@@ -1,0 +1,45 @@
+@(title: String, user: Option[models.User] = None)(content: Html)(implicit messages: Messages)
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+    <title>@title</title>
+    <link href="//fonts.googleapis.com/css?family=Roboto|Montserrat:400,700|Open+Sans:400,300,600" rel="stylesheet">
+    <link rel="stylesheet" href="@routes.Assets.versioned("styles/main.css")">
+  </head>
+  <body>
+    <header class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">@Messages("toggle.navigation")</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="@routes.ApplicationController.index">Silhouette Seed Template</a>
+        </div>
+        <nav class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="@routes.ApplicationController.index">@Messages("home")</a></li>
+            <li><a href="https://github.com/mohiva/play-silhouette-seed">GitHub</a></li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+          @user.map { u =>
+            <li><a href="@routes.ApplicationController.index">@u.fullName</a></li>
+          }
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="container">
+      <div class="starter-template row">
+      @content
+      </div>
+    </main>
+  </body>
+</html>
