@@ -11,19 +11,6 @@ import play.api.libs.ws.WSResponse
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-case class SlackProfile(teamUrl: String,
-                        teamName: String,
-                        userName: String,
-                        teamId: String,
-                        loginInfo: LoginInfo)
-  extends SocialProfile
-
-trait SlackProfileBuilder {
-  self: SocialProfileBuilder =>
-
-  type Profile = SlackProfile
-}
-
 class SlackProvider(protected val httpLayer: HTTPLayer,
                     protected val stateProvider: OAuth2StateProvider,
                     val settings: OAuth2Settings) extends OAuth2Provider with SlackProfileBuilder {

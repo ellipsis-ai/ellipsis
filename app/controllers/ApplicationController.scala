@@ -6,7 +6,9 @@ import com.mohiva.play.silhouette.api.{ Environment, LogoutEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.User
+import play.api.Configuration
 import play.api.i18n.MessagesApi
+import play.utils.UriEncoding
 
 import scala.concurrent.Future
 
@@ -20,6 +22,7 @@ import scala.concurrent.Future
 class ApplicationController @Inject() (
                                         val messagesApi: MessagesApi,
                                         val env: Environment[User, CookieAuthenticator],
+                                        val configuration: Configuration,
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
@@ -29,7 +32,18 @@ class ApplicationController @Inject() (
    * @return The result to display.
    */
   def index = SecuredAction.async { implicit request =>
-    Future.successful(Ok(views.html.home(request.identity)))
+    Future.successful(Ok("yay!"))
+  }
+
+  def addToSlack = UserAwareAction { implicit request =>
+    val maybeResult = for {
+      scopes <- configuration.getString("silhouette.slack.scope")
+      clientId <- configuration.getString("silhouette.slack.clientID")
+      redirectUrl <- configuration.getString("silhouette.slack.redirectURL").map(UriEncoding.encodePathSegment(_, "utf-8"))
+    } yield {
+        Ok(views.html.addToSlack(request.identity, scopes, clientId, redirectUrl))
+      }
+    maybeResult.getOrElse(Redirect(routes.ApplicationController.index))
   }
 
 }

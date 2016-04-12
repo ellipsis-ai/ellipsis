@@ -1,0 +1,12 @@
+@(maybeUser: Option[User], scopes: String, clientId: String, redirectUrl: String)(implicit r: RequestHeader, m: Messages)
+
+@main("Add to Slack") {
+
+  <div class="add-to-slack">
+
+    <p class="add-to-slack-action">
+      @addToSlackButton(scopes, clientId, redirectUrl)
+    </p>
+
+  </div>
+}

@@ -179,6 +179,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
                                stateProvider: OAuth2StateProvider,
                                configuration: Configuration): SlackProvider = {
 
-    new SlackProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("oauth.slack"))
+    new SlackProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.slack"))
   }
 }

@@ -3,14 +3,15 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET         /                                controllers.ApplicationController.index
-GET         /authenticate/:provider          controllers.SocialAuthController.authenticate(provider)
+GET        /                              @controllers.ApplicationController.index
+GET        /add_to_slack                  @controllers.ApplicationController.addToSlack
+GET        /authenticate/slack            @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp
 # An example controller showing how to use dependency injection
-GET        /count               controllers.CountController.count
+GET        /count                         @controllers.CountController.count
 # An example controller showing how to write asynchronous code
-GET        /message             controllers.AsyncController.message
+GET        /message                       @controllers.AsyncController.message
 
 # Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)
+GET        /assets/*file                  controllers.Assets.versioned(path="/public", file: Asset)

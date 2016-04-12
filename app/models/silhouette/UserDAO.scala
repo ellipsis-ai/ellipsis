@@ -1,7 +1,5 @@
 package models.silhouette
 
-import java.util.UUID
-
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.User
 
@@ -11,7 +9,7 @@ trait UserDAO {
 
   def find(loginInfo: LoginInfo): Future[Option[User]]
 
-  def find(userID: UUID): Future[Option[User]]
+  def find(userID: String): Future[Option[User]]
 
   def save(user: User): Future[User]
 }
