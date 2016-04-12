@@ -19,7 +19,7 @@ object Models {
   def onStart(): Unit = {
     println("initializing DB pool")
     onStop()
-    db = Database.forConfig("db.evolutions")
+    db = Database.forConfig("db.default")
   }
 
   def withDatabase[T](fn: Database => Future[T]) = {

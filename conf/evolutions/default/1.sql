@@ -8,6 +8,7 @@ CREATE TABLE users (
 
 CREATE TABLE oauth_2_tokens (
   access_token TEXT NOT NULL,
+  slack_scopes TEXT,
   token_type TEXT,
   expiration_time TIMESTAMP,
   refresh_token TEXT,
@@ -20,6 +21,7 @@ CREATE TABLE linked_accounts (
   provider_id TEXT NOT NULL,
   provider_key TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY(provider_id, provider_key, user_id),
   UNIQUE (provider_id, provider_key)
 );

@@ -59,7 +59,7 @@ class SocialAuthController @Inject() (
                          ) = UserAwareAction.async { implicit request =>
     val isHttps = configuration.getBoolean("application.https").getOrElse(true)
     val provider = slackProvider.withSettings { settings =>
-      val url = routes.SocialAuthController.authenticateSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = isHttps)
+      val url = routes.SocialAuthController.authenticateSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       val authorizationParams = maybeTeamId.map { teamId =>
         settings.authorizationParams + ("team" -> teamId)
       }.getOrElse(settings.authorizationParams)
