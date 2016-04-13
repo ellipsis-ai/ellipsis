@@ -90,6 +90,13 @@ object LinkedAccount {
     }.getOrElse(DBIO.successful(Seq()))
   }
 
+  def allFor(providerId: String): DBIO[Seq[LinkedAccount]] = {
+    joined.
+      filter { case(rawLinked, _) => rawLinked.providerId === providerId }.
+      result.
+      map { result => result.map(tuple2LinkedAccount) }
+  }
+
   def uncompiledMostRecentForQuery(providerId: Rep[String], userId: Rep[String]) = {
     uncompiledAllForQuery(providerId, userId)
       .sortBy { case(linkedAccount, user) =>

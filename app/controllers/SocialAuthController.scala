@@ -78,9 +78,13 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
+          maybeBotProfile <- Future.successful(slackProvider.maybeBotProfileFor(authInfo))
           maybeSlackTeamId <- Future.successful(Some(maybeTeamId.getOrElse(profile.teamId)))
           savedProfile <- Models.run(SlackProfileQueries.save(profile))
-          authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
+          maybeSavedBotProfile <- maybeBotProfile.map { botProfile =>
+            Models.run(SlackBotProfileQueries.save(botProfile))
+          }.getOrElse(Future.successful(None))
+          savedAuthInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
           maybeExistingLinkedAccount <- Models.run(LinkedAccount.find(profile.loginInfo))
           linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
             request.identity.map(Future.successful).getOrElse(Models.run(User.empty.save)).flatMap { user =>
@@ -88,7 +92,7 @@ class SocialAuthController @Inject() (
             }
           }
           user <- Future.successful(linkedAccount.user)
-          result <- Future.successful(Ok("Good job!"))
+          result <- Future.successful(Redirect(routes.ApplicationController.index))
           authenticatedResult <- Models.run(authenticatorResultForUserAndResult(user, result))
         } yield {
           authenticatedResult
