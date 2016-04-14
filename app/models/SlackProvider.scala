@@ -54,23 +54,27 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
     )
   }
 
-  def maybeBotProfileFor(authInfo: OAuth2Info): Option[SlackBotProfile] = {
+  def maybeBotProfileFor(authInfo: OAuth2Info): Future[Option[SlackBotProfile]] = {
     val maybeBotJson = authInfo.params.flatMap { params =>
       params.
         find { case (k, v) => k == "bot" }.
         map { case(k, v) => Json.parse(v) }
     }
-    val maybeTeamId = authInfo.params.flatMap { params =>
+    val maybeSlackTeamId = authInfo.params.flatMap { params =>
       params.
         find { case(k, v) => k == "team_id" }.
         map { case(k, v) => v }
     }
-    for {
+    val maybeAction = for {
       botJson <- maybeBotJson
       userId <- (botJson \ "bot_user_id").asOpt[String]
       token <- (botJson \ "bot_access_token").asOpt[String]
-      teamId <- maybeTeamId
-    } yield SlackBotProfile(userId, teamId, token)
+      slackTeamId <- maybeSlackTeamId
+    } yield SlackBotProfileQueries.ensure(userId, slackTeamId, token)
+
+    maybeAction.map { action =>
+      Models.run(action).map(Some(_))
+    }.getOrElse(Future.successful(None))
   }
 
 }

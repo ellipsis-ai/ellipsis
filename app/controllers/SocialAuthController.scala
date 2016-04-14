@@ -78,7 +78,7 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
-          maybeBotProfile <- Future.successful(slackProvider.maybeBotProfileFor(authInfo))
+          maybeBotProfile <- slackProvider.maybeBotProfileFor(authInfo)
           maybeSlackTeamId <- Future.successful(Some(maybeTeamId.getOrElse(profile.teamId)))
           savedProfile <- Models.run(SlackProfileQueries.save(profile))
           maybeSavedBotProfile <- maybeBotProfile.map { botProfile =>
