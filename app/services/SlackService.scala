@@ -17,7 +17,7 @@ object SlackService {
 
   private def processLearnMessage(message: Message, client: SlackRtmClient, learnRegex: Regex, profile: SlackBotProfile) = {
     val learnRegex(call, response) = message.text
-    val action = Response.create(profile.teamId, call, response).map { _ =>
+    val action = Response.ensure(profile.teamId, call, response).map { _ =>
       client.sendMessage(message.channel, s"<@${message.user}>: Got it! I'll say $response when someone says $call")
     }
     Models.runNow(action)

@@ -41,8 +41,12 @@ object Call {
     }
   }
 
-  def create(text: String, teamId: String): DBIO[Call] = {
-    Call(IDs.next, text, teamId).save
+  def ensure(text: String, teamId: String): DBIO[Call] = {
+    matchFor(text, teamId).flatMap { maybeExisting =>
+      maybeExisting.map(DBIO.successful).getOrElse {
+        Call(IDs.next, text, teamId).save
+      }
+    }
   }
 
   def uncompiledMatchForQuery(text: Rep[String], teamId: Rep[String]) = {

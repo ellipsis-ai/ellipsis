@@ -49,10 +49,15 @@ object Response {
     }
   }
 
-  def create(teamId: String, call: String, response: String): DBIO[Response] = {
+  def ensure(teamId: String, call: String, response: String): DBIO[Response] = {
     (for {
-      call <- Call.create(call.trim, teamId)
-      response <- Response(IDs.next, call.id, response.trim).save
+      call <- Call.ensure(call.trim, teamId)
+      maybeExistingResponse <- findByCallId(call.id)
+      response <- maybeExistingResponse.map { existing =>
+        existing.copy(text = response).save
+      }.getOrElse {
+        Response(IDs.next, call.id, response.trim).save
+      }
     } yield response).transactionally
   }
 }
