@@ -50,7 +50,7 @@ object SlackService {
     client.onMessage { message =>
 
       if (message.user != selfId) {
-        val learnRegex = """.*when\s*(\w+)\s*say\s*(\w+)""".r
+        val learnRegex = """.*when\s*(.+)\s*say\s*(.+)""".r
         if (learnRegex.findAllIn(message.text).nonEmpty) {
           processLearnMessage(message, client, learnRegex, profile)
         } else {
