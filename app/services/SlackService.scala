@@ -1,46 +1,17 @@
 package services
 
 import models._
-import slack.models.Message
+import models.bots.BotHandler
 import slack.rtm.SlackRtmClient
-import slack.SlackUtil
 import akka.actor.ActorSystem
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.matching.Regex
 
 object SlackService {
 
   implicit val system = ActorSystem("slack")
   implicit val ec = system.dispatcher
-
-  private def processLearnMessage(message: Message, client: SlackRtmClient, learnRegex: Regex, profile: SlackBotProfile) = {
-    val learnRegex(call, response) = message.text
-    val action = Response.ensure(profile.teamId, call, response).map { _ =>
-      client.sendMessage(message.channel, s"<@${message.user}>: Got it! I'll say $response when someone says $call")
-    }
-    Models.runNow(action)
-  }
-
-  private def processOtherMessage(message: Message, client: SlackRtmClient, profile: SlackBotProfile) = {
-    val messageTextRegex = """<@\w+>:\s(.*)""".r
-    val messageTextRegex(messageText) = message.text
-    val action = for {
-      maybeCall <- Call.matchFor(messageText.trim, profile.teamId)
-      maybeResponse <- maybeCall.map { call =>
-        Response.findByCallId(call.id)
-      }.getOrElse(DBIO.successful(None))
-    } yield {
-        maybeResponse.map { response =>
-          client.sendMessage(message.channel, s"<@${message.user}>: ${response.text}")
-        }.getOrElse {
-          client.sendMessage(message.channel, s"<@${message.user}>: I don't know what you're talking about")
-        }
-      }
-
-    Models.runNow(action)
-  }
 
   def startFor(profile: SlackBotProfile) {
 
@@ -48,16 +19,9 @@ object SlackService {
     val selfId = client.state.self.id
 
     client.onMessage { message =>
-
       if (message.user != selfId) {
-        val learnRegex = """.*when\s*(.+)\s*say\s*(.+)""".r
-        if (learnRegex.findAllIn(message.text).nonEmpty) {
-          processLearnMessage(message, client, learnRegex, profile)
-        } else {
-          processOtherMessage(message, client, profile)
-        }
+        BotHandler.ordered.find(_.canHandle(message)).foreach(_.runWith(client, profile, message))
       }
-
     }
 
   }
