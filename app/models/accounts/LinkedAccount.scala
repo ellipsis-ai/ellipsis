@@ -1,4 +1,4 @@
-package models
+package models.accounts
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.api.LoginInfo

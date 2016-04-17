@@ -3,7 +3,8 @@ package models.silhouette
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import models.{Models, OAuth2Token}
+import models.Models
+import models.accounts.OAuth2Token
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global

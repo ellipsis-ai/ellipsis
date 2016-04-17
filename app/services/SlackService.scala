@@ -1,6 +1,7 @@
 package services
 
 import models._
+import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
 import models.bots.BotHandler
 import slack.rtm.SlackRtmClient
 import akka.actor.ActorSystem

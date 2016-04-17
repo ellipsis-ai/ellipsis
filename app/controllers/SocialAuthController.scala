@@ -5,6 +5,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
 import com.mohiva.play.silhouette.api.util.Clock
+import models.accounts._
 import org.joda.time.DateTime
 import play.api.Configuration
 import services.UserService

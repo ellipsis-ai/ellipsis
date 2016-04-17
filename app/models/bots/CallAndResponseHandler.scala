@@ -1,6 +1,7 @@
 package models.bots
 
 import models._
+import models.accounts.SlackBotProfile
 import slack.models.Message
 import slack.rtm.SlackRtmClient
 import scala.util.matching.Regex

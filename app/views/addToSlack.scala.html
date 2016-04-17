@@ -1,4 +1,9 @@
-@(maybeUser: Option[User], scopes: String, clientId: String, redirectUrl: String)(implicit r: RequestHeader, m: Messages)
+@(
+    maybeUser: Option[models.accounts.User],
+    scopes: String,
+    clientId: String,
+    redirectUrl: String
+    )(implicit r: RequestHeader, m: Messages)
 
 @main("Add to Slack") {
 

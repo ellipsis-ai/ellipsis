@@ -1,8 +1,8 @@
-package models
+package models.accounts
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
-import com.mohiva.play.silhouette.impl.providers.{CommonSocialProfile, SocialProfileParser}
+import com.mohiva.play.silhouette.impl.providers.SocialProfileParser
 import play.api.libs.json._
 
 import scala.concurrent.Future

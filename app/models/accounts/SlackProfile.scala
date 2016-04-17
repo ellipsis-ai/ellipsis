@@ -1,7 +1,7 @@
-package models
+package models.accounts
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.{SocialProfileBuilder, SocialProfile}
+import com.mohiva.play.silhouette.impl.providers.{SocialProfile, SocialProfileBuilder}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global

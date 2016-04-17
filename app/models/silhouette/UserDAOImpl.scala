@@ -2,6 +2,7 @@ package models.silhouette
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models._
+import models.accounts.User
 import scala.concurrent.Future
 
 class UserDAOImpl extends UserDAO {

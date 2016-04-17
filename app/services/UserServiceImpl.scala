@@ -1,11 +1,11 @@
 package services
 
-import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import models.{IDs, User}
+import models.IDs
+import models.accounts.User
 import models.silhouette.UserDAO
 import play.api.libs.concurrent.Execution.Implicits._
 

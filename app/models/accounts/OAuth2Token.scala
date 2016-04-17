@@ -1,9 +1,9 @@
-package models
+package models.accounts
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import org.joda.time.{Seconds, DateTime}
+import org.joda.time.{DateTime, Seconds}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global

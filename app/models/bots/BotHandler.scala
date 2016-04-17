@@ -1,6 +1,6 @@
 package models.bots
 
-import models.SlackBotProfile
+import models.accounts.SlackBotProfile
 import slack.models.Message
 import slack.rtm.SlackRtmClient
 
