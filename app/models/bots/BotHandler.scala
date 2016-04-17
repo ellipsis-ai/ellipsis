@@ -29,6 +29,8 @@ trait BotHandlerType {
 object BotHandler {
   def ordered: Seq[BotHandlerType] = Seq(
     LearnCallAndResponseHandler,
+    LearnGoHandler,
+    GoHandler,
     CallAndResponseHandler
   )
 }
