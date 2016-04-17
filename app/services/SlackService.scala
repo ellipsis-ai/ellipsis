@@ -2,7 +2,7 @@ package services
 
 import models._
 import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
-import models.bots.BotHandler
+import models.bots.handlers.BotHandler
 import slack.rtm.SlackRtmClient
 import akka.actor.ActorSystem
 import slick.driver.PostgresDriver.api._

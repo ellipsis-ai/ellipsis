@@ -1,5 +1,6 @@
-package models
+package models.bots
 
+import models._
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 

@@ -1,4 +1,4 @@
-package models.bots
+package models.bots.handlers
 
 import models.accounts.SlackBotProfile
 import slack.models.Message

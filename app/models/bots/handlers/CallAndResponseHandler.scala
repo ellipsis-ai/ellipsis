@@ -1,12 +1,14 @@
-package models.bots
+package models.bots.handlers
 
 import models._
 import models.accounts.SlackBotProfile
+import models.bots.{Response, Call}
 import slack.models.Message
 import slack.rtm.SlackRtmClient
-import scala.util.matching.Regex
-import scala.concurrent.ExecutionContext.Implicits.global
 import slick.driver.PostgresDriver.api._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.matching.Regex
 
 
 case class CallAndResponseHandler(
