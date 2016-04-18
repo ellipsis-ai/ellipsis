@@ -17,7 +17,7 @@ case class LearnCallAndResponseHandler(
                                         ) extends BotHandler {
 
   def run = {
-    val regex = LearnCallAndResponseHandler.regex
+    val regex = LearnCallAndResponseHandler.regex(botId)
     val regex(call, response) = message.text
     val action = Response.ensure(profile.teamId, call, response).map { _ =>
       client.sendMessage(message.channel, s"<@${message.user}>: Got it! I'll say $response when someone says $call")
@@ -30,5 +30,5 @@ object LearnCallAndResponseHandler extends BotHandlerType {
 
   type T = LearnCallAndResponseHandler
 
-  def regex: Regex = """.*when\s*(.+)\s*say\s*(.+)""".r
+  def regex(botId: String): Regex = s"""<@${botId}>:\\s+when\\s+(.+)\\s+say\\s+(.+)""".r
 }

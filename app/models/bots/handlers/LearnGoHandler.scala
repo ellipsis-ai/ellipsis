@@ -17,7 +17,7 @@ case class LearnGoHandler(
                       ) extends BotHandler {
 
   def run = {
-    val regex = """.*when\s+(.+)\s+go\s<([^\|]+)\|?.*>""".r
+    val regex = s"""<@$botId>:\\s+when\\s+(.+)\\s+go\\s+<([^\\|]+)\\|?.*>""".r
     val regex(label, link) = message.text
     println(message.text)
     println(link)
@@ -32,5 +32,5 @@ object LearnGoHandler extends BotHandlerType {
 
   type T = LearnGoHandler
 
-  def regex: Regex = """.*when\s+(.+)\s+go\s+(.+)""".r
+  def regex(botId: String): Regex = s"""<@$botId>:\\s+when\\s+(.+)\\s+go\\s+(.+)""".r
 }

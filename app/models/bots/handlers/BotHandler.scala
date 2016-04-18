@@ -12,14 +12,16 @@ trait BotHandler {
   val message: Message
 
   def run: Unit
+  def botId: String = client.state.self.id
 }
 
 trait BotHandlerType {
+
   type T <: BotHandler
   def apply(client: SlackRtmClient, profile: SlackBotProfile, message: Message): T
-  def regex: Regex
-  def canHandle(message: Message): Boolean = {
-    regex.findFirstMatchIn(message.text).nonEmpty
+  def regex(botId: String): Regex
+  def canHandle(message: Message, botId: String): Boolean = {
+    regex(botId).findFirstMatchIn(message.text).nonEmpty
   }
   def runWith(client: SlackRtmClient, profile: SlackBotProfile, message: Message): Unit = {
     apply(client, profile, message).run

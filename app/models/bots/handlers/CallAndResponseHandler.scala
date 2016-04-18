@@ -18,7 +18,7 @@ case class CallAndResponseHandler(
                                         ) extends BotHandler {
 
   def run = {
-    val messageTextRegex = """<@\w+>:\s(.*)""".r
+    val messageTextRegex = CallAndResponseHandler.regex(botId)
     val messageTextRegex(messageText) = message.text
     val action = for {
       maybeCall <- Call.matchFor(messageText.trim, profile.teamId)
@@ -41,5 +41,5 @@ object CallAndResponseHandler extends BotHandlerType {
 
   type T = CallAndResponseHandler
 
-  def regex: Regex = ".*".r
+  def regex(botId: String): Regex = s"""<@$botId>:\\s+(.*)""".r
 }

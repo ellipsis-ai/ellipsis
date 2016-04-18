@@ -21,7 +21,10 @@ object SlackService {
 
     client.onMessage { message =>
       if (message.user != selfId) {
-        BotHandler.ordered.find(_.canHandle(message)).foreach(_.runWith(client, profile, message))
+        BotHandler.ordered.
+          find(_.canHandle(message, selfId)).foreach { handler =>
+          handler.runWith(client, profile, message)
+        }
       }
     }
 

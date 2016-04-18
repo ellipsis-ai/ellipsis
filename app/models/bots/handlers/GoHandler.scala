@@ -17,7 +17,7 @@ case class GoHandler(
                      ) extends BotHandler {
 
   def run = {
-    val messageTextRegex = GoHandler.regex
+    val messageTextRegex = GoHandler.regex(botId)
     val messageTextRegex(shortcutLabel) = message.text
     val action = for {
       maybeShortcut <- LinkShortcut.find(shortcutLabel.trim, profile.teamId)
@@ -37,5 +37,5 @@ object GoHandler extends BotHandlerType {
 
   type T = GoHandler
 
-  def regex: Regex = """.*go\s+(.+)""".r
+  def regex(botId: String): Regex = s"""<@$botId>:\\s+go\\s+(.+)""".r
 }
