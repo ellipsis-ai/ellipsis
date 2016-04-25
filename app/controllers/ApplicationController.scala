@@ -5,12 +5,14 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{ Environment, LogoutEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import models.Models
 import models.accounts.User
+import models.bots.DefaultBehaviors
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.utils.UriEncoding
 
-import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * The basic application controller.
@@ -32,7 +34,10 @@ class ApplicationController @Inject() (
    * @return The result to display.
    */
   def index = SecuredAction.async { implicit request =>
-    Future.successful(Ok("yay!"))
+    val action = DefaultBehaviors.ensureForAll.map { _ =>
+      Ok("yay!")
+    }
+    Models.run(action)
   }
 
   def addToSlack = UserAwareAction { implicit request =>

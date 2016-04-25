@@ -2,7 +2,7 @@ package services
 
 import models._
 import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
-import models.bots.handlers.BotHandler
+import models.bots.{SlackContext, SlackMessageEvent, RegexMessageTriggerQueries}
 import slack.rtm.SlackRtmClient
 import akka.actor.ActorSystem
 import slick.driver.PostgresDriver.api._
@@ -21,10 +21,16 @@ object SlackService {
 
     client.onMessage { message =>
       if (message.user != selfId) {
-        BotHandler.ordered.
-          find(_.canHandle(message, selfId)).foreach { handler =>
-          handler.runWith(client, profile, message)
-        }
+        val action = for {
+          maybeTeam <- Team.find(profile.teamId)
+          behaviorResponses <- maybeTeam.map { team =>
+            val messageContext = SlackContext(client, profile, message)
+            RegexMessageTriggerQueries.behaviorResponsesFor(SlackMessageEvent(messageContext), team)
+          }.getOrElse(DBIO.successful(Seq()))
+        } yield {
+            behaviorResponses.foreach(_.run)
+          }
+        Models.runNow(action)
       }
     }
 

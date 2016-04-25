@@ -19,8 +19,6 @@ case class LearnGoHandler(
   def run = {
     val regex = s"""<@$botId>:\\s+when\\s+(.+)\\s+go\\s+<([^\\|]+)\\|?.*>""".r
     val regex(label, link) = message.text
-    println(message.text)
-    println(link)
     val action = LinkShortcut(label.trim, link.trim, profile.teamId).save.map { _ =>
       client.sendMessage(message.channel, s"<@${message.user}>: Got it! I'll link to $link when someone says `@ellipsis: go $label`")
     }
