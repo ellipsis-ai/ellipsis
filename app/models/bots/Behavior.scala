@@ -16,17 +16,16 @@ case class Behavior(id: String, team: Team, description: String) {
   lazy val conf = Play.current.configuration
 
   def resultFor(params: Map[String, String]): String = {
-    val content = params.getOrElse("0", "<nothing>")
     val invokeRequest =
       new InvokeRequest().
         withFunctionName("echo").
         withInvocationType(InvocationType.RequestResponse).
-        withPayload(s""" { "content": "$content" } """)
+        withPayload(Json.toJson(params).toString())
     val credentials = new BasicAWSCredentials(conf.getString("aws.accessKey").get, conf.getString("aws.secretKey").get)
     // blocking
     val client = new AWSLambdaClient(credentials)
     val result = client.invoke(invokeRequest)
-    val bytes = result.getPayload().array
+    val bytes = result.getPayload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     (Json.parse(jsonString) \ "result").get.as[String]
   }
