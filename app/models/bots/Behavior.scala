@@ -2,7 +2,7 @@ package models.bots
 
 import java.nio.charset.Charset
 
-import com.amazonaws.auth.{BasicAWSCredentials}
+import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.lambda.AWSLambdaClient
 import com.amazonaws.services.lambda.model.{InvocationType, InvokeRequest}
 import models.{IDs, Team}
@@ -18,7 +18,7 @@ case class Behavior(id: String, team: Team, description: String) {
   def resultFor(params: Map[String, String]): String = {
     val invokeRequest =
       new InvokeRequest().
-        withFunctionName("echo").
+        withFunctionName(id).
         withInvocationType(InvocationType.RequestResponse).
         withPayload(Json.toJson(params).toString())
     val credentials = new BasicAWSCredentials(conf.getString("aws.accessKey").get, conf.getString("aws.secretKey").get)
