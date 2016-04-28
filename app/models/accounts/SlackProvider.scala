@@ -55,7 +55,7 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
     )
   }
 
-  def maybeBotProfileFor(authInfo: OAuth2Info): Future[Option[SlackBotProfile]] = {
+  def maybeBotProfileFor(authInfo: OAuth2Info, models: Models): Future[Option[SlackBotProfile]] = {
     val maybeBotJson = authInfo.params.flatMap { params =>
       params.
         find { case (k, v) => k == "bot" }.
@@ -74,7 +74,7 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
     } yield SlackBotProfileQueries.ensure(userId, slackTeamId, token)
 
     maybeAction.map { action =>
-      Models.run(action).map(Some(_))
+      models.run(action).map(Some(_))
     }.getOrElse(Future.successful(None))
   }
 

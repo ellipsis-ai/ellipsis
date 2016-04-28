@@ -16,7 +16,7 @@ case class RegexMessageTrigger(
       case e: SlackMessageEvent => {
         regex.findFirstMatchIn(e.context.message.text).map { firstMatch =>
           firstMatch.subgroups.zipWithIndex.map { case(param, i) =>
-            (i.toString, param)
+            (s"param$i", param)
           }.toMap
         }.getOrElse(Map())
       }

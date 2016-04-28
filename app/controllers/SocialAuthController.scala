@@ -29,6 +29,7 @@ class SocialAuthController @Inject() (
                                        val env: Environment[User, CookieAuthenticator],
                                        val configuration: Configuration,
                                        val clock: Clock,
+                                       val models: Models,
                                        slackProvider: SlackProvider,
                                        userService: UserService,
                                        authInfoRepository: AuthInfoRepository,
@@ -79,22 +80,22 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
-          maybeBotProfile <- slackProvider.maybeBotProfileFor(authInfo)
+          maybeBotProfile <- slackProvider.maybeBotProfileFor(authInfo, models)
           maybeSlackTeamId <- Future.successful(Some(maybeTeamId.getOrElse(profile.teamId)))
-          savedProfile <- Models.run(SlackProfileQueries.save(profile))
+          savedProfile <- models.run(SlackProfileQueries.save(profile))
           maybeSavedBotProfile <- maybeBotProfile.map { botProfile =>
-            Models.run(SlackBotProfileQueries.save(botProfile))
+            models.run(SlackBotProfileQueries.save(botProfile))
           }.getOrElse(Future.successful(None))
           savedAuthInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
-          maybeExistingLinkedAccount <- Models.run(LinkedAccount.find(profile.loginInfo))
+          maybeExistingLinkedAccount <- models.run(LinkedAccount.find(profile.loginInfo))
           linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
-            request.identity.map(Future.successful).getOrElse(Models.run(User.empty.save)).flatMap { user =>
-              Models.run(LinkedAccount(user, profile.loginInfo, DateTime.now).save)
+            request.identity.map(Future.successful).getOrElse(models.run(User.empty.save)).flatMap { user =>
+              models.run(LinkedAccount(user, profile.loginInfo, DateTime.now).save)
             }
           }
           user <- Future.successful(linkedAccount.user)
           result <- Future.successful(Redirect(routes.ApplicationController.index))
-          authenticatedResult <- Models.run(authenticatorResultForUserAndResult(user, result))
+          authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
         } yield {
           authenticatedResult
         }

@@ -17,7 +17,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.0.0",
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc4",
   "net.codingwell" %% "scala-guice" % "4.0.0",
-  "net.ceedubs" %% "ficus" % "1.1.2"
+  "net.ceedubs" %% "ficus" % "1.1.2",
+  "com.amazonaws" % "aws-java-sdk" % "1.10.72"
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
