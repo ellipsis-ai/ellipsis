@@ -47,15 +47,12 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
     val code = learnMatch.subgroups.tail.head
     val action = for {
       maybeTeam <- Team.find(profile.teamId)
-      maybeBehavior <- maybeTeam.map { team =>
-        BehaviorQueries.createFor(team, "").map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-      maybeTrigger <- maybeBehavior.map { behavior =>
-        RegexMessageTriggerQueries.ensureFor(behavior, regex).map(Some(_))
+      maybeTrigger <- maybeTeam.map { team =>
+        RegexMessageTriggerQueries.ensureFor(team, regex).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
-        maybeBehavior.map { behavior =>
-          lambdaService.deployFunction(behavior.id, code)
+        maybeTrigger.map { trigger =>
+          lambdaService.deployFunction(trigger.behavior.id, code)
         }.getOrElse("Hm. Problem with the team")
       }
     val reply = models.runNow(action)

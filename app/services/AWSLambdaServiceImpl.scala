@@ -9,7 +9,7 @@ import javax.inject.Inject
 import com.amazonaws.AmazonServiceException
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.lambda.AWSLambdaClient
-import com.amazonaws.services.lambda.model.{FunctionCode, CreateFunctionRequest, InvocationType, InvokeRequest}
+import com.amazonaws.services.lambda.model._
 import play.api.Configuration
 import play.api.libs.json.Json
 
@@ -71,7 +71,18 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
 
+  def deleteFunction(functionName: String): Unit = {
+    val deleteFunctionRequest =
+      new DeleteFunctionRequest().withFunctionName(functionName)
+    try {
+      blockingClient.deleteFunction(deleteFunctionRequest)
+    } catch {
+      case e: ResourceNotFoundException => Unit
+    }
+  }
+
   def deployFunction(functionName: String, code: String): String = {
+    deleteFunction(functionName)
     val functionCode =
       new FunctionCode().
         withZipFile(getZipFor(functionName, code))
