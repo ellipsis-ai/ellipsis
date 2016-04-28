@@ -10,6 +10,6 @@ trait AWSLambdaService {
 
   def invoke(functionName: String, params: Map[String, String]): String
 
-  def deployFunction(functionName: String, code: String): Unit
+  def deployFunction(functionName: String, code: String, params: Array[String]): Unit
 
 }

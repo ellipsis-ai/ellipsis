@@ -23,7 +23,9 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
   private def resultStringFor(payload: ByteBuffer): String = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
-    (Json.parse(jsonString) \ "result").get.toString
+    (Json.parse(jsonString) \ "result").toOption.map(_.toString).getOrElse {
+      "Hmm. Looks like something is wrong with your script. Try `learn` again."
+    }
   }
 
   def invoke(functionName: String, params: Map[String, String]): String = {
@@ -38,26 +40,27 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     resultStringFor(result.getPayload)
   }
 
-  private def nodeCodeFor(code: String): String = {
+  private def nodeCodeFor(code: String, params: Array[String]): String = {
     var fixedCode = "[“”]".r.replaceAllIn(code, "\"")
     "‘".r.replaceAllIn(fixedCode, "'")
+    val paramString = params.indices.map(i => s"event.param$i").mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {
       |   var fn = $fixedCode;
-      |   callback(null, { "result": fn() });
+      |   callback(null, { "result": fn($paramString) });
       |}
     """.stripMargin
   }
 
   private def zipFileNameFor(functionName: String) = s"/tmp/$functionName.zip"
 
-  private def createZipFor(functionName: String, code: String): ZipOutputStream = {
+  private def createZipFor(functionName: String, code: String, params: Array[String]): ZipOutputStream = {
     val fileStream = new FileOutputStream(zipFileNameFor(functionName))
     val zipStream = new ZipOutputStream(fileStream)
 
     val zipEntry = new ZipEntry(s"$functionName.js")
     zipStream.putNextEntry(zipEntry)
-    val data = nodeCodeFor(code).getBytes
+    val data = nodeCodeFor(code, params).getBytes
     zipStream.write(data, 0, data.length)
     zipStream.closeEntry()
 
@@ -65,8 +68,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     zipStream
   }
 
-  private def getZipFor(functionName: String, code: String): ByteBuffer = {
-    createZipFor(functionName, code)
+  private def getZipFor(functionName: String, code: String, params: Array[String]): ByteBuffer = {
+    createZipFor(functionName, code, params)
     val path = Paths.get(zipFileNameFor(functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -81,11 +84,11 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     }
   }
 
-  def deployFunction(functionName: String, code: String): Unit = {
+  def deployFunction(functionName: String, code: String, params: Array[String]): Unit = {
     deleteFunction(functionName)
     val functionCode =
       new FunctionCode().
-        withZipFile(getZipFor(functionName, code))
+        withZipFile(getZipFor(functionName, code, params))
     val createFunctionRequest =
       new CreateFunctionRequest().
         withFunctionName(functionName).

@@ -58,9 +58,19 @@ object BehaviorQueries {
     (all += raw).map { _ => Behavior(raw.id, team, description, raw.createdAt) }
   }
 
+  private def paramsIn(code: String): Array[String] = {
+    """.*function\s*\(([^\)]*)\)""".r.findFirstMatchIn(code).flatMap { firstMatch =>
+      firstMatch.subgroups.headOption.map { paramString =>
+        paramString.split("""\s*,\s*""")
+      }
+    }.getOrElse(Array())
+  }
+
   def learnFor(learnMatch: Match, teamId: String, lambdaService: AWSLambdaService): DBIO[Option[Behavior]] = {
     val regex = learnMatch.subgroups.head.r
+    val numExpectedParams = regex.pattern.matcher("").groupCount()
     val code = learnMatch.subgroups.tail.head
+    val actualParams = paramsIn(code)
     for {
       maybeTeam <- Team.find(teamId)
       maybeTrigger <- maybeTeam.map { team =>
@@ -68,7 +78,7 @@ object BehaviorQueries {
       }.getOrElse(DBIO.successful(None))
     } yield {
         maybeTrigger.map { trigger =>
-          lambdaService.deployFunction(trigger.behavior.id, code)
+          lambdaService.deployFunction(trigger.behavior.id, code, actualParams)
           trigger.behavior
         }
       }
