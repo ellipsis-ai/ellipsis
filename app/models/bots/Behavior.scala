@@ -1,12 +1,14 @@
 package models.bots
 
+import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.{IDs, Team}
+import org.joda.time.DateTime
 import play.api.Play
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class Behavior(id: String, team: Team, description: String) {
+case class Behavior(id: String, team: Team, description: String, createdAt: DateTime) {
 
   lazy val conf = Play.current.configuration
 
@@ -16,16 +18,17 @@ case class Behavior(id: String, team: Team, description: String) {
 
 }
 
-case class RawBehavior(id: String, teamId: String, description: String)
+case class RawBehavior(id: String, teamId: String, description: String, createdAt: DateTime)
 
 class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
 
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
   def description = column[String]("description")
+  def createdAt = column[DateTime]("created_at")
 
   def * =
-    (id, teamId, description) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+    (id, teamId, description, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
 object BehaviorQueries {
@@ -35,7 +38,7 @@ object BehaviorQueries {
 
   def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
     val rawBehavior = tuple._1
-    Behavior(rawBehavior.id, tuple._2, rawBehavior.description)
+    Behavior(rawBehavior.id, tuple._2, rawBehavior.description, rawBehavior.createdAt)
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
@@ -49,8 +52,8 @@ object BehaviorQueries {
   }
 
   def createFor(team: Team, description: String): DBIO[Behavior] = {
-    val raw = RawBehavior(IDs.next, team.id, description)
+    val raw = RawBehavior(IDs.next, team.id, description, DateTime.now)
 
-    (all += raw).map { _ => Behavior(raw.id, team, description) }
+    (all += raw).map { _ => Behavior(raw.id, team, description, raw.createdAt) }
   }
 }

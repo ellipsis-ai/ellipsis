@@ -43,7 +43,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     "‘".r.replaceAllIn(fixedCode, "'")
     s"""
       |exports.handler = function(event, context, callback) {
-      |   callback(null, { "result": $fixedCode });
+      |   var fn = $fixedCode;
+      |   callback(null, { "result": fn() });
       |}
     """.stripMargin
   }
