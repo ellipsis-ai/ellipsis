@@ -1,13 +1,7 @@
 package models.bots
 
-import java.nio.charset.Charset
-
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.services.lambda.AWSLambdaClient
-import com.amazonaws.services.lambda.model.{InvocationType, InvokeRequest}
 import models.{IDs, Team}
 import play.api.Play
-import play.api.libs.json.Json
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
