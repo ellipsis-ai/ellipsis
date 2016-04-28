@@ -14,11 +14,11 @@ class Models @Inject() (appLifecycle: ApplicationLifecycle) {
   var db: Database = Database.forConfig("db.default")
 
   appLifecycle.addStopHook { () =>
-    if (db != null) {
-      println("closing DB pool")
-      db.close()
-      db = null
-    }
+//    if (db != null) {
+//      println("closing DB pool")
+//      db.close()
+//      db = null
+//    }
     Future.successful(())
   }
 
