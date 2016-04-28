@@ -1,18 +1,32 @@
 package services
 
+import javax.inject._
 import models._
 import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
 import models.bots.{SlackContext, SlackMessageEvent, RegexMessageTriggerQueries}
+import play.api.inject.ApplicationLifecycle
 import slack.rtm.SlackRtmClient
 import akka.actor.ActorSystem
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-object SlackService {
+@Singleton
+class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: ApplicationLifecycle, models: Models) {
 
   implicit val system = ActorSystem("slack")
   implicit val ec = system.dispatcher
+
+  start
+
+  appLifecycle.addStopHook { () =>
+    val action = allProfiles.map { profiles =>
+      profiles.foreach { profile =>
+        closeFor(profile)
+      }
+    }
+    models.run(action)
+  }
 
   def startFor(profile: SlackBotProfile) {
 
@@ -28,9 +42,9 @@ object SlackService {
             RegexMessageTriggerQueries.behaviorResponsesFor(SlackMessageEvent(messageContext), team)
           }.getOrElse(DBIO.successful(Seq()))
         } yield {
-            behaviorResponses.foreach(_.run)
+            behaviorResponses.foreach(_.run(lambdaService))
           }
-        Models.runNow(action)
+        models.runNow(action)
       }
     }
 
@@ -46,21 +60,12 @@ object SlackService {
         startFor(profile)
       }
     }
-    Models.run(action)
+    models.run(action)
   }
 
   def closeFor(profile: SlackBotProfile): Unit = {
     val client = SlackRtmClient(profile.token)
     client.close
-  }
-
-  def stop: Future[Any] = {
-    val action = allProfiles.map { profiles =>
-      profiles.foreach { profile =>
-        closeFor(profile)
-      }
-    }
-    Models.run(action)
   }
 
 }

@@ -25,6 +25,7 @@ class ApplicationController @Inject() (
                                         val messagesApi: MessagesApi,
                                         val env: Environment[User, CookieAuthenticator],
                                         val configuration: Configuration,
+                                        val models: Models,
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
@@ -37,7 +38,7 @@ class ApplicationController @Inject() (
     val action = DefaultBehaviors.ensureForAll.map { _ =>
       Ok("yay!")
     }
-    Models.run(action)
+    models.run(action)
   }
 
   def addToSlack = UserAwareAction { implicit request =>

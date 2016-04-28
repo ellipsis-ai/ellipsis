@@ -1,25 +1,25 @@
 package models
 
+import javax.inject._
+
+import play.api.inject.ApplicationLifecycle
+
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import slick.driver.PostgresDriver.api._
 
-object Models {
+@Singleton
+class Models @Inject() (appLifecycle: ApplicationLifecycle) {
 
-  var db: Database = null
+  var db: Database = Database.forConfig("db.default")
 
-  def onStop(): Unit = {
+  appLifecycle.addStopHook { () =>
     if (db != null) {
       println("closing DB pool")
       db.close()
       db = null
     }
-  }
-
-  def onStart(): Unit = {
-    println("initializing DB pool")
-    onStop()
-    db = Database.forConfig("db.default")
+    Future.successful(())
   }
 
   def withDatabase[T](fn: Database => Future[T]) = {
@@ -33,6 +33,6 @@ object Models {
   }
 
   def runNow[T](action: DBIO[T]): T = {
-    Await.result(Models.run(action), 30.seconds)
+    Await.result(run(action), 30.seconds)
   }
 }
