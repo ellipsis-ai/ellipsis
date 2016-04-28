@@ -1,6 +1,7 @@
 package services
 
 import javax.inject._
+import com.amazonaws.AmazonServiceException
 import models._
 import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
 import models.bots._
@@ -43,18 +44,18 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
   val learnRegex = """.*\s+learn\s+(\S+)\s+(.+)$""".r
 
   private def learnBehaviorFor(learnMatch: Match, client: SlackRtmClient, profile: SlackBotProfile, message: Message): Unit = {
-    val regex = learnMatch.subgroups.head.r
-    val code = learnMatch.subgroups.tail.head
-    val action = for {
-      maybeTeam <- Team.find(profile.teamId)
-      maybeTrigger <- maybeTeam.map { team =>
-        RegexMessageTriggerQueries.ensureFor(team, regex).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-    } yield {
-        maybeTrigger.map { trigger =>
-          lambdaService.deployFunction(trigger.behavior.id, code)
-        }.getOrElse("Hm. Problem with the team")
+    val action = try {
+      BehaviorQueries.learnFor(learnMatch, profile.teamId, lambdaService).map { maybeBehavior =>
+        maybeBehavior.map { behavior =>
+          "OK, I think I've got it."
+        }.getOrElse {
+          "Couldn't find your team!?!"
+        }
       }
+
+    } catch {
+      case e: AmazonServiceException => DBIO.successful("D'oh! That didn't work.")
+    }
     val reply = models.runNow(action)
     val messageContext = SlackContext(client, profile, message)
     SlackMessageEvent(messageContext).context.sendMessage(reply)

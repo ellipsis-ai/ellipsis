@@ -7,6 +7,7 @@ import play.api.Play
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.matching.Regex.Match
 
 case class Behavior(id: String, team: Team, description: String, createdAt: DateTime) {
 
@@ -55,5 +56,21 @@ object BehaviorQueries {
     val raw = RawBehavior(IDs.next, team.id, description, DateTime.now)
 
     (all += raw).map { _ => Behavior(raw.id, team, description, raw.createdAt) }
+  }
+
+  def learnFor(learnMatch: Match, teamId: String, lambdaService: AWSLambdaService): DBIO[Option[Behavior]] = {
+    val regex = learnMatch.subgroups.head.r
+    val code = learnMatch.subgroups.tail.head
+    for {
+      maybeTeam <- Team.find(teamId)
+      maybeTrigger <- maybeTeam.map { team =>
+        RegexMessageTriggerQueries.ensureFor(team, regex).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+    } yield {
+        maybeTrigger.map { trigger =>
+          lambdaService.deployFunction(trigger.behavior.id, code)
+          trigger.behavior
+        }
+      }
   }
 }

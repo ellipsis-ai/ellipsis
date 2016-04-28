@@ -81,7 +81,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     }
   }
 
-  def deployFunction(functionName: String, code: String): String = {
+  def deployFunction(functionName: String, code: String): Unit = {
     deleteFunction(functionName)
     val functionCode =
       new FunctionCode().
@@ -94,12 +94,6 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
         withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
         withHandler(s"$functionName.handler")
 
-    try {
-      blockingClient.createFunction(createFunctionRequest)
-      "OK, I think I've got it."
-    } catch {
-      case e: AmazonServiceException => "D'oh! That didn't work."
-    }
-
+    blockingClient.createFunction(createFunctionRequest)
   }
 }
