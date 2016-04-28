@@ -92,7 +92,7 @@ object RegexMessageTriggerQueries {
   def ensureFor(team: Team, regex: Regex): DBIO[RegexMessageTrigger] = {
     val regexString = regex.pattern.toString
     allWithBehaviors.
-      filter { case(trigger, (behavior, team)) => team.id === team.id }.
+      filter { case(trigger, (behavior, thisTeam)) => thisTeam.id === team.id }.
       filter { case(trigger, _) => trigger.regex === regexString }.
       result.
       flatMap { r =>
