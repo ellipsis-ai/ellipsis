@@ -11,6 +11,7 @@ import akka.actor.ActorSystem
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.matching.Regex.Match
 
 @Singleton
 class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: ApplicationLifecycle, models: Models) {
@@ -41,6 +42,27 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
 
   val learnRegex = """.*\s+learn\s+(\S+)\s+(.+)$""".r
 
+  private def learnBehaviorFor(learnMatch: Match, client: SlackRtmClient, profile: SlackBotProfile, message: Message): Unit = {
+    val regex = learnMatch.subgroups.head.r
+    val code = learnMatch.subgroups.tail.head
+    val action = for {
+      maybeTeam <- Team.find(profile.teamId)
+      maybeBehavior <- maybeTeam.map { team =>
+        BehaviorQueries.createFor(team, "").map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+      maybeTrigger <- maybeBehavior.map { behavior =>
+        RegexMessageTriggerQueries.ensureFor(behavior, regex).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+    } yield {
+        maybeBehavior.map { behavior =>
+          lambdaService.deployFunction(behavior.id, code)
+        }.getOrElse("Hm. Problem with the team")
+      }
+    val reply = models.runNow(action)
+    val messageContext = SlackContext(client, profile, message)
+    SlackMessageEvent(messageContext).context.sendMessage(reply)
+  }
+
   def startFor(profile: SlackBotProfile) {
 
     val client = SlackRtmClient(profile.token, 5.seconds)
@@ -49,28 +71,9 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
 
     client.onMessage { message =>
       if (message.user != selfId) {
-        learnRegex.findFirstMatchIn(message.text).map { learnMatch =>
-          val regex = learnMatch.subgroups.head.r
-          val code = learnMatch.subgroups.tail.head
-          val action = for {
-            maybeTeam <- Team.find(profile.teamId)
-            maybeBehavior <- maybeTeam.map { team =>
-              BehaviorQueries.createFor(team, "").map(Some(_))
-            }.getOrElse(DBIO.successful(None))
-            maybeTrigger <- maybeBehavior.map { behavior =>
-              RegexMessageTriggerQueries.ensureFor(behavior, regex).map(Some(_))
-            }.getOrElse(DBIO.successful(None))
-          } yield {
-              maybeBehavior.map { behavior =>
-                lambdaService.deployFunction(behavior.id, code)
-                "New behavior deployed!"
-              }.getOrElse("Couldn't deploy new behavior :(")
-            }
-          val reply = models.runNow(action)
-          val messageContext = SlackContext(client, profile, message)
-          SlackMessageEvent(messageContext).context.sendMessage(reply)
-        }.getOrElse {
-          runBehaviorsFor(client, profile, message)
+        learnRegex.findFirstMatchIn(message.text) match {
+          case Some(learnMatch) => learnBehaviorFor(learnMatch, client, profile, message)
+          case None => runBehaviorsFor(client, profile, message)
         }
       }
     }

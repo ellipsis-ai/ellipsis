@@ -6,6 +6,7 @@ import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import javax.inject.Inject
+import com.amazonaws.AmazonServiceException
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.lambda.AWSLambdaClient
 import com.amazonaws.services.lambda.model.{FunctionCode, CreateFunctionRequest, InvocationType, InvokeRequest}
@@ -26,19 +27,23 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
   }
 
   def invoke(functionName: String, params: Map[String, String]): String = {
-    val invokeRequest =
+    var invokeRequest =
       new InvokeRequest().
         withFunctionName(functionName).
-        withInvocationType(InvocationType.RequestResponse).
-        withPayload(Json.toJson(params).toString())
+        withInvocationType(InvocationType.RequestResponse)
+    if (params.nonEmpty) {
+      invokeRequest = invokeRequest.withPayload(Json.toJson(params).toString())
+    }
     val result = blockingClient.invoke(invokeRequest)
     resultStringFor(result.getPayload)
   }
 
   private def nodeCodeFor(code: String): String = {
+    var fixedCode = "[“”]".r.replaceAllIn(code, "\"")
+    "‘".r.replaceAllIn(fixedCode, "'")
     s"""
       |exports.handler = function(event, context, callback) {
-      |   callback(null, { "result": $code });
+      |   callback(null, { "result": $fixedCode });
       |}
     """.stripMargin
   }
@@ -77,9 +82,12 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
         withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
         withHandler(s"$functionName.handler")
 
-    val result = blockingClient.createFunction(createFunctionRequest)
+    try {
+      blockingClient.createFunction(createFunctionRequest)
+      "OK, I think I've got it."
+    } catch {
+      case e: AmazonServiceException => "D'oh! That didn't work."
+    }
 
-    // shrug
-    result.getDescription
   }
 }
