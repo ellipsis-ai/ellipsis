@@ -83,7 +83,13 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
         val triggerItemsString = triggers.map { ea =>
           s"\n• ${ea.regex.pattern.pattern()}"
         }.mkString("")
-        s"Here's what I can do so far:$triggerItemsString"
+        s"""
+           |Here's what I can do so far:$triggerItemsString
+           |
+           |To teach me something new:
+           |
+           |`@ellipsis: learn <regex with N capture groups> function(param1,...,paramN) { <code that returns result>; }`
+           |""".stripMargin
       }
     val text = models.runNow(action)
     val messageContext = SlackContext(client, profile, message)
