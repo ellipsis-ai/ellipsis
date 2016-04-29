@@ -20,3 +20,4 @@ server.pid
 /.settings
 /RUNNING_PID
 activator
+.DS_Store
