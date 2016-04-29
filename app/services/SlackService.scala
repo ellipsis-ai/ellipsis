@@ -12,7 +12,7 @@ import akka.actor.ActorSystem
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.matching.Regex.Match
+import scala.util.matching.Regex
 
 @Singleton
 class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: ApplicationLifecycle, models: Models) {
@@ -43,9 +43,9 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
 
   val learnRegex = """.*\s+learn\s+(\S+)\s+(.+)$""".r
 
-  private def learnBehaviorFor(learnMatch: Match, client: SlackRtmClient, profile: SlackBotProfile, message: Message): Unit = {
+  private def learnBehaviorFor(regex: Regex, code: String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): Unit = {
     val action = try {
-      BehaviorQueries.learnFor(learnMatch, profile.teamId, lambdaService).map { maybeBehavior =>
+      BehaviorQueries.learnFor(regex, code, profile.teamId, lambdaService).map { maybeBehavior =>
         maybeBehavior.map { behavior =>
           "OK, I think I've got it."
         }.getOrElse {
@@ -69,9 +69,9 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
 
     client.onMessage { message =>
       if (message.user != selfId) {
-        learnRegex.findFirstMatchIn(message.text) match {
-          case Some(learnMatch) => learnBehaviorFor(learnMatch, client, profile, message)
-          case None => runBehaviorsFor(client, profile, message)
+        message.text match {
+          case learnRegex(regexString, code) => learnBehaviorFor(regexString.r, code, client, profile, message)
+          case _ => runBehaviorsFor(client, profile, message)
         }
       }
     }
