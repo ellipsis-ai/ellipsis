@@ -17,6 +17,11 @@ case class Behavior(id: String, team: Team, description: String, createdAt: Date
     service.invoke(id, params)
   }
 
+  def unlearn(lambdaService: AWSLambdaService): DBIO[Unit] = {
+    lambdaService.deleteFunction(id)
+    BehaviorQueries.delete(this).map(_ => Unit)
+  }
+
 }
 
 case class RawBehavior(id: String, teamId: String, description: String, createdAt: DateTime)
@@ -56,6 +61,10 @@ object BehaviorQueries {
     val raw = RawBehavior(IDs.next, team.id, description, DateTime.now)
 
     (all += raw).map { _ => Behavior(raw.id, team, description, raw.createdAt) }
+  }
+
+  def delete(behavior: Behavior): DBIO[Behavior] = {
+    all.filter(_.id === behavior.id).delete.map(_ => behavior)
   }
 
   private def paramsIn(code: String): Array[String] = {
