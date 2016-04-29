@@ -1,8 +1,0 @@
-# --- !Ups
-
-ALTER TABLE IF EXISTS behaviors ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-
-# --- !Downs
-
-ALTER TABLE IF EXISTS behaviors DROP COLUMN created_at;
-

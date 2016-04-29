@@ -36,8 +36,37 @@ CREATE TABLE slack_profiles (
   PRIMARY KEY(provider_id, provider_key)
 );
 
+CREATE TABLE teams (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL
+);
+
+CREATE TABLE slack_bot_profiles (
+  user_id TEXT PRIMARY KEY,
+  team_id TEXT NOT NULL REFERENCES teams(id),
+  slack_team_id TEXT NOT NULL,
+  token TEXT NOT NULL
+);
+
+CREATE TABLE behaviors (
+  id TEXT PRIMARY KEY,
+  team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  description TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE regex_message_triggers (
+  id TEXT PRIMARY KEY,
+  behavior_id TEXT NOT NULL REFERENCES behaviors(id) ON DELETE CASCADE,
+  regex TEXT NOT NULL
+);
+
 # --- !Downs
 
+DROP TABLE IF EXISTS regex_message_triggers;
+DROP TABLE IF EXISTS behaviors;
+DROP TABLE IF EXISTS slack_bot_profiles;
+DROP TABLE IF EXISTS teams;
 DROP TABLE IF EXISTS oauth_2_tokens;
 DROP TABLE IF EXISTS linked_accounts;
 DROP TABLE IF EXISTS slack_profiles;
