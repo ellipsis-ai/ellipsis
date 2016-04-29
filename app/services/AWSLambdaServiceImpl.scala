@@ -23,7 +23,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
   private def resultStringFor(payload: ByteBuffer): String = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
-    (Json.parse(jsonString) \ "result").toOption.map(_.toString).getOrElse {
+    val maybeResult = (Json.parse(jsonString) \ "result").toOption
+    maybeResult.map(_.toString.replaceAll("^\"|\"$", "")).getOrElse {
       "Hmm. Looks like something is wrong with your script. Try `learn` again."
     }
   }
