@@ -41,8 +41,6 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
     models.runNow(action)
   }
 
-  val learnRegex = """.*\s+learn\s+(\S+)\s+(.+)$""".r
-
   private def learnBehaviorFor(regex: Regex, code: String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): Unit = {
     val action = try {
       BehaviorQueries.learnFor(regex, code, profile.teamId, lambdaService).map { maybeBehavior =>
@@ -61,16 +59,37 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
     SlackMessageEvent(messageContext).context.sendMessage(reply)
   }
 
+  def displayHelpFor(helpString: String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): Unit = {
+    val action = for {
+      maybeTeam <- Team.find(profile.teamId)
+      triggers <- maybeTeam.map { team =>
+        RegexMessageTriggerQueries.allFor(team)
+      }.getOrElse(DBIO.successful(Seq()))
+    } yield {
+        val triggerItemsString = triggers.map { ea =>
+          s"\n• ${ea.regex.pattern.pattern()}"
+        }.mkString("")
+        s"Here's what I can do so far:$triggerItemsString"
+      }
+    val text = models.runNow(action)
+    val messageContext = SlackContext(client, profile, message)
+    SlackMessageEvent(messageContext).context.sendMessage(text)
+  }
+
   def startFor(profile: SlackBotProfile) {
 
     val client = SlackRtmClient(profile.token, 5.seconds)
     clients += client
     val selfId = client.state.self.id
 
+    val learnRegex = s"""<@$selfId>:\\s+learn\\s+(\\S+)\\s+(.+)""".r
+    val helpRegex = s"""<@$selfId>:\\s+help\\s*(\\S*)""".r
+
     client.onMessage { message =>
       if (message.user != selfId) {
         message.text match {
           case learnRegex(regexString, code) => learnBehaviorFor(regexString.r, code, client, profile, message)
+          case helpRegex(helpString) => displayHelpFor(helpString, client, profile, message)
           case _ => runBehaviorsFor(client, profile, message)
         }
       }
