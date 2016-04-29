@@ -7,20 +7,12 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.Models
 import models.accounts.User
-import models.bots.DefaultBehaviors
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.utils.UriEncoding
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-/**
- * The basic application controller.
- *
- * @param messagesApi The Play messages API.
- * @param env The Silhouette environment.
- * @param socialProviderRegistry The social provider registry.
- */
 class ApplicationController @Inject() (
                                         val messagesApi: MessagesApi,
                                         val env: Environment[User, CookieAuthenticator],
@@ -29,17 +21,7 @@ class ApplicationController @Inject() (
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
-  /**
-   * Handles the index action.
-   *
-   * @return The result to display.
-   */
-  def index = SecuredAction.async { implicit request =>
-    val action = DefaultBehaviors.ensureForAll.map { _ =>
-      Ok("yay!")
-    }
-    models.run(action)
-  }
+  def index = SecuredAction { implicit request => Ok("yay!") }
 
   def addToSlack = UserAwareAction { implicit request =>
     val maybeResult = for {
