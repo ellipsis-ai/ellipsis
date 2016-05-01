@@ -9,7 +9,14 @@ import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
 
-case class Behavior(id: String, team: Team, maybeDescription: Option[String], createdAt: DateTime) {
+case class Behavior(
+                     id: String,
+                     team: Team,
+                     maybeDescription: Option[String],
+                     maybeShortName: Option[String],
+                     hasCode: Boolean,
+                     createdAt: DateTime
+                     ) {
 
   lazy val conf = Play.current.configuration
 
@@ -24,17 +31,26 @@ case class Behavior(id: String, team: Team, maybeDescription: Option[String], cr
 
 }
 
-case class RawBehavior(id: String, teamId: String, maybeDescription: Option[String], createdAt: DateTime)
+case class RawBehavior(
+                        id: String,
+                        teamId: String,
+                        maybeDescription: Option[String],
+                        maybeShortName: Option[String],
+                        hasCode: Boolean,
+                        createdAt: DateTime
+                        )
 
 class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
 
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
   def maybeDescription = column[Option[String]]("description")
+  def maybeShortName = column[Option[String]]("short_name")
+  def hasCode = column[Boolean]("has_code")
   def createdAt = column[DateTime]("created_at")
 
   def * =
-    (id, teamId, maybeDescription, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+    (id, teamId, maybeDescription, maybeShortName, hasCode, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
 object BehaviorQueries {
@@ -43,8 +59,8 @@ object BehaviorQueries {
   def allWithTeam = all.join(Team.all).on(_.teamId === _.id)
 
   def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
-    val rawBehavior = tuple._1
-    Behavior(rawBehavior.id, tuple._2, rawBehavior.maybeDescription, rawBehavior.createdAt)
+    val raw = tuple._1
+    Behavior(raw.id, tuple._2, raw.maybeDescription, raw.maybeShortName, raw.hasCode, raw.createdAt)
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
@@ -58,9 +74,9 @@ object BehaviorQueries {
   }
 
   def createFor(team: Team): DBIO[Behavior] = {
-    val raw = RawBehavior(IDs.next, team.id, None, DateTime.now)
+    val raw = RawBehavior(IDs.next, team.id, None, None, false, DateTime.now)
 
-    (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.createdAt) }
+    (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.hasCode, raw.createdAt) }
   }
 
   def delete(behavior: Behavior): DBIO[Behavior] = {

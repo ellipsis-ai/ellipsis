@@ -17,6 +17,14 @@ case class LearnBehaviorConversation(
 
   val conversationType = "learn_behavior"
 
+  def replyFor(message: String): DBIO[String] = {
+    val reply = if ("""learn\\s*$$""".r.findFirstMatchIn(message).nonEmpty) {
+      "OK, teach me."
+    } else {
+      "I'm in a conversation!"
+    }
+    DBIO.successful(reply)
+  }
 }
 
 object LearnBehaviorConversation {

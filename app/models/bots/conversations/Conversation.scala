@@ -16,6 +16,8 @@ trait Conversation {
   val startedAt: DateTime
   val isEnded: Boolean
 
+  def replyFor(message: String): DBIO[String]
+
   def save: DBIO[Conversation] = ConversationQueries.save(this)
 
   def toRaw: RawConversation = {
