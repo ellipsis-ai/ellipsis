@@ -108,7 +108,7 @@ object RegexMessageTriggerQueries {
         DBIO.successful(tuple2Trigger(existing))
       }.getOrElse {
         for {
-          newBehavior <- BehaviorQueries.createFor(team, "")
+          newBehavior <- BehaviorQueries.createFor(team)
           newRawTrigger <- DBIO.successful(RawRegexMessageTrigger(IDs.next, newBehavior.id, regexString))
           _ <- all += newRawTrigger
         } yield RegexMessageTrigger(newRawTrigger.id, newBehavior, regex)
