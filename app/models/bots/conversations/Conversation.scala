@@ -85,7 +85,8 @@ object ConversationQueries {
   def uncompiledFindOngoingQueryFor(userIdForContext: Rep[String], context: Rep[String]) = {
     allWithBehavior.
       filter { case(conversation, _) => conversation.userIdForContext === userIdForContext }.
-      filter { case(conversation, _) => conversation.context === context}
+      filter { case(conversation, _) => conversation.context === context}.
+      filterNot { case(conversation, _) => conversation.state === LearnBehaviorConversation.DONE_STATE }
   }
   val findOngoingQueryFor = Compiled(uncompiledFindOngoingQueryFor _)
 

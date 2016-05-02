@@ -1,7 +1,7 @@
 package models.bots.conversations
 
 import models.IDs
-import models.bots.{BehaviorParameterQueries, BehaviorParameter, Behavior}
+import models.bots._
 import org.joda.time.DateTime
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
@@ -30,9 +30,7 @@ case class LearnBehaviorConversation(
 
   val TRIGGER_PROMPT = """What kinds of things do people need to say to trigger this behavior?
                          |
-                         |Use `{foo}` for the parameters and start with "@ellipsis: " if you only want @ellipsis to speak when spoken to.
-                         |
-                         |e.g. `@ellipsis: add {someNumber} and {someOtherNumber}` matches `@ellipsis: add 23 and 13`
+                         |List some trigger phrases, comma-separated:
                          |
                          |""".stripMargin
 
@@ -82,7 +80,13 @@ case class LearnBehaviorConversation(
   }
 
   private def collectTriggersFrom(message: String): DBIO[Conversation] = {
-    DBIO.successful(this)
+    val phrases = message.split("""\s*,\s*""").toSeq
+    for {
+      _ <- DBIO.sequence(phrases.map { phrase =>
+        RegexMessageTriggerQueries.ensureFor(behavior, phrase.r)
+      })
+      updatedConversation <- updateStateTo(LearnBehaviorConversation.DONE_STATE)
+    } yield updatedConversation
   }
 
   def process(message: String, lambdaService: AWSLambdaService): DBIO[Conversation] = {
