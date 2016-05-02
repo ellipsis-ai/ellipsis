@@ -109,7 +109,7 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
         LearnBehaviorConversation.createFor(behavior, ConversationQueries.SLACK_CONTEXT, message.user).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       reply <- maybeConversation.map { conversation =>
-        conversation.replyFor(message.text)
+        conversation.replyFor(message.text, lambdaService)
       }.getOrElse(DBIO.successful(messages("cant_find_team")))
     } yield reply
     eventualReply.map { reply =>
@@ -134,7 +134,7 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
   }
 
   def handleMessageInConversation(conversation: Conversation, client: SlackRtmClient, profile: SlackBotProfile, message: Message, selfId: String): DBIO[Unit] = {
-    conversation.replyFor(message.text).map { reply =>
+    conversation.replyFor(message.text, lambdaService).map { reply =>
       val messageContext = SlackContext(client, profile, message)
       SlackMessageEvent(messageContext).context.sendMessage(reply)
     }

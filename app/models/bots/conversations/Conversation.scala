@@ -4,6 +4,7 @@ import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.Team
 import models.bots.{RawBehavior, BehaviorQueries, Behavior}
 import org.joda.time.DateTime
+import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -14,14 +15,15 @@ trait Conversation {
   val context: String
   val userIdForContext: String
   val startedAt: DateTime
-  val isEnded: Boolean
+  val state: String
 
-  def replyFor(message: String): DBIO[String]
+  def replyStringFor(message: String): DBIO[String]
+  def replyFor(message: String, lambdaService: AWSLambdaService): DBIO[String]
 
   def save: DBIO[Conversation] = ConversationQueries.save(this)
 
   def toRaw: RawConversation = {
-    RawConversation(id, behavior.id, conversationType, context, userIdForContext, startedAt, isEnded)
+    RawConversation(id, behavior.id, conversationType, context, userIdForContext, startedAt, state)
   }
 }
 
@@ -32,7 +34,7 @@ case class RawConversation(
                             context: String,
                             userIdForContext: String,
                             startedAt: DateTime,
-                            isEnded: Boolean
+                            state: String
                             )
 
 class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversations") {
@@ -43,10 +45,10 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
   def context = column[String]("context")
   def userIdForContext = column[String]("user_id_for_context")
   def startedAt = column[DateTime]("started_at")
-  def isEnded = column[Boolean]("is_ended")
+  def state = column[String]("state")
 
   def * =
-    (id, behaviorId, conversationType, context, userIdForContext, startedAt, isEnded) <>
+    (id, behaviorId, conversationType, context, userIdForContext, startedAt, state) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 
@@ -57,7 +59,7 @@ object ConversationQueries {
   def tuple2Conversation(tuple: (RawConversation, (RawBehavior, Team))): Conversation = {
     val raw = tuple._1
     //    if (raw.conversationType == LEARNING_BEHAVIOR) {
-    LearnBehaviorConversation(raw.id, BehaviorQueries.tuple2Behavior(tuple._2), raw.context, raw.userIdForContext, raw.startedAt, raw.isEnded)
+    LearnBehaviorConversation(raw.id, BehaviorQueries.tuple2Behavior(tuple._2), raw.context, raw.userIdForContext, raw.startedAt, raw.state)
     //    }
   }
 
@@ -69,7 +71,15 @@ object ConversationQueries {
   }
 
   def save(conversation: Conversation): DBIO[Conversation] = {
-    (all += conversation.toRaw).map(_ => conversation)
+    val query = all.filter(_.id === conversation.id)
+    val raw = conversation.toRaw
+    query.result.flatMap { r =>
+      r.headOption.map { existing =>
+        query.update(raw)
+      }.getOrElse {
+        all += conversation.toRaw
+      }
+    }.map(_ => conversation)
   }
 
   def uncompiledFindOngoingQueryFor(userIdForContext: Rep[String], context: Rep[String]) = {

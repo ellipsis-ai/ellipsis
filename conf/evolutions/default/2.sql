@@ -25,7 +25,7 @@ CREATE TABLE conversations (
   context TEXT NOT NULL, -- Slack, etc
   user_id_for_context TEXT NOT NULL, -- Slack user id, etc
   started_at TIMESTAMP NOT NULL,
-  is_ended BOOLEAN NOT NULL DEFAULT FALSE
+  state TEXT NOT NULL
 );
 
 # --- !Downs

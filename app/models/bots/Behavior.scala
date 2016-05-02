@@ -29,6 +29,16 @@ case class Behavior(
     BehaviorQueries.delete(this).map(_ => Unit)
   }
 
+  def learnCode(code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
+    BehaviorQueries.learnCodeFor(this, code, lambdaService)
+  }
+
+  def save: DBIO[Behavior] = BehaviorQueries.save(this)
+
+  def toRaw: RawBehavior = {
+    RawBehavior(id, team.id, maybeDescription, maybeShortName, hasCode, createdAt)
+  }
+
 }
 
 case class RawBehavior(
@@ -79,6 +89,19 @@ object BehaviorQueries {
     (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.hasCode, raw.createdAt) }
   }
 
+  def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
+  val findQueryFor = Compiled(uncompiledFindQueryFor _)
+
+  def save(behavior: Behavior): DBIO[Behavior] = {
+    val raw = behavior.toRaw
+    val query = findQueryFor(raw.id)
+    query.result.flatMap { r =>
+      r.headOption.map { existing =>
+        query.update(raw)
+      }.getOrElse(all += raw)
+    }.map(_ => behavior)
+  }
+
   def delete(behavior: Behavior): DBIO[Behavior] = {
     all.filter(_.id === behavior.id).delete.map(_ => behavior)
   }
@@ -89,6 +112,15 @@ object BehaviorQueries {
         paramString.split("""\s*,\s*""")
       }
     }.getOrElse(Array())
+  }
+
+  def learnCodeFor(behavior: Behavior, code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
+    val actualParams = paramsIn(code)
+    lambdaService.deployFunction(behavior.id, code, actualParams)
+    (for {
+      b <- behavior.copy(hasCode = true).save
+      params <- BehaviorParameterQueries.ensureFor(b, actualParams)
+    } yield params) transactionally
   }
 
   def learnFor(regex: Regex, code: String, teamId: String, lambdaService: AWSLambdaService): DBIO[Option[Behavior]] = {
