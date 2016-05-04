@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class BehaviorParameter(
                             id: String,
                             name: String,
+                            rank: Int,
                             behavior: Behavior,
                             maybeQuestion: Option[String],
                             maybeParamType: Option[String]
@@ -19,13 +20,14 @@ case class BehaviorParameter(
   def save: DBIO[BehaviorParameter] = BehaviorParameterQueries.save(this)
 
   def toRaw: RawBehaviorParameter = {
-    RawBehaviorParameter(id, name, behavior.id, maybeQuestion, maybeParamType)
+    RawBehaviorParameter(id, name, rank, behavior.id, maybeQuestion, maybeParamType)
   }
 }
 
 case class RawBehaviorParameter(
                                id: String,
                                name: String,
+                               rank: Int,
                                behaviorId: String,
                                maybeQuestion: Option[String],
                                maybeParamType: Option[String]
@@ -35,12 +37,13 @@ class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag,
 
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
+  def rank = column[Int]("rank")
   def behaviorId = column[String]("behavior_id")
   def maybeQuestion = column[Option[String]]("question")
   def maybeParamType = column[Option[String]]("param_type")
 
   def * =
-    (id, name, behaviorId, maybeQuestion, maybeParamType) <> ((RawBehaviorParameter.apply _).tupled, RawBehaviorParameter.unapply _)
+    (id, name, rank, behaviorId, maybeQuestion, maybeParamType) <> ((RawBehaviorParameter.apply _).tupled, RawBehaviorParameter.unapply _)
 }
 
 object BehaviorParameterQueries {
@@ -48,13 +51,17 @@ object BehaviorParameterQueries {
   val all = TableQuery[BehaviorParametersTable]
   val allWithBehaviors = all.join(BehaviorQueries.allWithTeam).on(_.behaviorId === _._1.id)
 
-  def tuple2Parameter(tuple: (RawBehaviorParameter, (RawBehavior, Team))): BehaviorParameter = {
+  type TupleType = (RawBehaviorParameter, (RawBehavior, Team))
+
+  def tuple2Parameter(tuple: TupleType): BehaviorParameter = {
     val raw = tuple._1
-    BehaviorParameter(raw.id, raw.name, BehaviorQueries.tuple2Behavior(tuple._2), raw.maybeQuestion, raw.maybeParamType)
+    BehaviorParameter(raw.id, raw.name, raw.rank, BehaviorQueries.tuple2Behavior(tuple._2), raw.maybeQuestion, raw.maybeParamType)
   }
 
   def uncompiledAllForQuery(behaviorId: Rep[String]) = {
-    allWithBehaviors.filter { case(param, (behavior, team)) => behavior.id === behaviorId}
+    allWithBehaviors.
+      filter { case(param, (behavior, team)) => behavior.id === behaviorId}.
+      sortBy { case(param, _) => param.rank.asc }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
@@ -68,10 +75,10 @@ object BehaviorParameterQueries {
     }
   }
 
-  def createFor(name: String, behavior: Behavior): DBIO[BehaviorParameter] = {
-    val raw = RawBehaviorParameter(IDs.next, name, behavior.id, None, None)
+  def createFor(name: String, rank: Int, behavior: Behavior): DBIO[BehaviorParameter] = {
+    val raw = RawBehaviorParameter(IDs.next, name, rank, behavior.id, None, None)
     (all += raw).map { _ =>
-      BehaviorParameter(raw.id, raw.name, behavior, raw.maybeQuestion, raw.maybeParamType)
+      BehaviorParameter(raw.id, raw.name, raw.rank, behavior, raw.maybeQuestion, raw.maybeParamType)
     }
   }
 
@@ -90,7 +97,9 @@ object BehaviorParameterQueries {
   def ensureFor(behavior: Behavior, params: Seq[String]): DBIO[Seq[BehaviorParameter]] = {
     for {
       _ <- all.filter(_.behaviorId === behavior.id).delete
-      newParams <- DBIO.sequence(params.map(createFor(_, behavior)))
+      newParams <- DBIO.sequence(params.zipWithIndex.map { case(ea, i) =>
+        createFor(ea, i + 1, behavior)
+      })
     } yield newParams
   }
 }

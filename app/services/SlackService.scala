@@ -37,9 +37,8 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
         val messageContext = SlackContext(client, profile, message)
         RegexMessageTriggerQueries.behaviorResponsesFor(SlackMessageEvent(messageContext), team)
       }.getOrElse(DBIO.successful(Seq()))
-    } yield {
-        behaviorResponses.foreach(_.run(lambdaService))
-      }
+      _ <- DBIO.sequence(behaviorResponses.map(_.run(lambdaService)))
+    } yield Unit
   }
 
   private def learnBehaviorFor(regex: Regex, code: String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
@@ -100,22 +99,34 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
   }
 
   def startLearnConversationFor(client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
-    val eventualReply = for {
+    for {
       maybeTeam <- Team.find(profile.teamId)
       maybeBehavior <- maybeTeam.map { team =>
         BehaviorQueries.createFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeConversation <- maybeBehavior.map { behavior =>
-        LearnBehaviorConversation.createFor(behavior, ConversationQueries.SLACK_CONTEXT, message.user).map(Some(_))
+        LearnBehaviorConversation.createFor(behavior, Conversation.SLACK_CONTEXT, message.user).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      reply <- maybeConversation.map { conversation =>
-        conversation.replyFor(message.text, lambdaService)
-      }.getOrElse(DBIO.successful(messages("cant_find_team")))
-    } yield reply
-    eventualReply.map { reply =>
-      val messageContext = SlackContext(client, profile, message)
-      SlackMessageEvent(messageContext).context.sendMessage(reply)
-    }
+      messageContext <- DBIO.successful(SlackContext(client, profile, message))
+      event <- DBIO.successful(SlackMessageEvent(messageContext))
+      _ <- maybeConversation.map { conversation =>
+        conversation.replyFor(event, lambdaService)
+      }.getOrElse(DBIO.successful(messageContext.sendMessage(messages("cant_find_team"))))
+    } yield Unit
+  }
+
+  def startInvokeConversationFor(client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
+    for {
+      maybeTeam <- Team.find(profile.teamId)
+      behaviorResponses <- maybeTeam.map { team =>
+        val messageContext = SlackContext(client, profile, message)
+        RegexMessageTriggerQueries.behaviorResponsesFor(SlackMessageEvent(messageContext), team)
+      }.getOrElse(DBIO.successful(Seq()))
+      maybeResponse <- DBIO.successful(behaviorResponses.headOption)
+      _ <- maybeResponse.map { response =>
+        response.run(lambdaService)
+      }.getOrElse(DBIO.successful(Unit))
+    } yield Unit
   }
 
   def handleMessageFor(client: SlackRtmClient, profile: SlackBotProfile, message: Message, selfId: String): DBIO[Unit] = {
@@ -129,15 +140,13 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
       case oneLineLearnRegex(regexString, code) => learnBehaviorFor(regexString.r, code, client, profile, message)
       case unlearnRegex(regexString) => unlearnBehaviorFor(regexString, client, profile, message)
       case helpRegex(helpString) => displayHelpFor(helpString, client, profile, message)
-      case _ => runBehaviorsFor(client, profile, message)
+      case _ => startInvokeConversationFor(client, profile, message)
     }
   }
 
   def handleMessageInConversation(conversation: Conversation, client: SlackRtmClient, profile: SlackBotProfile, message: Message, selfId: String): DBIO[Unit] = {
-    conversation.replyFor(message.text, lambdaService).map { reply =>
-      val messageContext = SlackContext(client, profile, message)
-      SlackMessageEvent(messageContext).context.sendMessage(reply)
-    }
+    val messageContext = SlackContext(client, profile, message)
+    conversation.replyFor(SlackMessageEvent(messageContext), lambdaService)
   }
 
   def startFor(profile: SlackBotProfile) {
@@ -148,7 +157,7 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
 
     client.onMessage { message =>
       if (message.user != selfId) {
-        val action = ConversationQueries.findOngoingFor(message.user, ConversationQueries.SLACK_CONTEXT).flatMap { maybeConversation =>
+        val action = ConversationQueries.findOngoingFor(message.user, Conversation.SLACK_CONTEXT).flatMap { maybeConversation =>
          maybeConversation.map { conversation =>
            handleMessageInConversation(conversation, client, profile, message, selfId)
          }.getOrElse {

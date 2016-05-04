@@ -13,10 +13,10 @@ case class LearnBehaviorConversation(
                          context: String, // Slack, etc
                          userIdForContext: String, // id for Slack, etc user
                          startedAt: DateTime,
-                         state: String = LearnBehaviorConversation.NEW_STATE
+                         state: String = Conversation.NEW_STATE
                          ) extends Conversation {
 
-  val conversationType = "learn_behavior"
+  val conversationType = Conversation.LEARN_BEHAVIOR
 
   val NEW_PROMPT = "OK, teach me. You can go back and change any of this later."
 
@@ -85,27 +85,35 @@ case class LearnBehaviorConversation(
       _ <- DBIO.sequence(phrases.map { phrase =>
         RegexMessageTriggerQueries.ensureFor(behavior, phrase.r)
       })
-      updatedConversation <- updateStateTo(LearnBehaviorConversation.DONE_STATE)
+      updatedConversation <- updateStateTo(Conversation.DONE_STATE)
     } yield updatedConversation
   }
 
-  def process(message: String, lambdaService: AWSLambdaService): DBIO[Conversation] = {
+  def updateWith(event: Event, lambdaService: AWSLambdaService): DBIO[Conversation] = {
+    import Conversation._
     import LearnBehaviorConversation._
 
-    state match {
-      case NEW_STATE => updateStateTo(LearnBehaviorConversation.COLLECT_DESCRIPTION_STATE)
-      case COLLECT_DESCRIPTION_STATE => collectDescriptionFrom(message)
-      case COLLECT_CODE_STATE => collectCodeFrom(message, lambdaService)
-      case COLLECT_PARAMS_STATE => collectParamsFrom(message)
-      case COLLECT_TRIGGERS_STATE => collectTriggersFrom(message)
-      case DONE_STATE => DBIO.successful(this)
+    event match {
+      case e: SlackMessageEvent => {
+        val message = e.context.message.text
+        state match {
+          case NEW_STATE => updateStateTo(COLLECT_DESCRIPTION_STATE)
+          case COLLECT_DESCRIPTION_STATE => collectDescriptionFrom(message)
+          case COLLECT_CODE_STATE => collectCodeFrom(message, lambdaService)
+          case COLLECT_PARAMS_STATE => collectParamsFrom(message)
+          case COLLECT_TRIGGERS_STATE => collectTriggersFrom(message)
+          case DONE_STATE => DBIO.successful(this)
+        }
+      }
+      case _ => DBIO.successful(this)
     }
   }
 
-  def replyStringFor(message: String): DBIO[String] = {
+  def respond(event: Event, lambdaService: AWSLambdaService): DBIO[Unit] = {
+    import Conversation._
     import LearnBehaviorConversation._
 
-    state match {
+    val eventualReply = state match {
       case NEW_STATE => DBIO.successful(NEW_PROMPT)
       case COLLECT_DESCRIPTION_STATE => DBIO.successful(DESCRIPTION_PROMPT)
       case COLLECT_CODE_STATE => DBIO.successful(CODE_PROMPT)
@@ -119,31 +127,27 @@ case class LearnBehaviorConversation(
       case COLLECT_TRIGGERS_STATE => DBIO.successful(TRIGGER_PROMPT)
       case DONE_STATE => DBIO.successful("Done!")
     }
+
+    eventualReply.map { reply =>
+      event.context.sendMessage(reply)
+    }
   }
 
-  def replyFor(message: String, lambdaService: AWSLambdaService): DBIO[String] = {
-    for {
-      updatedConversation <- process(message, lambdaService)
-      reply <- updatedConversation.replyStringFor(message)
-    } yield reply
-  }
 }
 
 object LearnBehaviorConversation {
 
-  val NEW_STATE = "new"
   val COLLECT_DESCRIPTION_STATE = "collect_description"
   val COLLECT_CODE_STATE = "collect_code"
   val COLLECT_PARAMS_STATE = "collect_params"
   val COLLECT_TRIGGERS_STATE = "collect_triggers"
-  val DONE_STATE = "done"
 
   def createFor(
                  behavior: Behavior,
                  context: String,
                  userIdForContext: String
                  ): DBIO[LearnBehaviorConversation] = {
-    val newInstance = LearnBehaviorConversation(IDs.next, behavior, context, userIdForContext, DateTime.now, NEW_STATE)
+    val newInstance = LearnBehaviorConversation(IDs.next, behavior, context, userIdForContext, DateTime.now, Conversation.NEW_STATE)
     newInstance.save.map(_ => newInstance)
   }
 }

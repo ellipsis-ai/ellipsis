@@ -2,7 +2,7 @@ package models.bots.conversations
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.Team
-import models.bots.{RawBehavior, BehaviorQueries, Behavior}
+import models.bots.{Event, RawBehavior, BehaviorQueries, Behavior}
 import org.joda.time.DateTime
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
@@ -17,8 +17,15 @@ trait Conversation {
   val startedAt: DateTime
   val state: String
 
-  def replyStringFor(message: String): DBIO[String]
-  def replyFor(message: String, lambdaService: AWSLambdaService): DBIO[String]
+  def updateWith(event: Event, lambdaService: AWSLambdaService): DBIO[Conversation]
+  def respond(event: Event, lambdaService: AWSLambdaService): DBIO[Unit]
+
+  def replyFor(event: Event, lambdaService: AWSLambdaService): DBIO[Unit] = {
+    for {
+      updatedConversation <- updateWith(event, lambdaService)
+      _ <- updatedConversation.respond(event, lambdaService)
+    } yield Unit
+  }
 
   def save: DBIO[Conversation] = ConversationQueries.save(this)
 
@@ -56,11 +63,16 @@ object ConversationQueries {
   def all = TableQuery[ConversationsTable]
   def allWithBehavior = all.join(BehaviorQueries.allWithTeam).on(_.behaviorId === _._1.id)
 
-  def tuple2Conversation(tuple: (RawConversation, (RawBehavior, Team))): Conversation = {
+  type TupleType = (RawConversation, (RawBehavior, Team))
+
+  def tuple2Conversation(tuple: TupleType): Conversation = {
     val raw = tuple._1
-    //    if (raw.conversationType == LEARNING_BEHAVIOR) {
-    LearnBehaviorConversation(raw.id, BehaviorQueries.tuple2Behavior(tuple._2), raw.context, raw.userIdForContext, raw.startedAt, raw.state)
-    //    }
+    val behavior = BehaviorQueries.tuple2Behavior(tuple._2)
+    if (raw.conversationType == Conversation.LEARN_BEHAVIOR) {
+      LearnBehaviorConversation(raw.id, behavior, raw.context, raw.userIdForContext, raw.startedAt, raw.state)
+    } else {
+      InvokeBehaviorConversation(raw.id, behavior, raw.context, raw.userIdForContext, raw.startedAt, raw.state)
+    }
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = allWithBehavior.filter(_._1.id === id)
@@ -77,24 +89,31 @@ object ConversationQueries {
       r.headOption.map { existing =>
         query.update(raw)
       }.getOrElse {
-        all += conversation.toRaw
+        all += raw
       }
     }.map(_ => conversation)
   }
 
-  def uncompiledFindOngoingQueryFor(userIdForContext: Rep[String], context: Rep[String]) = {
+  def uncompiledFindWithoutStateQueryFor(userIdForContext: Rep[String], context: Rep[String], state: Rep[String]) = {
     allWithBehavior.
       filter { case(conversation, _) => conversation.userIdForContext === userIdForContext }.
       filter { case(conversation, _) => conversation.context === context}.
-      filterNot { case(conversation, _) => conversation.state === LearnBehaviorConversation.DONE_STATE }
+      filterNot { case(conversation, _) => conversation.state === state }
   }
-  val findOngoingQueryFor = Compiled(uncompiledFindOngoingQueryFor _)
+  val findWithoutStateQueryFor = Compiled(uncompiledFindWithoutStateQueryFor _)
 
   def findOngoingFor(userIdForContext: String, context: String): DBIO[Option[Conversation]] = {
-    findOngoingQueryFor(userIdForContext, context).result.map(_.headOption.map(tuple2Conversation))
+    findWithoutStateQueryFor(userIdForContext, context, Conversation.DONE_STATE).result.map(_.headOption.map(tuple2Conversation))
   }
+
+}
+
+object Conversation {
+  val NEW_STATE = "new"
+  val DONE_STATE = "done"
 
   val SLACK_CONTEXT = "slack"
 
-  val LEARNING_BEHAVIOR = "learning_behavior"
+  val LEARN_BEHAVIOR = "learn_behavior"
+  val INVOKE_BEHAVIOR = "invoke_behavior"
 }

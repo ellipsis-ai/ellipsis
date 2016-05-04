@@ -8,8 +8,10 @@ CREATE TABLE behavior_parameters (
   id TEXT PRIMARY KEY,
   behavior_id TEXT NOT NULL REFERENCES behaviors(id),
   name TEXT NOT NULL,
+  rank INT NOT NULL,
   question TEXT,
-  param_type TEXT
+  param_type TEXT,
+  UNIQUE(behavior_id, rank)
 );
 
 CREATE TABLE template_message_triggers (
@@ -30,7 +32,7 @@ CREATE TABLE conversations (
 
 # --- !Downs
 
-DROP TABLE IF EXISTS learn_behavior_conversations;
+DROP TABLE IF EXISTS conversations;
 DROP TABLE IF EXISTS template_message_triggers;
 DROP TABLE IF EXISTS behavior_parameters;
 
