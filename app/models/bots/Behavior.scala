@@ -9,7 +9,14 @@ import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
 
-case class Behavior(id: String, team: Team, description: String, createdAt: DateTime) {
+case class Behavior(
+                     id: String,
+                     team: Team,
+                     maybeDescription: Option[String],
+                     maybeShortName: Option[String],
+                     hasCode: Boolean,
+                     createdAt: DateTime
+                     ) {
 
   lazy val conf = Play.current.configuration
 
@@ -22,19 +29,38 @@ case class Behavior(id: String, team: Team, description: String, createdAt: Date
     BehaviorQueries.delete(this).map(_ => Unit)
   }
 
+  def learnCode(code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
+    BehaviorQueries.learnCodeFor(this, code, lambdaService)
+  }
+
+  def save: DBIO[Behavior] = BehaviorQueries.save(this)
+
+  def toRaw: RawBehavior = {
+    RawBehavior(id, team.id, maybeDescription, maybeShortName, hasCode, createdAt)
+  }
+
 }
 
-case class RawBehavior(id: String, teamId: String, description: String, createdAt: DateTime)
+case class RawBehavior(
+                        id: String,
+                        teamId: String,
+                        maybeDescription: Option[String],
+                        maybeShortName: Option[String],
+                        hasCode: Boolean,
+                        createdAt: DateTime
+                        )
 
 class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
 
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
-  def description = column[String]("description")
+  def maybeDescription = column[Option[String]]("description")
+  def maybeShortName = column[Option[String]]("short_name")
+  def hasCode = column[Boolean]("has_code")
   def createdAt = column[DateTime]("created_at")
 
   def * =
-    (id, teamId, description, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+    (id, teamId, maybeDescription, maybeShortName, hasCode, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
 object BehaviorQueries {
@@ -43,8 +69,8 @@ object BehaviorQueries {
   def allWithTeam = all.join(Team.all).on(_.teamId === _.id)
 
   def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
-    val rawBehavior = tuple._1
-    Behavior(rawBehavior.id, tuple._2, rawBehavior.description, rawBehavior.createdAt)
+    val raw = tuple._1
+    Behavior(raw.id, tuple._2, raw.maybeDescription, raw.maybeShortName, raw.hasCode, raw.createdAt)
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
@@ -57,10 +83,23 @@ object BehaviorQueries {
     allForTeamQuery(team.id).result.map { tuples => tuples.map(tuple2Behavior) }
   }
 
-  def createFor(team: Team, description: String): DBIO[Behavior] = {
-    val raw = RawBehavior(IDs.next, team.id, description, DateTime.now)
+  def createFor(team: Team): DBIO[Behavior] = {
+    val raw = RawBehavior(IDs.next, team.id, None, None, false, DateTime.now)
 
-    (all += raw).map { _ => Behavior(raw.id, team, description, raw.createdAt) }
+    (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.hasCode, raw.createdAt) }
+  }
+
+  def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
+  val findQueryFor = Compiled(uncompiledFindQueryFor _)
+
+  def save(behavior: Behavior): DBIO[Behavior] = {
+    val raw = behavior.toRaw
+    val query = findQueryFor(raw.id)
+    query.result.flatMap { r =>
+      r.headOption.map { existing =>
+        query.update(raw)
+      }.getOrElse(all += raw)
+    }.map(_ => behavior)
   }
 
   def delete(behavior: Behavior): DBIO[Behavior] = {
@@ -73,6 +112,15 @@ object BehaviorQueries {
         paramString.split("""\s*,\s*""")
       }
     }.getOrElse(Array())
+  }
+
+  def learnCodeFor(behavior: Behavior, code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
+    val actualParams = paramsIn(code)
+    lambdaService.deployFunction(behavior.id, code, actualParams)
+    (for {
+      b <- behavior.copy(hasCode = true).save
+      params <- BehaviorParameterQueries.ensureFor(b, actualParams)
+    } yield params) transactionally
   }
 
   def learnFor(regex: Regex, code: String, teamId: String, lambdaService: AWSLambdaService): DBIO[Option[Behavior]] = {

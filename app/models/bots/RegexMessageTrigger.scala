@@ -72,11 +72,13 @@ object RegexMessageTriggerQueries {
   }
 
   def behaviorResponsesFor(event: Event, team: Team): DBIO[Seq[BehaviorResponse]] = {
-    allFor(team).map { triggers =>
-      triggers.filter(_.isActivatedBy(event)).map { trigger =>
-        BehaviorResponse(trigger.behavior, event, trigger.paramsFor(event))
-      }
-    }
+    for {
+      triggers <- allFor(team)
+      activated <- DBIO.successful(triggers.filter(_.isActivatedBy(event)))
+      responses <- DBIO.sequence(activated.map { trigger =>
+        BehaviorResponse.buildFor(event, trigger.behavior, trigger.paramsFor(event))
+      })
+    } yield responses
   }
 
   def ensureFor(behavior: Behavior, regex: Regex): DBIO[RegexMessageTrigger] = {
@@ -108,7 +110,7 @@ object RegexMessageTriggerQueries {
         DBIO.successful(tuple2Trigger(existing))
       }.getOrElse {
         for {
-          newBehavior <- BehaviorQueries.createFor(team, "")
+          newBehavior <- BehaviorQueries.createFor(team)
           newRawTrigger <- DBIO.successful(RawRegexMessageTrigger(IDs.next, newBehavior.id, regexString))
           _ <- all += newRawTrigger
         } yield RegexMessageTrigger(newRawTrigger.id, newBehavior, regex)
