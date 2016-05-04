@@ -64,6 +64,7 @@ case class InvokeBehaviorConversation(
   }
 
   def updateWith(event: Event, lambdaService: AWSLambdaService): DBIO[Conversation] = {
+    import Conversation._
     import InvokeBehaviorConversation._
 
     event match {
@@ -90,6 +91,7 @@ case class InvokeBehaviorConversation(
   }
 
   def respond(event: Event, lambdaService: AWSLambdaService): DBIO[Unit] = {
+    import Conversation._
     import InvokeBehaviorConversation._
 
     paramInfo.map { info =>
@@ -105,16 +107,14 @@ case class InvokeBehaviorConversation(
 
 object InvokeBehaviorConversation {
 
-  val NEW_STATE = "new"
   val COLLECT_PARAM_VALUES_STATE = "collect_param_values"
-  val DONE_STATE = "done"
 
   def createFor(
                  behavior: Behavior,
                  context: String,
                  userIdForContext: String
                  ): DBIO[InvokeBehaviorConversation] = {
-    val newInstance = InvokeBehaviorConversation(IDs.next, behavior, context, userIdForContext, DateTime.now, NEW_STATE)
+    val newInstance = InvokeBehaviorConversation(IDs.next, behavior, context, userIdForContext, DateTime.now, Conversation.NEW_STATE)
     newInstance.save.map(_ => newInstance)
   }
 }
