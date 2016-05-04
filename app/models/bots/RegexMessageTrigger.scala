@@ -81,6 +81,17 @@ object RegexMessageTriggerQueries {
     } yield responses
   }
 
+  def uncompiledAllForBehaviorQuery(behaviorId: Rep[String]) = {
+    allWithBehaviors.filter { case(_, (behavior, _)) => behavior.id === behaviorId}
+  }
+  val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
+
+  def allFor(behavior: Behavior): DBIO[Seq[RegexMessageTrigger]] = {
+    allForBehaviorQuery(behavior.id).
+      result.
+      map(_.map(tuple2Trigger))
+  }
+
   def ensureFor(behavior: Behavior, regex: Regex): DBIO[RegexMessageTrigger] = {
     val regexString = regex.pattern.toString
     all.
