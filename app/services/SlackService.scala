@@ -83,15 +83,19 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
         RegexMessageTriggerQueries.allFor(team)
       }.getOrElse(DBIO.successful(Seq()))
     } yield {
-        val triggerItemsString = triggers.map { ea =>
-          s"\n• ${ea.regex.pattern.pattern()}"
+        val grouped = triggers.groupBy(_.behavior)
+        val behaviorsString = grouped.flatMap { case(behavior, triggers) =>
+          val triggersString = triggers.map { ea =>
+            s"`${ea.regex.pattern.pattern()}`"
+          }.mkString(" or ")
+          behavior.maybeDescription.map { desc =>
+            s"\n• $desc when someone types $triggersString"
+          }
         }.mkString("")
         val text = s"""
-           |Here's what I can do so far:$triggerItemsString
+           |Here's what I can do so far:$behaviorsString
            |
-           |To teach me something new:
-           |
-           |`@ellipsis: learn <regex with N capture groups> function(param1,...,paramN) { <code that returns result>; }`
+           |To teach me something new, just type `@ellipsis: learn`
            |""".stripMargin
         val messageContext = SlackContext(client, profile, message)
         SlackMessageEvent(messageContext).context.sendMessage(text)
