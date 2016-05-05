@@ -109,7 +109,7 @@ object BehaviorQueries {
   private def paramsIn(code: String): Array[String] = {
     """.*function\s*\(([^\)]*)\)""".r.findFirstMatchIn(code).flatMap { firstMatch =>
       firstMatch.subgroups.headOption.map { paramString =>
-        paramString.split("""\s*,\s*""")
+        paramString.split("""\s*,\s*""").filter(_.nonEmpty)
       }
     }.getOrElse(Array())
   }

@@ -96,7 +96,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
         withCode(functionCode).
         withRole(configuration.getString("aws.role").get).
         withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
-        withHandler(s"$functionName.handler")
+        withHandler(s"$functionName.handler").
+        withTimeout(10)
 
     blockingClient.createFunction(createFunctionRequest)
   }
