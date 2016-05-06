@@ -2,7 +2,8 @@ name := """ellipsis"""
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
+pipelineStages := Seq(rjs, digest)
 
 scalaVersion := "2.11.7"
 
