@@ -1,0 +1,103 @@
+/* Colors */
+@gray-lightest: hsl(231, 15%, 97%);
+@blue-darkest: hsl(231, 71%, 20%);
+@blue-dark: hsl(231, 71%, 42%);
+@blue-medium: hsl(231, 97%, 64%);
+@blue-faded: hsl(231, 15%, 75%);
+@pink-medium: hsl(341, 93%, 65%);
+@green-light: hsl(127, 93%, 63%);
+
+* {
+  font-family: 'Brix Sans Regular', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: @gray-lightest;
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.container {
+  box-sizing: border-box;
+  max-width: 744px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+p {
+  margin: 0 0 12px 0;
+}
+
+.ptxl {
+  padding-top: 24px !important;
+}
+
+.pam {
+  padding: 12px;
+}
+
+.prs {
+  padding-right: 8px;
+}
+
+.bg-blue-dark {
+  background-color: @blue-darkest;
+}
+
+.type-pink {
+  color: @pink-medium;
+}
+
+.type-green {
+  color: @green-light;
+}
+
+.type-white {
+  color: white;
+}
+
+.logo {
+  font-size: 24px;
+  line-height: 24px;
+}
+
+.logo-symbol {
+  vertical-align: middle;
+}
+
+.logo-type {
+  vertical-align: 2px;
+}
+
+.form-field {
+  border: 2px solid @blue-faded;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.CodeMirror {
+  font-family: 'Source Code Pro';
+  border-radius: 8px;
+}
+
+button {
+  font-weight: 600;
+  background-color: @blue-medium;
+  color: white;
+  padding: 8px 16px;
+  font-size: 18px;
+  line-height: 24px;
+  border-radius: 8px;
+  border: none;
+}
+
+button:focus {
+  outline: none;
+  text-decoration: underline;
+}
+
+button:active {
+  text-decoration: none;
+  background-color: @blue-dark;
+}

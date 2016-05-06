@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Ellipsis behavior editor</title>
+  <script type="text/javascript">
+    (function() {
+        var path = '//easy.myfonts.net/v2/js?sid=261626(font-family=Brix+Sans+Light)&sid=261628(font-family=Brix+Sans+Medium)&sid=261629(font-family=Brix+Sans+Italic)&sid=261630(font-family=Brix+Sans+Regular)&key=40jVEUQJ48',
+            protocol = ('https:' == document.location.protocol ? 'https:' : 'http:'),
+            trial = document.createElement('script');
+        trial.type = 'text/javascript';
+        trial.async = true;
+        trial.src = protocol + path;
+        var head = document.getElementsByTagName("head")[0];
+        head.appendChild(trial);
+    })();
+  </script>
+  <script src="/assets/javascripts/codemirror/lib/codemirror.js"></script>
+  <link rel="stylesheet" href="/assets/javascripts/codemirror/lib/codemirror.css">
+  <script src="/assets/javascripts/codemirror/mode/javascript/javascript.js"></script>
+  <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/main.css")">
+</head>
+<body>
+<header class="bg-blue-dark type-white">
+  <div class="container pam"><div class="logo">
+    <span class="logo-symbol type-green prs"><svg width="24px" height="24px" viewBox="0 0 96 96" version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink">
+      <defs>
+        <path
+          d="M0,24.00813 C0,10.74881 10.74457,0 24.00813,0 L71.99187,0 C85.25119,0 96,10.74457 96,24.00813 L96,71.99187 C96,85.25119 85.25543,96 71.99187,96 L0,96 L0,24.00813 L0,24.00813 Z M20,72 C20,69.79086 21.7998,68 24.00491,68 L71.99509,68 C74.20694,68 76,69.79536 76,72 C76,74.20914 74.2002,76 71.99509,76 L24.00491,76 C21.79306,76 20,74.20464 20,72 L20,72 Z M20,24 C20,21.79086 21.7998,20 24.00491,20 L71.99509,20 C74.20694,20 76,21.79536 76,24 C76,26.20914 74.2002,28 71.99509,28 L24.00491,28 C21.79306,28 20,26.20464 20,24 L20,24 Z M20,48 C20,45.79086 21.78525,44 23.99018,44 L52.00982,44 C54.21354,44 56,45.79536 56,48 C56,50.20914 54.21475,52 52.00982,52 L23.99018,52 C21.78646,52 20,50.20464 20,48 L20,48 Z"
+          id="path-1"></path>
+      </defs>
+      <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="foo">
+          <mask id="mask-2" fill="white">
+            <use xlink:href="#path-1"></use>
+          </mask>
+          <g id="Clip-2"></g>
+          <polygon id="Fill-1" fill="currentColor" mask="url(#mask-2)" points="-5 -5 101 -5 101 101 -5 101"></polygon>
+        </g>
+      </g>
+    </svg></span><span class="logo-type">Ellipsis</span>
+  </div></div>
+</header>
+<section class=""><div class="container pam ptxl">
+  <form>
+    <p>Describe what @@ellipsis should do by writing a node.js function. The function can take parameters supplied by
+      the user.</p>
+    <div class="form-field">
+      <textarea id="editor" autofocus="autofocus">
+function(input) {
+  return input + "? YAY!!!";
+}
+</textarea>
+    </div>
+    <button type="button">Save and return</button>
+  </form>
+  <script>
+    var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('editor'), {
+      mode: "javascript",
+      lineNumbers: true
+    });
+  </script>
+</div></section>
+</body>
+</html>
