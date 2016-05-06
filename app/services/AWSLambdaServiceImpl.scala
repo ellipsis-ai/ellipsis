@@ -52,7 +52,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
       |   var fn = $fixedCode;
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };
-      |   fn($paramString, onSuccess, onError);
+      |   fn($paramString);
       |}
     """.stripMargin
   }
