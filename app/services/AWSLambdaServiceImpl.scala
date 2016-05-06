@@ -48,7 +48,9 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     s"""
       |exports.handler = function(event, context, callback) {
       |   var fn = $fixedCode;
-      |   callback(null, { "result": fn($paramString) });
+      |   var onSuccess = function(result) { callback(null, { "result": result }); };
+      |   var onError = function(err) { callback(err); };
+      |   fn($paramString, onSuccess, onError);
       |}
     """.stripMargin
   }

@@ -114,18 +114,22 @@ object BehaviorQueries {
     }.getOrElse(Array())
   }
 
+  def withoutCallbacks(params: Array[String]) = params.filterNot(ea => ea == "onSuccess" || ea == "onError")
+
   def learnCodeFor(behavior: Behavior, code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
     val actualParams = paramsIn(code)
-    lambdaService.deployFunction(behavior.id, code, actualParams)
+    val paramsWithoutCallbacks = withoutCallbacks(actualParams)
+    lambdaService.deployFunction(behavior.id, code, paramsWithoutCallbacks)
     (for {
       b <- behavior.copy(hasCode = true).save
-      params <- BehaviorParameterQueries.ensureFor(b, actualParams)
+      params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutCallbacks)
     } yield params) transactionally
   }
 
   def learnFor(regex: Regex, code: String, teamId: String, lambdaService: AWSLambdaService): DBIO[Option[Behavior]] = {
     val numExpectedParams = regex.pattern.matcher("").groupCount()
     val actualParams = paramsIn(code)
+    val paramsWithoutCallbacks = withoutCallbacks(actualParams)
     for {
       maybeTeam <- Team.find(teamId)
       maybeTrigger <- maybeTeam.map { team =>
@@ -133,7 +137,7 @@ object BehaviorQueries {
       }.getOrElse(DBIO.successful(None))
     } yield {
         maybeTrigger.map { trigger =>
-          lambdaService.deployFunction(trigger.behavior.id, code, actualParams)
+          lambdaService.deployFunction(trigger.behavior.id, code, paramsWithoutCallbacks)
           trigger.behavior
         }
       }
