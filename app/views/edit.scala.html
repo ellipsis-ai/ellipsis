@@ -46,14 +46,23 @@
 </header>
 <section class=""><div class="container pam ptxl">
   <form>
-    <p>Describe what @@ellipsis should do by writing a node.js function. The function can take parameters supplied by
-      the user.</p>
-    <div class="form-field">
-      <textarea id="editor" autofocus="autofocus">
+    <div class="form-field-group">
+      <p>In one phrase, describe what this behavior does. You may also choose a short code name for reference.</p>
+      <div class="grouped-inputs">
+        <input type="text" class="form-input" value="" placeholder="Bang two coconuts togethers">
+        <input type="text" class="form-input" value="" placeholder="bang-two-coconuts" readonly>
+      </div>
+    </div>
+    <div class="form-field-group">
+      <p>Specify what @@ellipsis should do by writing a node.js function. The function can take parameters supplied by
+        the user.</p>
+      <div class="form-field">
+        <textarea id="editor" autofocus="autofocus">
 function(input) {
   return input + "? YAY!!!";
 }
 </textarea>
+      </div>
     </div>
     <button type="button">Save and return</button>
   </form>
