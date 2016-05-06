@@ -34,4 +34,8 @@ class ApplicationController @Inject() (
     maybeResult.getOrElse(Redirect(routes.ApplicationController.index))
   }
 
+  def editBehavior = SecuredAction { implicit request =>
+    Ok(views.html.edit())
+  }
+
 }
