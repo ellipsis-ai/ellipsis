@@ -22,9 +22,11 @@ case class LearnBehaviorConversation(
 
   val DESCRIPTION_PROMPT = "Describe the new behavior you'd like me to learn:"
 
-  val CODE_PROMPT = """Great. Next describe what @ellipsis should do by writing a node.js function (which can take parameters supplied by the user):
+  val CODE_PROMPT = """Great. Next describe what @ellipsis should do by writing a node.js function.
                       |
-                      |e.g. function(someNumber, someOtherNumber) { return someNumber + someOtherNumber; }
+                      |Parameters other than onSuccess and onError will be supplied by the user.
+                      |
+                      |e.g. function(someNumber, someOtherNumber, onSuccess, onError) { onSuccess(someNumber + someOtherNumber); }
                       |
                       |""".stripMargin
 
