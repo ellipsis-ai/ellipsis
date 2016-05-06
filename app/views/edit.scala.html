@@ -5,14 +5,14 @@
   <title>Ellipsis behavior editor</title>
   <script type="text/javascript">
     (function() {
-      var path = '//easy.myfonts.net/v2/js?sid=261620(font-family=Brix+Sans+Bold)&sid=261626(font-family=Brix+Sans+Light)&sid=261629(font-family=Brix+Sans+Italic)&sid=261630(font-family=Brix+Sans+Regular)&key=d3qyDFmh7o',
-        protocol = ('https:' == document.location.protocol ? 'https:' : 'http:'),
-        trial = document.createElement('script');
-      trial.type = 'text/javascript';
-      trial.async = true;
-      trial.src = protocol + path;
-      var head = document.getElementsByTagName("head")[0];
-      head.appendChild(trial);
+        var path = '//easy.myfonts.net/v2/js?sid=261626(font-family=Brix+Sans+Light)&sid=261628(font-family=Brix+Sans+Medium)&sid=261629(font-family=Brix+Sans+Italic)&sid=261630(font-family=Brix+Sans+Regular)&key=40jVEUQJ48',
+            protocol = ('https:' == document.location.protocol ? 'https:' : 'http:'),
+            trial = document.createElement('script');
+        trial.type = 'text/javascript';
+        trial.async = true;
+        trial.src = protocol + path;
+        var head = document.getElementsByTagName("head")[0];
+        head.appendChild(trial);
     })();
   </script>
   <script src="/assets/javascripts/codemirror/lib/codemirror.js"></script>
@@ -88,7 +88,7 @@
     }
 
     button {
-      font-family: 'Brix Sans Bold';
+      font-weight: 600;
       background-color: hsla(231, 97%, 64%, 1.00);
       color: white;
       padding: 8px 16px;
