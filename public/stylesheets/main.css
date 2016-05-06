@@ -1,0 +1,94 @@
+  * {
+    font-family: 'Brix Sans Regular', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    background-color: hsl(231, 15%, 97%);
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .container {
+    box-sizing: border-box;
+    max-width: 744px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  p {
+    margin: 0 0 12px 0;
+  }
+
+  .ptxl {
+    padding-top: 24px !important;
+  }
+
+  .pam {
+    padding: 12px;
+  }
+
+  .prs {
+    padding-right: 8px;
+  }
+
+  .bg-blue-dark {
+    background-color: hsl(231, 71%, 20%);
+  }
+
+  .type-pink {
+    color: hsla(341, 93%, 65%, 1.00);
+  }
+
+  .type-green {
+    color: hsla(127, 93%, 63%, 1.00);
+  }
+
+  .type-white {
+    color: white;
+  }
+
+  .logo {
+    font-size: 24px;
+    line-height: 24px;
+  }
+
+  .logo-symbol {
+    vertical-align: middle;
+  }
+
+  .logo-type {
+    vertical-align: 2px;
+  }
+
+  .form-field {
+    border: 2px solid hsl(231, 15%, 75%);
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  .CodeMirror {
+    font-family: 'Source Code Pro';
+    border-radius: 8px;
+  }
+
+  button {
+    font-weight: 600;
+    background-color: hsla(231, 97%, 64%, 1.00);
+    color: white;
+    padding: 8px 16px;
+    font-size: 18px;
+    line-height: 24px;
+    border-radius: 8px;
+    border: none;
+  }
+
+  button:focus {
+    outline: none;
+    text-decoration: underline;
+  }
+
+  button:active {
+    text-decoration: none;
+    background-color: hsla(232, 55%, 42%, 1.00);
+  }

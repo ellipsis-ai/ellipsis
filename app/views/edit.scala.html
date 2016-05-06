@@ -19,99 +19,11 @@
   <link rel="stylesheet" href="/assets/javascripts/codemirror/lib/codemirror.css">
   <script src="/assets/javascripts/codemirror/mode/javascript/javascript.js"></script>
   <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-  <style>
-    * {
-      font-family: 'Brix Sans Regular', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
-    }
-
-    body {
-      margin: 0;
-      background-color: hsl(231, 15%, 97%);
-      font-size: 18px;
-      line-height: 24px;
-    }
-
-    p {
-      margin: 0 0 12px 0;
-    }
-
-    .ptxl {
-      padding-top: 24px !important;
-    }
-
-    .pam {
-      padding: 12px;
-    }
-
-    .prs {
-      padding-right: 8px;
-    }
-
-    .bg-blue-dark {
-      background-color: hsl(231, 71%, 20%);
-    }
-
-    .type-pink {
-      color: hsla(341, 93%, 65%, 1.00);
-    }
-
-    .type-green {
-      color: hsla(127, 93%, 63%, 1.00);
-    }
-
-    .type-white {
-      color: white;
-    }
-
-    .logo {
-      font-size: 24px;
-      line-height: 24px;
-    }
-
-    .logo-symbol {
-      vertical-align: middle;
-    }
-
-    .logo-type {
-      vertical-align: 2px;
-    }
-
-    .form-field {
-      border: 2px solid hsl(231, 15%, 75%);
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-
-    .CodeMirror {
-      font-family: 'Source Code Pro';
-      border-radius: 8px;
-    }
-
-    button {
-      font-weight: 600;
-      background-color: hsla(231, 97%, 64%, 1.00);
-      color: white;
-      padding: 8px 16px;
-      font-size: 18px;
-      line-height: 24px;
-      border-radius: 8px;
-      border: none;
-    }
-
-    button:focus {
-      outline: none;
-      text-decoration: underline;
-    }
-
-    button:active {
-      text-decoration: none;
-      background-color: hsla(232, 55%, 42%, 1.00);
-    }
-  </style>
+  <link rel="stylesheet" href="/assets/stylesheets/main.css">
 </head>
 <body>
-<header class="pam bg-blue-dark type-white">
-  <div class="logo">
+<header class="bg-blue-dark type-white">
+  <div class="container pam"><div class="logo">
     <span class="logo-symbol type-green prs"><svg width="24px" height="24px" viewBox="0 0 96 96" version="1.1"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -130,13 +42,13 @@
         </g>
       </g>
     </svg></span><span class="logo-type">Ellipsis</span>
-  </div>
+  </div></div>
 </header>
-<section class="pam ptxl">
+<section class=""><div class="container pam ptxl">
   <form>
     <p>Describe what @@ellipsis should do by writing a node.js function. The function can take parameters supplied by
       the user.</p>
-    <div class="form-field" style="width: 40em">
+    <div class="form-field">
       <textarea id="editor" autofocus="autofocus">
 function(input) {
   return input + "? YAY!!!";
@@ -151,6 +63,6 @@ function(input) {
       lineNumbers: true
     });
   </script>
-</section>
+</div></section>
 </body>
 </html>
