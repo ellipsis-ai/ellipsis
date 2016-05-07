@@ -1,3 +1,16 @@
+/* Measurements */
+@xxs: 2px;
+@xs: 4px;
+@s: 8px;
+@m: 12px;
+@l: 16px;
+@xl: 24px;
+
+@type-m: 18px;
+
+@border-width: @xxs;
+@border-radius: @s;
+
 /* Colors */
 @gray-lightest: hsl(231, 15%, 97%);
 @blue-darkest: hsl(231, 71%, 20%);
@@ -14,8 +27,8 @@
 body {
   margin: 0;
   background-color: @gray-lightest;
-  font-size: 18px;
-  line-height: 24px;
+  font-size: @type-m;
+  line-height: @xl;
 }
 
 .container {
@@ -26,19 +39,35 @@ body {
 }
 
 p {
-  margin: 0 0 12px 0;
+  margin: 0 0 @m 0;
 }
 
+/* Margin utilities */
+
+.mbm {
+  margin-bottom: @m;
+}
+
+.mbl {
+  margin-bottom: @l;
+}
+
+.mbxl {
+  margin-bottom: @xl;
+}
+
+/* Padding utilities */
+
 .ptxl {
-  padding-top: 24px !important;
+  padding-top: @xl !important;
 }
 
 .pam {
-  padding: 12px;
+  padding: @m;
 }
 
 .prs {
-  padding-right: 8px;
+  padding-right: @m;
 }
 
 .bg-blue-dark {
@@ -58,8 +87,8 @@ p {
 }
 
 .logo {
-  font-size: 24px;
-  line-height: 24px;
+  font-size: @xl;
+  line-height: @xl;
 }
 
 .logo-symbol {
@@ -70,25 +99,57 @@ p {
   vertical-align: 2px;
 }
 
+/* Forms */
+
+.form-field-group {
+  .mbxl();
+}
+
+input, button, select, textarea, .form-field {
+  font-size: 1rem;
+  line-height: 1.5em;
+}
+
 .form-field {
-  border: 2px solid @blue-faded;
-  border-radius: 8px;
-  margin-bottom: 12px;
+  border-width: @border-width;
+  border-style: solid;
+  border-color: @blue-faded;
+  border-radius: @border-radius;
+}
+
+.form-input {
+  padding-left: @xs;
+  padding-right: @xs;
+  .form-field();
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.grouped-inputs {
+  .form-input {
+    border-radius: 0;
+    border-bottom-width: 0;
+  }
+  .form-input:first-child {
+    border-radius: @border-radius @border-radius 0 0;
+  }
+  .form-input:last-child {
+    border-bottom-width: @border-width;
+    border-radius: 0 0 @border-radius @border-radius;
+  }
 }
 
 .CodeMirror {
   font-family: 'Source Code Pro';
-  border-radius: 8px;
+  border-radius: @border-radius;
 }
 
 button {
   font-weight: 600;
   background-color: @blue-medium;
   color: white;
-  padding: 8px 16px;
-  font-size: 18px;
-  line-height: 24px;
-  border-radius: 8px;
+  padding: @s @l;
+  border-radius: @border-radius;
   border: none;
 }
 
