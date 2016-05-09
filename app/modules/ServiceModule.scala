@@ -19,4 +19,9 @@ class ServiceModule extends AbstractModule with ScalaModule {
     new AWSLambdaServiceImpl(configuration)
   }
 
+  @Provides
+  def provideAWSDynamoDBService(configuration: Configuration): AWSDynamoDBService = {
+    new AWSDynamoDBServiceImpl(configuration)
+  }
+
 }

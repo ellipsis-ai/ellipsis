@@ -16,8 +16,6 @@ import play.api.libs.json.Json
 
 class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends AWSLambdaService {
 
-  val credentials = new BasicAWSCredentials(configuration.getString("aws.accessKey").getOrElse("foo"), configuration.getString("aws.secretKey").getOrElse("foo"))
-
   val blockingClient: AWSLambdaClient = new AWSLambdaClient(credentials)
 
   private def resultStringFor(payload: ByteBuffer): String = {

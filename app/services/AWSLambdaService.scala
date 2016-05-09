@@ -3,7 +3,7 @@ package services
 import com.amazonaws.services.lambda.AWSLambdaClient
 import play.api.Configuration
 
-trait AWSLambdaService {
+trait AWSLambdaService extends AWSService {
 
   val configuration: Configuration
   val blockingClient: AWSLambdaClient
