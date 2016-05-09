@@ -52,11 +52,9 @@ class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extend
   }
 
   def getItem(itemId: String, itemType: String, team: Team): String = {
-    val itemIdComponent = new KeyAttribute(ITEM_ID, itemId)
-    val itemTypeComponent = new KeyAttribute(ITEM_TYPE, itemType)
-    val teamIdComponent = new KeyAttribute(TEAM_ID, team.id)
+    val primaryKeyComponent = new KeyAttribute(ITEM_PRIMARY_KEY, primaryKeyFor(itemId, itemType, team))
 
-    val spec = new GetItemSpec().withPrimaryKey(itemIdComponent, itemTypeComponent, teamIdComponent)
+    val spec = new GetItemSpec().withPrimaryKey(primaryKeyComponent)
     itemsTable.getItem(spec).getJSON(ITEM)
   }
 }
