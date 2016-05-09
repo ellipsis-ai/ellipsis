@@ -4,7 +4,7 @@ function(key, value, onSuccess, onError) {
 
     request.post(
         "https://05f7c2f1.ngrok.io/put_item",
-        { itemId: key, itemType: "stuff", teamId: "QNyaE3sVS3Wyv8l__s2FUw", item: value },
+        { itemId: key, itemType: "stuff", teamId: Ellipsis.teamId, item: value },
         function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 onSuccess("Ok, got it!");

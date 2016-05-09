@@ -6,10 +6,9 @@ import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import javax.inject.Inject
-import com.amazonaws.AmazonServiceException
-import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.lambda.AWSLambdaClient
 import com.amazonaws.services.lambda.model._
+import models.bots.Behavior
 import play.api.Configuration
 import play.api.libs.json.Json
 
@@ -39,7 +38,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     resultStringFor(result.getPayload)
   }
 
-  private def nodeCodeFor(code: String, params: Array[String]): String = {
+  private def nodeCodeFor(code: String, params: Array[String], behavior: Behavior): String = {
     var fixedCode = "[“”]".r.replaceAllIn(code, "\"")
     "‘".r.replaceAllIn(fixedCode, "'")
     val paramsSupplied = params.indices.map(i => s"event.param$i")
@@ -47,6 +46,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     val paramString = withCallbacks.mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {
+      |   var Ellipsis = {};
+      |   Ellipsis.teamId = ${behavior.team.id};
       |   var fn = $fixedCode;
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };
@@ -57,13 +58,13 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
 
   private def zipFileNameFor(functionName: String) = s"/tmp/$functionName.zip"
 
-  private def createZipFor(functionName: String, code: String, params: Array[String]): ZipOutputStream = {
-    val fileStream = new FileOutputStream(zipFileNameFor(functionName))
+  private def createZipFor(behavior: Behavior, code: String, params: Array[String]): ZipOutputStream = {
+    val fileStream = new FileOutputStream(zipFileNameFor(behavior.functionName))
     val zipStream = new ZipOutputStream(fileStream)
 
-    val zipEntry = new ZipEntry(s"$functionName.js")
+    val zipEntry = new ZipEntry(s"${behavior.functionName}.js")
     zipStream.putNextEntry(zipEntry)
-    val data = nodeCodeFor(code, params).getBytes
+    val data = nodeCodeFor(code, params, behavior).getBytes
     zipStream.write(data, 0, data.length)
     zipStream.closeEntry()
 
@@ -71,9 +72,9 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     zipStream
   }
 
-  private def getZipFor(functionName: String, code: String, params: Array[String]): ByteBuffer = {
-    createZipFor(functionName, code, params)
-    val path = Paths.get(zipFileNameFor(functionName))
+  private def getZipFor(behavior: Behavior, code: String, params: Array[String]): ByteBuffer = {
+    createZipFor(behavior, code, params)
+    val path = Paths.get(zipFileNameFor(behavior.functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
 
@@ -87,11 +88,12 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     }
   }
 
-  def deployFunction(functionName: String, code: String, params: Array[String]): Unit = {
+  def deployFunctionFor(behavior: Behavior, code: String, params: Array[String]): Unit = {
+    val functionName = behavior.functionName
     deleteFunction(functionName)
     val functionCode =
       new FunctionCode().
-        withZipFile(getZipFor(functionName, code, params))
+        withZipFile(getZipFor(behavior, code, params))
     val createFunctionRequest =
       new CreateFunctionRequest().
         withFunctionName(functionName).
