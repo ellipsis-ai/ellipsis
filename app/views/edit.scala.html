@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/assets/javascripts/codemirror/lib/codemirror.css">
   <script src="/assets/javascripts/codemirror/mode/javascript/javascript.js"></script>
   <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:400,300,600,400italic,300italic,600italic' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/main.css")">
+  <link rel='stylesheet' href='@routes.Assets.versioned("stylesheets/main.css")'>
   <script type="text/javascript">
     (function() {
         var path = '//easy.myfonts.net/v2/js?sid=270615(font-family=Grota+Sans+Rounded+Bold)&sid=270624(font-family=Grota+Sans+Rounded+Medium)&sid=270626(font-family=Grota+Sans+Rounded)&sid=270628(font-family=Grota+Sans+Rounded+SemiBold)&key=Eq3Cxbcef1',
@@ -72,6 +72,10 @@
 </header>
 <section class="bg-light pbxxxxl border-emphasis-bottom"><div class="container ptxl pbm">
   <h1>Edit a behavior</h1>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react-dom.js"></script>
+  <div id="editorContainer"></div>
+  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/editor.js")'></script>
   <form>
     <div class="form-field-group">
       <p><strong>In one phrase, describe what this behavior does.</strong></p>
