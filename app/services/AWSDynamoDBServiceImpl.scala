@@ -9,7 +9,7 @@ import models.Team
 import play.api.Configuration
 
 class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extends AWSDynamoDBService {
-  import AWSDynamoDBServiceImpl._
+  import AWSDynamoDBConstants._
 
   def createItemsTable: TableDescription = {
 
@@ -57,13 +57,4 @@ class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extend
     val spec = new GetItemSpec().withPrimaryKey(primaryKeyComponent)
     itemsTable.getItem(spec).getJSON(ITEM)
   }
-}
-
-object AWSDynamoDBServiceImpl {
-  val ITEMS_TABLE_NAME = "default_storage_items"
-  val ITEM_PRIMARY_KEY = "item_primary_key"
-  val ITEM_ID = "item_id"
-  val TEAM_ID = "team_id"
-  val ITEM_TYPE = "item_type"
-  val ITEM = "item"
 }

@@ -47,7 +47,11 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     s"""
       |exports.handler = function(event, context, callback) {
       |   var Ellipsis = {};
-      |   Ellipsis.teamId = ${behavior.team.id};
+      |   Ellipsis.teamId = "${behavior.team.id}";
+      |   Ellipsis.db = {};
+      |   Ellipsis.db.itemsTable = "${AWSDynamoDBConstants.ITEMS_TABLE_NAME}";
+      |   Ellipsis.db.putItemUrl = "https://05f7c2f1.ngrok.io/put_item";
+      |   Ellipsis.db.getItemUrl = "https://05f7c2f1.ngrok.io/get_item";
       |   var fn = $fixedCode;
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };
