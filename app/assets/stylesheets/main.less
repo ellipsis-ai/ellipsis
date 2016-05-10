@@ -41,10 +41,9 @@ body, input, select, textarea {
 
 body {
   margin: 0;
-  padding-bottom: @xl;
-  background-color: @gray-lightest;
   font-size: @type-m;
   line-height: @xl;
+  background-color: @white;
   color: @black;
 }
 
@@ -88,6 +87,10 @@ p {
   padding-top: @xl !important;
 }
 
+.pbxxxxl {
+  padding-bottom: @xxxxl;
+}
+
 .pam {
   padding: @m;
 }
@@ -105,6 +108,14 @@ p {
 
 .bg-blue-dark {
   background-color: @blue-darkest;
+}
+
+.bg-light {
+  background-color: @gray-lightest;
+}
+
+.bg-white {
+  background-color: @white;
 }
 
 /* Border utilities */
@@ -236,6 +247,7 @@ input, button, select, textarea, .form-field {
   border-color: @blue-faded;
   border-radius: @border-radius;
   box-sizing: border-box;
+  .bg-white();
 }
 
 .form-input {
