@@ -59,7 +59,32 @@ p {
   margin: 0 0 @m 0;
 }
 
-/* Margin utilities */
+/*
+
+Margin and padding utilities
+
+A set of margin and padding utilities exists for each measurement from xxxxl to xs.
+
+1. The first character denotes margin or padding
+  - 'm': margin
+  - 'p': padding
+2. The second character denotes the sides to apply the style
+  - 'a': all sides
+  - 'v': vertical (top and bottom)
+  - 'h': horizontal (sides)
+  - 't': top
+  - 'b': bottom
+  - 'l': left
+  - 'r': right
+3. The rest of the characters specify the amount
+  - 'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxxl', 'xxxxl'
+
+So for example:
+- '.mas' applies small margin to all sides
+- '.pbl' applies large padding to the bottom
+- '.pvxs' applies extra-small padding to the top and bottom
+
+*/
 
 .generate-margin(@size, @size-name) {
   .ma@{size-name} {
@@ -95,8 +120,6 @@ p {
 .generate-margin(@m, m);
 .generate-margin(@s, s);
 .generate-margin(@xs, xs);
-
-/* Padding utilities */
 
 .generate-padding(@size, @size-name) {
   .pa@{size-name} {
