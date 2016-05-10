@@ -5,9 +5,16 @@
 @m: 12px;
 @l: 16px;
 @xl: 24px;
+@xxl: 32px;
+@xxxl: 48px;
+@xxxxl: 64px;
 
+@type-xs: 12px;
 @type-s: 15px;
 @type-m: 18px;
+@type-l: 28px;
+@type-xl: 43px;
+@type-xxl: 59px;
 
 @border-width: @xxs;
 @border-radius: @s;
@@ -18,12 +25,13 @@
 @white: #FFFFFF;
 @gray-darkest: hsl(231, 15%, 40%);
 @gray-lightest: hsl(231, 15%, 97%);
-@gray-light: hsl(231, 12%, 94%);
+@gray-light: hsl(231, 10%, 95%);
 @blue-darkest: hsl(231, 71%, 20%);
 @blue-dark: hsl(231, 71%, 42%);
+@blue-medium-text: hsl(231, 74%, 57%);
 @blue-medium: hsl(231, 97%, 64%);
-@blue-faded: hsl(231, 15%, 75%);
-@blue-faded-dark: hsl(231, 15%, 45%);
+@blue-faded: hsl(231, 11%, 81%);
+@blue-faded-dark: hsl(231, 22%, 43%);
 @pink-medium: hsl(341, 93%, 65%);
 @green-light: hsl(127, 93%, 63%);
 
@@ -41,10 +49,11 @@ body {
 }
 
 .container {
-  box-sizing: border-box;
-  max-width: 744px;
+  max-width: 45rem;
   margin-left: auto;
   margin-right: auto;
+  padding-left: @l;
+  padding-right: @l;
 }
 
 p {
@@ -83,6 +92,11 @@ p {
   padding: @m;
 }
 
+.pvm {
+  padding-top: @m;
+  padding-bottom: @m;
+}
+
 .prs {
   padding-right: @m;
 }
@@ -93,7 +107,25 @@ p {
   background-color: @blue-darkest;
 }
 
+/* Border utilities */
+
+.border-emphasis-bottom {
+  border-width: 0 0 @xs 0;
+  border-style: solid;
+  border-color: @pink-medium;
+}
+
 /* Foreground type utilities */
+
+.type-s {
+  font-size: @type-s;
+  line-height: @xl;
+}
+
+.type-xs {
+  font-size: @type-xs;
+  line-height: @l;
+}
 
 .type-pink {
   color: @pink-medium;
@@ -120,6 +152,65 @@ p {
 .logo {
   height: 28px;
   margin: -2px 0;
+}
+
+/* Headers */
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 @m 0;
+  font-weight: normal;
+}
+
+h1 {
+  font-family: 'Grota Sans Rounded Medium', 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+  font-size: @type-xxl;
+  line-height: @xxxxl;
+  margin-top: @xxxxl;
+  color: @blue-faded-dark;
+}
+
+h2 {
+  font-size: @type-xl;
+  line-height: @xxxl;
+  font-style: italic;
+}
+
+h3 {
+  font-size: @type-l;
+  line-height: @xxl;
+  font-weight: 600;
+}
+
+h4 {
+  font-size: @type-m;
+  line-height: @xl;
+  font-weight: 600;
+}
+
+h5 {
+  font-size: @type-s;
+  line-height: @xl;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+}
+
+h6 {
+  font-size: @type-xs;
+  line-height: @l;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+/* Rules */
+
+hr {
+  width: 100%;
+  height: @xs;
+  border: none;
+  background-color: @pink-medium;
+  border-radius: @xs;
+  margin: @l 0 @xxl -@xxxxl*2;
+  padding: 0 0 0 @xxxxl*2;
 }
 
 /* Forms */
@@ -162,7 +253,7 @@ input, button, select, textarea, .form-field {
 
 .form-input:focus, .form-field:focus {
   outline: none;
-  border-color: @blue-faded-dark;
+  border-color: @pink-medium;
 }
 
 .form-grouped-inputs {
@@ -245,7 +336,7 @@ button {
   border-style: solid;
   border-color: @blue-medium;
   background-color: transparent;
-  color: @blue-dark;
+  color: @blue-medium-text;
   min-width: @s * 20;
   cursor: pointer;
 }

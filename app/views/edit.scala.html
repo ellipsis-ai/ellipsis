@@ -10,10 +10,22 @@
   <script src="/assets/javascripts/codemirror/mode/javascript/javascript.js"></script>
   <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:400,300,600,400italic,300italic,600italic' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/main.css")">
+  <script type="text/javascript">
+    (function() {
+        var path = '//easy.myfonts.net/v2/js?sid=270615(font-family=Grota+Sans+Rounded+Bold)&sid=270624(font-family=Grota+Sans+Rounded+Medium)&sid=270626(font-family=Grota+Sans+Rounded)&sid=270628(font-family=Grota+Sans+Rounded+SemiBold)&key=Eq3Cxbcef1',
+            protocol = ('https:' == document.location.protocol ? 'https:' : 'http:'),
+            trial = document.createElement('script');
+        trial.type = 'text/javascript';
+        trial.async = true;
+        trial.src = protocol + path;
+        var head = document.getElementsByTagName("head")[0];
+        head.appendChild(trial);
+    })();
+  </script>
 </head>
-<body>
-<header class="bg-blue-dark type-white">
-  <div class="container pam align-c"><div class="logo">
+<body class="border-emphasis-bottom">
+<header class="bg-blue-dark border-emphasis-bottom type-white">
+  <div class="container pvm align-c"><div class="logo">
     <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
       viewBox="0 0 382 114" enable-background="new 0 0 382 114" xml:space="preserve" height="28px">
       <g id="Layer_1">
@@ -58,13 +70,14 @@
     </svg>
   </div></div>
 </header>
-<section class=""><div class="container pam ptxl">
+<section><div class="container pvm ptxl">
+  <h1>Edit a behavior</h1>
   <form>
     <div class="form-field-group">
       <p><strong>In one phrase, describe what this behavior does.</strong></p>
       <p>You may also choose a short code name for reference.</p>
       <div class="form-grouped-inputs">
-        <input type="text" class="form-input" value="" placeholder="Bang two coconuts together">
+        <input type="text" class="form-input" value="" placeholder="Bang two coconuts together" autofocus="autofocus">
         <input type="text" class="form-input" value="" placeholder="bang-two-coconuts" readonly>
       </div>
     </div>
@@ -77,7 +90,7 @@
       an argument to the function.
       </p>
       <div class="form-field">
-        <textarea id="editor" autofocus="autofocus">
+        <textarea id="editor">
 function(userInput, onSuccess, onError) {
   onSuccess("*clop clop clop clop*\nYou have arrived at " + userInput);
 }
