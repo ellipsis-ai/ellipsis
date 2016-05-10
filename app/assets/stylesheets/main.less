@@ -41,10 +41,9 @@ body, input, select, textarea {
 
 body {
   margin: 0;
-  padding-bottom: @xl;
-  background-color: @gray-lightest;
   font-size: @type-m;
   line-height: @xl;
+  background-color: @white;
   color: @black;
 }
 
@@ -60,51 +59,115 @@ p {
   margin: 0 0 @m 0;
 }
 
-/* Margin utilities */
+/*
 
-.mbxs {
-  margin-bottom: @xs;
+Margin and padding utilities
+
+A set of margin and padding utilities exists for each measurement from xxxxl to xs.
+
+1. The first character denotes margin or padding
+  - 'm': margin
+  - 'p': padding
+2. The second character denotes the sides to apply the style
+  - 'a': all sides
+  - 'v': vertical (top and bottom)
+  - 'h': horizontal (sides)
+  - 't': top
+  - 'b': bottom
+  - 'l': left
+  - 'r': right
+3. The rest of the characters specify the amount
+  - 'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxxl', 'xxxxl'
+
+So for example:
+- '.mas' applies small margin to all sides
+- '.pbl' applies large padding to the bottom
+- '.pvxs' applies extra-small padding to the top and bottom
+
+*/
+
+.generate-margin(@size, @size-name) {
+  .ma@{size-name} {
+    margin: @size;
+  }
+  .mv@{size-name} {
+    margin-top: @size;
+    margin-bottom: @size;
+  }
+  .mh@{size-name} {
+    margin-left: @size;
+    margin-right: @size;
+  }
+  .mt@{size-name} {
+    margin-top: @size;
+  }
+  .mb@{size-name} {
+    margin-bottom: @size;
+  }
+  .ml@{size-name} {
+    margin-left: @size;
+  }
+  .mr@{size-name} {
+    margin-right: @size;
+  }
 }
 
-.mbs {
-  margin-bottom: @s;
+.generate-margin(@xxxxl, xxxxl);
+.generate-margin(@xxxl, xxxl);
+.generate-margin(@xxl, xxl);
+.generate-margin(@xl, xl);
+.generate-margin(@l, l);
+.generate-margin(@m, m);
+.generate-margin(@s, s);
+.generate-margin(@xs, xs);
+
+.generate-padding(@size, @size-name) {
+  .pa@{size-name} {
+    padding: @size;
+  }
+  .pv@{size-name} {
+    padding-top: @size;
+    padding-bottom: @size;
+  }
+  .ph@{size-name} {
+    padding-left: @size;
+    padding-right: @size;
+  }
+  .pt@{size-name} {
+    padding-top: @size;
+  }
+  .pb@{size-name} {
+    padding-bottom: @size;
+  }
+  .pl@{size-name} {
+    padding-left: @size;
+  }
+  .pr@{size-name} {
+    padding-right: @size;
+  }
 }
 
-.mbm {
-  margin-bottom: @m;
-}
-
-.mbl {
-  margin-bottom: @l;
-}
-
-.mbxl {
-  margin-bottom: @xl;
-}
-
-/* Padding utilities */
-
-.ptxl {
-  padding-top: @xl !important;
-}
-
-.pam {
-  padding: @m;
-}
-
-.pvm {
-  padding-top: @m;
-  padding-bottom: @m;
-}
-
-.prs {
-  padding-right: @m;
-}
+.generate-padding(@xxxxl, xxxxl);
+.generate-padding(@xxxl, xxxl);
+.generate-padding(@xxl, xxl);
+.generate-padding(@xl, xl);
+.generate-padding(@l, l);
+.generate-padding(@m, m);
+.generate-padding(@s, s);
+.generate-padding(@xs, xs);
 
 /* Background utilities */
 
 .bg-blue-dark {
   background-color: @blue-darkest;
+}
+
+.bg-light {
+  background-color: @gray-lightest;
+}
+
+.bg-white {
+  background-color: @white;
 }
 
 /* Border utilities */
@@ -236,6 +299,7 @@ input, button, select, textarea, .form-field {
   border-color: @blue-faded;
   border-radius: @border-radius;
   box-sizing: border-box;
+  .bg-white();
 }
 
 .form-input {
