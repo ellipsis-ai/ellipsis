@@ -75,16 +75,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react-dom.js"></script>
   <div id="editorContainer"></div>
-  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/editor.js")'></script>
+  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/behavior_editor.js")'></script>
+  <script>
+    var myBehaviorEditor = React.createElement(BehaviorEditor, { description: "Bang two coconuts together" });
+    ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
+  </script>
   <form>
-    <div class="form-field-group">
-      <p><strong>In one phrase, describe what this behavior does.</strong></p>
-      <p>You may also choose a short code name for reference.</p>
-      <div class="form-grouped-inputs">
-        <input type="text" class="form-input" value="" placeholder="Bang two coconuts together" autofocus="autofocus">
-        <input type="text" class="form-input" value="" placeholder="bang-two-coconuts" readonly>
-      </div>
-    </div>
     <div class="form-field-group">
       <p>
       <strong>Specify what @@ellipsis should do by writing a node.js function.</strong>
