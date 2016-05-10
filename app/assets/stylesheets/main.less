@@ -61,48 +61,77 @@ p {
 
 /* Margin utilities */
 
-.mbxs {
-  margin-bottom: @xs;
+.generate-margin(@size, @size-name) {
+  .ma@{size-name} {
+    margin: @size;
+  }
+  .mv@{size-name} {
+    margin-top: @size;
+    margin-bottom: @size;
+  }
+  .mh@{size-name} {
+    margin-left: @size;
+    margin-right: @size;
+  }
+  .mt@{size-name} {
+    margin-top: @size;
+  }
+  .mb@{size-name} {
+    margin-bottom: @size;
+  }
+  .ml@{size-name} {
+    margin-left: @size;
+  }
+  .mr@{size-name} {
+    margin-right: @size;
+  }
 }
 
-.mbs {
-  margin-bottom: @s;
-}
-
-.mbm {
-  margin-bottom: @m;
-}
-
-.mbl {
-  margin-bottom: @l;
-}
-
-.mbxl {
-  margin-bottom: @xl;
-}
+.generate-margin(@xxxxl, xxxxl);
+.generate-margin(@xxxl, xxxl);
+.generate-margin(@xxl, xxl);
+.generate-margin(@xl, xl);
+.generate-margin(@l, l);
+.generate-margin(@m, m);
+.generate-margin(@s, s);
+.generate-margin(@xs, xs);
 
 /* Padding utilities */
 
-.ptxl {
-  padding-top: @xl !important;
+.generate-padding(@size, @size-name) {
+  .pa@{size-name} {
+    padding: @size;
+  }
+  .pv@{size-name} {
+    padding-top: @size;
+    padding-bottom: @size;
+  }
+  .ph@{size-name} {
+    padding-left: @size;
+    padding-right: @size;
+  }
+  .pt@{size-name} {
+    padding-top: @size;
+  }
+  .pb@{size-name} {
+    padding-bottom: @size;
+  }
+  .pl@{size-name} {
+    padding-left: @size;
+  }
+  .pr@{size-name} {
+    padding-right: @size;
+  }
 }
 
-.pbxxxxl {
-  padding-bottom: @xxxxl;
-}
-
-.pam {
-  padding: @m;
-}
-
-.pvm {
-  padding-top: @m;
-  padding-bottom: @m;
-}
-
-.prs {
-  padding-right: @m;
-}
+.generate-padding(@xxxxl, xxxxl);
+.generate-padding(@xxxl, xxxl);
+.generate-padding(@xxl, xxl);
+.generate-padding(@xl, xl);
+.generate-padding(@l, l);
+.generate-padding(@m, m);
+.generate-padding(@s, s);
+.generate-padding(@xs, xs);
 
 /* Background utilities */
 
