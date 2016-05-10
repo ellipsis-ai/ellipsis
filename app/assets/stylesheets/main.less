@@ -6,6 +6,7 @@
 @l: 16px;
 @xl: 24px;
 
+@type-s: 15px;
 @type-m: 18px;
 
 @border-width: @xxs;
@@ -13,6 +14,7 @@
 
 /* Colors */
 @black: hsl(231, 15%, 15%);
+@black-translucent: hsla(231, 15%, 15%, 0.1);
 @white: #FFFFFF;
 @gray-darkest: hsl(231, 15%, 40%);
 @gray-lightest: hsl(231, 15%, 97%);
@@ -117,6 +119,7 @@ p {
 
 .logo {
   height: 28px;
+  margin: -2px 0;
 }
 
 /* Forms */
@@ -218,8 +221,18 @@ input, button, select, textarea, .form-field {
 
 .CodeMirror {
   .type-monospace();
+  font-size: @type-s;
+  line-height: @xl;
   border-radius: @border-radius;
+  min-height: @form-input-height - @border-width*2;
+  height: auto;
 }
+
+.CodeMirror-gutters {
+  border-radius: @border-radius 0 0 @border-radius;
+}
+
+/* Buttons */
 
 @button-height: @s * 2 + @xl;
 
@@ -243,6 +256,7 @@ button:focus {
 }
 
 button:active {
+  background-color: @black-translucent;
   border-color: @blue-dark;
 }
 
