@@ -11,6 +11,7 @@ import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
+import play.api.libs.json.Json
 import play.api.mvc.{Controller, Action}
 import services.AWSDynamoDBService
 
@@ -47,7 +48,7 @@ class DefaultStorage @Inject() (
           maybeTeam <- Team.find(info.teamId)
         } yield {
             maybeTeam.map { team =>
-              dynamoDBService.putItem(info.itemId, info.itemJson, info.itemType, team)
+              dynamoDBService.putItem(info.itemId, Json.toJson(info.itemJson), info.itemType, team)
               Ok("success")
             }.getOrElse(NotFound(s"Team not found: ${info.teamId}"))
         }
@@ -62,8 +63,9 @@ class DefaultStorage @Inject() (
       maybeTeam <- Team.find(teamId)
     } yield {
         maybeTeam.map { team =>
-          val result = dynamoDBService.getItem(itemId, itemType, team)
-          Ok(result)
+          dynamoDBService.getItem(itemId, itemType, team).map { item =>
+            Ok(item)
+          }.getOrElse(NotFound("item not found"))
         }.getOrElse(NotFound(s"Team not found: ${teamId}"))
       }
 
