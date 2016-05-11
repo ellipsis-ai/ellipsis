@@ -1,70 +1,27 @@
 var BehaviorEditor = React.createClass({
-  render: function() {
-    return (
-      <form>
-        <div className="form-field-group">
-          <p><strong>In one phrase, describe what this behavior does.</strong></p>
-          <p>You may also choose a short code name for reference.</p>
-          <BehaviorEditorDescription description={this.props.description} />
-        </div>
-
-        <div className="form-field-group">
-          <p><strong>Specify what @ellipsis should do by writing a node.js function.</strong></p>
-          <p>If you want your behavior to collect input from the user before operation, specify
-          each required value as an argument to the function.</p>
-          <div className="form-field">
-            <BehaviorEditorCodeInput code={this.props.nodeFunction} lineNumbers />
-          </div>
-        </div>
-      </form>
-    );
-  }
-});
-
-var BehaviorEditorDescription = React.createClass({
   getInitialState: function() {
     return {
-      value: this.props.description
+      description: this.props.description,
+      nodeFunction: this.props.nodeFunction,
+      argNames: this.props.argNames
     };
   },
 
-  handleChange: function(event) {
-    this.setState({
-      value: event.target.value
-    });
+  onDescriptionChange: function(newDescription) {
+    this.setState({ description: newDescription });
   },
 
   getCodeName: function() {
-    var stripped = this.state.value.toLowerCase().replace(/[^\w ]/g, '');
+    var stripped = this.state.description.toLowerCase().replace(/[^\w ]/g, '');
     return stripped.split(' ').slice(0,3).join('-');
   },
 
-  render: function() {
-    return (
-      <div className="form-grouped-inputs">
-        <input type="text"
-          className="form-input"
-          placeholder="Bang two coconuts together"
-          autofocus
-          value={this.state.value}
-          onChange={this.handleChange}
-        />
-        <input type="text"
-          className="form-input"
-          placeholder="bang-two-coconuts"
-          readOnly
-          value={this.getCodeName()}
-        />
-      </div>
-    );
-  }
-});
-
-var BehaviorEditorCodeInput = React.createClass({
-  getInitialState: function() {
-    return {
-      code: this.props.code
-    };
+  onCodeChange: function(newCode) {
+    this.setState({
+      nodeFunction: newCode,
+      argNames: this.getArgumentNamesFromCode(newCode)
+    });
+    console.log(this.state.argNames);
   },
 
   getArgumentNamesFromCode: function(code) {
@@ -79,27 +36,61 @@ var BehaviorEditorCodeInput = React.createClass({
     return args.slice(0, args.length - 2); // last two arguments are reserved for onSuccess/onError
   },
 
-  updateCode: function(newCode) {
-    var argumentNames = this.getArgumentNamesFromCode(newCode);
-    this.setState({
-      code: newCode,
-      argumentNames: argumentNames
-    });
-    console.log(argumentNames);
-  },
-
   render: function() {
-    var options = {
-      lineNumbers: this.props.lineNumbers || false,
-      mode: "javascript",
-      viewportMargin: Infinity
-    };
     return (
-      <Codemirror
-        value={this.state.code}
-        onChange={this.updateCode}
-        options={options}
-      />
+      <form>
+        <div className="form-field-group">
+          <p><strong>In one phrase, describe what this behavior does.</strong></p>
+          <p>You may also choose a short code name for reference.</p>
+          <BehaviorEditorDescription description={this.state.description}
+            codeName={this.getCodeName()}
+            onChange={this.onDescriptionChange}
+          />
+        </div>
+
+        <div className="form-field-group">
+          <p><strong>Specify what @ellipsis should do by writing a node.js function.</strong></p>
+          <p>If you want your behavior to collect input from the user before operation, specify
+          each required value as an argument to the function.</p>
+          <div className="form-field">
+            <Codemirror value={this.state.nodeFunction}
+              onChange={this.onCodeChange}
+              options={{
+                lineNumbers: true,
+                mode: "javascript",
+                viewportMargin: Infinity
+              }}
+            />
+          </div>
+        </div>
+      </form>
     );
   }
 });
+
+var BehaviorEditorDescription = React.createClass({
+  handleChange: function(event) {
+    this.props.onChange(event.target.value);
+  },
+
+  render: function() {
+    return (
+      <div className="form-grouped-inputs">
+        <input type="text"
+          className="form-input"
+          placeholder="Bang two coconuts together"
+          autofocus
+          value={this.props.description}
+          onChange={this.handleChange}
+        />
+        <input type="text"
+          className="form-input"
+          placeholder="bang-two-coconuts"
+          readOnly
+          value={this.props.codeName}
+        />
+      </div>
+    );
+  }
+});
+
