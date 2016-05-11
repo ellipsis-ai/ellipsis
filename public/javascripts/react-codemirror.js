@@ -1,3 +1,5 @@
+define('react-codemirror', function(require, exports, module) {
+
 'use strict';
 
 var React = require('react');
@@ -81,3 +83,5 @@ var CodeMirror = React.createClass({
 });
 
 module.exports = CodeMirror;
+
+});

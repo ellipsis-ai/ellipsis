@@ -138,7 +138,7 @@ var BehaviorEditorDescription = React.createClass({
 
 return {
   load: function(behaviorEditorOptions) {
-    React.createElement(BehaviorEditor, behaviorEditorOptions);
+    var myBehaviorEditor = React.createElement(BehaviorEditor, behaviorEditorOptions);
     ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
   }
 };
