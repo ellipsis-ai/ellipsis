@@ -21,7 +21,6 @@ var BehaviorEditor = React.createClass({
       nodeFunction: newCode,
       argNames: this.getArgumentNamesFromCode(newCode)
     });
-    console.log(this.state.argNames);
   },
 
   getArgumentNamesFromCode: function(code) {
@@ -42,6 +41,7 @@ var BehaviorEditor = React.createClass({
         <div className="form-field-group">
           <p><strong>In one phrase, describe what this behavior does.</strong></p>
           <p>You may also choose a short code name for reference.</p>
+
           <BehaviorEditorDescription description={this.state.description}
             codeName={this.getCodeName()}
             onChange={this.onDescriptionChange}
@@ -52,6 +52,7 @@ var BehaviorEditor = React.createClass({
           <p><strong>Specify what @ellipsis should do by writing a node.js function.</strong></p>
           <p>If you want your behavior to collect input from the user before operation, specify
           each required value as an argument to the function.</p>
+
           <div className="form-field">
             <Codemirror value={this.state.nodeFunction}
               onChange={this.onCodeChange}
@@ -62,6 +63,19 @@ var BehaviorEditor = React.createClass({
               }}
             />
           </div>
+        </div>
+
+        <div className="form-field-group">
+          <p><strong>For each required value, write what question @ellipsis should ask the user.</strong></p>
+
+          {this.state.argNames.map(function(argName, index) {
+            return (
+              <div className="form-field-with-prefix mbs" key={'argName' + index}>
+                <label className="form-input-prefix"><code>{argName}</code></label>
+                <input type="text" className="form-input" value="" placeholder="Where would you like to go?" />
+              </div>
+            )
+          })}
         </div>
       </form>
     );

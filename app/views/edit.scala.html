@@ -78,20 +78,12 @@
       description: "Bang two coconuts together",
       nodeFunction: 'function(userInput, onSuccess, onError) {\n' +
         '  onSuccess("*clop clop clop clop*\\nYou have arrived at " + userInput);\n' +
-        '}\n'
+        '}\n',
+      argNames: ['userInput']
     });
     ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
   </script>
   <form>
-    <div class="form-field-group">
-      <p>
-      <strong>For each required value, write what question @@ellipsis should ask the user.</strong>
-      </p>
-      <div class="form-field-with-prefix">
-        <label class="form-input-prefix"><code>input</code></label>
-        <input type="text" class="form-input" value="" placeholder="Where would you like to go?">
-      </div>
-    </div>
     <div class="form-field-group">
       <p><strong>Specify one or more words or phrases that should trigger this behavior in chat.</strong></p>
       <div class="form-grouped-inputs mbl">
@@ -111,11 +103,6 @@
     <button type="button" class="primary">Save and return</button>
   </form>
   <script>
-//     var functionEditor = CodeMirror.fromTextArea(document.getElementById('editor'), {
-//       mode: "javascript",
-//       lineNumbers: true,
-//       viewportMargin: Infinity
-//     });
 //     var regexEditor = CodeMirror.fromTextArea(document.getElementById('regex'), {
 //       mode: "javascript",
 //       viewportMargin: Infinity
