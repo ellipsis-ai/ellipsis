@@ -18,9 +18,6 @@
         head.appendChild(trial);
     })();
   </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react-dom.js"></script>
-  <script src="/assets/javascripts/react-codemirror.js"></script>
 </head>
 <body class="bg-blue-dark">
 <header class="bg-blue-dark border-emphasis-bottom type-white">
@@ -72,17 +69,7 @@
 <section class="bg-light pbxxxxl border-emphasis-bottom"><div class="container ptxl pbm">
   <h1>Edit a behavior</h1>
   <div id="editorContainer"></div>
-  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/behavior_editor.js")'></script>
-  <script>
-    var myBehaviorEditor = React.createElement(BehaviorEditor, {
-      description: "Bang two coconuts together",
-      nodeFunction: 'function(userInput, onSuccess, onError) {\n' +
-        '  onSuccess("*clop clop clop clop*\\nYou have arrived at " + userInput);\n' +
-        '}\n',
-      argNames: ['userInput']
-    });
-    ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
-  </script>
+  <script data-main='@routes.Assets.versioned("javascripts/main.js")' src='@routes.Assets.versioned("lib/requirejs/require.js")'></script>
 </div></section>
 </body>
 </html>

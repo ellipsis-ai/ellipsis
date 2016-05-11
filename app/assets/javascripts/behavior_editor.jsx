@@ -1,3 +1,9 @@
+define('behavior_editor', function(require) {
+
+var React = require('react');
+var ReactDOM = require('react-dom');
+var Codemirror = require('react-codemirror');
+
 var BehaviorEditor = React.createClass({
   getInitialState: function() {
     return {
@@ -128,5 +134,14 @@ var BehaviorEditorDescription = React.createClass({
       </div>
     );
   }
+});
+
+return {
+  load: function(behaviorEditorOptions) {
+    React.createElement(BehaviorEditor, behaviorEditorOptions);
+    ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
+  }
+};
+
 });
 
