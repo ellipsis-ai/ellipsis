@@ -24,8 +24,7 @@ var BehaviorEditor = React.createClass({
   },
 
   getArgumentNamesFromCode: function(code) {
-    var firstLine = code.split('\n')[0];
-    var matches = firstLine.match(/^function\((.+)\)/);
+    var matches = code.match(/^\s*function\((.+)\)/);
     if (!matches || matches.length < 2) {
       return [];
     }
