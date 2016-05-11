@@ -3,11 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <title>Ellipsis behavior editor</title>
-  <script type="text/javascript">
-  </script>
-  <script src="/assets/javascripts/codemirror/lib/codemirror.js"></script>
   <link rel="stylesheet" href="/assets/javascripts/codemirror/lib/codemirror.css">
-  <script src="/assets/javascripts/codemirror/mode/javascript/javascript.js"></script>
   <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:400,300,600,400italic,300italic,600italic' rel='stylesheet' type='text/css'>
   <link rel='stylesheet' href='@routes.Assets.versioned("stylesheets/main.css")'>
   <script type="text/javascript">
@@ -22,6 +18,11 @@
         head.appendChild(trial);
     })();
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react-dom.js"></script>
+  <script src="/assets/javascripts/codemirror/lib/codemirror.js"></script>
+  <script src="/assets/javascripts/codemirror/mode/javascript/javascript.js"></script>
+  <script src="/assets/javascripts/react-codemirror.min.js"></script>
 </head>
 <body class="bg-blue-dark">
 <header class="bg-blue-dark border-emphasis-bottom type-white">
@@ -72,31 +73,18 @@
 </header>
 <section class="bg-light pbxxxxl border-emphasis-bottom"><div class="container ptxl pbm">
   <h1>Edit a behavior</h1>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react-dom.js"></script>
   <div id="editorContainer"></div>
   <script type='text/javascript' src='@routes.Assets.versioned("javascripts/behavior_editor.js")'></script>
   <script>
-    var myBehaviorEditor = React.createElement(BehaviorEditor, { description: "Bang two coconuts together" });
+    var myBehaviorEditor = React.createElement(BehaviorEditor, {
+      description: "Bang two coconuts together",
+      nodeFunction: 'function(userInput, onSuccess, onError) {\n' +
+        '  onSuccess("*clop clop clop clop*\\nYou have arrived at " + userInput);\n' +
+        '}\n'
+    });
     ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
   </script>
   <form>
-    <div class="form-field-group">
-      <p>
-      <strong>Specify what @@ellipsis should do by writing a node.js function.</strong>
-      </p>
-      <p>
-      If you want your behavior to collect input from the user before operation, specify each required value as
-      an argument to the function.
-      </p>
-      <div class="form-field">
-        <textarea id="editor">
-function(userInput, onSuccess, onError) {
-  onSuccess("*clop clop clop clop*\nYou have arrived at " + userInput);
-}
-</textarea>
-      </div>
-    </div>
     <div class="form-field-group">
       <p>
       <strong>For each required value, write what question @@ellipsis should ask the user.</strong>
@@ -125,15 +113,15 @@ function(userInput, onSuccess, onError) {
     <button type="button" class="primary">Save and return</button>
   </form>
   <script>
-    var functionEditor = CodeMirror.fromTextArea(document.getElementById('editor'), {
-      mode: "javascript",
-      lineNumbers: true,
-      viewportMargin: Infinity
-    });
-    var regexEditor = CodeMirror.fromTextArea(document.getElementById('regex'), {
-      mode: "javascript",
-      viewportMargin: Infinity
-    });
+//     var functionEditor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+//       mode: "javascript",
+//       lineNumbers: true,
+//       viewportMargin: Infinity
+//     });
+//     var regexEditor = CodeMirror.fromTextArea(document.getElementById('regex'), {
+//       mode: "javascript",
+//       viewportMargin: Infinity
+//     });
   </script>
 </div></section>
 </body>
