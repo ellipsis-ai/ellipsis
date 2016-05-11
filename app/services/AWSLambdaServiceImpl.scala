@@ -44,8 +44,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
 
   val requireRegex = """.*require\(['"]\s*(\S+)\s*['"]\).*""".r
 
-  private def requiredModulesIn(code: String): Iterator[String] = {
-    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption)
+  private def requiredModulesIn(code: String): Array[String] = {
+    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray ++ Array("request")
   }
 
   private def nodeCodeFor(code: String, params: Array[String], behavior: Behavior): String = {
@@ -58,10 +58,42 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
       |exports.handler = function(event, context, callback) {
       |   var Ellipsis = {};
       |   Ellipsis.teamId = "${behavior.team.id}";
+      |
+      |   var request = require('request');
       |   Ellipsis.db = {};
       |   Ellipsis.db.itemsTable = "${AWSDynamoDBConstants.ITEMS_TABLE_NAME}";
       |   Ellipsis.db.putItemUrl = event.$API_BASE_URL + "/put_item";
       |   Ellipsis.db.getItemUrl = event.$API_BASE_URL + "/get_item";
+      |
+      |   Ellipsis.db.putItem = function(itemId, itemType, item, onSuccess, onError) {
+      |     request.
+      |        post( {
+      |         url: Ellipsis.db.putItemUrl,
+      |         form: { itemId: itemId, itemType: itemType, teamId: Ellipsis.teamId, item: item }
+      |        }, function (error, response, body) {
+      |                if (!error && response.statusCode == 200) {
+      |                    onSuccess(response, body);
+      |                } else {
+      |                    onError(error);
+      |                }
+      |            }
+      |        );
+      |   };
+      |
+      |   Ellipsis.db.getItem = function(itemId, itemType, onSuccess, onError) {
+      |     request.
+      |        get(
+      |         Ellipsis.db.getItemUrl + "/" + itemId + "/" + itemType + "/" + Ellipsis.teamId,
+      |         function (error, response, body) {
+      |                if (!error && response.statusCode == 200) {
+      |                    onSuccess(response, body);
+      |                } else {
+      |                    onError(error);
+      |                }
+      |            }
+      |        );
+      |   };
+      |
       |   var fn = $fixedCode;
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };

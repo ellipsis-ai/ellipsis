@@ -7,6 +7,7 @@ import com.amazonaws.services.dynamodbv2.document.{KeyAttribute, Table, Item}
 import com.amazonaws.services.dynamodbv2.model._
 import models.Team
 import play.api.Configuration
+import play.api.libs.json.JsValue
 
 class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extends AWSDynamoDBService {
   import AWSDynamoDBConstants._
@@ -39,11 +40,11 @@ class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extend
     s"${team.id}_${itemType}_${itemId}"
   }
 
-  def putItem(itemId: String, itemJson: String, itemType: String, team: Team): Unit = {
+  def putItem(itemId: String, itemJson: JsValue, itemType: String, team: Team): Unit = {
     val item =
       new Item().
         withString(ITEM_PRIMARY_KEY, primaryKeyFor(itemId, itemType, team: Team)).
-        withJSON(ITEM, itemJson).
+        withJSON(ITEM, itemJson.toString).
         withString(ITEM_TYPE, itemType).
         withString(TEAM_ID, team.id).
         withString(ITEM_ID, itemId)
@@ -51,10 +52,12 @@ class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extend
     itemsTable.putItem(item)
   }
 
-  def getItem(itemId: String, itemType: String, team: Team): String = {
+  def getItem(itemId: String, itemType: String, team: Team): Option[String] = {
     val primaryKeyComponent = new KeyAttribute(ITEM_PRIMARY_KEY, primaryKeyFor(itemId, itemType, team))
 
     val spec = new GetItemSpec().withPrimaryKey(primaryKeyComponent)
-    itemsTable.getItem(spec).getJSON(ITEM)
+    Option(itemsTable.getItem(spec)).map { item =>
+      item.getJSON(ITEM)
+    }
   }
 }

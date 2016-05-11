@@ -10,9 +10,9 @@ define(function(require) {
   var myBehaviorEditor = require('./behavior_editor');
   myBehaviorEditor.load({
     description: "Bang two coconuts together",
-    nodeFunction: 'function(userInput, onSuccess, onError) {\n' +
+    nodeFunction: 'function(userInput1, onSuccess, onError) {\n' +
       '  onSuccess("*clop clop clop clop*\\nYou have arrived at " + userInput);\n' +
       '}\n',
-    argNames: ['userInput']
+    args: [{ name: 'userInput1', question: '' }]
   });
 });
