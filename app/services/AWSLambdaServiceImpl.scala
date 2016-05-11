@@ -1,6 +1,6 @@
 package services
 
-import java.io.FileOutputStream
+import java.io.{File, PrintWriter, FileOutputStream}
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
@@ -11,6 +11,8 @@ import com.amazonaws.services.lambda.model._
 import models.bots.Behavior
 import play.api.Configuration
 import play.api.libs.json.Json
+import scala.reflect.io.{Path}
+import sys.process._
 
 
 class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends AWSLambdaService {
@@ -38,6 +40,12 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     resultStringFor(result.getPayload)
   }
 
+  val requireRegex = """.*require\(['"]\s*(\S+)\s*['"]\).*""".r
+
+  private def requiredModulesIn(code: String): Iterator[String] = {
+    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption)
+  }
+
   private def nodeCodeFor(code: String, params: Array[String], behavior: Behavior): String = {
     var fixedCode = "[“”]".r.replaceAllIn(code, "\"")
     "‘".r.replaceAllIn(fixedCode, "'")
@@ -60,24 +68,27 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     """.stripMargin
   }
 
-  private def zipFileNameFor(functionName: String) = s"/tmp/$functionName.zip"
+  private def dirNameFor(functionName: String) = s"/tmp/$functionName"
+  private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
-  private def createZipFor(behavior: Behavior, code: String, params: Array[String]): ZipOutputStream = {
-    val fileStream = new FileOutputStream(zipFileNameFor(behavior.functionName))
-    val zipStream = new ZipOutputStream(fileStream)
+  private def createZipWithModulesFor(behavior: Behavior, code: String, params: Array[String]): Unit = {
+    val dirName = dirNameFor(behavior.functionName)
+    val path = Path(dirName)
+    path.createDirectory()
 
-    val zipEntry = new ZipEntry(s"${behavior.functionName}.js")
-    zipStream.putNextEntry(zipEntry)
-    val data = nodeCodeFor(code, params, behavior).getBytes
-    zipStream.write(data, 0, data.length)
-    zipStream.closeEntry()
+    val writer = new PrintWriter(new File(s"$dirName/index.js"))
+    writer.write(nodeCodeFor(code, params, behavior))
+    writer.close()
 
-    zipStream.close
-    zipStream
+    requiredModulesIn(code).foreach { moduleName =>
+      Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName")).!
+    }
+
+    Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(behavior.functionName)} *")).!
   }
 
   private def getZipFor(behavior: Behavior, code: String, params: Array[String]): ByteBuffer = {
-    createZipFor(behavior, code, params)
+    createZipWithModulesFor(behavior, code, params)
     val path = Paths.get(zipFileNameFor(behavior.functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -104,7 +115,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
         withCode(functionCode).
         withRole(configuration.getString("aws.role").get).
         withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
-        withHandler(s"$functionName.handler").
+        withHandler("index.handler").
         withTimeout(10)
 
     blockingClient.createFunction(createFunctionRequest)
