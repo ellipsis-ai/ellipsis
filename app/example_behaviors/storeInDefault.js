@@ -7,7 +7,7 @@ function(key, value, onSuccess, onError) {
             Ellipsis.db.putItemUrl,
             { itemId: key, itemType: Ellipsis.db.itemsTable, teamId: Ellipsis.teamId, item: value },
             function (error, response, body) {
-                if (!error && response.statusCode == 200) {
+                if (!error) {
                     onSuccess("Ok, got it!");
                 } else {
                     onError(error);

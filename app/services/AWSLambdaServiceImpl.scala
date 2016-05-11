@@ -28,14 +28,16 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     }
   }
 
+  val API_BASE_URL = "apiBaseUrl"
+  def apiBaseUrl: String = configuration.getString("application.apiBaseUrl").get
+
   def invoke(functionName: String, params: Map[String, String]): String = {
-    var invokeRequest =
+    val paramsWithApiBaseUrl = params ++ Map(API_BASE_URL -> apiBaseUrl)
+    val invokeRequest =
       new InvokeRequest().
         withFunctionName(functionName).
-        withInvocationType(InvocationType.RequestResponse)
-    if (params.nonEmpty) {
-      invokeRequest = invokeRequest.withPayload(Json.toJson(params).toString())
-    }
+        withInvocationType(InvocationType.RequestResponse).
+        withPayload(Json.toJson(paramsWithApiBaseUrl).toString())
     val result = blockingClient.invoke(invokeRequest)
     resultStringFor(result.getPayload)
   }
@@ -58,8 +60,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
       |   Ellipsis.teamId = "${behavior.team.id}";
       |   Ellipsis.db = {};
       |   Ellipsis.db.itemsTable = "${AWSDynamoDBConstants.ITEMS_TABLE_NAME}";
-      |   Ellipsis.db.putItemUrl = "https://05f7c2f1.ngrok.io/put_item";
-      |   Ellipsis.db.getItemUrl = "https://05f7c2f1.ngrok.io/get_item";
+      |   Ellipsis.db.putItemUrl = event.$API_BASE_URL + "/put_item";
+      |   Ellipsis.db.getItemUrl = event.$API_BASE_URL + "/get_item";
       |   var fn = $fixedCode;
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };
