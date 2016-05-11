@@ -43,7 +43,7 @@ class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extend
     val item =
       new Item().
         withString(ITEM_PRIMARY_KEY, primaryKeyFor(itemId, itemType, team: Team)).
-        withJSON(ITEM, itemJson).
+        withString(ITEM, itemJson).
         withString(ITEM_TYPE, itemType).
         withString(TEAM_ID, team.id).
         withString(ITEM_ID, itemId)
@@ -55,6 +55,6 @@ class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extend
     val primaryKeyComponent = new KeyAttribute(ITEM_PRIMARY_KEY, primaryKeyFor(itemId, itemType, team))
 
     val spec = new GetItemSpec().withPrimaryKey(primaryKeyComponent)
-    itemsTable.getItem(spec).getJSON(ITEM)
+    itemsTable.getItem(spec).getString(ITEM)
   }
 }
