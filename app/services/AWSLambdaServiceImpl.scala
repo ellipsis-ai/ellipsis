@@ -1,22 +1,21 @@
 package services
 
-import java.io.FileOutputStream
+import java.io.{File, PrintWriter, FileOutputStream}
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import javax.inject.Inject
-import com.amazonaws.AmazonServiceException
-import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.lambda.AWSLambdaClient
 import com.amazonaws.services.lambda.model._
+import models.bots.Behavior
 import play.api.Configuration
 import play.api.libs.json.Json
+import scala.reflect.io.{Path}
+import sys.process._
 
 
 class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends AWSLambdaService {
-
-  val credentials = new BasicAWSCredentials(configuration.getString("aws.accessKey").getOrElse("foo"), configuration.getString("aws.secretKey").getOrElse("foo"))
 
   val blockingClient: AWSLambdaClient = new AWSLambdaClient(credentials)
 
@@ -29,19 +28,27 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     }
   }
 
+  val API_BASE_URL = "apiBaseUrl"
+  def apiBaseUrl: String = configuration.getString("application.apiBaseUrl").get
+
   def invoke(functionName: String, params: Map[String, String]): String = {
-    var invokeRequest =
+    val paramsWithApiBaseUrl = params ++ Map(API_BASE_URL -> apiBaseUrl)
+    val invokeRequest =
       new InvokeRequest().
         withFunctionName(functionName).
-        withInvocationType(InvocationType.RequestResponse)
-    if (params.nonEmpty) {
-      invokeRequest = invokeRequest.withPayload(Json.toJson(params).toString())
-    }
+        withInvocationType(InvocationType.RequestResponse).
+        withPayload(Json.toJson(paramsWithApiBaseUrl).toString())
     val result = blockingClient.invoke(invokeRequest)
     resultStringFor(result.getPayload)
   }
 
-  private def nodeCodeFor(code: String, params: Array[String]): String = {
+  val requireRegex = """.*require\(['"]\s*(\S+)\s*['"]\).*""".r
+
+  private def requiredModulesIn(code: String): Iterator[String] = {
+    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption)
+  }
+
+  private def nodeCodeFor(code: String, params: Array[String], behavior: Behavior): String = {
     var fixedCode = "[“”]".r.replaceAllIn(code, "\"")
     "‘".r.replaceAllIn(fixedCode, "'")
     val paramsSupplied = params.indices.map(i => s"event.param$i")
@@ -49,6 +56,12 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     val paramString = withCallbacks.mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {
+      |   var Ellipsis = {};
+      |   Ellipsis.teamId = "${behavior.team.id}";
+      |   Ellipsis.db = {};
+      |   Ellipsis.db.itemsTable = "${AWSDynamoDBConstants.ITEMS_TABLE_NAME}";
+      |   Ellipsis.db.putItemUrl = event.$API_BASE_URL + "/put_item";
+      |   Ellipsis.db.getItemUrl = event.$API_BASE_URL + "/get_item";
       |   var fn = $fixedCode;
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };
@@ -57,25 +70,28 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     """.stripMargin
   }
 
-  private def zipFileNameFor(functionName: String) = s"/tmp/$functionName.zip"
+  private def dirNameFor(functionName: String) = s"/tmp/$functionName"
+  private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
-  private def createZipFor(functionName: String, code: String, params: Array[String]): ZipOutputStream = {
-    val fileStream = new FileOutputStream(zipFileNameFor(functionName))
-    val zipStream = new ZipOutputStream(fileStream)
+  private def createZipWithModulesFor(behavior: Behavior, code: String, params: Array[String]): Unit = {
+    val dirName = dirNameFor(behavior.functionName)
+    val path = Path(dirName)
+    path.createDirectory()
 
-    val zipEntry = new ZipEntry(s"$functionName.js")
-    zipStream.putNextEntry(zipEntry)
-    val data = nodeCodeFor(code, params).getBytes
-    zipStream.write(data, 0, data.length)
-    zipStream.closeEntry()
+    val writer = new PrintWriter(new File(s"$dirName/index.js"))
+    writer.write(nodeCodeFor(code, params, behavior))
+    writer.close()
 
-    zipStream.close
-    zipStream
+    requiredModulesIn(code).foreach { moduleName =>
+      Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName")).!
+    }
+
+    Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(behavior.functionName)} *")).!
   }
 
-  private def getZipFor(functionName: String, code: String, params: Array[String]): ByteBuffer = {
-    createZipFor(functionName, code, params)
-    val path = Paths.get(zipFileNameFor(functionName))
+  private def getZipFor(behavior: Behavior, code: String, params: Array[String]): ByteBuffer = {
+    createZipWithModulesFor(behavior, code, params)
+    val path = Paths.get(zipFileNameFor(behavior.functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
 
@@ -89,18 +105,19 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     }
   }
 
-  def deployFunction(functionName: String, code: String, params: Array[String]): Unit = {
+  def deployFunctionFor(behavior: Behavior, code: String, params: Array[String]): Unit = {
+    val functionName = behavior.functionName
     deleteFunction(functionName)
     val functionCode =
       new FunctionCode().
-        withZipFile(getZipFor(functionName, code, params))
+        withZipFile(getZipFor(behavior, code, params))
     val createFunctionRequest =
       new CreateFunctionRequest().
         withFunctionName(functionName).
         withCode(functionCode).
         withRole(configuration.getString("aws.role").get).
         withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
-        withHandler(s"$functionName.handler").
+        withHandler("index.handler").
         withTimeout(10)
 
     blockingClient.createFunction(createFunctionRequest)

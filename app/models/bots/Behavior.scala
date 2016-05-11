@@ -20,6 +20,8 @@ case class Behavior(
 
   lazy val conf = Play.current.configuration
 
+  def functionName: String = id
+
   def resultFor(params: Map[String, String], service: AWSLambdaService): String = {
     service.invoke(id, params)
   }
@@ -119,7 +121,7 @@ object BehaviorQueries {
   def learnCodeFor(behavior: Behavior, code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
     val actualParams = paramsIn(code)
     val paramsWithoutCallbacks = withoutCallbacks(actualParams)
-    lambdaService.deployFunction(behavior.id, code, paramsWithoutCallbacks)
+    lambdaService.deployFunctionFor(behavior, code, paramsWithoutCallbacks)
     (for {
       b <- behavior.copy(hasCode = true).save
       params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutCallbacks)
@@ -137,7 +139,7 @@ object BehaviorQueries {
       }.getOrElse(DBIO.successful(None))
     } yield {
         maybeTrigger.map { trigger =>
-          lambdaService.deployFunction(trigger.behavior.id, code, paramsWithoutCallbacks)
+          lambdaService.deployFunctionFor(trigger.behavior, code, paramsWithoutCallbacks)
           trigger.behavior
         }
       }
