@@ -3,7 +3,8 @@ var BehaviorEditor = React.createClass({
     return {
       description: this.props.description,
       nodeFunction: this.props.nodeFunction,
-      argNames: this.props.argNames
+      args: this.props.args,
+      questionFocusIndex: null
     };
   },
 
@@ -19,8 +20,31 @@ var BehaviorEditor = React.createClass({
   onCodeChange: function(newCode) {
     this.setState({
       nodeFunction: newCode,
-      argNames: this.getArgumentNamesFromCode(newCode)
+      args: this.getArgumentNamesFromCode(newCode)
     });
+  },
+
+  updateCodeFromArgs: function() {
+    var newFunction = this.state.nodeFunction.replace(/^\s*function\(.+?\)/, this.getFunctionPrefix());
+    this.setState({
+      nodeFunction: newFunction
+    });
+  },
+
+  onAddQuestionClick: function() {
+    var newArg = { name: 'userInput' + (this.state.args.length + 1), question: '' };
+    this.setState({
+      args: this.state.args.concat([newArg]),
+      questionFocusIndex: this.state.args.length
+    }, this.updateCodeFromArgs);
+  },
+
+  onArgChange: function(index, newArg) {
+    // Create a copy of the old array with the indexed value replaced
+    var newArgs = this.state.args.slice(0, index).concat([newArg], this.state.args.slice(index + 1, index.length));
+    this.setState({
+      args: newArgs
+    }, this.updateCodeFromArgs);
   },
 
   getArgumentNamesFromCode: function(code) {
@@ -31,7 +55,20 @@ var BehaviorEditor = React.createClass({
     var args = matches[1].split(',').map(function(arg) {
       return arg.replace(/(^\s*)|(\s*$)/g, ''); // trim spaces
     });
-    return args.slice(0, args.length - 2); // last two arguments are reserved for onSuccess/onError
+
+    // last two arguments are reserved for onSuccess/onError
+    return args.slice(0, args.length - 2).map(function(arg, index) {
+      return {
+        name: arg,
+        question: this.state.args[index] ? this.state.args[index].question : ''
+      };
+    }, this);
+  },
+
+  getFunctionPrefix: function() {
+    return 'function(' +
+      this.state.args.map(function(arg) { return arg.name; }).join(', ') +
+      ', onSuccess, onError)';
   },
 
   render: function() {
@@ -48,9 +85,26 @@ var BehaviorEditor = React.createClass({
         </div>
 
         <div className="form-field-group">
+          <p><strong>What text should @ellipsis collect from the user?</strong></p>
+
+          <p>Write one or more questions to ask the user for input. Each one has a
+          programming-friendly label that can be modified for clarity if desired.</p>
+
+          {this.state.args.map(function(arg, index) {
+            return (
+              <BehaviorEditorUserInputDefinition key={index} name={arg.name} question={arg.question}
+                onChange={this.onArgChange.bind(this, index)} shouldGrabFocus={this.state.questionFocusIndex == index} />
+            );
+          }, this)}
+
+          <button type="button" onClick={this.onAddQuestionClick}>Add another question</button>
+        </div>
+
+        <div className="form-field-group">
           <p><strong>Specify what @ellipsis should do by writing a node.js function.</strong></p>
-          <p>If you want your behavior to collect input from the user before operation, specify
-          each required value as an argument to the function.</p>
+          <p>Each fragment of text collected from the user will be passed to the function, along
+          with <code>onSuccess</code> and <code>onError</code> callbacks that you should call with the
+          appropriate response.</p>
 
           <div className="form-field">
             <Codemirror value={this.state.nodeFunction}
@@ -62,19 +116,6 @@ var BehaviorEditor = React.createClass({
               }}
             />
           </div>
-        </div>
-
-        <div className="form-field-group">
-          <p><strong>For each required value, write what question @ellipsis should ask the user.</strong></p>
-
-          {this.state.argNames.map(function(argName, index) {
-            return (
-              <div className="form-field-with-prefix mbs" key={'argName' + index}>
-                <label className="form-input-prefix"><code>{argName}</code></label>
-                <input type="text" className="form-input" value="" placeholder="Where would you like to go?" />
-              </div>
-            )
-          })}
         </div>
 
         <div className="form-field-group">
@@ -115,12 +156,12 @@ var BehaviorEditorDescription = React.createClass({
         <input type="text"
           className="form-input"
           placeholder="Bang two coconuts together"
-          autofocus
+          autoFocus
           value={this.props.description}
           onChange={this.handleChange}
         />
         <input type="text"
-          className="form-input"
+          className="form-input type-monospace"
           placeholder="bang-two-coconuts"
           readOnly
           value={this.props.codeName}
@@ -130,3 +171,32 @@ var BehaviorEditorDescription = React.createClass({
   }
 });
 
+var BehaviorEditorUserInputDefinition = React.createClass({
+  onQuestionChange: function(event) {
+    this.props.onChange({ name: this.props.name, question: event.target.value });
+  },
+
+  onNameChange: function(event) {
+    this.props.onChange({ name: event.target.value, question: this.props.question });
+  },
+
+  render: function() {
+    return (
+      <div className="form-grouped-inputs mbs">
+        <input type="text"
+          className="form-input"
+          placeholder="Where would you like to go?"
+          autoFocus={this.props.shouldGrabFocus}
+          value={this.props.question}
+          onChange={this.onQuestionChange}
+        />
+        <input type="text"
+          className="form-input type-monospace"
+          placeholder="userInput"
+          value={this.props.name}
+          onChange={this.onNameChange}
+        />
+      </div>
+    );
+  }
+});
