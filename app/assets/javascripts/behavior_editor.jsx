@@ -77,6 +77,29 @@ var BehaviorEditor = React.createClass({
             )
           })}
         </div>
+
+        <div className="form-field-group">
+          <p><strong>Specify one or more words or phrases that should trigger this behavior in chat.</strong></p>
+          <div className="form-grouped-inputs mbl">
+            <input type="text" className="form-input" placeholder="ride" />
+            <input type="text" className="form-input" placeholder="trot" />
+            <input type="text" className="form-input" placeholder="gallop" />
+          </div>
+          <button type="button">Add more triggers</button>
+        </div>
+
+        <div className="form-field-group">
+          <p><strong>If desired, you can also specify a trigger that includes required values.</strong></p>
+          <p>Write a regular expression pattern to match the trigger and capture the desired input.</p>
+          <div className="form-field">
+            <Codemirror value="/ride\sto\s+(.+)/"
+              onChange={function(){}}
+              options={{ mode: "javascript", viewportMargin: Infinity }}
+            />
+          </div>
+        </div>
+        <button type="button" className="primary">Save and return</button>
+
       </form>
     );
   }

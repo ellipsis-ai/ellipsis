@@ -83,31 +83,6 @@
     });
     ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
   </script>
-  <form>
-    <div class="form-field-group">
-      <p><strong>Specify one or more words or phrases that should trigger this behavior in chat.</strong></p>
-      <div class="form-grouped-inputs mbl">
-        <input type="text" class="form-input" placeholder="ride">
-        <input type="text" class="form-input" placeholder="trot">
-        <input type="text" class="form-input" placeholder="gallop">
-      </div>
-      <button type="button">Add more triggers</button>
-    </div>
-
-    <div class="form-field-group">
-      <p><strong>If desired, you can also specify a trigger that includes required values.</strong></p>
-      <p>Write a regular expression pattern to match the trigger and capture the desired input.</p>
-      <div class="form-field"><textarea id="regex">
-/ride\sto\s+(.+)/</textarea></div>
-    </div>
-    <button type="button" class="primary">Save and return</button>
-  </form>
-  <script>
-//     var regexEditor = CodeMirror.fromTextArea(document.getElementById('regex'), {
-//       mode: "javascript",
-//       viewportMargin: Infinity
-//     });
-  </script>
 </div></section>
 </body>
 </html>
