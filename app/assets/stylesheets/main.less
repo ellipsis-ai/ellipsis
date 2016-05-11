@@ -5,73 +5,189 @@
 @m: 12px;
 @l: 16px;
 @xl: 24px;
+@xxl: 32px;
+@xxxl: 48px;
+@xxxxl: 64px;
 
+@type-xs: 12px;
+@type-s: 15px;
 @type-m: 18px;
+@type-l: 28px;
+@type-xl: 43px;
+@type-xxl: 59px;
 
 @border-width: @xxs;
 @border-radius: @s;
 
 /* Colors */
+@black: hsl(231, 15%, 15%);
+@black-translucent: hsla(231, 15%, 15%, 0.1);
+@white: #FFFFFF;
+@gray-darkest: hsl(231, 15%, 40%);
 @gray-lightest: hsl(231, 15%, 97%);
+@gray-light: hsl(231, 10%, 95%);
 @blue-darkest: hsl(231, 71%, 20%);
 @blue-dark: hsl(231, 71%, 42%);
+@blue-medium-text: hsl(231, 74%, 57%);
 @blue-medium: hsl(231, 97%, 64%);
-@blue-faded: hsl(231, 15%, 75%);
+@blue-faded: hsl(231, 11%, 81%);
+@blue-faded-dark: hsl(231, 22%, 43%);
 @pink-medium: hsl(341, 93%, 65%);
 @green-light: hsl(127, 93%, 63%);
 
-* {
-  font-family: 'Brix Sans Regular', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+body, input, select, textarea {
+  font-family: 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
 }
 
 body {
   margin: 0;
-  background-color: @gray-lightest;
   font-size: @type-m;
   line-height: @xl;
+  background-color: @white;
+  color: @black;
 }
 
 .container {
-  box-sizing: border-box;
-  max-width: 744px;
+  max-width: 45rem;
   margin-left: auto;
   margin-right: auto;
+  padding-left: @l;
+  padding-right: @l;
 }
 
 p {
   margin: 0 0 @m 0;
 }
 
-/* Margin utilities */
+/*
 
-.mbm {
-  margin-bottom: @m;
+Margin and padding utilities
+
+A set of margin and padding utilities exists for each measurement from xxxxl to xs.
+
+1. The first character denotes margin or padding
+  - 'm': margin
+  - 'p': padding
+2. The second character denotes the sides to apply the style
+  - 'a': all sides
+  - 'v': vertical (top and bottom)
+  - 'h': horizontal (sides)
+  - 't': top
+  - 'b': bottom
+  - 'l': left
+  - 'r': right
+3. The rest of the characters specify the amount
+  - 'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxxl', 'xxxxl'
+
+So for example:
+- '.mas' applies small margin to all sides
+- '.pbl' applies large padding to the bottom
+- '.pvxs' applies extra-small padding to the top and bottom
+
+*/
+
+.generate-margin(@size, @size-name) {
+  .ma@{size-name} {
+    margin: @size;
+  }
+  .mv@{size-name} {
+    margin-top: @size;
+    margin-bottom: @size;
+  }
+  .mh@{size-name} {
+    margin-left: @size;
+    margin-right: @size;
+  }
+  .mt@{size-name} {
+    margin-top: @size;
+  }
+  .mb@{size-name} {
+    margin-bottom: @size;
+  }
+  .ml@{size-name} {
+    margin-left: @size;
+  }
+  .mr@{size-name} {
+    margin-right: @size;
+  }
 }
 
-.mbl {
-  margin-bottom: @l;
+.generate-margin(@xxxxl, xxxxl);
+.generate-margin(@xxxl, xxxl);
+.generate-margin(@xxl, xxl);
+.generate-margin(@xl, xl);
+.generate-margin(@l, l);
+.generate-margin(@m, m);
+.generate-margin(@s, s);
+.generate-margin(@xs, xs);
+
+.generate-padding(@size, @size-name) {
+  .pa@{size-name} {
+    padding: @size;
+  }
+  .pv@{size-name} {
+    padding-top: @size;
+    padding-bottom: @size;
+  }
+  .ph@{size-name} {
+    padding-left: @size;
+    padding-right: @size;
+  }
+  .pt@{size-name} {
+    padding-top: @size;
+  }
+  .pb@{size-name} {
+    padding-bottom: @size;
+  }
+  .pl@{size-name} {
+    padding-left: @size;
+  }
+  .pr@{size-name} {
+    padding-right: @size;
+  }
 }
 
-.mbxl {
-  margin-bottom: @xl;
-}
+.generate-padding(@xxxxl, xxxxl);
+.generate-padding(@xxxl, xxxl);
+.generate-padding(@xxl, xxl);
+.generate-padding(@xl, xl);
+.generate-padding(@l, l);
+.generate-padding(@m, m);
+.generate-padding(@s, s);
+.generate-padding(@xs, xs);
 
-/* Padding utilities */
-
-.ptxl {
-  padding-top: @xl !important;
-}
-
-.pam {
-  padding: @m;
-}
-
-.prs {
-  padding-right: @m;
-}
+/* Background utilities */
 
 .bg-blue-dark {
   background-color: @blue-darkest;
+}
+
+.bg-light {
+  background-color: @gray-lightest;
+}
+
+.bg-white {
+  background-color: @white;
+}
+
+/* Border utilities */
+
+.border-emphasis-bottom {
+  border-width: 0 0 @xs 0;
+  border-style: solid;
+  border-color: @pink-medium;
+}
+
+/* Foreground type utilities */
+
+.type-s {
+  font-size: @type-s;
+  line-height: @xl;
+}
+
+.type-xs {
+  font-size: @type-xs;
+  line-height: @l;
 }
 
 .type-pink {
@@ -86,17 +202,78 @@ p {
   color: white;
 }
 
+.type-monospace, code {
+  font-family: 'Source Code Pro', Menlo, Consolas, monospace;
+}
+
+/* Alignment utilities */
+
+.align-c {
+  text-align: center;
+}
+
 .logo {
-  font-size: @xl;
+  height: 28px;
+  margin: -2px 0;
+}
+
+/* Headers */
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 @m 0;
+  font-weight: normal;
+}
+
+h1 {
+  font-family: 'Grota Sans Rounded Medium', 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+  font-size: @type-xxl;
+  line-height: @xxxxl;
+  margin-top: @xxxxl;
+  color: @blue-faded-dark;
+}
+
+h2 {
+  font-size: @type-xl;
+  line-height: @xxxl;
+  font-style: italic;
+}
+
+h3 {
+  font-size: @type-l;
+  line-height: @xxl;
+  font-weight: 600;
+}
+
+h4 {
+  font-size: @type-m;
   line-height: @xl;
+  font-weight: 600;
 }
 
-.logo-symbol {
-  vertical-align: middle;
+h5 {
+  font-size: @type-s;
+  line-height: @xl;
+  font-weight: 600;
+  letter-spacing: 0.07em;
 }
 
-.logo-type {
-  vertical-align: 2px;
+h6 {
+  font-size: @type-xs;
+  line-height: @l;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+/* Rules */
+
+hr {
+  width: 100%;
+  height: @xs;
+  border: none;
+  background-color: @pink-medium;
+  border-radius: @xs;
+  margin: @l 0 @xxl -@xxxxl*2;
+  padding: 0 0 0 @xxxxl*2;
 }
 
 /* Forms */
@@ -107,58 +284,151 @@ p {
 
 input, button, select, textarea, .form-field {
   font-size: 1rem;
-  line-height: 1.5em;
+  line-height: @xl;
 }
+
+@form-vertical-padding: (@s - @border-width);
+@form-horizontal-padding: @s;
+@form-input-height: @s * 2 + @xl;
+@form-bg-disabled: @gray-light;
+@form-color-disabled: @gray-darkest;
 
 .form-field {
   border-width: @border-width;
   border-style: solid;
   border-color: @blue-faded;
   border-radius: @border-radius;
+  box-sizing: border-box;
+  .bg-white();
 }
 
 .form-input {
-  padding-left: @xs;
-  padding-right: @xs;
+  /* Subtract 1 from bottom padding in case fonts causes line-height to be off by 1 */
+  padding: @form-vertical-padding @form-horizontal-padding (@form-vertical-padding - 1);
+  height: @form-input-height;
   .form-field();
   width: 100%;
-  box-sizing: border-box;
 }
 
-.grouped-inputs {
+.form-input[readonly] {
+  background-color: @form-bg-disabled;
+  color: @form-color-disabled;
+}
+
+.form-input:focus, .form-field:focus {
+  outline: none;
+  border-color: @pink-medium;
+}
+
+.form-grouped-inputs {
   .form-input {
     border-radius: 0;
     border-bottom-width: 0;
+    height: @form-input-height - @border-width;
   }
   .form-input:first-child {
     border-radius: @border-radius @border-radius 0 0;
   }
   .form-input:last-child {
     border-bottom-width: @border-width;
+    height: @form-input-height;
     border-radius: 0 0 @border-radius @border-radius;
+  }
+  .form-input:focus {
+    border-bottom-width: @border-width;
+    height: @form-input-height;
+  }
+  .form-input:focus + .form-input {
+    border-top-width: 0;
+    height: @form-input-height - @border-width*2;
+  }
+  .form-input:focus + .form-input:last-child {
+    height: @form-input-height - @border-width;
+  }
+}
+
+.form-field-with-prefix {
+  display: table-row;
+  box-sizing: border-box;
+  width: 100%;
+
+  .form-input-prefix, .form-input {
+    display: table-cell;
+    vertical-align: top;
+  }
+
+  .form-input-prefix {
+    .form-field();
+    padding: @form-vertical-padding @form-horizontal-padding (@form-vertical-padding - 1);
+    height: @form-input-height;
+    width: 1%;
+    border-right-width: 0;
+    border-radius: @border-radius 0 0 @border-radius;
+    background-color: @form-bg-disabled;
+    color: @form-color-disabled;
+  }
+
+  .form-input {
+    width: 100%;
+    border-radius: 0 @border-radius @border-radius 0;
   }
 }
 
 .CodeMirror {
-  font-family: 'Source Code Pro';
+  .type-monospace();
+  font-size: @type-s;
+  line-height: @xl;
   border-radius: @border-radius;
+  min-height: @form-input-height - @border-width*2;
+  height: auto;
 }
 
+.CodeMirror-gutters {
+  border-radius: @border-radius 0 0 @border-radius;
+}
+
+/* Buttons */
+
+@button-height: @s * 2 + @xl;
+
 button {
-  font-weight: 600;
-  background-color: @blue-medium;
-  color: white;
-  padding: @s @l;
+  padding: (@s - @border-width) @l;
+  height: @button-height;
+  box-sizing: border-box;
   border-radius: @border-radius;
-  border: none;
+  border-width: @border-width;
+  border-style: solid;
+  border-color: @blue-medium;
+  background-color: transparent;
+  color: @blue-medium-text;
+  min-width: @s * 20;
+  cursor: pointer;
 }
 
 button:focus {
   outline: none;
-  text-decoration: underline;
+  border-color: @blue-dark;
 }
 
 button:active {
-  text-decoration: none;
+  background-color: @black-translucent;
+  border-color: @blue-dark;
+}
+
+button.primary {
+  font-weight: 600;
+  background-color: @blue-medium;
+  border-color: @blue-medium;
+  color: @white;
+}
+
+button.primary:focus {
+  background-color: @blue-medium;
+  border-color: @blue-dark;
+}
+
+button.primary:active {
   background-color: @blue-dark;
+  border-color: @blue-dark;
+  color: @white;
 }
