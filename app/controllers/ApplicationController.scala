@@ -21,7 +21,7 @@ class ApplicationController @Inject() (
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
-  def index = SecuredAction { implicit request => Ok("yay!") }
+  def index = SecuredAction { implicit request => Ok(views.html.yay()) }
 
   def addToSlack = UserAwareAction { implicit request =>
     val maybeResult = for {
