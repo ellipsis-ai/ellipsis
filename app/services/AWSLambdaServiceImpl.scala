@@ -10,7 +10,7 @@ import com.amazonaws.services.lambda.AWSLambdaClient
 import com.amazonaws.services.lambda.model._
 import models.bots.Behavior
 import play.api.Configuration
-import play.api.libs.json.Json
+import play.api.libs.json.{JsString, JsObject, Json}
 import scala.reflect.io.{Path}
 import sys.process._
 
@@ -28,16 +28,24 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     }
   }
 
+  val CONTEXT = "context"
+  val TEAM_ID = "teamId"
   val API_BASE_URL = "apiBaseUrl"
   def apiBaseUrl: String = configuration.getString("application.apiBaseUrl").get
 
-  def invoke(functionName: String, params: Map[String, String]): String = {
-    val paramsWithApiBaseUrl = params ++ Map(API_BASE_URL -> apiBaseUrl)
+  def invoke(behavior: Behavior, params: Map[String, String]): String = {
+    val payloadJson = JsObject(
+      params.toSeq.map { case(k, v) => (k, JsString(v))} ++
+        Seq(CONTEXT -> JsObject(Seq(
+          API_BASE_URL -> JsString(apiBaseUrl),
+          TEAM_ID -> JsString(behavior.team.id)
+        )))
+    )
     val invokeRequest =
       new InvokeRequest().
-        withFunctionName(functionName).
+        withFunctionName(behavior.functionName).
         withInvocationType(InvocationType.RequestResponse).
-        withPayload(Json.toJson(paramsWithApiBaseUrl).toString())
+        withPayload(payloadJson.toString())
     val result = blockingClient.invoke(invokeRequest)
     resultStringFor(result.getPayload)
   }
@@ -58,14 +66,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     val paramString = withBuiltins.mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {
-      |
-      |   var context = {};
-      |   context.teamId = "${behavior.team.id}";
-      |
-      |   context.db = {};
-      |   context.db.putItemUrl = event.$API_BASE_URL + "/put_item";
-      |   context.db.getItemUrl = event.$API_BASE_URL + "/get_item";
-      |
+      |   var context = event.$CONTEXT;
       |   var fn = $fixedCode;
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };
