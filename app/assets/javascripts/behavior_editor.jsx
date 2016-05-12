@@ -1,11 +1,46 @@
+var Utils = {
+  arrayWithNewElementAtIndex: function(array, newElement, index) {
+    // Create a copy of the old array with the indexed element replaced
+    return array.slice(0, index).concat([newElement], array.slice(index + 1, array.length));
+  }
+};
+
 var BehaviorEditor = React.createClass({
+  propTypes: {
+    description: React.PropTypes.string,
+    nodeFunction: React.PropTypes.string,
+    args: React.PropTypes.arrayOf(React.PropTypes.shape({
+      name: React.PropTypes.string.isRequired,
+      question: React.PropTypes.string.isRequired
+    })),
+    triggers: React.PropTypes.arrayOf(React.PropTypes.string),
+    regexTrigger: React.PropTypes.string
+  },
+
   getInitialState: function() {
     return {
       description: this.props.description,
       nodeFunction: this.props.nodeFunction,
       args: this.props.args,
-      questionFocusIndex: null
+      questionFocusIndex: null,
+      triggers: this.props.triggers,
+      regexTrigger: this.props.regexTrigger
     };
+  },
+
+  addMoreTriggers: function() {
+    this.setState({
+      triggers: this.state.triggers.concat(['', '', ''])
+    }, this.focusOnFirstBlankTrigger);
+  },
+
+  focusOnFirstBlankTrigger: function() {
+    var blankTrigger = Object.keys(this.refs).find(function(key) {
+      return key.match(/trigger\d+/) && !this.refs[key].value;
+    }, this);
+    if (blankTrigger) {
+      this.refs[blankTrigger].focus();
+    }
   },
 
   onDescriptionChange: function(newDescription) {
@@ -21,6 +56,12 @@ var BehaviorEditor = React.createClass({
     this.setState({
       nodeFunction: newCode,
       args: this.getArgumentNamesFromCode(newCode)
+    });
+  },
+
+  onRegexTriggerChange: function(newRegexTrigger) {
+    this.setState({
+      regexTrigger: newRegexTrigger
     });
   },
 
@@ -40,11 +81,18 @@ var BehaviorEditor = React.createClass({
   },
 
   onArgChange: function(index, newArg) {
-    // Create a copy of the old array with the indexed value replaced
-    var newArgs = this.state.args.slice(0, index).concat([newArg], this.state.args.slice(index + 1, index.length));
+    var newArgs = Utils.arrayWithNewElementAtIndex(this.state.args, newArg, index);
     this.setState({
       args: newArgs
     }, this.updateCodeFromArgs);
+  },
+
+  onTriggerChange: function(index, event) {
+    var newTrigger = event.target.value;
+    var newTriggers = Utils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index);
+    this.setState({
+      triggers: newTriggers
+    });
   },
 
   getArgumentNamesFromCode: function(code) {
@@ -121,19 +169,26 @@ var BehaviorEditor = React.createClass({
         <div className="form-field-group">
           <p><strong>Specify one or more words or phrases that should trigger this behavior in chat.</strong></p>
           <div className="form-grouped-inputs mbl">
-            <input type="text" className="form-input" placeholder="ride" />
-            <input type="text" className="form-input" placeholder="trot" />
-            <input type="text" className="form-input" placeholder="gallop" />
+          {this.state.triggers.map(function(trigger, index) {
+            return (
+              <input type="text" className="form-input"
+                key={index}
+                ref={'trigger' + index}
+                value={trigger}
+                onChange={this.onTriggerChange.bind(this, index)}
+              />
+            );
+          }, this)}
           </div>
-          <button type="button">Add more triggers</button>
+          <button type="button" onClick={this.addMoreTriggers}>Add more triggers</button>
         </div>
 
         <div className="form-field-group">
           <p><strong>If desired, you can also specify a trigger that includes required values.</strong></p>
           <p>Write a regular expression pattern to match the trigger and capture the desired input.</p>
           <div className="form-field">
-            <Codemirror value="/ride\sto\s+(.+)/"
-              onChange={function(){}}
+            <Codemirror value={this.state.regexTrigger}
+              onChange={this.onRegexTriggerChange}
               options={{ mode: "javascript", viewportMargin: Infinity }}
             />
           </div>
