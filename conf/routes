@@ -10,7 +10,7 @@ GET        /authenticate/slack        @controllers.SocialAuthController.authenti
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp
 
-GET        /get_item/:itemId/:itemType/:teamId   @controllers.DefaultStorage.getItem(itemId: String, itemType: String, teamId: String)
+GET        /get_item/:itemId/:itemType/:token    @controllers.DefaultStorage.getItem(itemId: String, itemType: String, token: String)
 POST       /put_item                             @controllers.DefaultStorage.putItem
 
 # Map static resources from the /public folder to the /assets URL path

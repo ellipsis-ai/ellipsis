@@ -1,13 +1,13 @@
 package services
 
-import java.io.{File, PrintWriter, FileOutputStream}
+import java.io.{File, PrintWriter}
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
-import java.util.zip.{ZipEntry, ZipOutputStream}
 import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaClient
 import com.amazonaws.services.lambda.model._
+import models.{Models, InvocationToken}
 import models.bots.Behavior
 import play.api.Configuration
 import play.api.libs.json.{JsString, JsObject, Json}
@@ -15,7 +15,7 @@ import scala.reflect.io.{Path}
 import sys.process._
 
 
-class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends AWSLambdaService {
+class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val models: Models) extends AWSLambdaService {
 
   val blockingClient: AWSLambdaClient = new AWSLambdaClient(credentials)
 
@@ -29,16 +29,17 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
   }
 
   val CONTEXT = "context"
-  val TEAM_ID = "teamId"
+  val TOKEN = "token"
   val API_BASE_URL = "apiBaseUrl"
   def apiBaseUrl: String = configuration.getString("application.apiBaseUrl").get
 
   def invoke(behavior: Behavior, params: Map[String, String]): String = {
+    val token = models.runNow(InvocationToken.createFor(behavior.team))
     val payloadJson = JsObject(
       params.toSeq.map { case(k, v) => (k, JsString(v))} ++
         Seq(CONTEXT -> JsObject(Seq(
           API_BASE_URL -> JsString(apiBaseUrl),
-          TEAM_ID -> JsString(behavior.team.id)
+          TOKEN -> JsString(token.id)
         )))
     )
     val invokeRequest =
