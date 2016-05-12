@@ -1,21 +1,21 @@
 package services
 
-import java.io.{File, PrintWriter, FileOutputStream}
+import java.io.{File, PrintWriter}
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
-import java.util.zip.{ZipEntry, ZipOutputStream}
 import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaClient
 import com.amazonaws.services.lambda.model._
+import models.{Models, InvocationToken}
 import models.bots.Behavior
 import play.api.Configuration
-import play.api.libs.json.Json
+import play.api.libs.json.{JsString, JsObject, Json}
 import scala.reflect.io.{Path}
 import sys.process._
 
 
-class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends AWSLambdaService {
+class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val models: Models) extends AWSLambdaService {
 
   val blockingClient: AWSLambdaClient = new AWSLambdaClient(credentials)
 
@@ -28,72 +28,46 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
     }
   }
 
+  val CONTEXT = "context"
+  val TOKEN = "token"
   val API_BASE_URL = "apiBaseUrl"
   def apiBaseUrl: String = configuration.getString("application.apiBaseUrl").get
 
-  def invoke(functionName: String, params: Map[String, String]): String = {
-    val paramsWithApiBaseUrl = params ++ Map(API_BASE_URL -> apiBaseUrl)
+  def invoke(behavior: Behavior, params: Map[String, String]): String = {
+    val token = models.runNow(InvocationToken.createFor(behavior.team))
+    val payloadJson = JsObject(
+      params.toSeq.map { case(k, v) => (k, JsString(v))} ++
+        Seq(CONTEXT -> JsObject(Seq(
+          API_BASE_URL -> JsString(apiBaseUrl),
+          TOKEN -> JsString(token.id)
+        )))
+    )
     val invokeRequest =
       new InvokeRequest().
-        withFunctionName(functionName).
+        withFunctionName(behavior.functionName).
         withInvocationType(InvocationType.RequestResponse).
-        withPayload(Json.toJson(paramsWithApiBaseUrl).toString())
+        withPayload(payloadJson.toString())
     val result = blockingClient.invoke(invokeRequest)
     resultStringFor(result.getPayload)
   }
 
   val requireRegex = """.*require\(['"]\s*(\S+)\s*['"]\).*""".r
 
+  val alreadyIncludedModules = Array("dynamodb-doc")
+
   private def requiredModulesIn(code: String): Array[String] = {
-    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray ++ Array("request")
+    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules)
   }
 
   private def nodeCodeFor(code: String, params: Array[String], behavior: Behavior): String = {
     var fixedCode = "[“”]".r.replaceAllIn(code, "\"")
     "‘".r.replaceAllIn(fixedCode, "'")
     val paramsSupplied = params.indices.map(i => s"event.param$i")
-    val withCallbacks = paramsSupplied ++ Array("onSuccess", "onError")
-    val paramString = withCallbacks.mkString(", ")
+    val withBuiltins = paramsSupplied ++ Array("onSuccess", "onError", "context")
+    val paramString = withBuiltins.mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {
-      |   var Ellipsis = {};
-      |   Ellipsis.teamId = "${behavior.team.id}";
-      |
-      |   var request = require('request');
-      |   Ellipsis.db = {};
-      |   Ellipsis.db.itemsTable = "${AWSDynamoDBConstants.ITEMS_TABLE_NAME}";
-      |   Ellipsis.db.putItemUrl = event.$API_BASE_URL + "/put_item";
-      |   Ellipsis.db.getItemUrl = event.$API_BASE_URL + "/get_item";
-      |
-      |   Ellipsis.db.putItem = function(itemId, itemType, item, onSuccess, onError) {
-      |     request.
-      |        post( {
-      |         url: Ellipsis.db.putItemUrl,
-      |         form: { itemId: itemId, itemType: itemType, teamId: Ellipsis.teamId, item: item }
-      |        }, function (error, response, body) {
-      |                if (!error && response.statusCode == 200) {
-      |                    onSuccess(response, body);
-      |                } else {
-      |                    onError(error);
-      |                }
-      |            }
-      |        );
-      |   };
-      |
-      |   Ellipsis.db.getItem = function(itemId, itemType, onSuccess, onError) {
-      |     request.
-      |        get(
-      |         Ellipsis.db.getItemUrl + "/" + itemId + "/" + itemType + "/" + Ellipsis.teamId,
-      |         function (error, response, body) {
-      |                if (!error && response.statusCode == 200) {
-      |                    onSuccess(response, body);
-      |                } else {
-      |                    onError(error);
-      |                }
-      |            }
-      |        );
-      |   };
-      |
+      |   var context = event.$CONTEXT;
       |   var fn = $fixedCode;
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };

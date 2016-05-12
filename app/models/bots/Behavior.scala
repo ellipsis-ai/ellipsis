@@ -23,7 +23,7 @@ case class Behavior(
   def functionName: String = id
 
   def resultFor(params: Map[String, String], service: AWSLambdaService): String = {
-    service.invoke(id, params)
+    service.invoke(this, params)
   }
 
   def unlearn(lambdaService: AWSLambdaService): DBIO[Unit] = {
@@ -116,22 +116,22 @@ object BehaviorQueries {
     }.getOrElse(Array())
   }
 
-  def withoutCallbacks(params: Array[String]) = params.filterNot(ea => ea == "onSuccess" || ea == "onError")
+  def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == "onSuccess" || ea == "onError" || ea == "context")
 
   def learnCodeFor(behavior: Behavior, code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
     val actualParams = paramsIn(code)
-    val paramsWithoutCallbacks = withoutCallbacks(actualParams)
-    lambdaService.deployFunctionFor(behavior, code, paramsWithoutCallbacks)
+    val paramsWithoutBuiltin = withoutBuiltin(actualParams)
+    lambdaService.deployFunctionFor(behavior, code, paramsWithoutBuiltin)
     (for {
       b <- behavior.copy(hasCode = true).save
-      params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutCallbacks)
+      params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin)
     } yield params) transactionally
   }
 
   def learnFor(regex: Regex, code: String, teamId: String, lambdaService: AWSLambdaService): DBIO[Option[Behavior]] = {
     val numExpectedParams = regex.pattern.matcher("").groupCount()
     val actualParams = paramsIn(code)
-    val paramsWithoutCallbacks = withoutCallbacks(actualParams)
+    val paramsWithoutBuiltin = withoutBuiltin(actualParams)
     for {
       maybeTeam <- Team.find(teamId)
       maybeTrigger <- maybeTeam.map { team =>
@@ -139,7 +139,7 @@ object BehaviorQueries {
       }.getOrElse(DBIO.successful(None))
     } yield {
         maybeTrigger.map { trigger =>
-          lambdaService.deployFunctionFor(trigger.behavior, code, paramsWithoutCallbacks)
+          lambdaService.deployFunctionFor(trigger.behavior, code, paramsWithoutBuiltin)
           trigger.behavior
         }
       }

@@ -21,3 +21,4 @@ server.pid
 /RUNNING_PID
 activator
 .DS_Store
+node_modules

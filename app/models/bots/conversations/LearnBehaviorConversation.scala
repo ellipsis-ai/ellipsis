@@ -24,9 +24,9 @@ case class LearnBehaviorConversation(
 
   val CODE_PROMPT = """Great. Next describe what @ellipsis should do by writing a node.js function.
                       |
-                      |Parameters other than onSuccess and onError will be supplied by the user.
+                      |Parameters other than onSuccess, onError and context will be supplied by the user.
                       |
-                      |e.g. function(someNumber, someOtherNumber, onSuccess, onError) { onSuccess(someNumber + someOtherNumber); }
+                      |e.g. function(someNumber, someOtherNumber, onSuccess, onError, context) { onSuccess(someNumber + someOtherNumber); }
                       |
                       |""".stripMargin
 
