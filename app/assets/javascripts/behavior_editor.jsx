@@ -11,7 +11,7 @@ var BehaviorEditor = React.createClass({
   propTypes: {
     description: React.PropTypes.string,
     nodeFunction: React.PropTypes.string,
-    args: React.PropTypes.arrayOf(React.PropTypes.shape({
+    params: React.PropTypes.arrayOf(React.PropTypes.shape({
       name: React.PropTypes.string.isRequired,
       question: React.PropTypes.string.isRequired
     })),
@@ -23,7 +23,7 @@ var BehaviorEditor = React.createClass({
     return {
       description: this.props.description,
       nodeFunction: this.props.nodeFunction,
-      args: this.props.args,
+      params: this.props.params,
       questionFocusIndex: null,
       triggers: this.props.triggers,
       regexTrigger: this.props.regexTrigger
@@ -57,7 +57,7 @@ var BehaviorEditor = React.createClass({
   onCodeChange: function(newCode) {
     this.setState({
       nodeFunction: newCode,
-      args: this.getArgumentNamesFromCode(newCode)
+      params: this.getParamNamesFromCode(newCode)
     });
   },
 
@@ -67,7 +67,7 @@ var BehaviorEditor = React.createClass({
     });
   },
 
-  updateCodeFromArgs: function() {
+  updateCodeFromParams: function() {
     var newFunction = this.state.nodeFunction.replace(/^\s*function\(.+?\)/, this.getFunctionPrefix());
     this.setState({
       nodeFunction: newFunction
@@ -75,18 +75,18 @@ var BehaviorEditor = React.createClass({
   },
 
   onAddQuestionClick: function() {
-    var newArg = { name: 'userInput' + (this.state.args.length + 1), question: '' };
+    var newParam = { name: 'userInput' + (this.state.params.length + 1), question: '' };
     this.setState({
-      args: this.state.args.concat([newArg]),
-      questionFocusIndex: this.state.args.length
-    }, this.updateCodeFromArgs);
+      params: this.state.params.concat([newParam]),
+      questionFocusIndex: this.state.params.length
+    }, this.updateCodeFromParams);
   },
 
-  onArgChange: function(index, newArg) {
-    var newArgs = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.args, newArg, index);
+  onParamChange: function(index, newParam) {
+    var newParams = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.params, newParam, index);
     this.setState({
-      args: newArgs
-    }, this.updateCodeFromArgs);
+      params: newParams
+    }, this.updateCodeFromParams);
   },
 
   onTriggerChange: function(index, newTrigger) {
@@ -96,27 +96,27 @@ var BehaviorEditor = React.createClass({
     });
   },
 
-  getArgumentNamesFromCode: function(code) {
+  getParamNamesFromCode: function(code) {
     var matches = code.match(/^\s*function\((.+)\)/);
     if (!matches || matches.length < 2) {
       return [];
     }
-    var args = matches[1].split(',').map(function(arg) {
-      return arg.replace(/(^\s*)|(\s*$)/g, ''); // trim spaces
+    var params = matches[1].split(',').map(function(param) {
+      return param.replace(/(^\s*)|(\s*$)/g, ''); // trim spaces
     });
 
-    // last two arguments are reserved for onSuccess/onError
-    return args.slice(0, args.length - 2).map(function(arg, index) {
+    // last two params are reserved for onSuccess/onError
+    return params.slice(0, params.length - 2).map(function(param, index) {
       return {
-        name: arg,
-        question: this.state.args[index] ? this.state.args[index].question : ''
+        name: param,
+        question: this.state.params[index] ? this.state.params[index].question : ''
       };
     }, this);
   },
 
   getFunctionPrefix: function() {
     return 'function(' +
-      this.state.args.map(function(arg) { return arg.name; }).join(', ') +
+      this.state.params.map(function(param) { return param.name; }).join(', ') +
       ', onSuccess, onError)';
   },
 
@@ -139,10 +139,10 @@ var BehaviorEditor = React.createClass({
           <p>Write one or more questions to ask the user for input. Each one has a
           programming-friendly label that can be modified for clarity if desired.</p>
 
-          {this.state.args.map(function(arg, index) {
+          {this.state.params.map(function(param, index) {
             return (
-              <BehaviorEditorUserInputDefinition key={'BehaviorEditorUserInputDefinition' + index} name={arg.name} question={arg.question}
-                onChange={this.onArgChange.bind(this, index)} shouldGrabFocus={this.state.questionFocusIndex == index} />
+              <BehaviorEditorUserInputDefinition key={'BehaviorEditorUserInputDefinition' + index} name={param.name} question={param.question}
+                onChange={this.onParamChange.bind(this, index)} shouldGrabFocus={this.state.questionFocusIndex == index} />
             );
           }, this)}
 
