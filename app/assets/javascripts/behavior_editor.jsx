@@ -36,7 +36,7 @@ var BehaviorEditor = React.createClass({
 
   focusOnFirstBlankTrigger: function() {
     var blankTrigger = Object.keys(this.refs).find(function(key) {
-      return key.match(/trigger\d+/) && !this.refs[key].value;
+      return key.match(/^trigger\d+$/) && !this.refs[key].value;
     }, this);
     if (blankTrigger) {
       this.refs[blankTrigger].focus();
@@ -140,7 +140,7 @@ var BehaviorEditor = React.createClass({
 
           {this.state.args.map(function(arg, index) {
             return (
-              <BehaviorEditorUserInputDefinition key={index} name={arg.name} question={arg.question}
+              <BehaviorEditorUserInputDefinition key={'BehaviorEditorUserInputDefinition' + index} name={arg.name} question={arg.question}
                 onChange={this.onArgChange.bind(this, index)} shouldGrabFocus={this.state.questionFocusIndex == index} />
             );
           }, this)}
@@ -172,7 +172,7 @@ var BehaviorEditor = React.createClass({
           {this.state.triggers.map(function(trigger, index) {
             return (
               <input type="text" className="form-input"
-                key={index}
+                key={'BehaviorEditorTrigger' + index}
                 ref={'trigger' + index}
                 value={trigger}
                 onChange={this.onTriggerChange.bind(this, index)}
