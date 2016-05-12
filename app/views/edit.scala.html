@@ -68,7 +68,15 @@
 </header>
 <section class="bg-light pbxxxxl border-emphasis-bottom"><div class="container ptxl pbm">
   <h1>Edit a behavior</h1>
-  <div id="editorContainer"></div>
+  <div id="editorContainer">
+    <script id="editorData">
+{
+  "description": "Bang two coconuts together",
+  "nodeFunction": "function(userInput1, onSuccess, onError) {\n  onSuccess(\"*clop clop clop clop*\\nYou have arrived at \" + userInput);\n}\n",
+  "args": [{ "name": "userInput1", "question": "" }]
+}
+  </script>
+  </div>
   <script data-main='@routes.Assets.versioned("javascripts/main.js")' src='@routes.Assets.versioned("lib/requirejs/require.js")'></script>
 </div></section>
 </body>

@@ -8,11 +8,6 @@ requirejs.config({
 
 define(function(require) {
   var myBehaviorEditor = require('./behavior_editor');
-  myBehaviorEditor.load({
-    description: "Bang two coconuts together",
-    nodeFunction: 'function(userInput1, onSuccess, onError) {\n' +
-      '  onSuccess("*clop clop clop clop*\\nYou have arrived at " + userInput);\n' +
-      '}\n',
-    args: [{ name: 'userInput1', question: '' }]
-  });
+  var data = JSON.parse(document.getElementById('editorData').text);
+  myBehaviorEditor.load(data);
 });
