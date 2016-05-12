@@ -62,13 +62,14 @@
   <div id="editorContainer"></div>
   <script type='text/javascript' src='@routes.Assets.versioned("javascripts/behavior_editor.js")'></script>
   <script>
-    var myBehaviorEditor = React.createElement(BehaviorEditor, {
+    var jsonData = {
       description: "Bang two coconuts together",
-      nodeFunction: 'function(userInput1, onSuccess, onError) {\n' +
-        '  onSuccess("*clop clop clop clop*\\nYou have arrived at " + userInput);\n' +
-        '}\n',
-      args: [{ name: 'userInput1', question: '' }]
-    });
+      nodeFunction: "function(userInput1, onSuccess, onError) {\n  onSuccess(\"*clop clop clop clop*\\nYou have arrived at \" + userInput);\n}\n",
+      args: [{ "name": "userInput1", "question": "" }],
+      triggers: ["ride", "trot", "gallop"],
+      regexTrigger: "/ride\\sto\\s+(.+)/"
+    };
+    var myBehaviorEditor = React.createElement(BehaviorEditor, jsonData);
     ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
   </script>
 </div></section>

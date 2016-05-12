@@ -1,11 +1,48 @@
+var BehaviorEditorUtils = {
+  arrayWithNewElementAtIndex: function(array, newElement, index) {
+    // Create a copy of the old array with the indexed element replaced
+    var newArray = array.slice();
+    newArray[index] = newElement;
+    return newArray;
+  }
+};
+
 var BehaviorEditor = React.createClass({
+  propTypes: {
+    description: React.PropTypes.string,
+    nodeFunction: React.PropTypes.string,
+    args: React.PropTypes.arrayOf(React.PropTypes.shape({
+      name: React.PropTypes.string.isRequired,
+      question: React.PropTypes.string.isRequired
+    })),
+    triggers: React.PropTypes.arrayOf(React.PropTypes.string),
+    regexTrigger: React.PropTypes.string
+  },
+
   getInitialState: function() {
     return {
       description: this.props.description,
       nodeFunction: this.props.nodeFunction,
       args: this.props.args,
-      questionFocusIndex: null
+      questionFocusIndex: null,
+      triggers: this.props.triggers,
+      regexTrigger: this.props.regexTrigger
     };
+  },
+
+  addMoreTriggers: function() {
+    this.setState({
+      triggers: this.state.triggers.concat(['', '', ''])
+    }, this.focusOnFirstBlankTrigger);
+  },
+
+  focusOnFirstBlankTrigger: function() {
+    var blankTrigger = Object.keys(this.refs).find(function(key) {
+      return key.match(/^trigger\d+$/) && this.refs[key].isEmpty();
+    }, this);
+    if (blankTrigger) {
+      this.refs[blankTrigger].focus();
+    }
   },
 
   onDescriptionChange: function(newDescription) {
@@ -21,6 +58,12 @@ var BehaviorEditor = React.createClass({
     this.setState({
       nodeFunction: newCode,
       args: this.getArgumentNamesFromCode(newCode)
+    });
+  },
+
+  onRegexTriggerChange: function(newRegexTrigger) {
+    this.setState({
+      regexTrigger: newRegexTrigger
     });
   },
 
@@ -40,11 +83,17 @@ var BehaviorEditor = React.createClass({
   },
 
   onArgChange: function(index, newArg) {
-    // Create a copy of the old array with the indexed value replaced
-    var newArgs = this.state.args.slice(0, index).concat([newArg], this.state.args.slice(index + 1, index.length));
+    var newArgs = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.args, newArg, index);
     this.setState({
       args: newArgs
     }, this.updateCodeFromArgs);
+  },
+
+  onTriggerChange: function(index, newTrigger) {
+    var newTriggers = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index);
+    this.setState({
+      triggers: newTriggers
+    });
   },
 
   getArgumentNamesFromCode: function(code) {
@@ -92,7 +141,7 @@ var BehaviorEditor = React.createClass({
 
           {this.state.args.map(function(arg, index) {
             return (
-              <BehaviorEditorUserInputDefinition key={index} name={arg.name} question={arg.question}
+              <BehaviorEditorUserInputDefinition key={'BehaviorEditorUserInputDefinition' + index} name={arg.name} question={arg.question}
                 onChange={this.onArgChange.bind(this, index)} shouldGrabFocus={this.state.questionFocusIndex == index} />
             );
           }, this)}
@@ -121,19 +170,26 @@ var BehaviorEditor = React.createClass({
         <div className="form-field-group">
           <p><strong>Specify one or more words or phrases that should trigger this behavior in chat.</strong></p>
           <div className="form-grouped-inputs mbl">
-            <input type="text" className="form-input" placeholder="ride" />
-            <input type="text" className="form-input" placeholder="trot" />
-            <input type="text" className="form-input" placeholder="gallop" />
+          {this.state.triggers.map(function(trigger, index) {
+            return (
+              <BehaviorEditorInput
+                key={'BehaviorEditorTrigger' + index}
+                ref={'trigger' + index}
+                value={trigger}
+                onChange={this.onTriggerChange.bind(this, index)}
+              />
+            );
+          }, this)}
           </div>
-          <button type="button">Add more triggers</button>
+          <button type="button" onClick={this.addMoreTriggers}>Add more triggers</button>
         </div>
 
         <div className="form-field-group">
           <p><strong>If desired, you can also specify a trigger that includes required values.</strong></p>
           <p>Write a regular expression pattern to match the trigger and capture the desired input.</p>
           <div className="form-field">
-            <Codemirror value="/ride\sto\s+(.+)/"
-              onChange={function(){}}
+            <Codemirror value={this.state.regexTrigger}
+              onChange={this.onRegexTriggerChange}
               options={{ mode: "javascript", viewportMargin: Infinity }}
             />
           </div>
@@ -172,31 +228,53 @@ var BehaviorEditorDescription = React.createClass({
 });
 
 var BehaviorEditorUserInputDefinition = React.createClass({
-  onQuestionChange: function(event) {
-    this.props.onChange({ name: this.props.name, question: event.target.value });
-  },
-
-  onNameChange: function(event) {
-    this.props.onChange({ name: event.target.value, question: this.props.question });
+  onChange: function(event) {
+    this.props.onChange({ name: this.refs.name.value, question: this.refs.question.value });
   },
 
   render: function() {
     return (
       <div className="form-grouped-inputs mbs">
         <input type="text"
+          ref="question"
           className="form-input"
           placeholder="Where would you like to go?"
           autoFocus={this.props.shouldGrabFocus}
           value={this.props.question}
-          onChange={this.onQuestionChange}
+          onChange={this.onChange}
         />
         <input type="text"
+          ref="name"
           className="form-input type-monospace"
           placeholder="userInput"
           value={this.props.name}
-          onChange={this.onNameChange}
+          onChange={this.onChange}
         />
       </div>
+    );
+  }
+});
+
+var BehaviorEditorInput = React.createClass({
+  onChange: function() {
+    this.props.onChange(this.refs.input.value);
+  },
+
+  isEmpty: function() {
+    return !this.refs.input.value;
+  },
+
+  focus: function() {
+    this.refs.input.focus();
+  },
+
+  render: function() {
+    return (
+      <input type="text" className="form-input"
+        ref="input"
+        value={this.props.value}
+        onChange={this.onChange}
+      />
     );
   }
 });
