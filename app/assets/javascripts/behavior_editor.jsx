@@ -1,4 +1,4 @@
-var Utils = {
+var BehaviorEditorUtils = {
   arrayWithNewElementAtIndex: function(array, newElement, index) {
     // Create a copy of the old array with the indexed element replaced
     return array.slice(0, index).concat([newElement], array.slice(index + 1, array.length));
@@ -81,7 +81,7 @@ var BehaviorEditor = React.createClass({
   },
 
   onArgChange: function(index, newArg) {
-    var newArgs = Utils.arrayWithNewElementAtIndex(this.state.args, newArg, index);
+    var newArgs = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.args, newArg, index);
     this.setState({
       args: newArgs
     }, this.updateCodeFromArgs);
@@ -89,7 +89,7 @@ var BehaviorEditor = React.createClass({
 
   onTriggerChange: function(index, event) {
     var newTrigger = event.target.value;
-    var newTriggers = Utils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index);
+    var newTriggers = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index);
     this.setState({
       triggers: newTriggers
     });
