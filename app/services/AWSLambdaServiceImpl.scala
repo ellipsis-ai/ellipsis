@@ -44,8 +44,10 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration) extends 
 
   val requireRegex = """.*require\(['"]\s*(\S+)\s*['"]\).*""".r
 
+  val alreadyIncludedModules = Array("dynamodb-doc")
+
   private def requiredModulesIn(code: String): Array[String] = {
-    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray
+    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules)
   }
 
   private def nodeCodeFor(code: String, params: Array[String], behavior: Behavior): String = {
