@@ -35,6 +35,8 @@
 @pink-medium: hsl(341, 93%, 65%);
 @green-light: hsl(127, 93%, 63%);
 
+@border-color: @blue-faded;
+
 body, input, select, textarea {
   font-family: 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
 }
@@ -264,6 +266,31 @@ h6 {
   letter-spacing: 0.1em;
 }
 
+/* Columns */
+
+.columns {
+  float: left;
+  width: 100%;
+}
+
+.column {
+  float: left;
+  padding-right: @l;
+  box-sizing: border-box;
+}
+
+.column:last-child {
+  padding-right: 0;
+}
+
+.column-one-quarter {
+  width: 25%;
+}
+
+.column-three-quarters {
+  width: 75%;
+}
+
 /* Rules */
 
 hr {
@@ -272,8 +299,13 @@ hr {
   border: none;
   background-color: @pink-medium;
   border-radius: @xs;
-  margin: @l 0 @xxl -@xxxxl*2;
-  padding: 0 0 0 @xxxxl*2;
+  margin: @l 0 @xxl 0;
+}
+
+hr.form-border {
+  height: @xxs;
+  background-color: @border-color;
+  border-radius: 0;
 }
 
 /* Forms */
@@ -296,7 +328,7 @@ input, button, select, textarea, .form-field {
 .form-field {
   border-width: @border-width;
   border-style: solid;
-  border-color: @blue-faded;
+  border-color: @border-color;
   border-radius: @border-radius;
   box-sizing: border-box;
   .bg-white();
@@ -318,6 +350,13 @@ input, button, select, textarea, .form-field {
 .form-input:focus, .form-field:focus {
   outline: none;
   border-color: @pink-medium;
+}
+
+.form-input-borderless {
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  border-radius: 0;
 }
 
 .form-grouped-inputs {

@@ -10,7 +10,7 @@
       <script>
         var jsonData = {
           description: "Bang two coconuts together",
-          nodeFunction: "function(userInput1, onSuccess, onError) {\n  onSuccess(\"*clop clop clop clop*\\nYou have arrived at \" + userInput);\n}\n",
+          nodeFunction: "onSuccess(\"*clop clop clop clop*\\nYou have arrived at \" + userInput);",
           params: [{ "name": "userInput1", "question": "" }],
           triggers: ["ride", "trot", "gallop"],
           regexTrigger: "/ride\\sto\\s+(.+)/"

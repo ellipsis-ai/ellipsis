@@ -56,8 +56,7 @@ var BehaviorEditor = React.createClass({
 
   onCodeChange: function(newCode) {
     this.setState({
-      nodeFunction: newCode,
-      params: this.getParamNamesFromCode(newCode)
+      nodeFunction: newCode
     });
   },
 
@@ -67,26 +66,19 @@ var BehaviorEditor = React.createClass({
     });
   },
 
-  updateCodeFromParams: function() {
-    var newFunction = this.state.nodeFunction.replace(/^\s*function\(.+?\)/, this.getFunctionPrefix());
-    this.setState({
-      nodeFunction: newFunction
-    });
-  },
-
   onAddQuestionClick: function() {
     var newParam = { name: 'userInput' + (this.state.params.length + 1), question: '' };
     this.setState({
       params: this.state.params.concat([newParam]),
       questionFocusIndex: this.state.params.length
-    }, this.updateCodeFromParams);
+    });
   },
 
   onParamChange: function(index, newParam) {
     var newParams = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.params, newParam, index);
     this.setState({
       params: newParams
-    }, this.updateCodeFromParams);
+    });
   },
 
   onTriggerChange: function(index, newTrigger) {
@@ -94,24 +86,6 @@ var BehaviorEditor = React.createClass({
     this.setState({
       triggers: newTriggers
     });
-  },
-
-  getParamNamesFromCode: function(code) {
-    var matches = code.match(/^\s*function\((.+)\)/);
-    if (!matches || matches.length < 2) {
-      return [];
-    }
-    var params = matches[1].split(',').map(function(param) {
-      return param.replace(/(^\s*)|(\s*$)/g, ''); // trim spaces
-    });
-
-    // last two params are reserved for onSuccess/onError
-    return params.slice(0, params.length - 2).map(function(param, index) {
-      return {
-        name: param,
-        question: this.state.params[index] ? this.state.params[index].question : ''
-      };
-    }, this);
   },
 
   getFunctionPrefix: function() {
@@ -134,28 +108,28 @@ var BehaviorEditor = React.createClass({
         </div>
 
         <div className="form-field-group">
-          <p><strong>What text should @ellipsis collect from the user?</strong></p>
-
-          <p>Write one or more questions to ask the user for input. Each one has a
-          programming-friendly label that can be modified for clarity if desired.</p>
-
-          {this.state.params.map(function(param, index) {
-            return (
-              <BehaviorEditorUserInputDefinition key={'BehaviorEditorUserInputDefinition' + index} name={param.name} question={param.question}
-                onChange={this.onParamChange.bind(this, index)} shouldGrabFocus={this.state.questionFocusIndex == index} />
-            );
-          }, this)}
-
-          <button type="button" onClick={this.onAddQuestionClick}>Add another question</button>
-        </div>
-
-        <div className="form-field-group">
           <p><strong>Specify what @ellipsis should do by writing a node.js function.</strong></p>
-          <p>Each fragment of text collected from the user will be passed to the function, along
-          with <code>onSuccess</code> and <code>onError</code> callbacks that you should call with the
-          appropriate response.</p>
+
+          <p>You can have @ellipsis collect information from the user by adding one or more parameters
+          to your function, each with an associated question to ask.</p>
+
+          <p>Along with your parameters, your function will receive <code>onSuccess</code> and
+          <code>onError</code> callbacks, and a <code>context</code> object.</p>
 
           <div className="form-field">
+
+            <code>{"function("}</code>
+            {this.state.params.map(function(param, index) {
+              return (
+                <BehaviorEditorUserInputDefinition key={'BehaviorEditorUserInputDefinition' + index} name={param.name} question={param.question}
+                  onChange={this.onParamChange.bind(this, index)} shouldGrabFocus={this.state.questionFocusIndex == index} />
+              );
+            }, this)}
+
+            <button type="button" onClick={this.onAddQuestionClick}>Add another parameter</button>
+
+            <code>{", onSuccess, onError, context) {"}</code>
+            <hr className="form-border" />
             <Codemirror value={this.state.nodeFunction}
               onChange={this.onCodeChange}
               options={{
@@ -164,6 +138,8 @@ var BehaviorEditor = React.createClass({
                 viewportMargin: Infinity
               }}
             />
+            <hr className="form-border" />
+            <code>{"}"}</code>
           </div>
         </div>
 
@@ -234,22 +210,26 @@ var BehaviorEditorUserInputDefinition = React.createClass({
 
   render: function() {
     return (
-      <div className="form-grouped-inputs mbs">
-        <input type="text"
-          ref="question"
-          className="form-input"
-          placeholder="Where would you like to go?"
-          autoFocus={this.props.shouldGrabFocus}
-          value={this.props.question}
-          onChange={this.onChange}
-        />
-        <input type="text"
-          ref="name"
-          className="form-input type-monospace"
-          placeholder="userInput"
-          value={this.props.name}
-          onChange={this.onChange}
-        />
+      <div className="columns mbs">
+        <div className="column column-one-quarter">
+          <input type="text"
+            ref="name"
+            className="form-input form-input-borderless type-monospace"
+            placeholder="userInput"
+            value={this.props.name}
+            onChange={this.onChange}
+          />
+        </div>
+        <div className="column column-three-quarters">
+          <input type="text"
+            ref="question"
+            className="form-input"
+            placeholder="Where would you like to go?"
+            autoFocus={this.props.shouldGrabFocus}
+            value={this.props.question}
+            onChange={this.onChange}
+          />
+        </div>
       </div>
     );
   }
