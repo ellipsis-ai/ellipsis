@@ -23,7 +23,7 @@ case class Behavior(
   def functionName: String = id
 
   def resultFor(params: Map[String, String], service: AWSLambdaService): String = {
-    service.invoke(id, params)
+    service.invoke(this, params)
   }
 
   def unlearn(lambdaService: AWSLambdaService): DBIO[Unit] = {
