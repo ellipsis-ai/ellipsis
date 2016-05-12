@@ -1,6 +1,7 @@
-function(key, value, onSuccess, onError) {
+function(key, value, onSuccess, onError, context) {
 
-    var successFn = function() { onSuccess("Ok, got it!") };
-    Ellipsis.db.putItem(key, "stuff", value, successFn, onError);
+    var db = require("ellipsis-default-storage")(context);
+
+    db.putItem(key, "stuff", value, function() { onSuccess("Ok, got it!") }, onError);
 
 }
