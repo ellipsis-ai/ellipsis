@@ -34,6 +34,21 @@ object Team {
     findQueryFor(id).result.map(_.headOption)
   }
 
+  def findForToken(tokenId: String): DBIO[Option[Team]] = {
+    for {
+      maybeToken <- InvocationToken.find(tokenId)
+      maybeTeam <- maybeToken.map { token =>
+        if (token.isExpired || token.isUsed) {
+          DBIO.successful(None)
+        } else {
+          InvocationToken.use(token).flatMap { _ =>
+            find(token.teamId)
+          }
+        }
+      }.getOrElse(DBIO.successful(None))
+    } yield maybeTeam
+  }
+
   def create: DBIO[Team] = Team(IDs.next, "").save
 
   def save(team: Team): DBIO[Team] = {

@@ -15,8 +15,8 @@ class ServiceModule extends AbstractModule with ScalaModule {
   }
 
   @Provides
-  def provideAWSLambdaService(configuration: Configuration): AWSLambdaService = {
-    new AWSLambdaServiceImpl(configuration)
+  def provideAWSLambdaService(configuration: Configuration, models: Models): AWSLambdaService = {
+    new AWSLambdaServiceImpl(configuration, models)
   }
 
   @Provides

@@ -6,7 +6,7 @@ module.exports = {
         request.
             post({
                 url: context.apiBaseUrl + "/put_item",
-                form: {itemId: itemId, itemType: itemType, teamId: context.teamId, item: item}
+                form: {itemId: itemId, itemType: itemType, token: context.token, item: item}
             }, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     onSuccess(response, body);
@@ -20,7 +20,7 @@ module.exports = {
     getItem: function (itemId, itemType, onSuccess, onError, context) {
         request.
             get(
-            context.apiBaseUrl + "/get_item/" + itemId + "/" + itemType + "/" + context.teamId,
+            context.apiBaseUrl + "/get_item/" + itemId + "/" + itemType + "/" + context.token,
             function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     onSuccess(response, body);
