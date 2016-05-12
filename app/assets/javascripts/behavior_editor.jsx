@@ -1,7 +1,9 @@
 var BehaviorEditorUtils = {
   arrayWithNewElementAtIndex: function(array, newElement, index) {
     // Create a copy of the old array with the indexed element replaced
-    return array.slice(0, index).concat([newElement], array.slice(index + 1, array.length));
+    var newArray = array.slice();
+    newArray[index] = newElement;
+    return newArray;
   }
 };
 
@@ -36,7 +38,7 @@ var BehaviorEditor = React.createClass({
 
   focusOnFirstBlankTrigger: function() {
     var blankTrigger = Object.keys(this.refs).find(function(key) {
-      return key.match(/^trigger\d+$/) && !this.refs[key].value;
+      return key.match(/^trigger\d+$/) && this.refs[key].isEmpty();
     }, this);
     if (blankTrigger) {
       this.refs[blankTrigger].focus();
@@ -87,8 +89,7 @@ var BehaviorEditor = React.createClass({
     }, this.updateCodeFromArgs);
   },
 
-  onTriggerChange: function(index, event) {
-    var newTrigger = event.target.value;
+  onTriggerChange: function(index, newTrigger) {
     var newTriggers = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index);
     this.setState({
       triggers: newTriggers
@@ -171,7 +172,7 @@ var BehaviorEditor = React.createClass({
           <div className="form-grouped-inputs mbl">
           {this.state.triggers.map(function(trigger, index) {
             return (
-              <input type="text" className="form-input"
+              <BehaviorEditorInput
                 key={'BehaviorEditorTrigger' + index}
                 ref={'trigger' + index}
                 value={trigger}
@@ -227,31 +228,53 @@ var BehaviorEditorDescription = React.createClass({
 });
 
 var BehaviorEditorUserInputDefinition = React.createClass({
-  onQuestionChange: function(event) {
-    this.props.onChange({ name: this.props.name, question: event.target.value });
-  },
-
-  onNameChange: function(event) {
-    this.props.onChange({ name: event.target.value, question: this.props.question });
+  onChange: function(event) {
+    this.props.onChange({ name: this.refs.name.value, question: this.refs.question.value });
   },
 
   render: function() {
     return (
       <div className="form-grouped-inputs mbs">
         <input type="text"
+          ref="question"
           className="form-input"
           placeholder="Where would you like to go?"
           autoFocus={this.props.shouldGrabFocus}
           value={this.props.question}
-          onChange={this.onQuestionChange}
+          onChange={this.onChange}
         />
         <input type="text"
+          ref="name"
           className="form-input type-monospace"
           placeholder="userInput"
           value={this.props.name}
-          onChange={this.onNameChange}
+          onChange={this.onChange}
         />
       </div>
+    );
+  }
+});
+
+var BehaviorEditorInput = React.createClass({
+  onChange: function() {
+    this.props.onChange(this.refs.input.value);
+  },
+
+  isEmpty: function() {
+    return !this.refs.input.value;
+  },
+
+  focus: function() {
+    this.refs.input.focus();
+  },
+
+  render: function() {
+    return (
+      <input type="text" className="form-input"
+        ref="input"
+        value={this.props.value}
+        onChange={this.onChange}
+      />
     );
   }
 });
