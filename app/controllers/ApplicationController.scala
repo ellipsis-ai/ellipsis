@@ -104,7 +104,7 @@ class ApplicationController @Inject() (
             },
             triggers.map(ea => ea.regex.pattern.pattern())
           )
-          Ok(views.html.edit(Json.prettyPrint(Json.toJson(data))))
+          Ok(views.html.edit((Json.toJson(data).toString)))
         }).getOrElse {
           NotFound("Behavior not found")
         }
