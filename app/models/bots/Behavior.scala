@@ -137,7 +137,7 @@ object BehaviorQueries {
     lambdaService.deployFunctionFor(behavior, code, paramsWithoutBuiltin)
     (for {
       b <- behavior.copy(maybeCode = Some(code)).save
-      params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin)
+      params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin.map(ea => (ea, None)))
     } yield params) transactionally
   }
 
