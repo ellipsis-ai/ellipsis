@@ -114,22 +114,4 @@ object RegexMessageTriggerQueries {
     all.filter(_.behaviorId === behavior.id).delete.map(_ => Unit)
   }
 
-  def ensureFor(team: Team, regex: Regex): DBIO[RegexMessageTrigger] = {
-    val regexString = regex.pattern.toString
-    allWithBehaviors.
-      filter { case(trigger, (behavior, thisTeam)) => thisTeam.id === team.id }.
-      filter { case(trigger, _) => trigger.regex === regexString }.
-      result.
-      flatMap { r =>
-      r.headOption.map { existing =>
-        DBIO.successful(tuple2Trigger(existing))
-      }.getOrElse {
-        for {
-          newBehavior <- BehaviorQueries.createFor(team)
-          newRawTrigger <- DBIO.successful(RawRegexMessageTrigger(IDs.next, newBehavior.id, regexString))
-          _ <- all += newRawTrigger
-        } yield RegexMessageTrigger(newRawTrigger.id, newBehavior, regex)
-      }
-    }
-  }
 }
