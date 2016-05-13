@@ -1,12 +1,3 @@
-var BehaviorEditorUtils = {
-  arrayWithNewElementAtIndex: function(array, newElement, index) {
-    // Create a copy of the old array with the indexed element replaced
-    var newArray = array.slice();
-    newArray[index] = newElement;
-    return newArray;
-  }
-};
-
 var BehaviorEditor = React.createClass({
   propTypes: {
     description: React.PropTypes.string,
@@ -17,6 +8,21 @@ var BehaviorEditor = React.createClass({
     })),
     triggers: React.PropTypes.arrayOf(React.PropTypes.string),
     regexTrigger: React.PropTypes.string
+  },
+
+  utils: {
+    // Create a copy of an array before modifying it
+    arrayWithNewElementAtIndex: function(array, newElement, index) {
+      var newArray = array.slice();
+      newArray[index] = newElement;
+      return newArray;
+    },
+
+    arrayRemoveElementAtIndex: function(array, index) {
+      var newArray = array.slice();
+      newArray.splice(index, 1);
+      return newArray;
+    },
   },
 
   getInitialState: function() {
@@ -85,24 +91,20 @@ var BehaviorEditor = React.createClass({
   },
 
   replaceParamAtIndexWithParam: function(index, newParam) {
-    var newParams = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.params, newParam, index);
     this.setState({
-      params: newParams
+      params: this.utils.arrayWithNewElementAtIndex(this.state.params, newParam, index)
     });
   },
 
   deleteParamAtIndex: function(index) {
-    var newParams = this.state.params.slice();
-    newParams.splice(index, 1);
     this.setState({
-      params: newParams
+      params: this.utils.arrayRemoveElementAtIndex(this.state.params, index)
     });
   },
 
   onTriggerChange: function(index, newTrigger) {
-    var newTriggers = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index);
     this.setState({
-      triggers: newTriggers
+      triggers: this.utils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index)
     });
   },
 
