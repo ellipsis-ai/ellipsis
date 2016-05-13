@@ -110,6 +110,10 @@ object RegexMessageTriggerQueries {
       }
   }
 
+  def deleteAllFor(behavior: Behavior): DBIO[Unit] = {
+    all.filter(_.behaviorId === behavior.id).delete.map(_ => Unit)
+  }
+
   def ensureFor(team: Team, regex: Regex): DBIO[RegexMessageTrigger] = {
     val regexString = regex.pattern.toString
     allWithBehaviors.

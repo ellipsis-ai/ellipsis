@@ -9,6 +9,7 @@ var BehaviorEditorUtils = {
 
 var BehaviorEditor = React.createClass({
   propTypes: {
+    behaviorId: React.PropTypes.string,
     description: React.PropTypes.string,
     nodeFunction: React.PropTypes.string,
     params: React.PropTypes.arrayOf(React.PropTypes.shape({
@@ -21,6 +22,7 @@ var BehaviorEditor = React.createClass({
 
   getInitialState: function() {
     return {
+      behaviorId: this.props.behaviorId,
       description: this.props.description,
       nodeFunction: this.props.nodeFunction,
       params: this.props.params,
@@ -93,7 +95,10 @@ var BehaviorEditor = React.createClass({
 
   render: function() {
     return (
-      <form>
+      <form action="/save_behavior" method="POST">
+        <BehaviorEditorHiddenJsonInput
+          value={JSON.stringify(this.state)}
+        />
         <div className="form-field-group">
           <p><strong>In one phrase, describe what this behavior does.</strong></p>
           <p>You may also choose a short code name for reference.</p>
@@ -191,7 +196,7 @@ var BehaviorEditor = React.createClass({
             />
           </div>
         </div>
-        <button type="button" className="primary">Save and return</button>
+        <button type="submit" className="primary">Save and return</button>
 
       </form>
     );
@@ -294,6 +299,14 @@ var BehaviorEditorInput = React.createClass({
         value={this.props.value}
         onChange={this.onChange}
       />
+    );
+  }
+});
+
+var BehaviorEditorHiddenJsonInput = React.createClass({
+  render: function() {
+    return (
+      <input type="hidden" name="dataJson" value={this.props.value}/>
     );
   }
 });
