@@ -51,6 +51,12 @@ var BehaviorEditor = React.createClass({
     }
   },
 
+  deleteTriggerAtIndex: function(index) {
+    this.setState({
+      triggers: this.utils.arrayRemoveElementAtIndex(this.state.triggers, index)
+    });
+  },
+
   focusOnLastParam: function() {
     this.refs['param' + (this.state.params.length - 1)].focus();
   },
@@ -180,12 +186,22 @@ var BehaviorEditor = React.createClass({
           <div className="form-grouped-inputs mbl">
           {this.state.triggers.map(function(trigger, index) {
             return (
-              <BehaviorEditorInput
-                key={'BehaviorEditorTrigger' + index}
-                ref={'trigger' + index}
-                value={trigger}
-                onChange={this.onTriggerChange.bind(this, index)}
-              />
+              <div className="columns columns-elastic" key={'BehaviorEditorTriggerContainer' + index}>
+                <div className="column column-expand prxs">
+                  <BehaviorEditorInput
+                    key={'BehaviorEditorTrigger' + index}
+                    ref={'trigger' + index}
+                    value={trigger}
+                    onChange={this.onTriggerChange.bind(this, index)}
+                  />
+                </div>
+                <div className="column column-shrink">
+                  <BehaviorEditorDeleteButton
+                    key={'BehaviorEditorTriggerDelete' + index}
+                    onClick={this.deleteTriggerAtIndex.bind(this, index)}
+                  />
+                </div>
+              </div>
             );
           }, this)}
           </div>
@@ -277,12 +293,10 @@ var BehaviorEditorUserInputDefinition = React.createClass({
               </div>
             </div>
             <div className="column column-shrink">
-              <button className="subtle shrink" type="button" onClick={this.onDeleteClick}>
-                <img src="/assets/images/delete.svg"
-                  alt={"Delete"}
-                  title={"Delete the “" + this.props.name + "” parameter"}
-                />
-              </button>
+              <BehaviorEditorDeleteButton
+                onClick={this.onDeleteClick}
+                title={"Delete the “" + this.props.name + "” parameter"}
+              />
             </div>
           </div>
         </div>
@@ -319,6 +333,24 @@ var BehaviorEditorHiddenJsonInput = React.createClass({
   render: function() {
     return (
       <input type="hidden" name="dataJson" value={this.props.value}/>
+    );
+  }
+});
+
+var BehaviorEditorDeleteButton = React.createClass({
+  onClick: function(event) {
+    this.props.onClick();
+    this.refs.button.blur();
+  },
+
+  render: function() {
+    return (
+      <button className="subtle shrink" type="button" onMouseUp={this.onClick} ref="button">
+        <img src="/assets/images/delete.svg"
+          alt="Delete"
+          title={this.props.title || "Delete"}
+        />
+      </button>
     );
   }
 });

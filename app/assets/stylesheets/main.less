@@ -37,6 +37,7 @@
 @green-light: hsl(127, 93%, 63%);
 
 @border-color: @blue-faded;
+@border-color-focus: @pink-medium;
 
 body, input, select, textarea {
   font-family: 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
@@ -184,7 +185,7 @@ So for example:
 .border-emphasis-bottom {
   border-width: 0 0 @xs 0;
   border-style: solid;
-  border-color: @pink-medium;
+  border-color: @border-color-focus;
 }
 
 /* Foreground type utilities */
@@ -397,7 +398,7 @@ input, button, select, textarea, .form-field {
 
 .form-input:focus, .form-field:focus, .CodeMirror-focused {
   outline: none;
-  border-color: @pink-medium;
+  border-color: @border-color-focus;
 }
 
 .form-input-borderless {
@@ -413,31 +414,32 @@ input, button, select, textarea, .form-field {
 }
 
 .form-grouped-inputs {
-  .form-input {
+  .form-input, .columns > .column > .form-input {
     border-radius: 0;
-    border-bottom-width: 0;
-    height: @form-input-height - @border-width;
+    border-bottom-color: @white;
   }
-  .form-input:first-child {
+
+  & > .form-input,
+  & > .columns {
+    margin-bottom: -1px;
+  }
+
+  .form-input:first-child,
+  .columns:first-child > .column > .form-input {
     border-top-left-radius: @border-radius;
     border-top-right-radius: @border-radius;
   }
-  .form-input:last-child {
-    border-bottom-width: @border-width;
-    height: @form-input-height;
+  .form-input:last-child,
+  .columns:last-child > .column > .form-input {
+    border-bottom-color: @border-color;
     border-bottom-left-radius: @border-radius;
     border-bottom-right-radius: @border-radius;
   }
-  .form-input:focus {
-    border-bottom-width: @border-width;
-    height: @form-input-height;
-  }
-  .form-input:focus + .form-input {
-    border-top-width: 0;
-    height: @form-input-height - @border-width*2;
-  }
-  .form-input:focus + .form-input:last-child {
-    height: @form-input-height - @border-width;
+  .form-input:focus,
+  .columns > .column > .form-input:focus {
+    border-bottom-color: @border-color-focus;
+    position: relative;
+    z-index: 1;
   }
 }
 
