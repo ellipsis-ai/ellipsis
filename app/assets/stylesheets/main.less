@@ -419,12 +419,14 @@ input, button, select, textarea, .form-field {
     height: @form-input-height - @border-width;
   }
   .form-input:first-child {
-    border-radius: @border-radius @border-radius 0 0;
+    border-top-left-radius: @border-radius;
+    border-top-right-radius: @border-radius;
   }
   .form-input:last-child {
     border-bottom-width: @border-width;
     height: @form-input-height;
-    border-radius: 0 0 @border-radius @border-radius;
+    border-bottom-left-radius: @border-radius;
+    border-bottom-right-radius: @border-radius;
   }
   .form-input:focus {
     border-bottom-width: @border-width;

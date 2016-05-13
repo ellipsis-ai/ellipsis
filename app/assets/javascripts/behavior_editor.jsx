@@ -105,15 +105,15 @@ var BehaviorEditor = React.createClass({
         </div>
 
         <div className="form-field-group">
-          <p><strong>Specify what @ellipsis should do by writing a node.js function.</strong></p>
+          <p><strong>Implement the behavior by writing a node.js function.</strong></p>
 
-          <p>You can have @ellipsis collect information from the user by adding one or more parameters
-          to your function, each with an associated question to ask.</p>
+          <p>If you need to collect information from the user, add one or more parameters
+          to your function. For each one, include a question for @ellipsis to ask the user.</p>
 
           <p>
-            <span>Along with your parameters, your function will receive </span>
-            <code>onSuccess</code> and <code>onError</code>
-            <span> callbacks, as well a </span><code>context</code> object.
+            <span>Along with any parameters you’ve specified, your function will receive </span>
+            <code>onSuccess</code> and <code>onError</code><span> callbacks, as well a </span>
+            <code>context</code> object.
           </p>
 
           <div>
@@ -132,6 +132,7 @@ var BehaviorEditor = React.createClass({
                         question={param.question}
                         onChange={this.onParamChange.bind(this, index)}
                         hasMargin={index > 0}
+                        id={index}
                       />
                     );
                   }, this)}
@@ -152,6 +153,7 @@ var BehaviorEditor = React.createClass({
                 onChange={this.onCodeChange}
                 options={{
                   mode: "javascript",
+                  lineWrapping: true,
                   viewportMargin: Infinity
                 }}
               />
@@ -251,14 +253,21 @@ var BehaviorEditorUserInputDefinition = React.createClass({
           </div>
         </div>
         <div className="column column-three-quarters">
-          <input type="text"
-            ref="question"
-            className="form-input"
-            placeholder="Write a question to ask the user for this parameter"
-            autoFocus={this.props.shouldGrabFocus}
-            value={this.props.question}
-            onChange={this.onChange}
-          />
+          <div className="form-field-with-prefix">
+            <label className="form-input-prefix"
+              htmlFor={"question" + this.props.id}
+              title="Write a question for @ellipsis to ask the user to provide this parameter."
+            >Q:</label>
+            <input type="text"
+              id={"question" + this.props.id}
+              ref="question"
+              className="form-input"
+              placeholder="Write a question to ask the user for this parameter"
+              autoFocus={this.props.shouldGrabFocus}
+              value={this.props.question}
+              onChange={this.onChange}
+            />
+          </div>
         </div>
       </div>
     );
