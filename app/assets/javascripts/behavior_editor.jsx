@@ -70,21 +70,21 @@ var BehaviorEditor = React.createClass({
     });
   },
 
-  onAddParamClick: function() {
+  addParam: function() {
     var newParam = { name: 'userInput' + (this.state.params.length + 1), question: '' };
     this.setState({
       params: this.state.params.concat([newParam])
     }, this.focusOnLastParam);
   },
 
-  onParamChange: function(index, newParam) {
+  replaceParamAtIndexWithParam: function(index, newParam) {
     var newParams = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.params, newParam, index);
     this.setState({
       params: newParams
     });
   },
 
-  onParamDelete: function(index) {
+  deleteParamAtIndex: function(index) {
     var newParams = this.state.params.slice();
     newParams.splice(index, 1);
     this.setState({
@@ -136,8 +136,8 @@ var BehaviorEditor = React.createClass({
                     ref={'param' + index}
                     name={param.name}
                     question={param.question}
-                    onChange={this.onParamChange.bind(this, index)}
-                    onDelete={this.onParamDelete.bind(this, index)}
+                    onChange={this.replaceParamAtIndexWithParam.bind(this, index)}
+                    onDelete={this.deleteParamAtIndex.bind(this, index)}
                     hasMargin={index > 0}
                     id={index}
                   />
@@ -149,7 +149,7 @@ var BehaviorEditor = React.createClass({
                 <code className="type-weak type-s">onSuccess,<br />onError,<br />context</code>
               </div>
               <div className="column column-three-quarters ptxl align-c">
-                <button type="button" onClick={this.onAddParamClick}>Add parameter</button>
+                <button type="button" onClick={this.addParam}>Add parameter</button>
               </div>
             </div>
             <div>
