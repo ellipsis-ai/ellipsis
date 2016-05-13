@@ -21,7 +21,7 @@ case class Behavior(
   def description: String = maybeDescription.getOrElse("")
 
   // TODO: for reals
-  def code: String = ""
+  def code: String = "function(userInput1, onSuccess, onError) {\n  onSuccess(\"*clop clop clop clop*\\nYou have arrived at \" + userInput);\n}\n"
 
   lazy val conf = Play.current.configuration
 
