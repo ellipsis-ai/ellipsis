@@ -45,6 +45,10 @@ var BehaviorEditor = React.createClass({
     }
   },
 
+  focusOnLastParam: function() {
+    this.refs['param' + (this.state.params.length - 1)].focus();
+  },
+
   onDescriptionChange: function(newDescription) {
     this.setState({ description: newDescription });
   },
@@ -56,8 +60,7 @@ var BehaviorEditor = React.createClass({
 
   onCodeChange: function(newCode) {
     this.setState({
-      nodeFunction: newCode,
-      params: this.getParamNamesFromCode(newCode)
+      nodeFunction: newCode
     });
   },
 
@@ -67,26 +70,18 @@ var BehaviorEditor = React.createClass({
     });
   },
 
-  updateCodeFromParams: function() {
-    var newFunction = this.state.nodeFunction.replace(/^\s*function\(.+?\)/, this.getFunctionPrefix());
-    this.setState({
-      nodeFunction: newFunction
-    });
-  },
-
-  onAddQuestionClick: function() {
+  onAddParamClick: function() {
     var newParam = { name: 'userInput' + (this.state.params.length + 1), question: '' };
     this.setState({
-      params: this.state.params.concat([newParam]),
-      questionFocusIndex: this.state.params.length
-    }, this.updateCodeFromParams);
+      params: this.state.params.concat([newParam])
+    }, this.focusOnLastParam);
   },
 
   onParamChange: function(index, newParam) {
     var newParams = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.params, newParam, index);
     this.setState({
       params: newParams
-    }, this.updateCodeFromParams);
+    });
   },
 
   onTriggerChange: function(index, newTrigger) {
@@ -94,30 +89,6 @@ var BehaviorEditor = React.createClass({
     this.setState({
       triggers: newTriggers
     });
-  },
-
-  getParamNamesFromCode: function(code) {
-    var matches = code.match(/^\s*function\((.+)\)/);
-    if (!matches || matches.length < 2) {
-      return [];
-    }
-    var params = matches[1].split(',').map(function(param) {
-      return param.replace(/(^\s*)|(\s*$)/g, ''); // trim spaces
-    });
-
-    // last two params are reserved for onSuccess/onError
-    return params.slice(0, params.length - 2).map(function(param, index) {
-      return {
-        name: param,
-        question: this.state.params[index] ? this.state.params[index].question : ''
-      };
-    }, this);
-  },
-
-  getFunctionPrefix: function() {
-    return 'function(' +
-      this.state.params.map(function(param) { return param.name; }).join(', ') +
-      ', onSuccess, onError)';
   },
 
   render: function() {
@@ -134,36 +105,62 @@ var BehaviorEditor = React.createClass({
         </div>
 
         <div className="form-field-group">
-          <p><strong>What text should @ellipsis collect from the user?</strong></p>
+          <p><strong>Implement the behavior by writing a node.js function.</strong></p>
 
-          <p>Write one or more questions to ask the user for input. Each one has a
-          programming-friendly label that can be modified for clarity if desired.</p>
+          <p>If you need to collect information from the user, add one or more parameters
+          to your function. For each one, include a question for @ellipsis to ask the user.</p>
 
-          {this.state.params.map(function(param, index) {
-            return (
-              <BehaviorEditorUserInputDefinition key={'BehaviorEditorUserInputDefinition' + index} name={param.name} question={param.question}
-                onChange={this.onParamChange.bind(this, index)} shouldGrabFocus={this.state.questionFocusIndex == index} />
-            );
-          }, this)}
+          <p>
+            <span>Along with any parameters you’ve specified, your function will receive </span>
+            <code>onSuccess</code> and <code>onError</code><span> callbacks, as well a </span>
+            <code>context</code> object.
+          </p>
 
-          <button type="button" onClick={this.onAddQuestionClick}>Add another question</button>
-        </div>
-
-        <div className="form-field-group">
-          <p><strong>Specify what @ellipsis should do by writing a node.js function.</strong></p>
-          <p>Each fragment of text collected from the user will be passed to the function, along
-          with <code>onSuccess</code> and <code>onError</code> callbacks that you should call with the
-          appropriate response.</p>
-
-          <div className="form-field">
-            <Codemirror value={this.state.nodeFunction}
-              onChange={this.onCodeChange}
-              options={{
-                lineNumbers: true,
-                mode: "javascript",
-                viewportMargin: Infinity
-              }}
-            />
+          <div>
+            <div>
+              <code className="type-weak type-s">{"function ("}</code>
+            </div>
+            <div className="columns columns-elastic">
+              <div className="column column-expand">
+                <div className="plxl">
+                  {this.state.params.map(function(param, index) {
+                    return (
+                      <BehaviorEditorUserInputDefinition
+                        key={'BehaviorEditorUserInputDefinition' + index}
+                        ref={'param' + index}
+                        name={param.name}
+                        question={param.question}
+                        onChange={this.onParamChange.bind(this, index)}
+                        hasMargin={index > 0}
+                        id={index}
+                      />
+                    );
+                  }, this)}
+                </div>
+              </div>
+              <div className="column column-shrink align-b">
+                <button className="shrink" type="button" onClick={this.onAddParamClick}><img src="/assets/images/plus.svg" alt="Add parameter" /></button>
+              </div>
+            </div>
+            <div className="plxl">
+              <code className="type-weak type-s">onSuccess,<br />onError,<br />context</code>
+            </div>
+            <div>
+              <code className="type-weak type-s">{") {"}</code>
+            </div>
+            <div className="mll">
+              <Codemirror value={this.state.nodeFunction}
+                onChange={this.onCodeChange}
+                options={{
+                  mode: "javascript",
+                  lineWrapping: true,
+                  viewportMargin: Infinity
+                }}
+              />
+            </div>
+            <div>
+              <code className="type-weak type-s">{"}"}</code>
+            </div>
           </div>
         </div>
 
@@ -187,7 +184,7 @@ var BehaviorEditor = React.createClass({
         <div className="form-field-group">
           <p><strong>If desired, you can also specify a trigger that includes required values.</strong></p>
           <p>Write a regular expression pattern to match the trigger and capture the desired input.</p>
-          <div className="form-field">
+          <div className="">
             <Codemirror value={this.state.regexTrigger}
               onChange={this.onRegexTriggerChange}
               options={{ mode: "javascript", viewportMargin: Infinity }}
@@ -232,24 +229,46 @@ var BehaviorEditorUserInputDefinition = React.createClass({
     this.props.onChange({ name: this.refs.name.value, question: this.refs.question.value });
   },
 
+  focus: function() {
+    this.refs.question.focus();
+  },
+
   render: function() {
     return (
-      <div className="form-grouped-inputs mbs">
-        <input type="text"
-          ref="question"
-          className="form-input"
-          placeholder="Where would you like to go?"
-          autoFocus={this.props.shouldGrabFocus}
-          value={this.props.question}
-          onChange={this.onChange}
-        />
-        <input type="text"
-          ref="name"
-          className="form-input type-monospace"
-          placeholder="userInput"
-          value={this.props.name}
-          onChange={this.onChange}
-        />
+      <div className={"columns " + (this.props.hasMargin ? "mts" : "")}>
+        <div className="column column-one-quarter">
+          <div className="columns columns-elastic">
+            <div className="column column-expand prs">
+              <input type="text"
+                ref="name"
+                className="form-input form-input-borderless type-monospace type-s"
+                placeholder="userInput"
+                value={this.props.name}
+                onChange={this.onChange}
+              />
+            </div>
+            <div className="column column-shrink align-b">
+              <code>,</code>
+            </div>
+          </div>
+        </div>
+        <div className="column column-three-quarters">
+          <div className="form-field-with-prefix">
+            <label className="form-input-prefix"
+              htmlFor={"question" + this.props.id}
+              title="Write a question for @ellipsis to ask the user to provide this parameter."
+            >Q:</label>
+            <input type="text"
+              id={"question" + this.props.id}
+              ref="question"
+              className="form-input"
+              placeholder="Write a question to ask the user for this parameter"
+              autoFocus={this.props.shouldGrabFocus}
+              value={this.props.question}
+              onChange={this.onChange}
+            />
+          </div>
+        </div>
       </div>
     );
   }

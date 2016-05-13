@@ -16,7 +16,7 @@
 @type-xl: 43px;
 @type-xxl: 59px;
 
-@border-width: @xxs;
+@border-width: 1px;
 @border-radius: @s;
 
 /* Colors */
@@ -31,9 +31,12 @@
 @blue-medium-text: hsl(231, 74%, 57%);
 @blue-medium: hsl(231, 97%, 64%);
 @blue-faded: hsl(231, 11%, 81%);
+@blue-faded-light: hsl(231, 12%, 90%);
 @blue-faded-dark: hsl(231, 22%, 43%);
 @pink-medium: hsl(341, 93%, 65%);
 @green-light: hsl(127, 93%, 63%);
+
+@border-color: @blue-faded;
 
 body, input, select, textarea {
   font-family: 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
@@ -88,27 +91,27 @@ So for example:
 
 .generate-margin(@size, @size-name) {
   .ma@{size-name} {
-    margin: @size;
+    margin: @size !important;
   }
   .mv@{size-name} {
-    margin-top: @size;
-    margin-bottom: @size;
+    margin-top: @size !important;
+    margin-bottom: @size !important;
   }
   .mh@{size-name} {
-    margin-left: @size;
-    margin-right: @size;
+    margin-left: @size !important;
+    margin-right: @size !important;
   }
   .mt@{size-name} {
-    margin-top: @size;
+    margin-top: @size !important;
   }
   .mb@{size-name} {
-    margin-bottom: @size;
+    margin-bottom: @size !important;
   }
   .ml@{size-name} {
-    margin-left: @size;
+    margin-left: @size !important;
   }
   .mr@{size-name} {
-    margin-right: @size;
+    margin-right: @size !important;
   }
 }
 
@@ -120,30 +123,31 @@ So for example:
 .generate-margin(@m, m);
 .generate-margin(@s, s);
 .generate-margin(@xs, xs);
+.generate-margin(0, n);
 
 .generate-padding(@size, @size-name) {
   .pa@{size-name} {
-    padding: @size;
+    padding: @size !important;
   }
   .pv@{size-name} {
-    padding-top: @size;
-    padding-bottom: @size;
+    padding-top: @size !important;
+    padding-bottom: @size !important;
   }
   .ph@{size-name} {
-    padding-left: @size;
-    padding-right: @size;
+    padding-left: @size !important;
+    padding-right: @size !important;
   }
   .pt@{size-name} {
-    padding-top: @size;
+    padding-top: @size !important;
   }
   .pb@{size-name} {
-    padding-bottom: @size;
+    padding-bottom: @size !important;
   }
   .pl@{size-name} {
-    padding-left: @size;
+    padding-left: @size !important;
   }
   .pr@{size-name} {
-    padding-right: @size;
+    padding-right: @size !important;
   }
 }
 
@@ -155,6 +159,7 @@ So for example:
 .generate-padding(@m, m);
 .generate-padding(@s, s);
 .generate-padding(@xs, xs);
+.generate-padding(0, n);
 
 /* Background utilities */
 
@@ -162,8 +167,12 @@ So for example:
   background-color: @blue-darkest;
 }
 
-.bg-light {
+.bg-lightest {
   background-color: @gray-lightest;
+}
+
+.bg-light {
+  background-color: @gray-light
 }
 
 .bg-white {
@@ -181,13 +190,17 @@ So for example:
 /* Foreground type utilities */
 
 .type-s {
-  font-size: @type-s;
+  font-size: @type-s !important;
   line-height: @xl;
 }
 
 .type-xs {
-  font-size: @type-xs;
+  font-size: @type-xs !important;
   line-height: @l;
+}
+
+.type-weak {
+  color: @gray-darkest;
 }
 
 .type-pink {
@@ -204,12 +217,25 @@ So for example:
 
 .type-monospace, code {
   font-family: 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.9em;
 }
 
 /* Alignment utilities */
 
 .align-c {
   text-align: center;
+}
+
+.align-t {
+  vertical-align: top !important;
+}
+
+.align-b {
+  vertical-align: bottom !important;
+}
+
+.align-m {
+  vertical-align: middle !important;
 }
 
 .logo {
@@ -264,6 +290,51 @@ h6 {
   letter-spacing: 0.1em;
 }
 
+/* Columns */
+
+.columns:after {
+  content: ' ';
+  display: table;
+  clear: left;
+}
+
+.columns-elastic {
+  display: table;
+  width: 100%;
+}
+
+.columns-elastic > .column {
+  display: table-cell;
+  vertical-align: top;
+  float: none;
+}
+
+.column {
+  float: left;
+  padding-right: @l;
+  box-sizing: border-box;
+}
+
+.column:last-child {
+  padding-right: 0;
+}
+
+.column-one-quarter {
+  width: 25%;
+}
+
+.column-three-quarters {
+  width: 75%;
+}
+
+.column-expand {
+  width: 100%;
+}
+
+.column-shrink {
+  width: 1px;
+}
+
 /* Rules */
 
 hr {
@@ -272,8 +343,13 @@ hr {
   border: none;
   background-color: @pink-medium;
   border-radius: @xs;
-  margin: @l 0 @xxl -@xxxxl*2;
-  padding: 0 0 0 @xxxxl*2;
+  margin: @l 0 @xxl 0;
+}
+
+hr.form-border {
+  height: @xxs;
+  background-color: @border-color;
+  border-radius: 0;
 }
 
 /* Forms */
@@ -293,13 +369,17 @@ input, button, select, textarea, .form-field {
 @form-bg-disabled: @gray-light;
 @form-color-disabled: @gray-darkest;
 
-.form-field {
+.form-field, .CodeMirror {
   border-width: @border-width;
   border-style: solid;
-  border-color: @blue-faded;
+  border-color: @border-color;
   border-radius: @border-radius;
   box-sizing: border-box;
   .bg-white();
+}
+
+.form-field-faint {
+  border-color: @blue-faded-light;
 }
 
 .form-input {
@@ -315,9 +395,21 @@ input, button, select, textarea, .form-field {
   color: @form-color-disabled;
 }
 
-.form-input:focus, .form-field:focus {
+.form-input:focus, .form-field:focus, .CodeMirror-focused {
   outline: none;
   border-color: @pink-medium;
+}
+
+.form-input-borderless {
+  background-color: transparent;
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  border-radius: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: (@form-vertical-padding - 1 - @xs);
+  height: @form-input-height - @xs;
 }
 
 .form-grouped-inputs {
@@ -327,12 +419,14 @@ input, button, select, textarea, .form-field {
     height: @form-input-height - @border-width;
   }
   .form-input:first-child {
-    border-radius: @border-radius @border-radius 0 0;
+    border-top-left-radius: @border-radius;
+    border-top-right-radius: @border-radius;
   }
   .form-input:last-child {
     border-bottom-width: @border-width;
     height: @form-input-height;
-    border-radius: 0 0 @border-radius @border-radius;
+    border-bottom-left-radius: @border-radius;
+    border-bottom-right-radius: @border-radius;
   }
   .form-input:focus {
     border-bottom-width: @border-width;
@@ -378,13 +472,12 @@ input, button, select, textarea, .form-field {
   .type-monospace();
   font-size: @type-s;
   line-height: @xl;
-  border-radius: @border-radius;
   min-height: @form-input-height - @border-width*2;
   height: auto;
+  padding: @xs;
 }
 
 .CodeMirror-gutters {
-  border-radius: @border-radius 0 0 @border-radius;
 }
 
 /* Buttons */
@@ -403,6 +496,10 @@ button {
   color: @blue-medium-text;
   min-width: @s * 20;
   cursor: pointer;
+}
+
+button.shrink {
+  min-width: 0;
 }
 
 button:focus {
