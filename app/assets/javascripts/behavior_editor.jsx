@@ -83,10 +83,8 @@ var BehaviorEditor = React.createClass({
     })) {
       newParamIndex++;
     }
-    var newParamName = 'userInput' + newParamIndex;
-    var newParam = { name: newParamName, question: '' };
     this.setState({
-      params: this.state.params.concat([newParam])
+      params: this.state.params.concat([{ name: 'userInput' + newParamIndex, question: '' }])
     }, this.focusOnLastParam);
   },
 
