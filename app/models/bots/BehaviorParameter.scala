@@ -13,6 +13,8 @@ case class BehaviorParameter(
                             maybeParamType: Option[String]
                               ) {
 
+  def question: String = maybeQuestion.getOrElse("")
+
   def isComplete: Boolean = {
     maybeQuestion.isDefined
   }

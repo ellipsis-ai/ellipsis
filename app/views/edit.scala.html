@@ -1,4 +1,6 @@
-@()(implicit messages: Messages)
+@(
+  json: String
+    )(implicit messages: Messages)
 
 @main("Ellipsis behavior editor") {
 
@@ -8,14 +10,7 @@
       <div id="editorContainer"></div>
       <script type='text/javascript' src='@routes.Assets.versioned("javascripts/behavior_editor.js")'></script>
       <script>
-        var jsonData = {
-          description: "Bang two coconuts together",
-          nodeFunction: "onSuccess(\"*clop clop clop clop*\\nYou have arrived at \" + userInput1);",
-          params: [{ "name": "userInput1", "question": "" }],
-          triggers: ["ride", "trot", "gallop"],
-          regexTrigger: "/ride\\sto\\s+(.+)/"
-        };
-        var myBehaviorEditor = React.createElement(BehaviorEditor, jsonData);
+        var myBehaviorEditor = React.createElement(BehaviorEditor, @Html(json));
         ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
       </script>
     </div>

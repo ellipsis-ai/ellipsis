@@ -14,9 +14,13 @@ case class Behavior(
                      team: Team,
                      maybeDescription: Option[String],
                      maybeShortName: Option[String],
-                     hasCode: Boolean,
+                     maybeCode: Option[String],
                      createdAt: DateTime
                      ) {
+
+  def description: String = maybeDescription.getOrElse("")
+
+  def code: String = maybeCode.getOrElse("")
 
   lazy val conf = Play.current.configuration
 
@@ -38,7 +42,7 @@ case class Behavior(
   def save: DBIO[Behavior] = BehaviorQueries.save(this)
 
   def toRaw: RawBehavior = {
-    RawBehavior(id, team.id, maybeDescription, maybeShortName, hasCode, createdAt)
+    RawBehavior(id, team.id, maybeDescription, maybeShortName, maybeCode, createdAt)
   }
 
 }
@@ -48,7 +52,7 @@ case class RawBehavior(
                         teamId: String,
                         maybeDescription: Option[String],
                         maybeShortName: Option[String],
-                        hasCode: Boolean,
+                        maybeCode: Option[String],
                         createdAt: DateTime
                         )
 
@@ -58,11 +62,11 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
   def teamId = column[String]("team_id")
   def maybeDescription = column[Option[String]]("description")
   def maybeShortName = column[Option[String]]("short_name")
-  def hasCode = column[Boolean]("has_code")
+  def maybeCode = column[Option[String]]("code")
   def createdAt = column[DateTime]("created_at")
 
   def * =
-    (id, teamId, maybeDescription, maybeShortName, hasCode, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+    (id, teamId, maybeDescription, maybeShortName, maybeCode, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
 object BehaviorQueries {
@@ -72,7 +76,16 @@ object BehaviorQueries {
 
   def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
     val raw = tuple._1
-    Behavior(raw.id, tuple._2, raw.maybeDescription, raw.maybeShortName, raw.hasCode, raw.createdAt)
+    Behavior(raw.id, tuple._2, raw.maybeDescription, raw.maybeShortName, raw.maybeCode, raw.createdAt)
+  }
+
+  def uncompiledFindQuery(id: Rep[String]) = {
+    allWithTeam.filter { case(behavior, team) => behavior.id === id }
+  }
+  val findQuery = Compiled(uncompiledFindQuery _)
+
+  def find(id: String): DBIO[Option[Behavior]] = {
+    findQuery(id).result.map(_.headOption.map(tuple2Behavior))
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
@@ -86,9 +99,9 @@ object BehaviorQueries {
   }
 
   def createFor(team: Team): DBIO[Behavior] = {
-    val raw = RawBehavior(IDs.next, team.id, None, None, false, DateTime.now)
+    val raw = RawBehavior(IDs.next, team.id, None, None, None, DateTime.now)
 
-    (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.hasCode, raw.createdAt) }
+    (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.maybeCode, raw.createdAt) }
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
@@ -123,7 +136,7 @@ object BehaviorQueries {
     val paramsWithoutBuiltin = withoutBuiltin(actualParams)
     lambdaService.deployFunctionFor(behavior, code, paramsWithoutBuiltin)
     (for {
-      b <- behavior.copy(hasCode = true).save
+      b <- behavior.copy(maybeCode = Some(code)).save
       params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin)
     } yield params) transactionally
   }
