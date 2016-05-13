@@ -84,6 +84,14 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  onParamDelete: function(index) {
+    var newParams = this.state.params.slice();
+    newParams.splice(index, 1);
+    this.setState({
+      params: newParams
+    });
+  },
+
   onTriggerChange: function(index, newTrigger) {
     var newTriggers = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index);
     this.setState({
@@ -120,30 +128,29 @@ var BehaviorEditor = React.createClass({
             <div>
               <code className="type-weak type-s">{"function ("}</code>
             </div>
-            <div className="columns columns-elastic">
-              <div className="column column-expand">
-                <div className="plxl">
-                  {this.state.params.map(function(param, index) {
-                    return (
-                      <BehaviorEditorUserInputDefinition
-                        key={'BehaviorEditorUserInputDefinition' + index}
-                        ref={'param' + index}
-                        name={param.name}
-                        question={param.question}
-                        onChange={this.onParamChange.bind(this, index)}
-                        hasMargin={index > 0}
-                        id={index}
-                      />
-                    );
-                  }, this)}
-                </div>
-              </div>
-              <div className="column column-shrink align-b">
-                <button className="shrink" type="button" onClick={this.onAddParamClick}><img src="/assets/images/plus.svg" alt="Add parameter" /></button>
-              </div>
-            </div>
             <div className="plxl">
-              <code className="type-weak type-s">onSuccess,<br />onError,<br />context</code>
+              {this.state.params.map(function(param, index) {
+                return (
+                  <BehaviorEditorUserInputDefinition
+                    key={'BehaviorEditorUserInputDefinition' + index}
+                    ref={'param' + index}
+                    name={param.name}
+                    question={param.question}
+                    onChange={this.onParamChange.bind(this, index)}
+                    onDelete={this.onParamDelete.bind(this, index)}
+                    hasMargin={index > 0}
+                    id={index}
+                  />
+                );
+              }, this)}
+            </div>
+            <div className="columns plxl">
+              <div className="column column-one-quarter">
+                <code className="type-weak type-s">onSuccess,<br />onError,<br />context</code>
+              </div>
+              <div className="column column-three-quarters ptxl align-c">
+                <button type="button" onClick={this.onAddParamClick}>Add parameter</button>
+              </div>
             </div>
             <div>
               <code className="type-weak type-s">{") {"}</code>
@@ -229,6 +236,10 @@ var BehaviorEditorUserInputDefinition = React.createClass({
     this.props.onChange({ name: this.refs.name.value, question: this.refs.question.value });
   },
 
+  onDeleteClick: function() {
+    this.props.onDelete();
+  },
+
   focus: function() {
     this.refs.question.focus();
   },
@@ -253,20 +264,32 @@ var BehaviorEditorUserInputDefinition = React.createClass({
           </div>
         </div>
         <div className="column column-three-quarters">
-          <div className="form-field-with-prefix">
-            <label className="form-input-prefix"
-              htmlFor={"question" + this.props.id}
-              title="Write a question for @ellipsis to ask the user to provide this parameter."
-            >Q:</label>
-            <input type="text"
-              id={"question" + this.props.id}
-              ref="question"
-              className="form-input"
-              placeholder="Write a question to ask the user for this parameter"
-              autoFocus={this.props.shouldGrabFocus}
-              value={this.props.question}
-              onChange={this.onChange}
-            />
+          <div className="columns columns-elastic">
+            <div className="column column-expand prxs">
+              <div className="form-field-with-prefix">
+                <label className="form-input-prefix"
+                  htmlFor={"question" + this.props.id}
+                  title="Write a question for @ellipsis to ask the user to provide this parameter."
+                >Q:</label>
+                <input type="text"
+                  id={"question" + this.props.id}
+                  ref="question"
+                  className="form-input"
+                  placeholder="Write a question to ask the user for this parameter"
+                  autoFocus={this.props.shouldGrabFocus}
+                  value={this.props.question}
+                  onChange={this.onChange}
+                />
+              </div>
+            </div>
+            <div className="column column-shrink">
+              <button className="subtle shrink" type="button" onClick={this.onDeleteClick}>
+                <img src="/assets/images/delete.svg"
+                  alt={"Delete"}
+                  title={"Delete the “" + this.props.name + "” parameter"}
+                />
+              </button>
+            </div>
           </div>
         </div>
       </div>
