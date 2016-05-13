@@ -59,6 +59,11 @@ class ApplicationController @Inject() (
       (JsPath \ "question").read[String]
     )(BehaviorParameterData.apply _)
 
+  implicit val behaviorParameterWrites: Writes[BehaviorParameterData] = (
+    (JsPath \ "name").write[String] and
+      (JsPath \ "question").write[String]
+    )(unlift(BehaviorParameterData.unapply))
+
   implicit val behaviorReads: Reads[BehaviorData] = (
     (JsPath \ "behaviorId").read[String] and
       (JsPath \ "description").read[String] and
@@ -66,6 +71,14 @@ class ApplicationController @Inject() (
       (JsPath \ "params").read[Seq[BehaviorParameterData]] and
       (JsPath \ "triggers").read[Seq[String]]
     )(BehaviorData.apply _)
+
+  implicit val behaviorWrites: Writes[BehaviorData] = (
+    (JsPath \ "behaviorId").write[String] and
+      (JsPath \ "description").write[String] and
+      (JsPath \ "nodeFunction").write[String] and
+      (JsPath \ "params").write[Seq[BehaviorParameterData]] and
+      (JsPath \ "triggers").write[Seq[String]]
+    )(unlift(BehaviorData.unapply))
 
   def editBehavior(id: String) = SecuredAction.async { implicit request =>
     val action = for {
@@ -82,16 +95,16 @@ class ApplicationController @Inject() (
           params <- maybeParameters
           triggers <- maybeTriggers
         } yield {
-          val json = JsObject(Seq(
-            "behaviorId" -> JsString(behavior.id),
-            "description" -> JsString(behavior.description),
-            "nodeFunction" -> JsString(behavior.code),
-            "params" -> JsArray(params.map { ea =>
-              JsObject(Seq("name" -> JsString(ea.name), "question" -> JsString(ea.question)))
-            }),
-            "triggers" -> JsArray(triggers.map(ea => JsString(ea.regex.pattern.pattern())))
-          ))
-          Ok(views.html.edit(Json.prettyPrint(json)))
+          val data = BehaviorData(
+            behavior.id,
+            behavior.description,
+            behavior.code,
+            params.map { ea =>
+              BehaviorParameterData(ea.name, ea.question)
+            },
+            triggers.map(ea => ea.regex.pattern.pattern())
+          )
+          Ok(views.html.edit((Json.toJson(data).toString)))
         }).getOrElse {
           NotFound("Behavior not found")
         }
