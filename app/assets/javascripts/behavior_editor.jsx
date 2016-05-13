@@ -1,12 +1,3 @@
-var BehaviorEditorUtils = {
-  arrayWithNewElementAtIndex: function(array, newElement, index) {
-    // Create a copy of the old array with the indexed element replaced
-    var newArray = array.slice();
-    newArray[index] = newElement;
-    return newArray;
-  }
-};
-
 var BehaviorEditor = React.createClass({
   propTypes: {
     behaviorId: React.PropTypes.string,
@@ -18,6 +9,21 @@ var BehaviorEditor = React.createClass({
     })),
     triggers: React.PropTypes.arrayOf(React.PropTypes.string),
     regexTrigger: React.PropTypes.string
+  },
+
+  utils: {
+    // Create a copy of an array before modifying it
+    arrayWithNewElementAtIndex: function(array, newElement, index) {
+      var newArray = array.slice();
+      newArray[index] = newElement;
+      return newArray;
+    },
+
+    arrayRemoveElementAtIndex: function(array, index) {
+      var newArray = array.slice();
+      newArray.splice(index, 1);
+      return newArray;
+    },
   },
 
   getInitialState: function() {
@@ -72,24 +78,33 @@ var BehaviorEditor = React.createClass({
     });
   },
 
-  onAddParamClick: function() {
-    var newParam = { name: 'userInput' + (this.state.params.length + 1), question: '' };
+  addParam: function() {
+    var newParamIndex = this.state.params.length + 1;
+    while (this.state.params.some(function(param) {
+      return param.name == 'userInput' + newParamIndex;
+    })) {
+      newParamIndex++;
+    }
     this.setState({
-      params: this.state.params.concat([newParam])
+      params: this.state.params.concat([{ name: 'userInput' + newParamIndex, question: '' }])
     }, this.focusOnLastParam);
   },
 
-  onParamChange: function(index, newParam) {
-    var newParams = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.params, newParam, index);
+  replaceParamAtIndexWithParam: function(index, newParam) {
     this.setState({
-      params: newParams
+      params: this.utils.arrayWithNewElementAtIndex(this.state.params, newParam, index)
+    });
+  },
+
+  deleteParamAtIndex: function(index) {
+    this.setState({
+      params: this.utils.arrayRemoveElementAtIndex(this.state.params, index)
     });
   },
 
   onTriggerChange: function(index, newTrigger) {
-    var newTriggers = BehaviorEditorUtils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index);
     this.setState({
-      triggers: newTriggers
+      triggers: this.utils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index)
     });
   },
 
@@ -125,30 +140,29 @@ var BehaviorEditor = React.createClass({
             <div>
               <code className="type-weak type-s">{"function ("}</code>
             </div>
-            <div className="columns columns-elastic">
-              <div className="column column-expand">
-                <div className="plxl">
-                  {this.state.params.map(function(param, index) {
-                    return (
-                      <BehaviorEditorUserInputDefinition
-                        key={'BehaviorEditorUserInputDefinition' + index}
-                        ref={'param' + index}
-                        name={param.name}
-                        question={param.question}
-                        onChange={this.onParamChange.bind(this, index)}
-                        hasMargin={index > 0}
-                        id={index}
-                      />
-                    );
-                  }, this)}
-                </div>
-              </div>
-              <div className="column column-shrink align-b">
-                <button className="shrink" type="button" onClick={this.onAddParamClick}><img src="/assets/images/plus.svg" alt="Add parameter" /></button>
-              </div>
-            </div>
             <div className="plxl">
-              <code className="type-weak type-s">onSuccess,<br />onError,<br />context</code>
+              {this.state.params.map(function(param, index) {
+                return (
+                  <BehaviorEditorUserInputDefinition
+                    key={'BehaviorEditorUserInputDefinition' + index}
+                    ref={'param' + index}
+                    name={param.name}
+                    question={param.question}
+                    onChange={this.replaceParamAtIndexWithParam.bind(this, index)}
+                    onDelete={this.deleteParamAtIndex.bind(this, index)}
+                    hasMargin={index > 0}
+                    id={index}
+                  />
+                );
+              }, this)}
+            </div>
+            <div className="columns plxl">
+              <div className="column column-one-quarter">
+                <code className="type-weak type-s">onSuccess,<br />onError,<br />context</code>
+              </div>
+              <div className="column column-three-quarters ptxl align-c">
+                <button type="button" onClick={this.addParam}>Add parameter</button>
+              </div>
             </div>
             <div>
               <code className="type-weak type-s">{") {"}</code>
@@ -234,6 +248,10 @@ var BehaviorEditorUserInputDefinition = React.createClass({
     this.props.onChange({ name: this.refs.name.value, question: this.refs.question.value });
   },
 
+  onDeleteClick: function() {
+    this.props.onDelete();
+  },
+
   focus: function() {
     this.refs.question.focus();
   },
@@ -258,20 +276,32 @@ var BehaviorEditorUserInputDefinition = React.createClass({
           </div>
         </div>
         <div className="column column-three-quarters">
-          <div className="form-field-with-prefix">
-            <label className="form-input-prefix"
-              htmlFor={"question" + this.props.id}
-              title="Write a question for @ellipsis to ask the user to provide this parameter."
-            >Q:</label>
-            <input type="text"
-              id={"question" + this.props.id}
-              ref="question"
-              className="form-input"
-              placeholder="Write a question to ask the user for this parameter"
-              autoFocus={this.props.shouldGrabFocus}
-              value={this.props.question}
-              onChange={this.onChange}
-            />
+          <div className="columns columns-elastic">
+            <div className="column column-expand prxs">
+              <div className="form-field-with-prefix">
+                <label className="form-input-prefix"
+                  htmlFor={"question" + this.props.id}
+                  title="Write a question for @ellipsis to ask the user to provide this parameter."
+                >Q:</label>
+                <input type="text"
+                  id={"question" + this.props.id}
+                  ref="question"
+                  className="form-input"
+                  placeholder="Write a question to ask the user for this parameter"
+                  autoFocus={this.props.shouldGrabFocus}
+                  value={this.props.question}
+                  onChange={this.onChange}
+                />
+              </div>
+            </div>
+            <div className="column column-shrink">
+              <button className="subtle shrink" type="button" onClick={this.onDeleteClick}>
+                <img src="/assets/images/delete.svg"
+                  alt={"Delete"}
+                  title={"Delete the “" + this.props.name + "” parameter"}
+                />
+              </button>
+            </div>
           </div>
         </div>
       </div>
