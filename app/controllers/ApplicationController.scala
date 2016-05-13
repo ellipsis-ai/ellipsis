@@ -89,8 +89,7 @@ class ApplicationController @Inject() (
             "params" -> JsArray(params.map { ea =>
               JsObject(Seq("name" -> JsString(ea.name), "question" -> JsString(ea.question)))
             }),
-            "triggers" -> JsArray(triggers.map(ea => JsString(ea.regex.pattern.pattern()))),
-            "regexTrigger" -> JsString("")
+            "triggers" -> JsArray(triggers.map(ea => JsString(ea.regex.pattern.pattern())))
           ))
           Ok(views.html.edit(Json.prettyPrint(json)))
         }).getOrElse {

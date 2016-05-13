@@ -7,8 +7,7 @@ var BehaviorEditor = React.createClass({
       name: React.PropTypes.string.isRequired,
       question: React.PropTypes.string.isRequired
     })),
-    triggers: React.PropTypes.arrayOf(React.PropTypes.string),
-    regexTrigger: React.PropTypes.string
+    triggers: React.PropTypes.arrayOf(React.PropTypes.string)
   },
 
   utils: {
@@ -33,8 +32,7 @@ var BehaviorEditor = React.createClass({
       nodeFunction: this.props.nodeFunction,
       params: this.props.params,
       questionFocusIndex: null,
-      triggers: this.props.triggers,
-      regexTrigger: this.props.regexTrigger
+      triggers: this.props.triggers
     };
   },
 
@@ -69,12 +67,6 @@ var BehaviorEditor = React.createClass({
   onCodeChange: function(newCode) {
     this.setState({
       nodeFunction: newCode
-    });
-  },
-
-  onRegexTriggerChange: function(newRegexTrigger) {
-    this.setState({
-      regexTrigger: newRegexTrigger
     });
   },
 
@@ -200,16 +192,6 @@ var BehaviorEditor = React.createClass({
           <button type="button" onClick={this.addMoreTriggers}>Add more triggers</button>
         </div>
 
-        <div className="form-field-group">
-          <p><strong>If desired, you can also specify a trigger that includes required values.</strong></p>
-          <p>Write a regular expression pattern to match the trigger and capture the desired input.</p>
-          <div className="">
-            <Codemirror value={this.state.regexTrigger}
-              onChange={this.onRegexTriggerChange}
-              options={{ mode: "javascript", viewportMargin: Infinity }}
-            />
-          </div>
-        </div>
         <button type="submit" className="primary">Save and return</button>
 
       </form>
