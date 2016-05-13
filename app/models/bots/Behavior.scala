@@ -141,20 +141,4 @@ object BehaviorQueries {
     } yield params) transactionally
   }
 
-  def learnFor(regex: Regex, code: String, teamId: String, lambdaService: AWSLambdaService): DBIO[Option[Behavior]] = {
-    val numExpectedParams = regex.pattern.matcher("").groupCount()
-    val actualParams = paramsIn(code)
-    val paramsWithoutBuiltin = withoutBuiltin(actualParams)
-    for {
-      maybeTeam <- Team.find(teamId)
-      maybeTrigger <- maybeTeam.map { team =>
-        RegexMessageTriggerQueries.ensureFor(team, regex).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-    } yield {
-        maybeTrigger.map { trigger =>
-          lambdaService.deployFunctionFor(trigger.behavior, code, paramsWithoutBuiltin)
-          trigger.behavior
-        }
-      }
-  }
 }
