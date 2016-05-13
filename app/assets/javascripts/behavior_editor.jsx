@@ -45,6 +45,10 @@ var BehaviorEditor = React.createClass({
     }
   },
 
+  focusOnLastParam: function() {
+    this.refs['param' + (this.state.params.length - 1)].focus();
+  },
+
   onDescriptionChange: function(newDescription) {
     this.setState({ description: newDescription });
   },
@@ -66,12 +70,11 @@ var BehaviorEditor = React.createClass({
     });
   },
 
-  onAddQuestionClick: function() {
+  onAddParamClick: function() {
     var newParam = { name: 'userInput' + (this.state.params.length + 1), question: '' };
     this.setState({
-      params: this.state.params.concat([newParam]),
-      questionFocusIndex: this.state.params.length
-    });
+      params: this.state.params.concat([newParam])
+    }, this.focusOnLastParam);
   },
 
   onParamChange: function(index, newParam) {
@@ -86,12 +89,6 @@ var BehaviorEditor = React.createClass({
     this.setState({
       triggers: newTriggers
     });
-  },
-
-  getFunctionPrefix: function() {
-    return 'function(' +
-      this.state.params.map(function(param) { return param.name; }).join(', ') +
-      ', onSuccess, onError)';
   },
 
   render: function() {
@@ -113,33 +110,55 @@ var BehaviorEditor = React.createClass({
           <p>You can have @ellipsis collect information from the user by adding one or more parameters
           to your function, each with an associated question to ask.</p>
 
-          <p>Along with your parameters, your function will receive <code>onSuccess</code> and
-          <code>onError</code> callbacks, and a <code>context</code> object.</p>
+          <p>
+            <span>Along with your parameters, your function will receive </span>
+            <code>onSuccess</code> and <code>onError</code>
+            <span> callbacks, as well a </span><code>context</code> object.
+          </p>
 
-          <div className="form-field">
-
-            <code>{"function("}</code>
-            {this.state.params.map(function(param, index) {
-              return (
-                <BehaviorEditorUserInputDefinition key={'BehaviorEditorUserInputDefinition' + index} name={param.name} question={param.question}
-                  onChange={this.onParamChange.bind(this, index)} shouldGrabFocus={this.state.questionFocusIndex == index} />
-              );
-            }, this)}
-
-            <button type="button" onClick={this.onAddQuestionClick}>Add another parameter</button>
-
-            <code>{", onSuccess, onError, context) {"}</code>
-            <hr className="form-border" />
-            <Codemirror value={this.state.nodeFunction}
-              onChange={this.onCodeChange}
-              options={{
-                lineNumbers: true,
-                mode: "javascript",
-                viewportMargin: Infinity
-              }}
-            />
-            <hr className="form-border" />
-            <code>{"}"}</code>
+          <div>
+            <div>
+              <code className="type-weak type-s">{"function ("}</code>
+            </div>
+            <div className="columns columns-elastic">
+              <div className="column column-expand">
+                <div className="plxl">
+                  {this.state.params.map(function(param, index) {
+                    return (
+                      <BehaviorEditorUserInputDefinition
+                        key={'BehaviorEditorUserInputDefinition' + index}
+                        ref={'param' + index}
+                        name={param.name}
+                        question={param.question}
+                        onChange={this.onParamChange.bind(this, index)}
+                        hasMargin={index > 0}
+                      />
+                    );
+                  }, this)}
+                </div>
+              </div>
+              <div className="column column-shrink align-b">
+                <button className="shrink" type="button" onClick={this.onAddParamClick}><img src="/assets/images/plus.svg" alt="Add parameter" /></button>
+              </div>
+            </div>
+            <div className="plxl">
+              <code className="type-weak type-s">onSuccess,<br />onError,<br />context</code>
+            </div>
+            <div>
+              <code className="type-weak type-s">{") {"}</code>
+            </div>
+            <div className="mll">
+              <Codemirror value={this.state.nodeFunction}
+                onChange={this.onCodeChange}
+                options={{
+                  mode: "javascript",
+                  viewportMargin: Infinity
+                }}
+              />
+            </div>
+            <div>
+              <code className="type-weak type-s">{"}"}</code>
+            </div>
           </div>
         </div>
 
@@ -163,7 +182,7 @@ var BehaviorEditor = React.createClass({
         <div className="form-field-group">
           <p><strong>If desired, you can also specify a trigger that includes required values.</strong></p>
           <p>Write a regular expression pattern to match the trigger and capture the desired input.</p>
-          <div className="form-field">
+          <div className="">
             <Codemirror value={this.state.regexTrigger}
               onChange={this.onRegexTriggerChange}
               options={{ mode: "javascript", viewportMargin: Infinity }}
@@ -208,23 +227,34 @@ var BehaviorEditorUserInputDefinition = React.createClass({
     this.props.onChange({ name: this.refs.name.value, question: this.refs.question.value });
   },
 
+  focus: function() {
+    this.refs.question.focus();
+  },
+
   render: function() {
     return (
-      <div className="columns mbs">
+      <div className={"columns " + (this.props.hasMargin ? "mts" : "")}>
         <div className="column column-one-quarter">
-          <input type="text"
-            ref="name"
-            className="form-input form-input-borderless type-monospace"
-            placeholder="userInput"
-            value={this.props.name}
-            onChange={this.onChange}
-          />
+          <div className="columns columns-elastic">
+            <div className="column column-expand prs">
+              <input type="text"
+                ref="name"
+                className="form-input form-input-borderless type-monospace type-s"
+                placeholder="userInput"
+                value={this.props.name}
+                onChange={this.onChange}
+              />
+            </div>
+            <div className="column column-shrink align-b">
+              <code>,</code>
+            </div>
+          </div>
         </div>
         <div className="column column-three-quarters">
           <input type="text"
             ref="question"
             className="form-input"
-            placeholder="Where would you like to go?"
+            placeholder="Write a question to ask the user for this parameter"
             autoFocus={this.props.shouldGrabFocus}
             value={this.props.question}
             onChange={this.onChange}
