@@ -60,15 +60,13 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   }
 
   private def nodeCodeFor(code: String, params: Array[String], behavior: Behavior): String = {
-    var fixedCode = "[“”]".r.replaceAllIn(code, "\"")
-    "‘".r.replaceAllIn(fixedCode, "'")
     val paramsSupplied = params.indices.map(i => s"event.param$i")
     val withBuiltins = paramsSupplied ++ Array("onSuccess", "onError", "context")
     val paramString = withBuiltins.mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {
       |   var context = event.$CONTEXT;
-      |   var fn = $fixedCode;
+      |   var fn = $code;
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };
       |   fn($paramString);

@@ -5,6 +5,7 @@ import models.bots._
 import org.joda.time.DateTime
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+import utils.SlackCodeFixer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class LearnBehaviorConversation(
@@ -59,7 +60,7 @@ case class LearnBehaviorConversation(
     import LearnBehaviorConversation._
 
     for {
-      params <- behavior.learnCode(message, lambdaService)
+      params <- behavior.learnCode(SlackCodeFixer.runFor(message), lambdaService)
       newState <- DBIO.successful(if (params.isEmpty) { COLLECT_TRIGGERS_STATE } else { COLLECT_PARAMS_STATE })
       updated <- updateStateTo(newState)
     } yield updated
