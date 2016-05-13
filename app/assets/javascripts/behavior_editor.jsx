@@ -31,7 +31,6 @@ var BehaviorEditor = React.createClass({
       description: this.props.description,
       nodeFunction: this.props.nodeFunction,
       params: this.props.params,
-      questionFocusIndex: null,
       triggers: this.props.triggers
     };
   },
@@ -226,7 +225,6 @@ var BehaviorEditorDescription = React.createClass({
         <input type="text"
           className="form-input"
           placeholder="Bang two coconuts together"
-          autoFocus
           value={this.props.description}
           onChange={this.handleChange}
         />
@@ -251,7 +249,8 @@ var BehaviorEditorUserInputDefinition = React.createClass({
   },
 
   focus: function() {
-    this.refs.question.focus();
+    this.refs.name.focus();
+    this.refs.name.select();
   },
 
   render: function() {
