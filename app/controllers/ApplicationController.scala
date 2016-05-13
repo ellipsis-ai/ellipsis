@@ -128,9 +128,13 @@ class ApplicationController @Inject() (
                   ).save
                   _ <- BehaviorParameterQueries.ensureFor(behavior, data.params.map(ea => (ea.name, Some(ea.question))))
                   _ <- RegexMessageTriggerQueries.deleteAllFor(behavior)
-                  _ <- DBIO.sequence(data.triggers.map { trigger =>
-                    RegexMessageTriggerQueries.ensureFor(behavior, trigger.r)
-                  })
+                  _ <- DBIO.sequence(
+                    data.triggers.
+                      filterNot(_.trim.isEmpty).
+                      map { trigger =>
+                        RegexMessageTriggerQueries.ensureFor(behavior, trigger.r)
+                      }
+                    )
                 } yield Unit) transactionally
               }.getOrElse(DBIO.successful(Unit))
             } yield {
