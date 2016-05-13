@@ -18,6 +18,11 @@ case class Behavior(
                      createdAt: DateTime
                      ) {
 
+  def description: String = maybeDescription.getOrElse("")
+
+  // TODO: for reals
+  def code: String = ""
+
   lazy val conf = Play.current.configuration
 
   def functionName: String = id
@@ -73,6 +78,15 @@ object BehaviorQueries {
   def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
     val raw = tuple._1
     Behavior(raw.id, tuple._2, raw.maybeDescription, raw.maybeShortName, raw.hasCode, raw.createdAt)
+  }
+
+  def uncompiledFindQuery(id: Rep[String]) = {
+    allWithTeam.filter { case(behavior, team) => behavior.id === id }
+  }
+  val findQuery = Compiled(uncompiledFindQuery _)
+
+  def find(id: String): DBIO[Option[Behavior]] = {
+    findQuery(id).result.map(_.headOption.map(tuple2Behavior))
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
