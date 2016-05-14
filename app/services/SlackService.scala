@@ -79,8 +79,11 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
           val triggersString = triggers.map { ea =>
             s"`${ea.regex.pattern.pattern()}`"
           }.mkString(" or ")
+          val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
+            s" <$link|Edit>"
+          }.getOrElse("")
           behavior.maybeDescription.map { desc =>
-            s"\n• $desc when someone types $triggersString"
+            s"\n• $desc when someone types $triggersString $editLink"
           }
         }.mkString("")
         val matchString = maybeHelpSearch.map { s =>

@@ -24,9 +24,8 @@ case class LearnBehaviorConversation(
   val DESCRIPTION_PROMPT = "Describe the new behavior you'd like me to learn:"
 
   def codePromptFor(lambdaService: AWSLambdaService) = {
-    val editPrompt = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ApplicationController.editBehavior(behavior.id)
-      s" at $baseUrl$path"
+    val editPrompt = behavior.editLinkFor(lambdaService.configuration).map { link =>
+      s" at $link"
     }.getOrElse(".")
     s"""Great. Next describe how this should work$editPrompt
       |

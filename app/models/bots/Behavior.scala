@@ -3,7 +3,7 @@ package models.bots
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.{IDs, Team}
 import org.joda.time.DateTime
-import play.api.Play
+import play.api.{Configuration, Play}
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,6 +16,13 @@ case class Behavior(
                      maybeFunctionBody: Option[String],
                      createdAt: DateTime
                      ) {
+
+  def editLinkFor(configuration: Configuration): Option[String] = {
+    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.ApplicationController.editBehavior(id)
+      s"$baseUrl$path"
+    }
+  }
 
   def description: String = maybeDescription.getOrElse("")
 
