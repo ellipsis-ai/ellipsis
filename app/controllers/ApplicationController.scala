@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.Models
 import models.accounts.User
+import models.bots.conversations.LearnBehaviorConversation
 import models.bots.{RegexMessageTriggerQueries, BehaviorParameterQueries, BehaviorQueries}
 import play.api.Configuration
 import play.api.data.Form
@@ -89,6 +90,9 @@ class ApplicationController @Inject() (
       maybeTriggers <- maybeBehavior.map { behavior =>
         RegexMessageTriggerQueries.allFor(behavior).map(Some(_))
       }.getOrElse(DBIO.successful(None))
+      _ <- maybeBehavior.map { behavior =>
+        LearnBehaviorConversation.endAllFor(behavior)
+      }.getOrElse(DBIO.successful(Unit))
     } yield {
         (for {
           behavior <- maybeBehavior
