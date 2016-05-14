@@ -49,7 +49,7 @@ class ApplicationController @Inject() (
   case class BehaviorData(
                          id: String,
                          description: String,
-                         code: String,
+                         functionBody: String,
                          params: Seq[BehaviorParameterData],
                          triggers: Seq[String]
                            )
@@ -98,7 +98,7 @@ class ApplicationController @Inject() (
           val data = BehaviorData(
             behavior.id,
             behavior.description,
-            behavior.code,
+            behavior.functionBody,
             params.map { ea =>
               BehaviorParameterData(ea.name, ea.question)
             },
@@ -134,10 +134,10 @@ class ApplicationController @Inject() (
               maybeBehavior <- BehaviorQueries.find(data.id)
               _ <- maybeBehavior.map { behavior =>
                 (for {
-                  _ <- DBIO.successful(lambdaService.deployFunctionFor(behavior, data.code, BehaviorQueries.withoutBuiltin(data.params.map(_.name).toArray)))
+                  _ <- DBIO.successful(lambdaService.deployFunctionFor(behavior, data.functionBody, BehaviorQueries.withoutBuiltin(data.params.map(_.name).toArray)))
                   _ <- behavior.copy(
                     maybeDescription = Some(data.description),
-                    maybeCode = Some(data.code)
+                    maybeFunctionBody = Some(data.functionBody)
                   ).save
                   _ <- BehaviorParameterQueries.ensureFor(behavior, data.params.map(ea => (ea.name, Some(ea.question))))
                   _ <- RegexMessageTriggerQueries.deleteAllFor(behavior)

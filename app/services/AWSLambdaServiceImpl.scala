@@ -59,17 +59,19 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules)
   }
 
-  private def nodeCodeFor(code: String, params: Array[String], behavior: Behavior): String = {
-    val paramsSupplied = params.indices.map(i => s"event.param$i")
-    val withBuiltins = paramsSupplied ++ Array("onSuccess", "onError", "context")
-    val paramString = withBuiltins.mkString(", ")
+  val builtInParams = Array("onSuccess", "onError", "context")
+
+  private def nodeCodeFor(functionBody: String, params: Array[String], behavior: Behavior): String = {
+    val definitionParamString = (params ++ builtInParams).mkString(", ")
+    val paramsFromEvent = params.indices.map(i => s"event.param$i")
+    val invocationParamsString = (paramsFromEvent ++ builtInParams).mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {
       |   var context = event.$CONTEXT;
-      |   var fn = $code;
+      |   var fn = function($definitionParamString) { $functionBody };
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };
-      |   fn($paramString);
+      |   fn($invocationParamsString);
       |}
     """.stripMargin
   }
@@ -77,24 +79,24 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   private def dirNameFor(functionName: String) = s"/tmp/$functionName"
   private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
-  private def createZipWithModulesFor(behavior: Behavior, code: String, params: Array[String]): Unit = {
+  private def createZipWithModulesFor(behavior: Behavior, functionBody: String, params: Array[String]): Unit = {
     val dirName = dirNameFor(behavior.functionName)
     val path = Path(dirName)
     path.createDirectory()
 
     val writer = new PrintWriter(new File(s"$dirName/index.js"))
-    writer.write(nodeCodeFor(code, params, behavior))
+    writer.write(nodeCodeFor(functionBody, params, behavior))
     writer.close()
 
-    requiredModulesIn(code).foreach { moduleName =>
+    requiredModulesIn(functionBody).foreach { moduleName =>
       Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName")).!
     }
 
     Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(behavior.functionName)} *")).!
   }
 
-  private def getZipFor(behavior: Behavior, code: String, params: Array[String]): ByteBuffer = {
-    createZipWithModulesFor(behavior, code, params)
+  private def getZipFor(behavior: Behavior, functionBody: String, params: Array[String]): ByteBuffer = {
+    createZipWithModulesFor(behavior, functionBody, params)
     val path = Paths.get(zipFileNameFor(behavior.functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -109,12 +111,12 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     }
   }
 
-  def deployFunctionFor(behavior: Behavior, code: String, params: Array[String]): Unit = {
+  def deployFunctionFor(behavior: Behavior, functionBody: String, params: Array[String]): Unit = {
     val functionName = behavior.functionName
     deleteFunction(functionName)
     val functionCode =
       new FunctionCode().
-        withZipFile(getZipFor(behavior, code, params))
+        withZipFile(getZipFor(behavior, functionBody, params))
     val createFunctionRequest =
       new CreateFunctionRequest().
         withFunctionName(functionName).

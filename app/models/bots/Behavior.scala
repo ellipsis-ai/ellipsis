@@ -7,20 +7,19 @@ import play.api.Play
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.matching.Regex
 
 case class Behavior(
                      id: String,
                      team: Team,
                      maybeDescription: Option[String],
                      maybeShortName: Option[String],
-                     maybeCode: Option[String],
+                     maybeFunctionBody: Option[String],
                      createdAt: DateTime
                      ) {
 
   def description: String = maybeDescription.getOrElse("")
 
-  def code: String = maybeCode.getOrElse("")
+  def functionBody: String = maybeFunctionBody.getOrElse("")
 
   lazy val conf = Play.current.configuration
 
@@ -42,7 +41,7 @@ case class Behavior(
   def save: DBIO[Behavior] = BehaviorQueries.save(this)
 
   def toRaw: RawBehavior = {
-    RawBehavior(id, team.id, maybeDescription, maybeShortName, maybeCode, createdAt)
+    RawBehavior(id, team.id, maybeDescription, maybeShortName, maybeFunctionBody, createdAt)
   }
 
 }
@@ -52,7 +51,7 @@ case class RawBehavior(
                         teamId: String,
                         maybeDescription: Option[String],
                         maybeShortName: Option[String],
-                        maybeCode: Option[String],
+                        maybeFunctionBody: Option[String],
                         createdAt: DateTime
                         )
 
@@ -62,11 +61,11 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
   def teamId = column[String]("team_id")
   def maybeDescription = column[Option[String]]("description")
   def maybeShortName = column[Option[String]]("short_name")
-  def maybeCode = column[Option[String]]("code")
+  def maybeFunctionBody = column[Option[String]]("code")
   def createdAt = column[DateTime]("created_at")
 
   def * =
-    (id, teamId, maybeDescription, maybeShortName, maybeCode, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+    (id, teamId, maybeDescription, maybeShortName, maybeFunctionBody, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
 object BehaviorQueries {
@@ -76,7 +75,7 @@ object BehaviorQueries {
 
   def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
     val raw = tuple._1
-    Behavior(raw.id, tuple._2, raw.maybeDescription, raw.maybeShortName, raw.maybeCode, raw.createdAt)
+    Behavior(raw.id, tuple._2, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.createdAt)
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
@@ -101,7 +100,7 @@ object BehaviorQueries {
   def createFor(team: Team): DBIO[Behavior] = {
     val raw = RawBehavior(IDs.next, team.id, None, None, None, DateTime.now)
 
-    (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.maybeCode, raw.createdAt) }
+    (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.createdAt) }
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
@@ -131,12 +130,17 @@ object BehaviorQueries {
 
   def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == "onSuccess" || ea == "onError" || ea == "context")
 
+  val functionBodyRegex = """(?s)^\s*function\s*\([^\)]*\)\s*\{(.*)\}$""".r
+
   def learnCodeFor(behavior: Behavior, code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
     val actualParams = paramsIn(code)
     val paramsWithoutBuiltin = withoutBuiltin(actualParams)
-    lambdaService.deployFunctionFor(behavior, code, paramsWithoutBuiltin)
+    val functionBody = functionBodyRegex.findFirstMatchIn(code).flatMap { m =>
+      m.subgroups.headOption
+    }.getOrElse("")
+    lambdaService.deployFunctionFor(behavior, functionBody, paramsWithoutBuiltin)
     (for {
-      b <- behavior.copy(maybeCode = Some(code)).save
+      b <- behavior.copy(maybeFunctionBody = Some(functionBody)).save
       params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin.map(ea => (ea, None)))
     } yield params) transactionally
   }
