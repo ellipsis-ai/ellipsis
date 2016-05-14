@@ -15,6 +15,6 @@ trait AWSLambdaService extends AWSService {
   def invoke(behavior: Behavior, params: Map[String, String]): String
 
   def deleteFunction(functionName: String): Unit
-  def deployFunctionFor(behavior: Behavior, code: String, params: Array[String]): Unit
+  def deployFunctionFor(behavior: Behavior, functionBody: String, params: Array[String]): Unit
 
 }
