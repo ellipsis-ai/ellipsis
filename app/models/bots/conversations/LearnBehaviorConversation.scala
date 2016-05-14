@@ -23,13 +23,21 @@ case class LearnBehaviorConversation(
 
   val DESCRIPTION_PROMPT = "Describe the new behavior you'd like me to learn:"
 
-  val CODE_PROMPT = """Great. Next describe what @ellipsis should do by writing a node.js function.
-                      |
-                      |Parameters other than onSuccess, onError and context will be supplied by the user.
-                      |
-                      |e.g. function(someNumber, someOtherNumber, onSuccess, onError, context) { onSuccess(someNumber + someOtherNumber); }
-                      |
-                      |""".stripMargin
+  def codePromptFor(lambdaService: AWSLambdaService) = {
+    val editPrompt = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.ApplicationController.editBehavior(behavior.id)
+      s" at $baseUrl$path"
+    }.getOrElse(".")
+    s"""Great. Next describe how this should work$editPrompt
+      |
+      |Or, if you like, you can write a quick node.js function right here.
+      |
+      |Parameters other than onSuccess, onError and context will be supplied by the user.
+      |
+      |e.g. function(someNumber, someOtherNumber, onSuccess, onError, context) { onSuccess(someNumber + someOtherNumber); }
+      |
+      |""".stripMargin
+    }
 
   val TRIGGER_PROMPT = """What kinds of things do people need to say to trigger this behavior?
                          |
@@ -119,7 +127,7 @@ case class LearnBehaviorConversation(
     val eventualReply = state match {
       case NEW_STATE => DBIO.successful(NEW_PROMPT)
       case COLLECT_DESCRIPTION_STATE => DBIO.successful(DESCRIPTION_PROMPT)
-      case COLLECT_CODE_STATE => DBIO.successful(CODE_PROMPT)
+      case COLLECT_CODE_STATE => DBIO.successful(codePromptFor(lambdaService))
       case COLLECT_PARAMS_STATE => {
         BehaviorParameterQueries.nextIncompleteFor(behavior).map { maybeParam =>
           maybeParam.map { param =>
@@ -152,5 +160,14 @@ object LearnBehaviorConversation {
                  ): DBIO[LearnBehaviorConversation] = {
     val newInstance = LearnBehaviorConversation(IDs.next, behavior, context, userIdForContext, DateTime.now, Conversation.NEW_STATE)
     newInstance.save.map(_ => newInstance)
+  }
+
+  def endAllFor(behavior: Behavior): DBIO[Unit] = {
+    ConversationQueries.all.
+      filter(_.behaviorId === behavior.id).
+      filter(_.conversationType === Conversation.LEARN_BEHAVIOR).
+      map(_.state).
+      update(Conversation.DONE_STATE).
+      map(_ => Unit)
   }
 }
