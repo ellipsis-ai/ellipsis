@@ -99,6 +99,14 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  onParamEnterKey: function(index) {
+    if (index + 1 == this.state.params.length) {
+      this.addParam();
+    } else {
+      this.refs['param' + (index + 1)].focus();
+    }
+  },
+
   onTriggerChange: function(index, newTrigger) {
     this.setState({
       triggers: this.utils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index)
@@ -141,6 +149,7 @@ var BehaviorEditor = React.createClass({
                     question={param.question}
                     onChange={this.replaceParamAtIndexWithParam.bind(this, index)}
                     onDelete={this.deleteParamAtIndex.bind(this, index)}
+                    onEnterKey={this.onParamEnterKey.bind(this, index)}
                     hasMargin={index > 0}
                     id={index}
                   />
@@ -253,6 +262,7 @@ var BehaviorEditorUserInputDefinition = React.createClass({
                   autoFocus={this.props.shouldGrabFocus}
                   value={this.props.question}
                   onChange={this.onQuestionChange}
+                  onEnterKey={this.props.onEnterKey}
                 />
               </div>
             </div>
@@ -274,9 +284,12 @@ var BehaviorEditorInput = React.createClass({
     this.props.onChange(this.refs.input.value);
   },
 
-  disableEnterKey: function(event) {
+  handleEnterKey: function(event) {
     if (event.which == 13) {
       event.preventDefault();
+      if (typeof this.props.onEnterKey == 'function') {
+        this.props.onEnterKey();
+      }
     }
   },
 
@@ -302,8 +315,8 @@ var BehaviorEditorInput = React.createClass({
         placeholder={this.props.placeholder}
         autoFocus={this.props.autoFocus}
         onChange={this.onChange}
-        onKeyUp={this.disableEnterKey}
-        onKeyPress={this.disableEnterKey}
+        onKeyUp={this.handleEnterKey}
+        onKeyPress={this.handleEnterKey}
       />
     );
   }
