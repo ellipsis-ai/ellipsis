@@ -329,8 +329,11 @@ var BehaviorEditorDeleteButton = React.createClass({
 
   render: function() {
     return (
-      <button className={"subtle shrink " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
-        type="button" onMouseUp={this.onClick} ref="button">
+      <button type="button"
+        ref="button"
+        className={"subtle shrink " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
+        onMouseUp={this.onClick}
+      >
         <img src="/assets/images/delete.svg"
           alt="Delete"
           title={this.props.title || "Delete"}
@@ -361,7 +364,10 @@ var BehaviorEditorTriggerInput = React.createClass({
           />
         </div>
         <div className="column column-shrink">
-          <BehaviorEditorDeleteButton onClick={this.props.onDelete} hidden={this.isEmpty() && this.props.mayHideDelete} />
+          <BehaviorEditorDeleteButton
+            onClick={this.props.onDelete}
+            hidden={this.isEmpty() && this.props.mayHideDelete}
+          />
         </div>
       </div>
     );
