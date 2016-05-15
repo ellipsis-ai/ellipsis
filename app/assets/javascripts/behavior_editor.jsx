@@ -99,6 +99,22 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  onParamEnterKey: function(index) {
+    if (index + 1 < this.state.params.length) {
+      this.refs['param' + (index + 1)].focus();
+    } else if (this.state.params[index].question != '') {
+      this.addParam();
+    }
+  },
+
+  onTriggerEnterKey: function(index) {
+    if (index + 1 < this.state.triggers.length) {
+      this.refs['trigger' + (index + 1)].focus();
+    } else if (this.state.triggers[index] != '') {
+      this.addTrigger();
+    }
+  },
+
   onTriggerChange: function(index, newTrigger) {
     this.setState({
       triggers: this.utils.arrayWithNewElementAtIndex(this.state.triggers, newTrigger, index)
@@ -113,7 +129,10 @@ var BehaviorEditor = React.createClass({
         />
         <div className="form-field-group">
           <h3 className="mtxxxxl mbn type-weak">Edit behavior</h3>
-          <BehaviorEditorDescription description={this.state.description}
+          <BehaviorEditorInput
+            className="form-input-borderless form-input-h2"
+            placeholder="Describe the behavior in one phrase"
+            value={this.state.description}
             onChange={this.onDescriptionChange}
           />
         </div>
@@ -138,6 +157,7 @@ var BehaviorEditor = React.createClass({
                     question={param.question}
                     onChange={this.replaceParamAtIndexWithParam.bind(this, index)}
                     onDelete={this.deleteParamAtIndex.bind(this, index)}
+                    onEnterKey={this.onParamEnterKey.bind(this, index)}
                     hasMargin={index > 0}
                     id={index}
                   />
@@ -183,6 +203,7 @@ var BehaviorEditor = React.createClass({
                 value={trigger}
                 onChange={this.onTriggerChange.bind(this, index)}
                 onDelete={this.deleteTriggerAtIndex.bind(this, index)}
+                onEnterKey={this.onTriggerEnterKey.bind(this, index)}
                 mayHideDelete={index + 1 == this.state.triggers.length}
               />
             );
@@ -198,26 +219,13 @@ var BehaviorEditor = React.createClass({
   }
 });
 
-var BehaviorEditorDescription = React.createClass({
-  handleChange: function(event) {
-    this.props.onChange(event.target.value);
+var BehaviorEditorUserInputDefinition = React.createClass({
+  onNameChange: function(newName) {
+    this.props.onChange({ name: newName, question: this.props.question });
   },
 
-  render: function() {
-    return (
-      <input type="text"
-        className="form-input form-input-borderless form-input-h2"
-        placeholder="Describe the behavior in one phrase"
-        value={this.props.description}
-        onChange={this.handleChange}
-      />
-    );
-  }
-});
-
-var BehaviorEditorUserInputDefinition = React.createClass({
-  onChange: function(event) {
-    this.props.onChange({ name: this.refs.name.value, question: this.refs.question.value });
+  onQuestionChange: function(newQuestion) {
+    this.props.onChange({ name: this.props.name, question: newQuestion });
   },
 
   onDeleteClick: function() {
@@ -235,12 +243,12 @@ var BehaviorEditorUserInputDefinition = React.createClass({
         <div className="column column-one-quarter">
           <div className="columns columns-elastic">
             <div className="column column-expand prs">
-              <input type="text"
+              <BehaviorEditorInput
                 ref="name"
-                className="form-input form-input-borderless type-monospace type-s"
+                className="form-input-borderless type-monospace type-s"
                 placeholder="userInput"
                 value={this.props.name}
-                onChange={this.onChange}
+                onChange={this.onNameChange}
               />
             </div>
             <div className="column column-shrink align-b">
@@ -256,14 +264,14 @@ var BehaviorEditorUserInputDefinition = React.createClass({
                   htmlFor={"question" + this.props.id}
                   title="Write a question for @ellipsis to ask the user to provide this parameter."
                 >Q:</label>
-                <input type="text"
+                <BehaviorEditorInput
                   id={"question" + this.props.id}
                   ref="question"
-                  className="form-input"
                   placeholder="Write a question to ask the user for this parameter"
                   autoFocus={this.props.shouldGrabFocus}
                   value={this.props.question}
-                  onChange={this.onChange}
+                  onChange={this.onQuestionChange}
+                  onEnterKey={this.props.onEnterKey}
                 />
               </div>
             </div>
@@ -285,9 +293,12 @@ var BehaviorEditorInput = React.createClass({
     this.props.onChange(this.refs.input.value);
   },
 
-  disableEnterKey: function(event) {
+  handleEnterKey: function(event) {
     if (event.which == 13) {
       event.preventDefault();
+      if (typeof this.props.onEnterKey == 'function') {
+        this.props.onEnterKey();
+      }
     }
   },
 
@@ -299,15 +310,21 @@ var BehaviorEditorInput = React.createClass({
     this.refs.input.focus();
   },
 
+  select: function() {
+    this.refs.input.select();
+  },
+
   render: function() {
     return (
-      <input type="text" className="form-input"
+      <input type="text"
+        className={"form-input " + this.props.className}
         ref="input"
+        id={this.props.id}
         value={this.props.value}
         placeholder={this.props.placeholder}
+        autoFocus={this.props.autoFocus}
         onChange={this.onChange}
-        onKeyUp={this.disableEnterKey}
-        onKeyPress={this.disableEnterKey}
+        onKeyPress={this.handleEnterKey}
       />
     );
   }
@@ -361,6 +378,7 @@ var BehaviorEditorTriggerInput = React.createClass({
             value={this.props.value}
             placeholder="Add a trigger phrase or regular expression"
             onChange={this.props.onChange}
+            onEnterKey={this.props.onEnterKey}
           />
         </div>
         <div className="column column-shrink">
