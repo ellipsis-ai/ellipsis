@@ -35,7 +35,7 @@ var BehaviorEditor = React.createClass({
     };
   },
 
-  addMoreTriggers: function() {
+  addTrigger: function() {
     this.setState({
       triggers: this.state.triggers.concat([''])
     }, this.focusOnFirstBlankTrigger);
@@ -183,11 +183,12 @@ var BehaviorEditor = React.createClass({
                 value={trigger}
                 onChange={this.onTriggerChange.bind(this, index)}
                 onDelete={this.deleteTriggerAtIndex.bind(this, index)}
+                mayHideDelete={index + 1 == this.state.triggers.length}
               />
             );
           }, this)}
           </div>
-          <button type="button" onClick={this.addMoreTriggers}>Add more triggers</button>
+          <button type="button" onClick={this.addTrigger}>Add another trigger</button>
         </div>
 
         <button type="submit" className="primary">Save and return</button>
@@ -328,7 +329,7 @@ var BehaviorEditorDeleteButton = React.createClass({
 
   render: function() {
     return (
-      <button className={"subtle shrink " + (this.props.visible ? "visibility-visible" : "visibility-hidden")}
+      <button className={"subtle shrink " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
         type="button" onMouseUp={this.onClick} ref="button">
         <img src="/assets/images/delete.svg"
           alt="Delete"
@@ -360,7 +361,7 @@ var BehaviorEditorTriggerInput = React.createClass({
           />
         </div>
         <div className="column column-shrink">
-          <BehaviorEditorDeleteButton onClick={this.props.onDelete} visible={!this.isEmpty()} />
+          <BehaviorEditorDeleteButton onClick={this.props.onDelete} hidden={this.isEmpty() && this.props.mayHideDelete} />
         </div>
       </div>
     );
