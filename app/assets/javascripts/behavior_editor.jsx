@@ -100,10 +100,18 @@ var BehaviorEditor = React.createClass({
   },
 
   onParamEnterKey: function(index) {
-    if (index + 1 == this.state.params.length) {
-      this.addParam();
-    } else {
+    if (index + 1 < this.state.params.length) {
       this.refs['param' + (index + 1)].focus();
+    } else if (this.state.params[index].question != '') {
+      this.addParam();
+    }
+  },
+
+  onTriggerEnterKey: function(index) {
+    if (index + 1 < this.state.triggers.length) {
+      this.refs['trigger' + (index + 1)].focus();
+    } else if (this.state.triggers[index] != '') {
+      this.addTrigger();
     }
   },
 
@@ -195,6 +203,7 @@ var BehaviorEditor = React.createClass({
                 value={trigger}
                 onChange={this.onTriggerChange.bind(this, index)}
                 onDelete={this.deleteTriggerAtIndex.bind(this, index)}
+                onEnterKey={this.onTriggerEnterKey.bind(this, index)}
                 mayHideDelete={index + 1 == this.state.triggers.length}
               />
             );
@@ -315,7 +324,6 @@ var BehaviorEditorInput = React.createClass({
         placeholder={this.props.placeholder}
         autoFocus={this.props.autoFocus}
         onChange={this.onChange}
-        onKeyUp={this.handleEnterKey}
         onKeyPress={this.handleEnterKey}
       />
     );
@@ -370,6 +378,7 @@ var BehaviorEditorTriggerInput = React.createClass({
             value={this.props.value}
             placeholder="Add a trigger phrase or regular expression"
             onChange={this.props.onChange}
+            onEnterKey={this.props.onEnterKey}
           />
         </div>
         <div className="column column-shrink">
