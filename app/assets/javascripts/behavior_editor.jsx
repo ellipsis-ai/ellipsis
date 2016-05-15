@@ -64,11 +64,6 @@ var BehaviorEditor = React.createClass({
     this.setState({ description: newDescription });
   },
 
-  getCodeName: function() {
-    var stripped = this.state.description.toLowerCase().replace(/[^\w ]/g, '');
-    return stripped.split(' ').slice(0,3).join('-');
-  },
-
   onCodeChange: function(newCode) {
     this.setState({
       nodeFunction: newCode
@@ -112,11 +107,7 @@ var BehaviorEditor = React.createClass({
           value={JSON.stringify(this.state)}
         />
         <div className="form-field-group">
-          <p><strong>In one phrase, describe what this behavior does.</strong></p>
-          <p>You may also choose a short code name for reference.</p>
-
           <BehaviorEditorDescription description={this.state.description}
-            codeName={this.getCodeName()}
             onChange={this.onDescriptionChange}
           />
         </div>
@@ -126,12 +117,6 @@ var BehaviorEditor = React.createClass({
 
           <p>If you need to collect information from the user, add one or more parameters
           to your function. For each one, include a question for @ellipsis to ask the user.</p>
-
-          <p>
-            <span>Along with any parameters you’ve specified, your function will receive </span>
-            <code>onSuccess</code> and <code>onError</code><span> callbacks, as well a </span>
-            <code>context</code> object.
-          </p>
 
           <div>
             <div>
@@ -223,16 +208,10 @@ var BehaviorEditorDescription = React.createClass({
     return (
       <div className="form-grouped-inputs">
         <input type="text"
-          className="form-input"
-          placeholder="Bang two coconuts together"
+          className="form-input big"
+          placeholder="In one phrase, describe what this behavior does."
           value={this.props.description}
           onChange={this.handleChange}
-        />
-        <input type="text"
-          className="form-input type-monospace"
-          placeholder="bang-two-coconuts"
-          readOnly
-          value={this.props.codeName}
         />
       </div>
     );
