@@ -190,6 +190,11 @@ So for example:
 
 /* Foreground type utilities */
 
+.type-l {
+  font-size: @type-l !important;
+  line-height: @xxl;
+}
+
 .type-s {
   font-size: @type-s !important;
   line-height: @xl;
@@ -251,18 +256,20 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
 }
 
-h1 {
+h1, .h1 {
   font-family: 'Grota Sans Rounded Medium', 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
   font-size: @type-xxl;
   line-height: @xxxxl;
+}
+
+h1 {
   margin-top: @xxxxl;
   color: @blue-faded-dark;
 }
 
-h2 {
+h2, .h2 {
   font-size: @type-xl;
   line-height: @xxxl;
-  font-style: italic;
 }
 
 h3 {
@@ -367,6 +374,8 @@ input, button, select, textarea, .form-field {
 @form-vertical-padding: (@s - @border-width);
 @form-horizontal-padding: @s;
 @form-input-height: @s * 2 + @xl;
+@form-input-height-large: @s * 2 + @xxl;
+@form-input-height-h2: @s * 2 + @xxxl;
 @form-bg-disabled: @gray-light;
 @form-color-disabled: @gray-darkest;
 
@@ -391,9 +400,14 @@ input, button, select, textarea, .form-field {
   width: 100%;
 }
 
-.form-input.big {
-  height: @form-input-height * 1.25;
-  font-size: @type-l;
+.form-input-large {
+  .type-l();
+  height: @form-input-height-large;
+}
+
+.form-input-h2 {
+  .h2();
+  height: @form-input-height-h2;
 }
 
 .form-input[readonly] {
@@ -416,6 +430,14 @@ input, button, select, textarea, .form-field {
   padding-right: 0;
   padding-bottom: (@form-vertical-padding - 1 - @xs);
   height: @form-input-height - @xs;
+}
+
+.form-input-borderless.form-input-large {
+  height: @form-input-height-large - @xs;
+}
+
+.form-input-borderless.form-input-h2 {
+  height: @form-input-height-h2 - @xs;
 }
 
 .form-grouped-inputs {

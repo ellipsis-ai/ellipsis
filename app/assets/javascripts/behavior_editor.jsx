@@ -107,6 +107,7 @@ var BehaviorEditor = React.createClass({
           value={JSON.stringify(this.state)}
         />
         <div className="form-field-group">
+          <h3 className="mtxxxxl mbn type-weak">Edit behavior</h3>
           <BehaviorEditorDescription description={this.state.description}
             onChange={this.onDescriptionChange}
           />
@@ -206,14 +207,12 @@ var BehaviorEditorDescription = React.createClass({
 
   render: function() {
     return (
-      <div className="form-grouped-inputs">
-        <input type="text"
-          className="form-input big"
-          placeholder="In one phrase, describe what this behavior does."
-          value={this.props.description}
-          onChange={this.handleChange}
-        />
-      </div>
+      <input type="text"
+        className="form-input form-input-borderless form-input-h2"
+        placeholder="Describe the behavior in one phrase"
+        value={this.props.description}
+        onChange={this.handleChange}
+      />
     );
   }
 });
