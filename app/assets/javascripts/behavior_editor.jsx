@@ -31,13 +31,13 @@ var BehaviorEditor = React.createClass({
       description: this.props.description,
       nodeFunction: this.props.nodeFunction,
       params: this.props.params,
-      triggers: this.props.triggers
+      triggers: this.props.triggers.concat(['']) // always add one blank trigger
     };
   },
 
-  addMoreTriggers: function() {
+  addTrigger: function() {
     this.setState({
-      triggers: this.state.triggers.concat(['', '', ''])
+      triggers: this.state.triggers.concat([''])
     }, this.focusOnFirstBlankTrigger);
   },
 
@@ -51,8 +51,13 @@ var BehaviorEditor = React.createClass({
   },
 
   deleteTriggerAtIndex: function(index) {
+    var triggers = this.utils.arrayRemoveElementAtIndex(this.state.triggers, index);
+    if (index == triggers.length) {
+      // Add a blank trigger on the end if the user deleted the last trigger
+      triggers = triggers.concat(['']);
+    }
     this.setState({
-      triggers: this.utils.arrayRemoveElementAtIndex(this.state.triggers, index)
+      triggers: triggers
     });
   },
 
@@ -167,30 +172,23 @@ var BehaviorEditor = React.createClass({
         </div>
 
         <div className="form-field-group">
-          <p><strong>Specify one or more words or phrases that should trigger this behavior in chat.</strong></p>
+          <p><strong>Specify one or more phrases to trigger this behavior in chat.</strong></p>
+          <p>You can use regular expressions for more flexibility and to capture user input.</p>
           <div className="form-grouped-inputs mbl">
           {this.state.triggers.map(function(trigger, index) {
             return (
-              <div className="columns columns-elastic" key={'BehaviorEditorTriggerContainer' + index}>
-                <div className="column column-expand prxs">
-                  <BehaviorEditorInput
-                    key={'BehaviorEditorTrigger' + index}
-                    ref={'trigger' + index}
-                    value={trigger}
-                    onChange={this.onTriggerChange.bind(this, index)}
-                  />
-                </div>
-                <div className="column column-shrink">
-                  <BehaviorEditorDeleteButton
-                    key={'BehaviorEditorTriggerDelete' + index}
-                    onClick={this.deleteTriggerAtIndex.bind(this, index)}
-                  />
-                </div>
-              </div>
+              <BehaviorEditorTriggerInput
+                key={"BehaviorEditorTrigger" + index}
+                ref={"trigger" + index}
+                value={trigger}
+                onChange={this.onTriggerChange.bind(this, index)}
+                onDelete={this.deleteTriggerAtIndex.bind(this, index)}
+                mayHideDelete={index + 1 == this.state.triggers.length}
+              />
             );
           }, this)}
           </div>
-          <button type="button" onClick={this.addMoreTriggers}>Add more triggers</button>
+          <button type="button" onClick={this.addTrigger}>Add another trigger</button>
         </div>
 
         <button type="submit" className="primary">Save and return</button>
@@ -287,6 +285,12 @@ var BehaviorEditorInput = React.createClass({
     this.props.onChange(this.refs.input.value);
   },
 
+  disableEnterKey: function(event) {
+    if (event.which == 13) {
+      event.preventDefault();
+    }
+  },
+
   isEmpty: function() {
     return !this.refs.input.value;
   },
@@ -300,7 +304,10 @@ var BehaviorEditorInput = React.createClass({
       <input type="text" className="form-input"
         ref="input"
         value={this.props.value}
+        placeholder={this.props.placeholder}
         onChange={this.onChange}
+        onKeyUp={this.disableEnterKey}
+        onKeyPress={this.disableEnterKey}
       />
     );
   }
@@ -322,12 +329,47 @@ var BehaviorEditorDeleteButton = React.createClass({
 
   render: function() {
     return (
-      <button className="subtle shrink" type="button" onMouseUp={this.onClick} ref="button">
+      <button type="button"
+        ref="button"
+        className={"subtle shrink " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
+        onMouseUp={this.onClick}
+      >
         <img src="/assets/images/delete.svg"
           alt="Delete"
           title={this.props.title || "Delete"}
         />
       </button>
+    );
+  }
+});
+
+var BehaviorEditorTriggerInput = React.createClass({
+  isEmpty: function() {
+    return !this.props.value;
+  },
+
+  focus: function() {
+    this.refs.input.focus();
+  },
+
+  render: function() {
+    return (
+      <div className="columns columns-elastic">
+        <div className="column column-expand prxs">
+          <BehaviorEditorInput
+            ref="input"
+            value={this.props.value}
+            placeholder="Add a trigger phrase or regular expression"
+            onChange={this.props.onChange}
+          />
+        </div>
+        <div className="column column-shrink">
+          <BehaviorEditorDeleteButton
+            onClick={this.props.onDelete}
+            hidden={this.isEmpty() && this.props.mayHideDelete}
+          />
+        </div>
+      </div>
     );
   }
 });
