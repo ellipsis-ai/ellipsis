@@ -202,8 +202,12 @@ var BehaviorEditor = React.createClass({
 });
 
 var BehaviorEditorUserInputDefinition = React.createClass({
-  onChange: function(event) {
-    this.props.onChange({ name: this.refs.name.value, question: this.refs.question.value });
+  onNameChange: function(newName) {
+    this.props.onChange({ name: newName, question: this.props.question });
+  },
+
+  onQuestionChange: function(newQuestion) {
+    this.props.onChange({ name: this.props.name, question: newQuestion });
   },
 
   onDeleteClick: function() {
@@ -221,12 +225,12 @@ var BehaviorEditorUserInputDefinition = React.createClass({
         <div className="column column-one-quarter">
           <div className="columns columns-elastic">
             <div className="column column-expand prs">
-              <input type="text"
+              <BehaviorEditorInput
                 ref="name"
-                className="form-input form-input-borderless type-monospace type-s"
+                className="form-input-borderless type-monospace type-s"
                 placeholder="userInput"
                 value={this.props.name}
-                onChange={this.onChange}
+                onChange={this.onNameChange}
               />
             </div>
             <div className="column column-shrink align-b">
@@ -242,14 +246,13 @@ var BehaviorEditorUserInputDefinition = React.createClass({
                   htmlFor={"question" + this.props.id}
                   title="Write a question for @ellipsis to ask the user to provide this parameter."
                 >Q:</label>
-                <input type="text"
+                <BehaviorEditorInput
                   id={"question" + this.props.id}
                   ref="question"
-                  className="form-input"
                   placeholder="Write a question to ask the user for this parameter"
                   autoFocus={this.props.shouldGrabFocus}
                   value={this.props.question}
-                  onChange={this.onChange}
+                  onChange={this.onQuestionChange}
                 />
               </div>
             </div>
@@ -285,13 +288,19 @@ var BehaviorEditorInput = React.createClass({
     this.refs.input.focus();
   },
 
+  select: function() {
+    this.refs.input.select();
+  },
+
   render: function() {
     return (
       <input type="text"
         className={"form-input " + this.props.className}
         ref="input"
+        id={this.props.id}
         value={this.props.value}
         placeholder={this.props.placeholder}
+        autoFocus={this.props.autoFocus}
         onChange={this.onChange}
         onKeyUp={this.disableEnterKey}
         onKeyPress={this.disableEnterKey}
