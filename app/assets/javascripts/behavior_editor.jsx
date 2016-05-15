@@ -113,7 +113,10 @@ var BehaviorEditor = React.createClass({
         />
         <div className="form-field-group">
           <h3 className="mtxxxxl mbn type-weak">Edit behavior</h3>
-          <BehaviorEditorDescription description={this.state.description}
+          <BehaviorEditorInput
+            className="form-input-borderless form-input-h2"
+            placeholder="Describe the behavior in one phrase"
+            value={this.state.description}
             onChange={this.onDescriptionChange}
           />
         </div>
@@ -194,23 +197,6 @@ var BehaviorEditor = React.createClass({
         <button type="submit" className="primary">Save and return</button>
 
       </form>
-    );
-  }
-});
-
-var BehaviorEditorDescription = React.createClass({
-  handleChange: function(event) {
-    this.props.onChange(event.target.value);
-  },
-
-  render: function() {
-    return (
-      <input type="text"
-        className="form-input form-input-borderless form-input-h2"
-        placeholder="Describe the behavior in one phrase"
-        value={this.props.description}
-        onChange={this.handleChange}
-      />
     );
   }
 });
@@ -301,7 +287,8 @@ var BehaviorEditorInput = React.createClass({
 
   render: function() {
     return (
-      <input type="text" className="form-input"
+      <input type="text"
+        className={"form-input " + this.props.className}
         ref="input"
         value={this.props.value}
         placeholder={this.props.placeholder}
