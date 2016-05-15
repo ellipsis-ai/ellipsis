@@ -24,10 +24,11 @@ case class LearnBehaviorConversation(
   val DESCRIPTION_PROMPT = "Describe the new behavior you'd like me to learn:"
 
   def codePromptFor(lambdaService: AWSLambdaService) = {
+    val editPromptString = "describe how this should work"
     val editPrompt = behavior.editLinkFor(lambdaService.configuration).map { link =>
-      s" at $link"
-    }.getOrElse(".")
-    s"""Great. Next describe how this should work$editPrompt
+      s"<$link|$editPromptString>"
+    }.getOrElse(editPromptString)
+    s"""Great. Next $editPrompt.
       |
       |Or, if you like, you can write a quick node.js function right here.
       |
