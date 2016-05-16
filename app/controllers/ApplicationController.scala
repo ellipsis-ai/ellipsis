@@ -46,6 +46,17 @@ class ApplicationController @Inject() (
     maybeResult.getOrElse(Redirect(routes.ApplicationController.index))
   }
 
+  def signInWithSlack(maybeRedirectUrl: Option[String]) = UserAwareAction { implicit request =>
+    val maybeResult = for {
+      scopes <- configuration.getString("silhouette.slack.signInScope")
+      clientId <- configuration.getString("silhouette.slack.clientID")
+    } yield {
+        val redirectUrl = routes.SocialAuthController.authenticateSlack(maybeRedirectUrl.map(UriEncoding.encodePathSegment(_, "utf-8"))).absoluteURL()
+        Ok(views.html.signInWithSlack(request.identity, scopes, clientId, redirectUrl))
+      }
+    maybeResult.getOrElse(Redirect(routes.ApplicationController.index))
+  }
+
   case class BehaviorParameterData(name: String, question: String)
   case class BehaviorData(
                          id: String,
