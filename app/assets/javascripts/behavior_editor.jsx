@@ -212,7 +212,7 @@ var BehaviorEditor = React.createClass({
           <button type="button" onClick={this.addTrigger}>Add another trigger</button>
         </div>
 
-        <button type="submit" className="primary">Save and return</button>
+        <button type="submit" className="button-primary">Save and return</button>
 
       </form>
     );
@@ -348,7 +348,7 @@ var BehaviorEditorDeleteButton = React.createClass({
     return (
       <button type="button"
         ref="button"
-        className={"subtle shrink " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
+        className={"button-subtle button-shrink " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
         onMouseUp={this.onClick}
       >
         <img src="/assets/images/delete.svg"
