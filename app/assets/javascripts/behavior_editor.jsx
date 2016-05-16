@@ -35,6 +35,16 @@ var BehaviorEditor = React.createClass({
     };
   },
 
+  isModified: function() {
+    return JSON.stringify(this.state) !== JSON.stringify(this.getInitialState());
+  },
+
+  undoChanges: function() {
+    if (window.confirm("Are you sure you want to undo changes?")) {
+      this.setState(this.getInitialState());
+    }
+  },
+
   addTrigger: function() {
     this.setState({
       triggers: this.state.triggers.concat([''])
@@ -128,7 +138,11 @@ var BehaviorEditor = React.createClass({
           value={JSON.stringify(this.state)}
         />
         <div className="form-field-group">
-          <h3 className="mtxxxxl mbn type-weak">Edit behavior</h3>
+          <h3 className="mtxxxl mbn type-weak">
+            <span>
+              Edit behavior
+            </span> <span className={"type-italic type-pink visibility " + (this.isModified() ? "visibility-visible" : "visibility-hidden")}>— unsaved changes</span>
+          </h3>
           <BehaviorEditorInput
             className="form-input-borderless form-input-h2"
             placeholder="Describe the behavior in one phrase"
@@ -212,7 +226,8 @@ var BehaviorEditor = React.createClass({
           <button type="button" onClick={this.addTrigger}>Add another trigger</button>
         </div>
 
-        <button type="submit" className="button-primary">Save and return</button>
+        <button type="submit" className="button-primary mrs" disabled={!this.isModified()}>Save and return</button>
+        <button type="button" disabled={!this.isModified()} onClick={this.undoChanges}>Undo changes</button>
 
       </form>
     );
@@ -348,7 +363,7 @@ var BehaviorEditorDeleteButton = React.createClass({
     return (
       <button type="button"
         ref="button"
-        className={"button-subtle button-shrink " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
+        className={"button-subtle button-shrink visibility " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
         onMouseUp={this.onClick}
       >
         <img src="/assets/images/delete.svg"
