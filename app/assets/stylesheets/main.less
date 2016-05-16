@@ -372,8 +372,8 @@ input, button, select, textarea, .form-field {
   line-height: @xl;
 }
 
-@form-vertical-padding: (@s - @border-width);
-@form-horizontal-padding: @s;
+@form-padding-vertical: @s;
+@form-padding-horizontal: @s;
 @form-input-height: @s * 2 + @xl;
 @form-input-height-large: @s * 2 + @xxl;
 @form-input-height-h2: @s * 2 + @xxxl;
@@ -394,8 +394,7 @@ input, button, select, textarea, .form-field {
 }
 
 .form-input {
-  /* Subtract 1 from bottom padding in case fonts causes line-height to be off by 1 */
-  padding: @form-vertical-padding @form-horizontal-padding (@form-vertical-padding - 1);
+  padding: (@form-padding-vertical - @border-width) (@form-padding-horizontal - @border-width);
   height: @form-input-height;
   .form-field();
   width: 100%;
@@ -416,21 +415,40 @@ input, button, select, textarea, .form-field {
   color: @form-color-disabled;
 }
 
+.CodeMirror {
+  .type-monospace();
+  font-size: @type-s;
+  line-height: @xl;
+  min-height: @form-input-height - @border-width*2;
+  height: auto;
+  padding: (@xs - @border-width);
+}
+
 .form-input:focus, .form-field:focus, .CodeMirror-focused {
   outline: none;
   border-color: @border-color-focus;
+  border-width: @border-width-thick;
+  padding: (@form-padding-vertical - @border-width-thick) (@form-padding-horizontal - @border-width-thick);
+}
+
+.CodeMirror-focused {
+  padding: (@xs - @border-width-thick);
 }
 
 .form-input-borderless {
   background-color: transparent;
   border-top-color: transparent !important;
-  border-left-color: transparent !important;
-  border-right-color: transparent !important;
+  border-left-width: 0 !important;
+  border-right-width: 0 !important;
   border-radius: 0;
-  padding-left: 0;
-  padding-right: 0;
-  padding-bottom: (@form-vertical-padding - 1 - @xs);
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: (@form-padding-vertical - @border-width - @xs);
   height: @form-input-height - @xs;
+}
+
+.form-input-borderless:focus {
+  padding-bottom: (@form-padding-vertical - @border-width-thick - @xs);
 }
 
 .form-input-borderless.form-input-large {
@@ -483,7 +501,7 @@ input, button, select, textarea, .form-field {
 
   .form-input-prefix {
     .form-field();
-    padding: @form-vertical-padding @form-horizontal-padding (@form-vertical-padding - 1);
+    padding: (@form-padding-vertical - @border-width) (@form-padding-horizontal - @border-width);
     height: @form-input-height;
     width: 1%;
     border-right-width: 0;
@@ -496,18 +514,6 @@ input, button, select, textarea, .form-field {
     width: 100%;
     border-radius: 0 @border-radius @border-radius 0;
   }
-}
-
-.CodeMirror {
-  .type-monospace();
-  font-size: @type-s;
-  line-height: @xl;
-  min-height: @form-input-height - @border-width*2;
-  height: auto;
-  padding: @xs;
-}
-
-.CodeMirror-gutters {
 }
 
 /* Buttons */
