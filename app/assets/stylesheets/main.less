@@ -17,6 +17,7 @@
 @type-xxl: 59px;
 
 @border-width: 1px;
+@border-width-thick: 2px;
 @border-radius: @s;
 
 /* Colors */
@@ -514,7 +515,7 @@ input, button, select, textarea, .form-field {
 @button-height: @s * 2 + @xl;
 
 button {
-  padding: (@s - @border-width) @l;
+  padding: (@s - @border-width) (@l - @border-width);
   height: @button-height;
   box-sizing: border-box;
   border-radius: @border-radius;
@@ -527,19 +528,26 @@ button {
   cursor: pointer;
 }
 
-button.shrink {
+button.button-shrink {
   min-width: 0;
-  padding-left: @s;
-  padding-right: @s;
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
 }
 
-button.subtle {
+button.button-subtle {
   border-color: transparent;
 }
 
 button:focus {
   outline: none;
   border-color: @blue-dark;
+  border-width: @border-width-thick;
+  padding: (@s - @border-width-thick) (@l - @border-width-thick);
+}
+
+button.button-shrink:focus {
+  padding-left: (@s - @border-width-thick);
+  padding-right: (@s - @border-width-thick);
 }
 
 button:active {
@@ -547,19 +555,19 @@ button:active {
   border-color: @blue-dark;
 }
 
-button.primary {
+button.button-primary {
   font-weight: 600;
   background-color: @blue-medium;
   border-color: @blue-medium;
   color: @white;
 }
 
-button.primary:focus {
+button.button-primary:focus {
   background-color: @blue-medium;
   border-color: @blue-dark;
 }
 
-button.primary:active {
+button.button-primary:active {
   background-color: @blue-dark;
   border-color: @blue-dark;
   color: @white;
