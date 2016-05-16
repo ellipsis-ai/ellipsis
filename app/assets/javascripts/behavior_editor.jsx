@@ -39,6 +39,12 @@ var BehaviorEditor = React.createClass({
     return JSON.stringify(this.state) !== JSON.stringify(this.getInitialState());
   },
 
+  undoChanges: function() {
+    if (window.confirm("Are you sure you want to undo changes?")) {
+      this.setState(this.getInitialState());
+    }
+  },
+
   addTrigger: function() {
     this.setState({
       triggers: this.state.triggers.concat([''])
@@ -221,7 +227,7 @@ var BehaviorEditor = React.createClass({
         </div>
 
         <button type="submit" className="button-primary mrs" disabled={!this.isModified()}>Save and return</button>
-        <button type="submit">Cancel</button>
+        <button type="button" disabled={!this.isModified()} onClick={this.undoChanges}>Undo changes</button>
 
       </form>
     );
