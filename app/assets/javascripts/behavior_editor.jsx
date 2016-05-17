@@ -363,7 +363,7 @@ var BehaviorEditorDeleteButton = React.createClass({
     return (
       <button type="button"
         ref="button"
-        className={"button-subtle button-shrink type-black visibility " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
+        className={"button-subtle button-shrink visibility " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
         onMouseUp={this.onClick}
         title={this.props.title || "Delete"}
       >

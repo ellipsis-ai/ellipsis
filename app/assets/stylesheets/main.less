@@ -31,7 +31,6 @@
 @gray-darkest: hsl(231, 15%, 40%);
 
 @blue-faded-dark: hsl(231, 22%, 43%);
-@blue-faded-medium: hsl(231, 42%, 53%);
 
 @blue-darkest: hsl(231, 71%, 20%);
 @blue-dark: hsl(231, 71%, 42%);
@@ -564,7 +563,7 @@ button.button-shrink {
 
 button.button-subtle {
   border-color: transparent;
-  color: @black;
+  color: inherit;
 }
 
 button:focus {
@@ -575,7 +574,7 @@ button:focus {
 }
 
 button.button-subtle:focus {
-  border-color: @gray-darkest !important;
+  border-color: currentColor !important;
 }
 
 button.button-shrink:focus {
