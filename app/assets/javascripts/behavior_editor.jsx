@@ -1,3 +1,10 @@
+define('behavior_editor', function(require) {
+
+var React = require('react');
+var ReactDOM = require('react-dom');
+var Codemirror = require('react-codemirror');
+require('codemirror/mode/javascript/javascript');
+
 var BehaviorEditor = React.createClass({
   propTypes: {
     behaviorId: React.PropTypes.string,
@@ -232,17 +239,23 @@ var BehaviorEditor = React.createClass({
           <button type="button" onClick={this.addTrigger}>Add another trigger</button>
         </div>
 
-        <button type="submit"
-          className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
-          disabled={!this.isModified()}
-          onClick={this.onSaveClick}
+        <footer className={"position-fixed-bottom pvm border-top " +
+          (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
-          <span className="button-labels">
-            <span className="button-normal-label">Save and return</span>
-            <span className="button-activated-label">Saving…</span>
-          </span>
-        </button>
-        <button type="button" disabled={!this.isModified()} onClick={this.undoChanges}>Undo changes</button>
+          <div className="container">
+            <button type="submit"
+              className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
+              disabled={!this.isModified()}
+              onClick={this.onSaveClick}
+            >
+              <span className="button-labels">
+                <span className="button-normal-label">Save and return</span>
+                <span className="button-activated-label">Saving…</span>
+              </span>
+            </button>
+            <button type="button" disabled={!this.isModified()} onClick={this.undoChanges}>Undo changes</button>
+          </div>
+        </footer>
 
       </form>
     );
@@ -427,4 +440,13 @@ var BehaviorEditorTriggerInput = React.createClass({
       </div>
     );
   }
+});
+
+return {
+  load: function(data, containerId) {
+    var myBehaviorEditor = React.createElement(BehaviorEditor, data);
+    ReactDOM.render(myBehaviorEditor, document.getElementById(containerId));
+  }
+};
+
 });

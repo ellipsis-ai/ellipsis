@@ -7,11 +7,15 @@
 
 @main("Sign in with Slack") {
 
-  <div class="add-to-slack">
+  <div id="content" class="content">
+    <div class="container ptxxxxl">
+      <div class="add-to-slack">
 
-    <p class="add-to-slack-action">
-      @signInWithSlackButton(scopes, clientId, redirectUrl)
-    </p>
+        <p class="add-to-slack-action">
+          @signInWithSlackButton(scopes, clientId, redirectUrl)
+        </p>
 
+      </div>
+    </div>
   </div>
 }
