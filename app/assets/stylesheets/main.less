@@ -550,9 +550,9 @@ button {
 }
 
 button[disabled] {
-  border-color: @gray-light;
-  color: @gray-medium;
-  cursor: default;
+  border-color: @gray-light !important;
+  color: @gray-medium !important;
+  cursor: default !important;
 }
 
 button.button-shrink {
@@ -596,11 +596,6 @@ button.button-primary {
   -webkit-font-smoothing: antialiased;
 }
 
-button.button-primary[disabled] {
-  background-color: @gray-light;
-  border-color: @gray-light;
-}
-
 button.button-primary:focus {
   background-color: @blue-medium;
   border-color: @blue-dark;
@@ -610,6 +605,12 @@ button.button-primary:active {
   background-color: @blue-dark;
   border-color: @blue-dark;
   color: @white;
+}
+
+button.button-primary[disabled] {
+  background-color: @gray-light !important;
+  border-color: @gray-light !important;
+  color: @white !important;
 }
 
 .button-labels {
