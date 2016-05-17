@@ -612,6 +612,30 @@ button.button-primary:active {
   color: @white;
 }
 
+.button-labels {
+  display: block;
+  position: relative;
+}
+
+.button-activated-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  display: none;
+}
+
+/* Note this technique requires the activated label to be shorter than the normal label */
+button.button-activated {
+  .button-activated-label {
+    display: block;
+  }
+  .button-normal-label {
+    visibility: hidden;
+  }
+}
+
 /* Visibility */
 
 .visibility {

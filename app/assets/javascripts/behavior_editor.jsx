@@ -131,6 +131,12 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  onSaveClick: function() {
+    this.setState({
+      isSaving: true
+    });
+  },
+
   render: function() {
     return (
       <form action="/save_behavior" method="POST">
@@ -226,7 +232,16 @@ var BehaviorEditor = React.createClass({
           <button type="button" onClick={this.addTrigger}>Add another trigger</button>
         </div>
 
-        <button type="submit" className="button-primary mrs" disabled={!this.isModified()}>Save and return</button>
+        <button type="submit"
+          className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
+          disabled={!this.isModified()}
+          onClick={this.onSaveClick}
+        >
+          <span className="button-labels">
+            <span className="button-normal-label">Save and return</span>
+            <span className="button-activated-label">Saving…</span>
+          </span>
+        </button>
         <button type="button" disabled={!this.isModified()} onClick={this.undoChanges}>Undo changes</button>
 
       </form>
