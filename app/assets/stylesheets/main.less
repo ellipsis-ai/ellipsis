@@ -16,26 +16,34 @@
 @type-xl: 43px;
 @type-xxl: 59px;
 
-@border-width: @xxs;
+@border-width: 1px;
+@border-width-thick: 2px;
 @border-radius: @s;
 
 /* Colors */
 @black: hsl(231, 15%, 15%);
 @black-translucent: hsla(231, 15%, 15%, 0.1);
 @white: #FFFFFF;
+@almost-white: hsl(231, 15%, 97%);
+@gray-lightest: hsl(231, 10%, 95%);
+@gray-light: hsl(231, 11%, 81%);
+@gray-medium: hsl(231, 15%, 60%);
 @gray-darkest: hsl(231, 15%, 40%);
-@gray-lightest: hsl(231, 15%, 97%);
-@gray-light: hsl(231, 10%, 95%);
+
+@blue-faded-dark: hsl(231, 22%, 43%);
+
 @blue-darkest: hsl(231, 71%, 20%);
 @blue-dark: hsl(231, 71%, 42%);
 @blue-medium-text: hsl(231, 74%, 57%);
 @blue-medium: hsl(231, 97%, 64%);
-@blue-faded: hsl(231, 11%, 81%);
-@blue-faded-dark: hsl(231, 22%, 43%);
+
 @pink-medium: hsl(341, 93%, 65%);
 @green-light: hsl(127, 93%, 63%);
 
-body, input, select, textarea {
+@border-color: @gray-light;
+@border-color-focus: @pink-medium;
+
+body, input, select, textarea, button {
   font-family: 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -88,27 +96,27 @@ So for example:
 
 .generate-margin(@size, @size-name) {
   .ma@{size-name} {
-    margin: @size;
+    margin: @size !important;
   }
   .mv@{size-name} {
-    margin-top: @size;
-    margin-bottom: @size;
+    margin-top: @size !important;
+    margin-bottom: @size !important;
   }
   .mh@{size-name} {
-    margin-left: @size;
-    margin-right: @size;
+    margin-left: @size !important;
+    margin-right: @size !important;
   }
   .mt@{size-name} {
-    margin-top: @size;
+    margin-top: @size !important;
   }
   .mb@{size-name} {
-    margin-bottom: @size;
+    margin-bottom: @size !important;
   }
   .ml@{size-name} {
-    margin-left: @size;
+    margin-left: @size !important;
   }
   .mr@{size-name} {
-    margin-right: @size;
+    margin-right: @size !important;
   }
 }
 
@@ -120,30 +128,31 @@ So for example:
 .generate-margin(@m, m);
 .generate-margin(@s, s);
 .generate-margin(@xs, xs);
+.generate-margin(0, n);
 
 .generate-padding(@size, @size-name) {
   .pa@{size-name} {
-    padding: @size;
+    padding: @size !important;
   }
   .pv@{size-name} {
-    padding-top: @size;
-    padding-bottom: @size;
+    padding-top: @size !important;
+    padding-bottom: @size !important;
   }
   .ph@{size-name} {
-    padding-left: @size;
-    padding-right: @size;
+    padding-left: @size !important;
+    padding-right: @size !important;
   }
   .pt@{size-name} {
-    padding-top: @size;
+    padding-top: @size !important;
   }
   .pb@{size-name} {
-    padding-bottom: @size;
+    padding-bottom: @size !important;
   }
   .pl@{size-name} {
-    padding-left: @size;
+    padding-left: @size !important;
   }
   .pr@{size-name} {
-    padding-right: @size;
+    padding-right: @size !important;
   }
 }
 
@@ -155,6 +164,7 @@ So for example:
 .generate-padding(@m, m);
 .generate-padding(@s, s);
 .generate-padding(@xs, xs);
+.generate-padding(0, n);
 
 /* Background utilities */
 
@@ -162,8 +172,12 @@ So for example:
   background-color: @blue-darkest;
 }
 
+.bg-lightest {
+  background-color: @almost-white;
+}
+
 .bg-light {
-  background-color: @gray-lightest;
+  background-color: @gray-lightest
 }
 
 .bg-white {
@@ -180,14 +194,31 @@ So for example:
 
 /* Foreground type utilities */
 
+.type-l {
+  font-size: @type-l !important;
+  line-height: @xxl;
+}
+
 .type-s {
-  font-size: @type-s;
+  font-size: @type-s !important;
   line-height: @xl;
 }
 
 .type-xs {
-  font-size: @type-xs;
+  font-size: @type-xs !important;
   line-height: @l;
+}
+
+.type-italic {
+  font-style: italic;
+}
+
+.type-black {
+  color: @black;
+}
+
+.type-weak {
+  color: @gray-darkest;
 }
 
 .type-pink {
@@ -204,6 +235,7 @@ So for example:
 
 .type-monospace, code {
   font-family: 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.9em;
 }
 
 /* Alignment utilities */
@@ -212,9 +244,26 @@ So for example:
   text-align: center;
 }
 
+.align-t {
+  vertical-align: top !important;
+}
+
+.align-b {
+  vertical-align: bottom !important;
+}
+
+.align-m {
+  vertical-align: middle !important;
+}
+
 .logo {
+  color: @green-light;
   height: 28px;
   margin: -2px 0;
+}
+
+.logo:hover {
+  color: @blue-medium;
 }
 
 /* Headers */
@@ -224,18 +273,20 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
 }
 
-h1 {
+h1, .h1 {
   font-family: 'Grota Sans Rounded Medium', 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
   font-size: @type-xxl;
   line-height: @xxxxl;
+}
+
+h1 {
   margin-top: @xxxxl;
   color: @blue-faded-dark;
 }
 
-h2 {
+h2, .h2 {
   font-size: @type-xl;
   line-height: @xxxl;
-  font-style: italic;
 }
 
 h3 {
@@ -264,6 +315,51 @@ h6 {
   letter-spacing: 0.1em;
 }
 
+/* Columns */
+
+.columns:after {
+  content: ' ';
+  display: table;
+  clear: left;
+}
+
+.columns-elastic {
+  display: table;
+  width: 100%;
+}
+
+.columns-elastic > .column {
+  display: table-cell;
+  vertical-align: top;
+  float: none;
+}
+
+.column {
+  float: left;
+  padding-right: @l;
+  box-sizing: border-box;
+}
+
+.column:last-child {
+  padding-right: 0;
+}
+
+.column-one-quarter {
+  width: 25%;
+}
+
+.column-three-quarters {
+  width: 75%;
+}
+
+.column-expand {
+  width: 100%;
+}
+
+.column-shrink {
+  width: 1px;
+}
+
 /* Rules */
 
 hr {
@@ -272,8 +368,13 @@ hr {
   border: none;
   background-color: @pink-medium;
   border-radius: @xs;
-  margin: @l 0 @xxl -@xxxxl*2;
-  padding: 0 0 0 @xxxxl*2;
+  margin: @l 0 @xxl 0;
+}
+
+hr.form-border {
+  height: @xxs;
+  background-color: @border-color;
+  border-radius: 0;
 }
 
 /* Forms */
@@ -282,32 +383,43 @@ hr {
   .mbxl();
 }
 
-input, button, select, textarea, .form-field {
+input, select, textarea, .form-field {
   font-size: 1rem;
   line-height: @xl;
 }
 
-@form-vertical-padding: (@s - @border-width);
-@form-horizontal-padding: @s;
+@form-padding-vertical: @s;
+@form-padding-horizontal: @s;
 @form-input-height: @s * 2 + @xl;
-@form-bg-disabled: @gray-light;
+@form-input-height-large: @s * 2 + @xxl;
+@form-input-height-h2: @s * 2 + @xxxl;
+@form-bg-disabled: @gray-lightest;
 @form-color-disabled: @gray-darkest;
 
-.form-field {
+.form-field, .CodeMirror {
   border-width: @border-width;
   border-style: solid;
-  border-color: @blue-faded;
+  border-color: @border-color;
   border-radius: @border-radius;
   box-sizing: border-box;
   .bg-white();
 }
 
 .form-input {
-  /* Subtract 1 from bottom padding in case fonts causes line-height to be off by 1 */
-  padding: @form-vertical-padding @form-horizontal-padding (@form-vertical-padding - 1);
+  padding: (@form-padding-vertical - @border-width) (@form-padding-horizontal - @border-width);
   height: @form-input-height;
   .form-field();
   width: 100%;
+}
+
+.form-input-large {
+  .type-l();
+  height: @form-input-height-large;
+}
+
+.form-input-h2 {
+  .h2();
+  height: @form-input-height-h2;
 }
 
 .form-input[readonly] {
@@ -315,35 +427,77 @@ input, button, select, textarea, .form-field {
   color: @form-color-disabled;
 }
 
-.form-input:focus, .form-field:focus {
+.CodeMirror {
+  .type-monospace();
+  font-size: @type-s;
+  line-height: @xl;
+  min-height: @form-input-height - @border-width*2;
+  height: auto;
+  padding: (@xs - @border-width);
+}
+
+.form-input:focus, .form-field:focus, .CodeMirror-focused {
   outline: none;
-  border-color: @pink-medium;
+  border-color: @border-color-focus;
+  border-width: @border-width-thick;
+  padding: (@form-padding-vertical - @border-width-thick) (@form-padding-horizontal - @border-width-thick);
+}
+
+.CodeMirror-focused {
+  padding: (@xs - @border-width-thick);
+}
+
+.form-input-borderless {
+  background-color: transparent;
+  border-top-color: transparent !important;
+  border-left-width: 0 !important;
+  border-right-width: 0 !important;
+  border-radius: 0;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: (@form-padding-vertical - @border-width - @xs);
+  height: @form-input-height - @xs;
+}
+
+.form-input-borderless:focus {
+  padding-bottom: (@form-padding-vertical - @border-width-thick - @xs);
+}
+
+.form-input-borderless.form-input-large {
+  height: @form-input-height-large - @xs;
+}
+
+.form-input-borderless.form-input-h2 {
+  height: @form-input-height-h2 - @xs;
 }
 
 .form-grouped-inputs {
-  .form-input {
+  .form-input, .columns > .column > .form-input {
     border-radius: 0;
-    border-bottom-width: 0;
-    height: @form-input-height - @border-width;
+    border-bottom-color: @white;
   }
-  .form-input:first-child {
-    border-radius: @border-radius @border-radius 0 0;
+
+  & > .form-input,
+  & > .columns {
+    margin-bottom: -1px;
   }
-  .form-input:last-child {
-    border-bottom-width: @border-width;
-    height: @form-input-height;
-    border-radius: 0 0 @border-radius @border-radius;
+
+  .form-input:first-child,
+  .columns:first-child > .column > .form-input {
+    border-top-left-radius: @border-radius;
+    border-top-right-radius: @border-radius;
   }
-  .form-input:focus {
-    border-bottom-width: @border-width;
-    height: @form-input-height;
+  .form-input:last-child,
+  .columns:last-child > .column > .form-input {
+    border-bottom-color: @border-color;
+    border-bottom-left-radius: @border-radius;
+    border-bottom-right-radius: @border-radius;
   }
-  .form-input:focus + .form-input {
-    border-top-width: 0;
-    height: @form-input-height - @border-width*2;
-  }
-  .form-input:focus + .form-input:last-child {
-    height: @form-input-height - @border-width;
+  .form-input:focus,
+  .columns > .column > .form-input:focus {
+    border-bottom-color: @border-color-focus;
+    position: relative;
+    z-index: 1;
   }
 }
 
@@ -359,7 +513,7 @@ input, button, select, textarea, .form-field {
 
   .form-input-prefix {
     .form-field();
-    padding: @form-vertical-padding @form-horizontal-padding (@form-vertical-padding - 1);
+    padding: (@form-padding-vertical - @border-width) (@form-padding-horizontal - @border-width);
     height: @form-input-height;
     width: 1%;
     border-right-width: 0;
@@ -374,25 +528,14 @@ input, button, select, textarea, .form-field {
   }
 }
 
-.CodeMirror {
-  .type-monospace();
-  font-size: @type-s;
-  line-height: @xl;
-  border-radius: @border-radius;
-  min-height: @form-input-height - @border-width*2;
-  height: auto;
-}
-
-.CodeMirror-gutters {
-  border-radius: @border-radius 0 0 @border-radius;
-}
-
 /* Buttons */
 
 @button-height: @s * 2 + @xl;
 
 button {
-  padding: (@s - @border-width) @l;
+  font-size: @type-m;
+  line-height: @xl;
+  padding: (@s - @border-width + 1) (@l - @border-width) (@s - @border-width - 1);
   height: @button-height;
   box-sizing: border-box;
   border-radius: @border-radius;
@@ -403,11 +546,40 @@ button {
   color: @blue-medium-text;
   min-width: @s * 20;
   cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+button[disabled] {
+  border-color: @gray-light;
+  color: @gray-medium;
+  cursor: default;
+}
+
+button.button-shrink {
+  min-width: 0;
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
+}
+
+button.button-subtle {
+  border-color: transparent;
+  color: inherit;
 }
 
 button:focus {
   outline: none;
   border-color: @blue-dark;
+  border-width: @border-width-thick;
+  padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
+}
+
+button.button-subtle:focus {
+  border-color: currentColor !important;
+}
+
+button.button-shrink:focus {
+  padding-left: (@s - @border-width-thick);
+  padding-right: (@s - @border-width-thick);
 }
 
 button:active {
@@ -415,20 +587,67 @@ button:active {
   border-color: @blue-dark;
 }
 
-button.primary {
+button.button-primary {
   font-weight: 600;
   background-color: @blue-medium;
   border-color: @blue-medium;
   color: @white;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
 }
 
-button.primary:focus {
+button.button-primary[disabled] {
+  background-color: @gray-light;
+  border-color: @gray-light;
+}
+
+button.button-primary:focus {
   background-color: @blue-medium;
   border-color: @blue-dark;
 }
 
-button.primary:active {
+button.button-primary:active {
   background-color: @blue-dark;
   border-color: @blue-dark;
   color: @white;
+}
+
+.button-labels {
+  display: block;
+  position: relative;
+}
+
+.button-activated-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  display: none;
+}
+
+/* Note this technique requires the activated label to be shorter than the normal label */
+button.button-activated {
+  .button-activated-label {
+    display: block;
+  }
+  .button-normal-label {
+    visibility: hidden;
+  }
+}
+
+/* Visibility */
+
+.visibility {
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.visibility-hidden {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.visibility-visible {
+  visibility: visible;
+  opacity: 1;
 }

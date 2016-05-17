@@ -41,24 +41,6 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
     } yield Unit
   }
 
-  private def learnBehaviorFor(regex: Regex, code: String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
-    val eventualReply = try {
-      BehaviorQueries.learnFor(regex, code, profile.teamId, lambdaService).map { maybeBehavior =>
-        maybeBehavior.map { behavior =>
-          "OK, I think I've got it."
-        }.getOrElse {
-          messages("cant_find_team")
-        }
-      }
-    } catch {
-      case e: AmazonServiceException => DBIO.successful("D'oh! That didn't work.")
-    }
-    eventualReply.map { reply =>
-      val messageContext = SlackContext(client, profile, message)
-      SlackMessageEvent(messageContext).context.sendMessage(reply)
-    }
-  }
-
   private def unlearnBehaviorFor(regexString: String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
     val eventualReply = try {
       for {
@@ -97,8 +79,11 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
           val triggersString = triggers.map { ea =>
             s"`${ea.regex.pattern.pattern()}`"
           }.mkString(" or ")
+          val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
+            s" <$link|Edit>"
+          }.getOrElse("")
           behavior.maybeDescription.map { desc =>
-            s"\n• $desc when someone types $triggersString"
+            s"\n• $desc when someone types $triggersString $editLink"
           }
         }.mkString("")
         val matchString = maybeHelpSearch.map { s =>
@@ -147,13 +132,11 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
 
   def handleMessageFor(client: SlackRtmClient, profile: SlackBotProfile, message: Message, selfId: String): DBIO[Unit] = {
     val startLearnConversationRegex = s"""<@$selfId>:\\s+learn\\s*$$""".r
-    val oneLineLearnRegex = s"""<@$selfId>:\\s+learn\\s+(\\S+)\\s+(.+)""".r
     val unlearnRegex = s"""<@$selfId>:\\s+unlearn\\s+(\\S+)""".r
     val helpRegex = s"""<@$selfId>:\\s+help\\s*(\\S*.*)$$""".r
 
     message.text match {
       case startLearnConversationRegex() => startLearnConversationFor(client, profile, message)
-      case oneLineLearnRegex(regexString, code) => learnBehaviorFor(regexString.r, code, client, profile, message)
       case unlearnRegex(regexString) => unlearnBehaviorFor(regexString, client, profile, message)
       case helpRegex(helpString) => displayHelpFor(helpString, client, profile, message)
       case _ => startInvokeConversationFor(client, profile, message)

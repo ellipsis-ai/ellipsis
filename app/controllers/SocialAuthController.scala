@@ -1,5 +1,6 @@
 package controllers
 
+import java.net.URI
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -54,6 +55,15 @@ class SocialAuthController @Inject() (
     }
   }
 
+  private def validatedRedirectUri(uri: String)(implicit r: RequestHeader): String = {
+    val parsed = new URI(uri)
+    if (parsed.isAbsolute && parsed.getHost != r.host.split(":").head) {
+      routes.ApplicationController.index.toString
+    } else {
+      uri
+    }
+  }
+
   def authenticateSlack(
                          maybeRedirect: Option[String],
                          maybeTeamId: Option[String],
@@ -69,7 +79,7 @@ class SocialAuthController @Inject() (
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
-        Left(Redirect(routes.ApplicationController.addToSlack))
+        Left(Redirect(routes.ApplicationController.signInWithSlack(maybeRedirect)))
       }
       case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
         Left(Redirect(routes.ApplicationController.index))
@@ -94,7 +104,11 @@ class SocialAuthController @Inject() (
             }
           }
           user <- Future.successful(linkedAccount.user)
-          result <- Future.successful(Redirect(routes.ApplicationController.index))
+          result <- Future.successful {
+            maybeRedirect.map { redirect =>
+              Redirect(validatedRedirectUri(redirect))
+            }.getOrElse(Redirect(routes.ApplicationController.index))
+          }
           authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
         } yield {
           authenticatedResult

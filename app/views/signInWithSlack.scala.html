@@ -1,0 +1,17 @@
+@(
+    maybeUser: Option[models.accounts.User],
+    scopes: String,
+    clientId: String,
+    redirectUrl: String
+    )(implicit r: RequestHeader, m: Messages)
+
+@main("Sign in with Slack") {
+
+  <div class="add-to-slack">
+
+    <p class="add-to-slack-action">
+      @signInWithSlackButton(scopes, clientId, redirectUrl)
+    </p>
+
+  </div>
+}

@@ -27,11 +27,11 @@ class DefaultStorage @Inject() (
                                 socialProviderRegistry: SocialProviderRegistry)
   extends Controller {
 
-  case class PutItemInfo(teamId: String, itemType: String, itemId: String, itemJson: String)
+  case class PutItemInfo(token: String, itemType: String, itemId: String, itemJson: String)
 
   val putItemForm = Form(
     mapping(
-      "teamId" -> nonEmptyText, // TODO: replace me with a secure token
+      "token" -> nonEmptyText,
       "itemType" -> nonEmptyText,
       "itemId" -> nonEmptyText,
       "item" -> nonEmptyText
@@ -45,12 +45,12 @@ class DefaultStorage @Inject() (
       },
       info => {
         val action = for {
-          maybeTeam <- Team.find(info.teamId)
+          maybeTeam <- Team.findForToken(info.token)
         } yield {
             maybeTeam.map { team =>
               dynamoDBService.putItem(info.itemId, Json.toJson(info.itemJson), info.itemType, team)
               Ok("success")
-            }.getOrElse(NotFound(s"Team not found: ${info.teamId}"))
+            }.getOrElse(Unauthorized("Invalid request token"))
         }
 
         models.run(action)
@@ -58,15 +58,15 @@ class DefaultStorage @Inject() (
     )
   }
 
-  def getItem(itemId: String, itemType: String, teamId: String) = Action.async { implicit request =>
+  def getItem(itemId: String, itemType: String, token: String) = Action.async { implicit request =>
     val action = for {
-      maybeTeam <- Team.find(teamId)
+      maybeTeam <- Team.findForToken(token)
     } yield {
         maybeTeam.map { team =>
           dynamoDBService.getItem(itemId, itemType, team).map { item =>
             Ok(item)
           }.getOrElse(NotFound("item not found"))
-        }.getOrElse(NotFound(s"Team not found: ${teamId}"))
+        }.getOrElse(Unauthorized("Invalid request token"))
       }
 
     models.run(action)

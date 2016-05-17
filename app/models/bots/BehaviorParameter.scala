@@ -13,6 +13,8 @@ case class BehaviorParameter(
                             maybeParamType: Option[String]
                               ) {
 
+  def question: String = maybeQuestion.getOrElse("")
+
   def isComplete: Boolean = {
     maybeQuestion.isDefined
   }
@@ -75,8 +77,8 @@ object BehaviorParameterQueries {
     }
   }
 
-  def createFor(name: String, rank: Int, behavior: Behavior): DBIO[BehaviorParameter] = {
-    val raw = RawBehaviorParameter(IDs.next, name, rank, behavior.id, None, None)
+  def createFor(name: String, maybeQuestion: Option[String], rank: Int, behavior: Behavior): DBIO[BehaviorParameter] = {
+    val raw = RawBehaviorParameter(IDs.next, name, rank, behavior.id, maybeQuestion, None)
     (all += raw).map { _ =>
       BehaviorParameter(raw.id, raw.name, raw.rank, behavior, raw.maybeQuestion, raw.maybeParamType)
     }
@@ -94,11 +96,11 @@ object BehaviorParameterQueries {
     }.map(_ => parameter)
   }
 
-  def ensureFor(behavior: Behavior, params: Seq[String]): DBIO[Seq[BehaviorParameter]] = {
+  def ensureFor(behavior: Behavior, params: Seq[(String, Option[String])]): DBIO[Seq[BehaviorParameter]] = {
     for {
       _ <- all.filter(_.behaviorId === behavior.id).delete
-      newParams <- DBIO.sequence(params.zipWithIndex.map { case(ea, i) =>
-        createFor(ea, i + 1, behavior)
+      newParams <- DBIO.sequence(params.zipWithIndex.map { case((name, maybeQuestion), i) =>
+        createFor(name, maybeQuestion, i + 1, behavior)
       })
     } yield newParams
   }

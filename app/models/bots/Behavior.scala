@@ -3,27 +3,37 @@ package models.bots
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.{IDs, Team}
 import org.joda.time.DateTime
-import play.api.Play
+import play.api.{Configuration, Play}
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.matching.Regex
 
 case class Behavior(
                      id: String,
                      team: Team,
                      maybeDescription: Option[String],
                      maybeShortName: Option[String],
-                     hasCode: Boolean,
+                     maybeFunctionBody: Option[String],
                      createdAt: DateTime
                      ) {
+
+  def editLinkFor(configuration: Configuration): Option[String] = {
+    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.ApplicationController.editBehavior(id)
+      s"$baseUrl$path"
+    }
+  }
+
+  def description: String = maybeDescription.getOrElse("")
+
+  def functionBody: String = maybeFunctionBody.getOrElse("")
 
   lazy val conf = Play.current.configuration
 
   def functionName: String = id
 
   def resultFor(params: Map[String, String], service: AWSLambdaService): String = {
-    service.invoke(id, params)
+    service.invoke(this, params)
   }
 
   def unlearn(lambdaService: AWSLambdaService): DBIO[Unit] = {
@@ -38,7 +48,7 @@ case class Behavior(
   def save: DBIO[Behavior] = BehaviorQueries.save(this)
 
   def toRaw: RawBehavior = {
-    RawBehavior(id, team.id, maybeDescription, maybeShortName, hasCode, createdAt)
+    RawBehavior(id, team.id, maybeDescription, maybeShortName, maybeFunctionBody, createdAt)
   }
 
 }
@@ -48,7 +58,7 @@ case class RawBehavior(
                         teamId: String,
                         maybeDescription: Option[String],
                         maybeShortName: Option[String],
-                        hasCode: Boolean,
+                        maybeFunctionBody: Option[String],
                         createdAt: DateTime
                         )
 
@@ -58,11 +68,11 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
   def teamId = column[String]("team_id")
   def maybeDescription = column[Option[String]]("description")
   def maybeShortName = column[Option[String]]("short_name")
-  def hasCode = column[Boolean]("has_code")
+  def maybeFunctionBody = column[Option[String]]("code")
   def createdAt = column[DateTime]("created_at")
 
   def * =
-    (id, teamId, maybeDescription, maybeShortName, hasCode, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+    (id, teamId, maybeDescription, maybeShortName, maybeFunctionBody, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
 object BehaviorQueries {
@@ -72,7 +82,16 @@ object BehaviorQueries {
 
   def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
     val raw = tuple._1
-    Behavior(raw.id, tuple._2, raw.maybeDescription, raw.maybeShortName, raw.hasCode, raw.createdAt)
+    Behavior(raw.id, tuple._2, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.createdAt)
+  }
+
+  def uncompiledFindQuery(id: Rep[String]) = {
+    allWithTeam.filter { case(behavior, team) => behavior.id === id }
+  }
+  val findQuery = Compiled(uncompiledFindQuery _)
+
+  def find(id: String): DBIO[Option[Behavior]] = {
+    findQuery(id).result.map(_.headOption.map(tuple2Behavior))
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
@@ -86,9 +105,9 @@ object BehaviorQueries {
   }
 
   def createFor(team: Team): DBIO[Behavior] = {
-    val raw = RawBehavior(IDs.next, team.id, None, None, false, DateTime.now)
+    val raw = RawBehavior(IDs.next, team.id, None, None, None, DateTime.now)
 
-    (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.hasCode, raw.createdAt) }
+    (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.createdAt) }
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
@@ -116,32 +135,21 @@ object BehaviorQueries {
     }.getOrElse(Array())
   }
 
-  def withoutCallbacks(params: Array[String]) = params.filterNot(ea => ea == "onSuccess" || ea == "onError")
+  def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == "onSuccess" || ea == "onError" || ea == "context")
+
+  val functionBodyRegex = """(?s)^\s*function\s*\([^\)]*\)\s*\{(.*)\}$""".r
 
   def learnCodeFor(behavior: Behavior, code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
     val actualParams = paramsIn(code)
-    val paramsWithoutCallbacks = withoutCallbacks(actualParams)
-    lambdaService.deployFunctionFor(behavior, code, paramsWithoutCallbacks)
+    val paramsWithoutBuiltin = withoutBuiltin(actualParams)
+    val functionBody = functionBodyRegex.findFirstMatchIn(code).flatMap { m =>
+      m.subgroups.headOption
+    }.getOrElse("")
+    lambdaService.deployFunctionFor(behavior, functionBody, paramsWithoutBuiltin)
     (for {
-      b <- behavior.copy(hasCode = true).save
-      params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutCallbacks)
+      b <- behavior.copy(maybeFunctionBody = Some(functionBody)).save
+      params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin.map(ea => (ea, None)))
     } yield params) transactionally
   }
 
-  def learnFor(regex: Regex, code: String, teamId: String, lambdaService: AWSLambdaService): DBIO[Option[Behavior]] = {
-    val numExpectedParams = regex.pattern.matcher("").groupCount()
-    val actualParams = paramsIn(code)
-    val paramsWithoutCallbacks = withoutCallbacks(actualParams)
-    for {
-      maybeTeam <- Team.find(teamId)
-      maybeTrigger <- maybeTeam.map { team =>
-        RegexMessageTriggerQueries.ensureFor(team, regex).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-    } yield {
-        maybeTrigger.map { trigger =>
-          lambdaService.deployFunctionFor(trigger.behavior, code, paramsWithoutCallbacks)
-          trigger.behavior
-        }
-      }
-  }
 }

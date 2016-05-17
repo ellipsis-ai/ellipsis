@@ -3,15 +3,17 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET        /                          @controllers.ApplicationController.index
-GET        /add_to_slack              @controllers.ApplicationController.addToSlack
-GET        /edit_behavior             @controllers.ApplicationController.editBehavior
-GET        /authenticate/slack        @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
+GET         /                                         @controllers.ApplicationController.index
+GET         /add_to_slack                             @controllers.ApplicationController.addToSlack
+GET         /sign_in_with_slack                       @controllers.ApplicationController.signInWithSlack(redirect: Option[String] ?= None)
+GET         /edit_behavior/:id                        @controllers.ApplicationController.editBehavior(id: String)
+POST        /save_behavior                            @controllers.ApplicationController.saveBehavior
+GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp
 
-GET        /get_item/:itemId/:itemType/:teamId   @controllers.DefaultStorage.getItem(itemId: String, itemType: String, teamId: String)
-POST       /put_item                             @controllers.DefaultStorage.putItem
+GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorage.getItem(itemId: String, itemType: String, token: String)
+POST        /put_item                                 @controllers.DefaultStorage.putItem
 
 # Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file              controllers.Assets.versioned(path="/public", file: Asset)
+GET         /assets/*file                             controllers.Assets.versioned(path="/public", file: Asset)
