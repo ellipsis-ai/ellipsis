@@ -214,6 +214,10 @@ So for example:
   font-style: italic;
 }
 
+.type-black {
+  color: @black;
+}
+
 .type-weak {
   color: @gray-darkest;
 }
@@ -254,8 +258,13 @@ So for example:
 }
 
 .logo {
+  color: @green-light;
   height: 28px;
   margin: -2px 0;
+}
+
+.logo:hover {
+  color: @blue-medium;
 }
 
 /* Headers */
@@ -555,6 +564,7 @@ button.button-shrink {
 
 button.button-subtle {
   border-color: transparent;
+  color: @black;
 }
 
 button:focus {
@@ -562,6 +572,10 @@ button:focus {
   border-color: @blue-dark;
   border-width: @border-width-thick;
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
+}
+
+button.button-subtle:focus {
+  border-color: @gray-darkest !important;
 }
 
 button.button-shrink:focus {
