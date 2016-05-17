@@ -1,0 +1,11 @@
+#!/bin/sh
+
+pushd `git rev-parse --show-toplevel`
+touch conf/version.conf
+echo application.version=\"`git rev-parse --short HEAD`\" >conf/version.conf
+activator docker:stage
+cp deploy/Docker* target/docker/
+pushd target/docker
+zip -r ~/Desktop/ellipsis-`git rev-parse --short HEAD`.zip .
+popd
+popd
