@@ -4,14 +4,15 @@
 
 @main("Ellipsis behavior editor") {
 
-  <section class="bg-light pbxxxxl border-emphasis-bottom">
-    <div class="container ptxl pbm">
-      <div id="editorContainer"></div>
-      <script type='text/javascript' src='@routes.Assets.versioned("javascripts/behavior_editor.js")'></script>
-      <script>
-        var myBehaviorEditor = React.createElement(BehaviorEditor, @Html(json));
-        ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
+  <section class="bg-light pbxxxxl border-emphasis-bottom"><div class="container ptxl pbm">
+    <h1>Edit a behavior</h1>
+    <div id="editorContainer">
+      <script id="editorData">
+
+        @Html(json)
+
       </script>
     </div>
-  </section>
+    <script data-main='@routes.Assets.versioned("javascripts/main.js")' src='@routes.Assets.versioned("lib/requirejs/require.js")'></script>
+  </div></section>
 }
