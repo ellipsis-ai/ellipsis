@@ -443,9 +443,9 @@ var BehaviorEditorTriggerInput = React.createClass({
 });
 
 return {
-  load: function(behaviorEditorOptions) {
-    var myBehaviorEditor = React.createElement(BehaviorEditor, behaviorEditorOptions);
-    ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
+  load: function(data, containerId) {
+    var myBehaviorEditor = React.createElement(BehaviorEditor, data);
+    ReactDOM.render(myBehaviorEditor, document.getElementById(containerId));
   }
 };
 
