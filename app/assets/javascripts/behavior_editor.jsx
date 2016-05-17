@@ -239,17 +239,23 @@ var BehaviorEditor = React.createClass({
           <button type="button" onClick={this.addTrigger}>Add another trigger</button>
         </div>
 
-        <button type="submit"
-          className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
-          disabled={!this.isModified()}
-          onClick={this.onSaveClick}
+        <footer className={"position-fixed-bottom pvm border-top " +
+          (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
-          <span className="button-labels">
-            <span className="button-normal-label">Save and return</span>
-            <span className="button-activated-label">Saving…</span>
-          </span>
-        </button>
-        <button type="button" disabled={!this.isModified()} onClick={this.undoChanges}>Undo changes</button>
+          <div className="container">
+            <button type="submit"
+              className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
+              disabled={!this.isModified()}
+              onClick={this.onSaveClick}
+            >
+              <span className="button-labels">
+                <span className="button-normal-label">Save and return</span>
+                <span className="button-activated-label">Saving…</span>
+              </span>
+            </button>
+            <button type="button" disabled={!this.isModified()} onClick={this.undoChanges}>Undo changes</button>
+          </div>
+        </footer>
 
       </form>
     );

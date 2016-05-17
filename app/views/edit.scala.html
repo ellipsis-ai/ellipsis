@@ -4,15 +4,16 @@
 
 @main("Ellipsis behavior editor") {
 
-  <section class="bg-light pbxxxxl border-emphasis-bottom"><div class="container ptxl pbm">
-    <h1>Edit a behavior</h1>
-    <div id="editorContainer">
-      <script id="editorData">
+  <div id="content" class="content">
+    <div class="container ptxl pbm">
+      <div id="editorContainer">
+        <script id="editorData">
 
-        @Html(json)
+          @Html(json)
 
-      </script>
+        </script>
+      </div>
+      <script data-main='@routes.Assets.versioned("javascripts/main.js")' src='@routes.Assets.versioned("lib/requirejs/require.js")'></script>
     </div>
-    <script data-main='@routes.Assets.versioned("javascripts/main.js")' src='@routes.Assets.versioned("lib/requirejs/require.js")'></script>
-  </div></section>
+  </div>
 }
