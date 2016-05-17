@@ -3,6 +3,7 @@ define('behavior_editor', function(require) {
 var React = require('react');
 var ReactDOM = require('react-dom');
 var Codemirror = require('react-codemirror');
+require('codemirror/mode/javascript/javascript');
 
 var BehaviorEditor = React.createClass({
   propTypes: {
