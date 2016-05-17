@@ -7,11 +7,17 @@
   <div id="content" class="content">
     <div class="container ptxl pbm">
       <div id="editorContainer"></div>
-      <script type='text/javascript' src='@routes.Assets.versioned("javascripts/behavior_editor.js")'></script>
       <script>
-        var myBehaviorEditor = React.createElement(BehaviorEditor, @Html(json));
-        ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
+        var require = {
+          config: {
+            'main': {
+              data: @Html(json),
+              containerId: 'editorContainer'
+            }
+          }
+        };
       </script>
+      <script data-main='@routes.Assets.versioned("javascripts/main.js")' src='@routes.Assets.versioned("lib/requirejs/require.js")'></script>
     </div>
   </div>
 }

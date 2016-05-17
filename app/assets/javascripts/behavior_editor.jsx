@@ -1,3 +1,10 @@
+define('behavior_editor', function(require) {
+
+var React = require('react');
+var ReactDOM = require('react-dom');
+var Codemirror = require('react-codemirror');
+require('codemirror/mode/javascript/javascript');
+
 var BehaviorEditor = React.createClass({
   propTypes: {
     behaviorId: React.PropTypes.string,
@@ -433,4 +440,13 @@ var BehaviorEditorTriggerInput = React.createClass({
       </div>
     );
   }
+});
+
+return {
+  load: function(data, containerId) {
+    var myBehaviorEditor = React.createElement(BehaviorEditor, data);
+    ReactDOM.render(myBehaviorEditor, document.getElementById(containerId));
+  }
+};
+
 });
