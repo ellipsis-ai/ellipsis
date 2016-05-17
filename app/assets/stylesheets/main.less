@@ -34,7 +34,6 @@
 
 @blue-darkest: hsl(231, 71%, 20%);
 @blue-dark: hsl(231, 71%, 42%);
-
 @blue-medium-text: hsl(231, 74%, 57%);
 @blue-medium: hsl(231, 97%, 64%);
 
@@ -190,7 +189,7 @@ So for example:
 .border-emphasis-bottom {
   border-width: 0 0 @xs 0;
   border-style: solid;
-  border-color: @border-color-focus;
+  border-color: @pink-medium;
 }
 
 /* Foreground type utilities */
@@ -212,6 +211,10 @@ So for example:
 
 .type-italic {
   font-style: italic;
+}
+
+.type-black {
+  color: @black;
 }
 
 .type-weak {
@@ -254,8 +257,13 @@ So for example:
 }
 
 .logo {
+  color: @green-light;
   height: 28px;
   margin: -2px 0;
+}
+
+.logo:hover {
+  color: @blue-medium;
 }
 
 /* Headers */
@@ -555,6 +563,7 @@ button.button-shrink {
 
 button.button-subtle {
   border-color: transparent;
+  color: inherit;
 }
 
 button:focus {
@@ -562,6 +571,10 @@ button:focus {
   border-color: @blue-dark;
   border-width: @border-width-thick;
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
+}
+
+button.button-subtle:focus {
+  border-color: currentColor !important;
 }
 
 button.button-shrink:focus {
