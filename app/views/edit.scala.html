@@ -4,7 +4,7 @@
 
 @main("Ellipsis behavior editor") {
 
-  <section class="bg-light pbxxxxl border-emphasis-bottom">
+  <div id="content" class="content">
     <div class="container ptxl pbm">
       <div id="editorContainer"></div>
       <script type='text/javascript' src='@routes.Assets.versioned("javascripts/behavior_editor.js")'></script>
@@ -13,5 +13,5 @@
         ReactDOM.render(myBehaviorEditor, document.getElementById('editorContainer'));
       </script>
     </div>
-  </section>
+  </div>
 }

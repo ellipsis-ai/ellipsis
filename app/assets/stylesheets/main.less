@@ -25,7 +25,8 @@
 @black-translucent: hsla(231, 15%, 15%, 0.1);
 @white: #FFFFFF;
 @almost-white: hsl(231, 15%, 97%);
-@gray-lightest: hsl(231, 10%, 95%);
+@gray-lightest: hsl(231, 10%, 93%);
+@gray-lightest-translucent: hsla(231, 10%, 93%, 0.95);
 @gray-light: hsl(231, 11%, 81%);
 @gray-medium: hsl(231, 15%, 60%);
 @gray-darkest: hsl(231, 15%, 40%);
@@ -180,6 +181,10 @@ So for example:
   background-color: @gray-lightest
 }
 
+.bg-light-translucent {
+  background-color: @gray-lightest-translucent;
+}
+
 .bg-white {
   background-color: @white;
 }
@@ -190,6 +195,18 @@ So for example:
   border-width: 0 0 @xs 0;
   border-style: solid;
   border-color: @pink-medium;
+}
+
+.border-emphasis-top {
+  border-width: @xs 0 0 0;
+  border-style: solid;
+  border-color: @pink-medium;
+}
+
+.border-top {
+  border-top-width: @border-width-thick;
+  border-top-color: @border-color;
+  border-top-style: solid;
 }
 
 /* Foreground type utilities */
@@ -651,4 +668,21 @@ button.button-activated {
 .visibility-visible {
   visibility: visible;
   opacity: 1;
+}
+
+/* Positioning */
+
+.position-fixed-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+
+/* Normal content style */
+
+.content {
+  .bg-lightest();
+  .pbxxxxl();
 }
