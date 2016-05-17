@@ -6,13 +6,16 @@
 
   <div id="content" class="content">
     <div class="container ptxl pbm">
-      <div id="editorContainer">
-        <script id="editorData">
-
-          @Html(json)
-
-        </script>
-      </div>
+      <div id="editorContainer"></div>
+      <script>
+        var require = {
+          config: {
+            'main': {
+              data: @Html(json)
+            }
+          }
+        };
+      </script>
       <script data-main='@routes.Assets.versioned("javascripts/main.js")' src='@routes.Assets.versioned("lib/requirejs/require.js")'></script>
     </div>
   </div>
