@@ -583,6 +583,12 @@ button.button-subtle {
   color: inherit;
 }
 
+button.button-invisible {
+  border-color: transparent !important;
+  color: inherit;
+  text-align: left;
+}
+
 button:focus {
   outline: none;
   border-color: @blue-dark;
@@ -595,8 +601,8 @@ button.button-subtle:focus {
 }
 
 button.button-shrink:focus {
-  padding-left: (@s - @border-width-thick);
-  padding-right: (@s - @border-width-thick);
+  padding-left: (@s - @border-width-thick) !important;
+  padding-right: (@s - @border-width-thick) !important;
 }
 
 button:active {
@@ -654,6 +660,43 @@ button.button-activated {
   }
 }
 
+button.button-active-dropdown {
+  position: relative;
+  z-index: 11;
+  background-color: @white;
+  border-width: @border-width-thick !important;
+  border-color: @border-color @border-color @white @border-color !important;
+  border-radius: @border-radius @border-radius 0 0;
+  padding: (@s - @border-width-thick + 1) (@s - @border-width-thick) (@s - @border-width-thick - 1);
+}
+
+/* Dropdown menu */
+
+.dropdown-menu {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  width: 10em;
+  margin: -(@border-width + 1) 0 0 0;
+  padding: 0;
+  background-color: @white;
+  border: @border-width-thick solid @border-color;
+  border-radius: 0 @border-radius @border-radius @border-radius;
+  li {
+    list-style-type: none;
+
+    > button {
+      width: 100%;
+    }
+  }
+}
+
+.dropdown-menu-right {
+  left: auto;
+  right: 0;
+  border-radius: @border-radius 0 @border-radius @border-radius;
+}
+
 /* Visibility */
 
 .visibility {
@@ -671,6 +714,19 @@ button.button-activated {
 }
 
 /* Positioning */
+
+.position-absolute {
+  position: absolute;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.position-top-right {
+  top: 0;
+  right: 0;
+}
 
 .position-fixed-bottom {
   position: fixed;

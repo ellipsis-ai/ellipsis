@@ -39,7 +39,8 @@ var BehaviorEditor = React.createClass({
       nodeFunction: this.props.nodeFunction,
       params: this.props.params,
       triggers: this.props.triggers.concat(['']), // always add one blank trigger
-      codeEditorUseLineWrapping: false
+      codeEditorUseLineWrapping: false,
+      settingsMenuVisible: false
     };
   },
 
@@ -139,6 +140,18 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  toggleEditorSettingsMenu: function() {
+    this.setState({
+      settingsMenuVisible: !this.state.settingsMenuVisible
+    });
+  },
+
+  toggleCodeEditorLineWrapping: function() {
+    this.setState({
+      codeEditorUseLineWrapping: !this.state.codeEditorUseLineWrapping
+    });
+  },
+
   onSaveClick: function() {
     this.setState({
       isSaving: true
@@ -203,19 +216,30 @@ var BehaviorEditor = React.createClass({
             <div>
               <code className="type-weak type-s">{") {"}</code>
             </div>
-            <div className="columns columns-elastic">
-              <div className="column column-expand plxl prxs">
-                <Codemirror value={this.state.nodeFunction}
-                  onChange={this.onCodeChange}
-                  options={{
-                    mode: "javascript",
-                    lineWrapping: this.state.codeEditorUseLineWrapping,
-                    viewportMargin: Infinity
-                  }}
+            <div className="position-relative prxxxl plxl">
+              <Codemirror value={this.state.nodeFunction}
+                onChange={this.onCodeChange}
+                options={{
+                  mode: "javascript",
+                  lineWrapping: this.state.codeEditorUseLineWrapping,
+                  viewportMargin: Infinity
+                }}
+              />
+              <div className="position-absolute position-top-right">
+                <BehaviorEditorSettingsButton
+                  onClick={this.toggleEditorSettingsMenu}
+                  buttonActive={this.state.settingsMenuVisible}
                 />
-              </div>
-              <div className="column column-shrink">
-                <BehaviorEditorSettingsButton />
+                <BehaviorEditorSettingsMenu isVisible={this.state.settingsMenuVisible}>
+                  <li onMouseUp={this.toggleEditorSettingsMenu}>
+                    <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
+                      <span className={"visibility " +
+                        (this.state.codeEditorUseLineWrapping ? "visibility-visible" : "visibility-hidden")}
+                      >✓</span>
+                      <span> Line wrap</span>
+                    </button>
+                  </li>
+                </BehaviorEditorSettingsMenu>
               </div>
             </div>
             <div>
@@ -449,10 +473,19 @@ var BehaviorEditorTriggerInput = React.createClass({
 });
 
 var BehaviorEditorSettingsButton = React.createClass({
+  onMouseDown: function() {
+    this.refs.button.blur();
+    this.props.onClick();
+  },
+
   render: function() {
     return (
       <span className="type-weak">
-        <button type="button" className="button-subtle button-shrink">
+        <button type="button"
+          ref="button"
+          className={"button-invisible button-shrink " + (this.props.buttonActive ? "button-active-dropdown" : "")}
+          onMouseDown={this.onMouseDown}
+        >
           <svg aria-label="Settings" width="21px" height="24px" viewBox="0 0 21 24">
             <title>Settings</title>
             <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -463,6 +496,20 @@ var BehaviorEditorSettingsButton = React.createClass({
           </svg>
         </button>
       </span>
+    );
+  }
+});
+
+var BehaviorEditorSettingsMenu = React.createClass({
+  render: function() {
+    return (
+      <div className="position-relative">
+        <ul className={"dropdown-menu dropdown-menu-right visibility " +
+          (this.props.isVisible ? "visibility-visible" : "visibility-hidden")}
+        >
+          {this.props.children}
+        </ul>
+      </div>
     );
   }
 });
