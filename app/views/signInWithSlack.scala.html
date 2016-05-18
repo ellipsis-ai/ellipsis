@@ -2,7 +2,8 @@
     maybeUser: Option[models.accounts.User],
     scopes: String,
     clientId: String,
-    redirectUrl: String
+    redirectUrl: String,
+    maybeTeam: Option[Team] = None
     )(implicit r: RequestHeader, m: Messages)
 
 @main("Sign in with Slack") {
@@ -13,7 +14,7 @@
       <h1>Sign in to Ellipsis</h1>
 
       <p>You need to identify yourself to make changes to the bot. Click the button to sign
-      in with your [team name] Slack account.</p>
+      in with your @maybeTeam.map(_.name).getOrElse("team") Slack account.</p>
 
       <p>
         @signInWithSlackButton(scopes, clientId, redirectUrl)
