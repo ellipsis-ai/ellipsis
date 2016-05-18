@@ -578,6 +578,14 @@ button.button-shrink {
   padding-right: (@s - @border-width);
 }
 
+button.button-symbol {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
+}
+
 button.button-subtle {
   border-color: transparent;
   color: inherit;
@@ -600,7 +608,8 @@ button.button-subtle:focus {
   border-color: currentColor !important;
 }
 
-button.button-shrink:focus {
+button.button-shrink:focus,
+button.button-symbol:focus {
   padding-left: (@s - @border-width-thick) !important;
   padding-right: (@s - @border-width-thick) !important;
 }
