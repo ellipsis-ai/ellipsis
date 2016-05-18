@@ -5,7 +5,15 @@ var ReactDOM = require('react-dom');
 var Codemirror = require('react-codemirror');
 require('codemirror/mode/javascript/javascript');
 
+var BehaviorEditorMixin = {
+  visibleWhen: function(condition) {
+    return " visibility " + (condition ? "visibility-visible" : "visibility-hidden") + " ";
+  }
+};
+
 var BehaviorEditor = React.createClass({
+  mixins: [BehaviorEditorMixin],
+
   propTypes: {
     behaviorId: React.PropTypes.string,
     description: React.PropTypes.string,
@@ -178,7 +186,7 @@ var BehaviorEditor = React.createClass({
           <h3 className="mtxxxl mbn type-weak">
             <span>
               Edit behavior
-            </span> <span className={"type-italic type-pink visibility " + (this.isModified() ? "visibility-visible" : "visibility-hidden")}>— unsaved changes</span>
+            </span> <span className={"type-italic type-pink" + this.visibleWhen(this.isModified())}>— unsaved changes</span>
           </h3>
           <BehaviorEditorInput
             className="form-input-borderless form-input-h2"
@@ -242,9 +250,7 @@ var BehaviorEditor = React.createClass({
                 />
                 <BehaviorEditorSettingsMenu isVisible={this.state.settingsMenuVisible} onItemClick={this.toggleEditorSettingsMenu}>
                   <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
-                    <span className={"visibility " +
-                      (this.state.codeEditorUseLineWrapping ? "visibility-visible" : "visibility-hidden")}
-                    >✓</span>
+                    <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
                     <span> Enable line wrap</span>
                   </button>
                 </BehaviorEditorSettingsMenu>
@@ -422,6 +428,7 @@ var BehaviorEditorHiddenJsonInput = React.createClass({
 });
 
 var BehaviorEditorDeleteButton = React.createClass({
+  mixins: [BehaviorEditorMixin],
   onClick: function(event) {
     this.props.onClick();
     this.refs.button.blur();
@@ -431,7 +438,7 @@ var BehaviorEditorDeleteButton = React.createClass({
     return (
       <span className="type-weak"><button type="button"
         ref="button"
-        className={"button-subtle button-symbol visibility " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
+        className={"button-subtle button-symbol" + this.visibleWhen(!this.props.hidden)}
         onMouseUp={this.onClick}
         title={this.props.title || "Delete"}
       >
@@ -511,12 +518,11 @@ var BehaviorEditorSettingsButton = React.createClass({
 });
 
 var BehaviorEditorSettingsMenu = React.createClass({
+  mixins: [BehaviorEditorMixin],
   render: function() {
     return (
       <div className="position-relative">
-        <ul className={"dropdown-menu dropdown-menu-right visibility " +
-          (this.props.isVisible ? "visibility-visible" : "visibility-hidden")}
-        >
+        <ul className={"dropdown-menu dropdown-menu-right" + this.visibleWhen(this.props.isVisible)}>
           {React.Children.map(this.props.children, function(child) {
             return (<li onMouseUp={this.props.onItemClick}>{child}</li>);
           }, this)}
