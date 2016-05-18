@@ -491,7 +491,7 @@ var BehaviorEditorSettingsButton = React.createClass({
       <span className="type-weak">
         <button type="button"
           ref="button"
-          className={"button-invisible button-shrink " + (this.props.buttonActive ? "button-active-dropdown" : "")}
+          className="button-invisible button-shrink button-dropdown-trigger"
           onMouseDown={this.onMouseDown}
         >
           <svg aria-label="Settings" width="21px" height="24px" viewBox="0 0 21 24">
