@@ -235,7 +235,7 @@ var BehaviorEditor = React.createClass({
                   viewportMargin: Infinity
                 }}
               />
-              <div className="position-absolute position-top-right">
+              <div className="position-absolute position-top-right phxs">
                 <BehaviorEditorSettingsButton
                   onClick={this.toggleEditorSettingsMenu}
                   buttonActive={this.state.settingsMenuVisible}
@@ -245,7 +245,7 @@ var BehaviorEditor = React.createClass({
                     <span className={"visibility " +
                       (this.state.codeEditorUseLineWrapping ? "visibility-visible" : "visibility-hidden")}
                     >✓</span>
-                    <span> Line wrap</span>
+                    <span> Enable line wrap</span>
                   </button>
                 </BehaviorEditorSettingsMenu>
               </div>
@@ -276,6 +276,8 @@ var BehaviorEditor = React.createClass({
           </div>
           <button type="button" onClick={this.addTrigger}>Add another trigger</button>
         </div>
+
+        <div className="ptxl"></div>
 
         <footer className={"position-fixed-bottom pvm border-top " +
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
@@ -339,7 +341,7 @@ var BehaviorEditorUserInputDefinition = React.createClass({
         </div>
         <div className="column column-three-quarters">
           <div className="columns columns-elastic">
-            <div className="column column-expand prxs">
+            <div className="column column-expand prs">
               <div className="form-field-with-prefix">
                 <label className="form-input-prefix"
                   htmlFor={"question" + this.props.id}
@@ -356,7 +358,7 @@ var BehaviorEditorUserInputDefinition = React.createClass({
                 />
               </div>
             </div>
-            <div className="column column-shrink">
+            <div className="column column-shrink phxs">
               <BehaviorEditorDeleteButton
                 onClick={this.onDeleteClick}
                 title={"Delete the “" + this.props.name + "” parameter"}
@@ -429,7 +431,7 @@ var BehaviorEditorDeleteButton = React.createClass({
     return (
       <span className="type-weak"><button type="button"
         ref="button"
-        className={"button-subtle button-shrink visibility " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
+        className={"button-subtle button-symbol visibility " + (this.props.hidden ? "visibility-hidden" : "visibility-visible")}
         onMouseUp={this.onClick}
         title={this.props.title || "Delete"}
       >
@@ -460,7 +462,7 @@ var BehaviorEditorTriggerInput = React.createClass({
   render: function() {
     return (
       <div className="columns columns-elastic">
-        <div className="column column-expand prxs">
+        <div className="column column-expand prs">
           <BehaviorEditorInput
             ref="input"
             value={this.props.value}
@@ -469,7 +471,7 @@ var BehaviorEditorTriggerInput = React.createClass({
             onEnterKey={this.props.onEnterKey}
           />
         </div>
-        <div className="column column-shrink">
+        <div className="column column-shrink phxs">
           <BehaviorEditorDeleteButton
             onClick={this.props.onDelete}
             hidden={this.isEmpty() && this.props.mayHideDelete}
