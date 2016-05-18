@@ -7,11 +7,20 @@
 
 @main("Add to Slack") {
 
-  <div class="add-to-slack">
+  <div id="content" class="content">
+    <div class="container ptxxxxl">
 
-    <p class="add-to-slack-action">
-      @addToSlackButton(scopes, clientId, redirectUrl)
-    </p>
+      <h1>Add Ellipsis to Slack</h1>
 
+      <p>
+      To use Ellipsis, you need to add it to your Slack account. Use the button below to sign in
+      with Slack and grant permission to Ellipsis to join your account.
+      </p>
+
+      <p>
+        @addToSlackButton(scopes, clientId, redirectUrl)
+      </p>
+
+    </div>
   </div>
 }
