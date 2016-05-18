@@ -116,4 +116,52 @@ class SocialAuthController @Inject() (
       }
     }
   }
+
+  def identifySlack(
+                         maybeRedirect: Option[String],
+                         maybeTeamId: Option[String],
+                         maybeChannelId: Option[String]
+                         ) = UserAwareAction.async { implicit request =>
+    val isHttps = configuration.getBoolean("application.https").getOrElse(true)
+    val provider = slackProvider.withSettings { settings =>
+      val url = routes.SocialAuthController.identifySlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
+      val authorizationParams = maybeTeamId.map { teamId =>
+        settings.authorizationParams + ("team" -> teamId)
+      }.getOrElse(settings.authorizationParams)
+      settings.copy(redirectURL = url, authorizationParams = authorizationParams)
+    }
+    val authenticateResult = provider.authenticate() recover {
+      case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
+        Left(Redirect(routes.ApplicationController.signInWithSlack(maybeRedirect)))
+      }
+      case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
+        Left(Redirect(routes.ApplicationController.index))
+      }
+    }
+    authenticateResult.flatMap {
+      case Left(result) => Future.successful(result)
+      case Right(authInfo) => {
+        for {
+          loginInfo <- slackProvider.retrieveLoginInfo(authInfo)
+          savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
+          maybeExistingLinkedAccount <- models.run(LinkedAccount.find(loginInfo))
+          linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
+            request.identity.map(Future.successful).getOrElse(models.run(User.empty.save)).flatMap { user =>
+              models.run(LinkedAccount(user, loginInfo, DateTime.now).save)
+            }
+          }
+          user <- Future.successful(linkedAccount.user)
+          result <- Future.successful {
+            maybeRedirect.map { redirect =>
+              Redirect(validatedRedirectUri(redirect))
+            }.getOrElse(Redirect(routes.ApplicationController.index))
+          }
+          authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
+        } yield {
+          authenticatedResult
+        }
+      }
+    }
+  }
+
 }

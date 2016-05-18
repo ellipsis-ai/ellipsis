@@ -1,5 +1,6 @@
 package models.accounts
 
+import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException
 import com.mohiva.play.silhouette.impl.providers.OAuth2Provider._
@@ -25,12 +26,19 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
 
   override def withSettings(f: (Settings) => Settings) = new SlackProvider(httpLayer, stateProvider, f(settings))
 
-  protected def urls: Map[String, String] = Map("user" -> USER_API, "auth_test" -> AUTH_TEST_API)
+  protected def urls: Map[String, String] = Map("user" -> USER_API, "auth_test" -> AUTH_TEST_API, "identity" -> IDENTITY_API)
 
   protected def buildProfile(authInfo: A): Future[SlackProfile] = {
     httpLayer.url(urls("auth_test").format(authInfo.accessToken)).get().flatMap { response =>
       val json = response.json
       profileParser.parse(json)
+    }
+  }
+
+  def retrieveLoginInfo(authInfo: A): Future[LoginInfo] = {
+    httpLayer.url(urls("identity").format(authInfo.accessToken)).get().flatMap { response =>
+      val json = response.json
+      profileParser.parseLoginInfo(json)
     }
   }
 
@@ -90,6 +98,7 @@ object SlackProvider {
   val ID = "slack"
   val USER_API = "https://slack.com/api/users.info?token=%s&user=%s"
   val AUTH_TEST_API = "https://slack.com/api/auth.test?token=%s"
+  val IDENTITY_API = "https://slack.com/api/users.identity?token=%s"
 
   val SpecifiedProfileError = "[Silhouette][%s] Error retrieving profile information. Error message: %s"
 }

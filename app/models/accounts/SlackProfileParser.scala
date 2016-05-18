@@ -34,4 +34,17 @@ class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile] {
       throw new ProfileRetrievalException(message, SlackProfileParseException(json, message))
     }
   }
+
+  def parseLoginInfo(json: JsValue): Future[LoginInfo] = Future.successful {
+    val success = (json \ "ok").as[Boolean]
+
+    if (success) {
+      val userId = (json \ "user" \ "id").as[String]
+      LoginInfo(ID, userId)
+    } else {
+      val maybeError = (json \ "error").asOpt[String]
+      val message = maybeError.getOrElse("error")
+      throw new ProfileRetrievalException(message, SlackProfileParseException(json, message))
+    }
+  }
 }
