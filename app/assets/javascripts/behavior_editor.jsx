@@ -54,7 +54,7 @@ var BehaviorEditor = React.createClass({
 
   getInitialState: function() {
     return {
-      data: {
+      behavior: {
         behaviorId: this.props.behaviorId,
         description: this.props.description,
         nodeFunction: this.props.nodeFunction,
@@ -66,27 +66,27 @@ var BehaviorEditor = React.createClass({
     };
   },
 
-  getData: function(key) {
-    return this.state.data[key];
+  getBehaviorProp: function(key) {
+    return this.state.behavior[key];
   },
 
-  setData: function(key, value, callback) {
-    var newData = this.utils.objectWithNewValueAtKey(this.state.data, value, key);
-    this.setState({ data: newData }, callback);
+  setBehaviorProp: function(key, value, callback) {
+    var newData = this.utils.objectWithNewValueAtKey(this.state.behavior, value, key);
+    this.setState({ behavior: newData }, callback);
   },
 
   isModified: function() {
-    return JSON.stringify(this.state.data) !== JSON.stringify(this.getInitialState().data);
+    return JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
   },
 
   undoChanges: function() {
     if (window.confirm("Are you sure you want to undo changes?")) {
-      this.setState({ data: this.getInitialState().data });
+      this.setState({ behavior: this.getInitialState().behavior });
     }
   },
 
   addTrigger: function() {
-    this.setData('triggers', this.getData('triggers').concat(['']), this.focusOnFirstBlankTrigger);
+    this.setBehaviorProp('triggers', this.getBehaviorProp('triggers').concat(['']), this.focusOnFirstBlankTrigger);
   },
 
   focusOnFirstBlankTrigger: function() {
@@ -99,63 +99,63 @@ var BehaviorEditor = React.createClass({
   },
 
   deleteTriggerAtIndex: function(index) {
-    var triggers = this.utils.arrayRemoveElementAtIndex(this.getData('triggers'), index);
+    var triggers = this.utils.arrayRemoveElementAtIndex(this.getBehaviorProp('triggers'), index);
     if (index == triggers.length) {
       // Add a blank trigger on the end if the user deleted the last trigger
       triggers = triggers.concat(['']);
     }
-    this.setData('triggers', triggers);
+    this.setBehaviorProp('triggers', triggers);
   },
 
   focusOnLastParam: function() {
-    this.refs['param' + (this.getData('params').length - 1)].focus();
+    this.refs['param' + (this.getBehaviorProp('params').length - 1)].focus();
   },
 
   onDescriptionChange: function(newDescription) {
-    this.setData('description', newDescription);
+    this.setBehaviorProp('description', newDescription);
   },
 
   onCodeChange: function(newCode) {
-    this.setData('nodeFunction', newCode);
+    this.setBehaviorProp('nodeFunction', newCode);
   },
 
   addParam: function() {
-    var newParamIndex = this.getData('params').length + 1;
-    while (this.getData('params').some(function(param) {
+    var newParamIndex = this.getBehaviorProp('params').length + 1;
+    while (this.getBehaviorProp('params').some(function(param) {
       return param.name == 'userInput' + newParamIndex;
     })) {
       newParamIndex++;
     }
-    var newParams = this.getData('params').concat([{ name: 'userInput' + newParamIndex, question: '' }]);
-    this.setData('params', newParams, this.focusOnLastParam);
+    var newParams = this.getBehaviorProp('params').concat([{ name: 'userInput' + newParamIndex, question: '' }]);
+    this.setBehaviorProp('params', newParams, this.focusOnLastParam);
   },
 
   replaceParamAtIndexWithParam: function(index, newParam) {
-    this.setData('params', this.utils.arrayWithNewElementAtIndex(this.getData('params'), newParam, index));
+    this.setBehaviorProp('params', this.utils.arrayWithNewElementAtIndex(this.getBehaviorProp('params'), newParam, index));
   },
 
   deleteParamAtIndex: function(index) {
-    this.setData('params', this.utils.arrayRemoveElementAtIndex(this.getData('params'), index));
+    this.setBehaviorProp('params', this.utils.arrayRemoveElementAtIndex(this.getBehaviorProp('params'), index));
   },
 
   onParamEnterKey: function(index) {
-    if (index + 1 < this.getData('params').length) {
+    if (index + 1 < this.getBehaviorProp('params').length) {
       this.refs['param' + (index + 1)].focus();
-    } else if (this.getData('params')[index].question != '') {
+    } else if (this.getBehaviorProp('params')[index].question != '') {
       this.addParam();
     }
   },
 
   onTriggerEnterKey: function(index) {
-    if (index + 1 < this.getData('triggers').length) {
+    if (index + 1 < this.getBehaviorProp('triggers').length) {
       this.refs['trigger' + (index + 1)].focus();
-    } else if (this.getData('triggers')[index] != '') {
+    } else if (this.getBehaviorProp('triggers')[index] != '') {
       this.addTrigger();
     }
   },
 
   onTriggerChange: function(index, newTrigger) {
-    this.setData('triggers', this.utils.arrayWithNewElementAtIndex(this.getData('triggers'), newTrigger, index));
+    this.setBehaviorProp('triggers', this.utils.arrayWithNewElementAtIndex(this.getBehaviorProp('triggers'), newTrigger, index));
   },
 
   toggleEditorSettingsMenu: function() {
@@ -180,7 +180,7 @@ var BehaviorEditor = React.createClass({
     return (
       <form action="/save_behavior" method="POST">
         <BehaviorEditorHiddenJsonInput
-          value={JSON.stringify(this.state.data)}
+          value={JSON.stringify(this.state.behavior)}
         />
         <div className="form-field-group">
           <h3 className="mtxxxl mbn type-weak">
@@ -191,7 +191,7 @@ var BehaviorEditor = React.createClass({
           <BehaviorEditorInput
             className="form-input-borderless form-input-h2"
             placeholder="Describe the behavior in one phrase"
-            value={this.getData('description')}
+            value={this.getBehaviorProp('description')}
             onChange={this.onDescriptionChange}
           />
         </div>
@@ -207,7 +207,7 @@ var BehaviorEditor = React.createClass({
               <code className="type-weak type-s">{"function ("}</code>
             </div>
             <div className="plxl">
-              {this.getData('params').map(function(param, index) {
+              {this.getBehaviorProp('params').map(function(param, index) {
                 return (
                   <BehaviorEditorUserInputDefinition
                     key={'BehaviorEditorUserInputDefinition' + index}
@@ -235,7 +235,7 @@ var BehaviorEditor = React.createClass({
               <code className="type-weak type-s">{") {"}</code>
             </div>
             <div className="position-relative prxxxl plxl">
-              <Codemirror value={this.getData('nodeFunction')}
+              <Codemirror value={this.getBehaviorProp('nodeFunction')}
                 onChange={this.onCodeChange}
                 options={{
                   mode: "javascript",
@@ -266,7 +266,7 @@ var BehaviorEditor = React.createClass({
           <p><strong>Specify one or more phrases to trigger this behavior in chat.</strong></p>
           <p>You can use regular expressions for more flexibility and to capture user input.</p>
           <div className="form-grouped-inputs mbl">
-          {this.getData('triggers').map(function(trigger, index) {
+          {this.getBehaviorProp('triggers').map(function(trigger, index) {
             return (
               <BehaviorEditorTriggerInput
                 key={"BehaviorEditorTrigger" + index}
@@ -275,7 +275,7 @@ var BehaviorEditor = React.createClass({
                 onChange={this.onTriggerChange.bind(this, index)}
                 onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                 onEnterKey={this.onTriggerEnterKey.bind(this, index)}
-                mayHideDelete={index + 1 == this.getData('triggers').length}
+                mayHideDelete={index + 1 == this.getBehaviorProp('triggers').length}
               />
             );
           }, this)}
