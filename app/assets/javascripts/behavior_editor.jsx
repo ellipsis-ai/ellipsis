@@ -230,15 +230,13 @@ var BehaviorEditor = React.createClass({
                   onClick={this.toggleEditorSettingsMenu}
                   buttonActive={this.state.settingsMenuVisible}
                 />
-                <BehaviorEditorSettingsMenu isVisible={this.state.settingsMenuVisible}>
-                  <li onMouseUp={this.toggleEditorSettingsMenu}>
-                    <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
-                      <span className={"visibility " +
-                        (this.state.codeEditorUseLineWrapping ? "visibility-visible" : "visibility-hidden")}
-                      >✓</span>
-                      <span> Line wrap</span>
-                    </button>
-                  </li>
+                <BehaviorEditorSettingsMenu isVisible={this.state.settingsMenuVisible} onItemClick={this.toggleEditorSettingsMenu}>
+                  <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
+                    <span className={"visibility " +
+                      (this.state.codeEditorUseLineWrapping ? "visibility-visible" : "visibility-hidden")}
+                    >✓</span>
+                    <span> Line wrap</span>
+                  </button>
                 </BehaviorEditorSettingsMenu>
               </div>
             </div>
@@ -507,7 +505,9 @@ var BehaviorEditorSettingsMenu = React.createClass({
         <ul className={"dropdown-menu dropdown-menu-right visibility " +
           (this.props.isVisible ? "visibility-visible" : "visibility-hidden")}
         >
-          {this.props.children}
+          {React.Children.map(this.props.children, function(child) {
+            return (<li onMouseUp={this.props.onItemClick}>{child}</li>);
+          }, this)}
         </ul>
       </div>
     );
