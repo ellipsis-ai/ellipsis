@@ -358,7 +358,7 @@ var BehaviorEditorUserInputDefinition = React.createClass({
                 />
               </div>
             </div>
-            <div className="column column-shrink phxs">
+            <div className="column column-shrink">
               <BehaviorEditorDeleteButton
                 onClick={this.onDeleteClick}
                 title={"Delete the “" + this.props.name + "” parameter"}
@@ -471,7 +471,7 @@ var BehaviorEditorTriggerInput = React.createClass({
             onEnterKey={this.props.onEnterKey}
           />
         </div>
-        <div className="column column-shrink phxs">
+        <div className="column column-shrink">
           <BehaviorEditorDeleteButton
             onClick={this.props.onDelete}
             hidden={this.isEmpty() && this.props.mayHideDelete}
