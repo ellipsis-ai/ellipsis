@@ -64,14 +64,14 @@ class SocialAuthController @Inject() (
     }
   }
 
-  def authenticateSlack(
+  def installForSlack(
                          maybeRedirect: Option[String],
                          maybeTeamId: Option[String],
                          maybeChannelId: Option[String]
                          ) = UserAwareAction.async { implicit request =>
     val isHttps = configuration.getBoolean("application.https").getOrElse(true)
     val provider = slackProvider.withSettings { settings =>
-      val url = routes.SocialAuthController.authenticateSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
+      val url = routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       val authorizationParams = maybeTeamId.map { teamId =>
         settings.authorizationParams + ("team" -> teamId)
       }.getOrElse(settings.authorizationParams)
@@ -79,7 +79,7 @@ class SocialAuthController @Inject() (
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
-        Left(Redirect(routes.ApplicationController.signInWithSlack(maybeRedirect)))
+        Left(Redirect(routes.ApplicationController.addToSlack(maybeRedirect)))
       }
       case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
         Left(Redirect(routes.ApplicationController.index))
@@ -117,14 +117,14 @@ class SocialAuthController @Inject() (
     }
   }
 
-  def identifySlack(
+  def authenticateSlack(
                          maybeRedirect: Option[String],
                          maybeTeamId: Option[String],
                          maybeChannelId: Option[String]
                          ) = UserAwareAction.async { implicit request =>
     val isHttps = configuration.getBoolean("application.https").getOrElse(true)
     val provider = slackProvider.withSettings { settings =>
-      val url = routes.SocialAuthController.identifySlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
+      val url = routes.SocialAuthController.authenticateSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       val authorizationParams = maybeTeamId.map { teamId =>
         settings.authorizationParams + ("team" -> teamId)
       }.getOrElse(settings.authorizationParams)

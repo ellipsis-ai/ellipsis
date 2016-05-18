@@ -9,7 +9,7 @@ GET         /sign_in_with_slack                       @controllers.ApplicationCo
 GET         /edit_behavior/:id                        @controllers.ApplicationController.editBehavior(id: String)
 POST        /save_behavior                            @controllers.ApplicationController.saveBehavior
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
-GET         /identify/slack                           @controllers.SocialAuthController.identifySlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
+GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp
 
