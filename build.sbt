@@ -35,8 +35,8 @@ resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 RjsKeys.mainConfig := "build"
 
 buildProfile := JS.Object(
-  "appDir" -> "./",
+  "appDir" -> "../../",
   "baseUrl" -> "javascripts",
-  "dir" -> "../appdirectory-build",
+  "dir" -> "../../appdirectory-build",
   "modules" -> Seq(JS.Object("name" -> "main"))
 )

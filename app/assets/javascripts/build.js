@@ -1,6 +1,6 @@
 ({
-  appDir: "./",
+  appDir: "../../",
   baseUrl: "javascripts",
-  dir: "../appdirectory-build",
+  dir: "../../appdirectory-build",
   modules: [{ name: "main" }]
 })
