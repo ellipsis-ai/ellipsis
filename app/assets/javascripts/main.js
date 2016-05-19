@@ -1,8 +1,4 @@
 requirejs.config({
-  paths:{
-    'react': ['../lib/react'],
-    'react-dom': ['../lib/react-dom/dist'],
-  },
   packages: [
     {
       name: 'codemirror',
@@ -10,21 +6,14 @@ requirejs.config({
       main: 'lib/codemirror'
     }, {
       name: 'react',
+      location: '../lib/react',
       main: 'react'
     }, {
       name: 'react-dom',
+      location: '../lib/react-dom/dist',
       main: 'react-dom'
     }
-  ],
-  shim: {
-    'react': {
-      exports: 'react'
-    },
-    'react-dom': {
-      deps: ['react'],
-      exports: 'react-dom'
-    }
-  }
+  ]
 });
 
 define(['module', './behavior_editor'], function(module, behaviorEditor) {

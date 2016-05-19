@@ -33,5 +33,3 @@ resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 routesGenerator := InjectedRoutesGenerator
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
-
-RjsKeys.mainConfig := "build"
