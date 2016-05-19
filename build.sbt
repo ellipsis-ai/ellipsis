@@ -21,8 +21,7 @@ libraryDependencies ++= Seq(
   "net.ceedubs" %% "ficus" % "1.1.2",
   "com.amazonaws" % "aws-java-sdk" % "1.10.72",
   "org.webjars" % "requirejs" % "2.1.14-1",
-  "org.webjars" % "react" % "15.0.1",
-  "org.webjars.npm" % "react-dom" % "15.0.2"
+  "org.webjars" % "react" % "15.0.1"
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
