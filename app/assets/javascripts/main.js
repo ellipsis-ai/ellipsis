@@ -10,7 +10,7 @@ requirejs.config({
       main: 'react'
     }, {
       name: 'react-dom',
-      location: '../lib/react-dom/dist',
+      location: '../lib/react',
       main: 'react-dom'
     }
   ]
