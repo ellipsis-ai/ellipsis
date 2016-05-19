@@ -1,6 +1,3 @@
-import WebJs._
-import RjsKeys._
-
 name := """ellipsis"""
 
 version := "1.0-SNAPSHOT"
