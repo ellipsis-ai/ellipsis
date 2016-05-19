@@ -16,6 +16,6 @@ requirejs.config({
   ]
 });
 
-define(['module', './behavior_editor'], function(module, behaviorEditor) {
-  behaviorEditor.load(module.config().data, module.config().containerId);
+define(['./behavior_editor'], function(behaviorEditor) {
+  behaviorEditor.load(BehaviorEditorConfiguration.data, BehaviorEditorConfiguration.containerId);
 });

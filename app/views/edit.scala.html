@@ -8,13 +8,9 @@
     <div class="container ptxl pbm">
       <div id="editorContainer"></div>
       <script>
-        var require = {
-          config: {
-            'main': {
-              data: @Html(json),
-              containerId: 'editorContainer'
-            }
-          }
+        var BehaviorEditorConfiguration = {
+          data: @Html(json),
+          containerId: 'editorContainer'
         };
       </script>
       <script data-main='@routes.Assets.versioned("javascripts/main.js")' src='@routes.Assets.versioned("lib/requirejs/require.js")'></script>
