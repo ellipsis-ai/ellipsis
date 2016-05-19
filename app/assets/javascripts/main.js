@@ -1,17 +1,32 @@
 requirejs.config({
   paths:{
-    'react': 'https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react',
-    'react-dom': 'https://cdnjs.cloudflare.com/ajax/libs/react/15.0.2/react-dom',
+    'react': ['../lib/react'],
+    'react-dom': ['../lib/react-dom/dist'],
   },
-  packages: [{
-    name: 'codemirror',
-    location: 'codemirror',
-    main: 'lib/codemirror'
-  }]
+  packages: [
+    {
+      name: 'codemirror',
+      location: 'codemirror',
+      main: 'lib/codemirror'
+    }, {
+      name: 'react',
+      main: 'react'
+    }, {
+      name: 'react-dom',
+      main: 'react-dom'
+    }
+  ],
+  shim: {
+    'react': {
+      exports: 'react'
+    },
+    'react-dom': {
+      deps: ['react'],
+      exports: 'react-dom'
+    }
+  }
 });
 
-define(['module'], function(module) {
-  require(['./behavior_editor'], function(behaviorEditor) {
-    behaviorEditor.load(module.config().data, module.config().containerId);
-  });
+define(['module', './behavior_editor'], function(module, behaviorEditor) {
+  behaviorEditor.load(module.config().data, module.config().containerId);
 });
