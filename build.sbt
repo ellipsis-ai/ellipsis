@@ -1,3 +1,6 @@
+import WebJs._
+import RjsKeys._
+
 name := """ellipsis"""
 
 version := "1.0-SNAPSHOT"
@@ -28,3 +31,12 @@ resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 routesGenerator := InjectedRoutesGenerator
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
+
+RjsKeys.mainConfig := "build"
+
+buildProfile := JS.Object(
+  "appDir" -> "./",
+  "baseUrl" -> "javascripts",
+  "dir" -> "../appdirectory-build",
+  "modules" -> Seq(JS.Object("name" -> "main"))
+)

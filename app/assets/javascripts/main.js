@@ -11,7 +11,7 @@ requirejs.config({
 });
 
 define(['module'], function(module) {
-  require(['behavior_editor'], function(behaviorEditor) {
+  require(['./behavior_editor'], function(behaviorEditor) {
     behaviorEditor.load(module.config().data, module.config().containerId);
   });
 });
