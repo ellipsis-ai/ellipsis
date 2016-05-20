@@ -19,6 +19,12 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
 
   val blockingClient: AWSLambdaClient = new AWSLambdaClient(credentials)
 
+  val INVOCATION_TIMEOUT_SECONDS = 30
+  val CONTEXT_KEY = "context"
+  val TOKEN_KEY = "token"
+  val API_BASE_URL_KEY = "apiBaseUrl"
+  val apiBaseUrl: String = configuration.getString("application.apiBaseUrl").get
+
   private def resultStringFor(payload: ByteBuffer): String = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
@@ -28,18 +34,13 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     }
   }
 
-  val CONTEXT = "context"
-  val TOKEN = "token"
-  val API_BASE_URL = "apiBaseUrl"
-  def apiBaseUrl: String = configuration.getString("application.apiBaseUrl").get
-
   def invoke(behavior: Behavior, params: Map[String, String]): String = {
     val token = models.runNow(InvocationToken.createFor(behavior.team))
     val payloadJson = JsObject(
       params.toSeq.map { case(k, v) => (k, JsString(v))} ++
-        Seq(CONTEXT -> JsObject(Seq(
-          API_BASE_URL -> JsString(apiBaseUrl),
-          TOKEN -> JsString(token.id)
+        Seq(CONTEXT_KEY -> JsObject(Seq(
+          API_BASE_URL_KEY -> JsString(apiBaseUrl),
+          TOKEN_KEY -> JsString(token.id)
         )))
     )
     val invokeRequest =
@@ -67,7 +68,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     val invocationParamsString = (paramsFromEvent ++ builtInParams).mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {
-      |   var context = event.$CONTEXT;
+      |   var context = event.$CONTEXT_KEY;
       |   var fn = function($definitionParamString) { $functionBody };
       |   var onSuccess = function(result) { callback(null, { "result": result }); };
       |   var onError = function(err) { callback(err); };
@@ -89,7 +90,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     writer.close()
 
     requiredModulesIn(functionBody).foreach { moduleName =>
-      Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName")).!
+      // NPM wants to write a lockfile in $HOME; this makes it work for daemons
+      Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
     }
 
     Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(behavior.functionName)} *")).!
@@ -124,7 +126,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
         withRole(configuration.getString("aws.role").get).
         withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
         withHandler("index.handler").
-        withTimeout(10)
+        withTimeout(INVOCATION_TIMEOUT_SECONDS)
 
     blockingClient.createFunction(createFunctionRequest)
   }
