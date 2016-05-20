@@ -91,7 +91,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
 
     requiredModulesIn(functionBody).foreach { moduleName =>
       // NPM wants to write a lockfile in $HOME; this makes it work for daemons
-      Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
+      Process(Seq("bash","-c",s"cd $dirName && npm install --global-style=false --legacy-bundling=false $moduleName"), None, "HOME" -> "/tmp").!
     }
 
     Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(behavior.functionName)} *")).!
