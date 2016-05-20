@@ -1,3 +1,8 @@
+/*
+RequireJS development configuration
+Production configuration lives in build.js.
+*/
+
 requirejs.config({
   packages: [
     {

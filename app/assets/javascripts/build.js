@@ -1,3 +1,8 @@
+/*
+RequireJS production configuration
+Development configuration lives in main.js
+*/
+
 requirejs.config({
   packages: [
     {
