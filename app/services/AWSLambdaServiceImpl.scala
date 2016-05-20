@@ -19,6 +19,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
 
   val blockingClient: AWSLambdaClient = new AWSLambdaClient(credentials)
 
+  val INVOCATION_TIMEOUT_SECONDS = 30
   val CONTEXT_KEY = "context"
   val TOKEN_KEY = "token"
   val API_BASE_URL_KEY = "apiBaseUrl"
@@ -125,7 +126,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
         withRole(configuration.getString("aws.role").get).
         withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
         withHandler("index.handler").
-        withTimeout(10)
+        withTimeout(INVOCATION_TIMEOUT_SECONDS)
 
     blockingClient.createFunction(createFunctionRequest)
   }
