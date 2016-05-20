@@ -70,7 +70,9 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
       |exports.handler = function(event, context, callback) {
       |   var context = event.$CONTEXT_KEY;
       |   var fn = function($definitionParamString) { $functionBody };
-      |   var onSuccess = function(result) { callback(null, { "result": result }); };
+      |   var onSuccess = function(result) {
+      |     callback(null, { "result": result === undefined ? null : result });
+      |   };
       |   var onError = function(err) { callback(err); };
       |   fn($invocationParamsString);
       |}
