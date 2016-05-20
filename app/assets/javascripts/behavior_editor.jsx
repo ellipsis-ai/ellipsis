@@ -2,14 +2,15 @@ define('behavior_editor', [
   'react',
   'react-dom',
   './react-codemirror',
-  './codemirror/mode/javascript/javascript'
-], function(React, ReactDOM, Codemirror) {
-
-var BehaviorEditorMixin = {
-  visibleWhen: function(condition) {
-    return " visibility " + (condition ? "visibility-visible" : "visibility-hidden") + " ";
-  }
-};
+  './codemirror/mode/javascript/javascript',
+  './behavior_editor_mixin'
+], function(
+  React,
+  ReactDOM,
+  Codemirror,
+  CodemirrorJSMode,
+  BehaviorEditorMixin
+) {
 
 var BehaviorEditor = React.createClass({
   mixins: [BehaviorEditorMixin],
