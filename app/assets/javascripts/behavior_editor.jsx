@@ -3,13 +3,15 @@ define('behavior_editor', [
   'react-dom',
   './react-codemirror',
   './codemirror/mode/javascript/javascript',
-  './behavior_editor_mixin'
+  './behavior_editor_mixin',
+  './behavior_editor_settings_menu'
 ], function(
   React,
   ReactDOM,
   Codemirror,
   CodemirrorJSMode,
-  BehaviorEditorMixin
+  BehaviorEditorMixin,
+  BehaviorEditorSettingsMenu
 ) {
 
 var BehaviorEditor = React.createClass({
@@ -514,21 +516,6 @@ var BehaviorEditorSettingsButton = React.createClass({
           </svg>
         </button>
       </span>
-    );
-  }
-});
-
-var BehaviorEditorSettingsMenu = React.createClass({
-  mixins: [BehaviorEditorMixin],
-  render: function() {
-    return (
-      <div className="position-relative">
-        <ul className={"dropdown-menu dropdown-menu-right" + this.visibleWhen(this.props.isVisible)}>
-          {React.Children.map(this.props.children, function(child) {
-            return (<li onMouseUp={this.props.onItemClick}>{child}</li>);
-          }, this)}
-        </ul>
-      </div>
     );
   }
 });
