@@ -33,4 +33,23 @@ routesGenerator := InjectedRoutesGenerator
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
-RjsKeys.mainConfig := "build"
+buildProfile := JS.Object(
+  "modules" -> Seq(
+    JS.Object(
+      "name" -> "main",
+      "override" -> JS.Object(
+        "packages" -> Seq(
+          JS.Object(
+            "name" -> "react",
+            "location" -> "../lib/react",
+            "main" -> "react.min"
+          ), JS.Object(
+            "name" -> "react-dom",
+            "location" -> "../lib/react",
+            "main" -> "react-dom.min"
+          )
+        )
+      )
+    )
+  )
+)
