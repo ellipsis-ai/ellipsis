@@ -14,6 +14,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc.{Controller, Action}
 import services.AWSDynamoDBService
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -46,12 +47,12 @@ class DefaultStorage @Inject() (
       info => {
         val action = for {
           maybeTeam <- Team.findForToken(info.token)
-        } yield {
-            maybeTeam.map { team =>
-              dynamoDBService.putItem(info.itemId, Json.toJson(info.itemJson), info.itemType, team)
+          result <- maybeTeam.map { team =>
+            DBIO.from(dynamoDBService.putItem(info.itemId, Json.toJson(info.itemJson), info.itemType, team).map { _ =>
               Ok("success")
-            }.getOrElse(Unauthorized("Invalid request token"))
-        }
+            })
+          }.getOrElse(DBIO.successful(Unauthorized("Invalid request token")))
+        } yield result
 
         models.run(action)
       }
@@ -61,13 +62,14 @@ class DefaultStorage @Inject() (
   def getItem(itemId: String, itemType: String, token: String) = Action.async { implicit request =>
     val action = for {
       maybeTeam <- Team.findForToken(token)
-    } yield {
-        maybeTeam.map { team =>
-          dynamoDBService.getItem(itemId, itemType, team).map { item =>
+      result <- maybeTeam.map { team =>
+        DBIO.from(dynamoDBService.getItem(itemId, itemType, team).map { maybeItem =>
+          maybeItem.map { item =>
             Ok(item)
           }.getOrElse(NotFound("item not found"))
-        }.getOrElse(Unauthorized("Invalid request token"))
-      }
+        })
+      }.getOrElse(DBIO.successful(Unauthorized("Invalid request token")))
+    } yield result
 
     models.run(action)
   }
