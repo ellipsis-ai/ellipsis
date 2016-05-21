@@ -4,6 +4,7 @@ import models.bots.conversations.InvokeBehaviorConversation
 import services.AWSLambdaService
 import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class BehaviorResponse(
                              event: Event,
@@ -16,11 +17,15 @@ case class BehaviorResponse(
     parameters.size == paramValues.size
   }
 
-  def runCode(service: AWSLambdaService): Unit = event.context.sendMessage(behavior.resultFor(paramValues, service))
+  def runCode(service: AWSLambdaService): Future[Unit] = {
+    behavior.resultFor(paramValues, service).map { result =>
+      event.context.sendMessage(result)
+    }
+  }
 
   def run(service: AWSLambdaService): DBIO[Unit] = {
     if (isFilledOut) {
-      DBIO.successful(runCode(service))
+      DBIO.from(runCode(service))
     } else {
       for {
         convo <- InvokeBehaviorConversation.createFor(behavior, event.context.name, event.context.userIdForContext)

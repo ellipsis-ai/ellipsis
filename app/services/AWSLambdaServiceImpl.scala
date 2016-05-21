@@ -5,21 +5,24 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
 import javax.inject.Inject
-import com.amazonaws.services.lambda.AWSLambdaClient
+import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
 import models.{Models, InvocationToken}
 import models.bots.Behavior
 import play.api.Configuration
 import play.api.libs.json.{JsString, JsObject, Json}
-import scala.reflect.io.{Path}
+import utils.JavaFutureWrapper
+import scala.concurrent.Future
+import scala.reflect.io.Path
 import sys.process._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val models: Models) extends AWSLambdaService {
 
-  val blockingClient: AWSLambdaClient = new AWSLambdaClient(credentials)
+  val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
 
-  val INVOCATION_TIMEOUT_SECONDS = 30
+  val INVOCATION_TIMEOUT_SECONDS = 10
   val CONTEXT_KEY = "context"
   val TOKEN_KEY = "token"
   val API_BASE_URL_KEY = "apiBaseUrl"
@@ -34,7 +37,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     }
   }
 
-  def invoke(behavior: Behavior, params: Map[String, String]): String = {
+  def invoke(behavior: Behavior, params: Map[String, String]): Future[String] = {
     val token = models.runNow(InvocationToken.createFor(behavior.team))
     val payloadJson = JsObject(
       params.toSeq.map { case(k, v) => (k, JsString(v))} ++
@@ -48,8 +51,9 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
         withFunctionName(behavior.functionName).
         withInvocationType(InvocationType.RequestResponse).
         withPayload(payloadJson.toString())
-    val result = blockingClient.invoke(invokeRequest)
-    resultStringFor(result.getPayload)
+    JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
+      resultStringFor(result.getPayload)
+    }
   }
 
   val requireRegex = """.*require\(['"]\s*(\S+)\s*['"]\).*""".r
@@ -105,17 +109,17 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
 
-  def deleteFunction(functionName: String): Unit = {
+  def deleteFunction(functionName: String): Future[Unit] = {
     val deleteFunctionRequest =
       new DeleteFunctionRequest().withFunctionName(functionName)
     try {
-      blockingClient.deleteFunction(deleteFunctionRequest)
+      JavaFutureWrapper.wrap(client.deleteFunctionAsync(deleteFunctionRequest)).map(_ => Unit)
     } catch {
-      case e: ResourceNotFoundException => Unit
+      case e: ResourceNotFoundException => Future.successful(Unit)
     }
   }
 
-  def deployFunctionFor(behavior: Behavior, functionBody: String, params: Array[String]): Unit = {
+  def deployFunctionFor(behavior: Behavior, functionBody: String, params: Array[String]): Future[Unit] = {
     val functionName = behavior.functionName
     deleteFunction(functionName)
     val functionCode =
@@ -130,6 +134,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
         withHandler("index.handler").
         withTimeout(INVOCATION_TIMEOUT_SECONDS)
 
-    blockingClient.createFunction(createFunctionRequest)
+    // TODO: something with the result of this
+    JavaFutureWrapper.wrap(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
   }
 }
