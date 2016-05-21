@@ -7,6 +7,7 @@ import play.api.{Configuration, Play}
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class Behavior(
                      id: String,
@@ -32,7 +33,7 @@ case class Behavior(
 
   def functionName: String = id
 
-  def resultFor(params: Map[String, String], service: AWSLambdaService): String = {
+  def resultFor(params: Map[String, String], service: AWSLambdaService): Future[String] = {
     service.invoke(this, params)
   }
 
