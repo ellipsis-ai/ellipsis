@@ -23,6 +23,8 @@ case class LearnBehaviorConversation(
 
   val DESCRIPTION_PROMPT = "Describe the new behavior you'd like me to learn:"
 
+  import services.AWSLambdaConstants._
+
   def codePromptFor(lambdaService: AWSLambdaService) = {
     val editPromptString = "describe how this should work"
     val editPrompt = behavior.editLinkFor(lambdaService.configuration).map { link =>
@@ -32,9 +34,9 @@ case class LearnBehaviorConversation(
       |
       |Or, if you like, you can write a quick node.js function right here.
       |
-      |Parameters other than onSuccess, onError and context will be supplied by the user.
+      |Parameters other than $ON_SUCCESS_PARAM, $ON_ERROR_PARAM and $CONTEXT_PARAM will be supplied by the user.
       |
-      |e.g. function(someNumber, someOtherNumber, onSuccess, onError, context) { onSuccess(someNumber + someOtherNumber); }
+      |e.g. function(someNumber, someOtherNumber, $ON_SUCCESS_PARAM, $ON_ERROR_PARAM, $CONTEXT_PARAM) { $ON_SUCCESS_PARAM(someNumber + someOtherNumber); }
       |
       |""".stripMargin
     }

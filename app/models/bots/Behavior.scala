@@ -136,7 +136,9 @@ object BehaviorQueries {
     }.getOrElse(Array())
   }
 
-  def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == "onSuccess" || ea == "onError" || ea == "context")
+  import services.AWSLambdaConstants._
+
+  def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == ON_SUCCESS_PARAM || ea == ON_ERROR_PARAM || ea == CONTEXT_PARAM)
 
   val functionBodyRegex = """(?s)^\s*function\s*\([^\)]*\)\s*\{(.*)\}$""".r
 

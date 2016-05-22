@@ -241,7 +241,7 @@ var BehaviorEditor = React.createClass({
             </div>
             <div className="columns plxl">
               <div className="column column-one-quarter">
-                <code className="type-weak type-s">onSuccess,<br />onError,<br />context</code>
+                <code className="type-weak type-s">onSuccess,<br />onError,<br />ellipsis</code>
               </div>
               <div className="column column-three-quarters ptxl align-c">
                 <button type="button" onClick={this.addParam}>Add parameter</button>
