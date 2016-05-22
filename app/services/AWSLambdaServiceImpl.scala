@@ -20,13 +20,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val models: Models) extends AWSLambdaService {
 
-  val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
+  import AWSLambdaConstants._
 
-  val INVOCATION_TIMEOUT_SECONDS = 10
-  val CONTEXT_KEY = "context"
-  val TOKEN_KEY = "token"
-  val API_BASE_URL_KEY = "apiBaseUrl"
-  val apiBaseUrl: String = configuration.getString("application.apiBaseUrl").get
+  val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
+  val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
   private def resultStringFor(payload: ByteBuffer): String = {
     val bytes = payload.array
@@ -41,7 +38,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     val token = models.runNow(InvocationToken.createFor(behavior.team))
     val payloadJson = JsObject(
       params.toSeq.map { case(k, v) => (k, JsString(v))} ++
-        Seq(CONTEXT_KEY -> JsObject(Seq(
+        Seq(CONTEXT_PARAM -> JsObject(Seq(
           API_BASE_URL_KEY -> JsString(apiBaseUrl),
           TOKEN_KEY -> JsString(token.id)
         )))
@@ -64,20 +61,17 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules)
   }
 
-  val builtInParams = Array("onSuccess", "onError", "context")
-
   private def nodeCodeFor(functionBody: String, params: Array[String], behavior: Behavior): String = {
-    val definitionParamString = (params ++ builtInParams).mkString(", ")
+    val definitionParamString = (params ++ HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")
     val paramsFromEvent = params.indices.map(i => s"event.param$i")
-    val invocationParamsString = (paramsFromEvent ++ builtInParams).mkString(", ")
+    val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {
-      |   var context = event.$CONTEXT_KEY;
       |   var fn = function($definitionParamString) { $functionBody };
-      |   var onSuccess = function(result) {
+      |   var $ON_SUCCESS_PARAM = function(result) {
       |     callback(null, { "result": result === undefined ? null : result });
       |   };
-      |   var onError = function(err) { callback(err); };
+      |   var $ON_ERROR_PARAM = function(err) { callback(err); };
       |   fn($invocationParamsString);
       |}
     """.stripMargin

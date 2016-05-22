@@ -13,14 +13,14 @@ function findMissingArgs(keysToEnsure, args) {
 module.exports = {
 
     putItem: function (args) {
-        var missing = findMissingArgs(["itemId", "itemType", "item", "context"], args);
+        var missing = findMissingArgs(["itemId", "itemType", "item", "ellipsis"], args);
         if (missing.length > 0) {
             onError("Missing values for: " + missing.join(", "));
         } else {
             request.
                 post({
-                    url: args.context.apiBaseUrl + "/put_item",
-                    form: {itemId: args.itemId, itemType: args.itemType, token: args.context.token, item: args.item}
+                    url: args.ellipsis.apiBaseUrl + "/put_item",
+                    form: {itemId: args.itemId, itemType: args.itemType, token: args.ellipsis.token, item: args.item}
                 }, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         if (args.onSuccess) {
@@ -37,13 +37,13 @@ module.exports = {
     },
 
     getItem: function (args) {
-        var missing = findMissingArgs(["itemId", "itemType", "context"], args);
+        var missing = findMissingArgs(["itemId", "itemType", "ellipsis"], args);
         if (missing.length > 0) {
             onError("Missing values for: " + missing.join(", "));
         } else {
             request.
                 get(
-                args.context.apiBaseUrl + "/get_item/" + args.itemId + "/" + args.itemType + "/" + args.context.token,
+                args.context.apiBaseUrl + "/get_item/" + args.itemId + "/" + args.itemType + "/" + args.ellipsis.token,
                 function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         if (args.onSuccess) {

@@ -1,4 +1,4 @@
-function(key, value, onSuccess, onError, context) {
+function(key, value, onSuccess, onError, ellipsis) {
 
     var db = require("ellipsis-default-storage");
 
@@ -6,7 +6,7 @@ function(key, value, onSuccess, onError, context) {
         itemId: key,
         itemType: "stuff",
         item: value,
-        context: context,
+        ellipsis: ellipsis,
         onSuccess: function() { onSuccess("Ok, got it!") },
         onError: onError
     });
