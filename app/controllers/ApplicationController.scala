@@ -39,8 +39,8 @@ class ApplicationController @Inject() (
     val maybeResult = for {
       scopes <- configuration.getString("silhouette.slack.scope")
       clientId <- configuration.getString("silhouette.slack.clientID")
-      redirectUrl <- configuration.getString("silhouette.slack.redirectURL").map(UriEncoding.encodePathSegment(_, "utf-8"))
     } yield {
+        val redirectUrl = routes.SocialAuthController.installForSlack().absoluteURL(secure=true)
         Ok(views.html.addToSlack(request.identity, scopes, clientId, redirectUrl))
       }
     maybeResult.getOrElse(Redirect(routes.ApplicationController.index))
