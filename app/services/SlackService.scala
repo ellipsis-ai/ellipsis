@@ -14,15 +14,19 @@ import akka.actor.ActorSystem
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.matching.Regex
 
 @Singleton
-class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: ApplicationLifecycle, models: Models, messages: MessagesApi) {
+class SlackService @Inject() (
+                               lambdaService: AWSLambdaService,
+                               appLifecycle: ApplicationLifecycle,
+                               val models: Models,
+                               messages: MessagesApi
+                               ) {
 
   implicit val system = ActorSystem("slack")
   implicit val ec = system.dispatcher
 
-  val clients = scala.collection.mutable.ListBuffer.empty[SlackRtmClient]
+  val clients = scala.collection.mutable.Map.empty[SlackBotProfile, SlackRtmClient]
 
   start
 
@@ -148,10 +152,23 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
     conversation.replyFor(SlackMessageEvent(messageContext), lambdaService)
   }
 
+  def stopFor(profile: SlackBotProfile): Unit = {
+
+    println(s"stopping client for ${profile.userId}")
+
+    clients.get(profile).foreach { client =>
+      client.close()
+    }
+    clients.remove(profile)
+  }
+
   def startFor(profile: SlackBotProfile) {
 
+    stopFor(profile)
+
+    println(s"starting client for ${profile.userId}")
     val client = SlackRtmClient(profile.token, 5.seconds)
-    clients += client
+    clients.put(profile, client)
     val selfId = client.state.self.id
 
     client.onMessage { message =>
@@ -183,9 +200,11 @@ class SlackService @Inject() (lambdaService: AWSLambdaService, appLifecycle: App
     models.run(action)
   }
 
-  def stop = clients.foreach { ea =>
-    ea.close
-    clients -= ea
+  def stop = {
+    clients.clone().foreach { case(profile, client) =>
+      client.close
+      clients.remove(profile)
+    }
   }
 
 }
