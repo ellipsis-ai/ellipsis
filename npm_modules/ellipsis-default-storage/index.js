@@ -43,7 +43,7 @@ module.exports = {
         } else {
             request.
                 get(
-                args.context.apiBaseUrl + "/get_item/" + args.itemId + "/" + args.itemType + "/" + args.ellipsis.token,
+                args.ellipsis.apiBaseUrl + "/get_item/" + args.itemId + "/" + args.itemType + "/" + args.ellipsis.token,
                 function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         if (args.onSuccess) {
