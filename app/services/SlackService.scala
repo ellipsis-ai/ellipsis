@@ -134,12 +134,26 @@ class SlackService @Inject() (
     } yield Unit
   }
 
+  def setEnvironmentVariable(name: String, value:String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
+    for {
+      maybeTeam <- Team.find(profile.teamId)
+      maybeEnvVar <- maybeTeam.map { team =>
+        EnvironmentVariableQueries.ensureFor(name, value, team)
+      }.getOrElse(DBIO.successful(None))
+    } yield {
+      val messageContext = SlackContext(client, profile, message)
+      SlackMessageEvent(messageContext).context.sendMessage(s"OK, saved $name!")
+    }
+  }
+
   def handleMessageFor(client: SlackRtmClient, profile: SlackBotProfile, message: Message, selfId: String): DBIO[Unit] = {
+    val setEnvironmentVariableRegex = s"""<@$selfId>:\\s+set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
     val startLearnConversationRegex = s"""<@$selfId>:\\s+learn\\s*$$""".r
     val unlearnRegex = s"""<@$selfId>:\\s+unlearn\\s+(\\S+)""".r
     val helpRegex = s"""<@$selfId>:\\s+help\\s*(\\S*.*)$$""".r
 
     message.text match {
+      case setEnvironmentVariableRegex(name, value) => setEnvironmentVariable(name, value, client, profile, message)
       case startLearnConversationRegex() => startLearnConversationFor(client, profile, message)
       case unlearnRegex(regexString) => unlearnBehaviorFor(regexString, client, profile, message)
       case helpRegex(helpString) => displayHelpFor(helpString, client, profile, message)

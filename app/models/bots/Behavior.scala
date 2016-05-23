@@ -1,7 +1,7 @@
 package models.bots
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
-import models.{IDs, Team}
+import models.{EnvironmentVariableQueries, IDs, Team}
 import org.joda.time.DateTime
 import play.api.{Configuration, Play}
 import services.AWSLambdaService
@@ -34,7 +34,10 @@ case class Behavior(
   def functionName: String = id
 
   def resultFor(params: Map[String, String], service: AWSLambdaService): Future[String] = {
-    service.invoke(this, params)
+    for {
+      envVars <- service.models.run(EnvironmentVariableQueries.allFor(team))
+      result <- service.invoke(this, params, envVars)
+    } yield result
   }
 
   def unlearn(lambdaService: AWSLambdaService): DBIO[Unit] = {
@@ -148,8 +151,8 @@ object BehaviorQueries {
     val functionBody = functionBodyRegex.findFirstMatchIn(code).flatMap { m =>
       m.subgroups.headOption
     }.getOrElse("")
-    lambdaService.deployFunctionFor(behavior, functionBody, paramsWithoutBuiltin)
     (for {
+      _ <- DBIO.from(lambdaService.deployFunctionFor(behavior, functionBody, paramsWithoutBuiltin))
       b <- behavior.copy(maybeFunctionBody = Some(functionBody)).save
       params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin.map(ea => (ea, None)))
     } yield params) transactionally
