@@ -149,7 +149,7 @@ class ApplicationController @Inject() (
               maybeBehavior <- BehaviorQueries.find(data.id)
               _ <- maybeBehavior.map { behavior =>
                 (for {
-                  _ <- DBIO.successful(lambdaService.deployFunctionFor(behavior, data.functionBody, BehaviorQueries.withoutBuiltin(data.params.map(_.name).toArray)))
+                  _ <- DBIO.from(lambdaService.deployFunctionFor(behavior, data.functionBody, BehaviorQueries.withoutBuiltin(data.params.map(_.name).toArray)))
                   _ <- behavior.copy(
                     maybeDescription = Some(data.description),
                     maybeFunctionBody = Some(data.functionBody)

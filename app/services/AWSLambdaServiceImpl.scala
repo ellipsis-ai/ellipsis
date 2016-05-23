@@ -7,7 +7,7 @@ import java.nio.file.{Files, Paths}
 import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
-import models.{Models, InvocationToken}
+import models.{EnvironmentVariable, Models, InvocationToken}
 import models.bots.Behavior
 import play.api.Configuration
 import play.api.libs.json.{JsString, JsObject, Json}
@@ -34,13 +34,16 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     }
   }
 
-  def invoke(behavior: Behavior, params: Map[String, String]): Future[String] = {
+  def invoke(behavior: Behavior, params: Map[String, String], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
     val token = models.runNow(InvocationToken.createFor(behavior.team))
     val payloadJson = JsObject(
       params.toSeq.map { case(k, v) => (k, JsString(v))} ++
         Seq(CONTEXT_PARAM -> JsObject(Seq(
           API_BASE_URL_KEY -> JsString(apiBaseUrl),
-          TOKEN_KEY -> JsString(token.id)
+          TOKEN_KEY -> JsString(token.id),
+          ENV_KEY -> JsObject(environmentVariables.map { ea =>
+            ea.name -> JsString(ea.value)
+          })
         )))
     )
     val invokeRequest =
@@ -103,19 +106,22 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
 
-  def deleteFunction(functionName: String): Future[Unit] = {
+  def deleteFunction(functionName: String): Unit = {
     val deleteFunctionRequest =
       new DeleteFunctionRequest().withFunctionName(functionName)
     try {
-      JavaFutureWrapper.wrap(client.deleteFunctionAsync(deleteFunctionRequest)).map(_ => Unit)
+      client.deleteFunction(deleteFunctionRequest)
     } catch {
-      case e: ResourceNotFoundException => Future.successful(Unit)
+      case e: ResourceNotFoundException => Unit // we expect this when creating the first time
     }
   }
 
   def deployFunctionFor(behavior: Behavior, functionBody: String, params: Array[String]): Future[Unit] = {
     val functionName = behavior.functionName
+
+    // blocks
     deleteFunction(functionName)
+
     val functionCode =
       new FunctionCode().
         withZipFile(getZipFor(behavior, functionBody, params))
@@ -128,7 +134,6 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
         withHandler("index.handler").
         withTimeout(INVOCATION_TIMEOUT_SECONDS)
 
-    // TODO: something with the result of this
     JavaFutureWrapper.wrap(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
   }
 }

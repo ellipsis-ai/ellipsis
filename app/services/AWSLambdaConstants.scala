@@ -7,5 +7,6 @@ object AWSLambdaConstants {
   val HANDLER_PARAMS = Array(ON_SUCCESS_PARAM, ON_ERROR_PARAM)
   val INVOCATION_TIMEOUT_SECONDS = 10
   val TOKEN_KEY = "token"
+  val ENV_KEY = "env"
   val API_BASE_URL_KEY = "apiBaseUrl"
 }
