@@ -10,7 +10,7 @@ import com.amazonaws.services.lambda.model._
 import models.{EnvironmentVariable, Models, InvocationToken}
 import models.bots.Behavior
 import play.api.Configuration
-import play.api.libs.json.{JsString, JsObject, Json}
+import play.api.libs.json.{JsValue, JsString, JsObject, Json}
 import utils.JavaFutureWrapper
 import scala.concurrent.Future
 import scala.reflect.io.Path
@@ -25,12 +25,22 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
+  private def processedResultFor(result: JsValue): String = {
+    result.
+      toString.
+      replaceAll("^\"|\"$", "").
+      replaceAll("Process exited before completing request", "We weren't able to run your code. Better error reporting coming soon, but for now give it another look.")
+  }
+
   private def resultStringFor(payload: ByteBuffer): String = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
-    val maybeResult = (Json.parse(jsonString) \ "result").toOption
-    maybeResult.map(_.toString.replaceAll("^\"|\"$", "")).getOrElse {
-      "Hmm. Looks like something is wrong with your script. Try `learn` again."
+    val json = Json.parse(jsonString)
+    val maybeResult = (json \ "result").toOption
+    (json \ "result").toOption.orElse {
+      (json \ "errorMessage").toOption
+    }.map(processedResultFor).getOrElse {
+      "Hmm. Looks like something is wrong with your script."
     }
   }
 
