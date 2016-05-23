@@ -11,11 +11,6 @@ case class EnvironmentVariable(
                               team: Team,
                               createdAt: DateTime
                             ) {
-
-  def setForNodeEnvString: String = {
-    s"""process.env.$name = "$value""""
-  }
-
   def toRaw: RawEnvironmentVariable = {
     RawEnvironmentVariable(name, value, team.id, createdAt)
   }
