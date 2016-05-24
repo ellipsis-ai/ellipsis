@@ -14,7 +14,7 @@ return React.createClass({
       <div className="position-relative">
         <button type="button"
           ref="button"
-          className={"button-symbol button-s " + (this.props.inverted ? "button-primary" : "")}
+          className={"button-symbol button-s " + (this.props.inverted ? "button-inverted" : "")}
           onClick={this.onClick}
         >
           <svg aria-label="?" width="12px" height="100%" viewBox="0 0 12 24">

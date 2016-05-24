@@ -30,6 +30,7 @@
 @gray-light: hsl(231, 11%, 81%);
 @gray-medium: hsl(231, 11%, 60%);
 @gray-dark: hsl(231, 11%, 45%);
+@gray-darkest: hsl(231, 13%, 25%);
 
 @blue-faded-dark: hsl(231, 22%, 43%);
 
@@ -750,21 +751,21 @@ button.button-primary:active {
 }
 
 button.button-inverted {
-  background-color: @gray-medium;
-  border-color: @gray-medium;
+  background-color: @gray-dark;
+  border-color: @gray-darkest;
   color: @white;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
 }
 
 button.button-inverted:focus {
-  background-color: @gray-medium;
-  border-color: @gray-dark;
+  background-color: @gray-dark;
+  border-color: @gray-darkest;
 }
 
 button.button-inverted:active {
-  background-color: @gray-dark;
-  border-color: @gray-dark;
+  background-color: @gray-darkest;
+  border-color: @gray-darkest;
   color: @white;
 }
 
