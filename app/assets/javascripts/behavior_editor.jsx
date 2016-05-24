@@ -1,30 +1,16 @@
-define('behavior_editor', [
-  'react',
-  'react-dom',
-  './react-codemirror',
-  './codemirror/mode/javascript/javascript',
-  './behavior_editor_mixin',
-  './behavior_editor_delete_button',
-  './behavior_editor_hidden_json_input',
-  './behavior_editor_input',
-  './behavior_editor_settings_button',
-  './behavior_editor_settings_menu',
-  './behavior_editor_trigger_input',
-  './behavior_editor_user_input_definition'
-], function(
-  React,
-  ReactDOM,
-  Codemirror,
-  CodemirrorJSMode,
-  BehaviorEditorMixin,
-  BehaviorEditorDeleteButton,
-  BehaviorEditorHiddenJsonInput,
-  BehaviorEditorInput,
-  BehaviorEditorSettingsButton,
-  BehaviorEditorSettingsMenu,
-  BehaviorEditorTriggerInput,
-  BehaviorEditorUserInputDefinition
-) {
+define(function(require) {
+var React = require('react'),
+  ReactDOM = require('react-dom'),
+  Codemirror = require('./react-codemirror'),
+  CodemirrorJSMode = require('./codemirror/mode/javascript/javascript'),
+  BehaviorEditorMixin = require('./behavior_editor_mixin'),
+  BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
+  BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
+  BehaviorEditorInput = require('./behavior_editor_input'),
+  BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
+  BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
+  BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
+  BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition');
 
 var BehaviorEditor = React.createClass({
   displayName: 'BehaviorEditor',
