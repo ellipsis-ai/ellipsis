@@ -10,7 +10,8 @@ define('behavior_editor', [
   './behavior_editor_settings_button',
   './behavior_editor_settings_menu',
   './behavior_editor_trigger_input',
-  './behavior_editor_user_input_definition'
+  './behavior_editor_user_input_definition',
+  './csrf_token_hidden_input'
 ], function(
   React,
   ReactDOM,
@@ -23,7 +24,8 @@ define('behavior_editor', [
   BehaviorEditorSettingsButton,
   BehaviorEditorSettingsMenu,
   BehaviorEditorTriggerInput,
-  BehaviorEditorUserInputDefinition
+  BehaviorEditorUserInputDefinition,
+  CsrfTokenHiddenInput
 ) {
 
 var BehaviorEditor = React.createClass({
@@ -38,7 +40,8 @@ var BehaviorEditor = React.createClass({
       name: React.PropTypes.string.isRequired,
       question: React.PropTypes.string.isRequired
     })),
-    triggers: React.PropTypes.arrayOf(React.PropTypes.string)
+    triggers: React.PropTypes.arrayOf(React.PropTypes.string),
+    csrfToken: React.PropTypes.string.isRequired
   },
 
   utils: {
@@ -78,7 +81,8 @@ var BehaviorEditor = React.createClass({
         triggers: this.props.triggers.concat(['']) // always add one blank trigger
       },
       codeEditorUseLineWrapping: false,
-      settingsMenuVisible: false
+      settingsMenuVisible: false,
+      csrfToken: this.props.csrfToken
     };
   },
 
@@ -195,6 +199,9 @@ var BehaviorEditor = React.createClass({
   render: function() {
     return (
       <form action="/save_behavior" method="POST">
+        <CsrfTokenHiddenInput
+          value={this.state.csrfToken}
+        />
         <BehaviorEditorHiddenJsonInput
           value={JSON.stringify(this.state.behavior)}
         />
@@ -325,8 +332,8 @@ var BehaviorEditor = React.createClass({
 });
 
 return {
-  load: function(data, containerId) {
-    var myBehaviorEditor = React.createElement(BehaviorEditor, data);
+  load: function(data, containerId, csrfToken) {
+    var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(data, {csrfToken: csrfToken}));
     ReactDOM.render(myBehaviorEditor, document.getElementById(containerId));
   }
 };
