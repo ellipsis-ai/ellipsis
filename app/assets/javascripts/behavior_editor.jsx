@@ -10,7 +10,8 @@ var React = require('react'),
   BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
   BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
-  BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition');
+  BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
+  CsrfTokenHiddenInput = require('./csrf_token_hidden_input');
 
 var BehaviorEditor = React.createClass({
   displayName: 'BehaviorEditor',
@@ -24,7 +25,8 @@ var BehaviorEditor = React.createClass({
       name: React.PropTypes.string.isRequired,
       question: React.PropTypes.string.isRequired
     })),
-    triggers: React.PropTypes.arrayOf(React.PropTypes.string)
+    triggers: React.PropTypes.arrayOf(React.PropTypes.string),
+    csrfToken: React.PropTypes.string.isRequired
   },
 
   utils: {
@@ -181,6 +183,9 @@ var BehaviorEditor = React.createClass({
   render: function() {
     return (
       <form action="/save_behavior" method="POST">
+        <CsrfTokenHiddenInput
+          value={this.props.csrfToken}
+        />
         <BehaviorEditorHiddenJsonInput
           value={JSON.stringify(this.state.behavior)}
         />
@@ -311,8 +316,8 @@ var BehaviorEditor = React.createClass({
 });
 
 return {
-  load: function(data, containerId) {
-    var myBehaviorEditor = React.createElement(BehaviorEditor, data);
+  load: function(data, containerId, csrfToken) {
+    var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(data, {csrfToken: csrfToken}));
     ReactDOM.render(myBehaviorEditor, document.getElementById(containerId));
   }
 };
