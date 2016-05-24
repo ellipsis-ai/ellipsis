@@ -6,13 +6,14 @@ name := """ellipsis"""
 version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
-pipelineStages := Seq(rjs, digest)
+pipelineStages := Seq(rjs, digest, gzip)
 
 scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq(
   evolutions,
   jdbc,
+  filters,
   "com.zaxxer" % "HikariCP" % "2.4.1",
   "com.github.tototoshi" %% "slick-joda-mapper" % "2.0.0",
   "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.0-RC1" % Test,
