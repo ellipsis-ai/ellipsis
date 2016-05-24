@@ -11,6 +11,7 @@ import models.{EnvironmentVariable, Models, InvocationToken}
 import models.bots.Behavior
 import play.api.Configuration
 import play.api.libs.json.{JsValue, JsString, JsObject, Json}
+import sun.misc.BASE64Decoder
 import utils.JavaFutureWrapper
 import scala.concurrent.Future
 import scala.reflect.io.Path
@@ -28,19 +29,44 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   private def processedResultFor(result: JsValue): String = {
     result.
       toString.
-      replaceAll("^\"|\"$", "").
-      replaceAll("Process exited before completing request", "We weren't able to run your code. Better error reporting coming soon, but for now give it another look.")
+      replaceAll("^\"|\"$", "")
   }
 
-  private def resultStringFor(payload: ByteBuffer): String = {
+  private def successResultStringFor(result: JsValue): String = {
+    processedResultFor(result)
+  }
+
+  private def handledErrorResultStringFor(json: JsValue): String = {
+    val prompt = s"$ON_ERROR_PARAM triggered"
+    val maybeDetail = (json \ "errorMessage").toOption.map(processedResultFor)
+    Array(Some(prompt), maybeDetail).flatten.mkString(": ")
+  }
+
+  private def unhandledErrorResultStringFor(logResult: String): String = {
+    val prompt = s"We hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
+    val logRegex = """.*\n.*\t.*\t(.*)""".r
+    val maybeDetail = logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption)
+    Array(Some(prompt), maybeDetail).flatten.mkString(": ")
+  }
+
+  private def isUnhandledError(json: JsValue): Boolean = {
+    (json \ "errorMessage").toOption.flatMap { m =>
+      "Process exited before completing request".r.findFirstIn(m.toString)
+    }.isDefined
+  }
+
+  private def resultStringFor(payload: ByteBuffer, logResult: String): String = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
-    val maybeResult = (json \ "result").toOption
-    (json \ "result").toOption.orElse {
-      (json \ "errorMessage").toOption
-    }.map(processedResultFor).getOrElse {
-      "Hmm. Looks like something is wrong with your script."
+    (json \ "result").toOption.map { successResult =>
+      successResultStringFor(successResult)
+    }.getOrElse {
+      if (isUnhandledError(json)) {
+        unhandledErrorResultStringFor(logResult)
+      } else {
+        handledErrorResultStringFor(json)
+      }
     }
   }
 
@@ -58,11 +84,13 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     )
     val invokeRequest =
       new InvokeRequest().
+        withLogType(LogType.Tail).
         withFunctionName(behavior.functionName).
         withInvocationType(InvocationType.RequestResponse).
         withPayload(payloadJson.toString())
     JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
-      resultStringFor(result.getPayload)
+      val logResult = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
+      resultStringFor(result.getPayload, logResult)
     }
   }
 
