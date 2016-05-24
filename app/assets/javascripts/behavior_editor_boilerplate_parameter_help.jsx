@@ -16,30 +16,31 @@ return React.createClass({
 
           <ul>
             <li className="mbs">
-              <div>Call <code>onSuccess</code> to return a response to the user.</div>
-              <div className="pas pvxs bg-blue-lightest type-weak border border-blue">
-                <code>{'onSuccess("It worked!");'}</code>
+              <div>
+                <span>Call <code>onSuccess</code> to return a response, e.g. </span>
+                <span className="pas pvxs bg-blue-lightest type-weak border border-blue">
+                  <code>{'onSuccess("It worked!");'}</code>
+                </span>
               </div>
             </li>
 
             <li className="mbs">
-              <div>Call <code>onError</code> to return an error message to the user.</div>
-              <div className="pas pvxs bg-blue-lightest type-weak border border-blue">
-                <code>onError("Something went wrong.");</code>
+              <div>
+                <span>Call <code>onError</code> to return an error message, e.g. </span>
+                <span className="pas pvxs bg-blue-lightest type-weak border border-blue">
+                  <code>onError("Something went wrong.");</code>
+                </span>
               </div>
             </li>
 
             <li className="mbs">
-              <div>Use the <code>ellipsis</code> object to reference external properties or environment variables.</div>
+              <div>The <code>ellipsis</code> object reveals useful properties and environment variables.</div>
               <div className="pas pvxs bg-blue-lightest type-weak border border-blue">
-                <code>{'ellipsis: {'}</code><br />
-                <code>{'  apiBaseUrl: '}</code><span className="type-weak">…</span><code> /*</code> <em>the Ellipsis base URL with no trailing slash</em><code> */</code><br />
-                <code>{'  token:      '}</code><span className="type-weak">…</span><code> /*</code> <em>one-time token to authenticate to storage</em><code> */</code><br />
-                <code>{'  env: {'}</code><br />
-                <code>{'    /* '}</code><em>object with keys for the current environment variables</em><code> */</code><br />
-                <code>{'    AWS_ACCESS_KEY: '}</code><span className="type-weak">…</span><br />
-                <code>{'    AWS_SECRET_KEY: '}</code><span className="type-weak">…</span><br />
-                <code>{'  }'}</code><br />
+                <code>{'ellipsis.apiBaseUrl  //'}</code> <em>the Ellipsis base URL with no trailing slash</em><br />
+                <code>{'ellipsis.token       //'}</code> <em>one-time token to authenticate to storage</em><br />
+                <code>{'ellipsis.env: {      //'}</code> <em>object with keys for the current environment variables</em><br />
+                <code>{'  AWS_ACCESS_KEY,'}</code><br />
+                <code>{'  AWS_SECRET_KEY'}</code><br />
                 <code>{'}'}</code>
               </div>
             </li>
