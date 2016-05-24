@@ -36,19 +36,6 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     processedResultFor(result)
   }
 
-  private def errorResultStringFor(json: JsValue, logResult: String): String = {
-    val maybeMessage = (json \ "errorMessage").toOption.flatMap { m =>
-      if ("Process exited before completing request".r.findFirstIn(m.toString).isDefined) {
-        None
-      } else {
-        Some(m)
-      }
-    }
-    val logRegex = """.*\n.*\t.*\t(.*)""".r
-    val maybeLogError = logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption)
-    Array(maybeMessage, maybeLogError).flatten.mkString(": ")
-  }
-
   private def handledErrorResultStringFor(json: JsValue): String = {
     val prompt = s"$ON_ERROR_PARAM triggered"
     val maybeDetail = (json \ "errorMessage").toOption.map(processedResultFor)
