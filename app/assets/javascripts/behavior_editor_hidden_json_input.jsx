@@ -1,8 +1,5 @@
-define([
-  'react'
-], function(
-  React
-) {
+define(function(require) {
+var React = require('react');
 
 return React.createClass({
   displayName: 'BehaviorEditorHiddenJsonInput',

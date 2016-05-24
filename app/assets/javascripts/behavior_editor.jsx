@@ -1,4 +1,5 @@
 define(function(require) {
+<<<<<<< HEAD
   var React = require('react'),
     ReactDOM = require('react-dom'),
     Codemirror = require('./react-codemirror'),
@@ -12,6 +13,20 @@ define(function(require) {
     BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
     BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
     BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition');
+=======
+var React = require('react'),
+  ReactDOM = require('react-dom'),
+  Codemirror = require('./react-codemirror'),
+  CodemirrorJSMode = require('./codemirror/mode/javascript/javascript'),
+  BehaviorEditorMixin = require('./behavior_editor_mixin'),
+  BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
+  BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
+  BehaviorEditorInput = require('./behavior_editor_input'),
+  BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
+  BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
+  BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
+  BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition');
+>>>>>>> commonjs_wrapper_require
 
 var BehaviorEditor = React.createClass({
   displayName: 'BehaviorEditor',

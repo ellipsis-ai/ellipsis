@@ -1,10 +1,6 @@
-define([
-  'react',
-  './behavior_editor_mixin'
-], function(
-  React,
-  BehaviorEditorMixin
-) {
+define(function(require) {
+var React = require('react'),
+  BehaviorEditorMixin = require('./behavior_editor_mixin');
 
 return React.createClass({
   displayName: 'BehaviorEditorDeleteButton',

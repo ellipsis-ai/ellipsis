@@ -1,12 +1,7 @@
-define([
-  'react',
-  './behavior_editor_delete_button',
-  './behavior_editor_input'
-], function(
-  React,
-  BehaviorEditorDeleteButton,
-  BehaviorEditorInput
-) {
+define(function(require) {
+var React = require('react'),
+  BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
+  BehaviorEditorInput = require('./behavior_editor_input');
 
 return React.createClass({
   displayName: 'BehaviorEditorTriggerInput',
