@@ -66,8 +66,7 @@ var BehaviorEditor = React.createClass({
         triggers: this.props.triggers.concat(['']) // always add one blank trigger
       },
       codeEditorUseLineWrapping: false,
-      settingsMenuVisible: false,
-      csrfToken: this.props.csrfToken
+      settingsMenuVisible: false
     };
   },
 
@@ -185,7 +184,7 @@ var BehaviorEditor = React.createClass({
     return (
       <form action="/save_behavior" method="POST">
         <CsrfTokenHiddenInput
-          value={this.state.csrfToken}
+          value={this.props.csrfToken}
         />
         <BehaviorEditorHiddenJsonInput
           value={JSON.stringify(this.state.behavior)}
