@@ -10,7 +10,7 @@ var React = require('react'),
   BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
   BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
-  BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition');
+  BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input');
 
 var BehaviorEditor = React.createClass({
