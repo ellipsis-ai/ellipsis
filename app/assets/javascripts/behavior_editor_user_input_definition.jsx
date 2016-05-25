@@ -38,7 +38,7 @@ return React.createClass({
               />
             </div>
             <div className="column column-shrink align-b">
-              <code>,</code>
+              <code className="type-s type-weak">,</code>
             </div>
           </div>
         </div>

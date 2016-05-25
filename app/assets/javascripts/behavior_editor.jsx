@@ -4,7 +4,9 @@ var React = require('react'),
   Codemirror = require('./react-codemirror'),
   CodemirrorJSMode = require('./codemirror/mode/javascript/javascript'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
+  BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
+  BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
   BehaviorEditorInput = require('./behavior_editor_input'),
   BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
@@ -66,7 +68,10 @@ var BehaviorEditor = React.createClass({
         triggers: this.props.triggers.concat(['']) // always add one blank trigger
       },
       codeEditorUseLineWrapping: false,
-      settingsMenuVisible: false
+      settingsMenuVisible: false,
+      boilerplateHelpVisible: false,
+      expandEnvVariables: false,
+      envVariableNames: ['AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'ANOTHER_KEY', 'AND_ANOTHER_KEY'] // TODO: make these real
     };
   },
 
@@ -174,6 +179,29 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  toggleBoilerplateHelp: function() {
+    /* Reset height of the container to its only child
+       before toggling it so the animation is smooth */
+
+    var container = this.refs.boilerplateHelpContainer;
+    container.style.maxHeight = container.children[0].offsetHeight + 'px';
+
+    this.setState({
+      boilerplateHelpVisible: !this.state.boilerplateHelpVisible
+    });
+  },
+
+  toggleEnvVariableExpansion: function() {
+    /* Reset max height of the container so it can expand */
+
+    var container = this.refs.boilerplateHelpContainer;
+    container.style.maxHeight = 'none';
+
+    this.setState({
+      expandEnvVariables: !this.state.expandEnvVariables
+    });
+  },
+
   onSaveClick: function() {
     this.setState({
       isSaving: true
@@ -232,10 +260,29 @@ var BehaviorEditor = React.createClass({
             </div>
             <div className="columns plxl">
               <div className="column column-one-quarter">
-                <code className="type-weak type-s">onSuccess,<br />onError,<br />ellipsis</code>
+                <div className="columns columns-elastic">
+                  <div className="column column-expand">
+                    <code className="type-weak type-s">onSuccess,</code><br />
+                    <code className="type-weak type-s">onError,</code><br />
+                    <code className="type-weak type-s">ellipsis</code>
+                  </div>
+                  <div className="column column-shrink align-m prl">
+                    <BehaviorEditorHelpButton onClick={this.toggleBoilerplateHelp} inverted={this.state.boilerplateHelpVisible} />
+                  </div>
+                </div>
               </div>
-              <div className="column column-three-quarters ptxl align-c">
+              <div className="column column-three-quarters ptl align-c">
                 <button type="button" onClick={this.addParam}>Add parameter</button>
+              </div>
+              <div
+                className={"column column-full" + this.visibleWhen(this.state.boilerplateHelpVisible, true)}
+                ref="boilerplateHelpContainer"
+              >
+                <BehaviorEditorBoilerplateParameterHelp
+                  envVariableNames={this.state.envVariableNames}
+                  onExpandToggle={this.toggleEnvVariableExpansion}
+                  expandEnvVariables={this.state.expandEnvVariables}
+                />
               </div>
             </div>
             <div>
