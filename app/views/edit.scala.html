@@ -1,8 +1,10 @@
 @(
-  json: String
+  json: String,
+  envVariableNames: Seq[String]
     )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
+@import play.api.libs.json._
 
 @main("Ellipsis behavior editor") {
 
@@ -13,7 +15,8 @@
         var BehaviorEditorConfiguration = {
           data: @Html(json),
           containerId: 'editorContainer',
-          csrfToken: "@CSRF.getToken(r).map(_.value)"
+          csrfToken: "@CSRF.getToken(r).map(_.value)",
+          envVariableNames: @Html(Json.toJson(envVariableNames).toString)
         };
       </script>
       <script data-main='@routes.Assets.versioned("javascripts/main.js")' src='@routes.Assets.versioned("lib/requirejs/require.js")'></script>
