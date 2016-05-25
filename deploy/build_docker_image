@@ -7,8 +7,9 @@ activator docker:stage
 cp deploy/Docker* target/docker/
 pushd target/docker
 VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
-BUNDLE=~/Desktop/$VERSION_LABEL.zip
-zip -r $BUNDLE .
+BUNDLE=$VERSION_LABEL.zip
+BUNDLE_PATH=~/Desktop/$BUNDLE
+zip -r $BUNDLE_PATH .
 popd
 popd
 
@@ -28,7 +29,7 @@ else
   else
 
     echo "Uploading $BUNDLE to S3..."
-    aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE s3://$BUCKET/
+    aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$BUCKET/
 
     aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
     --application-name "$APP_NAME" \
