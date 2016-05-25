@@ -21,7 +21,10 @@ return React.createClass({
     return (
       <div>
         <h5>
-          <span>{this.props.expandEnvVariables ? "▾" : "▸"}</span>
+          <span
+            className="display-inline-block"
+            style={{ width: '0.8em' }}
+          >{this.props.expandEnvVariables ? "▾" : "▸"}</span>
           <span> Current environment variables</span>
         </h5>
 
