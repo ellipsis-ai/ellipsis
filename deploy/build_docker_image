@@ -31,7 +31,7 @@ else
     aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE s3://$BUCKET/
 
     aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
-    --application-name $APP_NAME \
+    --application-name "$APP_NAME" \
     --version-label $VERSION_LABEL \
     --source-bundle S3Bucket=$BUCKET,S3Key=$BUNDLE;
 
