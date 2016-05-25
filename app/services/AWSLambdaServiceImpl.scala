@@ -26,10 +26,10 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
+  private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
+
   private def processedResultFor(result: JsValue): String = {
-    result.
-      toString.
-      replaceAll("^\"|\"$", "")
+    dropEnclosingDoubleQuotes(result.as[String])
   }
 
   private def successResultStringFor(result: JsValue): String = {
