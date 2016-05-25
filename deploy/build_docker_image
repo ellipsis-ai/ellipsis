@@ -27,7 +27,7 @@ else
 
   else
 
-    aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE s3://bucket/$BUCKET/
+    aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE s3://$BUCKET/
 
     aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
     --application-name $APP_NAME \
