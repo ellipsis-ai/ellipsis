@@ -714,6 +714,8 @@ button.button-subtle {
 
 button.button-invisible {
   border-color: transparent !important;
+  border-left-width: 0;
+  border-right-width: 0;
   color: inherit;
   text-align: left;
 }
@@ -748,6 +750,20 @@ button.button-s.button-symbol:focus {
 button:active {
   background-color: @black-translucent;
   border-color: @blue-dark;
+}
+
+button.button-none,
+button.button-none:focus,
+button.button-none:active {
+  background-color: transparent;
+  border-width: 0;
+  padding: 0;
+  min-width: 0;
+  color: inherit;
+  height: auto;
+  font-size: inherit;
+  line-height: inherit;
+  text-align: inherit;
 }
 
 button.button-primary {
@@ -879,7 +895,9 @@ button.button-dropdown-trigger {
 /* Display utilities only work on block elements */
 
 .display {
-  transition: max-height 0.25s ease-out;
+  transition:
+    max-height 0.25s ease-out,
+    white-space 0.25s ease-out;
   overflow: hidden;
 }
 
@@ -892,6 +910,22 @@ button.button-dropdown-trigger {
   max-height: 1000px;
 }
 
+.display-inline {
+  display: inline;
+}
+
+.display-ellipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.display-limit-width {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Positioning */
 
 .position-absolute {
@@ -900,6 +934,11 @@ button.button-dropdown-trigger {
 
 .position-relative {
   position: relative;
+}
+
+.position-top-left {
+  top: 0;
+  left: 0;
 }
 
 .position-top-right {

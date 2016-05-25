@@ -1,10 +1,13 @@
 define(function(require) {
 var React = require('react');
+var BehaviorEditorMixin = require('./behavior_editor_mixin');
 
 return React.createClass({
   displayName: 'BehaviorEditorBoilerplateParameterHelp',
-  onClick: function() {
-    this.props.onClick();
+  mixins: [BehaviorEditorMixin],
+  onExpandToggle: function() {
+    this.refs.button.blur();
+    this.props.onExpandToggle();
   },
   render: function() {
     return (
@@ -38,22 +41,46 @@ return React.createClass({
             </li>
           </ul>
 
-          <h5 className="mbs">Current environment variables</h5>
-          <div className="pas pvxs bg-blue-lightest type-weak border border-blue">
-            <code>{'ellipsis.env: {'}</code><br />
-            {this.props.envVariableNames.map(function(name, index) {
-              return (
-                <span>
-                  <code>{'  ' + name + ': '}</code>
-                  <span className="bg-dark-translucent plxxxl" title="For security, the value is not displayed."></span>
-                  {index < this.props.envVariableNames.length - 1 ? (<code>,</code>) : ""}
-                  <br />
-                </span>
-              );
-            }, this)}
-            <code>{'}'}</code>
-          </div>
+          <button type="button"
+            ref="button"
+            className="button-none pan mbxs display-limit-width"
+            onClick={this.onExpandToggle}
+          >
+            <h5 className="">
+              <span>{this.props.expandEnvVariables ? "▾" : "▸"}</span>
+              <span> Current environment variables</span>
+            </h5>
 
+            <div className="pas pvxs bg-blue-lightest type-weak border border-blue">
+              <div
+                className="display display-ellipsis"
+                style={{
+                  maxHeight: (this.props.expandEnvVariables ?
+                    ((this.props.envVariableNames.length + 3) * 1.5) + 'em' :
+                    '1.5em')
+                }}
+              >
+                <code className="prs">{'ellipsis.env: {'}</code>
+                {this.props.envVariableNames.map(function(name, index) {
+                  return (
+                    <div
+                      key={"envVar" + index}
+                      className={this.props.expandEnvVariables ? "pll" : "display-inline"}
+                    >
+                      <code>{name + ': '}</code>
+                      <span
+                        className={"bg-dark-translucent " + (this.props.expandEnvVariables ? "plxxxl" : "plm")}
+                        title="For security, environment variable values are not displayed."></span>
+                      <code>
+                        {index < this.props.envVariableNames.length - 1 ? ", " : " "}
+                      </code>
+                    </div>
+                  );
+                }, this)}
+                <code>{'}'}</code>
+              </div>
+            </div>
+          </button>
         </div>
       </div>
     );

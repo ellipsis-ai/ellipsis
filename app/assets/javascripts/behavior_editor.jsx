@@ -70,7 +70,8 @@ var BehaviorEditor = React.createClass({
       codeEditorUseLineWrapping: false,
       settingsMenuVisible: false,
       boilerplateHelpVisible: false,
-      envVariableNames: ['AWS_ACCESS_KEY', 'AWS_SECRET_KEY'] // TODO: make these real
+      expandEnvVariables: false,
+      envVariableNames: ['AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'ANOTHER_KEY', 'AND_ANOTHER_KEY'] // TODO: make these real
     };
   },
 
@@ -190,6 +191,17 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  toggleEnvVariableExpansion: function() {
+    /* Reset max height of the container so it can expand */
+
+    var container = this.refs.boilerplateHelpContainer;
+    container.style.maxHeight = 'none';
+
+    this.setState({
+      expandEnvVariables: !this.state.expandEnvVariables
+    });
+  },
+
   onSaveClick: function() {
     this.setState({
       isSaving: true
@@ -266,7 +278,11 @@ var BehaviorEditor = React.createClass({
                 className={"column column-full" + this.visibleWhen(this.state.boilerplateHelpVisible, true)}
                 ref="boilerplateHelpContainer"
               >
-                <BehaviorEditorBoilerplateParameterHelp envVariableNames={this.state.envVariableNames} />
+                <BehaviorEditorBoilerplateParameterHelp
+                  envVariableNames={this.state.envVariableNames}
+                  onExpandToggle={this.toggleEnvVariableExpansion}
+                  expandEnvVariables={this.state.expandEnvVariables}
+                />
               </div>
             </div>
             <div>
