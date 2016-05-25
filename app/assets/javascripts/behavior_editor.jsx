@@ -69,7 +69,8 @@ var BehaviorEditor = React.createClass({
       },
       codeEditorUseLineWrapping: false,
       settingsMenuVisible: false,
-      boilerplateHelpVisible: false
+      boilerplateHelpVisible: false,
+      envVariableNames: ['AWS_ACCESS_KEY', 'AWS_SECRET_KEY'] // TODO: make these real
     };
   },
 
@@ -265,7 +266,7 @@ var BehaviorEditor = React.createClass({
                 className={"column column-full" + this.visibleWhen(this.state.boilerplateHelpVisible, true)}
                 ref="boilerplateHelpContainer"
               >
-                <BehaviorEditorBoilerplateParameterHelp />
+                <BehaviorEditorBoilerplateParameterHelp envVariableNames={this.state.envVariableNames} />
               </div>
             </div>
             <div>

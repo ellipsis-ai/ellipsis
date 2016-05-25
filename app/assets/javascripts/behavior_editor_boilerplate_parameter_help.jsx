@@ -41,11 +41,16 @@ return React.createClass({
           <h5 className="mbs">Current environment variables</h5>
           <div className="pas pvxs bg-blue-lightest type-weak border border-blue">
             <code>{'ellipsis.env: {'}</code><br />
-            <code>{'  AWS_ACCESS_KEY: '}</code>
-            <span title="For security, the value is not displayed">…</span>
-            <code>,</code><br />
-            <code>{'  AWS_SECRET_KEY: '}</code>
-            <span title="For security, the value is not displayed">…</span><br />
+            {this.props.envVariableNames.map(function(name, index) {
+              return (
+                <span>
+                  <code>{'  ' + name + ': '}</code>
+                  <span className="bg-dark-translucent plxxxl" title="For security, the value is not displayed."></span>
+                  {index < this.props.envVariableNames.length - 1 ? (<code>,</code>) : ""}
+                  <br />
+                </span>
+              );
+            }, this)}
             <code>{'}'}</code>
           </div>
 
