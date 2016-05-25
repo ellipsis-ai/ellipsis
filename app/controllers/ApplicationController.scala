@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{ Environment, LogoutEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import models.Models
+import models.{EnvironmentVariableQueries, Models}
 import models.accounts.User
 import models.bots.conversations.LearnBehaviorConversation
 import models.bots.{RegexMessageTriggerQueries, BehaviorParameterQueries, BehaviorQueries}
@@ -101,6 +101,9 @@ class ApplicationController @Inject() (
       maybeTriggers <- maybeBehavior.map { behavior =>
         RegexMessageTriggerQueries.allFor(behavior).map(Some(_))
       }.getOrElse(DBIO.successful(None))
+      maybeEnvironmentVariables <- maybeBehavior.map { behavior =>
+        EnvironmentVariableQueries.allFor(behavior.team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
       _ <- maybeBehavior.map { behavior =>
         LearnBehaviorConversation.endAllFor(behavior)
       }.getOrElse(DBIO.successful(Unit))
@@ -109,6 +112,7 @@ class ApplicationController @Inject() (
           behavior <- maybeBehavior
           params <- maybeParameters
           triggers <- maybeTriggers
+          envVars <- maybeEnvironmentVariables
         } yield {
           val data = BehaviorData(
             behavior.id,
@@ -119,7 +123,7 @@ class ApplicationController @Inject() (
             },
             triggers.map(ea => ea.regex.pattern.pattern())
           )
-          Ok(views.html.edit((Json.toJson(data).toString)))
+          Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name)))
         }).getOrElse {
           NotFound("Behavior not found")
         }

@@ -22,5 +22,11 @@ requirejs.config({
 });
 
 requirejs(['./behavior_editor'], function(behaviorEditor) {
-  behaviorEditor.load(BehaviorEditorConfiguration.data, BehaviorEditorConfiguration.containerId, BehaviorEditorConfiguration.csrfToken);
+  var config = BehaviorEditorConfiguration;
+  behaviorEditor.load(
+    config.data,
+    config.containerId,
+    config.csrfToken,
+    config.envVariableNames
+  );
 });

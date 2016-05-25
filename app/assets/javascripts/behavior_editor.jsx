@@ -28,7 +28,8 @@ var BehaviorEditor = React.createClass({
       question: React.PropTypes.string.isRequired
     })),
     triggers: React.PropTypes.arrayOf(React.PropTypes.string),
-    csrfToken: React.PropTypes.string.isRequired
+    csrfToken: React.PropTypes.string.isRequired,
+    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string)
   },
 
   utils: {
@@ -71,7 +72,7 @@ var BehaviorEditor = React.createClass({
       settingsMenuVisible: false,
       boilerplateHelpVisible: false,
       expandEnvVariables: false,
-      envVariableNames: ['AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'ANOTHER_KEY', 'AND_ANOTHER_KEY'] // TODO: make these real
+      envVariableNames: this.props.envVariableNames
     };
   },
 
@@ -363,8 +364,9 @@ var BehaviorEditor = React.createClass({
 });
 
 return {
-  load: function(data, containerId, csrfToken) {
-    var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(data, {csrfToken: csrfToken}));
+  load: function(data, containerId, csrfToken, envVariableNames) {
+    var additionalData = { csrfToken: csrfToken, envVariableNames: envVariableNames };
+    var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(data, additionalData));
     ReactDOM.render(myBehaviorEditor, document.getElementById(containerId));
   }
 };
