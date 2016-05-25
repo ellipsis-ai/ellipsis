@@ -9,7 +9,7 @@ return React.createClass({
   render: function() {
     return (
       <div className="pvs">
-        <div className="bg-blue-lighter border border-emphasis-left border-blue type-s ptl phl pbxs">
+        <div className="bg-blue-lighter border border-emphasis-left border-blue type-s pal">
           <p>
             <span>In addition to any parameters you define, your function will receive three parameters from Ellipsis.</span>
           </p>
@@ -17,34 +17,38 @@ return React.createClass({
           <ul>
             <li className="mbs">
               <div>
-                <span>Call <code>onSuccess</code> to return a response, e.g. </span>
-                <span className="pas pvxs bg-blue-lightest type-weak border border-blue">
-                  <code>{'onSuccess("It worked!");'}</code>
-                </span>
+                <span>Call <code className="type-bold">onSuccess</code> to return a response, e.g. </span>
+                <code className="type-weak">{'onSuccess("It worked!");'}</code>
               </div>
             </li>
 
             <li className="mbs">
               <div>
-                <span>Call <code>onError</code> to return an error message, e.g. </span>
-                <span className="pas pvxs bg-blue-lightest type-weak border border-blue">
-                  <code>onError("Something went wrong.");</code>
-                </span>
+                <span>Call <code className="type-bold">onError</code> to return an error message, e.g. </span>
+                <code className="type-weak">onError("Something went wrong.");</code>
               </div>
             </li>
 
             <li className="mbs">
-              <div>The <code>ellipsis</code> object reveals useful properties and environment variables.</div>
-              <div className="pas pvxs bg-blue-lightest type-weak border border-blue">
-                <code>{'ellipsis.apiBaseUrl  //'}</code> <em>the Ellipsis base URL with no trailing slash</em><br />
-                <code>{'ellipsis.token       //'}</code> <em>one-time token to authenticate to storage</em><br />
-                <code>{'ellipsis.env: {      //'}</code> <em>object with keys for the current environment variables</em><br />
-                <code>{'  AWS_ACCESS_KEY,'}</code><br />
-                <code>{'  AWS_SECRET_KEY'}</code><br />
-                <code>{'}'}</code>
+              <div>
+                <span>The <code className="type-bold">ellipsis</code> object is required when using the </span>
+                <span>default storage library, and it also contains any pre-configured environment variables </span>
+                <span>in the <code className="type-bold">env</code> property.</span>
               </div>
             </li>
           </ul>
+
+          <h5 className="mbs">Current environment variables</h5>
+          <div className="pas pvxs bg-blue-lightest type-weak border border-blue">
+            <code>{'ellipsis.env: {'}</code><br />
+            <code>{'  AWS_ACCESS_KEY: '}</code>
+            <span title="For security, the value is not displayed">…</span>
+            <code>,</code><br />
+            <code>{'  AWS_SECRET_KEY: '}</code>
+            <span title="For security, the value is not displayed">…</span><br />
+            <code>{'}'}</code>
+          </div>
+
         </div>
       </div>
     );
