@@ -317,7 +317,6 @@ var BehaviorEditor = React.createClass({
 
         <div className="form-field-group">
           <p><strong>Specify one or more phrases to trigger this behavior in chat.</strong></p>
-          <p>You can use regular expressions for more flexibility and to capture user input.</p>
           <div className="form-grouped-inputs mbl">
           {this.getBehaviorProp('triggers').map(function(trigger, index) {
             return (
@@ -333,7 +332,17 @@ var BehaviorEditor = React.createClass({
             );
           }, this)}
           </div>
-          <button type="button" onClick={this.addTrigger}>Add another trigger</button>
+          <div className="columns columns-elastic">
+            <div className="column column-expand">
+              <p>
+                <span>You can write triggers using regular expressions to collect user input from the trigger, </span>
+                <span> or to be more flexible.</span>
+              </p>
+            </div>
+            <div className="column column-shrink prxxxl">
+              <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
+            </div>
+          </div>
         </div>
 
         <div className="ptxl"></div>
