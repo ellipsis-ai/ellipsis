@@ -556,14 +556,17 @@ input, select, textarea, .form-field {
   .type-monospace();
   font-size: @type-s;
   line-height: @xl;
-  min-height: @form-input-height - @border-width*2;
   height: auto;
-  min-height: 60px; /* This ends up being the right amount */
+  min-height: 60px;
   border-radius: @xxs;
   padding: 0 !important;
 }
 
-.CodeMirror, .CodeMirror-gutters {
+.CodeMirror {
+  background-color: @gray-lightest;
+}
+
+.CodeMirror-gutters {
   background-color: @almost-white;
 }
 
