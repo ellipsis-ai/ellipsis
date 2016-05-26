@@ -34,9 +34,9 @@ case class LearnBehaviorConversation(
       |
       |Or, if you like, you can write a quick node.js function right here.
       |
-      |Parameters other than $ON_SUCCESS_PARAM, $ON_ERROR_PARAM and $CONTEXT_PARAM will be supplied by the user.
+      |Parameters other than $ON_SUCCESS_PARAM, $ON_ERROR_PARAM and $CONTEXT_PARAM will be supplied by the user. For example:
       |
-      |e.g. function(someNumber, someOtherNumber, $ON_SUCCESS_PARAM, $ON_ERROR_PARAM, $CONTEXT_PARAM) { $ON_SUCCESS_PARAM(someNumber + someOtherNumber); }
+      |```function(someNumber, someOtherNumber, $ON_SUCCESS_PARAM, $ON_ERROR_PARAM, $CONTEXT_PARAM) { $ON_SUCCESS_PARAM(someNumber + someOtherNumber); }```
       |
       |""".stripMargin
     }
