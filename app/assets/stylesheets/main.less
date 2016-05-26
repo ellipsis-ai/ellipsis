@@ -327,6 +327,10 @@ code {
   text-align: center;
 }
 
+.align-r {
+  text-align: right;
+}
+
 .align-t {
   vertical-align: top !important;
 }
@@ -436,6 +440,10 @@ h6 {
 
 .column-one-quarter {
   width: 25%;
+}
+
+.column-one-half {
+  width: 50%;
 }
 
 .column-three-quarters {
@@ -665,6 +673,7 @@ button {
   min-width: @s * 20;
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease;
+  vertical-align: bottom;
 }
 
 button.button-s {
@@ -786,27 +795,21 @@ button.button-primary:active {
   color: @white;
 }
 
-button.button-inverted {
-  background-color: @gray-dark;
-  border-color: @gray-darkest;
-  color: @white;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
+button.button-help-toggled {
+  background-color: @blue-lighter;
 }
 
-button.button-inverted:focus {
-  background-color: @gray-dark;
-  border-color: @gray-darkest;
+button.button-help-toggled:focus {
+  background-color: @blue-lighter;
 }
 
-button.button-inverted:active {
-  background-color: @gray-darkest;
-  border-color: @gray-darkest;
+button.button-help-toggled:active {
+  background-color: @blue-dark;
   color: @white;
 }
 
 button.button-primary[disabled],
-button.button-inverted[disabled] {
+button.button-help-toggled[disabled] {
   background-color: @gray-light !important;
   border-color: @gray-light !important;
   color: @white !important;

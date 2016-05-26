@@ -25,7 +25,7 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className={"columns " + (this.props.hasMargin ? "mts" : "")}>
+      <div className="columns mbs">
         <div className="column column-one-quarter">
           <div className="columns columns-elastic">
             <div className="column column-expand prs">

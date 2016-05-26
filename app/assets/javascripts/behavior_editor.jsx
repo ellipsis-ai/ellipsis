@@ -59,6 +59,10 @@ var BehaviorEditor = React.createClass({
     }
   },
 
+  isNewBehavior: function() {
+    return !this.props.nodeFunction;
+  },
+
   getInitialState: function() {
     return {
       behavior: {
@@ -70,7 +74,7 @@ var BehaviorEditor = React.createClass({
       },
       codeEditorUseLineWrapping: false,
       settingsMenuVisible: false,
-      boilerplateHelpVisible: false,
+      boilerplateHelpVisible: this.isNewBehavior(),
       expandEnvVariables: false,
       envVariableNames: this.props.envVariableNames
     };
@@ -236,7 +240,7 @@ var BehaviorEditor = React.createClass({
           <p><strong>Implement the behavior by writing a node.js function.</strong></p>
 
           <p>If you need to collect information from the user, add one or more parameters
-          to your function. For each one, include a question for @ellipsis to ask the user.</p>
+          to your function.</p>
 
           <div>
             <div>
@@ -253,41 +257,34 @@ var BehaviorEditor = React.createClass({
                     onChange={this.replaceParamAtIndexWithParam.bind(this, index)}
                     onDelete={this.deleteParamAtIndex.bind(this, index)}
                     onEnterKey={this.onParamEnterKey.bind(this, index)}
-                    hasMargin={index > 0}
                     id={index}
                   />
                 );
               }, this)}
             </div>
-            <div className="columns plxl">
-              <div className="column column-one-quarter">
-                <div className="columns columns-elastic">
-                  <div className="column column-expand">
-                    <code className="type-weak type-s">onSuccess,</code><br />
-                    <code className="type-weak type-s">onError,</code><br />
-                    <code className="type-weak type-s">ellipsis</code>
-                  </div>
-                  <div className="column column-shrink align-m prl">
-                    <BehaviorEditorHelpButton onClick={this.toggleBoilerplateHelp} inverted={this.state.boilerplateHelpVisible} />
-                  </div>
-                </div>
+            <div className="columns">
+              <div className="column column-one-half">
+                <code className="type-weak type-s plxl">onSuccess, onError, ellipsis </code>
+                <span className={this.visibleWhen(!this.state.boilerplateHelpVisible)}>
+                  <BehaviorEditorHelpButton onClick={this.toggleBoilerplateHelp} />
+                </span>
+                <br />
+                <code className="type-weak type-s">{") { "}</code>
               </div>
-              <div className="column column-three-quarters ptl align-c">
-                <button type="button" onClick={this.addParam}>Add parameter</button>
-              </div>
-              <div
-                className={"column column-full" + this.visibleWhen(this.state.boilerplateHelpVisible, true)}
-                ref="boilerplateHelpContainer"
-              >
-                <BehaviorEditorBoilerplateParameterHelp
-                  envVariableNames={this.state.envVariableNames}
-                  onExpandToggle={this.toggleEnvVariableExpansion}
-                  expandEnvVariables={this.state.expandEnvVariables}
-                />
+              <div className="column column-one-half prxxxl align-r">
+                <button type="button" className="button-s" onClick={this.addParam}>Add parameter</button>
               </div>
             </div>
-            <div>
-              <code className="type-weak type-s">{") {"}</code>
+            <div
+              className={"plxl prxxxl " + this.visibleWhen(this.state.boilerplateHelpVisible, true)}
+              ref="boilerplateHelpContainer"
+            >
+              <BehaviorEditorBoilerplateParameterHelp
+                envVariableNames={this.state.envVariableNames}
+                onExpandToggle={this.toggleEnvVariableExpansion}
+                expandEnvVariables={this.state.expandEnvVariables}
+                onCollapseClick={this.toggleBoilerplateHelp}
+              />
             </div>
             <div className="position-relative prxxxl plxl">
               <Codemirror value={this.getBehaviorProp('nodeFunction')}
