@@ -72,7 +72,7 @@ var BehaviorEditor = React.createClass({
       settingsMenuVisible: false,
       boilerplateHelpVisible: false,
       expandEnvVariables: false,
-      envVariableNames: this.props.envVariableNames.concat(['FOO'])
+      envVariableNames: this.props.envVariableNames
     };
   },
 
