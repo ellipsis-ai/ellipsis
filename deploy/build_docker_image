@@ -9,7 +9,7 @@ pushd target/docker
 VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
 BUNDLE=$VERSION_LABEL.zip
 BUNDLE_PATH=~/Desktop/$BUNDLE
-WHITE=`tput setaf 7`
+MAGENTA=`tput setaf 5`
 GREEN=`tput setaf 2`
 PLAIN=`tput sgr0`
 zip -r $BUNDLE_PATH .
@@ -55,7 +55,7 @@ profile to use for AWS.
 
     S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
     echo -e "
-${WHITE}Uploading ${GREEN}$BUNDLE${WHITE} to S3...${PLAIN}";
+${MAGENTA}Uploading ${GREEN}$BUNDLE${MAGENTA} to S3...${PLAIN}";
     aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$BUCKET/$S3_KEY
 
     aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
