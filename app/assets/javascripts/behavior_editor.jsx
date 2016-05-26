@@ -292,6 +292,7 @@ var BehaviorEditor = React.createClass({
                 options={{
                   mode: "javascript",
                   lineWrapping: this.state.codeEditorUseLineWrapping,
+                  lineNumbers: true,
                   viewportMargin: Infinity
                 }}
               />

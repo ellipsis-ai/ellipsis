@@ -63,7 +63,7 @@ body {
 }
 
 .container {
-  max-width: 45rem;
+  max-width: 51rem;
   margin-left: auto;
   margin-right: auto;
   padding-left: @l;
@@ -558,7 +558,17 @@ input, select, textarea, .form-field {
   line-height: @xl;
   min-height: @form-input-height - @border-width*2;
   height: auto;
-  padding: (@xs - @border-width);
+  min-height: 60px; /* This ends up being the right amount */
+  border-radius: @xxs;
+  padding: 0 !important;
+}
+
+.CodeMirror, .CodeMirror-gutters {
+  background-color: @almost-white;
+}
+
+.CodeMirror-scroll {
+  background-color: @white;
 }
 
 .form-input:focus, .form-field:focus, .CodeMirror-focused {
@@ -569,7 +579,9 @@ input, select, textarea, .form-field {
 }
 
 .CodeMirror-focused {
-  padding: (@xs - @border-width-thick);
+  margin-left: -1px;
+  margin-top: -1px;
+  margin-bottom: 1px;
 }
 
 .form-input-borderless {
