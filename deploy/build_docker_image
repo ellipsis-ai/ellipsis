@@ -9,6 +9,9 @@ pushd target/docker
 VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
 BUNDLE=$VERSION_LABEL.zip
 BUNDLE_PATH=~/Desktop/$BUNDLE
+WHITE=`tput setaf 7`
+GREEN=`tput setaf 2`
+PLAIN=`tput sgr0`
 zip -r $BUNDLE_PATH .
 popd
 popd
@@ -17,19 +20,42 @@ BUCKET=elasticbeanstalk-us-east-1-170937251085
 APP_NAME="My First Elastic Beanstalk Application"
 
 if ! type aws > /dev/null;
+then
 
-then echo "You need to set up the aws CLI tools";
+  echo -e "
+You need to set up the aws CLI tools. Try ${GREEN}brew install awscli${PLAIN} if you’re using
+brew, or go to ${GREEN}https://aws.amazon.com/cli/${PLAIN}.";
 
 else
 
   if [ -z ${AWS_ELLIPSIS_PROFILE+x} ];
+  then
 
-  then echo "You need to set the AWS_ELLIPSIS_PROFILE env var with the profile to use for the AWS commands";
+    echo -e "
+You need to set the ${GREEN}AWS_ELLIPSIS_PROFILE${PLAIN} env var with the
+profile to use for AWS.
+
+1. If you haven’t already, run ${GREEN}aws configure --profile ellipsis${PLAIN} to set up a
+   profile.
+
+   You will need an AWS access key and secret key. If you don’t have one, you
+   can create a new one from the users page:
+
+   ${GREEN}https://console.aws.amazon.com/iam/home?region=us-east-1#users${PLAIN}
+
+   Use ${GREEN}text${PLAIN} for the output format, and ${GREEN}us-east-1${PLAIN} for the region.
+
+2. Add a line to your ${GREEN}.bashrc${PLAIN} file:
+
+   ${GREEN}export AWS_ELLIPSIS_PROFILE=ellipsis${PLAIN}
+
+3. Open a new terminal or run ${GREEN}source ~/.bashrc${PLAIN}, then try again.";
 
   else
 
     S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
-    echo "Uploading $BUNDLE to S3..."
+    echo -e "
+${WHITE}Uploading ${GREEN}$BUNDLE${WHITE} to S3...${PLAIN}";
     aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$BUCKET/$S3_KEY
 
     aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
