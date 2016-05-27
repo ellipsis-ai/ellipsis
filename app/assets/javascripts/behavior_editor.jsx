@@ -248,139 +248,120 @@ var BehaviorEditor = React.createClass({
             />
           </div>
 
-          <div className="columns"><div className="column column-one-quarter mbxxl">
+          <div className="columns">
+            <div className="column column-one-quarter form-field-group">
 
-            <p>
-              <strong>Implement the behavior by writing a node.js function.</strong>
-            </p>
+              <p>
+                <strong>Implement the behavior by writing a node.js function.</strong>
+              </p>
 
-            <ul className="type-s">
-              <li className="mbs">
-                <span>Call onSuccess with a response.</span>
-              </li>
+              <ul className="type-s">
+                <li className="mbs">
+                  <span>Call onSuccess with a response.</span>
+                </li>
 
-              <li className={"mbs" + this.visibleWhen(!this.getBehaviorProp('params').length)}>
-                If you need to collect information from the user, add one or more parameters
-                to your function.
-              </li>
-            </ul>
+                <li className={"mbs" + this.visibleWhen(!this.getBehaviorProp('params').length)}>
+                  If you need to collect information from the user, add one or more parameters
+                  to your function.
+                </li>
+              </ul>
 
-          </div><div className="column column-three-quarters pll mbxxl"><div className="border-top border-left border-right border-radius-top pvs plxl">
-
-            <div className={this.hasParams() ? "" : "display-none"}>
-              <code className="type-weak type-s">{"function ("}</code>
             </div>
-            <div className="plxl">
-              {this.getBehaviorProp('params').map(function(param, index) {
+
+            <div className="column column-three-quarters pll form-field-group">
+
+              <BehaviorEditorCodeHeader
+                hasParams={this.hasParams()}
+                params={this.getBehaviorProp('params')}
+                onParamChange={this.replaceParamAtIndexWithParam}
+                onParamDelete={this.deleteParamAtIndex}
+                onParamAdd={this.addParam}
+                onEnterKey={this.onParamEnterKey}
+                helpVisible={this.state.boilerplateHelpVisible}
+                onToggleHelp={this.toggleBoilerplateHelp
+              />
+
+              <div
+                className={this.visibleWhen(this.state.boilerplateHelpVisible, true)}
+                ref="boilerplateHelpContainer"
+              >
+                <BehaviorEditorBoilerplateParameterHelp
+                  envVariableNames={this.state.envVariableNames}
+                  onExpandToggle={this.toggleEnvVariableExpansion}
+                  expandEnvVariables={this.state.expandEnvVariables}
+                  onCollapseClick={this.toggleBoilerplateHelp}
+                />
+              </div>
+
+              <div className="position-relative pr-symbol border-right">
+                <Codemirror value={this.getBehaviorProp('nodeFunction')}
+                  onChange={this.onCodeChange}
+                  options={{
+                    mode: "javascript",
+                    lineWrapping: this.state.codeEditorUseLineWrapping,
+                    lineNumbers: true,
+                    firstLineNumber: 2,
+                    viewportMargin: Infinity
+                  }}
+                />
+                <div className="position-absolute position-top-right">
+                  <BehaviorEditorSettingsButton
+                    onClick={this.toggleEditorSettingsMenu}
+                    buttonActive={this.state.settingsMenuVisible}
+                  />
+                  <BehaviorEditorSettingsMenu isVisible={this.state.settingsMenuVisible} onItemClick={this.toggleEditorSettingsMenu}>
+                    <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
+                      <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
+                      <span> Enable line wrap</span>
+                    </button>
+                  </BehaviorEditorSettingsMenu>
+                </div>
+              </div>
+
+              <div className="border-left border-bottom border-right border-radius-bottom pvs plxl">
+                <code className="type-weak type-s">{"}"}</code>
+              </div>
+
+            </div>
+          </div>
+
+          <hr className="mtn" />
+
+          <div className="columns form-field-group">
+            <div className="column column-one-quarter">
+
+              <p><strong>Specify one or more phrases to trigger this behavior in chat.</strong></p>
+
+              {/*<p>
+                <span>You can write triggers using regular expressions to collect user input from the trigger, </span>
+                <span> or to be more flexible.</span>
+              </p>*/}
+
+            </div>
+
+            <div className="column column-three-quarters pll form-field-group">
+
+              <div className="form-grouped-inputs mbl">
+              {this.getBehaviorProp('triggers').map(function(trigger, index) {
                 return (
-                  <BehaviorEditorUserInputDefinition
-                    key={'BehaviorEditorUserInputDefinition' + index}
-                    ref={'param' + index}
-                    name={param.name}
-                    question={param.question}
-                    onChange={this.replaceParamAtIndexWithParam.bind(this, index)}
-                    onDelete={this.deleteParamAtIndex.bind(this, index)}
-                    onEnterKey={this.onParamEnterKey.bind(this, index)}
-                    id={index}
+                  <BehaviorEditorTriggerInput
+                    key={"BehaviorEditorTrigger" + index}
+                    ref={"trigger" + index}
+                    value={trigger}
+                    onChange={this.onTriggerChange.bind(this, index)}
+                    onDelete={this.deleteTriggerAtIndex.bind(this, index)}
+                    onEnterKey={this.onTriggerEnterKey.bind(this, index)}
+                    mayHideDelete={index + 1 == this.getBehaviorProp('triggers').length}
                   />
                 );
               }, this)}
-            </div>
-            <div className="columns columns-elastic">
-              <div className="column column-expand">
-                {this.hasParams() ?
-                  (<code className="type-weak type-s plxl">{"onSuccess, onError, ellipsis "}</code>) :
-                  (<code className="type-weak type-s">{"function(onSuccess, onError, ellipis) { "}</code>)
-                }
-                <span className={this.visibleWhen(!this.state.boilerplateHelpVisible)}>
-                  <BehaviorEditorHelpButton onClick={this.toggleBoilerplateHelp} />
-                </span>
               </div>
-              <div className="column column-shrink pr-symbol align-r">
-                <button type="button" className="button-s" onClick={this.addParam}>Add parameter</button>
-                <span className="button-symbol-placeholder"></span>
+              <div className="pr-symbol align-r">
+                <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
               </div>
-            </div>
-            <div className={this.hasParams() ? "" : "display-none"}>
-              <code className="type-weak type-s">{") {"}</code>
+
             </div>
           </div>
-
-          <div
-            className={this.visibleWhen(this.state.boilerplateHelpVisible, true)}
-            ref="boilerplateHelpContainer"
-          >
-            <BehaviorEditorBoilerplateParameterHelp
-              envVariableNames={this.state.envVariableNames}
-              onExpandToggle={this.toggleEnvVariableExpansion}
-              expandEnvVariables={this.state.expandEnvVariables}
-              onCollapseClick={this.toggleBoilerplateHelp}
-            />
-          </div>
-
-          <div className="position-relative pr-symbol border-right">
-            <Codemirror value={this.getBehaviorProp('nodeFunction')}
-              onChange={this.onCodeChange}
-              options={{
-                mode: "javascript",
-                lineWrapping: this.state.codeEditorUseLineWrapping,
-                lineNumbers: true,
-                firstLineNumber: 2,
-                viewportMargin: Infinity
-              }}
-            />
-            <div className="position-absolute position-top-right">
-              <BehaviorEditorSettingsButton
-                onClick={this.toggleEditorSettingsMenu}
-                buttonActive={this.state.settingsMenuVisible}
-              />
-              <BehaviorEditorSettingsMenu isVisible={this.state.settingsMenuVisible} onItemClick={this.toggleEditorSettingsMenu}>
-                <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
-                  <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
-                  <span> Enable line wrap</span>
-                </button>
-              </BehaviorEditorSettingsMenu>
-            </div>
-          </div>
-          <div className="border-left border-bottom border-right border-radius-bottom pvs plxl">
-            <code className="type-weak type-s">{"}"}</code>
-          </div>
-
-          </div></div>
-
-          <hr className="mtn" /><div className="columns"><div className="column column-one-quarter">
-
-          <p><strong>Specify one or more phrases to trigger this behavior in chat.</strong></p>
-
-          {/*<p>
-            <span>You can write triggers using regular expressions to collect user input from the trigger, </span>
-            <span> or to be more flexible.</span>
-          </p>*/}
-
-        </div><div className="column column-three-quarters pll"><div className="form-field-group">
-
-          <div className="form-grouped-inputs mbl">
-          {this.getBehaviorProp('triggers').map(function(trigger, index) {
-            return (
-              <BehaviorEditorTriggerInput
-                key={"BehaviorEditorTrigger" + index}
-                ref={"trigger" + index}
-                value={trigger}
-                onChange={this.onTriggerChange.bind(this, index)}
-                onDelete={this.deleteTriggerAtIndex.bind(this, index)}
-                onEnterKey={this.onTriggerEnterKey.bind(this, index)}
-                mayHideDelete={index + 1 == this.getBehaviorProp('triggers').length}
-              />
-            );
-          }, this)}
-          </div>
-          <div className="prxxxl align-r">
-            <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
-          </div></div></div>
-
-        </div>
-
-        <div className="ptxl"></div>
 
         </div> {/* End of container */}
 
