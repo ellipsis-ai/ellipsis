@@ -74,7 +74,7 @@ var BehaviorEditor = React.createClass({
       },
       codeEditorUseLineWrapping: false,
       settingsMenuVisible: false,
-      boilerplateHelpVisible: this.isNewBehavior(),
+      boilerplateHelpVisible: false,
       expandEnvVariables: false,
       envVariableNames: this.props.envVariableNames
     };
@@ -235,45 +235,38 @@ var BehaviorEditor = React.createClass({
         {/* Start of container */}
         <div className="container ptxl pbm">
 
-          <div className="columns">
-            <div className="column column-one-quarter"></div>
-            <div className="column column-three-quarters pll">
-              <div className="form-field-group">
-                <BehaviorEditorInput
-                  className="form-input-borderless form-input-h2"
-                  placeholder="Describe the behavior in one phrase"
-                  value={this.getBehaviorProp('description')}
-                  onChange={this.onDescriptionChange}
-                />
-              </div>
-            </div>
+          <div className="form-field-group">
+            <BehaviorEditorInput
+              className="form-input-borderless form-input-h2"
+              placeholder="Describe the behavior in one phrase"
+              value={this.getBehaviorProp('description')}
+              onChange={this.onDescriptionChange}
+            />
           </div>
 
-          <div className="columns"><div className="column column-one-quarter">
+          <div className="columns"><div className="column column-one-quarter mbxl">
 
-            <p><strong>Implement the behavior by writing a node.js function.</strong></p>
+            <p>
+              <strong>Implement the behavior by writing a node.js function.</strong>
+            </p>
 
-            <p>If you need to collect information from the user, add one or more parameters
-            to your function.</p>
+            <ul className="type-s">
+              <li className="mbs">
+                <span>Call onSuccess with a response.</span>
+              </li>
 
-          </div><div className="column column-three-quarters pll">
+              <li className={"mbs" + this.visibleWhen(!this.getBehaviorProp('params').length)}>
+                If you need to collect information from the user, add one or more parameters
+                to your function.
+              </li>
+            </ul>
 
-            <div
-              className={"mbm" + this.visibleWhen(this.state.boilerplateHelpVisible, true)}
-              ref="boilerplateHelpContainer"
-            >
-              <BehaviorEditorBoilerplateParameterHelp
-                envVariableNames={this.state.envVariableNames}
-                onExpandToggle={this.toggleEnvVariableExpansion}
-                expandEnvVariables={this.state.expandEnvVariables}
-                onCollapseClick={this.toggleBoilerplateHelp}
-              />
-            </div><div className="form-field-group">
+          </div><div className="column column-three-quarters pll mbxl">
 
             <div>
               <code className="type-weak type-s">{"function ("}</code>
             </div>
-            <div className="plxl">
+            <div className="plxxl">
               {this.getBehaviorProp('params').map(function(param, index) {
                 return (
                   <BehaviorEditorUserInputDefinition
@@ -289,21 +282,31 @@ var BehaviorEditor = React.createClass({
                 );
               }, this)}
             </div>
-            <div className="columns">
+            <div className="columns mbs">
               <div className="column column-one-half">
-                <code className="type-weak type-s plxl">onSuccess, onError, ellipsis </code>
+                <code className="type-weak type-s plxxl">{"onSuccess, onError, ellipsis) { "}</code>
                 <span className={this.visibleWhen(!this.state.boilerplateHelpVisible)}>
                   <BehaviorEditorHelpButton onClick={this.toggleBoilerplateHelp} />
                 </span>
-                <br />
-                <code className="type-weak type-s">{") { "}</code>
               </div>
               <div className="column column-one-half prxxxl align-r">
                 <button type="button" className="button-s" onClick={this.addParam}>Add parameter</button>
               </div>
             </div>
 
-            <div className="position-relative mtxs prxxxl plxl">
+            <div
+              className={"plxxl prxxxl" + this.visibleWhen(this.state.boilerplateHelpVisible, true)}
+              ref="boilerplateHelpContainer"
+            >
+              <BehaviorEditorBoilerplateParameterHelp
+                envVariableNames={this.state.envVariableNames}
+                onExpandToggle={this.toggleEnvVariableExpansion}
+                expandEnvVariables={this.state.expandEnvVariables}
+                onCollapseClick={this.toggleBoilerplateHelp}
+              />
+            </div>
+
+            <div className="position-relative mtxs prxxxl">
               <Codemirror value={this.getBehaviorProp('nodeFunction')}
                 onChange={this.onCodeChange}
                 options={{
@@ -331,14 +334,14 @@ var BehaviorEditor = React.createClass({
             </div>
           </div></div>
 
-        </div><hr className="mtn" /><div className="columns"><div className="column column-one-quarter">
+          <hr className="mtn" /><div className="columns"><div className="column column-one-quarter">
 
           <p><strong>Specify one or more phrases to trigger this behavior in chat.</strong></p>
 
-          <p>
+          {/*<p>
             <span>You can write triggers using regular expressions to collect user input from the trigger, </span>
             <span> or to be more flexible.</span>
-          </p>
+          </p>*/}
 
         </div><div className="column column-three-quarters pll"><div className="form-field-group">
 
