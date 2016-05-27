@@ -89,6 +89,10 @@ var BehaviorEditor = React.createClass({
     this.setState({ behavior: newData }, callback);
   },
 
+  hasParams: function() {
+    return this.getBehaviorProp('params').length > 0;
+  },
+
   isModified: function() {
     return JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
   },
@@ -263,7 +267,7 @@ var BehaviorEditor = React.createClass({
 
           </div><div className="column column-three-quarters pll mbxl">
 
-            <div>
+            <div className={this.hasParams() ? "" : "display-none"}>
               <code className="type-weak type-s">{"function ("}</code>
             </div>
             <div className="plxxl">
@@ -282,9 +286,12 @@ var BehaviorEditor = React.createClass({
                 );
               }, this)}
             </div>
-            <div className="columns mbs">
+            <div className="columns">
               <div className="column column-one-half">
-                <code className="type-weak type-s plxxl">{"onSuccess, onError, ellipsis) { "}</code>
+                {this.hasParams() ?
+                  (<code className="type-weak type-s plxxl">{"onSuccess, onError, ellipsis "}</code>) :
+                  (<code className="type-weak type-s">{"function(onSuccess, onError, ellipis) { "}</code>)
+                }
                 <span className={this.visibleWhen(!this.state.boilerplateHelpVisible)}>
                   <BehaviorEditorHelpButton onClick={this.toggleBoilerplateHelp} />
                 </span>
@@ -293,9 +300,12 @@ var BehaviorEditor = React.createClass({
                 <button type="button" className="button-s" onClick={this.addParam}>Add parameter</button>
               </div>
             </div>
+            <div className={this.hasParams() ? "" : "display-none"}>
+              <code className="type-weak type-s">{") {"}</code>
+            </div>
 
             <div
-              className={"plxxl prxxxl" + this.visibleWhen(this.state.boilerplateHelpVisible, true)}
+              className={"prxxxl" + this.visibleWhen(this.state.boilerplateHelpVisible, true)}
               ref="boilerplateHelpContainer"
             >
               <BehaviorEditorBoilerplateParameterHelp

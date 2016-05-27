@@ -14,7 +14,7 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="pbm">
+      <div className="pvm">
         <div className="position-relative bg-blue-lighter border border-emphasis-left border-blue type-s pal">
 
           <div className="position-absolute position-top-right ptxs prxs">
