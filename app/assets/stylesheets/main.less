@@ -25,7 +25,7 @@
 @black-translucent: hsla(231, 15%, 15%, 0.1);
 @white: #FFFFFF;
 @almost-white: hsl(231, 15%, 97%);
-@gray-lightest: hsl(231, 10%, 93%);
+@gray-lightest: hsl(231, 10%, 92.5%);
 @gray-lightest-translucent: hsla(231, 10%, 93%, 0.95);
 @gray-light: hsl(231, 11%, 81%);
 @gray-medium: hsl(231, 11%, 60%);
@@ -63,7 +63,7 @@ body {
 }
 
 .container {
-  max-width: 51rem;
+  max-width: 72rem;
   margin-left: auto;
   margin-right: auto;
   padding-left: @l;
@@ -178,6 +178,11 @@ So for example:
 .generate-padding(@xs, xs);
 .generate-padding(0, n);
 
+.pr-symbol {
+/* Special-case of reserving space for a symbol button */
+  padding-right: 40px !important;
+}
+
 /* Background utilities */
 
 .bg-dark-translucent {
@@ -224,6 +229,10 @@ So for example:
   border-color: @border-color;
 }
 
+.border-thick {
+  border-width: @border-width-thick;
+}
+
 .border-emphasis-bottom {
   border-bottom-width: @xs;
   border-bottom-style: solid;
@@ -249,9 +258,51 @@ So for example:
 }
 
 .border-top {
+  border-top-width: @border-width;
+  border-top-color: @border-color;
+  border-top-style: solid;
+}
+
+.border-top-thick {
   border-top-width: @border-width-thick;
   border-top-color: @border-color;
   border-top-style: solid;
+}
+
+.border-bottom {
+  border-bottom-width: @border-width;
+  border-bottom-color: @border-color;
+  border-bottom-style: solid;
+}
+
+.border-bottom-thick {
+  border-bottom-width: @border-width-thick;
+  border-bottom-color: @border-color;
+  border-bottom-style: solid;
+}
+
+.border-left {
+  border-left-width: @border-width;
+  border-left-color: @border-color;
+  border-left-style: solid;
+}
+
+.border-left-thick {
+  border-left-width: @border-width-thick;
+  border-left-color: @border-color;
+  border-left-style: solid;
+}
+
+.border-right {
+  border-right-width: @border-width;
+  border-right-color: @border-color;
+  border-right-style: solid;
+}
+
+.border-right-thick {
+  border-right-width: @border-width-thick;
+  border-right-color: @border-color;
+  border-right-style: solid;
 }
 
 .border-blue {
@@ -260,6 +311,20 @@ So for example:
 
 .border-pink {
   border-color: @pink-medium;
+}
+
+.border-radius {
+  border-radius: @border-radius;
+}
+
+.border-radius-top {
+  border-top-left-radius: @border-radius;
+  border-top-right-radius: @border-radius;
+}
+
+.border-radius-bottom {
+  border-bottom-left-radius: @border-radius;
+  border-bottom-right-radius: @border-radius;
 }
 
 /* Foreground type utilities */
@@ -298,6 +363,10 @@ code.type-bold {
 
 .type-weak {
   color: @gray-dark;
+}
+
+.type-disabled {
+  color: @gray-medium;
 }
 
 .type-pink {
@@ -430,6 +499,7 @@ h6 {
 
 .column {
   float: left;
+  min-height: 1px;
   padding-right: @l;
   box-sizing: border-box;
 }
@@ -489,11 +559,11 @@ h6 {
 
 hr {
   width: 100%;
-  height: @xs;
+  height: @border-width-thick;
   border: none;
   background-color: @pink-medium;
   border-radius: @xs;
-  margin: @l 0 @xxl 0;
+  margin: @xxl 0;
 }
 
 hr.form-border {
@@ -505,7 +575,7 @@ hr.form-border {
 /* Forms */
 
 .form-field-group {
-  .mbxl();
+  .mbxxl();
 }
 
 input, select, textarea, .form-field {
@@ -521,7 +591,7 @@ input, select, textarea, .form-field {
 @form-bg-disabled: @gray-lightest;
 @form-color-disabled: @gray-dark;
 
-.form-field, .CodeMirror {
+.form-field {
   border-width: @border-width;
   border-style: solid;
   border-color: @border-color;
@@ -557,24 +627,43 @@ input, select, textarea, .form-field {
   font-size: @type-s;
   line-height: @xl;
   height: auto;
-  min-height: 60px;
-  border-radius: @xxs;
   padding: 0 !important;
+  border-width: 0 @border-width;
+  border-style: solid;
+  border-color: @border-color;
 }
 
-.CodeMirror {
-  background-color: @gray-lightest;
+.CodeMirror, .CodeMirror-gutters {
+  background-color: @almost-white;
 }
 
 .CodeMirror-gutters {
-  background-color: @almost-white;
+  border-right-color: @border-color;
+}
+
+.CodeMirror-linenumber {
+  .type-disabled();
 }
 
 .CodeMirror-scroll {
   background-color: @white;
 }
 
-.form-input:focus, .form-field:focus, .CodeMirror-focused {
+.CodeMirror-sizer {
+  border-width: @border-width 0;
+  border-style: solid;
+  border-color: @border-color;
+}
+
+.CodeMirror-scroll::-webkit-scrollbar {
+  width: 15px;
+}
+
+.CodeMirror-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.form-input:focus, .form-field:focus {
   outline: none;
   border-color: @border-color-focus;
   border-width: @border-width-thick;
@@ -582,9 +671,21 @@ input, select, textarea, .form-field {
 }
 
 .CodeMirror-focused {
-  margin-left: -1px;
-  margin-top: -1px;
-  margin-bottom: 1px;
+  /* Compensate for thicker border in focused state, since we can't adjust padding */
+  position: relative;
+  top: -1px;
+  margin-bottom: -2px;
+}
+
+.CodeMirror-focused,
+.CodeMirror-focused .CodeMirror-gutters {
+  border-right-color: @border-color-focus;
+  border-right-width: 2px;
+}
+
+.CodeMirror-focused .CodeMirror-sizer {
+  border-color: @border-color-focus;
+  border-width: 2px 0;
 }
 
 .form-input-borderless {
@@ -721,6 +822,7 @@ button.button-symbol {
   max-width: 40px;
   padding-left: (@s - @border-width);
   padding-right: (@s - @border-width);
+  text-align: center !important;
 }
 
 button.button-s.button-symbol {
@@ -921,6 +1023,11 @@ button.button-dropdown-trigger {
 
 .display-hidden {
   max-height: 0 !important;
+}
+
+.display-none {
+  /* Prevents animation */
+  display: none;
 }
 
 .display-visible {

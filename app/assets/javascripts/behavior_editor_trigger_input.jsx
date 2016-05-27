@@ -16,7 +16,7 @@ return React.createClass({
   render: function() {
     return (
       <div className="columns columns-elastic">
-        <div className="column column-expand prs">
+        <div className="column column-expand prn">
           <BehaviorEditorInput
             ref="input"
             value={this.props.value}

@@ -44,7 +44,7 @@ return React.createClass({
         </div>
         <div className="column column-three-quarters">
           <div className="columns columns-elastic">
-            <div className="column column-expand prs">
+            <div className="column column-expand prn">
               <div className="form-field-with-prefix">
                 <label className="form-input-prefix"
                   htmlFor={"question" + this.props.id}

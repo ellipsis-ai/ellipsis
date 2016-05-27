@@ -14,39 +14,38 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="pvs">
-        <div className="position-relative bg-blue-lighter border border-emphasis-left border-blue type-s pal">
+      <div className="">
+        <div className="position-relative bg-blue-lighter border  border-blue type-s pal">
 
           <div className="position-absolute position-top-right ptxs prxs">
             <BehaviorEditorHelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
           </div>
 
-          <p>
-            <span>In addition to any parameters you add, the function will receive three parameters from Ellipsis. </span>
-            <span><strong>You must use <code>onSuccess</code> to show a response to the user.</strong> </span>
-            <span>(Using <code className="type-weak">return</code> won’t work.)</span>
+          <p className="prl">
+            <span>The function will automatically receive three parameters from Ellipsis:</span>
           </p>
 
           <ul>
             <li className="mbs">
               <div>
-                <span><code className="type-bold">onSuccess</code> is a callback function used to send the desired response, e.g. </span>
+                <span>Call the <code className="type-bold">onSuccess</code> function to send a response to the user.</span>
+                <span> e.g. </span>
                 <code className="type-weak">{'onSuccess("It worked!");'}</code>
               </div>
             </li>
 
             <li className="mbs">
               <div>
-                <span><code className="type-bold">onError</code> is a callback function used to send an error message, e.g. </span>
+                <span>Call the <code className="type-bold">onError</code> function to send an error message, e.g. </span>
                 <code className="type-weak">onError("Something went wrong.");</code>
               </div>
             </li>
 
             <li className="mbs">
               <div>
-                <span>The <code className="type-bold">ellipsis</code> object is required when using the </span>
-                <span>default storage library, and it also contains any pre-configured environment variables </span>
-                <span>in the <code className="type-bold">env</code> property.</span>
+                <span>Use the <code className="type-bold">ellipsis</code> object when required by library </span>
+                <span>methods. It also contains any pre-configured environment variables </span>
+                <span>in its <code className="type-bold">env</code> property.</span>
               </div>
             </li>
           </ul>
@@ -68,6 +67,7 @@ return React.createClass({
             }
           </button>
         </div>
+        <div className="border-left border-right pts"></div>
       </div>
     );
   }
