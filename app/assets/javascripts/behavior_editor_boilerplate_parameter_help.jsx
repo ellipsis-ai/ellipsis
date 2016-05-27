@@ -14,14 +14,14 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="pvs">
+      <div className="">
         <div className="position-relative bg-blue-lighter border border-emphasis-left border-blue type-s pal">
 
           <div className="position-absolute position-top-right ptxs prxs">
             <BehaviorEditorHelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
           </div>
 
-          <p>
+          <p className="prl">
             <span>In addition to any parameters you add, the function will receive three parameters from Ellipsis. </span>
             <span><strong>You must use <code>onSuccess</code> to show a response to the user.</strong> </span>
             <span>(Using <code className="type-weak">return</code> won’t work.)</span>

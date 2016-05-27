@@ -25,7 +25,7 @@
 @black-translucent: hsla(231, 15%, 15%, 0.1);
 @white: #FFFFFF;
 @almost-white: hsl(231, 15%, 97%);
-@gray-lightest: hsl(231, 10%, 93%);
+@gray-lightest: hsl(231, 10%, 92.5%);
 @gray-lightest-translucent: hsla(231, 10%, 93%, 0.95);
 @gray-light: hsl(231, 11%, 81%);
 @gray-medium: hsl(231, 11%, 60%);
@@ -63,7 +63,7 @@ body {
 }
 
 .container {
-  max-width: 51rem;
+  max-width: 72rem;
   margin-left: auto;
   margin-right: auto;
   padding-left: @l;
@@ -254,6 +254,24 @@ So for example:
   border-top-style: solid;
 }
 
+.border-bottom {
+  border-bottom-width: @border-width-thick;
+  border-bottom-color: @border-color;
+  border-bottom-style: solid;
+}
+
+.border-left {
+  border-left-width: @border-width-thick;
+  border-left-color: @border-color;
+  border-left-style: solid;
+}
+
+.border-right {
+  border-right-width: @border-width-thick;
+  border-right-color: @border-color;
+  border-right-style: solid;
+}
+
 .border-blue {
   border-color: @blue-light;
 }
@@ -430,6 +448,7 @@ h6 {
 
 .column {
   float: left;
+  min-height: 1px;
   padding-right: @l;
   box-sizing: border-box;
 }
@@ -489,11 +508,11 @@ h6 {
 
 hr {
   width: 100%;
-  height: @xs;
+  height: @border-width-thick;
   border: none;
   background-color: @pink-medium;
   border-radius: @xs;
-  margin: @l 0 @xxl 0;
+  margin: @xxl 0;
 }
 
 hr.form-border {
@@ -505,7 +524,7 @@ hr.form-border {
 /* Forms */
 
 .form-field-group {
-  .mbxl();
+  .mbxxl();
 }
 
 input, select, textarea, .form-field {
@@ -582,9 +601,9 @@ input, select, textarea, .form-field {
 }
 
 .CodeMirror-focused {
-  margin-left: -1px;
-  margin-top: -1px;
-  margin-bottom: 1px;
+  position: relative;
+  top: -1px;
+  left: -1px;
 }
 
 .form-input-borderless {
