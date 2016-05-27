@@ -248,7 +248,7 @@ var BehaviorEditor = React.createClass({
             />
           </div>
 
-          <div className="columns"><div className="column column-one-quarter mbxl">
+          <div className="columns"><div className="column column-one-quarter mbxxl">
 
             <p>
               <strong>Implement the behavior by writing a node.js function.</strong>
@@ -265,7 +265,7 @@ var BehaviorEditor = React.createClass({
               </li>
             </ul>
 
-          </div><div className="column column-three-quarters pll mbxl">
+          </div><div className="column column-three-quarters pll mbxxl"><div className="border-top border-left border-right border-radius-top pvs pls">
 
             <div className={this.hasParams() ? "" : "display-none"}>
               <code className="type-weak type-s">{"function ("}</code>
@@ -286,8 +286,8 @@ var BehaviorEditor = React.createClass({
                 );
               }, this)}
             </div>
-            <div className="columns">
-              <div className="column column-one-half">
+            <div className="columns columns-elastic">
+              <div className="column column-expand">
                 {this.hasParams() ?
                   (<code className="type-weak type-s plxxl">{"onSuccess, onError, ellipsis "}</code>) :
                   (<code className="type-weak type-s">{"function(onSuccess, onError, ellipis) { "}</code>)
@@ -296,52 +296,55 @@ var BehaviorEditor = React.createClass({
                   <BehaviorEditorHelpButton onClick={this.toggleBoilerplateHelp} />
                 </span>
               </div>
-              <div className="column column-one-half prxxxl align-r">
+              <div className="column column-shrink pr-symbol align-r">
                 <button type="button" className="button-s" onClick={this.addParam}>Add parameter</button>
+                <span className="button-symbol-placeholder"></span>
               </div>
             </div>
             <div className={this.hasParams() ? "" : "display-none"}>
               <code className="type-weak type-s">{") {"}</code>
             </div>
+          </div>
 
-            <div
-              className={"prxxxl" + this.visibleWhen(this.state.boilerplateHelpVisible, true)}
-              ref="boilerplateHelpContainer"
-            >
-              <BehaviorEditorBoilerplateParameterHelp
-                envVariableNames={this.state.envVariableNames}
-                onExpandToggle={this.toggleEnvVariableExpansion}
-                expandEnvVariables={this.state.expandEnvVariables}
-                onCollapseClick={this.toggleBoilerplateHelp}
-              />
-            </div>
+          <div
+            className={this.visibleWhen(this.state.boilerplateHelpVisible, true)}
+            ref="boilerplateHelpContainer"
+          >
+            <BehaviorEditorBoilerplateParameterHelp
+              envVariableNames={this.state.envVariableNames}
+              onExpandToggle={this.toggleEnvVariableExpansion}
+              expandEnvVariables={this.state.expandEnvVariables}
+              onCollapseClick={this.toggleBoilerplateHelp}
+            />
+          </div>
 
-            <div className="position-relative mtxs prxxxl">
-              <Codemirror value={this.getBehaviorProp('nodeFunction')}
-                onChange={this.onCodeChange}
-                options={{
-                  mode: "javascript",
-                  lineWrapping: this.state.codeEditorUseLineWrapping,
-                  lineNumbers: true,
-                  viewportMargin: Infinity
-                }}
+          <div className="position-relative pr-symbol border-top border-bottom border-right">
+            <Codemirror value={this.getBehaviorProp('nodeFunction')}
+              onChange={this.onCodeChange}
+              options={{
+                mode: "javascript",
+                lineWrapping: this.state.codeEditorUseLineWrapping,
+                lineNumbers: true,
+                viewportMargin: Infinity
+              }}
+            />
+            <div className="position-absolute position-top-right">
+              <BehaviorEditorSettingsButton
+                onClick={this.toggleEditorSettingsMenu}
+                buttonActive={this.state.settingsMenuVisible}
               />
-              <div className="position-absolute position-top-right phxs">
-                <BehaviorEditorSettingsButton
-                  onClick={this.toggleEditorSettingsMenu}
-                  buttonActive={this.state.settingsMenuVisible}
-                />
-                <BehaviorEditorSettingsMenu isVisible={this.state.settingsMenuVisible} onItemClick={this.toggleEditorSettingsMenu}>
-                  <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
-                    <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
-                    <span> Enable line wrap</span>
-                  </button>
-                </BehaviorEditorSettingsMenu>
-              </div>
+              <BehaviorEditorSettingsMenu isVisible={this.state.settingsMenuVisible} onItemClick={this.toggleEditorSettingsMenu}>
+                <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
+                  <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
+                  <span> Enable line wrap</span>
+                </button>
+              </BehaviorEditorSettingsMenu>
             </div>
-            <div>
-              <code className="type-weak type-s">{"}"}</code>
-            </div>
+          </div>
+          <div className="border-left border-bottom border-right border-radius-bottom pvxs pls">
+            <code className="type-weak type-s">{"}"}</code>
+          </div>
+
           </div></div>
 
           <hr className="mtn" /><div className="columns"><div className="column column-one-quarter">

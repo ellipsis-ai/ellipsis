@@ -14,8 +14,8 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="pvm">
-        <div className="position-relative bg-blue-lighter border border-emphasis-left border-blue type-s pal">
+      <div className="">
+        <div className="position-relative bg-blue-lighter border-right border-top border-emphasis-left border-blue type-s pal">
 
           <div className="position-absolute position-top-right ptxs prxs">
             <BehaviorEditorHelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
