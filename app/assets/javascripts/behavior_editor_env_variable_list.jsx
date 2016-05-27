@@ -48,7 +48,7 @@ return React.createClass({
                     }
                     title="For security, environment variable values are not displayed.">
                   </span>
-                  <code>{this.isLastIndex(index) ? ", " : " "}</code>
+                  <code>{this.isLastIndex(index) ? " " : ", "}</code>
                 </div>
               );
             }, this)}
