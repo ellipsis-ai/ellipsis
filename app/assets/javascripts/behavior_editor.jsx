@@ -265,12 +265,12 @@ var BehaviorEditor = React.createClass({
               </li>
             </ul>
 
-          </div><div className="column column-three-quarters pll mbxxl"><div className="border-top border-left border-right border-radius-top pvs pls">
+          </div><div className="column column-three-quarters pll mbxxl"><div className="border-top border-left border-right border-radius-top pvs plxl">
 
             <div className={this.hasParams() ? "" : "display-none"}>
               <code className="type-weak type-s">{"function ("}</code>
             </div>
-            <div className="plxxl">
+            <div className="plxl">
               {this.getBehaviorProp('params').map(function(param, index) {
                 return (
                   <BehaviorEditorUserInputDefinition
@@ -289,7 +289,7 @@ var BehaviorEditor = React.createClass({
             <div className="columns columns-elastic">
               <div className="column column-expand">
                 {this.hasParams() ?
-                  (<code className="type-weak type-s plxxl">{"onSuccess, onError, ellipsis "}</code>) :
+                  (<code className="type-weak type-s plxl">{"onSuccess, onError, ellipsis "}</code>) :
                   (<code className="type-weak type-s">{"function(onSuccess, onError, ellipis) { "}</code>)
                 }
                 <span className={this.visibleWhen(!this.state.boilerplateHelpVisible)}>
@@ -318,13 +318,14 @@ var BehaviorEditor = React.createClass({
             />
           </div>
 
-          <div className="position-relative pr-symbol border-top border-bottom border-right">
+          <div className="position-relative pr-symbol border-right">
             <Codemirror value={this.getBehaviorProp('nodeFunction')}
               onChange={this.onCodeChange}
               options={{
                 mode: "javascript",
                 lineWrapping: this.state.codeEditorUseLineWrapping,
                 lineNumbers: true,
+                firstLineNumber: 2,
                 viewportMargin: Infinity
               }}
             />
@@ -341,7 +342,7 @@ var BehaviorEditor = React.createClass({
               </BehaviorEditorSettingsMenu>
             </div>
           </div>
-          <div className="border-left border-bottom border-right border-radius-bottom pvxs pls">
+          <div className="border-left border-bottom border-right border-radius-bottom pvs plxl">
             <code className="type-weak type-s">{"}"}</code>
           </div>
 

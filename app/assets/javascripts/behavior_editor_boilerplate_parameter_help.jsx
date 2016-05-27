@@ -15,7 +15,7 @@ return React.createClass({
   render: function() {
     return (
       <div className="">
-        <div className="position-relative bg-blue-lighter border-right border-top border-emphasis-left border-blue type-s pal">
+        <div className="position-relative bg-blue-lighter border  border-blue type-s pal">
 
           <div className="position-absolute position-top-right ptxs prxs">
             <BehaviorEditorHelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
@@ -67,6 +67,7 @@ return React.createClass({
             }
           </button>
         </div>
+        <div className="border-left border-right pts"></div>
       </div>
     );
   }
