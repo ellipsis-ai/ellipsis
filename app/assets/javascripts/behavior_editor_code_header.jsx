@@ -1,8 +1,24 @@
 define(function(require) {
-var React = require('react');
+var React = require('react'),
+  BehaviorEditorMixin = require('./behavior_editor_mixin'),
+  BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
+  BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition');
 
 return React.createClass({
   displayName: 'BehaviorEditorCodeHeader',
+  mixins: [BehaviorEditorMixin],
+  onChange: function(index, data) {
+    this.props.onParamChange(index, data);
+  },
+  onDelete: function(index) {
+    this.props.onParamDelete(index);
+  },
+  onEnterKey: function(index) {
+    this.props.onEnterKey(index);
+  },
+  focusIndex: function(index) {
+    this.refs['param' + index].focus();
+  },
   render: function() {
     return (
       <div className="border-top border-left border-right border-radius-top pvs plxl">
@@ -19,9 +35,9 @@ return React.createClass({
                 ref={'param' + index}
                 name={param.name}
                 question={param.question}
-                onChange={this.props.onParamChange.bind(this, index)}
-                onDelete={this.props.onParamDelete.bind(this, index)}
-                onEnterKey={this.props.onEnterKey.bind(this, index)}
+                onChange={this.onChange.bind(this, index)}
+                onDelete={this.onDelete.bind(this, index)}
+                onEnterKey={this.onEnterKey.bind(this, index)}
                 id={index}
               />
             );
@@ -39,7 +55,7 @@ return React.createClass({
             </span>
           </div>
           <div className="column column-shrink pr-symbol align-r">
-            <button type="button" className="button-s" onClick={this.props.paramAdd}>Add parameter</button>
+            <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add parameter</button>
             <span className="button-symbol-placeholder"></span>
           </div>
         </div>

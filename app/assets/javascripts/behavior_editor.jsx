@@ -5,6 +5,7 @@ var React = require('react'),
   CodemirrorJSMode = require('./codemirror/mode/javascript/javascript'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
+  BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
@@ -125,8 +126,12 @@ var BehaviorEditor = React.createClass({
     this.setBehaviorProp('triggers', triggers);
   },
 
+  focusOnParamIndex: function(index) {
+    this.refs.codeHeader.focusIndex(index);
+  },
+
   focusOnLastParam: function() {
-    this.refs['param' + (this.getBehaviorProp('params').length - 1)].focus();
+    this.focusOnParamIndex(this.getBehaviorProp('params').length - 1)
   },
 
   onDescriptionChange: function(newDescription) {
@@ -158,7 +163,7 @@ var BehaviorEditor = React.createClass({
 
   onParamEnterKey: function(index) {
     if (index + 1 < this.getBehaviorProp('params').length) {
-      this.refs['param' + (index + 1)].focus();
+      this.focusOnParamIndex(index + 1);
     } else if (this.getBehaviorProp('params')[index].question != '') {
       this.addParam();
     }
@@ -271,6 +276,7 @@ var BehaviorEditor = React.createClass({
             <div className="column column-three-quarters pll form-field-group">
 
               <BehaviorEditorCodeHeader
+                ref="codeHeader"
                 hasParams={this.hasParams()}
                 params={this.getBehaviorProp('params')}
                 onParamChange={this.replaceParamAtIndexWithParam}
@@ -278,7 +284,7 @@ var BehaviorEditor = React.createClass({
                 onParamAdd={this.addParam}
                 onEnterKey={this.onParamEnterKey}
                 helpVisible={this.state.boilerplateHelpVisible}
-                onToggleHelp={this.toggleBoilerplateHelp
+                onToggleHelp={this.toggleBoilerplateHelp}
               />
 
               <div
