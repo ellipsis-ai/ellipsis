@@ -126,6 +126,16 @@ var BehaviorEditor = React.createClass({
     return result;
   },
 
+  getFirstLineNumberForCode: function() {
+    return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
+  },
+
+  getLastLineNumberForCode: function() {
+    var newLines = this.getBehaviorNodeFunction().match(/\n/g);
+    var numNewLines = newLines ? newLines.length : 1;
+    return this.getFirstLineNumberForCode() + numNewLines;
+  },
+
   setBehaviorProp: function(key, value, callback) {
     var newData = this.utils.objectWithNewValueAtKey(this.state.behavior, value, key);
     this.setState({ behavior: newData }, callback);
@@ -235,11 +245,6 @@ var BehaviorEditor = React.createClass({
   toggleCodeEditorLineWrapping: function() {
     this.setState({
       codeEditorUseLineWrapping: !this.state.codeEditorUseLineWrapping
-    }, function() {
-      /* Toggle the editor instance by hand because it doesn't respect state.
-         This is likely a bug with the react-codemirror module. */
-      var editorInstance = this.refs.nodeFunctionEditor.getCodeMirror();
-      editorInstance.setOption('lineWrapping', this.state.codeEditorUseLineWrapping);
     });
   },
 
@@ -355,7 +360,7 @@ var BehaviorEditor = React.createClass({
                   onChange={this.onCodeChange}
                   options={{
                     mode: "javascript",
-                    firstLineNumber: 2,
+                    firstLineNumber: this.getFirstLineNumberForCode(),
                     indentUnit: 2,
                     indentWithTabs: false,
                     lineWrapping: this.state.codeEditorUseLineWrapping,
@@ -385,8 +390,15 @@ var BehaviorEditor = React.createClass({
                 </div>
               </div>
 
-              <div className="border-left border-bottom border-right border-radius-bottom pvs plxl">
-                <code className="type-weak type-s">{"}"}</code>
+              <div className="border-left border-bottom border-right border-radius-bottom pvs">
+                <div className="columns columns-elastic">
+                  <div className="column column-shrink">
+                    <code className="type-disabled type-s">{this.padSpace(this.getLastLineNumberForCode(), 3)}</code>
+                  </div>
+                  <div className="column column-expand">
+                    <code className="type-weak type-s">{"}"}</code>
+                  </div>
+                </div>
               </div>
 
             </div>
