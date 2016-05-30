@@ -25,7 +25,10 @@ libraryDependencies ++= Seq(
   "net.ceedubs" %% "ficus" % "1.1.2",
   "com.amazonaws" % "aws-java-sdk" % "1.10.72",
   "org.webjars" % "requirejs" % "2.1.14-1",
-  "org.webjars" % "react" % "15.0.1"
+  "org.webjars" % "react" % "15.0.1",
+  "com.atlassian.commonmark" % "commonmark" % "0.3.0",
+  "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.3.0",
+  "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.3.0"
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
