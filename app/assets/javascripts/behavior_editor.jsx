@@ -235,6 +235,11 @@ var BehaviorEditor = React.createClass({
   toggleCodeEditorLineWrapping: function() {
     this.setState({
       codeEditorUseLineWrapping: !this.state.codeEditorUseLineWrapping
+    }, function() {
+      /* Toggle the editor instance by hand because it doesn't respect state.
+         This is likely a bug with the react-codemirror module. */
+      var editorInstance = this.refs.nodeFunctionEditor.getCodeMirror();
+      editorInstance.setOption('lineWrapping', this.state.codeEditorUseLineWrapping);
     });
   },
 
@@ -346,6 +351,7 @@ var BehaviorEditor = React.createClass({
 
               <div className="position-relative pr-symbol border-right">
                 <Codemirror value={this.getBehaviorNodeFunction()}
+                  ref="nodeFunctionEditor"
                   onChange={this.onCodeChange}
                   options={{
                     mode: "javascript",
