@@ -131,9 +131,8 @@ var BehaviorEditor = React.createClass({
   },
 
   getLastLineNumberForCode: function() {
-    var newLines = this.getBehaviorNodeFunction().match(/\n/g);
-    var numNewLines = newLines ? newLines.length : 1;
-    return this.getFirstLineNumberForCode() + numNewLines;
+    var numLines = this.getBehaviorNodeFunction().split('\n').length;
+    return this.getFirstLineNumberForCode() + numLines;
   },
 
   setBehaviorProp: function(key, value, callback) {
@@ -392,10 +391,10 @@ var BehaviorEditor = React.createClass({
 
               <div className="border-left border-bottom border-right border-radius-bottom pvs">
                 <div className="columns columns-elastic">
-                  <div className="column column-shrink">
-                    <code className="type-disabled type-s">{this.padSpace(this.getLastLineNumberForCode(), 3)}</code>
+                  <div className="column column-shrink plxxxl prn align-r position-relative">
+                    <code className="type-disabled type-s position-absolute position-top-right prxs">{this.getLastLineNumberForCode().toString()}</code>
                   </div>
-                  <div className="column column-expand">
+                  <div className="column column-expand plxs">
                     <code className="type-weak type-s">{"}"}</code>
                   </div>
                 </div>

@@ -33,10 +33,10 @@ return React.createClass({
 
         <div className={this.props.hasParams ? "" : "display-none"}>
           <div className="columns columns-elastic">
-            <div className="column column-shrink prs">
-              <code className="type-disabled type-s">{this.padSpace(1, 3)}</code>
+            <div className="column column-shrink plxxxl prn align-r position-relative">
+              <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>
             </div>
-            <div className="column column-expand">
+            <div className="column column-expand plxs">
               <code className="type-weak type-s">{"function ("}</code>
             </div>
           </div>
@@ -45,8 +45,8 @@ return React.createClass({
         {this.props.params.map(function(param, paramIndex) {
           return (
             <div ref={'paramContainer' + paramIndex} className="columns columns-elastic">
-              <div className="column column-shrink pts prs">
-                <code className="type-disabled type-s">{this.padSpace(paramIndex + 2, 3)}</code>
+              <div className="column column-shrink plxxxl prn align-r position-relative">
+                <code className="type-disabled type-s position-absolute position-top-right pts prxs">{(paramIndex + 2).toString()}</code>
               </div>
               <div className="column column-expand pll">
                 <BehaviorEditorUserInputDefinition
@@ -67,10 +67,10 @@ return React.createClass({
         <div className="columns columns-elastic">
           <div className="column column-expand">
             <div className="columns columns-elastic">
-              <div className="column column-shrink prs">
-                <code className="type-disabled type-s">{this.padSpace(this.boilerplateLineNumber(), 3)}</code>
+              <div className="column column-shrink plxxxl prn align-r position-relative">
+                <code className="type-disabled type-s position-absolute position-top-right prxs">{this.boilerplateLineNumber().toString()}</code>
               </div>
-              <div className="column column-expand">
+              <div className="column column-expand plxs">
                 <code className="type-weak type-s">{this.boilerplateLine()}</code>
                 <span className={this.visibleWhen(!this.props.helpVisible)}>
                   <BehaviorEditorHelpButton onClick={this.props.onToggleHelp} />
@@ -86,10 +86,10 @@ return React.createClass({
 
         <div className={this.props.hasParams ? "" : "display-none"}>
           <div className="columns columns-elastic">
-            <div className="column column-shrink prs">
-              <code className="type-disabled type-s">{this.padSpace(this.boilerplateLineNumber() + 1, 3)}</code>
+            <div className="column column-shrink plxxxl prn align-r position-relative">
+              <code className="type-disabled type-s position-absolute position-top-right prxs">{(this.boilerplateLineNumber() + 1).toString()}</code>
             </div>
-            <div className="column column-expand">
+            <div className="column column-expand plxs">
               <code className="type-weak type-s">{") {"}</code>
             </div>
           </div>
