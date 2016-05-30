@@ -24,6 +24,7 @@ var BehaviorEditor = React.createClass({
     behaviorId: React.PropTypes.string,
     description: React.PropTypes.string,
     nodeFunction: React.PropTypes.string,
+    responseTemplate: React.PropTypes.string,
     params: React.PropTypes.arrayOf(React.PropTypes.shape({
       name: React.PropTypes.string.isRequired,
       question: React.PropTypes.string.isRequired
@@ -70,6 +71,7 @@ var BehaviorEditor = React.createClass({
         behaviorId: this.props.behaviorId,
         description: this.props.description,
         nodeFunction: this.props.nodeFunction,
+        responseTemplate: this.props.responseTemplate,
         params: this.props.params,
         triggers: this.props.triggers.concat(['']) // always add one blank trigger
       },
@@ -140,6 +142,10 @@ var BehaviorEditor = React.createClass({
 
   onCodeChange: function(newCode) {
     this.setBehaviorProp('nodeFunction', newCode);
+  },
+
+  onTemplateChange: function(newTemplateString) {
+    this.setBehaviorProp('responseTemplate', newTemplateString)
   },
 
   addParam: function() {
@@ -326,6 +332,47 @@ var BehaviorEditor = React.createClass({
 
               <div className="border-left border-bottom border-right border-radius-bottom pvs plxl">
                 <code className="type-weak type-s">{"}"}</code>
+              </div>
+
+            </div>
+            <div>
+              <code className="type-weak type-s">{"}"}</code>
+            </div>
+          </div>
+
+          <div className="columns">
+
+            <div className="column column-one-quarter mbxl">
+
+              <p>
+                <strong>Format the response</strong>
+              </p>
+
+              <ul className="type-s">
+                <li className="mbs">
+                  <span>Use Markdown for structure and presentation</span>
+                </li>
+
+                <li className="mbs">
+                  You can include all user-supplied parameters, plus a special successResponse variable.
+                </li>
+              </ul>
+
+            </div>
+
+            <div className="column column-three-quarters pll mbxl">
+
+              <div className="position-relative mtxs prxxxl">
+                <Codemirror value={this.getBehaviorProp('responseTemplate')}
+                            onChange={this.onTemplateChange}
+                            options={{
+                  mode: "markdown",
+                  lineWrapping: false,
+                  lineNumbers: true,
+                  viewportMargin: Infinity,
+                  placeholder: "The result is {successResponse}"
+                }}
+                  />
               </div>
 
             </div>

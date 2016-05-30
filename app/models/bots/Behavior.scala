@@ -1,9 +1,14 @@
 package models.bots
 
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
+
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.{EnvironmentVariableQueries, IDs, Team}
 import org.joda.time.DateTime
+import play.api.libs.json.{Json, JsValue}
 import play.api.{Configuration, Play}
+import services.AWSLambdaConstants._
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,6 +20,7 @@ case class Behavior(
                      maybeDescription: Option[String],
                      maybeShortName: Option[String],
                      maybeFunctionBody: Option[String],
+                     maybeResponseTemplate: Option[String],
                      createdAt: DateTime
                      ) {
 
@@ -49,10 +55,60 @@ case class Behavior(
     BehaviorQueries.learnCodeFor(this, code, lambdaService)
   }
 
+  private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
+
+  private def processedResultFor(result: JsValue): String = {
+    dropEnclosingDoubleQuotes(result.as[String])
+  }
+
+  private def applyResponseTemplateTo(successString: String): String = {
+    maybeResponseTemplate.map { responseTemplate =>
+      """\{successResponse\}""".r.replaceAllIn(responseTemplate, successString)
+    }.getOrElse(successString)
+  }
+
+  private def successResultStringFor(result: JsValue): String = {
+    applyResponseTemplateTo(processedResultFor(result))
+  }
+
+  private def handledErrorResultStringFor(json: JsValue): String = {
+    val prompt = s"$ON_ERROR_PARAM triggered"
+    val maybeDetail = (json \ "errorMessage").toOption.map(processedResultFor)
+    Array(Some(prompt), maybeDetail).flatten.mkString(": ")
+  }
+
+  private def unhandledErrorResultStringFor(logResult: String): String = {
+    val prompt = s"We hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
+    val logRegex = """.*\n.*\t.*\t(.*)""".r
+    val maybeDetail = logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption)
+    Array(Some(prompt), maybeDetail).flatten.mkString(": ")
+  }
+
+  private def isUnhandledError(json: JsValue): Boolean = {
+    (json \ "errorMessage").toOption.flatMap { m =>
+      "Process exited before completing request".r.findFirstIn(m.toString)
+    }.isDefined
+  }
+
+  def resultStringFor(payload: ByteBuffer, logResult: String): String = {
+    val bytes = payload.array
+    val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
+    val json = Json.parse(jsonString)
+    (json \ "result").toOption.map { successResult =>
+      successResultStringFor(successResult)
+    }.getOrElse {
+      if (isUnhandledError(json)) {
+        unhandledErrorResultStringFor(logResult)
+      } else {
+        handledErrorResultStringFor(json)
+      }
+    }
+  }
+
   def save: DBIO[Behavior] = BehaviorQueries.save(this)
 
   def toRaw: RawBehavior = {
-    RawBehavior(id, team.id, maybeDescription, maybeShortName, maybeFunctionBody, createdAt)
+    RawBehavior(id, team.id, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt)
   }
 
 }
@@ -63,6 +119,7 @@ case class RawBehavior(
                         maybeDescription: Option[String],
                         maybeShortName: Option[String],
                         maybeFunctionBody: Option[String],
+                        maybeResponseTemplate: Option[String],
                         createdAt: DateTime
                         )
 
@@ -73,10 +130,12 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
   def maybeDescription = column[Option[String]]("description")
   def maybeShortName = column[Option[String]]("short_name")
   def maybeFunctionBody = column[Option[String]]("code")
+  def maybeResponseTemplate = column[Option[String]]("response_template")
   def createdAt = column[DateTime]("created_at")
 
   def * =
-    (id, teamId, maybeDescription, maybeShortName, maybeFunctionBody, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+    (id, teamId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt) <>
+      ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
 object BehaviorQueries {
@@ -86,7 +145,15 @@ object BehaviorQueries {
 
   def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
     val raw = tuple._1
-    Behavior(raw.id, tuple._2, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.createdAt)
+    Behavior(
+      raw.id,
+      tuple._2,
+      raw.maybeDescription,
+      raw.maybeShortName,
+      raw.maybeFunctionBody,
+      raw.maybeResponseTemplate,
+      raw.createdAt
+    )
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
@@ -109,9 +176,11 @@ object BehaviorQueries {
   }
 
   def createFor(team: Team): DBIO[Behavior] = {
-    val raw = RawBehavior(IDs.next, team.id, None, None, None, DateTime.now)
+    val raw = RawBehavior(IDs.next, team.id, None, None, None, None, DateTime.now)
 
-    (all += raw).map { _ => Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.createdAt) }
+    (all += raw).map { _ =>
+      Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.createdAt)
+    }
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)

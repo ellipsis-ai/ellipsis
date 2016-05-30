@@ -26,50 +26,6 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
-  private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
-
-  private def processedResultFor(result: JsValue): String = {
-    dropEnclosingDoubleQuotes(result.as[String])
-  }
-
-  private def successResultStringFor(result: JsValue): String = {
-    processedResultFor(result)
-  }
-
-  private def handledErrorResultStringFor(json: JsValue): String = {
-    val prompt = s"$ON_ERROR_PARAM triggered"
-    val maybeDetail = (json \ "errorMessage").toOption.map(processedResultFor)
-    Array(Some(prompt), maybeDetail).flatten.mkString(": ")
-  }
-
-  private def unhandledErrorResultStringFor(logResult: String): String = {
-    val prompt = s"We hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
-    val logRegex = """.*\n.*\t.*\t(.*)""".r
-    val maybeDetail = logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption)
-    Array(Some(prompt), maybeDetail).flatten.mkString(": ")
-  }
-
-  private def isUnhandledError(json: JsValue): Boolean = {
-    (json \ "errorMessage").toOption.flatMap { m =>
-      "Process exited before completing request".r.findFirstIn(m.toString)
-    }.isDefined
-  }
-
-  private def resultStringFor(payload: ByteBuffer, logResult: String): String = {
-    val bytes = payload.array
-    val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
-    val json = Json.parse(jsonString)
-    (json \ "result").toOption.map { successResult =>
-      successResultStringFor(successResult)
-    }.getOrElse {
-      if (isUnhandledError(json)) {
-        unhandledErrorResultStringFor(logResult)
-      } else {
-        handledErrorResultStringFor(json)
-      }
-    }
-  }
-
   def invoke(behavior: Behavior, params: Map[String, String], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
     val token = models.runNow(InvocationToken.createFor(behavior.team))
     val payloadJson = JsObject(
@@ -90,7 +46,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
         withPayload(payloadJson.toString())
     JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
       val logResult = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
-      resultStringFor(result.getPayload, logResult)
+      behavior.resultStringFor(result.getPayload, logResult)
     }
   }
 

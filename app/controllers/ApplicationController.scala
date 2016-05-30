@@ -62,6 +62,7 @@ class ApplicationController @Inject() (
                          id: String,
                          description: String,
                          functionBody: String,
+                         responseTemplate: String,
                          params: Seq[BehaviorParameterData],
                          triggers: Seq[String]
                            )
@@ -80,6 +81,7 @@ class ApplicationController @Inject() (
     (JsPath \ "behaviorId").read[String] and
       (JsPath \ "description").read[String] and
       (JsPath \ "nodeFunction").read[String] and
+      (JsPath \ "responseTemplate").read[String] and
       (JsPath \ "params").read[Seq[BehaviorParameterData]] and
       (JsPath \ "triggers").read[Seq[String]]
     )(BehaviorData.apply _)
@@ -88,6 +90,7 @@ class ApplicationController @Inject() (
     (JsPath \ "behaviorId").write[String] and
       (JsPath \ "description").write[String] and
       (JsPath \ "nodeFunction").write[String] and
+      (JsPath \ "responseTemplate").write[String] and
       (JsPath \ "params").write[Seq[BehaviorParameterData]] and
       (JsPath \ "triggers").write[Seq[String]]
     )(unlift(BehaviorData.unapply))
@@ -118,6 +121,7 @@ class ApplicationController @Inject() (
             behavior.id,
             behavior.description,
             behavior.functionBody,
+            behavior.maybeResponseTemplate.getOrElse(""),
             params.map { ea =>
               BehaviorParameterData(ea.name, ea.question)
             },
@@ -156,7 +160,8 @@ class ApplicationController @Inject() (
                   _ <- DBIO.from(lambdaService.deployFunctionFor(behavior, data.functionBody, BehaviorQueries.withoutBuiltin(data.params.map(_.name).toArray)))
                   _ <- behavior.copy(
                     maybeDescription = Some(data.description),
-                    maybeFunctionBody = Some(data.functionBody)
+                    maybeFunctionBody = Some(data.functionBody),
+                    maybeResponseTemplate = Some(data.responseTemplate)
                   ).save
                   _ <- BehaviorParameterQueries.ensureFor(behavior, data.params.map(ea => (ea.name, Some(ea.question))))
                   _ <- RegexMessageTriggerQueries.deleteAllFor(behavior)
