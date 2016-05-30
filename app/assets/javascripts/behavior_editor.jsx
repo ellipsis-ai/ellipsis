@@ -345,9 +345,6 @@ var BehaviorEditor = React.createClass({
               </div>
 
             </div>
-            <div>
-              <code className="type-weak type-s">{"}"}</code>
-            </div>
           </div>
 
           <div className="columns">
