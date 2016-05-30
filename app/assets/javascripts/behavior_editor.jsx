@@ -126,6 +126,15 @@ var BehaviorEditor = React.createClass({
     return result;
   },
 
+  getFirstLineNumberForCode: function() {
+    return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
+  },
+
+  getLastLineNumberForCode: function() {
+    var numLines = this.getBehaviorNodeFunction().split('\n').length;
+    return this.getFirstLineNumberForCode() + numLines;
+  },
+
   setBehaviorProp: function(key, value, callback) {
     var newData = this.utils.objectWithNewValueAtKey(this.state.behavior, value, key);
     this.setState({ behavior: newData }, callback);
@@ -346,10 +355,11 @@ var BehaviorEditor = React.createClass({
 
               <div className="position-relative pr-symbol border-right">
                 <Codemirror value={this.getBehaviorNodeFunction()}
+                  ref="nodeFunctionEditor"
                   onChange={this.onCodeChange}
                   options={{
                     mode: "javascript",
-                    firstLineNumber: 2,
+                    firstLineNumber: this.getFirstLineNumberForCode(),
                     indentUnit: 2,
                     indentWithTabs: false,
                     lineWrapping: this.state.codeEditorUseLineWrapping,
@@ -379,8 +389,15 @@ var BehaviorEditor = React.createClass({
                 </div>
               </div>
 
-              <div className="border-left border-bottom border-right border-radius-bottom pvs plxl">
-                <code className="type-weak type-s">{"}"}</code>
+              <div className="border-left border-bottom border-right border-radius-bottom pvs">
+                <div className="columns columns-elastic">
+                  <div className="column column-shrink plxxxl prn align-r position-relative">
+                    <code className="type-disabled type-s position-absolute position-top-right prxs">{this.getLastLineNumberForCode()}</code>
+                  </div>
+                  <div className="column column-expand plxs">
+                    <code className="type-weak type-s">{"}"}</code>
+                  </div>
+                </div>
               </div>
 
             </div>

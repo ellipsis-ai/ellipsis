@@ -19,40 +19,64 @@ return React.createClass({
   focusIndex: function(index) {
     this.refs['param' + index].focus();
   },
+  boilerplateLineNumber: function() {
+    return this.props.hasParams ? this.props.params.length + 2 : 1;
+  },
+  boilerplateLine: function() {
+    return this.props.hasParams ?
+      (<span className="pll">{"onSuccess, onError, ellipsis "}</span>) :
+      "function(onSuccess, onError, ellipis) { ";
+  },
   render: function() {
     return (
-      <div className="border-top border-left border-right border-radius-top pvs plxl">
+      <div className="border-top border-left border-right border-radius-top pvs">
 
         <div className={this.props.hasParams ? "" : "display-none"}>
-          <code className="type-weak type-s">{"function ("}</code>
+          <div className="columns columns-elastic">
+            <div className="column column-shrink plxxxl prn align-r position-relative">
+              <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>
+            </div>
+            <div className="column column-expand plxs">
+              <code className="type-weak type-s">{"function ("}</code>
+            </div>
+          </div>
         </div>
 
-        <div className="plxl">
-          {this.props.params.map(function(param, index) {
-            return (
-              <BehaviorEditorUserInputDefinition
-                key={'BehaviorEditorUserInputDefinition' + index}
-                ref={'param' + index}
-                name={param.name}
-                question={param.question}
-                onChange={this.onChange.bind(this, index)}
-                onDelete={this.onDelete.bind(this, index)}
-                onEnterKey={this.onEnterKey.bind(this, index)}
-                id={index}
-              />
-            );
-          }, this)}
-        </div>
+        {this.props.params.map(function(param, paramIndex) {
+          return (
+            <div ref={'paramContainer' + paramIndex} className="columns columns-elastic">
+              <div className="column column-shrink plxxxl prn align-r position-relative">
+                <code className="type-disabled type-s position-absolute position-top-right pts prxs">{paramIndex + 2}</code>
+              </div>
+              <div className="column column-expand pll">
+                <BehaviorEditorUserInputDefinition
+                  key={'BehaviorEditorUserInputDefinition' + paramIndex}
+                  ref={'param' + paramIndex}
+                  name={param.name}
+                  question={param.question}
+                  onChange={this.onChange.bind(this, paramIndex)}
+                  onDelete={this.onDelete.bind(this, paramIndex)}
+                  onEnterKey={this.onEnterKey.bind(this, paramIndex)}
+                  id={paramIndex}
+                />
+              </div>
+            </div>
+          );
+        }, this)}
 
         <div className="columns columns-elastic">
           <div className="column column-expand">
-            {this.props.hasParams ?
-              (<code className="type-weak type-s plxl">{"onSuccess, onError, ellipsis "}</code>) :
-              (<code className="type-weak type-s">{"function(onSuccess, onError, ellipis) { "}</code>)
-            }
-            <span className={this.visibleWhen(!this.props.helpVisible)}>
-              <BehaviorEditorHelpButton onClick={this.props.onToggleHelp} />
-            </span>
+            <div className="columns columns-elastic">
+              <div className="column column-shrink plxxxl prn align-r position-relative">
+                <code className="type-disabled type-s position-absolute position-top-right prxs">{this.boilerplateLineNumber()}</code>
+              </div>
+              <div className="column column-expand plxs">
+                <code className="type-weak type-s">{this.boilerplateLine()}</code>
+                <span className={this.visibleWhen(!this.props.helpVisible)}>
+                  <BehaviorEditorHelpButton onClick={this.props.onToggleHelp} />
+                </span>
+              </div>
+            </div>
           </div>
           <div className="column column-shrink pr-symbol align-r">
             <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add parameter</button>
@@ -61,7 +85,14 @@ return React.createClass({
         </div>
 
         <div className={this.props.hasParams ? "" : "display-none"}>
-          <code className="type-weak type-s">{") {"}</code>
+          <div className="columns columns-elastic">
+            <div className="column column-shrink plxxxl prn align-r position-relative">
+              <code className="type-disabled type-s position-absolute position-top-right prxs">{(this.boilerplateLineNumber() + 1)}</code>
+            </div>
+            <div className="column column-expand plxs">
+              <code className="type-weak type-s">{") {"}</code>
+            </div>
+          </div>
         </div>
 
       </div>
