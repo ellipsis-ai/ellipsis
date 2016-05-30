@@ -94,7 +94,7 @@ case class Behavior(
   }
 
   private def successResultStringFor(result: JsValue): String = {
-    TemplateApplier(maybeResponseTemplate, JsDefined(result)).apply
+    slackFormattedBodyTextFor(TemplateApplier(maybeResponseTemplate, JsDefined(result)).apply)
   }
 
   private def handledErrorResultStringFor(json: JsValue): String = {

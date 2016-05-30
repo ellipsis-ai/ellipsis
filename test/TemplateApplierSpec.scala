@@ -45,7 +45,7 @@ class TemplateApplierSpec extends PlaySpec {
     "apply for missing property" in {
       val json = Json.toJson(Map("foo" -> 2))
       val applier = TemplateApplier(Some("{successResult.bar}"), JsDefined(json))
-      applier.apply mustBe "Not found"
+      applier.apply mustBe "successResult.bar not found"
     }
 
   }

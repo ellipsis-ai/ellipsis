@@ -7,22 +7,19 @@ import scala.util.matching.Regex
 
 case class TemplateApplier(maybeResponseTemplate: Option[String], result: JsLookupResult) {
 
-  private def applyToString(result: String): String = {
-    maybeResponseTemplate.map { responseTemplate =>
-      s"""\\{$RESULT_KEY\\}""".r.replaceAllIn(responseTemplate, result)
-    }.getOrElse(result)
+
+  private def printJsValue(value: JsValue): String = {
+    value match {
+      case s: JsString => s.value
+      case _ => value.toString
+    }
   }
 
-  private def lookUp(obj: JsLookupResult, properties: Array[String]): String = {
+  private def lookUp(obj: JsLookupResult, properties: Array[String]): Option[String] = {
     properties.headOption.map { property =>
       lookUp(obj \ property, properties.tail)
     }.getOrElse {
-      obj.toOption.map { value =>
-       value match {
-         case s: JsString => s.value
-         case _ => value.toString
-       }
-      }.getOrElse("Not found")
+      obj.toOption.map(printJsValue)
     }
   }
 
@@ -30,10 +27,10 @@ case class TemplateApplier(maybeResponseTemplate: Option[String], result: JsLook
     m: Regex.Match =>
       m.subgroups.headOption.map { path =>
         if (path == null) {
-          result.toOption.map(_.toString).getOrElse("")
+          result.toOption.map(printJsValue).getOrElse("not found")
         } else {
           val segments = path.split("\\.").filter(_.nonEmpty)
-          lookUp(result, segments)
+          lookUp(result, segments).getOrElse(s"$RESULT_KEY$path not found")
         }
       }.getOrElse(m.toString())
   }
@@ -45,11 +42,6 @@ case class TemplateApplier(maybeResponseTemplate: Option[String], result: JsLook
     }.getOrElse("")
   }
 
-  def apply: String = {
-    result match {
-      case JsDefined(s: JsString) => applyToString(s.as[String])
-      case _ => applyToObject(result)
-    }
-  }
+  def apply: String = applyToObject(result)
 
 }
