@@ -31,6 +31,8 @@ libraryDependencies ++= Seq(
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.3.0"
 )
 
+javaOptions in Test += "-Dconfig.file=conf/test.conf"
+
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
 routesGenerator := InjectedRoutesGenerator
