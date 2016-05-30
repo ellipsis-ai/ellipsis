@@ -310,10 +310,20 @@ var BehaviorEditor = React.createClass({
                   onChange={this.onCodeChange}
                   options={{
                     mode: "javascript",
+                    firstLineNumber: 2,
+                    indentUnit: 2,
+                    indentWithTabs: false,
                     lineWrapping: this.state.codeEditorUseLineWrapping,
                     lineNumbers: true,
-                    firstLineNumber: 2,
-                    viewportMargin: Infinity
+                    smartIndent: true,
+                    tabSize: 2,
+                    viewportMargin: Infinity,
+                    extraKeys: {
+                      Tab: function(cm) {
+                        var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+                        cm.replaceSelection(spaces);
+                      }
+                    }
                   }}
                 />
                 <div className="position-absolute position-top-right">
