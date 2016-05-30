@@ -2,17 +2,29 @@ package models.bots
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.util
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.{EnvironmentVariableQueries, IDs, Team}
+import org.commonmark.ext.autolink.AutolinkExtension
+import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
+import org.commonmark.node.{Image, AbstractVisitor, Node}
+import org.commonmark.parser.Parser
 import org.joda.time.DateTime
 import play.api.libs.json.{Json, JsValue}
 import play.api.{Configuration, Play}
+import renderers.SlackRenderer
 import services.AWSLambdaConstants._
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+class CommonmarkVisitor extends AbstractVisitor {
+  override def visit(image: Image) {
+    image.unlink()
+  }
+}
 
 case class Behavior(
                      id: String,
@@ -61,10 +73,30 @@ case class Behavior(
     dropEnclosingDoubleQuotes(result.as[String])
   }
 
+  val COMMONMARK_EXTENSIONS = util.Arrays.asList(StrikethroughExtension.create, AutolinkExtension.create)
+
+  def commonmarkParser = {
+    Parser.builder().extensions(COMMONMARK_EXTENSIONS).build()
+  }
+
+  def commonmarkNodeFor(text: String): Node = {
+    val node = commonmarkParser.parse(text)
+    node.accept(new CommonmarkVisitor())
+    node
+  }
+
+  def slackFormattedBodyTextFor(text: String): String = {
+    val builder = StringBuilder.newBuilder
+    val slack = new SlackRenderer(builder)
+    commonmarkNodeFor(text).accept(slack)
+    builder.toString
+  }
+
   private def applyResponseTemplateTo(successString: String): String = {
-    maybeResponseTemplate.map { responseTemplate =>
+    val withSuccessString = maybeResponseTemplate.map { responseTemplate =>
       """\{successResponse\}""".r.replaceAllIn(responseTemplate, successString)
     }.getOrElse(successString)
+    slackFormattedBodyTextFor(withSuccessString)
   }
 
   private def successResultStringFor(result: JsValue): String = {

@@ -14,7 +14,7 @@ case class SlackContext(
                         ) extends MessageContext {
 
   def sendMessage(text: String)(implicit ec: ExecutionContext): Unit = {
-    client.apiClient.postChatMessage(message.channel, s"<@${message.user}>: $text")
+    client.apiClient.postChatMessage(message.channel, text)
 //    postChatMessage() uses formatting
 //    client.sendMessage(message.channel, s"<@${message.user}>: $text")
   }
