@@ -368,20 +368,25 @@ var BehaviorEditor = React.createClass({
             </div>
 
             <div className="column column-three-quarters pll mbxl">
-
-              <div className="position-relative mtxs prxxxl">
+              <div className="border-top border-left border-right border-radius-top ptxl"></div>
+              <div className="position-relative pr-symbol border-right">
                 <Codemirror value={this.getBehaviorProp('responseTemplate')}
-                            onChange={this.onTemplateChange}
-                            options={{
-                  mode: "markdown",
-                  lineWrapping: false,
-                  lineNumbers: true,
-                  viewportMargin: Infinity,
-                  placeholder: "The result is {successResponse}"
-                }}
-                  />
+                  onChange={this.onTemplateChange}
+                  options={{
+                    mode: "markdown",
+                    gutters: ['CodeMirror-empty-gutter'],
+                    indentUnit: 4,
+                    indentWithTabs: true,
+                    lineWrapping: true,
+                    lineNumbers: false,
+                    smartIndent: true,
+                    tabSize: 4,
+                    viewportMargin: Infinity,
+                    placeholder: "The result is {successResponse}"
+                  }}
+                />
               </div>
-
+              <div className="border-bottom border-left border-right border-radius-bottom ptxl"></div>
             </div>
           </div>
 
