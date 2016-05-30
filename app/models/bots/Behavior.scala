@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.util
 
+import _root_.util.TemplateApplier
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.{EnvironmentVariableQueries, IDs, Team}
 import org.commonmark.ext.autolink.AutolinkExtension
@@ -11,7 +12,7 @@ import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
 import org.commonmark.node.{Image, AbstractVisitor, Node}
 import org.commonmark.parser.Parser
 import org.joda.time.DateTime
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.{JsDefined, Json, JsValue}
 import play.api.{Configuration, Play}
 import renderers.SlackRenderer
 import services.AWSLambdaConstants._
@@ -92,15 +93,8 @@ case class Behavior(
     builder.toString
   }
 
-  private def applyResponseTemplateTo(successString: String): String = {
-    val withSuccessString = maybeResponseTemplate.map { responseTemplate =>
-      """\{successResponse\}""".r.replaceAllIn(responseTemplate, successString)
-    }.getOrElse(successString)
-    slackFormattedBodyTextFor(withSuccessString)
-  }
-
   private def successResultStringFor(result: JsValue): String = {
-    applyResponseTemplateTo(processedResultFor(result))
+    TemplateApplier(maybeResponseTemplate, JsDefined(result)).apply
   }
 
   private def handledErrorResultStringFor(json: JsValue): String = {

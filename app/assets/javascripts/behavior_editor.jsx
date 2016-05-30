@@ -364,7 +364,7 @@ var BehaviorEditor = React.createClass({
                 </li>
 
                 <li className="mbs">
-                  You can include all user-supplied parameters, plus a special successResponse variable.
+                  You can include all user-supplied parameters, plus a special successResult variable.
                 </li>
               </ul>
 
@@ -380,7 +380,7 @@ var BehaviorEditor = React.createClass({
                   lineWrapping: false,
                   lineNumbers: true,
                   viewportMargin: Infinity,
-                  placeholder: "The result is {successResponse}"
+                  placeholder: "The result is {successResult}"
                 }}
                   />
               </div>

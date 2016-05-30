@@ -9,4 +9,5 @@ object AWSLambdaConstants {
   val TOKEN_KEY = "token"
   val ENV_KEY = "env"
   val API_BASE_URL_KEY = "apiBaseUrl"
+  val RESULT_KEY = "successResult"
 }
