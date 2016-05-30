@@ -12,7 +12,6 @@ var CodeMirror = React.createClass({
 	propTypes: {
 		onChange: React.PropTypes.func,
 		onFocusChange: React.PropTypes.func,
-    placeholder: React.PropTypes.string,
 		options: React.PropTypes.object,
 		path: React.PropTypes.string,
 		value: React.PropTypes.string,
@@ -78,7 +77,7 @@ var CodeMirror = React.createClass({
 		return React.createElement(
 			'div',
 			{ className: editorClassName },
-			React.createElement('textarea', { ref: 'textarea', name: this.props.path, defaultValue: this.props.value, autoComplete: 'off', placeholder: this.props.placeholder })
+			React.createElement('textarea', { ref: 'textarea', name: this.props.path, defaultValue: this.props.value, autoComplete: 'off' })
 		);
 	}
 });
