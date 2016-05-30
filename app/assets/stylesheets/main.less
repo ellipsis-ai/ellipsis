@@ -641,6 +641,11 @@ input, select, textarea, .form-field {
   border-right-color: @border-color;
 }
 
+.CodeMirror-empty-gutter {
+  /* Magic value that corresponds to width of default line numbers */
+  width: 29px;
+}
+
 .CodeMirror-linenumber {
   .type-disabled();
 }
