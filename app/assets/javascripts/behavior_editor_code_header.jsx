@@ -46,7 +46,7 @@ return React.createClass({
           return (
             <div ref={'paramContainer' + paramIndex} className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">
-                <code className="type-disabled type-s position-absolute position-top-right pts prxs">{(paramIndex + 2).toString()}</code>
+                <code className="type-disabled type-s position-absolute position-top-right pts prxs">{paramIndex + 2}</code>
               </div>
               <div className="column column-expand pll">
                 <BehaviorEditorUserInputDefinition
@@ -68,7 +68,7 @@ return React.createClass({
           <div className="column column-expand">
             <div className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">
-                <code className="type-disabled type-s position-absolute position-top-right prxs">{this.boilerplateLineNumber().toString()}</code>
+                <code className="type-disabled type-s position-absolute position-top-right prxs">{this.boilerplateLineNumber()}</code>
               </div>
               <div className="column column-expand plxs">
                 <code className="type-weak type-s">{this.boilerplateLine()}</code>
@@ -87,7 +87,7 @@ return React.createClass({
         <div className={this.props.hasParams ? "" : "display-none"}>
           <div className="columns columns-elastic">
             <div className="column column-shrink plxxxl prn align-r position-relative">
-              <code className="type-disabled type-s position-absolute position-top-right prxs">{(this.boilerplateLineNumber() + 1).toString()}</code>
+              <code className="type-disabled type-s position-absolute position-top-right prxs">{(this.boilerplateLineNumber() + 1)}</code>
             </div>
             <div className="column column-expand plxs">
               <code className="type-weak type-s">{") {"}</code>
