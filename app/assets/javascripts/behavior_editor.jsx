@@ -112,14 +112,8 @@ var BehaviorEditor = React.createClass({
       params = this.getBehaviorParams();
 
     params.forEach(function(param) {
-      var name = param.name ?
-        '{' + param.name + '}' :
-        '(blank parameter name)';
-
-      var question = param.question ?
-        '“' + param.question + '”' :
-        '(blank question)';
-
+      var name = param.name ? '{'+param.name+'}' : '(blank parameter name)';
+      var question = param.question ? '“'+param.question+'”' : '(blank question)';
       result += 'You said ' + name + ' for ' + question + '.\n';
     });
 
@@ -127,7 +121,7 @@ var BehaviorEditor = React.createClass({
       result += '\n';
     }
 
-    result += 'The answer is: {successResponse}.\n';
+    result += 'The answer is: {successResponse}.';
 
     return result;
   },
