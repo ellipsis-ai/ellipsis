@@ -121,7 +121,7 @@ var BehaviorEditor = React.createClass({
       result += '\n';
     }
 
-    result += 'The answer is: {successResponse}.';
+    result += 'The answer is: {successResult}.';
 
     return result;
   },
