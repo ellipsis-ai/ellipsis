@@ -633,6 +633,20 @@ input, select, textarea, .form-field {
   border-color: @border-color;
 }
 
+/* Use pseudo-elements to draw top/bottom borders so they're positioned correctly */
+.CodeMirror::before,
+.CodeMirror::after {
+  content: ' ';
+  height: 0;
+  position: absolute;
+  right: 0;
+  left: @xxxl;
+  border-width: @border-width 0 0 0;
+  border-style: solid;
+  border-color: @border-color;
+  z-index: 1;
+}
+
 .CodeMirror, .CodeMirror-gutters {
   background-color: @almost-white;
 }
@@ -655,10 +669,12 @@ input, select, textarea, .form-field {
   background-color: @white;
 }
 
-.CodeMirror-sizer {
-  border-width: @border-width 0;
-  border-style: solid;
-  border-color: @border-color;
+.CodeMirror::before {
+  top: 0;
+}
+
+.CodeMirror::after {
+  bottom: 0;
 }
 
 .CodeMirror-scroll::-webkit-scrollbar {
@@ -676,22 +692,21 @@ input, select, textarea, .form-field {
   padding: (@form-padding-vertical - @border-width-thick) (@form-padding-horizontal - @border-width-thick);
 }
 
-.CodeMirror-focused {
-  /* Compensate for thicker border in focused state, since we can't adjust padding */
-  position: relative;
-  top: -1px;
-  margin-bottom: -2px;
-}
-
 .CodeMirror-focused,
 .CodeMirror-focused .CodeMirror-gutters {
   border-right-color: @border-color-focus;
-  border-right-width: 2px;
+  border-right-width: @border-width-thick;
 }
 
 .CodeMirror-focused .CodeMirror-sizer {
   border-color: @border-color-focus;
-  border-width: 2px 0;
+  border-width: @border-width-thick 0;
+}
+
+.CodeMirror-focused::before,
+.CodeMirror-focused::after {
+  border-width: @border-width-thick 0 0 0;
+  border-color: @border-color-focus;
 }
 
 .form-input-borderless {
