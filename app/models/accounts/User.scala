@@ -11,8 +11,12 @@ case class User(
                  ) extends Identity {
 
   def canAccess(team: Team): DBIO[Boolean] = {
-    // TODO: something real
-    DBIO.successful(true)
+    for {
+      linkedAccounts <- LinkedAccount.allFor(this)
+      canAccesses <- DBIO.sequence(linkedAccounts.map(_.canAccess(team)))
+    } yield {
+      canAccesses.contains(true)
+    }
   }
 
   def loginInfo: LoginInfo = LoginInfo(User.EPHEMERAL_USER_ID, id)
