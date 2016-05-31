@@ -341,7 +341,7 @@ var BehaviorEditor = React.createClass({
 
               <ul className="type-s">
                 <li className="mbs">Write a question or phrase to trigger a response.</li>
-                <li className="mbs">You can add additional triggers below.</li>
+                <li className="mbs">You can add multiple triggers.</li>
               </ul>
 
             </div>
