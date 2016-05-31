@@ -31,7 +31,8 @@ var BehaviorEditor = React.createClass({
     })),
     triggers: React.PropTypes.arrayOf(React.PropTypes.string),
     csrfToken: React.PropTypes.string.isRequired,
-    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string)
+    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
+    shouldRevealCodeEditor: React.PropTypes.bool
   },
 
   utils: {
@@ -65,6 +66,23 @@ var BehaviorEditor = React.createClass({
     return !this.props.nodeFunction;
   },
 
+  shouldRevealCodeEditor: function() {
+    return this.props.shouldRevealCodeEditor || this.props.nodeFunction
+  },
+
+  getMagic8BallResponse: function() {
+    var responses = [
+      "Reply hazy try again",
+      "Ask again later",
+      "Better not tell you now",
+      "Cannot predict now",
+      "Concentrate and ask again"
+    ];
+
+    var rand = Math.floor(Math.random() * responses.length);
+    return "**Magic 8-Ball says:** " + responses[rand];
+  },
+
   getInitialState: function() {
     return {
       behavior: {
@@ -79,7 +97,9 @@ var BehaviorEditor = React.createClass({
       settingsMenuVisible: false,
       boilerplateHelpVisible: false,
       expandEnvVariables: false,
-      envVariableNames: this.props.envVariableNames
+      envVariableNames: this.props.envVariableNames,
+      revealCodeEditor: this.shouldRevealCodeEditor(),
+      magic8BallResponse: this.getMagic8BallResponse()
     };
   },
 
@@ -107,6 +127,11 @@ var BehaviorEditor = React.createClass({
     return this.getBehaviorProp('triggers');
   },
 
+  hasCalledOnSuccess: function() {
+    var code = this.getBehaviorNodeFunction();
+    return code && code.match(/\bonSuccess\(.+?\)/);
+  },
+
   getDefaultBehaviorTemplate: function() {
     var result = '',
       params = this.getBehaviorParams();
@@ -121,7 +146,11 @@ var BehaviorEditor = React.createClass({
       result += '\n';
     }
 
-    result += 'The answer is: {successResult}.';
+    if (this.hasCalledOnSuccess()) {
+      result += 'The answer is: {successResult}.';
+    } else {
+      result += this.state.magic8BallResponse;
+    }
 
     return result;
   },
@@ -235,6 +264,12 @@ var BehaviorEditor = React.createClass({
     this.setBehaviorProp('triggers', this.utils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
   },
 
+  toggleCodeEditor: function() {
+    this.setState({
+      revealCodeEditor: !this.state.revealCodeEditor
+    });
+  },
+
   toggleEditorSettingsMenu: function() {
     this.setState({
       settingsMenuVisible: !this.state.settingsMenuVisible
@@ -298,25 +333,55 @@ var BehaviorEditor = React.createClass({
         {/* Start of container */}
         <div className="container ptxl pbm">
 
-          <div className="form-field-group">
-            <BehaviorEditorInput
-              className="form-input-borderless form-input-h2"
-              placeholder="Describe the behavior in one phrase"
-              value={this.getBehaviorDescription()}
-              onChange={this.onDescriptionChange}
-            />
+          <div className="columns">
+            <div className="column column-one-quarter form-field-group mts">
+              <p>
+                <strong>What question or phrase should trigger a response?</strong>
+              </p>
+
+              <ul className="type-s">
+                <li className="mbs">You can add additional triggers below.</li>
+              </ul>
+
+            </div>
+            <div className="column column-three-quarters pll form-field-group">
+              <BehaviorEditorInput
+                className="form-input-borderless form-input-large"
+                placeholder="Describe the behavior in one phrase"
+                value={this.getBehaviorDescription()}
+                onChange={this.onDescriptionChange}
+              />
+            </div>
           </div>
 
-          <div className="columns">
+          <hr className="mtn" />
+
+          <div className={this.visibleWhen(!this.state.revealCodeEditor, true)}>
+            <div className="columns columns-elastic form-field-group">
+              <div className="column column-expand">
+                <p className="mbn">
+                  <span>You can run code to determine a result, with additional input from the user if needed. </span>
+                  <span>Or provide a simple response below.</span>
+                </p>
+              </div>
+              <div className="column column-shrink align-m">
+                <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
+                  Add code
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className={"columns" + this.visibleWhen(this.state.revealCodeEditor, true)}>
             <div className="column column-one-quarter form-field-group">
 
               <p>
-                <strong>Implement the behavior by writing a node.js function.</strong>
+                <strong>Determine a result by writing a node.js function.</strong>
               </p>
 
               <ul className="type-s">
                 <li className="mbs">
-                  <span>Call onSuccess with a response.</span>
+                  <span>Call <code className="type-weak">onSuccess</code> with a result.</span>
                 </li>
 
                 <li className={"mbs" + this.visibleWhen(!this.getBehaviorParams().length)}>
@@ -408,16 +473,18 @@ var BehaviorEditor = React.createClass({
             <div className="column column-one-quarter mbxl">
 
               <p>
-                <strong>Format the response</strong>
+                <strong>Write the response</strong>
               </p>
 
               <ul className="type-s">
                 <li className="mbs">
-                  <span>Use Markdown for structure and presentation</span>
+                  <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
+                  <span>to format the response, add links, etc.</span>
                 </li>
 
                 <li className="mbs">
-                  You can include all user-supplied parameters, plus a special successResult variable.
+                  <span>You can include all user-supplied parameters, plus a special </span>
+                  <span><code className="type-weak">successResult</code> variable.</span>
                 </li>
               </ul>
 
@@ -451,7 +518,7 @@ var BehaviorEditor = React.createClass({
           <div className="columns form-field-group">
             <div className="column column-one-quarter">
 
-              <p><strong>Specify one or more phrases to trigger this behavior in chat.</strong></p>
+              <p><strong>Add more phrases to trigger this behavior in chat</strong> (optional)</p>
 
               {/*<p>
                 <span>You can write triggers using regular expressions to collect user input from the trigger, </span>
