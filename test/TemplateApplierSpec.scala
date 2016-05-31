@@ -55,6 +55,13 @@ class TemplateApplierSpec extends PlaySpec {
       applier.apply mustBe "1 + 2 = 3"
     }
 
+    "apply missing input" in {
+      val resultJson = Json.toJson(Map("total" -> "3"))
+      val inputs = Seq(("userInput1", "1"), ("userInput2", "2"))
+      val applier = TemplateApplier(Some("{userInput1} + {madeUp} = {successResult.total}"), JsDefined(resultJson), inputs)
+      applier.apply mustBe "1 + {madeUp} = 3"
+    }
+
   }
 
 }
