@@ -2,6 +2,7 @@ package models.accounts
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.api.LoginInfo
+import models.Team
 import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -23,6 +24,15 @@ case class LinkedAccount(user: User, loginInfo: LoginInfo, createdAt: DateTime) 
   }
 
   def maybeSlackTeamId: DBIO[Option[String]] = maybeSlackProfile.map(_.map(_.teamId))
+
+  def canAccess(team: Team): DBIO[Boolean] = {
+    for {
+      maybeId <- maybeSlackTeamId
+      botProfiles <- maybeId.map { slackTeamId =>
+        SlackBotProfileQueries.allFor(team)
+      }.getOrElse(DBIO.successful(Seq()))
+    } yield botProfiles.nonEmpty
+  }
 }
 
 case class RawLinkedAccount(userId: String, loginInfo: LoginInfo, createdAt: DateTime)
@@ -73,21 +83,17 @@ object LinkedAccount {
     LinkedAccount(tuple._2, tuple._1.loginInfo, tuple._1.createdAt)
   }
 
-  def uncompiledAllForQuery(providerId: Rep[String], userId: Rep[String]) = {
-    joined.
-      filter { case(_, u) => u.id === userId }.
-      filter { case(rawLinked, _) => rawLinked.providerId === providerId }
+  def uncompiledAllForQuery(userId: Rep[String]) = {
+    joined.filter { case(_, u) => u.id === userId }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def allFor(providerId: String, maybeUser: Option[User]): DBIO[Seq[LinkedAccount]] = {
-    maybeUser.map { user =>
-      allForQuery(providerId, user.id).
-        result.
-        map { result =>
-        result.map(tuple2LinkedAccount)
-      }
-    }.getOrElse(DBIO.successful(Seq()))
+  def allFor(user: User): DBIO[Seq[LinkedAccount]] = {
+    allForQuery(user.id).
+      result.
+      map { result =>
+      result.map(tuple2LinkedAccount)
+    }
   }
 
   def allFor(providerId: String): DBIO[Seq[LinkedAccount]] = {
@@ -97,20 +103,4 @@ object LinkedAccount {
       map { result => result.map(tuple2LinkedAccount) }
   }
 
-  def uncompiledMostRecentForQuery(providerId: Rep[String], userId: Rep[String]) = {
-    uncompiledAllForQuery(providerId, userId)
-      .sortBy { case(linkedAccount, user) =>
-      linkedAccount.createdAt.desc
-    }.
-      take(1)
-  }
-  val mostRecentForQuery = Compiled(uncompiledMostRecentForQuery _)
-
-  def findMostRecentFor(providerId: String, maybeUser: Option[User]): DBIO[Option[LinkedAccount]] = {
-    maybeUser.map { user =>
-      mostRecentForQuery(providerId, user.id).result.map { linkedAccounts =>
-        linkedAccounts.headOption.map(tuple2LinkedAccount)
-      }
-    }.getOrElse(DBIO.successful(None))
-  }
 }

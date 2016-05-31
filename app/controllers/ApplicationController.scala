@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{ Environment, LogoutEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import models.{EnvironmentVariableQueries, Models}
+import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
 import models.bots.conversations.LearnBehaviorConversation
 import models.bots.{RegexMessageTriggerQueries, BehaviorParameterQueries, BehaviorQueries}
@@ -57,9 +57,40 @@ class ApplicationController @Inject() (
     maybeResult.getOrElse(Redirect(routes.ApplicationController.index))
   }
 
+  def newBehavior(teamId: String) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      maybeTeam <- Team.find(teamId, user)
+      maybeEnvironmentVariables <- maybeTeam.map { team =>
+        EnvironmentVariableQueries.allFor(team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+    } yield {
+        (for {
+          team <- maybeTeam
+          envVars <- maybeEnvironmentVariables
+        } yield {
+            val data = BehaviorData(
+              team.id,
+              None,
+              "",
+              "",
+              "",
+              Seq(),
+              Seq()
+            )
+            Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name)))
+          }).getOrElse {
+          NotFound("Behavior not found")
+        }
+      }
+
+    models.run(action)
+  }
+
   case class BehaviorParameterData(name: String, question: String)
   case class BehaviorData(
-                         id: String,
+                         teamId: String,
+                         maybeId: Option[String],
                          description: String,
                          functionBody: String,
                          responseTemplate: String,
@@ -78,7 +109,8 @@ class ApplicationController @Inject() (
     )(unlift(BehaviorParameterData.unapply))
 
   implicit val behaviorReads: Reads[BehaviorData] = (
-    (JsPath \ "behaviorId").read[String] and
+    (JsPath \ "teamId").read[String] and
+      (JsPath \ "behaviorId").readNullable[String] and
       (JsPath \ "description").read[String] and
       (JsPath \ "nodeFunction").read[String] and
       (JsPath \ "responseTemplate").read[String] and
@@ -87,7 +119,8 @@ class ApplicationController @Inject() (
     )(BehaviorData.apply _)
 
   implicit val behaviorWrites: Writes[BehaviorData] = (
-    (JsPath \ "behaviorId").write[String] and
+    (JsPath \ "teamId").write[String] and
+      (JsPath \ "behaviorId").writeNullable[String] and
       (JsPath \ "description").write[String] and
       (JsPath \ "nodeFunction").write[String] and
       (JsPath \ "responseTemplate").write[String] and
@@ -118,7 +151,8 @@ class ApplicationController @Inject() (
           envVars <- maybeEnvironmentVariables
         } yield {
           val data = BehaviorData(
-            behavior.id,
+            behavior.team.id,
+            Some(behavior.id),
             behavior.description,
             behavior.functionBody,
             behavior.maybeResponseTemplate.getOrElse(""),
@@ -154,7 +188,14 @@ class ApplicationController @Inject() (
         json.validate[BehaviorData] match {
           case JsSuccess(data, jsPath) => {
             val action = for {
-              maybeBehavior <- BehaviorQueries.find(data.id)
+              maybeTeam <- Team.find(data.teamId, request.identity)
+              maybeBehavior <- data.maybeId.map { behaviorId =>
+                BehaviorQueries.find(behaviorId)
+              }.getOrElse {
+                maybeTeam.map { team =>
+                  BehaviorQueries.createFor(team).map(Some(_))
+                }.getOrElse(DBIO.successful(None))
+              }
               _ <- maybeBehavior.map { behavior =>
                 (for {
                   _ <- DBIO.from(lambdaService.deployFunctionFor(behavior, data.functionBody, BehaviorQueries.withoutBuiltin(data.params.map(_.name).toArray)))
@@ -175,7 +216,11 @@ class ApplicationController @Inject() (
                 } yield Unit) transactionally
               }.getOrElse(DBIO.successful(Unit))
             } yield {
-                Redirect(routes.ApplicationController.editBehavior(data.id))
+                maybeBehavior.map { behavior =>
+                  Redirect(routes.ApplicationController.editBehavior(behavior.id))
+                }.getOrElse {
+                  NotFound("Behavior not found")
+                }
               }
 
             models.run(action)

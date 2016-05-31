@@ -21,6 +21,7 @@ var BehaviorEditor = React.createClass({
   mixins: [BehaviorEditorMixin],
 
   propTypes: {
+    teamId: React.PropTypes.string.isRequired,
     behaviorId: React.PropTypes.string,
     description: React.PropTypes.string,
     nodeFunction: React.PropTypes.string,
@@ -86,6 +87,7 @@ var BehaviorEditor = React.createClass({
   getInitialState: function() {
     return {
       behavior: {
+        teamId: this.props.teamId,
         behaviorId: this.props.behaviorId,
         description: this.props.description,
         nodeFunction: this.props.nodeFunction,

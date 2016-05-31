@@ -6,6 +6,7 @@
 GET         /                                         @controllers.ApplicationController.index
 GET         /add_to_slack                             @controllers.ApplicationController.addToSlack
 GET         /sign_in_with_slack                       @controllers.ApplicationController.signInWithSlack(redirect: Option[String] ?= None)
+GET         /new_behavior/:teamId                     @controllers.ApplicationController.newBehavior(teamId: String)
 GET         /edit_behavior/:id                        @controllers.ApplicationController.editBehavior(id: String)
 POST        /save_behavior                            @controllers.ApplicationController.saveBehavior
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)

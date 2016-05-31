@@ -1,5 +1,6 @@
 package models
 
+import models.accounts.User
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -32,6 +33,25 @@ object Team {
 
   def find(id: String): DBIO[Option[Team]] = {
     findQueryFor(id).result.map(_.headOption)
+  }
+
+  def find(id: String, user: User): DBIO[Option[Team]] = {
+    for {
+      maybeTeam <- find(id)
+      canAccess <- maybeTeam.map { team =>
+        user.canAccess(team)
+      }.getOrElse {
+        DBIO.successful(false)
+      }
+    } yield {
+      maybeTeam.flatMap { team =>
+        if (canAccess) {
+          Some(team)
+        } else {
+          None
+        }
+      }
+    }
   }
 
   def findForToken(tokenId: String): DBIO[Option[Team]] = {

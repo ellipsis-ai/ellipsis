@@ -1,7 +1,7 @@
 package models.accounts
 
 import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
-import models.IDs
+import models.{Team, IDs}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -9,6 +9,15 @@ case class User(
                  id: String,
                  maybeEmail: Option[String]
                  ) extends Identity {
+
+  def canAccess(team: Team): DBIO[Boolean] = {
+    for {
+      linkedAccounts <- LinkedAccount.allFor(this)
+      canAccesses <- DBIO.sequence(linkedAccounts.map(_.canAccess(team)))
+    } yield {
+      canAccesses.contains(true)
+    }
+  }
 
   def loginInfo: LoginInfo = LoginInfo(User.EPHEMERAL_USER_ID, id)
 
