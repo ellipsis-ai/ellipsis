@@ -9,7 +9,7 @@ import com.amazonaws.services.lambda.model._
 import models.{EnvironmentVariable, Models, InvocationToken}
 import models.bots.{ParameterWithValue, Behavior}
 import play.api.Configuration
-import play.api.libs.json.{JsValue, JsString, JsObject, Json}
+import play.api.libs.json._
 import sun.misc.BASE64Decoder
 import utils.JavaFutureWrapper
 import scala.concurrent.Future
@@ -26,26 +26,30 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
   def invoke(behavior: Behavior, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
-    val token = models.runNow(InvocationToken.createFor(behavior.team))
-    val payloadJson = JsObject(
-      parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value))} ++
-        Seq(CONTEXT_PARAM -> JsObject(Seq(
-          API_BASE_URL_KEY -> JsString(apiBaseUrl),
-          TOKEN_KEY -> JsString(token.id),
-          ENV_KEY -> JsObject(environmentVariables.map { ea =>
-            ea.name -> JsString(ea.value)
-          })
-        )))
-    )
-    val invokeRequest =
-      new InvokeRequest().
-        withLogType(LogType.Tail).
-        withFunctionName(behavior.functionName).
-        withInvocationType(InvocationType.RequestResponse).
-        withPayload(payloadJson.toString())
-    JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
-      val logResult = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
-      behavior.resultStringFor(result.getPayload, logResult, parametersWithValues)
+    if (behavior.functionBody.isEmpty) {
+      Future.successful(behavior.successResultStringFor(JsNull, parametersWithValues))
+    } else {
+      val token = models.runNow(InvocationToken.createFor(behavior.team))
+      val payloadJson = JsObject(
+        parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
+          Seq(CONTEXT_PARAM -> JsObject(Seq(
+            API_BASE_URL_KEY -> JsString(apiBaseUrl),
+            TOKEN_KEY -> JsString(token.id),
+            ENV_KEY -> JsObject(environmentVariables.map { ea =>
+              ea.name -> JsString(ea.value)
+            })
+          )))
+      )
+      val invokeRequest =
+        new InvokeRequest().
+          withLogType(LogType.Tail).
+          withFunctionName(behavior.functionName).
+          withInvocationType(InvocationType.RequestResponse).
+          withPayload(payloadJson.toString())
+      JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
+        val logResult = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
+        behavior.resultStringFor(result.getPayload, logResult, parametersWithValues)
+      }
     }
   }
 
@@ -115,18 +119,22 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     // blocks
     deleteFunction(functionName)
 
-    val functionCode =
-      new FunctionCode().
-        withZipFile(getZipFor(behavior, functionBody, params))
-    val createFunctionRequest =
-      new CreateFunctionRequest().
-        withFunctionName(functionName).
-        withCode(functionCode).
-        withRole(configuration.getString("aws.role").get).
-        withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
-        withHandler("index.handler").
-        withTimeout(INVOCATION_TIMEOUT_SECONDS)
+    if (functionBody.trim.isEmpty) {
+      Future.successful(Unit)
+    } else {
+      val functionCode =
+        new FunctionCode().
+          withZipFile(getZipFor(behavior, functionBody, params))
+      val createFunctionRequest =
+        new CreateFunctionRequest().
+          withFunctionName(functionName).
+          withCode(functionCode).
+          withRole(configuration.getString("aws.role").get).
+          withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
+          withHandler("index.handler").
+          withTimeout(INVOCATION_TIMEOUT_SECONDS)
 
-    JavaFutureWrapper.wrap(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
+      JavaFutureWrapper.wrap(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
+    }
   }
 }

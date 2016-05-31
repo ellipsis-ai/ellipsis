@@ -93,7 +93,7 @@ case class Behavior(
     builder.toString
   }
 
-  private def successResultStringFor(result: JsValue, parametersWithValues: Seq[ParameterWithValue]): String = {
+  def successResultStringFor(result: JsValue, parametersWithValues: Seq[ParameterWithValue]): String = {
     val inputs = parametersWithValues.map { ea => (ea.parameter.name, ea.value) }
     slackFormattedBodyTextFor(TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply)
   }
