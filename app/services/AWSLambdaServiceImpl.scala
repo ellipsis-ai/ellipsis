@@ -27,7 +27,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
 
   def invoke(behavior: Behavior, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
     if (behavior.functionBody.isEmpty) {
-      Future.successful(behavior.successResultStringFor(JsNull))
+      Future.successful(behavior.successResultStringFor(JsNull, parametersWithValues))
     } else {
       val token = models.runNow(InvocationToken.createFor(behavior.team))
       val payloadJson = JsObject(
