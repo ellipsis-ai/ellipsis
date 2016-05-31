@@ -18,6 +18,7 @@ return React.createClass({
       <div className="columns columns-elastic">
         <div className="column column-expand prn">
           <BehaviorEditorInput
+            className="form-input-borderless"
             ref="input"
             value={this.props.value}
             placeholder="Add a trigger phrase or regular expression"
@@ -26,10 +27,7 @@ return React.createClass({
           />
         </div>
         <div className="column column-shrink">
-          <BehaviorEditorDeleteButton
-            onClick={this.props.onDelete}
-            hidden={this.isEmpty() && this.props.mayHideDelete}
-          />
+          <BehaviorEditorDeleteButton onClick={this.props.onDelete} />
         </div>
       </div>
     );

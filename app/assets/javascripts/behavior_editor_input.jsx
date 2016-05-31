@@ -31,7 +31,7 @@ return React.createClass({
   render: function() {
     return (
       <input type="text"
-        className={"form-input " + this.props.className}
+        className={"form-input " + (this.props.className || "")}
         ref="input"
         id={this.props.id}
         value={this.props.value}

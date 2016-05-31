@@ -80,7 +80,7 @@ var BehaviorEditor = React.createClass({
     ];
 
     var rand = Math.floor(Math.random() * responses.length);
-    return responses[rand];
+    return "My answer is: " + responses[rand];
   },
 
   getInitialState: function() {
@@ -91,7 +91,7 @@ var BehaviorEditor = React.createClass({
         nodeFunction: this.props.nodeFunction,
         responseTemplate: this.props.responseTemplate,
         params: this.props.params,
-        triggers: this.props.triggers.concat(['']) // always add one blank trigger
+        triggers: this.props.triggers
       },
       codeEditorUseLineWrapping: false,
       settingsMenuVisible: false,
@@ -198,10 +198,6 @@ var BehaviorEditor = React.createClass({
 
   deleteTriggerAtIndex: function(index) {
     var triggers = this.utils.arrayRemoveElementAtIndex(this.getBehaviorTriggers(), index);
-    if (index == triggers.length) {
-      // Add a blank trigger on the end if the user deleted the last trigger
-      triggers = triggers.concat(['']);
-    }
     this.setBehaviorProp('triggers', triggers);
   },
 
@@ -345,17 +341,36 @@ var BehaviorEditor = React.createClass({
 
               <ul className="type-s">
                 <li className="mbs">Write a question or phrase to trigger a response.</li>
-                <li className="mbs">You can add additional triggers below.</li>
+                <li className="mbs">You can add multiple triggers.</li>
               </ul>
 
             </div>
             <div className="column column-three-quarters pll form-field-group">
-              <BehaviorEditorInput
-                className="form-input-borderless form-input-large"
-                placeholder="Describe the behavior in one phrase"
-                value={this.getBehaviorDescription()}
-                onChange={this.onDescriptionChange}
-              />
+              <div className="mbs pr-symbol">
+                <BehaviorEditorInput
+                  className="form-input-borderless form-input-large"
+                  placeholder="Describe the behavior in one phrase"
+                  value={this.getBehaviorDescription()}
+                  onChange={this.onDescriptionChange}
+                />
+              </div>
+              <div className="mbm">
+              {this.getBehaviorTriggers().map(function(trigger, index) {
+                return (
+                  <BehaviorEditorTriggerInput
+                    key={"BehaviorEditorTrigger" + index}
+                    ref={"trigger" + index}
+                    value={trigger}
+                    onChange={this.onTriggerChange.bind(this, index)}
+                    onDelete={this.deleteTriggerAtIndex.bind(this, index)}
+                    onEnterKey={this.onTriggerEnterKey.bind(this, index)}
+                  />
+                );
+              }, this)}
+              </div>
+              <div className="pr-symbol align-r">
+                <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
+              </div>
             </div>
           </div>
 
@@ -482,6 +497,10 @@ var BehaviorEditor = React.createClass({
             </div>
           </div>
 
+          <div className={this.visibleWhen(this.state.revealCodeEditor, true)}>
+            <hr className="mtn" />
+          </div>
+
           <div className="columns">
 
             <div className="column column-one-quarter mbxl">
@@ -526,45 +545,6 @@ var BehaviorEditor = React.createClass({
               <div className="border-bottom border-left border-right border-radius-bottom ptxl"></div>
             </div>
           </div>
-
-          <hr className="mtn" />
-
-          <div className="columns form-field-group">
-            <div className="column column-one-quarter">
-
-              <p><strong>Add more phrases to trigger this behavior in chat</strong> (optional)</p>
-
-              {/*<p>
-                <span>You can write triggers using regular expressions to collect user input from the trigger, </span>
-                <span> or to be more flexible.</span>
-              </p>*/}
-
-            </div>
-
-            <div className="column column-three-quarters pll form-field-group">
-
-              <div className="form-grouped-inputs mbl">
-              {this.getBehaviorTriggers().map(function(trigger, index) {
-                return (
-                  <BehaviorEditorTriggerInput
-                    key={"BehaviorEditorTrigger" + index}
-                    ref={"trigger" + index}
-                    value={trigger}
-                    onChange={this.onTriggerChange.bind(this, index)}
-                    onDelete={this.deleteTriggerAtIndex.bind(this, index)}
-                    onEnterKey={this.onTriggerEnterKey.bind(this, index)}
-                    mayHideDelete={index + 1 == this.getBehaviorTriggers().length}
-                  />
-                );
-              }, this)}
-              </div>
-              <div className="pr-symbol align-r">
-                <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
-              </div>
-
-            </div>
-          </div>
-
         </div> {/* End of container */}
 
         <footer className={"position-fixed-bottom pvm border-top " +
