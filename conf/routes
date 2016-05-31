@@ -14,6 +14,7 @@ GET         /install/slack                            @controllers.SocialAuthCon
 #POST        /signUp                          controllers.SignUpController.signUp
 
 GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorage.getItem(itemId: String, itemType: String, token: String)
+# NOCSRF
 POST        /put_item                                 @controllers.DefaultStorage.putItem
 
 # Map static resources from the /public folder to the /assets URL path
