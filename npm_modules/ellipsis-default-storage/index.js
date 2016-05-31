@@ -15,7 +15,9 @@ module.exports = {
     putItem: function (args) {
         var missing = findMissingArgs(["itemId", "itemType", "item", "ellipsis"], args);
         if (missing.length > 0) {
-            onError("Missing values for: " + missing.join(", "));
+          if (args.onError) {
+            args.onError("Missing values for: " + missing.join(", "));
+          }
         } else {
             request.
                 post({
