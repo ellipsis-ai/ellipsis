@@ -80,7 +80,7 @@ var BehaviorEditor = React.createClass({
     ];
 
     var rand = Math.floor(Math.random() * responses.length);
-    return "**Magic 8-Ball says:** " + responses[rand];
+    return responses[rand];
   },
 
   getInitialState: function() {
@@ -305,6 +305,10 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  getResponseHeader: function() {
+    return this.state.revealCodeEditor ? "Then respond with:" : "Ellipsis will respond with:";
+  },
+
   onSaveClick: function() {
     this.setState({
       isSaving: true
@@ -336,10 +340,11 @@ var BehaviorEditor = React.createClass({
           <div className="columns">
             <div className="column column-one-quarter form-field-group mts">
               <p>
-                <strong>What question or phrase should trigger a response?</strong>
+                <strong>When someone says:</strong>
               </p>
 
               <ul className="type-s">
+                <li className="mbs">Write a question or phrase to trigger a response.</li>
                 <li className="mbs">You can add additional triggers below.</li>
               </ul>
 
@@ -354,14 +359,17 @@ var BehaviorEditor = React.createClass({
             </div>
           </div>
 
-          <hr className="mtn" />
+          <div className={this.visibleWhen(this.state.revealCodeEditor, true)}>
+            <hr className="mtn" />
+          </div>
 
           <div className={this.visibleWhen(!this.state.revealCodeEditor, true)}>
-            <div className="columns columns-elastic form-field-group">
+            <div className="bg-blue-lighter border border-blue pal form-field-group">
+            <div className="columns columns-elastic">
               <div className="column column-expand">
                 <p className="mbn">
-                  <span>You can run code to determine a result, with additional input from the user if needed. </span>
-                  <span>Or provide a simple response below.</span>
+                  <span>You can run code to determine a result, with additional input from the user if needed, </span>
+                  <span>or provide a simple response below.</span>
                 </p>
               </div>
               <div className="column column-shrink align-m">
@@ -370,23 +378,29 @@ var BehaviorEditor = React.createClass({
                 </button>
               </div>
             </div>
+            </div>
           </div>
 
           <div className={"columns" + this.visibleWhen(this.state.revealCodeEditor, true)}>
             <div className="column column-one-quarter form-field-group">
 
               <p>
-                <strong>Determine a result by writing a node.js function.</strong>
+                <strong>Ellipsis will do the following:</strong>
               </p>
 
               <ul className="type-s">
                 <li className="mbs">
-                  <span>Call <code className="type-weak">onSuccess</code> with a result.</span>
+                  <span>Write a node.js function to determine a result.</span>
+                </li>
+
+                <li className="mbs">
+                  <span>Call <code className="type-weak">onSuccess</code> with a string or </span>
+                  <span>object to include in the response.</span>
                 </li>
 
                 <li className={"mbs" + this.visibleWhen(!this.getBehaviorParams().length)}>
-                  If you need to collect information from the user, add one or more parameters
-                  to your function.
+                  <span>If you need more information from the user, add one or more parameters </span>
+                  <span>to your function.</span>
                 </li>
               </ul>
 
@@ -473,7 +487,7 @@ var BehaviorEditor = React.createClass({
             <div className="column column-one-quarter mbxl">
 
               <p>
-                <strong>Write the response</strong>
+                <strong>{this.getResponseHeader()}</strong>
               </p>
 
               <ul className="type-s">
