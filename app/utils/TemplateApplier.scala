@@ -5,7 +5,11 @@ import services.AWSLambdaConstants._
 
 import scala.util.matching.Regex
 
-case class TemplateApplier(maybeResponseTemplate: Option[String], result: JsLookupResult) {
+case class TemplateApplier(
+                            maybeResponseTemplate: Option[String],
+                            result: JsLookupResult,
+                            inputs: Seq[(String, String)] = Seq()
+                            ) {
 
 
   private def printJsValue(value: JsValue): String = {
@@ -35,13 +39,23 @@ case class TemplateApplier(maybeResponseTemplate: Option[String], result: JsLook
       }.getOrElse(m.toString())
   }
 
-  private def applyToObject(result: JsLookupResult): String = {
-    maybeResponseTemplate.map { responseTemplate =>
-      val pathsRegex = s"""(?s)\\{$RESULT_KEY(\\.\\S+)?\\}""".r
-      pathsRegex.replaceAllIn(responseTemplate, pathReplacement(result))
-    }.getOrElse("")
+  def applyInputsTo(responseTemplate: String, remainingInputs: Seq[(String, String)]): String = {
+    remainingInputs.headOption.map { case(paramName, value) =>
+      val regex = s"""(?s)(\\{\\s*$paramName\\s*\\})""".r
+      val applied = regex.replaceAllIn(responseTemplate, value)
+      applyInputsTo(applied, remainingInputs.tail)
+    }.getOrElse(responseTemplate)
   }
 
-  def apply: String = applyToObject(result)
+  def applyResultTo(responseTemplate: String): String = {
+    val pathsRegex = s"""(?s)\\{$RESULT_KEY(\\.\\S+)?\\}""".r
+    pathsRegex.replaceAllIn(responseTemplate, pathReplacement(result))
+  }
+
+  def apply: String = {
+    maybeResponseTemplate.map { responseTemplate =>
+      applyInputsTo(applyResultTo(responseTemplate), inputs)
+    }.getOrElse("")
+  }
 
 }

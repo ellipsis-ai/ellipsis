@@ -94,10 +94,10 @@ case class InvokeBehaviorConversation(
     import Conversation._
     import InvokeBehaviorConversation._
 
-    paramInfo.map { info =>
+    paramInfo.flatMap { info =>
       state match {
-        case COLLECT_PARAM_VALUES_STATE => sendPromptFor(event, info)
-        case DONE_STATE => BehaviorResponse(event, behavior, info.rankedParams, info.invocationMap).runCode(lambdaService)
+        case COLLECT_PARAM_VALUES_STATE => DBIO.successful(sendPromptFor(event, info))
+        case DONE_STATE => BehaviorResponse.buildFor(event, behavior, info.invocationMap).map(_.runCode(lambdaService))
       }
     }
 
