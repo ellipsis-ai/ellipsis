@@ -1,24 +1,27 @@
 package models.bots
 
 import models.bots.conversations.InvokeBehaviorConversation
-import services.AWSLambdaService
+import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+case class ParameterWithValue(parameter: BehaviorParameter, invocationName: String, maybeValue: Option[String]) {
+  def value: String = maybeValue.getOrElse("")
+}
+
 case class BehaviorResponse(
                              event: Event,
                              behavior: Behavior,
-                             parameters: Seq[BehaviorParameter],
-                             paramValues: Map[String, String]
+                             parametersWithValues: Seq[ParameterWithValue]
                              ) {
 
   def isFilledOut: Boolean = {
-    parameters.size == paramValues.size
+    parametersWithValues.forall(_.maybeValue.isDefined)
   }
 
   def runCode(service: AWSLambdaService): Future[Unit] = {
-    behavior.resultFor(paramValues, service).map { result =>
+    behavior.resultFor(parametersWithValues, service).map { result =>
       event.context.sendMessage(result)
     }
   }
@@ -39,7 +42,11 @@ object BehaviorResponse {
 
   def buildFor(event: Event, behavior: Behavior, paramValues: Map[String, String]): DBIO[BehaviorResponse] = {
     BehaviorParameterQueries.allFor(behavior).map { params =>
-      BehaviorResponse(event, behavior, params, paramValues)
+      val paramsWithValues = params.zipWithIndex.map { case (ea, i) =>
+        val invocationName = AWSLambdaConstants.invocationParamFor(i)
+        ParameterWithValue(ea, invocationName, paramValues.get(invocationName))
+      }
+      BehaviorResponse(event, behavior, paramsWithValues)
     }
   }
 }

@@ -2,13 +2,12 @@ package services
 
 import java.io.{File, PrintWriter}
 import java.nio.ByteBuffer
-import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
 import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
 import models.{EnvironmentVariable, Models, InvocationToken}
-import models.bots.Behavior
+import models.bots.{ParameterWithValue, Behavior}
 import play.api.Configuration
 import play.api.libs.json._
 import sun.misc.BASE64Decoder
@@ -26,13 +25,13 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
-  def invoke(behavior: Behavior, params: Map[String, String], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
+  def invoke(behavior: Behavior, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
     if (behavior.functionBody.isEmpty) {
       Future.successful(behavior.successResultStringFor(JsNull))
     } else {
       val token = models.runNow(InvocationToken.createFor(behavior.team))
       val payloadJson = JsObject(
-        params.toSeq.map { case (k, v) => (k, JsString(v)) } ++
+        parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
           Seq(CONTEXT_PARAM -> JsObject(Seq(
             API_BASE_URL_KEY -> JsString(apiBaseUrl),
             TOKEN_KEY -> JsString(token.id),
@@ -49,7 +48,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
           withPayload(payloadJson.toString())
       JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
         val logResult = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
-        behavior.resultStringFor(result.getPayload, logResult)
+        behavior.resultStringFor(result.getPayload, logResult, parametersWithValues)
       }
     }
   }
@@ -64,7 +63,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
 
   private def nodeCodeFor(functionBody: String, params: Array[String], behavior: Behavior): String = {
     val definitionParamString = (params ++ HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")
-    val paramsFromEvent = params.indices.map(i => s"event.param$i")
+    val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {

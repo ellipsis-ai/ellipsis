@@ -52,10 +52,10 @@ case class Behavior(
 
   def functionName: String = id
 
-  def resultFor(params: Map[String, String], service: AWSLambdaService): Future[String] = {
+  def resultFor(parametersWithValues: Seq[ParameterWithValue], service: AWSLambdaService): Future[String] = {
     for {
       envVars <- service.models.run(EnvironmentVariableQueries.allFor(team))
-      result <- service.invoke(this, params, envVars)
+      result <- service.invoke(this, parametersWithValues, envVars)
     } yield result
   }
 
@@ -93,8 +93,9 @@ case class Behavior(
     builder.toString
   }
 
-  def successResultStringFor(result: JsValue): String = {
-    slackFormattedBodyTextFor(TemplateApplier(maybeResponseTemplate, JsDefined(result)).apply)
+  def successResultStringFor(result: JsValue, parametersWithValues: Seq[ParameterWithValue]): String = {
+    val inputs = parametersWithValues.map { ea => (ea.parameter.name, ea.value) }
+    slackFormattedBodyTextFor(TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply)
   }
 
   private def handledErrorResultStringFor(json: JsValue): String = {
@@ -116,12 +117,12 @@ case class Behavior(
     }.isDefined
   }
 
-  def resultStringFor(payload: ByteBuffer, logResult: String): String = {
+  def resultStringFor(payload: ByteBuffer, logResult: String, parametersWithValues: Seq[ParameterWithValue]): String = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
     (json \ "result").toOption.map { successResult =>
-      successResultStringFor(successResult)
+      successResultStringFor(successResult, parametersWithValues)
     }.getOrElse {
       if (isUnhandledError(json)) {
         unhandledErrorResultStringFor(logResult)

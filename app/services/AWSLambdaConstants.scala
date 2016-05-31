@@ -10,4 +10,5 @@ object AWSLambdaConstants {
   val ENV_KEY = "env"
   val API_BASE_URL_KEY = "apiBaseUrl"
   val RESULT_KEY = "successResult"
+  def invocationParamFor(i: Int): String = s"param$i"
 }
