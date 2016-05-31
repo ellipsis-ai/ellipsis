@@ -1,7 +1,7 @@
 package models.bots
 
 import models.bots.conversations.InvokeBehaviorConversation
-import services.AWSLambdaService
+import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -43,7 +43,7 @@ object BehaviorResponse {
   def buildFor(event: Event, behavior: Behavior, paramValues: Map[String, String]): DBIO[BehaviorResponse] = {
     BehaviorParameterQueries.allFor(behavior).map { params =>
       val paramsWithValues = params.zipWithIndex.map { case (ea, i) =>
-        val invocationName = s"param$i"
+        val invocationName = AWSLambdaConstants.invocationParamFor(i)
         ParameterWithValue(ea, invocationName, paramValues.get(invocationName))
       }
       BehaviorResponse(event, behavior, paramsWithValues)

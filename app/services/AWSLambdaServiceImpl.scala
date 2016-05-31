@@ -59,7 +59,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
 
   private def nodeCodeFor(functionBody: String, params: Array[String], behavior: Behavior): String = {
     val definitionParamString = (params ++ HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")
-    val paramsFromEvent = params.indices.map(i => s"event.param$i")
+    val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
     s"""
       |exports.handler = function(event, context, callback) {

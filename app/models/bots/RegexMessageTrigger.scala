@@ -1,6 +1,7 @@
 package models.bots
 
 import models.{Team, IDs}
+import services.AWSLambdaConstants
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
@@ -16,7 +17,7 @@ case class RegexMessageTrigger(
       case e: SlackMessageEvent => {
         regex.findFirstMatchIn(e.context.message.text).map { firstMatch =>
           firstMatch.subgroups.zipWithIndex.map { case(param, i) =>
-            (s"param$i", param)
+            (AWSLambdaConstants.invocationParamFor(i), param)
           }.toMap
         }.getOrElse(Map())
       }

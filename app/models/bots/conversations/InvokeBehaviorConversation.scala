@@ -3,7 +3,7 @@ package models.bots.conversations
 import models.IDs
 import models.bots._
 import org.joda.time.DateTime
-import services.AWSLambdaService
+import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -37,7 +37,7 @@ case class InvokeBehaviorConversation(
     def invocationMap: Map[String, String] = {
       rankedParams.zipWithIndex.map { case(ea, i) =>
         val maybeParamValue = collected.find(_.parameter == ea).map(_.valueString)
-        (s"param$i", maybeParamValue.getOrElse(""))
+        (AWSLambdaConstants.invocationParamFor(i), maybeParamValue.getOrElse(""))
       }.toMap
     }
   }
