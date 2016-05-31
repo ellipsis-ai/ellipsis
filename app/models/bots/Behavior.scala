@@ -93,7 +93,7 @@ case class Behavior(
     builder.toString
   }
 
-  private def successResultStringFor(result: JsValue): String = {
+  def successResultStringFor(result: JsValue): String = {
     slackFormattedBodyTextFor(TemplateApplier(maybeResponseTemplate, JsDefined(result)).apply)
   }
 
