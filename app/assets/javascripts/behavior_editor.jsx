@@ -10,6 +10,7 @@ var React = require('react'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
   BehaviorEditorInput = require('./behavior_editor_input'),
+  BehaviorEditorSectionHeading = require('./behavior_editor_section_heading'),
   BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
   BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
@@ -304,7 +305,31 @@ var BehaviorEditor = React.createClass({
   },
 
   getResponseHeader: function() {
-    return this.state.revealCodeEditor ? "Then respond with:" : "Ellipsis will respond with:";
+    return this.state.revealCodeEditor ? "Then respond with" : "Ellipsis will respond with";
+  },
+
+  hasUserParameters: function() {
+    // TODO: when we have user parameters that aren't part of code, include those
+    return this.hasParams();
+  },
+
+  getTemplateHelp: function() {
+    if (this.state.revealCodeEditor) {
+      return (
+        <span>
+          <span>You can include any user-supplied parameters, plus the special </span>
+          <span><code className="type-weak">{"{successResult}"}</code> variable.</span>
+        </span>
+      );
+    } else if (this.hasUserParameters()) {
+      return (
+        <span>You can include any user-supplied parameters.</span>
+      )
+    } else {
+      return (
+        <span>Add code if you want to collect user input before returning a response.</span>
+      );
+    }
   },
 
   onSaveClick: function() {
@@ -337,12 +362,10 @@ var BehaviorEditor = React.createClass({
 
           <div className="columns">
             <div className="column column-one-quarter form-field-group mts">
-              <p>
-                <strong>When someone says:</strong>
-              </p>
+              <BehaviorEditorSectionHeading>When someone says</BehaviorEditorSectionHeading>
 
               <ul className="type-s">
-                <li className="mbs">Write a question or phrase to trigger a response.</li>
+                <li className="mbs">Write a question or phrase people should use to trigger a response.</li>
                 <li className="mbs">You can add multiple triggers.</li>
               </ul>
 
@@ -401,9 +424,7 @@ var BehaviorEditor = React.createClass({
           <div className={"columns" + this.visibleWhen(this.state.revealCodeEditor, true)}>
             <div className="column column-one-quarter form-field-group">
 
-              <p>
-                <strong>Ellipsis will do the following:</strong>
-              </p>
+              <BehaviorEditorSectionHeading>Ellipsis will do</BehaviorEditorSectionHeading>
 
               <ul className="type-s">
                 <li className="mbs">
@@ -507,9 +528,7 @@ var BehaviorEditor = React.createClass({
 
             <div className="column column-one-quarter mbxl">
 
-              <p>
-                <strong>{this.getResponseHeader()}</strong>
-              </p>
+              <BehaviorEditorSectionHeading>{this.getResponseHeader()}</BehaviorEditorSectionHeading>
 
               <ul className="type-s">
                 <li className="mbs">
@@ -518,8 +537,7 @@ var BehaviorEditor = React.createClass({
                 </li>
 
                 <li className="mbs">
-                  <span>You can include all user-supplied parameters, plus a special </span>
-                  <span><code className="type-weak">successResult</code> variable.</span>
+                  {this.getTemplateHelp()}
                 </li>
               </ul>
 
