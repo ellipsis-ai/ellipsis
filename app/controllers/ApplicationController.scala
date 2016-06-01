@@ -74,7 +74,6 @@ class ApplicationController @Inject() (
               None,
               "",
               "",
-              "",
               Seq(),
               Seq()
             )
@@ -91,7 +90,6 @@ class ApplicationController @Inject() (
   case class BehaviorData(
                          teamId: String,
                          maybeId: Option[String],
-                         description: String,
                          functionBody: String,
                          responseTemplate: String,
                          params: Seq[BehaviorParameterData],
@@ -111,7 +109,6 @@ class ApplicationController @Inject() (
   implicit val behaviorReads: Reads[BehaviorData] = (
     (JsPath \ "teamId").read[String] and
       (JsPath \ "behaviorId").readNullable[String] and
-      (JsPath \ "description").read[String] and
       (JsPath \ "nodeFunction").read[String] and
       (JsPath \ "responseTemplate").read[String] and
       (JsPath \ "params").read[Seq[BehaviorParameterData]] and
@@ -121,7 +118,6 @@ class ApplicationController @Inject() (
   implicit val behaviorWrites: Writes[BehaviorData] = (
     (JsPath \ "teamId").write[String] and
       (JsPath \ "behaviorId").writeNullable[String] and
-      (JsPath \ "description").write[String] and
       (JsPath \ "nodeFunction").write[String] and
       (JsPath \ "responseTemplate").write[String] and
       (JsPath \ "params").write[Seq[BehaviorParameterData]] and
@@ -153,7 +149,6 @@ class ApplicationController @Inject() (
           val data = BehaviorData(
             behavior.team.id,
             Some(behavior.id),
-            behavior.description,
             behavior.functionBody,
             behavior.maybeResponseTemplate.getOrElse(""),
             params.map { ea =>
@@ -200,7 +195,6 @@ class ApplicationController @Inject() (
                 (for {
                   _ <- DBIO.from(lambdaService.deployFunctionFor(behavior, data.functionBody, BehaviorQueries.withoutBuiltin(data.params.map(_.name).toArray)))
                   _ <- behavior.copy(
-                    maybeDescription = Some(data.description),
                     maybeFunctionBody = Some(data.functionBody),
                     maybeResponseTemplate = Some(data.responseTemplate)
                   ).save
