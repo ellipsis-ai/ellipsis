@@ -2,12 +2,10 @@ define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
   Codemirror = require('./react-codemirror'),
-  CodemirrorJSMode = require('./codemirror/mode/javascript/javascript'),
-  CodemirrorMarkdownMode = require('./codemirror/mode/markdown/markdown'),
-  CodemirrorShowHint = require('./codemirror/addon/hint/show-hint'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
+  BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
@@ -336,38 +334,12 @@ var BehaviorEditor = React.createClass({
     }
   },
 
-  autocompleteParams: function(cm, options) {
-    var matches = [];
-    var possibleWords = ["onSuccess", "onError", "ellipsis"].concat(this.getBehaviorParams());
-    this.state.envVariableNames.forEach(function(name) {
-      possibleWords.push('ellipsis.env.' + name);
+  getCodeAutocompletions: function() {
+    var envVars = this.state.envVariableNames.map(function(name) {
+      return 'ellipsis.env.' + name;
     });
 
-    var cursor = cm.getCursor();
-    var line = cm.getLine(cursor.line);
-    var start = cursor.ch;
-    var end = cursor.ch;
-
-    while (start && /\w/.test(line.charAt(start - 1))) {
-      --start;
-    }
-    while (end < line.length && /\w/.test(line.charAt(end))) {
-      ++end;
-    }
-
-    var word = line.slice(start, end).toLowerCase();
-
-    possibleWords.forEach(function(w) {
-      if (w.indexOf(word) !== -1) {
-        matches.push(w);
-      }
-    });
-
-    return {
-      list: matches,
-      from: { line: cursor.line, ch: start },
-      to: { line: cursor.line, ch: end }
-    }
+    return ["onSuccess()", "onError()", "ellipsis"].concat(this.getBehaviorParams(), envVars);
   },
 
   onSaveClick: function() {
@@ -503,28 +475,12 @@ var BehaviorEditor = React.createClass({
               </div>
 
               <div className="position-relative pr-symbol border-right">
-                <Codemirror value={this.getBehaviorNodeFunction()}
-                  ref="nodeFunctionEditor"
+                <BehaviorEditorCodeEditor
+                  value={this.getBehaviorNodeFunction()}
                   onChange={this.onCodeChange}
-                  options={{
-                    mode: "javascript",
-                    firstLineNumber: this.getFirstLineNumberForCode(),
-                    hintOptions: { hint: this.autocompleteParams },
-                    indentUnit: 2,
-                    indentWithTabs: false,
-                    lineWrapping: this.state.codeEditorUseLineWrapping,
-                    lineNumbers: true,
-                    smartIndent: true,
-                    tabSize: 2,
-                    viewportMargin: Infinity,
-                    extraKeys: {
-                      Esc: "autocomplete",
-                      Tab: function(cm) {
-                        var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
-                        cm.replaceSelection(spaces);
-                      }
-                    }
-                  }}
+                  firstLineNumber={this.getFirstLineNumberForCode()}
+                  lineWrapping={this.state.codeEditorUseLineWrapping}
+                  autocompletions={this.getCodeAutocompletions()}
                 />
                 <div className="position-absolute position-top-right">
                   <BehaviorEditorSettingsButton
