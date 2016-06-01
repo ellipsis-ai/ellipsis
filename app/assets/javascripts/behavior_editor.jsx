@@ -364,9 +364,9 @@ var BehaviorEditor = React.createClass({
             <div className="column column-one-quarter form-field-group mts">
               <BehaviorEditorSectionHeading>When someone says</BehaviorEditorSectionHeading>
 
-              <ul className="type-s">
-                <li className="mbs">Write a question or phrase people should use to trigger a response.</li>
-                <li className="mbs">You can add multiple triggers.</li>
+              <ul className="type-s list-space-s">
+                <li>Write a question or phrase people should use to trigger a response.</li>
+                <li>You can add multiple triggers.</li>
               </ul>
 
             </div>
@@ -426,17 +426,17 @@ var BehaviorEditor = React.createClass({
 
               <BehaviorEditorSectionHeading>Ellipsis will do</BehaviorEditorSectionHeading>
 
-              <ul className="type-s">
-                <li className="mbs">
+              <ul className="type-s list-space-s">
+                <li>
                   <span>Write a node.js function to determine a result.</span>
                 </li>
 
-                <li className="mbs">
+                <li>
                   <span>Call <code className="type-weak">onSuccess</code> with a string or </span>
                   <span>object to include in the response.</span>
                 </li>
 
-                <li className={"mbs" + this.visibleWhen(!this.getBehaviorParams().length)}>
+                <li className={this.visibleWhen(!this.getBehaviorParams().length)}>
                   <span>If you need more information from the user, add one or more parameters </span>
                   <span>to your function.</span>
                 </li>
@@ -530,13 +530,13 @@ var BehaviorEditor = React.createClass({
 
               <BehaviorEditorSectionHeading>{this.getResponseHeader()}</BehaviorEditorSectionHeading>
 
-              <ul className="type-s">
-                <li className="mbs">
+              <ul className="type-s list-space-s">
+                <li>
                   <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
                   <span>to format the response, add links, etc.</span>
                 </li>
 
-                <li className="mbs">
+                <li>
                   {this.getTemplateHelp()}
                 </li>
               </ul>
