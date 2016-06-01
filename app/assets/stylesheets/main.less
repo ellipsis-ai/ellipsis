@@ -701,6 +701,16 @@ input, select, textarea, .form-field {
   z-index: 1;
 }
 
+.CodeMirror-container-no-gutter {
+  .CodeMirror {
+    border-left-width: 0;
+  }
+  .CodeMirror::before,
+  .CodeMirror::after {
+    left: 0;
+  }
+}
+
 .CodeMirror, .CodeMirror-gutters {
   background-color: @almost-white;
 }
@@ -712,6 +722,10 @@ input, select, textarea, .form-field {
 .CodeMirror-empty-gutter,
 .CodeMirror-linenumbers {
   width: @xxxl;
+}
+
+.CodeMirror-no-gutter {
+  width: 0;
 }
 
 .CodeMirror-linenumber {

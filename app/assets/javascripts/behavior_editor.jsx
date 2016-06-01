@@ -82,7 +82,7 @@ var BehaviorEditor = React.createClass({
     ];
 
     var rand = Math.floor(Math.random() * responses.length);
-    return "My answer is: " + responses[rand];
+    return "**The magic 8-ball says:**\n\n“" + responses[rand] + "”";
   },
 
   getInitialTriggers: function() {
@@ -541,13 +541,17 @@ var BehaviorEditor = React.createClass({
             </div>
 
             <div className="column column-three-quarters pll mbxl">
-              <div className="border-top border-left border-right border-radius-top ptxl"></div>
-              <div className="position-relative pr-symbol border-right">
+              <div className="position-relative CodeMirror-container-no-gutter">
                 <Codemirror value={this.getBehaviorTemplate()}
                   onChange={this.onTemplateChange}
                   options={{
-                    mode: "markdown",
-                    gutters: ['CodeMirror-empty-gutter'],
+                    mode: {
+                      name: "markdown",
+                      /* Use CommonMark-appropriate settings */
+                      fencedCodeBlocks: true,
+                      underscoresBreakWords: false
+                    },
+                    gutters: ['CodeMirror-no-gutter'],
                     indentUnit: 4,
                     indentWithTabs: true,
                     lineWrapping: true,
@@ -559,7 +563,6 @@ var BehaviorEditor = React.createClass({
                   }}
                 />
               </div>
-              <div className="border-bottom border-left border-right border-radius-bottom ptxl"></div>
             </div>
           </div>
         </div> {/* End of container */}
