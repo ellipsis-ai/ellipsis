@@ -2,7 +2,6 @@ define(function(require) {
 var React = require('react'),
   Codemirror = require('./react-codemirror'),
   CodemirrorJSMode = require('./codemirror/mode/javascript/javascript'),
-  CodemirrorMarkdownMode = require('./codemirror/mode/markdown/markdown'),
   CodemirrorShowHint = require('./codemirror/addon/hint/show-hint');
 
 return React.createClass({

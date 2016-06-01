@@ -2,6 +2,7 @@ define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
   Codemirror = require('./react-codemirror'),
+  CodemirrorMarkdownMode = require('./codemirror/mode/markdown/markdown'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
   BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
