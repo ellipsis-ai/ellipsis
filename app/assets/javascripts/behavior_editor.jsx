@@ -4,8 +4,9 @@ var React = require('react'),
   Codemirror = require('./react-codemirror'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
-  BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
   BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
+  BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
+  BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
@@ -496,16 +497,7 @@ var BehaviorEditor = React.createClass({
                 </div>
               </div>
 
-              <div className="border-left border-bottom border-right border-radius-bottom pvs">
-                <div className="columns columns-elastic">
-                  <div className="column column-shrink plxxxl prn align-r position-relative">
-                    <code className="type-disabled type-s position-absolute position-top-right prxs">{this.getLastLineNumberForCode()}</code>
-                  </div>
-                  <div className="column column-expand plxs">
-                    <code className="type-weak type-s">{"}"}</code>
-                  </div>
-                </div>
-              </div>
+              <BehaviorEditorCodeFooter lineNumber={this.getLastLineNumberForCode()} />
 
             </div>
           </div>
