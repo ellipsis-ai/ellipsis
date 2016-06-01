@@ -46,6 +46,7 @@
 @green-lightest: hsl(127, 93%, 95.5%);
 @green-light: hsl(127, 93%, 63%);
 @green-medium: hsl(127, 93%, 48%);
+@green-text: hsl(127, 93%, 35%);
 
 @border-color: @gray-light;
 @border-color-focus: @pink-medium;
@@ -81,6 +82,24 @@ ul {
 
 .list-space-s > li {
   margin-bottom: @s;
+}
+
+.checklist > li {
+  transition: color 0.2s ease;
+  list-style-type: circle;
+}
+
+.checklist > .checklist-checked {
+  list-style-type: none;
+  position: relative;
+  color: @green-text;
+  text-decoration: strikethrough;
+  &::before {
+    content: '✓';
+    position: absolute;
+    left: -1.25em;
+    color: @green-text;
+  }
 }
 
 /*

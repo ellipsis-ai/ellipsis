@@ -135,6 +135,11 @@ var BehaviorEditor = React.createClass({
     return code && code.match(/\bonSuccess\(.+?\)/);
   },
 
+  hasMultipleTriggers: function() {
+    // TODO: update this when we stop using the description
+    return this.getBehaviorTriggers().length > 0;
+  },
+
   getDefaultBehaviorTemplate: function() {
     var result = '',
       params = this.getBehaviorParams();
@@ -318,7 +323,7 @@ var BehaviorEditor = React.createClass({
       return (
         <span>
           <span>You can include any user-supplied parameters, plus the special </span>
-          <span><code className="type-weak">{"{successResult}"}</code> variable.</span>
+          <span><code>{"{successResult}"}</code> variable.</span>
         </span>
       );
     } else if (this.hasUserParameters()) {
@@ -364,9 +369,9 @@ var BehaviorEditor = React.createClass({
             <div className="column column-one-quarter form-field-group mts">
               <BehaviorEditorSectionHeading>When someone says</BehaviorEditorSectionHeading>
 
-              <ul className="type-s list-space-s">
+              <ul className="type-s list-space-s checklist">
                 <li>Write a question or phrase people should use to trigger a response.</li>
-                <li>You can add multiple triggers.</li>
+                <li className={this.hasMultipleTriggers() ? "checklist-checked" : ""}>You can add multiple triggers.</li>
               </ul>
 
             </div>
@@ -426,17 +431,17 @@ var BehaviorEditor = React.createClass({
 
               <BehaviorEditorSectionHeading>Ellipsis will do</BehaviorEditorSectionHeading>
 
-              <ul className="type-s list-space-s">
-                <li>
+              <ul className="type-s list-space-s checklist">
+                <li className="">
                   <span>Write a node.js function to determine a result.</span>
                 </li>
 
-                <li>
-                  <span>Call <code className="type-weak">onSuccess</code> with a string or </span>
+                <li className={this.hasCalledOnSuccess() ? "checklist-checked" : ""}>
+                  <span>Call <code>onSuccess</code> with a string or </span>
                   <span>object to include in the response.</span>
                 </li>
 
-                <li className={this.visibleWhen(!this.getBehaviorParams().length)}>
+                <li className={this.hasParams() ? "checklist-checked" : ""}>
                   <span>If you need more information from the user, add one or more parameters </span>
                   <span>to your function.</span>
                 </li>
@@ -530,7 +535,7 @@ var BehaviorEditor = React.createClass({
 
               <BehaviorEditorSectionHeading>{this.getResponseHeader()}</BehaviorEditorSectionHeading>
 
-              <ul className="type-s list-space-s">
+              <ul className="type-s list-space-s checklist">
                 <li>
                   <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
                   <span>to format the response, add links, etc.</span>
