@@ -44,7 +44,7 @@ return React.createClass({
 
         {this.props.params.map(function(param, paramIndex) {
           return (
-            <div ref={'paramContainer' + paramIndex} className="columns columns-elastic">
+            <div key={'paramContainer' + paramIndex} className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">
                 <code className="type-disabled type-s position-absolute position-top-right pts prxs">{paramIndex + 2}</code>
               </div>

@@ -2,10 +2,11 @@ define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
   Codemirror = require('./react-codemirror'),
-  CodemirrorJSMode = require('./codemirror/mode/javascript/javascript'),
   CodemirrorMarkdownMode = require('./codemirror/mode/markdown/markdown'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
+  BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
+  BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
@@ -335,6 +336,14 @@ var BehaviorEditor = React.createClass({
     }
   },
 
+  getCodeAutocompletions: function() {
+    var envVars = this.state.envVariableNames.map(function(name) {
+      return 'ellipsis.env.' + name;
+    });
+
+    return ["onSuccess()", "onError()", "ellipsis"].concat(this.getBehaviorParams(), envVars);
+  },
+
   onSaveClick: function() {
     this.setState({
       isSaving: true
@@ -468,26 +477,12 @@ var BehaviorEditor = React.createClass({
               </div>
 
               <div className="position-relative pr-symbol border-right">
-                <Codemirror value={this.getBehaviorNodeFunction()}
-                  ref="nodeFunctionEditor"
+                <BehaviorEditorCodeEditor
+                  value={this.getBehaviorNodeFunction()}
                   onChange={this.onCodeChange}
-                  options={{
-                    mode: "javascript",
-                    firstLineNumber: this.getFirstLineNumberForCode(),
-                    indentUnit: 2,
-                    indentWithTabs: false,
-                    lineWrapping: this.state.codeEditorUseLineWrapping,
-                    lineNumbers: true,
-                    smartIndent: true,
-                    tabSize: 2,
-                    viewportMargin: Infinity,
-                    extraKeys: {
-                      Tab: function(cm) {
-                        var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
-                        cm.replaceSelection(spaces);
-                      }
-                    }
-                  }}
+                  firstLineNumber={this.getFirstLineNumberForCode()}
+                  lineWrapping={this.state.codeEditorUseLineWrapping}
+                  autocompletions={this.getCodeAutocompletions()}
                 />
                 <div className="position-absolute position-top-right">
                   <BehaviorEditorSettingsButton
@@ -503,16 +498,7 @@ var BehaviorEditor = React.createClass({
                 </div>
               </div>
 
-              <div className="border-left border-bottom border-right border-radius-bottom pvs">
-                <div className="columns columns-elastic">
-                  <div className="column column-shrink plxxxl prn align-r position-relative">
-                    <code className="type-disabled type-s position-absolute position-top-right prxs">{this.getLastLineNumberForCode()}</code>
-                  </div>
-                  <div className="column column-expand plxs">
-                    <code className="type-weak type-s">{"}"}</code>
-                  </div>
-                </div>
-              </div>
+              <BehaviorEditorCodeFooter lineNumber={this.getLastLineNumberForCode()} />
 
             </div>
           </div>
