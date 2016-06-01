@@ -85,7 +85,11 @@ var BehaviorEditor = React.createClass({
   },
 
   getInitialTriggers: function() {
-    return this.props.triggers.length > 0 ? this.props.triggers : [""];
+    if (this.props.triggers && this.props.triggers.length > 0) {
+      return this.props.triggers;
+    } else {
+      return [""];
+    }
   },
 
   getInitialState: function() {
