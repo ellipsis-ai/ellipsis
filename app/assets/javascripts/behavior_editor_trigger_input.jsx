@@ -23,7 +23,7 @@ return React.createClass({
             className={"form-input-borderless " + (this.props.className || "")}
             ref="input"
             value={this.props.value}
-            placeholder="Add a trigger phrase or regular expression"
+            placeholder="Add a trigger phrase"
             onChange={this.props.onChange}
             onEnterKey={this.props.onEnterKey}
           />
