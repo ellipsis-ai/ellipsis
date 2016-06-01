@@ -1,10 +1,12 @@
 define(function(require) {
 var React = require('react'),
+  BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorInput = require('./behavior_editor_input');
 
 return React.createClass({
   displayName: 'BehaviorEditorTriggerInput',
+  mixins: [BehaviorEditorMixin],
   isEmpty: function() {
     return !this.props.value;
   },
@@ -18,7 +20,7 @@ return React.createClass({
       <div className="columns columns-elastic">
         <div className="column column-expand prn">
           <BehaviorEditorInput
-            className="form-input-borderless"
+            className={"form-input-borderless " + (this.props.className || "")}
             ref="input"
             value={this.props.value}
             placeholder="Add a trigger phrase or regular expression"
@@ -26,7 +28,7 @@ return React.createClass({
             onEnterKey={this.props.onEnterKey}
           />
         </div>
-        <div className="column column-shrink">
+        <div className={"column column-shrink" + this.visibleWhen(!this.props.hideDelete)}>
           <BehaviorEditorDeleteButton onClick={this.props.onDelete} />
         </div>
       </div>
