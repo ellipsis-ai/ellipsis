@@ -24,7 +24,6 @@ var BehaviorEditor = React.createClass({
   propTypes: {
     teamId: React.PropTypes.string.isRequired,
     behaviorId: React.PropTypes.string,
-    description: React.PropTypes.string,
     nodeFunction: React.PropTypes.string,
     responseTemplate: React.PropTypes.string,
     params: React.PropTypes.arrayOf(React.PropTypes.shape({
@@ -85,16 +84,23 @@ var BehaviorEditor = React.createClass({
     return "My answer is: " + responses[rand];
   },
 
+  getInitialTriggers: function() {
+    if (this.props.triggers && this.props.triggers.length > 0) {
+      return this.props.triggers;
+    } else {
+      return [""];
+    }
+  },
+
   getInitialState: function() {
     return {
       behavior: {
         teamId: this.props.teamId,
         behaviorId: this.props.behaviorId,
-        description: this.props.description,
         nodeFunction: this.props.nodeFunction,
         responseTemplate: this.props.responseTemplate,
         params: this.props.params,
-        triggers: this.props.triggers
+        triggers: this.getInitialTriggers()
       },
       codeEditorUseLineWrapping: false,
       settingsMenuVisible: false,
@@ -108,10 +114,6 @@ var BehaviorEditor = React.createClass({
 
   getBehaviorProp: function(key) {
     return this.state.behavior[key];
-  },
-
-  getBehaviorDescription: function() {
-    return this.getBehaviorProp('description');
   },
 
   getBehaviorNodeFunction: function() {
@@ -136,8 +138,7 @@ var BehaviorEditor = React.createClass({
   },
 
   hasMultipleTriggers: function() {
-    // TODO: update this when we stop using the description
-    return this.getBehaviorTriggers().length > 0;
+    return this.getBehaviorTriggers().length > 1;
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -215,10 +216,6 @@ var BehaviorEditor = React.createClass({
 
   focusOnLastParam: function() {
     this.focusOnParamIndex(this.getBehaviorParams().length - 1)
-  },
-
-  onDescriptionChange: function(newDescription) {
-    this.setBehaviorProp('description', newDescription);
   },
 
   onCodeChange: function(newCode) {
@@ -376,21 +373,15 @@ var BehaviorEditor = React.createClass({
 
             </div>
             <div className="column column-three-quarters pll form-field-group">
-              <div className="mbs pr-symbol">
-                <BehaviorEditorInput
-                  className="form-input-borderless form-input-large"
-                  placeholder="Describe the behavior in one phrase"
-                  value={this.getBehaviorDescription()}
-                  onChange={this.onDescriptionChange}
-                />
-              </div>
               <div className="mbm">
               {this.getBehaviorTriggers().map(function(trigger, index) {
                 return (
                   <BehaviorEditorTriggerInput
+                    className={index === 0 ? "form-input-large" : ""}
                     key={"BehaviorEditorTrigger" + index}
                     ref={"trigger" + index}
                     value={trigger}
+                    hideDelete={index === 0}
                     onChange={this.onTriggerChange.bind(this, index)}
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}
