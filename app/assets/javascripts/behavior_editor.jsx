@@ -4,6 +4,7 @@ var React = require('react'),
   Codemirror = require('./react-codemirror'),
   CodemirrorJSMode = require('./codemirror/mode/javascript/javascript'),
   CodemirrorMarkdownMode = require('./codemirror/mode/markdown/markdown'),
+  CodemirrorShowHint = require('./codemirror/addon/hint/show-hint'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
@@ -335,6 +336,40 @@ var BehaviorEditor = React.createClass({
     }
   },
 
+  autocompleteParams: function(cm, options) {
+    var matches = [];
+    var possibleWords = ["onSuccess", "onError", "ellipsis"].concat(this.getBehaviorParams());
+    this.state.envVariableNames.forEach(function(name) {
+      possibleWords.push('ellipsis.env.' + name);
+    });
+
+    var cursor = cm.getCursor();
+    var line = cm.getLine(cursor.line);
+    var start = cursor.ch;
+    var end = cursor.ch;
+
+    while (start && /\w/.test(line.charAt(start - 1))) {
+      --start;
+    }
+    while (end < line.length && /\w/.test(line.charAt(end))) {
+      ++end;
+    }
+
+    var word = line.slice(start, end).toLowerCase();
+
+    possibleWords.forEach(function(w) {
+      if (w.indexOf(word) !== -1) {
+        matches.push(w);
+      }
+    });
+
+    return {
+      list: matches,
+      from: { line: cursor.line, ch: start },
+      to: { line: cursor.line, ch: end }
+    }
+  },
+
   onSaveClick: function() {
     this.setState({
       isSaving: true
@@ -474,6 +509,7 @@ var BehaviorEditor = React.createClass({
                   options={{
                     mode: "javascript",
                     firstLineNumber: this.getFirstLineNumberForCode(),
+                    hintOptions: { hint: this.autocompleteParams },
                     indentUnit: 2,
                     indentWithTabs: false,
                     lineWrapping: this.state.codeEditorUseLineWrapping,
@@ -482,6 +518,7 @@ var BehaviorEditor = React.createClass({
                     tabSize: 2,
                     viewportMargin: Infinity,
                     extraKeys: {
+                      Esc: "autocomplete",
                       Tab: function(cm) {
                         var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
                         cm.replaceSelection(spaces);
