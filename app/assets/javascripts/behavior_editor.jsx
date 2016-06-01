@@ -85,15 +85,7 @@ var BehaviorEditor = React.createClass({
   },
 
   getInitialTriggers: function() {
-    // TODO: remove this method once if we've banished the description
-    var triggers = [];
-    if (this.props.description) {
-      triggers.push(this.props.description);
-    }
-    if (this.props.triggers) {
-      triggers = triggers.concat(this.props.triggers);
-    }
-    return triggers;
+    return this.props.triggers.length > 0 ? this.props.triggers : [""];
   },
 
   getInitialState: function() {
