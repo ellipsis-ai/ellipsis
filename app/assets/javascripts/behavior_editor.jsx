@@ -71,7 +71,7 @@ var BehaviorEditor = React.createClass({
   },
 
   shouldRevealCodeEditor: function() {
-    return this.props.shouldRevealCodeEditor || this.props.nodeFunction
+    return !!(this.props.shouldRevealCodeEditor || this.props.nodeFunction)
   },
 
   getMagic8BallResponse: function() {
@@ -417,7 +417,7 @@ var BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={this.state.revealCodeEditor}>
+          <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
           <div className="columns">
             <div className="column column-one-quarter form-field-group">
 
