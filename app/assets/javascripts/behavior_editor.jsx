@@ -135,9 +135,18 @@ var BehaviorEditor = React.createClass({
     return this.getBehaviorProp('triggers');
   },
 
+  hasCode: function() {
+    return !!this.getBehaviorNodeFunction();
+  },
+
   hasCalledOnSuccess: function() {
     var code = this.getBehaviorNodeFunction();
     return code && code.match(/\bonSuccess\(.+?\)/);
+  },
+
+  hasPrimaryTrigger: function() {
+    var triggers = this.getBehaviorTriggers();
+    return triggers.length > 0 && triggers[0];
   },
 
   hasMultipleTriggers: function() {
@@ -307,21 +316,54 @@ var BehaviorEditor = React.createClass({
     return this.hasParams();
   },
 
+  templateUsesMarkdown: function() {
+    var template = this.getBehaviorTemplate();
+    /* Big ugly flaming pile of regex to try and guess at Markdown usage: */
+    var matches = [
+      '\\*.+?\\*', /* Bold/italics */
+      '_.+?_', /* Bold/italics */
+      '\\[.+?\\]\\(.+?\\)', /* Links */
+      '(\\[.+?\\]){2}', /* Links by reference */
+      '^.+\\n[=-]+', /* Underlined headers */
+      '^#+\\s+.+', /* # Headers */
+      '^\\d\\.\\s+.+', /* Numbered lists */
+      '^\\*\\s+.+', /* Bulleted lists */
+      '^>.+', /* Block quote */
+      '`.+?`', /* Code */
+      '```', /* Code block */
+      '^\\s*[-\\*]\\s*[-\\*]\\s*[-\\*]' /* Horizontal rule */
+    ];
+    var matchRegExp = new RegExp( '(' + matches.join( ')|(' ) + ')' );
+    return template && template.match(matchRegExp);
+  },
+
+  templateIncludesParam: function() {
+    var template = this.getBehaviorTemplate();
+    return template && template.match(/\{\S+?\}/);
+  },
+
   getTemplateHelp: function() {
     if (this.state.revealCodeEditor) {
       return (
-        <span>
-          <span>You can include any user-supplied parameters, plus the special </span>
-          <span><code>{"{successResult}"}</code> variable.</span>
-        </span>
+        <li className={this.templateIncludesParam() ? "checklist-checked" : ""}>
+          <span>
+            <span>Use <code>{"{exampleParamName}"}</code> to show any user-supplied parameter, or </span>
+            <span><code>{"{successResult}"}</code> to show the parameter provided to </span>
+            <span><code>onSuccess</code> in your code.</span>
+          </span>
+        </li>
       );
     } else if (this.hasUserParameters()) {
       return (
-        <span>You can include any user-supplied parameters.</span>
+        <li className={this.templateIncludesParam() ? "checklist-checked" : ""}>
+          <span>Use <code>{"{exampleParamName}"}</code> to show any user-supplied parameter.</span>
+        </li>
       )
     } else {
       return (
-        <span>Add code if you want to collect user input before returning a response.</span>
+        <li>
+          <span>Add code above if you want to collect user input before returning a response.</span>
+        </li>
       );
     }
   },
@@ -367,7 +409,9 @@ var BehaviorEditor = React.createClass({
               <BehaviorEditorSectionHeading>When someone says</BehaviorEditorSectionHeading>
 
               <ul className="type-s list-space-s checklist">
-                <li>Write a question or phrase people should use to trigger a response.</li>
+                <li className={this.hasPrimaryTrigger() ? "checklist-checked" : ""}>
+                  Write a question or phrase people should use to trigger a response.
+                </li>
                 <li className={this.hasMultipleTriggers() ? "checklist-checked" : ""}>You can add multiple triggers.</li>
               </ul>
 
@@ -424,7 +468,7 @@ var BehaviorEditor = React.createClass({
               <BehaviorEditorSectionHeading>Ellipsis will do</BehaviorEditorSectionHeading>
 
               <ul className="type-s list-space-s checklist">
-                <li className="">
+                <li className={this.hasCode() ? "checklist-checked" : ""}>
                   <span>Write a node.js function to determine a result.</span>
                 </li>
 
@@ -501,14 +545,12 @@ var BehaviorEditor = React.createClass({
               <BehaviorEditorSectionHeading>{this.getResponseHeader()}</BehaviorEditorSectionHeading>
 
               <ul className="type-s list-space-s checklist">
-                <li>
+                <li className={this.templateUsesMarkdown() ? "checklist-checked" : ""}>
                   <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
                   <span>to format the response, add links, etc.</span>
                 </li>
 
-                <li>
-                  {this.getTemplateHelp()}
-                </li>
+                {this.getTemplateHelp()}
               </ul>
 
             </div>
@@ -516,6 +558,7 @@ var BehaviorEditor = React.createClass({
             <div className="column column-three-quarters pll mbxl">
               <div className="position-relative CodeMirror-container-no-gutter">
                 <Codemirror value={this.getBehaviorTemplate()}
+                  ref="template"
                   onChange={this.onTemplateChange}
                   options={{
                     mode: {
