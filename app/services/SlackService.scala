@@ -86,17 +86,15 @@ class SlackService @Inject() (
             s"`${ea.regex.pattern.pattern()}`"
           }.mkString(" or ")
           val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
-            s" <$link|Edit>"
+            s" <$link|Details>"
           }.getOrElse("")
-          behavior.maybeDescription.map { desc =>
-            s"\n• $desc when someone types $triggersString $editLink"
-          }
+          s"\n• $triggersString $editLink"
         }.mkString("")
         val matchString = maybeHelpSearch.map { s =>
           s" that matches `$s`"
         }.getOrElse("")
         val text = s"""
-           |Here's what I can do$matchString:$behaviorsString
+           |Here's what I respond to$matchString:$behaviorsString
            |
            |To teach me something new, just type `@ellipsis: learn`
            |""".stripMargin
