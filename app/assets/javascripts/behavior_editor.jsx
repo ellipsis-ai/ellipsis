@@ -558,7 +558,6 @@ var BehaviorEditor = React.createClass({
             <div className="column column-three-quarters pll mbxl">
               <div className="position-relative CodeMirror-container-no-gutter">
                 <Codemirror value={this.getBehaviorTemplate()}
-                  ref="template"
                   onChange={this.onTemplateChange}
                   options={{
                     mode: {
