@@ -3,15 +3,17 @@ package services
 import javax.inject._
 import com.amazonaws.AmazonServiceException
 import models._
-import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
+import models.accounts.{OAuth2Token, SlackProfileQueries, SlackBotProfileQueries, SlackBotProfile}
 import models.bots._
 import models.bots.conversations.{LearnBehaviorConversation, Conversation, ConversationQueries}
 import play.api.i18n.MessagesApi
 import play.api.inject.ApplicationLifecycle
+import slack.api.SlackApiClient
 import slack.models.Message
 import slack.rtm.SlackRtmClient
 import akka.actor.ActorSystem
 import slick.driver.PostgresDriver.api._
+import utils.QuestionAnswerExtractor
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -154,17 +156,60 @@ class SlackService @Inject() (
     }
   }
 
+  def remember(client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
+    for {
+      maybeTeam <- Team.find(profile.teamId)
+      maybeSlackProfile <- SlackProfileQueries.allFor(profile.slackTeamId).map(_.headOption)
+      maybeOAuthToken <- maybeSlackProfile.map { profile =>
+        OAuth2Token.findByLoginInfo(profile.loginInfo)
+      }.getOrElse(DBIO.successful(None))
+      maybeUserClient <- DBIO.successful(maybeOAuthToken.map { token =>
+        SlackApiClient(token.accessToken)
+      })
+      maybeHistory <- maybeUserClient.map { userClient =>
+        DBIO.from(userClient.getChannelHistory(message.channel, latest = Some(message.ts))).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+      messages <- DBIO.successful(maybeHistory.map { history =>
+        history.messages.slice(0, 10).reverse.flatMap { json =>
+          (json \ "text").asOpt[String]
+        }
+      }.getOrElse(Seq()))
+      qaExtractor <- DBIO.successful(QuestionAnswerExtractor(messages))
+      maybeBehavior <- maybeTeam.map { team =>
+        BehaviorQueries.createFor(team).flatMap { behavior =>
+          behavior.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)).save.flatMap { behaviorWithContent =>
+            qaExtractor.maybeLastQuestion.map { lastQuestion =>
+              RegexMessageTriggerQueries.ensureFor(behavior, lastQuestion.r)
+            }.getOrElse {
+              DBIO.successful()
+            }.map(_ => behaviorWithContent)
+          }
+        }.map(Some(_)) transactionally
+      }.getOrElse(DBIO.successful(None))
+    } yield {
+      maybeBehavior.foreach { behavior =>
+        val messageContext = SlackContext(client, profile, message)
+        behavior.editLinkFor(lambdaService.configuration).foreach { link =>
+          SlackMessageEvent(messageContext).context.sendMessage(s"OK, I compiled recent messages at $link")
+        }
+      }
+
+    }
+  }
+
   def handleMessageFor(client: SlackRtmClient, profile: SlackBotProfile, message: Message, selfId: String): DBIO[Unit] = {
     val setEnvironmentVariableRegex = s"""<@$selfId>:\\s+set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
     val startLearnConversationRegex = s"""<@$selfId>:\\s+learn\\s*$$""".r
     val unlearnRegex = s"""<@$selfId>:\\s+unlearn\\s+(\\S+)""".r
     val helpRegex = s"""<@$selfId>:\\s+help\\s*(\\S*.*)$$""".r
+    val rememberRegex = s"""<@$selfId>:\\s+(remember|\\^)\\s*$$""".r
 
     message.text match {
       case setEnvironmentVariableRegex(name, value) => setEnvironmentVariable(name, value, client, profile, message)
       case startLearnConversationRegex() => startLearnConversationFor(client, profile, message)
       case unlearnRegex(regexString) => unlearnBehaviorFor(regexString, client, profile, message)
       case helpRegex(helpString) => displayHelpFor(helpString, client, profile, message)
+      case rememberRegex(cmd) => remember(client, profile, message)
       case _ => startInvokeConversationFor(client, profile, message)
     }
   }
