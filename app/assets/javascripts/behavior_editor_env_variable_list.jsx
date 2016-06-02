@@ -30,8 +30,8 @@ return React.createClass({
 
         <div className="phs pvxs bg-blue-lightest type-weak border border-blue">
           <div
-            className="display display-ellipsis"
-            style={{ maxHeight: this.maxHeightForVars() }}
+            className="display-ellipsis"
+            style={{ maxHeight: this.maxHeightForVars(), transition: 'max-height 0.15s ease' }}
           >
             <code className="prs">{'ellipsis.env: {'}</code>
             {this.props.envVariableNames.map(function(name, index) {

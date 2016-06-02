@@ -17,6 +17,7 @@ var React = require('react'),
   BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
+  Collapsible = require('./collapsible'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input');
 
 var BehaviorEditor = React.createClass({
@@ -70,7 +71,7 @@ var BehaviorEditor = React.createClass({
   },
 
   shouldRevealCodeEditor: function() {
-    return this.props.shouldRevealCodeEditor || this.props.nodeFunction
+    return !!(this.props.shouldRevealCodeEditor || this.props.nodeFunction)
   },
 
   getMagic8BallResponse: function() {
@@ -286,23 +287,12 @@ var BehaviorEditor = React.createClass({
   },
 
   toggleBoilerplateHelp: function() {
-    /* Reset height of the container to its only child
-       before toggling it so the animation is smooth */
-
-    var container = this.refs.boilerplateHelpContainer;
-    container.style.maxHeight = container.children[0].offsetHeight + 'px';
-
     this.setState({
       boilerplateHelpVisible: !this.state.boilerplateHelpVisible
     });
   },
 
   toggleEnvVariableExpansion: function() {
-    /* Reset max height of the container so it can expand */
-
-    var container = this.refs.boilerplateHelpContainer;
-    container.style.maxHeight = 'none';
-
     this.setState({
       expandEnvVariables: !this.state.expandEnvVariables
     });
@@ -405,11 +395,11 @@ var BehaviorEditor = React.createClass({
             </div>
           </div>
 
-          <div className={this.visibleWhen(this.state.revealCodeEditor, true)}>
+          <Collapsible revealWhen={this.state.revealCodeEditor}>
             <hr className="mtn" />
-          </div>
+          </Collapsible>
 
-          <div className={this.visibleWhen(!this.state.revealCodeEditor, true)}>
+          <Collapsible revealWhen={!this.state.revealCodeEditor}>
             <div className="bg-blue-lighter border border-blue pal form-field-group">
             <div className="columns columns-elastic">
               <div className="column column-expand">
@@ -425,9 +415,10 @@ var BehaviorEditor = React.createClass({
               </div>
             </div>
             </div>
-          </div>
+          </Collapsible>
 
-          <div className={"columns" + this.visibleWhen(this.state.revealCodeEditor, true)}>
+          <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
+          <div className="columns">
             <div className="column column-one-quarter form-field-group">
 
               <BehaviorEditorSectionHeading>Ellipsis will do</BehaviorEditorSectionHeading>
@@ -464,17 +455,14 @@ var BehaviorEditor = React.createClass({
                 onToggleHelp={this.toggleBoilerplateHelp}
               />
 
-              <div
-                className={this.visibleWhen(this.state.boilerplateHelpVisible, true)}
-                ref="boilerplateHelpContainer"
-              >
+              <Collapsible revealWhen={this.state.boilerplateHelpVisible}>
                 <BehaviorEditorBoilerplateParameterHelp
                   envVariableNames={this.state.envVariableNames}
                   onExpandToggle={this.toggleEnvVariableExpansion}
                   expandEnvVariables={this.state.expandEnvVariables}
                   onCollapseClick={this.toggleBoilerplateHelp}
                 />
-              </div>
+              </Collapsible>
 
               <div className="position-relative pr-symbol border-right">
                 <BehaviorEditorCodeEditor
@@ -503,9 +491,8 @@ var BehaviorEditor = React.createClass({
             </div>
           </div>
 
-          <div className={this.visibleWhen(this.state.revealCodeEditor, true)}>
-            <hr className="mtn" />
-          </div>
+          <hr className="mtn" />
+          </Collapsible>
 
           <div className="columns">
 
