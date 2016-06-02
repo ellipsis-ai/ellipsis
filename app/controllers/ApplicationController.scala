@@ -238,8 +238,8 @@ class ApplicationController @Inject() (
         val action = for {
           maybeBehavior <- BehaviorQueries.find(behaviorId)
           _ <- maybeBehavior.map { behavior =>
-            BehaviorQueries.delete(behavior)
-          }
+            behavior.unlearn(lambdaService)
+          }.getOrElse(DBIO.successful(Unit))
         } yield Redirect(routes.ApplicationController.index())
 
         models.run(action)
