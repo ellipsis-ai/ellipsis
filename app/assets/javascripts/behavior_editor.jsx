@@ -153,6 +153,12 @@ var BehaviorEditor = React.createClass({
     return this.getBehaviorTriggers().length > 1;
   },
 
+  triggersUseParams: function() {
+    return this.getBehaviorTriggers().some(function(trigger) {
+      return trigger.match(/{.+}/);
+    });
+  },
+
   getDefaultBehaviorTemplate: function() {
     var result = '',
       params = this.getBehaviorParams();
@@ -412,7 +418,12 @@ var BehaviorEditor = React.createClass({
                 <li className={this.hasPrimaryTrigger() ? "checklist-checked" : ""}>
                   Write a question or phrase people should use to trigger a response.
                 </li>
-                <li className={this.hasMultipleTriggers() ? "checklist-checked" : ""}>You can add multiple triggers.</li>
+                <li className={this.hasMultipleTriggers() ? "checklist-checked" : ""}>
+                  You can add multiple triggers.
+                </li>
+                <li className={this.triggersUseParams() ? "checklist-checked" : ""}>
+                  <span>A trigger can include “fill-in-the-blank” parts, e.g. <code>{"My name is {name}"}</code></span>
+                </li>
               </ul>
 
             </div>
