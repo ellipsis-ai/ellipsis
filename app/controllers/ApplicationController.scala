@@ -5,10 +5,11 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{ Environment, LogoutEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import models.bots.triggers.RegexMessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
 import models.bots.conversations.LearnBehaviorConversation
-import models.bots.{RegexMessageTriggerQueries, BehaviorParameterQueries, BehaviorQueries}
+import models.bots.{BehaviorParameterQueries, BehaviorQueries}
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._

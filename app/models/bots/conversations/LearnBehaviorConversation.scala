@@ -2,6 +2,7 @@ package models.bots.conversations
 
 import models.IDs
 import models.bots._
+import models.bots.triggers.RegexMessageTriggerQueries
 import org.joda.time.DateTime
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._

@@ -6,6 +6,7 @@ import models._
 import models.accounts.{OAuth2Token, SlackProfileQueries, SlackBotProfileQueries, SlackBotProfile}
 import models.bots._
 import models.bots.conversations.{LearnBehaviorConversation, Conversation, ConversationQueries}
+import models.bots.triggers.RegexMessageTriggerQueries
 import play.api.i18n.MessagesApi
 import play.api.inject.ApplicationLifecycle
 import slack.api.SlackApiClient
@@ -41,7 +42,7 @@ class SlackService @Inject() (
       maybeTeam <- Team.find(profile.teamId)
       behaviorResponses <- maybeTeam.map { team =>
         val messageContext = SlackContext(client, profile, message)
-        RegexMessageTriggerQueries.behaviorResponsesFor(SlackMessageEvent(messageContext), team)
+        BehaviorResponse.allFor(SlackMessageEvent(messageContext), team)
       }.getOrElse(DBIO.successful(Seq()))
       _ <- DBIO.sequence(behaviorResponses.map(_.run(lambdaService)))
     } yield Unit
@@ -133,7 +134,7 @@ class SlackService @Inject() (
       maybeTeam <- Team.find(profile.teamId)
       behaviorResponses <- maybeTeam.map { team =>
         val messageContext = SlackContext(client, profile, message)
-        RegexMessageTriggerQueries.behaviorResponsesFor(SlackMessageEvent(messageContext), team)
+        BehaviorResponse.allFor(SlackMessageEvent(messageContext), team)
       }.getOrElse(DBIO.successful(Seq()))
       maybeResponse <- DBIO.successful(behaviorResponses.headOption)
       _ <- maybeResponse.map { response =>
