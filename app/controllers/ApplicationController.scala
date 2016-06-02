@@ -225,5 +225,27 @@ class ApplicationController @Inject() (
     )
   }
 
+  private val deleteBehaviorForm = Form(
+    "behaviorId" -> nonEmptyText
+  )
+
+  def deleteBehavior = SecuredAction.async { implicit request =>
+    deleteBehaviorForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      behaviorId => {
+        val action = for {
+          maybeBehavior <- BehaviorQueries.find(behaviorId)
+          _ <- maybeBehavior.map { behavior =>
+            BehaviorQueries.delete(behavior)
+          }
+        } yield Redirect(routes.ApplicationController.index())
+
+        models.run(action)
+      }
+    )
+  }
+
 
 }
