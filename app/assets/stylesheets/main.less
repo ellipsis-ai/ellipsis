@@ -1117,27 +1117,8 @@ button.button-dropdown-trigger {
   opacity: 1;
 }
 
-/* Display utilities only work on block elements */
-
-.display {
-  transition:
-    max-height 0.25s ease-out,
-    white-space 0.25s ease-out;
-  overflow: hidden;
-}
-
-.display-hidden {
-  max-height: 0 !important;
-}
-
 .display-none {
-  /* Prevents animation */
   display: none;
-}
-
-.display-visible {
-  /* This works better if the element has an explicit max height set */
-  max-height: 10000px;
 }
 
 .display-inline {
@@ -1149,8 +1130,10 @@ button.button-dropdown-trigger {
 }
 
 .display-ellipsis {
+  display: block;
   text-overflow: ellipsis;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .display-limit-width {
