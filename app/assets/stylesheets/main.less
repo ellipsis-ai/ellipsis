@@ -363,6 +363,16 @@ So for example:
   border-bottom-right-radius: @border-radius;
 }
 
+/* Boxes combined background and border */
+
+.box-help {
+  .bg-blue-lighter();
+  .border();
+  .border-blue();
+  .pal();
+  .position-relative();
+}
+
 /* Foreground type utilities */
 
 .type-bold {
@@ -981,6 +991,10 @@ button.button-s.button-symbol:focus {
 button:active {
   background-color: @black-translucent;
   border-color: @blue-dark;
+}
+
+button.button-subtle:active {
+  border-color: @blue-dark !important;
 }
 
 button.button-none,
