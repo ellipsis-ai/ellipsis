@@ -13,7 +13,9 @@ case class RegexMessageTrigger(
                                 regex: Regex
                                 ) extends MessageTrigger {
 
-  protected def rankMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]] = {
+  val pattern: String = regex.pattern.pattern()
+
+  protected def paramIndexMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]] = {
     0.to(regex.pattern.matcher("").groupCount()).map { i =>
       Some(i)
     }

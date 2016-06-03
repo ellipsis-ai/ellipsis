@@ -13,6 +13,7 @@ case class TemplateMessageTrigger(
                                 template: String
                                 ) extends MessageTrigger {
 
+  val pattern: String = template
 
   val regex: Regex = {
     var pattern = template
@@ -26,9 +27,9 @@ case class TemplateMessageTrigger(
     """\{(.*?)\}""".r.findAllMatchIn(template).flatMap(_.subgroups).toSeq
   }
 
-  protected def rankMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]] = {
+  protected def paramIndexMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]] = {
     templateParamNames.map { paramName =>
-      params.find(_.name == paramName).map(_.rank)
+      params.find(_.name == paramName).map(_.rank - 1)
     }
   }
 
