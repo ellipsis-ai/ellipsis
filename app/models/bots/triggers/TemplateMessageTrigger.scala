@@ -19,7 +19,7 @@ case class TemplateMessageTrigger(
     var pattern = template
     pattern = """\{.*?\}""".r.replaceAllIn(pattern, """(\\S+)""")
     pattern = """\s+""".r.replaceAllIn(pattern, """\\s+""")
-    pattern = "^" ++ pattern
+    pattern = "(?i)^" ++ pattern
     pattern.r
   }
 
