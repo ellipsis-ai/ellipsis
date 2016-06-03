@@ -15,6 +15,7 @@ var React = require('react'),
   BehaviorEditorSectionHeading = require('./behavior_editor_section_heading'),
   BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
   BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
+  BehaviorEditorTriggerHelp = require('./behavior_editor_trigger_help'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
   Collapsible = require('./collapsible'),
@@ -111,7 +112,8 @@ var BehaviorEditor = React.createClass({
       expandEnvVariables: false,
       envVariableNames: this.props.envVariableNames,
       revealCodeEditor: this.shouldRevealCodeEditor(),
-      magic8BallResponse: this.getMagic8BallResponse()
+      magic8BallResponse: this.getMagic8BallResponse(),
+      triggerHelpVisible: false
     };
   },
 
@@ -283,6 +285,12 @@ var BehaviorEditor = React.createClass({
     this.setBehaviorProp('triggers', this.utils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
   },
 
+  toggleTriggerHelp: function() {
+    this.setState({
+      triggerHelpVisible: !this.state.triggerHelpVisible
+    });
+  },
+
   toggleCodeEditor: function() {
     this.setState({
       revealCodeEditor: !this.state.revealCodeEditor
@@ -422,12 +430,17 @@ var BehaviorEditor = React.createClass({
                   You can add multiple triggers.
                 </li>
                 <li className={this.triggersUseParams() ? "checklist-checked" : ""}>
-                  <span>A trigger can include “fill-in-the-blank” parts, e.g. <code>{"My name is {name}"}</code></span>
+                  <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
+                  <span className="pls"><BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} /></span>
                 </li>
               </ul>
 
             </div>
             <div className="column column-three-quarters pll form-field-group">
+              <Collapsible revealWhen={this.state.triggerHelpVisible}>
+                <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
+              </Collapsible>
+
               <div className="mbm">
               {this.getBehaviorTriggers().map(function(trigger, index) {
                 return (
