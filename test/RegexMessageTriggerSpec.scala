@@ -39,7 +39,7 @@ class RegexMessageTriggerSpec extends PlaySpec {
 
     "build an invocation parameter" in {
       val trigger = triggerFor(oneParamPattern)
-      val params = Seq(BehaviorParameter(IDs.next, "version", 0, trigger.behavior, None, None))
+      val params = Seq(BehaviorParameter(IDs.next, "version", 1, trigger.behavior, None, None))
       val invocationParams = trigger.invocationParamsFor("deploy ellipsis-12345", params)
       invocationParams mustBe Map("param0" -> "ellipsis-12345")
     }
@@ -47,8 +47,8 @@ class RegexMessageTriggerSpec extends PlaySpec {
     "build two invocation parameters" in {
       val trigger = triggerFor(twoParamPattern)
       val params = Seq(
-        BehaviorParameter(IDs.next, "version", 0, trigger.behavior, None, None),
-        BehaviorParameter(IDs.next, "subversion", 1, trigger.behavior, None, None)
+        BehaviorParameter(IDs.next, "version", 1, trigger.behavior, None, None),
+        BehaviorParameter(IDs.next, "subversion", 2, trigger.behavior, None, None)
       )
       val invocationParams = trigger.invocationParamsFor("deploy ellipsis-12345 0.0.1", params)
       invocationParams mustBe Map("param0" -> "ellipsis-12345", "param1" -> "0.0.1")
