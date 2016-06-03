@@ -6,7 +6,7 @@ import models._
 import models.accounts.{OAuth2Token, SlackProfileQueries, SlackBotProfileQueries, SlackBotProfile}
 import models.bots._
 import models.bots.conversations.{LearnBehaviorConversation, Conversation, ConversationQueries}
-import models.bots.triggers.RegexMessageTriggerQueries
+import models.bots.triggers.MessageTriggerQueries
 import play.api.i18n.MessagesApi
 import play.api.inject.ApplicationLifecycle
 import slack.api.SlackApiClient
@@ -48,13 +48,13 @@ class SlackService @Inject() (
     } yield Unit
   }
 
-  private def unlearnBehaviorFor(regexString: String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
+  private def unlearnBehaviorFor(patternString: String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
     val eventualReply = try {
       for {
-        triggers <- RegexMessageTriggerQueries.allMatching(regexString, profile.teamId)
+        triggers <- MessageTriggerQueries.allMatching(patternString, profile.teamId)
         _ <- DBIO.sequence(triggers.map(_.behavior.unlearn(lambdaService)))
       } yield {
-        s"$regexString? Never heard of it."
+        s"$patternString? Never heard of it."
       }
     } catch {
       case e: AmazonServiceException => DBIO.successful("D'oh! That didn't work.")
@@ -71,20 +71,20 @@ class SlackService @Inject() (
       maybeTeam <- Team.find(profile.teamId)
       matchingTriggers <- maybeTeam.map { team =>
         maybeHelpSearch.map { helpSearch =>
-          RegexMessageTriggerQueries.allMatching(helpSearch, team.id)
+          MessageTriggerQueries.allMatching(helpSearch, team.id)
         }.getOrElse {
-          RegexMessageTriggerQueries.allFor(team)
+          MessageTriggerQueries.allFor(team)
         }
       }.getOrElse(DBIO.successful(Seq()))
       behaviors <- DBIO.successful(matchingTriggers.map(_.behavior).distinct)
       triggersForBehaviors <- DBIO.sequence(behaviors.map { ea =>
-        RegexMessageTriggerQueries.allFor(ea)
+        MessageTriggerQueries.allFor(ea)
       }).map(_.flatten)
     } yield {
         val grouped = triggersForBehaviors.groupBy(_.behavior)
         val behaviorsString = grouped.flatMap { case(behavior, triggers) =>
           val triggersString = triggers.map { ea =>
-            s"`${ea.regex.pattern.pattern()}`"
+            s"`${ea.pattern}`"
           }.mkString(" or ")
           val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
             s" <$link|Details>"
@@ -178,7 +178,7 @@ class SlackService @Inject() (
         BehaviorQueries.createFor(team).flatMap { behavior =>
           behavior.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)).save.flatMap { behaviorWithContent =>
             qaExtractor.maybeLastQuestion.map { lastQuestion =>
-              RegexMessageTriggerQueries.ensureFor(behavior, lastQuestion.r)
+              MessageTriggerQueries.ensureFor(behavior, lastQuestion)
             }.getOrElse {
               DBIO.successful()
             }.map(_ => behaviorWithContent)

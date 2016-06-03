@@ -2,7 +2,7 @@ package models.bots.conversations
 
 import models.IDs
 import models.bots._
-import models.bots.triggers.RegexMessageTriggerQueries
+import models.bots.triggers.MessageTriggerQueries
 import org.joda.time.DateTime
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
@@ -97,7 +97,7 @@ case class LearnBehaviorConversation(
     val phrases = message.split("""\s*,\s*""").toSeq
     for {
       _ <- DBIO.sequence(phrases.map { phrase =>
-        RegexMessageTriggerQueries.ensureFor(behavior, phrase.r)
+        MessageTriggerQueries.ensureFor(behavior, phrase)
       })
       updatedConversation <- updateStateTo(Conversation.DONE_STATE)
     } yield updatedConversation

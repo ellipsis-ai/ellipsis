@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{ Environment, LogoutEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import models.bots.triggers.RegexMessageTriggerQueries
+import models.bots.triggers.MessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
 import models.bots.conversations.LearnBehaviorConversation
@@ -132,7 +132,7 @@ class ApplicationController @Inject() (
         BehaviorParameterQueries.allFor(behavior).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeTriggers <- maybeBehavior.map { behavior =>
-        RegexMessageTriggerQueries.allFor(behavior).map(Some(_))
+        MessageTriggerQueries.allFor(behavior).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeEnvironmentVariables <- maybeBehavior.map { behavior =>
         EnvironmentVariableQueries.allFor(behavior.team).map(Some(_))
@@ -155,7 +155,7 @@ class ApplicationController @Inject() (
             params.map { ea =>
               BehaviorParameterData(ea.name, ea.question)
             },
-            triggers.map(ea => ea.regex.pattern.pattern())
+            triggers.map(_.pattern)
           )
           Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name)))
         }).getOrElse {
@@ -200,12 +200,12 @@ class ApplicationController @Inject() (
                     maybeResponseTemplate = Some(data.responseTemplate)
                   ).save
                   _ <- BehaviorParameterQueries.ensureFor(behavior, data.params.map(ea => (ea.name, Some(ea.question))))
-                  _ <- RegexMessageTriggerQueries.deleteAllFor(behavior)
+                  _ <- MessageTriggerQueries.deleteAllFor(behavior)
                   _ <- DBIO.sequence(
                     data.triggers.
                       filterNot(_.trim.isEmpty).
                       map { trigger =>
-                        RegexMessageTriggerQueries.ensureFor(behavior, trigger.r)
+                        MessageTriggerQueries.ensureFor(behavior, trigger)
                       }
                     )
                 } yield Unit) transactionally

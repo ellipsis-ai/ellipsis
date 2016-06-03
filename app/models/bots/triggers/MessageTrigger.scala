@@ -1,32 +1,99 @@
 package models.bots.triggers
 
-import models.bots.{SlackMessageEvent, Event}
-import services.AWSLambdaConstants
+import java.util.regex.PatternSyntaxException
 
+import models.Team
+import models.bots.{Behavior, BehaviorParameter, SlackMessageEvent, Event}
+import services.AWSLambdaConstants
+import slick.driver.PostgresDriver.api._
 import scala.util.matching.Regex
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait MessageTrigger extends Trigger {
 
+  val pattern: String
   val regex: Regex
 
-  def paramsFor(event: Event): Map[String, String] = {
+  protected def paramIndexMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]]
+
+  def invocationParamsFor(message: String, params: Seq[BehaviorParameter]): Map[String, String] = {
+    regex.findFirstMatchIn(message).map { firstMatch =>
+      firstMatch.subgroups.zip(paramIndexMaybesFor(params)).flatMap { case(paramValue, maybeRank) =>
+        maybeRank.map { rank =>
+          (AWSLambdaConstants.invocationParamFor(rank), paramValue)
+        }
+      }.toMap
+    }.getOrElse(Map())
+  }
+
+  def invocationParamsFor(event: Event, params: Seq[BehaviorParameter]): Map[String, String] = {
     event match {
-      case e: SlackMessageEvent => {
-        regex.findFirstMatchIn(e.context.message.text).map { firstMatch =>
-          firstMatch.subgroups.zipWithIndex.map { case(param, i) =>
-            (AWSLambdaConstants.invocationParamFor(i), param)
-          }.toMap
-        }.getOrElse(Map())
-      }
+      case e: SlackMessageEvent => invocationParamsFor(e.context.message.text, params)
       case _ => Map()
     }
   }
 
+  def matches(text: String): Boolean = regex.findFirstMatchIn(text).nonEmpty
+
   def isActivatedBy(event: Event): Boolean = {
     event match {
-      case e: SlackMessageEvent => regex.findFirstMatchIn(e.context.message.text).nonEmpty
+      case e: SlackMessageEvent => matches(e.context.message.text)
       case _ => false
     }
+  }
+
+}
+
+object MessageTriggerQueries {
+
+  def allFor(team: Team): DBIO[Seq[MessageTrigger]] = {
+    for {
+      regexTriggers <- RegexMessageTriggerQueries.allFor(team)
+      templateTriggers <- TemplateMessageTriggerQueries.allFor(team)
+    } yield regexTriggers ++ templateTriggers
+  }
+
+  def allFor(behavior: Behavior): DBIO[Seq[MessageTrigger]] = {
+    for {
+      regexTriggers <- RegexMessageTriggerQueries.allFor(behavior)
+      templateTriggers <- TemplateMessageTriggerQueries.allFor(behavior)
+    } yield regexTriggers ++ templateTriggers
+  }
+
+  def allMatching(pattern: String, teamId: String): DBIO[Seq[MessageTrigger]] = {
+    for {
+      regexTriggers <- RegexMessageTriggerQueries.allMatching(pattern, teamId)
+      templateTriggers <- TemplateMessageTriggerQueries.allMatching(pattern, teamId)
+    } yield regexTriggers ++ templateTriggers
+  }
+
+  private def canCompileAsRegex(pattern: String): Boolean = {
+    try {
+      pattern.r
+      true
+    } catch {
+      case e: PatternSyntaxException => false
+    }
+  }
+
+  // ¯\_(ツ)_/¯
+  private def looksLikeRegex(pattern: String): Boolean = {
+    canCompileAsRegex(pattern) && pattern.contains("""\s""")
+  }
+
+  def ensureFor(behavior: Behavior, pattern: String): DBIO[MessageTrigger] = {
+    if (looksLikeRegex(pattern)) {
+      RegexMessageTriggerQueries.ensureFor(behavior, pattern.r)
+    } else {
+      TemplateMessageTriggerQueries.ensureFor(behavior, pattern)
+    }
+  }
+
+  def deleteAllFor(behavior: Behavior): DBIO[Unit] = {
+    for {
+      _ <- RegexMessageTriggerQueries.deleteAllFor(behavior)
+      _ <- TemplateMessageTriggerQueries.deleteAllFor(behavior)
+    } yield Unit
   }
 
 }
