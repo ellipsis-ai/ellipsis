@@ -468,7 +468,7 @@ var BehaviorEditor = React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
-            <div className="bg-blue-lighter border border-blue pal form-field-group">
+            <div className="box-help form-field-group">
             <div className="columns columns-elastic">
               <div className="column column-expand">
                 <p className="mbn">

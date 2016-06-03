@@ -15,7 +15,7 @@ return React.createClass({
   render: function() {
     return (
       <div className="">
-        <div className="position-relative bg-blue-lighter border  border-blue type-s pal">
+        <div className="box-help type-s">
 
           <div className="position-absolute position-top-right ptxs prxs">
             <BehaviorEditorHelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
