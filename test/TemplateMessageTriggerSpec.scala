@@ -29,6 +29,11 @@ class TemplateMessageTriggerSpec extends PlaySpec {
       trigger.matches("deploy foo bar") mustBe true
     }
 
+    "be activated regardless of case" in {
+      val trigger = triggerFor("deploy {version}")
+      trigger.matches("DEPLOY foo") mustBe true
+    }
+
     "not be activated without a required param" in {
       val trigger = triggerFor("deploy {version}")
       trigger.matches("deploy") mustBe false
