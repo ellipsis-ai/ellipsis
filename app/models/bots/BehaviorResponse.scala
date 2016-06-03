@@ -57,7 +57,10 @@ object BehaviorResponse {
       triggers <- RegexMessageTriggerQueries.allFor(team)
       activated <- DBIO.successful(triggers.filter(_.isActivatedBy(event)))
       responses <- DBIO.sequence(activated.map { trigger =>
-        BehaviorResponse.buildFor(event, trigger.behavior, trigger.paramsFor(event))
+        for {
+          params <- BehaviorParameterQueries.allFor(trigger.behavior)
+          response <- BehaviorResponse.buildFor(event, trigger.behavior, trigger.invocationParamsFor(event, params))
+        } yield response
       })
     } yield responses
   }
