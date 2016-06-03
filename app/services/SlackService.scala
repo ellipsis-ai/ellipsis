@@ -82,7 +82,7 @@ class SlackService @Inject() (
       }).map(_.flatten)
     } yield {
         val grouped = triggersForBehaviors.groupBy(_.behavior)
-        val behaviorsString = grouped.flatMap { case(behavior, triggers) =>
+        val behaviorStrings = grouped.map { case(behavior, triggers) =>
           val triggersString = triggers.map { ea =>
             s"`${ea.pattern}`"
           }.mkString(" or ")
@@ -90,7 +90,8 @@ class SlackService @Inject() (
             s" <$link|Details>"
           }.getOrElse("")
           s"\n• $triggersString $editLink"
-        }.mkString("")
+        }
+        val behaviorsString = behaviorStrings.toSeq.sortBy(_.toLowerCase).mkString("")
         val matchString = maybeHelpSearch.map { s =>
           s" that matches `$s`"
         }.getOrElse("")
