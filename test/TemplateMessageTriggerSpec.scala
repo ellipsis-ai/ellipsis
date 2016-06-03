@@ -34,6 +34,11 @@ class TemplateMessageTriggerSpec extends PlaySpec {
       trigger.matches("DEPLOY foo") mustBe true
     }
 
+    "handle regex chars" in {
+      val trigger = triggerFor("how much is ${amount} CAD in USD?")
+      trigger.matches("how much is $100 CAD in USD?") mustBe true
+    }
+
     "not be activated without a required param" in {
       val trigger = triggerFor("deploy {version}")
       trigger.matches("deploy") mustBe false

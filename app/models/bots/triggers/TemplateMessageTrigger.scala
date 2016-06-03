@@ -1,5 +1,7 @@
 package models.bots.triggers
 
+import java.util.regex.Matcher
+
 import models.bots._
 import models.{IDs, Team}
 import slick.driver.PostgresDriver.api._
@@ -17,6 +19,7 @@ case class TemplateMessageTrigger(
 
   val regex: Regex = {
     var pattern = template
+    pattern = Matcher.quoteReplacement(pattern)
     pattern = """\{.*?\}""".r.replaceAllIn(pattern, """(\\S+)""")
     pattern = """\s+""".r.replaceAllIn(pattern, """\\s+""")
     pattern = "(?i)^" ++ pattern
