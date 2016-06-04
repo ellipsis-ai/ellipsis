@@ -44,6 +44,15 @@ object SlackBotProfileQueries {
     allForTeamQuery(team.id).result
   }
 
+  def uncompiledAllForSlackTeamQuery(slackTeamId: Rep[String]) = {
+    all.filter(_.slackTeamId === slackTeamId)
+  }
+  val allForSlackTeamQuery = Compiled(uncompiledAllForSlackTeamQuery _)
+
+  def allForSlackTeamId(slackTeamId: String): DBIO[Seq[SlackBotProfile]] = {
+    allForSlackTeamQuery(slackTeamId).result
+  }
+
   def ensure(userId: String, slackTeamId: String, token: String): DBIO[SlackBotProfile] = {
     val query = findQuery(userId)
     query.result.headOption.flatMap {

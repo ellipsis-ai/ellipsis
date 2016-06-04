@@ -29,9 +29,11 @@ case class LinkedAccount(user: User, loginInfo: LoginInfo, createdAt: DateTime) 
     for {
       maybeId <- maybeSlackTeamId
       botProfiles <- maybeId.map { slackTeamId =>
-        SlackBotProfileQueries.allFor(team)
+        SlackBotProfileQueries.allForSlackTeamId(slackTeamId)
       }.getOrElse(DBIO.successful(Seq()))
-    } yield botProfiles.nonEmpty
+    } yield {
+      botProfiles.exists(_.teamId == team.id)
+    }
   }
 }
 
