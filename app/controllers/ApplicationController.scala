@@ -126,8 +126,9 @@ class ApplicationController @Inject() (
     )(unlift(BehaviorData.unapply))
 
   def editBehavior(id: String) = SecuredAction.async { implicit request =>
+    val user = request.identity
     val action = for {
-      maybeBehavior <- BehaviorQueries.find(id)
+      maybeBehavior <- BehaviorQueries.find(id, user)
       maybeParameters <- maybeBehavior.map { behavior =>
         BehaviorParameterQueries.allFor(behavior).map(Some(_))
       }.getOrElse(DBIO.successful(None))
@@ -175,6 +176,7 @@ class ApplicationController @Inject() (
   )
 
   def saveBehavior = SecuredAction.async { implicit request =>
+    val user = request.identity
     saveBehaviorForm.bindFromRequest.fold(
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
@@ -184,9 +186,9 @@ class ApplicationController @Inject() (
         json.validate[BehaviorData] match {
           case JsSuccess(data, jsPath) => {
             val action = for {
-              maybeTeam <- Team.find(data.teamId, request.identity)
+              maybeTeam <- Team.find(data.teamId, user)
               maybeBehavior <- data.maybeId.map { behaviorId =>
-                BehaviorQueries.find(behaviorId)
+                BehaviorQueries.find(behaviorId, user)
               }.getOrElse {
                 maybeTeam.map { team =>
                   BehaviorQueries.createFor(team).map(Some(_))

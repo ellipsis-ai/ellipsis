@@ -6,6 +6,7 @@ import java.util
 
 import _root_.util.TemplateApplier
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import models.accounts.User
 import models.{EnvironmentVariableQueries, IDs, Team}
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
@@ -188,8 +189,24 @@ object BehaviorQueries {
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def find(id: String): DBIO[Option[Behavior]] = {
+  // doesn't check if accessible to a user so private
+  private def find(id: String): DBIO[Option[Behavior]] = {
     findQuery(id).result.map(_.headOption.map(tuple2Behavior))
+  }
+
+  def find(id: String, user: User): DBIO[Option[Behavior]] = {
+    for {
+      maybeBehavior <- find(id)
+      maybeAccessibleBehavior <- maybeBehavior.map { behavior =>
+        user.canAccess(behavior.team).map { canAccess =>
+          if (canAccess) {
+            Some(behavior)
+          } else {
+            None
+          }
+        }
+      }.getOrElse(DBIO.successful(None))
+    } yield maybeAccessibleBehavior
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
