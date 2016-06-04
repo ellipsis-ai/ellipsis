@@ -80,7 +80,7 @@ class ApplicationController @Inject() (
             )
             Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name)))
           }).getOrElse {
-          NotFound("Behavior not found")
+          Redirect(routes.ApplicationController.signInWithSlack(Some(request.uri)))
         }
       }
 
