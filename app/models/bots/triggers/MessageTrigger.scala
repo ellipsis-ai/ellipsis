@@ -28,7 +28,7 @@ trait MessageTrigger extends Trigger {
 
   def invocationParamsFor(event: Event, params: Seq[BehaviorParameter]): Map[String, String] = {
     event match {
-      case e: SlackMessageEvent => invocationParamsFor(e.context.message.text, params)
+      case e: SlackMessageEvent => invocationParamsFor(e.context.relevantMessageText, params)
       case _ => Map()
     }
   }
@@ -37,7 +37,7 @@ trait MessageTrigger extends Trigger {
 
   def isActivatedBy(event: Event): Boolean = {
     event match {
-      case e: SlackMessageEvent => matches(e.context.message.text)
+      case e: SlackMessageEvent => matches(e.context.relevantMessageText)
       case _ => false
     }
   }

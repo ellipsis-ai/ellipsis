@@ -109,7 +109,7 @@ case class LearnBehaviorConversation(
 
     event match {
       case e: SlackMessageEvent => {
-        val message = e.context.message.text
+        val message = e.context.relevantMessageText
         state match {
           case NEW_STATE => updateStateTo(COLLECT_DESCRIPTION_STATE)
           case COLLECT_DESCRIPTION_STATE => collectDescriptionFrom(message)

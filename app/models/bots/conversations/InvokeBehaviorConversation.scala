@@ -52,7 +52,7 @@ case class InvokeBehaviorConversation(
   private def collectParamValueFrom(event: SlackMessageEvent, info: ParamInfo): DBIO[Conversation] = {
     for {
       _ <- info.maybeNextToCollect.map { param =>
-        CollectedParameterValue(param, this, event.context.message.text).save
+        CollectedParameterValue(param, this, event.context.relevantMessageText).save
       }.getOrElse(DBIO.successful(Unit))
       updatedParamInfo <- paramInfo
       updatedConversation <- if (updatedParamInfo.maybeNextToCollect.isDefined) {

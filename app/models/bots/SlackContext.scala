@@ -6,6 +6,7 @@ import slack.models.Message
 import slack.rtm.SlackRtmClient
 
 import scala.concurrent.ExecutionContext
+import scala.util.matching.Regex
 
 case class SlackContext(
                         client: SlackRtmClient,
@@ -13,12 +14,23 @@ case class SlackContext(
                         message: Message
                         ) extends MessageContext {
 
-  def sendMessage(text: String)(implicit ec: ExecutionContext): Unit = {
-    client.apiClient.postChatMessage(message.channel, text)
-//    postChatMessage() uses formatting
-//    client.sendMessage(message.channel, s"<@${message.user}>: $text")
+  lazy val botId: String = client.state.self.id
+  lazy val name: String = Conversation.SLACK_CONTEXT
+  lazy val userIdForContext: String = message.user
+
+  lazy val isDirectMessage: Boolean = {
+    message.channel.startsWith("D")
   }
 
-  val name: String = Conversation.SLACK_CONTEXT
-  def userIdForContext: String = message.user
+  lazy val isToBot: Boolean = {
+    isDirectMessage || toBotRegex.findFirstMatchIn(message.text).nonEmpty
+  }
+
+  lazy val toBotRegex: Regex = s"""^<@$botId>:?\\s*""".r
+
+  lazy val relevantMessageText: String = toBotRegex.replaceFirstIn(message.text, "")
+
+  def sendMessage(text: String)(implicit ec: ExecutionContext): Unit = {
+    client.apiClient.postChatMessage(message.channel, text)
+  }
 }
