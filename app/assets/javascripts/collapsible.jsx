@@ -28,6 +28,9 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
   addTransition: function() {
     this.refs.container.style.transition = 'max-height ' + this.animationDurationSeconds() + 's ease';
   },
+  removeTransition: function() {
+    this.refs.container.style.transition = null;
+  },
 
   setMaxHeight: function(height) {
     this.refs.container.style.maxHeight = height;
@@ -48,19 +51,23 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
   },
 
   collapse: function() {
+    this.removeTransition();
     this.setCurrentHeight();
     this.setOverflow('hidden');
     this.after(this.finishCollapse);
   },
   finishCollapse: function() {
+    this.addTransition();
     this.setNoHeight();
   },
 
   reveal: function() {
+    this.addTransition();
     this.setCurrentHeight();
     this.afterAnimation(this.afterReveal);
   },
   afterReveal: function() {
+    this.removeTransition();
     this.setAutoHeight();
     this.setOverflow('visible');
   },
