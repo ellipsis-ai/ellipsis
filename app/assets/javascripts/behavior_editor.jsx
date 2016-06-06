@@ -113,7 +113,8 @@ var BehaviorEditor = React.createClass({
       envVariableNames: this.props.envVariableNames,
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
-      triggerHelpVisible: false
+      triggerHelpVisible: false,
+      hasModifiedTemplate: !!this.props.responseTemplate
     };
   },
 
@@ -130,7 +131,12 @@ var BehaviorEditor = React.createClass({
   },
 
   getBehaviorTemplate: function() {
-    return this.getBehaviorProp('responseTemplate') || this.getDefaultBehaviorTemplate();
+    var template = this.getBehaviorProp('responseTemplate');
+    if (!template && !this.state.hasModifiedTemplate) {
+      return this.getDefaultBehaviorTemplate();
+    } else {
+      return template;
+    }
   },
 
   getBehaviorTriggers: function() {
@@ -243,7 +249,10 @@ var BehaviorEditor = React.createClass({
   },
 
   onTemplateChange: function(newTemplateString) {
-    this.setBehaviorProp('responseTemplate', newTemplateString)
+    var callback = function() {
+      this.setState({ hasModifiedTemplate: true });
+    };
+    this.setBehaviorProp('responseTemplate', newTemplateString, callback)
   },
 
   addParam: function() {
