@@ -13,6 +13,7 @@ trait MessageTrigger extends Trigger {
 
   val pattern: String
   val regex: Regex
+  val sortRank: Int
 
   protected def paramIndexMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]]
 
@@ -57,7 +58,9 @@ object MessageTriggerQueries {
     for {
       regexTriggers <- RegexMessageTriggerQueries.allFor(behavior)
       templateTriggers <- TemplateMessageTriggerQueries.allFor(behavior)
-    } yield regexTriggers ++ templateTriggers
+    } yield {
+      (regexTriggers ++ templateTriggers).sortBy(ea => (ea.sortRank, ea.pattern))
+    }
   }
 
   def allMatching(pattern: String, teamId: String): DBIO[Seq[MessageTrigger]] = {
