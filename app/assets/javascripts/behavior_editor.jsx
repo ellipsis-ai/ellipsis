@@ -212,10 +212,20 @@ var BehaviorEditor = React.createClass({
     return JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
   },
 
-  undoChanges: function() {
-    if (window.confirm("Are you sure you want to undo changes?")) {
-      this.setState({ behavior: this.getInitialState().behavior });
+  confirmAction: function(message, confirmCallback, cancelCallback) {
+    var didConfirm = window.confirm(message);
+    if (didConfirm && typeof(confirmCallback) === 'function') {
+      confirmCallback.call(this);
+    } else if (!didConfirm && typeof(cancelCallback) === 'function') {
+      cancelCallback.call(this);
     }
+  },
+
+  undoChanges: function() {
+    this.confirmAction("Are you sure you want to undo changes?", function() {
+      this.setState({ behavior: this.getInitialState().behavior });
+      this.toggleCodeEditor(this.shouldRevealCodeEditor());
+    });
   },
 
   addTrigger: function() {
@@ -246,6 +256,14 @@ var BehaviorEditor = React.createClass({
 
   onCodeChange: function(newCode) {
     this.setBehaviorProp('nodeFunction', newCode);
+  },
+
+  deleteCode: function() {
+    this.confirmAction("Are you sure you want to clear the code?", function() {
+      this.setBehaviorProp('params', []);
+      this.setBehaviorProp('nodeFunction', '');
+      this.toggleCodeEditor();
+    });
   },
 
   onTemplateChange: function(newTemplateString) {
@@ -300,9 +318,10 @@ var BehaviorEditor = React.createClass({
     });
   },
 
-  toggleCodeEditor: function() {
+  toggleCodeEditor: function(forceState) {
+    var newState = forceState !== undefined ? forceState : !this.state.revealCodeEditor;
     this.setState({
-      revealCodeEditor: !this.state.revealCodeEditor
+      revealCodeEditor: newState
     });
   },
 
@@ -563,7 +582,10 @@ var BehaviorEditor = React.createClass({
                 </div>
               </div>
 
-              <BehaviorEditorCodeFooter lineNumber={this.getLastLineNumberForCode()} />
+              <BehaviorEditorCodeFooter
+                lineNumber={this.getLastLineNumberForCode()}
+                onCodeDelete={this.deleteCode}
+              />
 
             </div>
           </div>

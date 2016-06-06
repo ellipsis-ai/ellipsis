@@ -10,7 +10,14 @@ return React.createClass({
             <code className="type-disabled type-s position-absolute position-top-right prxs">{this.props.lineNumber}</code>
           </div>
           <div className="column column-expand plxs">
-            <code className="type-weak type-s">{"}"}</code>
+            <div className="columns columns-elastic">
+              <div className="column column-expand">
+                <code className="type-weak type-s">{"}"}</code>
+              </div>
+              <div className="column column-shrink pr-symbol align-r">
+                <button type="button" className="button-s" onClick={this.props.onCodeDelete}>Remove code</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
