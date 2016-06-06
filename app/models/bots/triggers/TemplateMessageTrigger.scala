@@ -15,6 +15,8 @@ case class TemplateMessageTrigger(
                                 template: String
                                 ) extends MessageTrigger {
 
+  val sortRank: Int = 1
+
   val pattern: String = template
 
   val regex: Regex = {

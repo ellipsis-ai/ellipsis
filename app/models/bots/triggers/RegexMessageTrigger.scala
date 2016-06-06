@@ -13,6 +13,8 @@ case class RegexMessageTrigger(
                                 regex: Regex
                                 ) extends MessageTrigger {
 
+  val sortRank: Int = 2
+
   val pattern: String = regex.pattern.pattern()
 
   protected def paramIndexMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]] = {
