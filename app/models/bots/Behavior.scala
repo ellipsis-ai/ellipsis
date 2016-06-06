@@ -112,6 +112,10 @@ case class Behavior(
     Array(Some(prompt), maybeDetail).flatten.mkString(": ")
   }
 
+  private def noCallbackTriggeredResultString: String = {
+    s"It looks like neither `$ON_SUCCESS_PARAM` or `$ON_ERROR_PARAM` was called – make sure you call one or the other!"
+  }
+
   private def isUnhandledError(json: JsValue): Boolean = {
     (json \ "errorMessage").toOption.flatMap { m =>
       "Process exited before completing request".r.findFirstIn(m.toString)
@@ -127,8 +131,10 @@ case class Behavior(
     }.getOrElse {
       if (isUnhandledError(json)) {
         unhandledErrorResultStringFor(logResult)
+      } else if (json.toString == "null") {
+        noCallbackTriggeredResultString
       } else {
-        handledErrorResultStringFor(json)
+          handledErrorResultStringFor(json)
       }
     }
   }
