@@ -113,7 +113,7 @@ case class Behavior(
   }
 
   private def noCallbackTriggeredResultString: String = {
-    s"It looks like neither `$ON_SUCCESS_PARAM` or `$ON_ERROR_PARAM` was called – make sure you call one or the other!"
+    s"It looks like neither `$ON_SUCCESS_PARAM` or `$ON_ERROR_PARAM` was called – make sure you call one or the other."
   }
 
   private def isUnhandledError(json: JsValue): Boolean = {
