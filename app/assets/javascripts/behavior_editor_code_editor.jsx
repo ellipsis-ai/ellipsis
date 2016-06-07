@@ -2,6 +2,8 @@ define(function(require) {
 var React = require('react'),
   Codemirror = require('./react-codemirror'),
   CodemirrorJSMode = require('./codemirror/mode/javascript/javascript'),
+  CodeMirrorLint = require('./codemirror/addon/lint/lint'),
+  CodeMirrorJSLint = require('./codemirror/addon/lint/javascript-lint'),
   CodemirrorShowHint = require('./codemirror/addon/hint/show-hint');
 
 return React.createClass({
@@ -44,11 +46,13 @@ return React.createClass({
         options={{
           mode: "javascript",
           firstLineNumber: this.props.firstLineNumber,
+          gutters: ["CodeMirror-lint-markers"],
           hintOptions: { hint: this.autocompleteParams },
           indentUnit: 2,
           indentWithTabs: false,
           lineWrapping: this.props.lineWrapping,
           lineNumbers: true,
+          lint: true,
           smartIndent: true,
           tabSize: 2,
           viewportMargin: Infinity,
