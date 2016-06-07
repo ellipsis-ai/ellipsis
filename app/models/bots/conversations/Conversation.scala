@@ -68,11 +68,8 @@ object ConversationQueries {
   def tuple2Conversation(tuple: TupleType): Conversation = {
     val raw = tuple._1
     val behavior = BehaviorQueries.tuple2Behavior(tuple._2)
-    if (raw.conversationType == Conversation.LEARN_BEHAVIOR) {
-      LearnBehaviorConversation(raw.id, behavior, raw.context, raw.userIdForContext, raw.startedAt, raw.state)
-    } else {
-      InvokeBehaviorConversation(raw.id, behavior, raw.context, raw.userIdForContext, raw.startedAt, raw.state)
-    }
+    // When we have multiple kinds of conversations again, use conversationType to figure out which is which
+    InvokeBehaviorConversation(raw.id, behavior, raw.context, raw.userIdForContext, raw.startedAt, raw.state)
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = allWithBehavior.filter(_._1.id === id)

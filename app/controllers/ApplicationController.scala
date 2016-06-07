@@ -8,7 +8,6 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.bots.triggers.MessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
-import models.bots.conversations.LearnBehaviorConversation
 import models.bots.{BehaviorParameterQueries, BehaviorQueries}
 import play.api.Configuration
 import play.api.data.Form
@@ -138,9 +137,6 @@ class ApplicationController @Inject() (
       maybeEnvironmentVariables <- maybeBehavior.map { behavior =>
         EnvironmentVariableQueries.allFor(behavior.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      _ <- maybeBehavior.map { behavior =>
-        LearnBehaviorConversation.endAllFor(behavior)
-      }.getOrElse(DBIO.successful(Unit))
     } yield {
         (for {
           behavior <- maybeBehavior
