@@ -751,9 +751,13 @@ input, select, textarea, .form-field {
   border-right-color: @border-color;
 }
 
-.CodeMirror-empty-gutter,
-.CodeMirror-linenumbers {
+.CodeMirror-empty-gutter {
   width: @xxxl;
+}
+
+.CodeMirror-linenumbers {
+  @jsHintWidth: 16px;
+  width: @xxxl - @jsHintWidth;
 }
 
 .CodeMirror-no-gutter {
