@@ -5,6 +5,7 @@ var React = require('react'),
   CodemirrorMarkdownMode = require('./codemirror/mode/markdown/markdown'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
+  BehaviorEditorChecklist = require('./behavior_editor_checklist'),
   BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
   BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
@@ -67,8 +68,8 @@ var BehaviorEditor = React.createClass({
     }
   },
 
-  isNewBehavior: function() {
-    return !this.props.nodeFunction;
+  isExistingBehavior: function() {
+    return !!(this.props.nodeFunction || this.props.responseTemplate);
   },
 
   shouldRevealCodeEditor: function() {
@@ -85,7 +86,7 @@ var BehaviorEditor = React.createClass({
     ];
 
     var rand = Math.floor(Math.random() * responses.length);
-    return "**The magic 8-ball says:**\n\n“" + responses[rand] + "”";
+    return "The magic 8-ball says:\n\n“" + responses[rand] + "”";
   },
 
   getInitialTriggers: function() {
@@ -144,12 +145,13 @@ var BehaviorEditor = React.createClass({
   },
 
   hasCode: function() {
-    return !!this.getBehaviorNodeFunction();
+    return this.getBehaviorNodeFunction().match(/\S/);
   },
 
   hasCalledOnSuccess: function() {
     var code = this.getBehaviorNodeFunction();
-    return code && code.match(/\bonSuccess\(.+?\)/);
+    var success = code && code.match(/\bonSuccess\([\s\S]+?\)/);
+    return success;
   },
 
   hasPrimaryTrigger: function() {
@@ -387,25 +389,21 @@ var BehaviorEditor = React.createClass({
   getTemplateHelp: function() {
     if (this.state.revealCodeEditor) {
       return (
-        <li className={this.templateIncludesParam() ? "checklist-checked" : ""}>
-          <span>
-            <span>Use <code>{"{exampleParamName}"}</code> to show any user-supplied parameter, or </span>
-            <span><code>{"{successResult}"}</code> to show the parameter provided to </span>
-            <span><code>onSuccess</code> in your code.</span>
-          </span>
-        </li>
+        <span checkedWhen={this.templateIncludesParam()}>
+          <span>Use <code>{"{exampleParamName}"}</code> to show any user-supplied parameter, or </span>
+          <span><code>{"{successResult}"}</code> to show the parameter provided to </span>
+          <span><code>onSuccess</code> in your code.</span>
+        </span>
       );
     } else if (this.hasUserParameters()) {
       return (
-        <li className={this.templateIncludesParam() ? "checklist-checked" : ""}>
-          <span>Use <code>{"{exampleParamName}"}</code> to show any user-supplied parameter.</span>
-        </li>
+        <span checkedWhen={this.templateIncludesParam()}>
+          Use <code>{"{exampleParamName}"}</code> to show any user-supplied parameter.
+        </span>
       )
     } else {
       return (
-        <li>
-          <span>Add code above if you want to collect user input before returning a response.</span>
-        </li>
+        <span>Add code above if you want to collect user input before returning a response.</span>
       );
     }
   },
@@ -450,18 +448,18 @@ var BehaviorEditor = React.createClass({
             <div className="column column-one-quarter form-field-group mts">
               <BehaviorEditorSectionHeading>When someone says</BehaviorEditorSectionHeading>
 
-              <ul className="type-s list-space-s checklist">
-                <li className={this.hasPrimaryTrigger() ? "checklist-checked" : ""}>
+              <BehaviorEditorChecklist disabledWhen={this.isExistingBehavior()}>
+                <span checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.isExistingBehavior()}>
                   Write a question or phrase people should use to trigger a response.
-                </li>
-                <li className={this.hasMultipleTriggers() ? "checklist-checked" : ""}>
+                </span>
+                <span checkedWhen={this.hasMultipleTriggers()} hiddenWhen={this.isExistingBehavior() && this.hasMultipleTriggers()}>
                   You can add multiple triggers.
-                </li>
-                <li className={this.triggersUseParams() ? "checklist-checked" : ""}>
+                </span>
+                <span checkedWhen={this.triggersUseParams()}>
                   <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
                   <span className="pls"><BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} /></span>
-                </li>
-              </ul>
+                </span>
+              </BehaviorEditorChecklist>
 
             </div>
             <div className="column column-three-quarters pll form-field-group">
@@ -519,21 +517,21 @@ var BehaviorEditor = React.createClass({
 
               <BehaviorEditorSectionHeading>Ellipsis will do</BehaviorEditorSectionHeading>
 
-              <ul className="type-s list-space-s checklist">
-                <li className={this.hasCode() ? "checklist-checked" : ""}>
-                  <span>Write a node.js function to determine a result.</span>
-                </li>
+              <BehaviorEditorChecklist disabledWhen={this.isExistingBehavior()}>
+                <span checkedWhen={this.hasCode()} hiddenWhen={this.isExistingBehavior()}>
+                  Write a node.js function to determine a result.
+                </span>
 
-                <li className={this.hasCalledOnSuccess() ? "checklist-checked" : ""}>
+                <span checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.isExistingBehavior()}>
                   <span>Call <code>onSuccess</code> with a string or </span>
                   <span>object to include in the response.</span>
-                </li>
+                </span>
 
-                <li className={this.hasParams() ? "checklist-checked" : ""}>
+                <span checkedWhen={this.hasParams()} hiddenWhen={this.isExistingBehavior() && this.hasParams()}>
                   <span>If you need more information from the user, add one or more parameters </span>
                   <span>to your function.</span>
-                </li>
-              </ul>
+                </span>
+              </BehaviorEditorChecklist>
 
             </div>
 
@@ -599,14 +597,14 @@ var BehaviorEditor = React.createClass({
 
               <BehaviorEditorSectionHeading>{this.getResponseHeader()}</BehaviorEditorSectionHeading>
 
-              <ul className="type-s list-space-s checklist">
-                <li className={this.templateUsesMarkdown() ? "checklist-checked" : ""}>
+              <BehaviorEditorChecklist disabledWhen={this.isExistingBehavior()}>
+                <span checkedWhen={this.templateUsesMarkdown()}>
                   <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
                   <span>to format the response, add links, etc.</span>
-                </li>
+                </span>
 
                 {this.getTemplateHelp()}
-              </ul>
+              </BehaviorEditorChecklist>
 
             </div>
 
