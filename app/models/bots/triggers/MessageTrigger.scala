@@ -63,10 +63,22 @@ object MessageTriggerQueries {
     }
   }
 
-  def allMatching(pattern: String, teamId: String): DBIO[Seq[MessageTrigger]] = {
+  def allMatching(pattern: String, team: Team): DBIO[Seq[MessageTrigger]] = {
     for {
-      regexTriggers <- RegexMessageTriggerQueries.allMatching(pattern, teamId)
-      templateTriggers <- TemplateMessageTriggerQueries.allMatching(pattern, teamId)
+      regexTriggers <- RegexMessageTriggerQueries.allFor(team)
+      templateTriggers <- TemplateMessageTriggerQueries.allFor(team)
+    } yield {
+      val regex = ("(?i)" ++ pattern).r
+      (regexTriggers ++ templateTriggers).filter { ea =>
+        regex.findFirstMatchIn(ea.pattern).isDefined
+      }
+    }
+  }
+
+  def allWithExactPattern(pattern: String, teamId: String): DBIO[Seq[MessageTrigger]] = {
+    for {
+      regexTriggers <- RegexMessageTriggerQueries.allWithExactPattern(pattern, teamId)
+      templateTriggers <- TemplateMessageTriggerQueries.allWithExactPattern(pattern, teamId)
     } yield regexTriggers ++ templateTriggers
   }
 

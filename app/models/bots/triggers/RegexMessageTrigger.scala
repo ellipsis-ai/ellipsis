@@ -54,7 +54,7 @@ object RegexMessageTriggerQueries {
     allForTeamQuery(team.id).result.map(_.map(tuple2Trigger))
   }
 
-  def allMatching(regexString: String, teamId: String): DBIO[Seq[RegexMessageTrigger]] = {
+  def allWithExactPattern(regexString: String, teamId: String): DBIO[Seq[RegexMessageTrigger]] = {
     allWithBehaviors.
       filter { case(trigger, (behavior, team)) => team.id === teamId }.
       filter { case(trigger, _) => trigger.regex === regexString }.

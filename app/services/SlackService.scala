@@ -51,7 +51,7 @@ class SlackService @Inject() (
   private def unlearnBehaviorFor(patternString: String, messageContext: SlackContext): DBIO[Unit] = {
     val eventualReply = try {
       for {
-        triggers <- MessageTriggerQueries.allMatching(patternString, messageContext.profile.teamId)
+        triggers <- MessageTriggerQueries.allWithExactPattern(patternString, messageContext.profile.teamId)
         _ <- DBIO.sequence(triggers.map(_.behavior.unlearn(lambdaService)))
       } yield {
         s"$patternString? Never heard of it."
@@ -70,7 +70,7 @@ class SlackService @Inject() (
       maybeTeam <- Team.find(messageContext.profile.teamId)
       matchingTriggers <- maybeTeam.map { team =>
         maybeHelpSearch.map { helpSearch =>
-          MessageTriggerQueries.allMatching(helpSearch, team.id)
+          MessageTriggerQueries.allMatching(helpSearch, team)
         }.getOrElse {
           MessageTriggerQueries.allFor(team)
         }
