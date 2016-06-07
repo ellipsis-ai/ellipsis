@@ -7,6 +7,72 @@ var React = require('react'),
   CodemirrorShowHint = require('./codemirror/addon/hint/show-hint');
 
 return React.createClass({
+  getJsHintOptions: function() {
+    return {
+      // Enforcing options
+      bitwise: false,
+      curly: false,
+      eqeqeq: false,
+      esversion: 5,
+      forin: false,
+      freeze: false,
+      funcscope: false,
+      globals: true,
+      iterator: false,
+      latedef: false,
+      noarg: false,
+      nocomma: false,
+      nonbsp: false,
+      nonew: false,
+      notypeof: true,
+      predef: ['onSuccess', 'onError', 'ellipsis'],
+      shadow: false,
+      singleGroups: false,
+      strict: false,
+      undef: true,
+      unused: true,
+      varstmt: false,
+
+      // Relaxing options
+      asi: true,
+      boss: true,
+      eqnull: true,
+      evil: true,
+      expr: true,
+      lastsemic: true,
+      loopfunc: true,
+      noyield: true,
+      plusplus: false,
+      proto: true,
+      scripturl: true,
+      supernew: true,
+      withstmt: true,
+
+      // Environment
+      browser: false,
+      browserify: false,
+      couch: false,
+      devel: false,
+      dojo: false,
+      jasmine: false,
+      jquery: false,
+      mocha: false,
+      module: false,
+      mootools: false,
+      node: true,
+      nonstandard: true,
+      phantom: false,
+      prototype: false,
+      qunit: false,
+      rhino: false,
+      shelljs: false,
+      typed: false,
+      worker: false,
+      wsh: false,
+      yui: false
+    };
+  },
+
   autocompleteParams: function(cm, options) {
     var matches = [];
     var possibleWords = this.props.autocompletions;
@@ -52,7 +118,7 @@ return React.createClass({
           indentWithTabs: false,
           lineWrapping: this.props.lineWrapping,
           lineNumbers: true,
-          lint: true,
+          lint: this.getJsHintOptions(),
           smartIndent: true,
           tabSize: 2,
           viewportMargin: Infinity,
