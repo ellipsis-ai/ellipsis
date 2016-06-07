@@ -105,11 +105,21 @@ case class Behavior(
     Array(Some(prompt), maybeDetail).flatten.mkString(": ")
   }
 
+  private def translateFromLambdaErrorDetails(details: String): String = {
+    var translated = details
+    translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
+    translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
+    translated
+  }
+
+  private def maybeDetailedErrorInfoIn(logResult: String): Option[String] = {
+    val logRegex = """(?s).*\n.*\t.*\t(Error:.*)\n[^\n]*\nEND.*""".r
+    logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption).map(translateFromLambdaErrorDetails)
+  }
+
   private def unhandledErrorResultStringFor(logResult: String): String = {
     val prompt = s"We hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
-    val logRegex = """.*\n.*\t.*\t(.*)""".r
-    val maybeDetail = logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption)
-    Array(Some(prompt), maybeDetail).flatten.mkString(": ")
+    Array(Some(prompt), maybeDetailedErrorInfoIn(logResult)).flatten.mkString(":\n\n")
   }
 
   private def isUnhandledError(json: JsValue): Boolean = {
