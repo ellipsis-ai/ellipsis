@@ -126,9 +126,24 @@ case class Behavior(
     s"It looks like neither callback was triggered — you need to make sure that `$ON_SUCCESS_PARAM` is called to end every successful invocation and `$ON_ERROR_PARAM` is called to end every unsuccessful one"
   }
 
+  private def syntaxErrorResultStringFor(json: JsValue, logResult: String): String = {
+    s"""
+       |There's a syntax error in your function:
+       |
+       |${(json \ "errorMessage").asOpt[String].getOrElse("")}
+       |${maybeDetailedErrorInfoIn(logResult).getOrElse("")}
+     """.stripMargin
+  }
+
   private def isUnhandledError(json: JsValue): Boolean = {
     (json \ "errorMessage").toOption.flatMap { m =>
       "Process exited before completing request".r.findFirstIn(m.toString)
+    }.isDefined
+  }
+
+  private def isSyntaxError(json: JsValue): Boolean = {
+    (json \ "errorType").toOption.flatMap { m =>
+      "SyntaxError".r.findFirstIn(m.toString)
     }.isDefined
   }
 
@@ -143,6 +158,8 @@ case class Behavior(
         unhandledErrorResultStringFor(logResult)
       } else if (json.toString == "null") {
         noCallbackTriggeredResultString
+      } else if (isSyntaxError(json)) {
+        syntaxErrorResultStringFor(json, logResult)
       } else {
           handledErrorResultStringFor(json)
       }
