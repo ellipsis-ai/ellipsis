@@ -110,21 +110,6 @@ class SlackService @Inject() (
     }.get
     messageContext.sendMessage(s"I love to learn. Come <$newBehaviorLink|teach me something new>.")
     DBIO.successful(Unit)
-    // TODO: decide whether to keep any of the learn behavior conversation
-//    for {
-//      maybeTeam <- Team.find(profile.teamId)
-//      maybeBehavior <- maybeTeam.map { team =>
-//        BehaviorQueries.createFor(team).map(Some(_))
-//      }.getOrElse(DBIO.successful(None))
-//      maybeConversation <- maybeBehavior.map { behavior =>
-//        LearnBehaviorConversation.createFor(behavior, Conversation.SLACK_CONTEXT, message.user).map(Some(_))
-//      }.getOrElse(DBIO.successful(None))
-//      messageContext <- DBIO.successful(SlackContext(client, profile, message))
-//      event <- DBIO.successful(SlackMessageEvent(messageContext))
-//      _ <- maybeConversation.map { conversation =>
-//        conversation.replyFor(event, lambdaService)
-//      }.getOrElse(DBIO.successful(messageContext.sendMessage(messages("cant_find_team"))))
-//    } yield Unit
   }
 
   def startInvokeConversationFor(messageContext: SlackContext): DBIO[Unit] = {
