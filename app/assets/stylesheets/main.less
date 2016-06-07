@@ -1,5 +1,4 @@
 @import url(../lib/codemirror/addon/hint/show-hint.css);
-@import url(../lib/codemirror/addon/lint/lint.css);
 
 /* Measurements */
 @xxs: 2px;
@@ -50,6 +49,11 @@
 @green-light: hsl(127, 93%, 63%);
 @green-medium: hsl(127, 93%, 48%);
 @green-text: hsl(127, 93%, 35%);
+
+@orange-light: hsl(24, 100%, 67%);
+@orange-lighter: hsl(24, 100%, 77%);
+
+@yellow-light: hsl(45, 100%, 73%);
 
 @border-color: @gray-light;
 @border-color-focus: @pink-medium;
@@ -1095,13 +1099,17 @@ button.button-dropdown-trigger {
 
 /* Popup */
 
+.popup-shadow {
+  box-shadow: 0 2px 20px @black-translucent;
+}
+
 .popup {
   position: absolute;
   z-index: 12;
   background-color: @white;
   border: @border-width-thick solid @border-color;
   border-radius: @border-radius;
-  box-shadow: 0 2px 20px @black-translucent;
+  .popup-shadow();
 }
 
 /* Dropdown menu */
@@ -1209,3 +1217,57 @@ button.button-dropdown-trigger {
   .pbxxl();
 }
 
+/* CodeMirror extension styles */
+
+.CodeMirror-lint-markers {
+  width: 16px;
+}
+
+.CodeMirror-lint-marker-error,
+.CodeMirror-lint-marker-warning {
+  cursor: pointer;
+  display: inline-block;
+  width: 16px;
+  height: @xl;
+  position: relative;
+}
+
+.CodeMirror-lint-marker-warning {
+  background-color: @yellow-light;
+}
+
+.CodeMirror-lint-marker-error {
+  background-color: @pink-medium;
+}
+
+.CodeMirror-lint-marker-error:before,
+.CodeMirror-lint-marker-warning:before {
+  content: "·";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  .type-s();
+  .type-weak();
+}
+
+.CodeMirror-lint-marker-error:before {
+  color: @white;
+}
+
+.CodeMirror-lint-tooltip {
+  .box-help();
+  .popup-shadow();
+  .type-s();
+  .pvxs();
+  .phs();
+  overflow: hidden;
+  position: fixed;
+  white-space: pre;
+  white-space: pre-wrap;
+  z-index: 100;
+  max-width: 600px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}

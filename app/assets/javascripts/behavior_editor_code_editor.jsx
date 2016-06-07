@@ -30,7 +30,7 @@ return React.createClass({
       singleGroups: false,
       strict: false,
       undef: true,
-      unused: true,
+      unused: false,
       varstmt: false,
 
       // Relaxing options
