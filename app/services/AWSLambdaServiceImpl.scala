@@ -62,12 +62,17 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   }
 
   private def nodeCodeFor(functionBody: String, params: Array[String], behavior: Behavior): String = {
-    val definitionParamString = (params ++ HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
-    s"""
-      |exports.handler = function(event, context, callback) {
-      |   var fn = function($definitionParamString) { $functionBody };
+
+    // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
+    // Be careful changing either this or the UI line numbers
+    s"""exports.handler = function(event, context, callback) { var fn = function(
+      |     ${params.mkString(",\n")},
+      |     ${(HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")}
+      |   ) {
+      |     $functionBody
+      |   };
       |   var $ON_SUCCESS_PARAM = function(result) {
       |     callback(null, { "result": result === undefined ? null : result });
       |   };
