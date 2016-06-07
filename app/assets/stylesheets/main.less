@@ -104,6 +104,14 @@ ul {
   }
 }
 
+.checklist.type-weak > .checklist-checked {
+  .type-weak();
+  list-style-type: circle;
+  &::before {
+    content: none;
+  }
+}
+
 /* Links */
 
 a:link, a:visited {
