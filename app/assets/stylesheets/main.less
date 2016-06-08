@@ -1260,8 +1260,7 @@ button.button-dropdown-trigger {
   .box-help();
   .popup-shadow();
   .type-s();
-  .pvxs();
-  .phs();
+  .pan();
   overflow: hidden;
   position: fixed;
   white-space: pre;
@@ -1270,4 +1269,16 @@ button.button-dropdown-trigger {
   max-width: 600px;
   opacity: 0;
   transition: opacity 0.2s ease;
+}
+
+.CodeMirror-lint-message-error {
+  border-left: @xs solid @pink-medium;
+  .pvxs();
+  .phs();
+}
+
+.CodeMirror-lint-message-warning {
+  border-left: @xs solid @yellow-light;
+  .pvxs();
+  .phs();
 }
