@@ -34,11 +34,5 @@ requirejs.config({
 });
 
 requirejs(['./behavior_editor'], function(behaviorEditor) {
-  var config = BehaviorEditorConfiguration;
-  behaviorEditor.load(
-    config.data,
-    config.containerId,
-    config.csrfToken,
-    config.envVariableNames
-  );
+  behaviorEditor.load(BehaviorEditorConfiguration);
 });

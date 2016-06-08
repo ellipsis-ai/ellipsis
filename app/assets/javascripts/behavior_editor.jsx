@@ -37,6 +37,7 @@ var BehaviorEditor = React.createClass({
     })),
     triggers: React.PropTypes.arrayOf(React.PropTypes.string),
     csrfToken: React.PropTypes.string.isRequired,
+    justSaved: React.PropTypes.boolean,
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
     shouldRevealCodeEditor: React.PropTypes.bool
   },
@@ -111,6 +112,7 @@ var BehaviorEditor = React.createClass({
       settingsMenuVisible: false,
       boilerplateHelpVisible: false,
       expandEnvVariables: false,
+      justSaved: this.props.justSaved,
       envVariableNames: this.props.envVariableNames,
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
@@ -422,6 +424,10 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  componentDidUpdate: function() {
+    this.state.justSaved = false;
+  },
+
   render: function() {
     return (
       <form action="/save_behavior" method="POST">
@@ -436,6 +442,7 @@ var BehaviorEditor = React.createClass({
           <div className="container ptxl pbm">
             <h3 className="man type-weak">
               <span>Edit behavior</span>
+              <span className={"type-italic type-pink" + (!this.state.justSaved ? " display-none" : "")}>— Saved!</span>
               <span className={"type-italic type-pink" + this.visibleWhen(this.isModified())}>— unsaved changes</span>
             </h3>
           </div>
@@ -659,10 +666,10 @@ var BehaviorEditor = React.createClass({
 });
 
 return {
-  load: function(data, containerId, csrfToken, envVariableNames) {
-    var additionalData = { csrfToken: csrfToken, envVariableNames: envVariableNames };
-    var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(data, additionalData));
-    ReactDOM.render(myBehaviorEditor, document.getElementById(containerId));
+  load: function(config) {
+    var additionalData = { csrfToken: config.csrfToken, envVariableNames: config.envVariableNames, justSaved: config.justSaved };
+    var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(config.data, additionalData));
+    ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
   }
 };
 
