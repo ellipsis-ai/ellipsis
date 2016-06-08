@@ -13,7 +13,7 @@ return React.createClass({
       bitwise: false,
       curly: false,
       eqeqeq: false,
-      esversion: 5,
+      esversion: 6,
       forin: false,
       freeze: false,
       funcscope: false,
