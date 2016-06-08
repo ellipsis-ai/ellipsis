@@ -37,7 +37,7 @@ var BehaviorEditor = React.createClass({
     })),
     triggers: React.PropTypes.arrayOf(React.PropTypes.string),
     csrfToken: React.PropTypes.string.isRequired,
-    justSaved: React.PropTypes.boolean,
+    justSaved: React.PropTypes.bool,
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
     shouldRevealCodeEditor: React.PropTypes.bool
   },
@@ -418,6 +418,16 @@ var BehaviorEditor = React.createClass({
     return ["onSuccess()", "onError()", "ellipsis"].concat(this.getBehaviorParams(), envVars);
   },
 
+  getBehaviorStatusText: function() {
+    if (this.state.justSaved) {
+      return (<span className="type-green fade-in"> — saved successfully</span>);
+    } else if (this.isModified()) {
+      return (<span className="type-pink fade-in"> — unsaved changes</span>);
+    } else {
+      return (<span>&nbsp;</span>);
+    }
+  },
+
   onSaveClick: function() {
     this.setState({
       isSaving: true
@@ -425,7 +435,10 @@ var BehaviorEditor = React.createClass({
   },
 
   componentDidUpdate: function() {
-    this.state.justSaved = false;
+    // Note that calling setState on every update triggers an infinite loop
+    if (this.state.justSaved) {
+      this.setState({ justSaved: false });
+    }
   },
 
   render: function() {
@@ -442,8 +455,7 @@ var BehaviorEditor = React.createClass({
           <div className="container ptxl pbm">
             <h3 className="man type-weak">
               <span>Edit behavior</span>
-              <span className={"type-italic type-pink" + (!this.state.justSaved ? " display-none" : "")}>— Saved!</span>
-              <span className={"type-italic type-pink" + this.visibleWhen(this.isModified())}>— unsaved changes</span>
+              <span className="type-italic">{this.getBehaviorStatusText()}</span>
             </h3>
           </div>
         </div>
