@@ -140,10 +140,7 @@ class SlackService @Inject() (
     val profile = messageContext.profile
     for {
       maybeTeam <- Team.find(profile.teamId)
-      maybeSlackProfile <- SlackProfileQueries.allFor(profile.slackTeamId).map(_.headOption)
-      maybeOAuthToken <- maybeSlackProfile.map { profile =>
-        OAuth2Token.findByLoginInfo(profile.loginInfo)
-      }.getOrElse(DBIO.successful(None))
+      maybeOAuthToken <- OAuth2Token.maybeFullForSlackTeamId(profile.slackTeamId)
       maybeUserClient <- DBIO.successful(maybeOAuthToken.map { token =>
         SlackApiClient(token.accessToken)
       })

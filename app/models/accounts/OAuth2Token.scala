@@ -87,7 +87,7 @@ object OAuth2Token {
       join(tokens).on(_.providerKey === _.providerKey).
       map { case(profile, token) => token }.
       filter(_.maybeSlackScopes.isDefined).
-      filterNot(_.maybeSlackScopes === "identify")
+      filterNot(_.maybeSlackScopes === "identity.basic")
   }
   val allFullForSlackTeamIdQuery = Compiled(uncompiledAllFullForSlackTeamIdQuery _)
 
