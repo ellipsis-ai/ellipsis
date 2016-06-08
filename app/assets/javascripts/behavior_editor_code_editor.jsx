@@ -25,7 +25,7 @@ return React.createClass({
       nonbsp: false,
       nonew: false,
       notypeof: true,
-      predef: ['onSuccess', 'onError', 'ellipsis'],
+      predef: this.props.functionParams,
       shadow: false,
       singleGroups: false,
       strict: false,
