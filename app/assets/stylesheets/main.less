@@ -433,7 +433,7 @@ code.type-bold {
 }
 
 .type-green {
-  color: @green-light;
+  color: @green-text;
 }
 
 .type-white {
@@ -1176,6 +1176,27 @@ button.button-dropdown-trigger {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+.fade-in {
+-webkit-animation: fadein 0.2s; /* Safari, Chrome and Opera > 12.1 */
+  -ms-animation: fadein 0.2s; /* Internet Explorer */
+      animation: fadein 0.2s;
+}
+
+@keyframes fadein {
+  from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@-webkit-keyframes fadein {
+  from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@-ms-keyframes fadein {
+  from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 /* Positioning */

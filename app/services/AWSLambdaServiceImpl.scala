@@ -68,7 +68,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
     s"""exports.handler = function(event, context, callback) { var fn = function(
-      |     ${params.mkString(",\n")},
+      |     ${params.map(ea => ea ++ ",").mkString("\n")}
       |     ${(HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")}
       |   ) {
       |     $functionBody

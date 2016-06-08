@@ -1,6 +1,7 @@
 @(
   json: String,
-  envVariableNames: Seq[String]
+  envVariableNames: Seq[String],
+  justSaved: Boolean
     )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
@@ -17,6 +18,7 @@
           data: @Html(json),
           containerId: 'editorContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
+          justSaved: @justSaved,
           envVariableNames: @Html(Json.toJson(envVariableNames).toString)
         };
       </script>

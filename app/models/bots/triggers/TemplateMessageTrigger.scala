@@ -70,7 +70,7 @@ object TemplateMessageTriggerQueries {
     allForTeamQuery(team.id).result.map(_.map(tuple2Trigger))
   }
 
-  def allMatching(template: String, teamId: String): DBIO[Seq[TemplateMessageTrigger]] = {
+  def allWithExactPattern(template: String, teamId: String): DBIO[Seq[TemplateMessageTrigger]] = {
     allWithBehaviors.
       filter { case(trigger, (behavior, team)) => team.id === teamId }.
       filter { case(trigger, _) => trigger.template === template }.
