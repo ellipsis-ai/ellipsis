@@ -43,11 +43,7 @@ var CodeMirror = React.createClass({
 			if (typeof nextProps.options === 'object') {
 				for (var optionName in nextProps.options) {
 					if (nextProps.options.hasOwnProperty(optionName)) {
-						var oldOption = this.codeMirror.getOption(optionName);
-						var newOption = nextProps.options[optionName];
-						if (JSON.stringify(oldOption) !== JSON.stringify(newOption)) {
-							this.codeMirror.setOption(optionName, newOption);
-						}
+						this.setCodeMirrorOptionIfChanged(optionName, nextProps.options[optionName]);
 					}
 				}
 			}
@@ -64,6 +60,12 @@ var CodeMirror = React.createClass({
 	},
 	getCodeMirror: function getCodeMirror() {
 		return this.codeMirror;
+	},
+	setCodeMirrorOptionIfChanged: function(optionName, newValue) {
+		var oldValue = this.codeMirror.getOption(optionName);
+		if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+			this.codeMirror.setOption(optionName, newValue);
+		}
 	},
 	focus: function focus() {
 		if (this.codeMirror) {
