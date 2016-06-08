@@ -415,7 +415,12 @@ var BehaviorEditor = React.createClass({
       return 'ellipsis.env.' + name;
     });
 
-    return ["onSuccess()", "onError()", "ellipsis"].concat(this.getBehaviorParams(), envVars);
+    return this.getCodeFunctionParams().concat(envVars);
+  },
+
+  getCodeFunctionParams: function() {
+    var userParams = this.getBehaviorProp('params').map(function(param) { return param.name; });
+    return userParams.concat(["onSuccess", "onError", "ellipsis"]);
   },
 
   getBehaviorStatusText: function() {
@@ -584,6 +589,7 @@ var BehaviorEditor = React.createClass({
                   firstLineNumber={this.getFirstLineNumberForCode()}
                   lineWrapping={this.state.codeEditorUseLineWrapping}
                   autocompletions={this.getCodeAutocompletions()}
+                  functionParams={this.getCodeFunctionParams()}
                 />
                 <div className="position-absolute position-top-right">
                   <BehaviorEditorSettingsButton
