@@ -449,11 +449,13 @@ var BehaviorEditor = React.createClass({
   renderDelete: function() {
     if (this.props.behaviorId !== undefined) {
       return (
-        <form action="/delete_behavior" method="POST">
-          <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-          <button type="submit" className="button-primary mrs">Delete</button>
-        </form>
+        <div className="column column-one-quarter">
+          <form action="/delete_behavior" method="POST">
+            <CsrfTokenHiddenInput value={this.props.csrfToken} />
+            <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+            <button type="submit" className="button-primary">Delete</button>
+          </form>
+        </div>
       );
     } else {
       return "";
@@ -468,10 +470,16 @@ var BehaviorEditor = React.createClass({
       <div className="bg-light">
         <div className="container ptxl pbm">
           <h3 className="man type-weak">
-            <span>Edit behavior</span>
-            <span className="type-italic">{this.getBehaviorStatusText()}</span>
+            <div className="columns columns-elastic">
 
-            {this.renderDelete()}
+              <div className="column column-expand">
+                <span>Edit behavior</span>
+                <span className="type-italic">{this.getBehaviorStatusText()}</span>
+              </div>
+
+              {this.renderDelete()}
+
+            </div>
           </h3>
         </div>
       </div>
