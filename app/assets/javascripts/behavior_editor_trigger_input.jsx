@@ -18,16 +18,17 @@ return React.createClass({
   render: function() {
     return (
       <div className="columns columns-elastic mbs">
-        <div className="column column-shrink align-m prs pts border-bottom">
-          <div className="display-ellipsis type-s">
+        <div className="column column-shrink prn">
+          <div className={"display-ellipsis type-s type-weak form-input form-input-borderless prxs " +
+            (this.props.className || "")}>
             <label>
               <input type="checkbox" /> @ellipsis:
             </label>
           </div>
         </div>
-        <div className="column column-expand align-b prn">
+        <div className="column column-expand prn">
           <BehaviorEditorInput
-            className={"form-input-borderless phs " + (this.props.className || "")}
+            className={"form-input-borderless " + (this.props.className || "")}
             ref="input"
             value={this.props.value}
             placeholder="Add a trigger phrase"
@@ -35,17 +36,18 @@ return React.createClass({
             onEnterKey={this.props.onEnterKey}
           />
         </div>
-        <div className="column column-shrink align-m pls pts prxs border-bottom">
-          <div className="display-ellipsis type-label">
-            <label className="mrm">
+        <div className="column column-shrink prn">
+          <div className={"display-ellipsis form-input form-input-borderless " +
+            (this.props.className || "")}>
+            <label className="mrm type-label">
               <input type="checkbox" /> Regexp
             </label>
-            <label className="">
+            <label className="type-label">
               <input type="checkbox" /> Case
             </label>
           </div>
         </div>
-        <div className="column column-shrink align-b">
+        <div className="column column-shrink">
           <div className={this.visibleWhen(!this.props.hideDelete)}>
             <BehaviorEditorDeleteButton onClick={this.props.onDelete} />
           </div>

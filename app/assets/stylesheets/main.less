@@ -675,7 +675,7 @@ hr.form-border {
 }
 
 input, select, textarea, .form-field {
-  font-size: 1rem;
+  font-size: @type-s;
   line-height: @xl;
 }
 
@@ -844,6 +844,7 @@ input, select, textarea, .form-field {
 
 .form-input-borderless.form-input-large {
   height: @form-input-height-large - @xs;
+  line-height: @form-input-height-large - @border-width-thick - @xs;
   padding-top: 0;
   padding-bottom: 0;
 }
