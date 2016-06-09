@@ -5,7 +5,8 @@ import com.amazonaws.AmazonServiceException
 import models._
 import models.accounts.{OAuth2Token, SlackProfileQueries, SlackBotProfileQueries, SlackBotProfile}
 import models.bots._
-import models.bots.conversations.{LearnBehaviorConversation, Conversation, ConversationQueries}
+import models.bots.conversations.{Conversation, ConversationQueries}
+import models.bots.triggers.MessageTriggerQueries
 import play.api.i18n.MessagesApi
 import play.api.inject.ApplicationLifecycle
 import slack.api.SlackApiClient
@@ -41,99 +42,94 @@ class SlackService @Inject() (
       maybeTeam <- Team.find(profile.teamId)
       behaviorResponses <- maybeTeam.map { team =>
         val messageContext = SlackContext(client, profile, message)
-        RegexMessageTriggerQueries.behaviorResponsesFor(SlackMessageEvent(messageContext), team)
+        BehaviorResponse.allFor(SlackMessageEvent(messageContext), team)
       }.getOrElse(DBIO.successful(Seq()))
       _ <- DBIO.sequence(behaviorResponses.map(_.run(lambdaService)))
     } yield Unit
   }
 
-  private def unlearnBehaviorFor(regexString: String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
+  private def unlearnBehaviorFor(patternString: String, messageContext: SlackContext): DBIO[Unit] = {
     val eventualReply = try {
       for {
-        triggers <- RegexMessageTriggerQueries.allMatching(regexString, profile.teamId)
+        triggers <- MessageTriggerQueries.allWithExactPattern(patternString, messageContext.profile.teamId)
         _ <- DBIO.sequence(triggers.map(_.behavior.unlearn(lambdaService)))
       } yield {
-        s"$regexString? Never heard of it."
+        s"$patternString? Never heard of it."
       }
     } catch {
       case e: AmazonServiceException => DBIO.successful("D'oh! That didn't work.")
     }
     eventualReply.map { reply =>
-      val messageContext = SlackContext(client, profile, message)
       SlackMessageEvent(messageContext).context.sendMessage(reply)
     }
   }
 
-  def displayHelpFor(helpString: String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
+  private def helpStringFor(behaviors: Seq[Behavior], prompt: String, matchString: String): DBIO[String] = {
+    DBIO.sequence(behaviors.map { ea =>
+      MessageTriggerQueries.allFor(ea)
+    }).map(_.flatten).map { triggersForBehaviors =>
+      val grouped = triggersForBehaviors.groupBy(_.behavior)
+      val behaviorStrings = grouped.map { case(behavior, triggers) =>
+        val triggersString = triggers.map { ea =>
+          s"`${ea.pattern}`"
+        }.mkString(" or ")
+        val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
+          s" <$link|Details>"
+        }.getOrElse("")
+        s"\n• $triggersString $editLink"
+      }
+      if (behaviorStrings.isEmpty) {
+        ""
+      } else {
+        s"$prompt$matchString:${behaviorStrings.toSeq.sortBy(_.toLowerCase).mkString("")}"
+      }
+    }
+  }
+
+  def displayHelpFor(helpString: String, messageContext: SlackContext): DBIO[Unit] = {
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
     for {
-      maybeTeam <- Team.find(profile.teamId)
+      maybeTeam <- Team.find(messageContext.profile.teamId)
       matchingTriggers <- maybeTeam.map { team =>
         maybeHelpSearch.map { helpSearch =>
-          RegexMessageTriggerQueries.allMatching(helpSearch, team.id)
+          MessageTriggerQueries.allMatching(helpSearch, team)
         }.getOrElse {
-          RegexMessageTriggerQueries.allFor(team)
+          MessageTriggerQueries.allFor(team)
         }
       }.getOrElse(DBIO.successful(Seq()))
       behaviors <- DBIO.successful(matchingTriggers.map(_.behavior).distinct)
-      triggersForBehaviors <- DBIO.sequence(behaviors.map { ea =>
-        RegexMessageTriggerQueries.allFor(ea)
-      }).map(_.flatten)
+      (skills, knowledge) <- DBIO.successful(behaviors.partition(_.isSkill))
+      matchString <- DBIO.successful(maybeHelpSearch.map { s =>
+        s" that matches `$s`"
+      }.getOrElse(""))
+      skillsString <- helpStringFor(skills, "Here's what I can do", matchString)
+      knowledgeString <- helpStringFor(knowledge, "Here's what I know", matchString)
     } yield {
-        val grouped = triggersForBehaviors.groupBy(_.behavior)
-        val behaviorsString = grouped.flatMap { case(behavior, triggers) =>
-          val triggersString = triggers.map { ea =>
-            s"`${ea.regex.pattern.pattern()}`"
-          }.mkString(" or ")
-          val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
-            s" <$link|Details>"
-          }.getOrElse("")
-          s"\n• $triggersString $editLink"
-        }.mkString("")
-        val matchString = maybeHelpSearch.map { s =>
-          s" that matches `$s`"
-        }.getOrElse("")
         val text = s"""
-           |Here's what I respond to$matchString:$behaviorsString
+           |$skillsString
+           |
+           |$knowledgeString
            |
            |To teach me something new, just type `@ellipsis: learn`
            |""".stripMargin
-        val messageContext = SlackContext(client, profile, message)
         SlackMessageEvent(messageContext).context.sendMessage(text)
       }
   }
 
-  def startLearnConversationFor(client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
+  def startLearnConversationFor(messageContext: SlackContext): DBIO[Unit] = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ApplicationController.newBehavior(profile.teamId)
+      val path = controllers.routes.ApplicationController.newBehavior(messageContext.profile.teamId)
       s"$baseUrl$path"
     }.get
-    val messageContext = SlackContext(client, profile, message)
     messageContext.sendMessage(s"I love to learn. Come <$newBehaviorLink|teach me something new>.")
     DBIO.successful(Unit)
-    // TODO: decide whether to keep any of the learn behavior conversation
-//    for {
-//      maybeTeam <- Team.find(profile.teamId)
-//      maybeBehavior <- maybeTeam.map { team =>
-//        BehaviorQueries.createFor(team).map(Some(_))
-//      }.getOrElse(DBIO.successful(None))
-//      maybeConversation <- maybeBehavior.map { behavior =>
-//        LearnBehaviorConversation.createFor(behavior, Conversation.SLACK_CONTEXT, message.user).map(Some(_))
-//      }.getOrElse(DBIO.successful(None))
-//      messageContext <- DBIO.successful(SlackContext(client, profile, message))
-//      event <- DBIO.successful(SlackMessageEvent(messageContext))
-//      _ <- maybeConversation.map { conversation =>
-//        conversation.replyFor(event, lambdaService)
-//      }.getOrElse(DBIO.successful(messageContext.sendMessage(messages("cant_find_team"))))
-//    } yield Unit
   }
 
-  def startInvokeConversationFor(client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
+  def startInvokeConversationFor(messageContext: SlackContext): DBIO[Unit] = {
     for {
-      maybeTeam <- Team.find(profile.teamId)
+      maybeTeam <- Team.find(messageContext.profile.teamId)
       behaviorResponses <- maybeTeam.map { team =>
-        val messageContext = SlackContext(client, profile, message)
-        RegexMessageTriggerQueries.behaviorResponsesFor(SlackMessageEvent(messageContext), team)
+        BehaviorResponse.allFor(SlackMessageEvent(messageContext), team)
       }.getOrElse(DBIO.successful(Seq()))
       maybeResponse <- DBIO.successful(behaviorResponses.headOption)
       _ <- maybeResponse.map { response =>
@@ -142,30 +138,27 @@ class SlackService @Inject() (
     } yield Unit
   }
 
-  def setEnvironmentVariable(name: String, value:String, client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
+  def setEnvironmentVariable(name: String, value:String, messageContext: SlackContext): DBIO[Unit] = {
     for {
-      maybeTeam <- Team.find(profile.teamId)
+      maybeTeam <- Team.find(messageContext.profile.teamId)
       maybeEnvVar <- maybeTeam.map { team =>
         EnvironmentVariableQueries.ensureFor(name, value, team)
       }.getOrElse(DBIO.successful(None))
     } yield {
-      val messageContext = SlackContext(client, profile, message)
       SlackMessageEvent(messageContext).context.sendMessage(s"OK, saved $name!")
     }
   }
 
-  def remember(client: SlackRtmClient, profile: SlackBotProfile, message: Message): DBIO[Unit] = {
+  def remember(messageContext: SlackContext): DBIO[Unit] = {
+    val profile = messageContext.profile
     for {
       maybeTeam <- Team.find(profile.teamId)
-      maybeSlackProfile <- SlackProfileQueries.allFor(profile.slackTeamId).map(_.headOption)
-      maybeOAuthToken <- maybeSlackProfile.map { profile =>
-        OAuth2Token.findByLoginInfo(profile.loginInfo)
-      }.getOrElse(DBIO.successful(None))
+      maybeOAuthToken <- OAuth2Token.maybeFullForSlackTeamId(profile.slackTeamId)
       maybeUserClient <- DBIO.successful(maybeOAuthToken.map { token =>
         SlackApiClient(token.accessToken)
       })
       maybeHistory <- maybeUserClient.map { userClient =>
-        DBIO.from(userClient.getChannelHistory(message.channel, latest = Some(message.ts))).map(Some(_))
+        DBIO.from(userClient.getChannelHistory(messageContext.message.channel, latest = Some(messageContext.message.ts))).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       messages <- DBIO.successful(maybeHistory.map { history =>
         history.messages.slice(0, 10).reverse.flatMap { json =>
@@ -177,7 +170,7 @@ class SlackService @Inject() (
         BehaviorQueries.createFor(team).flatMap { behavior =>
           behavior.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)).save.flatMap { behaviorWithContent =>
             qaExtractor.maybeLastQuestion.map { lastQuestion =>
-              RegexMessageTriggerQueries.ensureFor(behavior, lastQuestion.r)
+              MessageTriggerQueries.ensureFor(behavior, lastQuestion)
             }.getOrElse {
               DBIO.successful()
             }.map(_ => behaviorWithContent)
@@ -186,7 +179,6 @@ class SlackService @Inject() (
       }.getOrElse(DBIO.successful(None))
     } yield {
       maybeBehavior.foreach { behavior =>
-        val messageContext = SlackContext(client, profile, message)
         behavior.editLinkFor(lambdaService.configuration).foreach { link =>
           SlackMessageEvent(messageContext).context.sendMessage(s"OK, I compiled recent messages at $link")
         }
@@ -195,25 +187,29 @@ class SlackService @Inject() (
     }
   }
 
-  def handleMessageFor(client: SlackRtmClient, profile: SlackBotProfile, message: Message, selfId: String): DBIO[Unit] = {
-    val setEnvironmentVariableRegex = s"""<@$selfId>:\\s+set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
-    val startLearnConversationRegex = s"""<@$selfId>:\\s+learn\\s*$$""".r
-    val unlearnRegex = s"""<@$selfId>:\\s+unlearn\\s+(\\S+)""".r
-    val helpRegex = s"""<@$selfId>:\\s+help\\s*(\\S*.*)$$""".r
-    val rememberRegex = s"""<@$selfId>:\\s+(remember|\\^)\\s*$$""".r
+  def handleMessageFor(messageContext: SlackContext): DBIO[Unit] = {
 
-    message.text match {
-      case setEnvironmentVariableRegex(name, value) => setEnvironmentVariable(name, value, client, profile, message)
-      case startLearnConversationRegex() => startLearnConversationFor(client, profile, message)
-      case unlearnRegex(regexString) => unlearnBehaviorFor(regexString, client, profile, message)
-      case helpRegex(helpString) => displayHelpFor(helpString, client, profile, message)
-      case rememberRegex(cmd) => remember(client, profile, message)
-      case _ => startInvokeConversationFor(client, profile, message)
+    val setEnvironmentVariableRegex = s"""^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
+    val startLearnConversationRegex = s"""^learn\\s*$$""".r
+    val unlearnRegex = s"""^unlearn\\s+(\\S+)""".r
+    val helpRegex = s"""^help\\s*(\\S*.*)$$""".r
+    val rememberRegex = s"""^(remember|\\^)\\s*$$""".r
+
+    if (messageContext.isToBot) {
+      messageContext.relevantMessageText match {
+        case setEnvironmentVariableRegex(name, value) => setEnvironmentVariable(name, value, messageContext)
+        case startLearnConversationRegex() => startLearnConversationFor(messageContext)
+        case unlearnRegex(regexString) => unlearnBehaviorFor(regexString, messageContext)
+        case helpRegex(helpString) => displayHelpFor(helpString, messageContext)
+        case rememberRegex(cmd) => remember(messageContext)
+        case _ => startInvokeConversationFor(messageContext)
+      }
+    } else {
+      startInvokeConversationFor(messageContext)
     }
   }
 
-  def handleMessageInConversation(conversation: Conversation, client: SlackRtmClient, profile: SlackBotProfile, message: Message, selfId: String): DBIO[Unit] = {
-    val messageContext = SlackContext(client, profile, message)
+  def handleMessageInConversation(conversation: Conversation, messageContext: SlackContext): DBIO[Unit] = {
     conversation.replyFor(SlackMessageEvent(messageContext), lambdaService)
   }
 
@@ -238,11 +234,12 @@ class SlackService @Inject() (
 
     client.onMessage { message =>
       if (message.user != selfId) {
+        val messageContext = SlackContext(client, profile, message)
         val action = ConversationQueries.findOngoingFor(message.user, Conversation.SLACK_CONTEXT).flatMap { maybeConversation =>
          maybeConversation.map { conversation =>
-           handleMessageInConversation(conversation, client, profile, message, selfId)
+           handleMessageInConversation(conversation, messageContext)
          }.getOrElse {
-           handleMessageFor(client, profile, message, selfId)
+           handleMessageFor(messageContext)
          }
         }
         models.runNow(action)

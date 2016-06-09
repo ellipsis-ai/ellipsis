@@ -1,6 +1,8 @@
 package models.bots
 
+import models.Team
 import models.bots.conversations.InvokeBehaviorConversation
+import models.bots.triggers.MessageTriggerQueries
 import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -48,5 +50,18 @@ object BehaviorResponse {
       }
       BehaviorResponse(event, behavior, paramsWithValues)
     }
+  }
+
+  def allFor(event: Event, team: Team): DBIO[Seq[BehaviorResponse]] = {
+    for {
+      triggers <- MessageTriggerQueries.allFor(team)
+      activated <- DBIO.successful(triggers.filter(_.isActivatedBy(event)))
+      responses <- DBIO.sequence(activated.map { trigger =>
+        for {
+          params <- BehaviorParameterQueries.allFor(trigger.behavior)
+          response <- BehaviorResponse.buildFor(event, trigger.behavior, trigger.invocationParamsFor(event, params))
+        } yield response
+      })
+    } yield responses
   }
 }

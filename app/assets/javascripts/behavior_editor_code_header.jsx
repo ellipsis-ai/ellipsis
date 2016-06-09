@@ -25,7 +25,7 @@ return React.createClass({
   boilerplateLine: function() {
     return this.props.hasParams ?
       (<span className="pll">{"onSuccess, onError, ellipsis "}</span>) :
-      "function(onSuccess, onError, ellipis) { ";
+      "function(onSuccess, onError, ellipsis) { ";
   },
   render: function() {
     return (

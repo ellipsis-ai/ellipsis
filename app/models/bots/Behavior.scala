@@ -6,6 +6,7 @@ import java.util
 
 import _root_.util.TemplateApplier
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import models.accounts.User
 import models.{EnvironmentVariableQueries, IDs, Team}
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
@@ -36,6 +37,12 @@ case class Behavior(
                      maybeResponseTemplate: Option[String],
                      createdAt: DateTime
                      ) {
+
+  def isSkill: Boolean = {
+    maybeFunctionBody.map { body =>
+      Option(body).filter(_.trim.nonEmpty).isDefined
+    }.getOrElse(false)
+  }
 
   def editLinkFor(configuration: Configuration): Option[String] = {
     configuration.getString("application.apiBaseUrl").map { baseUrl =>
@@ -104,16 +111,45 @@ case class Behavior(
     Array(Some(prompt), maybeDetail).flatten.mkString(": ")
   }
 
+  private def translateFromLambdaErrorDetails(details: String): String = {
+    var translated = details
+    translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
+    translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
+    translated
+  }
+
+  private def maybeDetailedErrorInfoIn(logResult: String): Option[String] = {
+    val logRegex = """(?s).*\n.*\t.*\t(Error:.*)\n[^\n]*\nEND.*""".r
+    logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption).map(translateFromLambdaErrorDetails)
+  }
+
   private def unhandledErrorResultStringFor(logResult: String): String = {
     val prompt = s"We hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
-    val logRegex = """.*\n.*\t.*\t(.*)""".r
-    val maybeDetail = logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption)
-    Array(Some(prompt), maybeDetail).flatten.mkString(": ")
+    Array(Some(prompt), maybeDetailedErrorInfoIn(logResult)).flatten.mkString(":\n\n")
+  }
+
+  private def noCallbackTriggeredResultString: String = {
+    s"It looks like neither callback was triggered — you need to make sure that `$ON_SUCCESS_PARAM` is called to end every successful invocation and `$ON_ERROR_PARAM` is called to end every unsuccessful one"
+  }
+
+  private def syntaxErrorResultStringFor(json: JsValue, logResult: String): String = {
+    s"""
+       |There's a syntax error in your function:
+       |
+       |${(json \ "errorMessage").asOpt[String].getOrElse("")}
+       |${maybeDetailedErrorInfoIn(logResult).getOrElse("")}
+     """.stripMargin
   }
 
   private def isUnhandledError(json: JsValue): Boolean = {
     (json \ "errorMessage").toOption.flatMap { m =>
       "Process exited before completing request".r.findFirstIn(m.toString)
+    }.isDefined
+  }
+
+  private def isSyntaxError(json: JsValue): Boolean = {
+    (json \ "errorType").toOption.flatMap { m =>
+      "SyntaxError".r.findFirstIn(m.toString)
     }.isDefined
   }
 
@@ -126,8 +162,12 @@ case class Behavior(
     }.getOrElse {
       if (isUnhandledError(json)) {
         unhandledErrorResultStringFor(logResult)
+      } else if (json.toString == "null") {
+        noCallbackTriggeredResultString
+      } else if (isSyntaxError(json)) {
+        syntaxErrorResultStringFor(json, logResult)
       } else {
-        handledErrorResultStringFor(json)
+          handledErrorResultStringFor(json)
       }
     }
   }
@@ -188,8 +228,24 @@ object BehaviorQueries {
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def find(id: String): DBIO[Option[Behavior]] = {
+  // doesn't check if accessible to a user so private
+  private def find(id: String): DBIO[Option[Behavior]] = {
     findQuery(id).result.map(_.headOption.map(tuple2Behavior))
+  }
+
+  def find(id: String, user: User): DBIO[Option[Behavior]] = {
+    for {
+      maybeBehavior <- find(id)
+      maybeAccessibleBehavior <- maybeBehavior.map { behavior =>
+        user.canAccess(behavior.team).map { canAccess =>
+          if (canAccess) {
+            Some(behavior)
+          } else {
+            None
+          }
+        }
+      }.getOrElse(DBIO.successful(None))
+    } yield maybeAccessibleBehavior
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {

@@ -5,10 +5,10 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{ Environment, LogoutEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import models.bots.triggers.MessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
-import models.bots.conversations.LearnBehaviorConversation
-import models.bots.{RegexMessageTriggerQueries, BehaviorParameterQueries, BehaviorQueries}
+import models.bots.{BehaviorParameterQueries, BehaviorQueries}
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
@@ -77,9 +77,9 @@ class ApplicationController @Inject() (
               Seq(),
               Seq()
             )
-            Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name)))
+            Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), justSaved = true))
           }).getOrElse {
-          NotFound("Behavior not found")
+          Redirect(routes.ApplicationController.signInWithSlack(Some(request.uri)))
         }
       }
 
@@ -124,21 +124,19 @@ class ApplicationController @Inject() (
       (JsPath \ "triggers").write[Seq[String]]
     )(unlift(BehaviorData.unapply))
 
-  def editBehavior(id: String) = SecuredAction.async { implicit request =>
+  def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
+    val user = request.identity
     val action = for {
-      maybeBehavior <- BehaviorQueries.find(id)
+      maybeBehavior <- BehaviorQueries.find(id, user)
       maybeParameters <- maybeBehavior.map { behavior =>
         BehaviorParameterQueries.allFor(behavior).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeTriggers <- maybeBehavior.map { behavior =>
-        RegexMessageTriggerQueries.allFor(behavior).map(Some(_))
+        MessageTriggerQueries.allFor(behavior).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeEnvironmentVariables <- maybeBehavior.map { behavior =>
         EnvironmentVariableQueries.allFor(behavior.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      _ <- maybeBehavior.map { behavior =>
-        LearnBehaviorConversation.endAllFor(behavior)
-      }.getOrElse(DBIO.successful(Unit))
     } yield {
         (for {
           behavior <- maybeBehavior
@@ -154,9 +152,9 @@ class ApplicationController @Inject() (
             params.map { ea =>
               BehaviorParameterData(ea.name, ea.question)
             },
-            triggers.map(ea => ea.regex.pattern.pattern())
+            triggers.map(_.pattern)
           )
-          Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name)))
+          Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
         }).getOrElse {
           NotFound("Behavior not found")
         }
@@ -174,6 +172,7 @@ class ApplicationController @Inject() (
   )
 
   def saveBehavior = SecuredAction.async { implicit request =>
+    val user = request.identity
     saveBehaviorForm.bindFromRequest.fold(
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
@@ -183,9 +182,9 @@ class ApplicationController @Inject() (
         json.validate[BehaviorData] match {
           case JsSuccess(data, jsPath) => {
             val action = for {
-              maybeTeam <- Team.find(data.teamId, request.identity)
+              maybeTeam <- Team.find(data.teamId, user)
               maybeBehavior <- data.maybeId.map { behaviorId =>
-                BehaviorQueries.find(behaviorId)
+                BehaviorQueries.find(behaviorId, user)
               }.getOrElse {
                 maybeTeam.map { team =>
                   BehaviorQueries.createFor(team).map(Some(_))
@@ -199,19 +198,19 @@ class ApplicationController @Inject() (
                     maybeResponseTemplate = Some(data.responseTemplate)
                   ).save
                   _ <- BehaviorParameterQueries.ensureFor(behavior, data.params.map(ea => (ea.name, Some(ea.question))))
-                  _ <- RegexMessageTriggerQueries.deleteAllFor(behavior)
+                  _ <- MessageTriggerQueries.deleteAllFor(behavior)
                   _ <- DBIO.sequence(
                     data.triggers.
                       filterNot(_.trim.isEmpty).
                       map { trigger =>
-                        RegexMessageTriggerQueries.ensureFor(behavior, trigger.r)
+                        MessageTriggerQueries.ensureFor(behavior, trigger)
                       }
                     )
                 } yield Unit) transactionally
               }.getOrElse(DBIO.successful(Unit))
             } yield {
                 maybeBehavior.map { behavior =>
-                  Redirect(routes.ApplicationController.editBehavior(behavior.id))
+                  Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
                 }.getOrElse {
                   NotFound("Behavior not found")
                 }

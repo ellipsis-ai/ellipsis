@@ -6,6 +6,44 @@ var React = require('react');
 var className = require('classnames');
 var debounce = require('lodash.debounce');
 
+function deepEquals(thing1, thing2) {
+	if (thing1 === thing2) {
+		return true;
+	} else if (Number.isNaN(thing1) && Number.isNaN(thing2)) {
+		return true;
+	} else if (Array.isArray(thing1) && Array.isArray(thing2)) {
+		return arraysEqual(thing1, thing2);
+	} else if (typeof(thing1) === 'object' && typeof(thing2) === 'object') {
+		return objectsEqual(thing1, thing2);
+	} else {
+		return false;
+	}
+}
+
+function arraysEqual(array1, array2) {
+	if (array1.length !== array2.length) {
+		return false;
+	} else {
+		return array1.every(function(item, index) {
+			return deepEquals(array1[index], array2[index]);
+		});
+	}
+}
+
+function objectsEqual(obj1, obj2) {
+	if (obj1.constructor !== obj2.constructor) {
+		return false;
+	}
+	var obj1Keys = Object.keys(obj1);
+	var obj2Keys = Object.keys(obj2);
+	if (!arraysEqual(obj1Keys.sort(), obj2Keys.sort())) {
+		return false;
+	}
+	return obj1Keys.every(function(key) {
+		return deepEquals(obj1[key], obj2[key]);
+	});
+}
+
 var CodeMirror = React.createClass({
 	displayName: 'CodeMirror',
 
@@ -43,7 +81,7 @@ var CodeMirror = React.createClass({
 			if (typeof nextProps.options === 'object') {
 				for (var optionName in nextProps.options) {
 					if (nextProps.options.hasOwnProperty(optionName)) {
-						this.codeMirror.setOption(optionName, nextProps.options[optionName]);
+						this.setCodeMirrorOptionIfChanged(optionName, nextProps.options[optionName]);
 					}
 				}
 			}
@@ -60,6 +98,12 @@ var CodeMirror = React.createClass({
 	},
 	getCodeMirror: function getCodeMirror() {
 		return this.codeMirror;
+	},
+	setCodeMirrorOptionIfChanged: function(optionName, newValue) {
+		var oldValue = this.codeMirror.getOption(optionName);
+		if (!deepEquals(oldValue, newValue)) {
+			this.codeMirror.setOption(optionName, newValue);
+		}
 	},
 	focus: function focus() {
 		if (this.codeMirror) {

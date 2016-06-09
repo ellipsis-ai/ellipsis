@@ -1,8 +1,9 @@
-package models.bots
+package models.bots.triggers
 
-import models.{Team, IDs}
-import services.AWSLambdaConstants
+import models.bots._
+import models.{IDs, Team}
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
 
@@ -10,28 +11,17 @@ case class RegexMessageTrigger(
                                 id: String,
                                 behavior: Behavior,
                                 regex: Regex
-                                ) extends Trigger {
+                                ) extends MessageTrigger {
 
-  def paramsFor(event: Event): Map[String, String] = {
-    event match {
-      case e: SlackMessageEvent => {
-        regex.findFirstMatchIn(e.context.message.text).map { firstMatch =>
-          firstMatch.subgroups.zipWithIndex.map { case(param, i) =>
-            (AWSLambdaConstants.invocationParamFor(i), param)
-          }.toMap
-        }.getOrElse(Map())
-      }
-      case _ => Map()
+  val sortRank: Int = 2
+
+  val pattern: String = regex.pattern.pattern()
+
+  protected def paramIndexMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]] = {
+    0.to(regex.pattern.matcher("").groupCount()).map { i =>
+      Some(i)
     }
   }
-
-  def isActivatedBy(event: Event): Boolean = {
-    event match {
-      case e: SlackMessageEvent => regex.findFirstMatchIn(e.context.message.text).nonEmpty
-      case _ => false
-    }
-  }
-
 }
 
 case class RawRegexMessageTrigger(id: String, behaviorId: String, regex: String)
@@ -64,22 +54,12 @@ object RegexMessageTriggerQueries {
     allForTeamQuery(team.id).result.map(_.map(tuple2Trigger))
   }
 
-  def allMatching(regexString: String, teamId: String): DBIO[Seq[RegexMessageTrigger]] = {
+  def allWithExactPattern(regexString: String, teamId: String): DBIO[Seq[RegexMessageTrigger]] = {
     allWithBehaviors.
       filter { case(trigger, (behavior, team)) => team.id === teamId }.
       filter { case(trigger, _) => trigger.regex === regexString }.
       result.
       map(_.map(tuple2Trigger))
-  }
-
-  def behaviorResponsesFor(event: Event, team: Team): DBIO[Seq[BehaviorResponse]] = {
-    for {
-      triggers <- allFor(team)
-      activated <- DBIO.successful(triggers.filter(_.isActivatedBy(event)))
-      responses <- DBIO.sequence(activated.map { trigger =>
-        BehaviorResponse.buildFor(event, trigger.behavior, trigger.paramsFor(event))
-      })
-    } yield responses
   }
 
   def uncompiledAllForBehaviorQuery(behaviorId: Rep[String]) = {
