@@ -18,16 +18,10 @@ class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile] {
     val success = (json \ "ok").as[Boolean]
 
     if (success) {
-      val teamUrl = (json \ "url").asOpt[String]
-      val teamName = (json \ "team").asOpt[String]
-      val userName = (json \ "user").asOpt[String]
       val teamId = (json \ "team_id").as[String]
       val userId = (json \ "user_id").as[String]
       val loginInfo = LoginInfo(ID, userId)
       SlackProfile(
-        maybeTeamUrl = teamUrl,
-        maybeTeamName = teamName,
-        maybeUserName = userName,
         teamId = teamId,
         loginInfo = loginInfo)
     } else {
@@ -45,9 +39,6 @@ class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile] {
       val teamId = (json \ "team" \ "id").as[String]
       val loginInfo = LoginInfo(ID, userId)
       SlackProfile(
-        maybeTeamUrl = None,
-        maybeTeamName = None,
-        maybeUserName = None,
         teamId = teamId,
         loginInfo = loginInfo)
     } else {

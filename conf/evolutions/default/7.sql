@@ -1,11 +1,11 @@
 # --- !Ups
 
-ALTER TABLE slack_profiles ALTER COLUMN team_name DROP NOT NULL;
-ALTER TABLE slack_profiles ALTER COLUMN team_url DROP NOT NULL;
-ALTER TABLE slack_profiles ALTER COLUMN user_name DROP NOT NULL;
+ALTER TABLE slack_profiles DROP COLUMN team_name;
+ALTER TABLE slack_profiles DROP COLUMN team_url;
+ALTER TABLE slack_profiles DROP COLUMN user_name;
 
 # --- !Downs
 
-ALTER TABLE slack_profiles ALTER COLUMN team_name SET NOT NULL;
-ALTER TABLE slack_profiles ALTER COLUMN team_url SET NOT NULL;
-ALTER TABLE slack_profiles ALTER COLUMN user_name SET NOT NULL;
+ALTER TABLE slack_profiles ADD COLUMN team_name TEXT NOT NULL;
+ALTER TABLE slack_profiles ADD COLUMN team_url TEXT NOT NULL;
+ALTER TABLE slack_profiles ADD COLUMN user_name TEXT NOT NULL;
