@@ -384,22 +384,32 @@ var BehaviorEditor = React.createClass({
 
   render: function() {
     return (
+
+      <div>
+
+      <div className="bg-light">
+        <div className="container ptxl pbm">
+          <h3 className="man type-weak">
+            <span>Edit behavior</span>
+            <span className={"type-italic type-pink" + this.visibleWhen(this.isModified())}>— unsaved changes</span>
+
+            <form action="/delete_behavior" method="POST">
+              <CsrfTokenHiddenInput value={this.props.csrfToken} />
+              <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+              <button type="submit" className="button-primary mrs">Delete</button>
+            </form>
+          </h3>
+        </div>
+      </div>
+
       <form action="/save_behavior" method="POST">
+
         <CsrfTokenHiddenInput
           value={this.props.csrfToken}
-        />
+          />
         <BehaviorEditorHiddenJsonInput
           value={JSON.stringify(this.state.behavior)}
         />
-
-        <div className="bg-light">
-          <div className="container ptxl pbm">
-            <h3 className="man type-weak">
-              <span>Edit behavior</span>
-              <span className={"type-italic type-pink" + this.visibleWhen(this.isModified())}>— unsaved changes</span>
-            </h3>
-          </div>
-        </div>
 
         {/* Start of container */}
         <div className="container ptxl pbm">
@@ -601,6 +611,8 @@ var BehaviorEditor = React.createClass({
         </footer>
 
       </form>
+
+      </div>
     );
   }
 });
