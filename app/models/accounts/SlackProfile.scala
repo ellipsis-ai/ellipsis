@@ -7,12 +7,7 @@ import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-case class SlackProfile(teamUrl: String,
-                        teamName: String,
-                        userName: String,
-                        teamId: String,
-                        loginInfo: LoginInfo
-                         ) extends SocialProfile
+case class SlackProfile(teamId: String, loginInfo: LoginInfo) extends SocialProfile
 
 
 trait SlackProfileBuilder {
@@ -25,16 +20,13 @@ trait SlackProfileBuilder {
 class SlackProfileTable(tag: Tag) extends Table[SlackProfile](tag, "slack_profiles") {
   def providerId = column[String]("provider_id")
   def providerKey = column[String]("provider_key")
-  def teamUrl = column[String]("team_url")
-  def userName = column[String]("user_name")
-  def teamName = column[String]("team_name")
   def teamId = column[String]("team_id")
 
   def pk = primaryKey("slack_profiles_pkey", (providerId, providerKey))
 
   def loginInfo = (providerId, providerKey) <> (LoginInfo.tupled, LoginInfo.unapply _)
 
-  def * = (teamUrl, teamName, userName, teamId, loginInfo)  <> ((SlackProfile.apply _).tupled, SlackProfile.unapply _)
+  def * = (teamId, loginInfo)  <> ((SlackProfile.apply _).tupled, SlackProfile.unapply _)
 
 }
 
