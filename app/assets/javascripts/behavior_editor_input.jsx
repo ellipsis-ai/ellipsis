@@ -30,30 +30,16 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="columns columns-elastic">
-        <div className="column column-expand position-relative">
-          <input type="text"
-            className={"form-input " + (this.props.className || "")}
-            ref="input"
-            id={this.props.id}
-            value={this.props.value}
-            placeholder={this.props.placeholder}
-            autoFocus={this.props.autoFocus}
-            onChange={this.onChange}
-            onKeyPress={this.handleEnterKey}
-          />
-        </div>
-        <div className="column column-shrink align-m">
-          <div className="display-ellipsis type-label">
-            <span className="mrm">
-              <input type="checkbox" /> Regexp
-            </span>
-            <span className="">
-              <input type="checkbox" /> Case
-            </span>
-          </div>
-        </div>
-      </div>
+      <input type="text"
+        className={"form-input " + (this.props.className || "")}
+        ref="input"
+        id={this.props.id}
+        value={this.props.value}
+        placeholder={this.props.placeholder}
+        autoFocus={this.props.autoFocus}
+        onChange={this.onChange}
+        onKeyPress={this.handleEnterKey}
+      />
     );
   }
 });

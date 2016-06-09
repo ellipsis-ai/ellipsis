@@ -18,7 +18,7 @@ return React.createClass({
   render: function() {
     return (
       <div className="columns columns-elastic">
-        <div className="column column-expand prn">
+        <div className="column column-expand">
           <BehaviorEditorInput
             className={"form-input-borderless " + (this.props.className || "")}
             ref="input"
@@ -28,8 +28,20 @@ return React.createClass({
             onEnterKey={this.props.onEnterKey}
           />
         </div>
-        <div className={"column column-shrink" + this.visibleWhen(!this.props.hideDelete)}>
-          <BehaviorEditorDeleteButton onClick={this.props.onDelete} />
+        <div className="column column-shrink">
+          <div className="display-ellipsis">
+            <div className="display-inline-block type-label">
+              <label className="mrm">
+                <input type="checkbox" /> Regexp
+              </label>
+              <label className="">
+                <input type="checkbox" /> Case
+              </label>
+            </div>
+            <div className={"display-inline-block" + this.visibleWhen(!this.props.hideDelete)}>
+              <BehaviorEditorDeleteButton onClick={this.props.onDelete} />
+            </div>
+          </div>
         </div>
       </div>
     );
