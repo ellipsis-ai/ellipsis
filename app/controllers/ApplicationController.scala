@@ -77,7 +77,7 @@ class ApplicationController @Inject() (
               Seq(),
               Seq()
             )
-            Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), justSaved = true))
+            Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), justSaved = false))
           }).getOrElse {
           Redirect(routes.ApplicationController.signInWithSlack(Some(request.uri)))
         }
