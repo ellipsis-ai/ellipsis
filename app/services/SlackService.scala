@@ -64,6 +64,28 @@ class SlackService @Inject() (
     }
   }
 
+  private def helpStringFor(behaviors: Seq[Behavior], prompt: String, matchString: String): DBIO[String] = {
+    DBIO.sequence(behaviors.map { ea =>
+      MessageTriggerQueries.allFor(ea)
+    }).map(_.flatten).map { triggersForBehaviors =>
+      val grouped = triggersForBehaviors.groupBy(_.behavior)
+      val behaviorStrings = grouped.map { case(behavior, triggers) =>
+        val triggersString = triggers.map { ea =>
+          s"`${ea.pattern}`"
+        }.mkString(" or ")
+        val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
+          s" <$link|Details>"
+        }.getOrElse("")
+        s"\n• $triggersString $editLink"
+      }
+      if (behaviorStrings.isEmpty) {
+        ""
+      } else {
+        s"$prompt$matchString:${behaviorStrings.toSeq.sortBy(_.toLowerCase).mkString("")}"
+      }
+    }
+  }
+
   def displayHelpFor(helpString: String, messageContext: SlackContext): DBIO[Unit] = {
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
     for {
@@ -76,26 +98,17 @@ class SlackService @Inject() (
         }
       }.getOrElse(DBIO.successful(Seq()))
       behaviors <- DBIO.successful(matchingTriggers.map(_.behavior).distinct)
-      triggersForBehaviors <- DBIO.sequence(behaviors.map { ea =>
-        MessageTriggerQueries.allFor(ea)
-      }).map(_.flatten)
+      (skills, knowledge) <- DBIO.successful(behaviors.partition(_.isSkill))
+      matchString <- DBIO.successful(maybeHelpSearch.map { s =>
+        s" that matches `$s`"
+      }.getOrElse(""))
+      skillsString <- helpStringFor(skills, "Here's what I can do", matchString)
+      knowledgeString <- helpStringFor(knowledge, "Here's what I know", matchString)
     } yield {
-        val grouped = triggersForBehaviors.groupBy(_.behavior)
-        val behaviorStrings = grouped.map { case(behavior, triggers) =>
-          val triggersString = triggers.map { ea =>
-            s"`${ea.pattern}`"
-          }.mkString(" or ")
-          val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
-            s" <$link|Details>"
-          }.getOrElse("")
-          s"\n• $triggersString $editLink"
-        }
-        val behaviorsString = behaviorStrings.toSeq.sortBy(_.toLowerCase).mkString("")
-        val matchString = maybeHelpSearch.map { s =>
-          s" that matches `$s`"
-        }.getOrElse("")
         val text = s"""
-           |Here's what I respond to$matchString:$behaviorsString
+           |$skillsString
+           |
+           |$knowledgeString
            |
            |To teach me something new, just type `@ellipsis: learn`
            |""".stripMargin
@@ -140,10 +153,7 @@ class SlackService @Inject() (
     val profile = messageContext.profile
     for {
       maybeTeam <- Team.find(profile.teamId)
-      maybeSlackProfile <- SlackProfileQueries.allFor(profile.slackTeamId).map(_.headOption)
-      maybeOAuthToken <- maybeSlackProfile.map { profile =>
-        OAuth2Token.findByLoginInfo(profile.loginInfo)
-      }.getOrElse(DBIO.successful(None))
+      maybeOAuthToken <- OAuth2Token.maybeFullForSlackTeamId(profile.slackTeamId)
       maybeUserClient <- DBIO.successful(maybeOAuthToken.map { token =>
         SlackApiClient(token.accessToken)
       })

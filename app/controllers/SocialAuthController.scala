@@ -144,7 +144,7 @@ class SocialAuthController @Inject() (
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
           savedProfile <- models.run(SlackProfileQueries.save(profile))
-          loginInfo <- slackProvider.retrieveLoginInfo(authInfo)
+          loginInfo <- Future.successful(profile.loginInfo)
           savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
           maybeExistingLinkedAccount <- models.run(LinkedAccount.find(loginInfo))
           linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {

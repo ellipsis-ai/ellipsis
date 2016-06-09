@@ -38,6 +38,12 @@ case class Behavior(
                      createdAt: DateTime
                      ) {
 
+  def isSkill: Boolean = {
+    maybeFunctionBody.map { body =>
+      Option(body).filter(_.trim.nonEmpty).isDefined
+    }.getOrElse(false)
+  }
+
   def editLinkFor(configuration: Configuration): Option[String] = {
     configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ApplicationController.editBehavior(id)
