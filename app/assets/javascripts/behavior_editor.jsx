@@ -446,6 +446,20 @@ var BehaviorEditor = React.createClass({
     }
   },
 
+  renderDelete: function() {
+    if (this.props.behaviorId !== undefined) {
+      return (
+        <form action="/delete_behavior" method="POST">
+          <CsrfTokenHiddenInput value={this.props.csrfToken} />
+          <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+          <button type="submit" className="button-primary mrs">Delete</button>
+        </form>
+      );
+    } else {
+      return "";
+    }
+  },
+
   render: function() {
     return (
 
@@ -455,13 +469,9 @@ var BehaviorEditor = React.createClass({
         <div className="container ptxl pbm">
           <h3 className="man type-weak">
             <span>Edit behavior</span>
-            <span className={"type-italic type-pink" + this.visibleWhen(this.isModified())}>— unsaved changes</span>
+            <span className="type-italic">{this.getBehaviorStatusText()}</span>
 
-            <form action="/delete_behavior" method="POST">
-              <CsrfTokenHiddenInput value={this.props.csrfToken} />
-              <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-              <button type="submit" className="button-primary mrs">Delete</button>
-            </form>
+            {this.renderDelete()}
           </h3>
         </div>
       </div>
@@ -474,15 +484,6 @@ var BehaviorEditor = React.createClass({
         <BehaviorEditorHiddenJsonInput
           value={JSON.stringify(this.state.behavior)}
         />
-
-        <div className="bg-light">
-          <div className="container ptxl pbm">
-            <h3 className="man type-weak">
-              <span>Edit behavior</span>
-              <span className="type-italic">{this.getBehaviorStatusText()}</span>
-            </h3>
-          </div>
-        </div>
 
         {/* Start of container */}
         <div className="container ptxl pbm">

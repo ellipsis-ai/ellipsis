@@ -235,7 +235,7 @@ class ApplicationController @Inject() (
       },
       behaviorId => {
         val action = for {
-          maybeBehavior <- BehaviorQueries.find(behaviorId)
+          maybeBehavior <- BehaviorQueries.find(behaviorId, request.identity)
           _ <- maybeBehavior.map { behavior =>
             behavior.unlearn(lambdaService)
           }.getOrElse(DBIO.successful(Unit))
