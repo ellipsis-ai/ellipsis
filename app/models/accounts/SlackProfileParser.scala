@@ -12,20 +12,22 @@ case class SlackProfileParseException(json: JsValue, message: String) extends Ex
 class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile] {
   import SlackProvider._
 
-  override def parse(json: JsValue): Future[SlackProfile] = Future.successful {
+  def parse(json: JsValue): Future[SlackProfile] = parseForSignIn(json)
+
+  def parseForInstall(json: JsValue): Future[SlackProfile] = Future.successful {
     val success = (json \ "ok").as[Boolean]
 
     if (success) {
-      val teamUrl = (json \ "url").as[String]
-      val teamName = (json \ "team").as[String]
-      val userName = (json \ "user").as[String]
+      val teamUrl = (json \ "url").asOpt[String]
+      val teamName = (json \ "team").asOpt[String]
+      val userName = (json \ "user").asOpt[String]
       val teamId = (json \ "team_id").as[String]
       val userId = (json \ "user_id").as[String]
       val loginInfo = LoginInfo(ID, userId)
       SlackProfile(
-        teamUrl = teamUrl,
-        teamName = teamName,
-        userName = userName,
+        maybeTeamUrl = teamUrl,
+        maybeTeamName = teamName,
+        maybeUserName = userName,
         teamId = teamId,
         loginInfo = loginInfo)
     } else {
@@ -35,16 +37,24 @@ class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile] {
     }
   }
 
-  def parseLoginInfo(json: JsValue): Future[LoginInfo] = Future.successful {
+  def parseForSignIn(json: JsValue): Future[SlackProfile] = Future.successful {
     val success = (json \ "ok").as[Boolean]
 
     if (success) {
       val userId = (json \ "user" \ "id").as[String]
-      LoginInfo(ID, userId)
+      val teamId = (json \ "team" \ "id").as[String]
+      val loginInfo = LoginInfo(ID, userId)
+      SlackProfile(
+        maybeTeamUrl = None,
+        maybeTeamName = None,
+        maybeUserName = None,
+        teamId = teamId,
+        loginInfo = loginInfo)
     } else {
       val maybeError = (json \ "error").asOpt[String]
       val message = maybeError.getOrElse("error")
       throw new ProfileRetrievalException(message, SlackProfileParseException(json, message))
     }
   }
+
 }
