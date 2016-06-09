@@ -830,13 +830,15 @@ input, select, textarea, .form-field {
   border-left-width: 0 !important;
   border-right-width: 0 !important;
   border-radius: 0;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding-left: 0;
+  padding-right: 0;
   padding-bottom: (@form-padding-vertical - @border-width - @xs);
   height: @form-input-height - @xs;
 }
 
 .form-input-borderless:focus {
+  padding-left: 0;
+  padding-right: 0;
   padding-bottom: (@form-padding-vertical - @border-width-thick - @xs);
 }
 
