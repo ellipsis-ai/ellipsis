@@ -17,34 +17,32 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="columns columns-elastic">
+      <div className="columns columns-elastic mbs">
+        <div className="column column-shrink align-m prs pts border-bottom">
+          <div className="display-ellipsis type-s">
+            <label>
+              <input type="checkbox" /> @ellipsis:
+            </label>
+          </div>
+        </div>
         <div className="column column-expand align-b prn">
-          <div className="form-field-capped">
-            <div className="form-input-prefix align-m">
-              <div className="type-s">
-                <label>
-                  <input type="checkbox" /> @ellipsis:
-                </label>
-              </div>
-            </div>
-            <BehaviorEditorInput
-              className={this.props.className || ""}
-              ref="input"
-              value={this.props.value}
-              placeholder="Add a trigger phrase"
-              onChange={this.props.onChange}
-              onEnterKey={this.props.onEnterKey}
-            />
-            <div className="form-input-suffix align-m">
-              <div className="type-label">
-                <label className="mrm">
-                  <input type="checkbox" /> Regexp
-                </label>
-                <label className="mrxs">
-                  <input type="checkbox" /> Case
-                </label>
-              </div>
-            </div>
+          <BehaviorEditorInput
+            className={"form-input-borderless phs " + (this.props.className || "")}
+            ref="input"
+            value={this.props.value}
+            placeholder="Add a trigger phrase"
+            onChange={this.props.onChange}
+            onEnterKey={this.props.onEnterKey}
+          />
+        </div>
+        <div className="column column-shrink align-m pls pts prxs border-bottom">
+          <div className="display-ellipsis type-label">
+            <label className="mrm">
+              <input type="checkbox" /> Regexp
+            </label>
+            <label className="">
+              <input type="checkbox" /> Case
+            </label>
           </div>
         </div>
         <div className="column column-shrink align-b">

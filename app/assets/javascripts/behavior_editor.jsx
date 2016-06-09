@@ -491,7 +491,7 @@ var BehaviorEditor = React.createClass({
                 <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
               </Collapsible>
 
-              <div className="mbm form-grouped-inputs">
+              <div className="mbm">
               {this.getBehaviorTriggers().map(function(trigger, index) {
                 return (
                   <BehaviorEditorTriggerInput
