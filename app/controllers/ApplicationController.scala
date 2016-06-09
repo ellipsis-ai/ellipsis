@@ -87,13 +87,19 @@ class ApplicationController @Inject() (
   }
 
   case class BehaviorParameterData(name: String, question: String)
+  case class BehaviorTriggerData(
+                                  text: String,
+                                  requiresMention: Boolean,
+                                  isRegex: Boolean,
+                                  caseSensitive: Boolean
+                                )
   case class BehaviorData(
                          teamId: String,
                          maybeId: Option[String],
                          functionBody: String,
                          responseTemplate: String,
                          params: Seq[BehaviorParameterData],
-                         triggers: Seq[String]
+                         triggers: Seq[BehaviorTriggerData]
                            )
 
   implicit val behaviorParameterReads: Reads[BehaviorParameterData] = (
@@ -106,13 +112,27 @@ class ApplicationController @Inject() (
       (JsPath \ "question").write[String]
     )(unlift(BehaviorParameterData.unapply))
 
+  implicit val behaviorTriggerReads: Reads[BehaviorTriggerData] = (
+    (JsPath \ "text").read[String] and
+      (JsPath \ "requiresMention").read[Boolean] and
+      (JsPath \ "isRegex").read[Boolean] and
+      (JsPath \ "caseSensitive").read[Boolean]
+    )(BehaviorTriggerData.apply _)
+
+  implicit val behaviorTriggerWrites: Writes[BehaviorTriggerData] = (
+    (JsPath \ "text").write[String] and
+      (JsPath \ "requiresMention").write[Boolean] and
+      (JsPath \ "isRegex").write[Boolean] and
+      (JsPath \ "caseSensitive").write[Boolean]
+    )(unlift(BehaviorTriggerData.unapply))
+
   implicit val behaviorReads: Reads[BehaviorData] = (
     (JsPath \ "teamId").read[String] and
       (JsPath \ "behaviorId").readNullable[String] and
       (JsPath \ "nodeFunction").read[String] and
       (JsPath \ "responseTemplate").read[String] and
       (JsPath \ "params").read[Seq[BehaviorParameterData]] and
-      (JsPath \ "triggers").read[Seq[String]]
+      (JsPath \ "triggers").read[Seq[BehaviorTriggerData]]
     )(BehaviorData.apply _)
 
   implicit val behaviorWrites: Writes[BehaviorData] = (
@@ -121,7 +141,7 @@ class ApplicationController @Inject() (
       (JsPath \ "nodeFunction").write[String] and
       (JsPath \ "responseTemplate").write[String] and
       (JsPath \ "params").write[Seq[BehaviorParameterData]] and
-      (JsPath \ "triggers").write[Seq[String]]
+      (JsPath \ "triggers").write[Seq[BehaviorTriggerData]]
     )(unlift(BehaviorData.unapply))
 
   def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
@@ -152,7 +172,9 @@ class ApplicationController @Inject() (
             params.map { ea =>
               BehaviorParameterData(ea.name, ea.question)
             },
-            triggers.map(_.pattern)
+            triggers.map( ea =>
+              BehaviorTriggerData(ea.pattern, false, false, false)
+            )
           )
           Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
         }).getOrElse {
@@ -201,9 +223,9 @@ class ApplicationController @Inject() (
                   _ <- MessageTriggerQueries.deleteAllFor(behavior)
                   _ <- DBIO.sequence(
                     data.triggers.
-                      filterNot(_.trim.isEmpty).
+                      filterNot(_.text.trim.isEmpty)
                       map { trigger =>
-                        MessageTriggerQueries.ensureFor(behavior, trigger)
+                        MessageTriggerQueries.ensureFor(behavior, trigger.text)
                       }
                     )
                 } yield Unit) transactionally

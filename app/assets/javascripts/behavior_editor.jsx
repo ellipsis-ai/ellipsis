@@ -35,7 +35,12 @@ var BehaviorEditor = React.createClass({
       name: React.PropTypes.string.isRequired,
       question: React.PropTypes.string.isRequired
     })),
-    triggers: React.PropTypes.arrayOf(React.PropTypes.string),
+    triggers: React.PropTypes.arrayOf(React.PropTypes.shape({
+      text: React.PropTypes.string.isRequired,
+      requiresMention: React.PropTypes.bool,
+      isRegex: React.PropTypes.bool,
+      caseSensitive: React.PropTypes.bool
+    })),
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
@@ -94,7 +99,12 @@ var BehaviorEditor = React.createClass({
     if (this.props.triggers && this.props.triggers.length > 0) {
       return this.props.triggers;
     } else {
-      return [""];
+      return [{
+        text: "",
+        requiresMention: false,
+        isRegex: false,
+        caseSensitive: false
+      }];
     }
   },
 
@@ -167,7 +177,7 @@ var BehaviorEditor = React.createClass({
 
   triggersUseParams: function() {
     return this.getBehaviorTriggers().some(function(trigger) {
-      return trigger.match(/{.+}/);
+      return trigger.text.match(/{.+}/);
     });
   },
 
@@ -498,7 +508,7 @@ var BehaviorEditor = React.createClass({
                     className={index === 0 ? "form-input-large" : ""}
                     key={"BehaviorEditorTrigger" + index}
                     ref={"trigger" + index}
-                    value={trigger}
+                    value={trigger.text}
                     hideDelete={index === 0}
                     onChange={this.onTriggerChange.bind(this, index)}
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
