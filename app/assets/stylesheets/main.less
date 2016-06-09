@@ -30,8 +30,8 @@
 @gray-lightest: hsl(231, 10%, 92.5%);
 @gray-lightest-translucent: hsla(231, 10%, 93%, 0.95);
 @gray-light: hsl(231, 11%, 81%);
-@gray-medium: hsl(231, 11%, 65%);
-@gray-dark: hsl(231, 11%, 45%);
+@gray-medium: hsl(231, 9%, 65%);
+@gray-dark: hsl(231, 10%, 45%);
 @gray-darkest: hsl(231, 13%, 25%);
 
 @blue-faded-dark: hsl(231, 22%, 43%);
@@ -451,6 +451,10 @@ code.type-bold {
   font-size: 0.9em;
 }
 
+.type-strikethrough {
+  text-decoration: line-through;
+}
+
 code {
   white-space: pre;
 }
@@ -716,6 +720,15 @@ input, select, textarea, .form-field {
 .form-input[readonly] {
   background-color: @form-bg-disabled;
   color: @form-color-disabled;
+}
+
+.label-checkbox {
+  cursor: pointer;
+}
+
+.label-checkbox:hover {
+  color: @blue-medium-text;
+  text-decoration: none;
 }
 
 .CodeMirror {

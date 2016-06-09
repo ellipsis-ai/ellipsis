@@ -19,10 +19,10 @@ return React.createClass({
     return (
       <div className="columns columns-elastic mbs">
         <div className="column column-shrink prn">
-          <div className={"display-ellipsis type-s type-weak form-input form-input-borderless prxs " +
+          <div className={"display-ellipsis type-s form-input form-input-borderless prxs " +
             (this.props.className || "")}>
-            <label>
-              <input type="checkbox" /> @ellipsis:
+            <label className="type-weak">
+              @ellipsis:
             </label>
           </div>
         </div>
@@ -40,10 +40,13 @@ return React.createClass({
           <div className={"display-ellipsis form-input form-input-borderless " +
             (this.props.className || "")}>
             <label className="mrm type-label">
-              <input type="checkbox" /> Regexp
+              <input type="checkbox" checked="checked" /> Mention?
+            </label>
+            <label className="mrm type-label">
+              <input type="checkbox" /> Case?
             </label>
             <label className="type-label">
-              <input type="checkbox" /> Case
+              <input type="checkbox" /> Regexp
             </label>
           </div>
         </div>
