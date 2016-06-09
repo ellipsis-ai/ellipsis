@@ -7,6 +7,15 @@ var React = require('react'),
 return React.createClass({
   displayName: 'BehaviorEditorTriggerInput',
   mixins: [BehaviorEditorMixin],
+  onChange: function(newValue) {
+    var newTrigger = {
+      text: newValue,
+      requiresMention: false,
+      isRegex: false,
+      caseSensitive: false
+    };
+    this.props.onChange(newTrigger);
+  },
   isEmpty: function() {
     return !this.props.value;
   },
@@ -24,7 +33,7 @@ return React.createClass({
             ref="input"
             value={this.props.value}
             placeholder="Add a trigger phrase"
-            onChange={this.props.onChange}
+            onChange={this.onChange}
             onEnterKey={this.props.onEnterKey}
           />
         </div>
