@@ -99,7 +99,12 @@ var BehaviorEditor = React.createClass({
     if (this.props.triggers && this.props.triggers.length > 0) {
       return this.props.triggers;
     } else {
-      return [{ text: "" }];
+      return [{
+        text: "",
+        requiresMention: false,
+        isRegex: false,
+        caseSensitive: false
+      }];
     }
   },
 
