@@ -223,9 +223,7 @@ class ApplicationController @Inject() (
                   _ <- MessageTriggerQueries.deleteAllFor(behavior)
                   _ <- DBIO.sequence(
                     data.triggers.
-                      filterNot { ea =>
-                        ea.text.isEmpty
-                      }
+                      filterNot(_.text.trim.isEmpty)
                       map { trigger =>
                         MessageTriggerQueries.ensureFor(behavior, trigger.text)
                       }
