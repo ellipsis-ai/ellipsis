@@ -19,7 +19,7 @@ case class TemplateMessageTrigger(
 
   val pattern: String = template
 
-  val regex: Regex = {
+  def regex: Regex = {
     var pattern = template
     pattern = Matcher.quoteReplacement(pattern)
     pattern = """\{.*?\}""".r.replaceAllIn(pattern, """(\\S+)""")
