@@ -8,6 +8,11 @@ var React = require('react'),
 return React.createClass({
   displayName: 'BehaviorEditorTriggerInput',
   mixins: [BehaviorEditorMixin],
+  getInitialState: function() {
+    return {
+      highlightCaseSensitivity: false
+    };
+  },
   changeTrigger: function(props) {
     var newTrigger = {
       text: this.props.value,
@@ -32,7 +37,11 @@ return React.createClass({
       text = text.replace(/^\(\?i\)/, '');
       changes.caseSensitive = false;
       changes.text = text;
-      this.changeTrigger(changes);
+      var callback = function() {
+        this.changeTrigger(changes);
+        this.setState({ highlightCaseSensitivity: true });
+      };
+      this.setState({ highlightCaseSensitivity: false }, callback);
     }
   },
   isEmpty: function() {
@@ -51,11 +60,13 @@ return React.createClass({
             "type-weak type-s form-input form-input-borderless prxs " +
             (this.props.className || "")
           }>
-            @ellipsis:
+            <label htmlFor={this.props.id}>@ellipsis:</label>
           </div>
         </div>
         <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-          <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.className || "")}>/</div>
+          <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.className || "")}>
+            <label htmlFor={this.props.id}>/</label>
+          </div>
         </div>
         <div className="column column-expand prn">
           <BehaviorEditorInput
@@ -64,6 +75,7 @@ return React.createClass({
               (this.props.isRegex ? " type-monospace " : "") +
               (this.props.className || "")
             }
+            id={this.props.id}
             ref="input"
             value={this.props.value}
             placeholder="Add a trigger phrase"
@@ -73,7 +85,9 @@ return React.createClass({
           />
         </div>
         <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-          <div className={"type-disabled type-monospace form-input form-input-borderless prs " + (this.props.className || "")}>/</div>
+          <div className={"type-disabled type-monospace form-input form-input-borderless prs " + (this.props.className || "")}>
+            <label htmlFor={this.props.id}>/</label>
+          </div>
         </div>
         <div className="column column-shrink prn">
           <div className={"display-ellipsis form-input form-input-borderless " +
@@ -84,7 +98,10 @@ return React.createClass({
                 onChange={this.onChange.bind(this, 'requiresMention')}
               /> 🗣🤖
             </label>
-            <label className="mrm type-s" title="Match uppercase and lowercase letters exactly — if unchecked, case is ignored">
+            <label
+              className={"mrm type-s " + (this.state.highlightCaseSensitivity ? "blink-twice" : "")}
+              title="Match uppercase and lowercase letters exactly — if unchecked, case is ignored"
+            >
               <BehaviorEditorCheckbox
                 checked={this.props.caseSensitive}
                 onChange={this.onChange.bind(this, 'caseSensitive')}

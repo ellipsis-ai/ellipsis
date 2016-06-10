@@ -527,6 +527,7 @@ var BehaviorEditor = React.createClass({
                   <BehaviorEditorTriggerInput
                     className={index === 0 ? "form-input-large" : ""}
                     key={"BehaviorEditorTrigger" + index}
+                    id={"trigger" + index}
                     ref={"trigger" + index}
                     value={trigger.text}
                     requiresMention={trigger.requiresMention}
