@@ -1,17 +1,16 @@
 package models.bots.triggers
 
 import models.bots._
-import models.{IDs, Team}
-import slick.driver.PostgresDriver.api._
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
 
 case class RegexMessageTrigger(
                                 id: String,
                                 behavior: Behavior,
-                                regex: Regex
+                                regex: Regex,
+                                isCaseSensitive: Boolean
                                 ) extends MessageTrigger {
+
+  val shouldTreatAsRegex: Boolean = true
 
   val sortRank: Int = 2
 

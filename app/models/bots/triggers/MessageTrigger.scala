@@ -13,6 +13,8 @@ trait MessageTrigger extends Trigger {
 
   val pattern: String
   val regex: Regex
+  val shouldTreatAsRegex: Boolean
+  val isCaseSensitive: Boolean
   val sortRank: Int
 
   protected def paramIndexMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]]
@@ -45,7 +47,13 @@ trait MessageTrigger extends Trigger {
 
 }
 
-case class RawMessageTrigger(id: String, behaviorId: String, pattern: String, shouldTreatAsRegex: Boolean)
+case class RawMessageTrigger(
+                              id: String,
+                              behaviorId: String,
+                              pattern: String,
+                              shouldTreatAsRegex: Boolean,
+                              isCaseSensitive: Boolean
+                              )
 
 class MessageTriggersTable(tag: Tag) extends Table[RawMessageTrigger](tag, "message_triggers") {
 
@@ -53,9 +61,10 @@ class MessageTriggersTable(tag: Tag) extends Table[RawMessageTrigger](tag, "mess
   def behaviorId = column[String]("behavior_id")
   def pattern = column[String]("pattern")
   def shouldTreatAsRegex = column[Boolean]("treat_as_regex")
+  def isCaseSensitive = column[Boolean]("is_case_sensitive")
 
   def * =
-    (id, behaviorId, pattern, shouldTreatAsRegex) <> ((RawMessageTrigger.apply _).tupled, RawMessageTrigger.unapply _)
+    (id, behaviorId, pattern, shouldTreatAsRegex, isCaseSensitive) <> ((RawMessageTrigger.apply _).tupled, RawMessageTrigger.unapply _)
 }
 
 object MessageTriggerQueries {
@@ -67,9 +76,9 @@ object MessageTriggerQueries {
     val raw = tuple._1
     val behavior = BehaviorQueries.tuple2Behavior(tuple._2)
     if (raw.shouldTreatAsRegex) {
-      RegexMessageTrigger(raw.id, behavior, raw.pattern.r)
+      RegexMessageTrigger(raw.id, behavior, raw.pattern.r, raw.isCaseSensitive)
     } else {
-      TemplateMessageTrigger(raw.id, behavior, raw.pattern)
+      TemplateMessageTrigger(raw.id, behavior, raw.pattern, raw.isCaseSensitive)
     }
   }
 
@@ -101,24 +110,25 @@ object MessageTriggerQueries {
       map(_.map(tuple2Trigger))
   }
 
-  def ensureFor(behavior: Behavior, pattern: String, shouldTreatAsRegex: Boolean): DBIO[MessageTrigger] = {
-    all.
-      filter(_.behaviorId === behavior.id).
-      filter(_.pattern === pattern).
-      filter(_.shouldTreatAsRegex === shouldTreatAsRegex).
-      result.
-      flatMap { r =>
-      r.headOption.map { existing =>
-        DBIO.successful(existing)
-      }.getOrElse {
-        val newRaw = RawMessageTrigger(IDs.next, behavior.id, pattern, shouldTreatAsRegex)
-        (all += newRaw).map(_ => newRaw)
-      }.map { ensuredRaw =>
-        if (shouldTreatAsRegex) {
-          RegexMessageTrigger(ensuredRaw.id, behavior, pattern.r)
-        } else {
-          TemplateMessageTrigger(ensuredRaw.id, behavior, pattern)
-        }
+  val caseInsensitiveRegex: Regex = """\(\?i\)""".r
+
+  def patternWithoutCaseInsensitiveFlag(pattern: String, shouldTreatAsRegex: Boolean): String = {
+    if (shouldTreatAsRegex) {
+      caseInsensitiveRegex.replaceAllIn(pattern, "")
+    } else {
+      pattern
+    }
+  }
+
+  def createFor(behavior: Behavior, pattern: String, shouldTreatAsRegex: Boolean, isCaseSensitive: Boolean): DBIO[MessageTrigger] = {
+    val processedPattern = patternWithoutCaseInsensitiveFlag(pattern, shouldTreatAsRegex)
+    val isCaseSensitiveIntended = isCaseSensitive && (!shouldTreatAsRegex || caseInsensitiveRegex.findFirstMatchIn(pattern).isEmpty)
+    val newRaw = RawMessageTrigger(IDs.next, behavior.id, processedPattern, shouldTreatAsRegex, isCaseSensitiveIntended)
+    (all += newRaw).map(_ => newRaw).map { _ =>
+      if (shouldTreatAsRegex) {
+        RegexMessageTrigger(newRaw.id, behavior, newRaw.pattern.r, newRaw.isCaseSensitive)
+      } else {
+        TemplateMessageTrigger(newRaw.id, behavior, newRaw.pattern, newRaw.isCaseSensitive)
       }
     }
   }
@@ -145,15 +155,6 @@ object MessageTriggerQueries {
     } catch {
       case e: PatternSyntaxException => false
     }
-  }
-
-  // ¯\_(ツ)_/¯
-  private def looksLikeRegex(pattern: String): Boolean = {
-    canCompileAsRegex(pattern) && pattern.contains("""\s""")
-  }
-
-  def ensureFor(behavior: Behavior, pattern: String): DBIO[MessageTrigger] = {
-    ensureFor(behavior, pattern, shouldTreatAsRegex = looksLikeRegex(pattern))
   }
 
 }
