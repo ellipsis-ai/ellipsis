@@ -446,16 +446,14 @@ var BehaviorEditor = React.createClass({
     }
   },
 
-  renderDelete: function() {
+  renderDeleteBehaviorButton: function() {
     if (this.props.behaviorId !== undefined) {
       return (
-        <div className="column column-one-quarter">
-          <form action="/delete_behavior" method="POST">
-            <CsrfTokenHiddenInput value={this.props.csrfToken} />
-            <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-            <button type="submit" className="button-primary">Delete</button>
-          </form>
-        </div>
+        <form action="/delete_behavior" method="POST">
+          <CsrfTokenHiddenInput value={this.props.csrfToken} />
+          <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+          <button type="submit" className="button-warning">Delete behavior</button>
+        </form>
       );
     } else {
       return "";
@@ -468,19 +466,19 @@ var BehaviorEditor = React.createClass({
       <div>
 
       <div className="bg-light">
-        <div className="container ptxl pbm">
-          <h3 className="man type-weak">
-            <div className="columns columns-elastic">
-
-              <div className="column column-expand">
+        <div className="container pbm">
+          <div className="columns columns-elastic">
+            <div className="column column-expand">
+              <h3 className="mbn type-weak">
                 <span>Edit behavior</span>
                 <span className="type-italic">{this.getBehaviorStatusText()}</span>
-              </div>
-
-              {this.renderDelete()}
-
+              </h3>
             </div>
-          </h3>
+
+            <div className="column column-shrink ptl align-r">
+              {this.renderDeleteBehaviorButton()}
+            </div>
+          </div>
         </div>
       </div>
 
