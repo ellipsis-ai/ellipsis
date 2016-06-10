@@ -2,51 +2,50 @@ import models.{IDs, Team}
 import models.bots.{BehaviorParameter, Behavior}
 import models.bots.triggers.TemplateMessageTrigger
 import org.joda.time.DateTime
-import org.scalatestplus.play.PlaySpec
 
-class TemplateMessageTriggerSpec extends PlaySpec {
+class TemplateMessageTriggerSpec extends MessageTriggerSpec {
 
   def triggerFor(template: String): TemplateMessageTrigger = {
     val team = Team(IDs.next, "Team!")
     val behavior = Behavior(IDs.next, team, None, None, None, None, DateTime.now)
-    TemplateMessageTrigger(IDs.next, behavior, template)
+    TemplateMessageTrigger(IDs.next, behavior, template, requiresBotMention = false, isCaseSensitive = false)
   }
 
   "TemplateMessageTrigger" should {
 
     "be activated with one word param" in  {
       val trigger = triggerFor("deploy {version}")
-      trigger.matches("deploy foo") mustBe true
+      matches(trigger, "deploy foo") mustBe true
     }
 
     "be activated with two word param" in  {
       val trigger = triggerFor("deploy {version}")
-      trigger.matches("deploy foo bar") mustBe true
+      matches(trigger, "deploy foo bar") mustBe true
     }
 
     "be activated with two params" in  {
       val trigger = triggerFor("deploy {version} {subversion}")
-      trigger.matches("deploy foo bar") mustBe true
+      matches(trigger, "deploy foo bar") mustBe true
     }
 
     "be activated regardless of case" in {
       val trigger = triggerFor("deploy {version}")
-      trigger.matches("DEPLOY foo") mustBe true
+      matches(trigger, "DEPLOY foo") mustBe true
     }
 
     "handle regex chars" in {
       val trigger = triggerFor("how much is ${amount} CAD in USD?")
-      trigger.matches("how much is $100 CAD in USD?") mustBe true
+      matches(trigger, "how much is $100 CAD in USD?") mustBe true
     }
 
     "not be activated without a required param" in {
       val trigger = triggerFor("deploy {version}")
-      trigger.matches("deploy") mustBe false
+      matches(trigger, "deploy") mustBe false
     }
 
     "not be activated when not at beginning of text" in {
       val trigger = triggerFor("deploy {version}")
-      trigger.matches("yo deploy") mustBe false
+      matches(trigger, "yo deploy") mustBe false
     }
 
     "build an invocation parameter" in {

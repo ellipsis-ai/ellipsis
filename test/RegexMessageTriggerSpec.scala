@@ -2,14 +2,13 @@ import models.{IDs, Team}
 import models.bots.{BehaviorParameter, Behavior}
 import models.bots.triggers.RegexMessageTrigger
 import org.joda.time.DateTime
-import org.scalatestplus.play.PlaySpec
 
-class RegexMessageTriggerSpec extends PlaySpec {
+class RegexMessageTriggerSpec extends MessageTriggerSpec {
 
   def triggerFor(pattern: String): RegexMessageTrigger = {
     val team = Team(IDs.next, "Team!")
     val behavior = Behavior(IDs.next, team, None, None, None, None, DateTime.now)
-    RegexMessageTrigger(IDs.next, behavior, pattern.r)
+    RegexMessageTrigger(IDs.next, behavior, pattern.r, requiresBotMention = false, isCaseSensitive = true)
   }
 
   val oneParamPattern = """deploy\s+(\S+)"""
@@ -19,22 +18,22 @@ class RegexMessageTriggerSpec extends PlaySpec {
 
     "be activated with one word param" in  {
       val trigger = triggerFor(oneParamPattern)
-      trigger.matches("deploy foo") mustBe true
+      matches(trigger, "deploy foo") mustBe true
     }
 
     "be activated with two word param" in  {
       val trigger = triggerFor(oneParamPattern)
-      trigger.matches("deploy foo bar") mustBe true
+      matches(trigger, "deploy foo bar") mustBe true
     }
 
     "be activated with two params" in  {
       val trigger = triggerFor(twoParamPattern)
-      trigger.matches("deploy foo bar") mustBe true
+      matches(trigger, "deploy foo bar") mustBe true
     }
 
     "not be activated without a required param" in {
       val trigger = triggerFor(oneParamPattern)
-      trigger.matches("deploy") mustBe false
+      matches(trigger, "deploy") mustBe false
     }
 
     "build an invocation parameter" in {
