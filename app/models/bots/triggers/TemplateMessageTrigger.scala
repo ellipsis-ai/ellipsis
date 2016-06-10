@@ -3,17 +3,16 @@ package models.bots.triggers
 import java.util.regex.Matcher
 
 import models.bots._
-import models.{IDs, Team}
-import slick.driver.PostgresDriver.api._
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
 
 case class TemplateMessageTrigger(
                                 id: String,
                                 behavior: Behavior,
-                                template: String
+                                template: String,
+                                isCaseSensitive: Boolean
                                 ) extends MessageTrigger {
+
+  val shouldTreatAsRegex: Boolean = false
 
   val sortRank: Int = 1
 
@@ -24,7 +23,10 @@ case class TemplateMessageTrigger(
     pattern = Matcher.quoteReplacement(pattern)
     pattern = """\{.*?\}""".r.replaceAllIn(pattern, """(\\S+)""")
     pattern = """\s+""".r.replaceAllIn(pattern, """\\s+""")
-    pattern = "(?i)^" ++ pattern
+    pattern = "^" ++ pattern
+    if (!isCaseSensitive) {
+      pattern = "(?i)" ++ pattern
+    }
     pattern.r
   }
 
