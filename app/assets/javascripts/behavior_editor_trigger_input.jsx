@@ -99,9 +99,7 @@ return React.createClass({
           </div>
         </div>
         <div className="column column-shrink">
-          <div className={this.visibleWhen(!this.props.hideDelete)}>
-            <BehaviorEditorDeleteButton onClick={this.props.onDelete} />
-          </div>
+          <BehaviorEditorDeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
         </div>
       </div>
     );

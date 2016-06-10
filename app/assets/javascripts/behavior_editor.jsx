@@ -532,7 +532,7 @@ var BehaviorEditor = React.createClass({
                     requiresMention={trigger.requiresMention}
                     isRegex={trigger.isRegex}
                     caseSensitive={trigger.caseSensitive}
-                    hideDelete={index === 0}
+                    hideDelete={!this.hasMultipleTriggers()}
                     onChange={this.onTriggerChange.bind(this, index)}
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}
