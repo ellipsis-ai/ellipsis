@@ -37,11 +37,12 @@ return React.createClass({
       text = text.replace(/^\(\?i\)/, '');
       changes.caseSensitive = false;
       changes.text = text;
+      this.changeTrigger(changes);
+      this.setState({ highlightCaseSensitivity: true });
       var callback = function() {
-        this.changeTrigger(changes);
-        this.setState({ highlightCaseSensitivity: true });
-      };
-      this.setState({ highlightCaseSensitivity: false }, callback);
+        this.setState({ highlightCaseSensitivity: false });
+      }.bind(this);
+      window.setTimeout(callback, 1000);
     }
   },
   isEmpty: function() {
