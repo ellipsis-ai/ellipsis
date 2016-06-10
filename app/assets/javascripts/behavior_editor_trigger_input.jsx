@@ -8,14 +8,14 @@ var React = require('react'),
 return React.createClass({
   displayName: 'BehaviorEditorTriggerInput',
   mixins: [BehaviorEditorMixin],
-  onChange: function(prop, newValue) {
+  onChange: function(propName, newValue) {
     var newTrigger = {
       text: this.props.value,
       requiresMention: this.props.requiresMention,
       isRegex: this.props.isRegex,
       caseSensitive: this.props.caseSensitive
     };
-    newTrigger[prop] = newValue;
+    newTrigger[propName] = newValue;
     this.props.onChange(newTrigger);
   },
   isEmpty: function() {
