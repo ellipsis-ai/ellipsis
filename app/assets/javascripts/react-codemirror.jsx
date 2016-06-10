@@ -1,7 +1,6 @@
 define('react-codemirror', function(require, exports, module) {
 
 var React = require('react');
-var className = require('classnames');
 var debounce = require('lodash.debounce');
 
 function deepEquals(thing1, thing2) {
@@ -129,13 +128,19 @@ var CodeMirror = React.createClass({
   render: function render() {
     var _this = this;
 
-    var editorClassName = className('ReactCodeMirror', this.state.isFocused ? 'ReactCodeMirror--focused' : null, this.props.className);
-    return React.createElement(
-      'div',
-      { className: editorClassName },
-      React.createElement('textarea', { ref: function (node) {
-          return _this.textarea = node;
-        }, name: this.props.path, defaultValue: this.props.value, autoComplete: 'off' })
+    return (
+      <div className={
+        'ReactCodeMirror ' +
+        (this.state.isFocused ? ' ReactCodeMirror--focused ' : '') +
+        this.props.className
+      }>
+        <textarea
+          ref={function (node) { return _this.textarea = node; }}
+          name={this.props.path}
+          defaultValue={this.props.value}
+          autoComplete='off'
+        />
+      </div>
     );
   }
 });
