@@ -63,7 +63,7 @@ var CodeMirror = React.createClass({
     };
   },
   componentDidMount: function componentDidMount() {
-    var textareaNode = this.textarea;
+    var textareaNode = this.refs.textarea;
     var codeMirrorInstance = this.getCodeMirrorInstance();
     this.codeMirror = codeMirrorInstance.fromTextArea(textareaNode, this.props.options);
     this.codeMirror.on('change', this.codemirrorValueChanged);
@@ -135,7 +135,7 @@ var CodeMirror = React.createClass({
         this.props.className
       }>
         <textarea
-          ref={function (node) { return _this.textarea = node; }}
+          ref="textarea"
           name={this.props.path}
           defaultValue={this.props.value}
           autoComplete='off'
