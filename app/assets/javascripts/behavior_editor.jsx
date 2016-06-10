@@ -9,6 +9,7 @@ var React = require('react'),
   BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
   BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
+  BehaviorEditorDeleteBehaviorForm = require('./behavior_editor_delete_behavior_form'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
@@ -462,22 +463,37 @@ var BehaviorEditor = React.createClass({
 
   render: function() {
     return (
+
+      <div>
+
+      <div className="bg-light">
+        <div className="container pbm">
+          <div className="columns columns-elastic">
+            <div className="column column-expand">
+              <h3 className="mbn type-weak">
+                <span>Edit behavior</span>
+                <span className="type-italic">{this.getBehaviorStatusText()}</span>
+              </h3>
+            </div>
+
+            <div className="column column-shrink ptl align-r">
+              <BehaviorEditorDeleteBehaviorForm
+                behaviorId={this.props.behaviorId}
+                csrfToken={this.props.csrfToken}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <form action="/save_behavior" method="POST">
+
         <CsrfTokenHiddenInput
           value={this.props.csrfToken}
-        />
+          />
         <BehaviorEditorHiddenJsonInput
           value={JSON.stringify(this.state.behavior)}
         />
-
-        <div className="bg-light">
-          <div className="container ptxl pbm">
-            <h3 className="man type-weak">
-              <span>Edit behavior</span>
-              <span className="type-italic">{this.getBehaviorStatusText()}</span>
-            </h3>
-          </div>
-        </div>
 
         {/* Start of container */}
         <div className="container ptxl pbm">
@@ -696,6 +712,8 @@ var BehaviorEditor = React.createClass({
         </footer>
 
       </form>
+
+      </div>
     );
   }
 });
