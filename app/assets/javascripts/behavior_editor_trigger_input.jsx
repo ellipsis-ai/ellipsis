@@ -35,9 +35,16 @@ return React.createClass({
             @ellipsis:
           </div>
         </div>
+        <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
+          <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.className || "")}>/</div>
+        </div>
         <div className="column column-expand prn">
           <BehaviorEditorInput
-            className={"form-input-borderless " + (this.props.className || "")}
+            className={
+              " form-input-borderless " +
+              (this.props.isRegex ? " type-monospace " : "") +
+              (this.props.className || "")
+            }
             ref="input"
             value={this.props.value}
             placeholder="Add a trigger phrase"
@@ -45,26 +52,29 @@ return React.createClass({
             onEnterKey={this.props.onEnterKey}
           />
         </div>
+        <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
+          <div className={"type-disabled type-monospace form-input form-input-borderless prs " + (this.props.className || "")}>/</div>
+        </div>
         <div className="column column-shrink prn">
           <div className={"display-ellipsis form-input form-input-borderless " +
             (this.props.className || "")}>
-            <label className="mrm type-label">
+            <label className="mrm type-s" title="Only respond when someone mentions @ellipsis">
               <BehaviorEditorCheckbox
                 checked={this.props.requiresMention}
                 onChange={this.onChange.bind(this, 'requiresMention')}
-              /> Mention
+              /> 💬🤖
             </label>
-            <label className="mrm type-label">
+            <label className="mrm type-s" title="Match uppercase and lowercase letters exactly — if unchecked, case is ignored">
               <BehaviorEditorCheckbox
                 checked={this.props.caseSensitive}
                 onChange={this.onChange.bind(this, 'caseSensitive')}
-              /> Case
+              /> <i>Aa</i>
             </label>
-            <label className="type-label">
+            <label className="type-s" title="Use regular expression pattern matching">
               <BehaviorEditorCheckbox
                 checked={this.props.isRegex}
                 onChange={this.onChange.bind(this, 'isRegex')}
-              /> Regex
+              /> <code>/^…$/</code>
             </label>
           </div>
         </div>
