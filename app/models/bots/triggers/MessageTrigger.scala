@@ -37,13 +37,13 @@ trait MessageTrigger extends Trigger {
     }
   }
 
-  def matches(fullText: String, relevantMessageText: String, mentionRegex: Regex): Boolean = {
-    regex.findFirstMatchIn(relevantMessageText).nonEmpty && (!requiresBotMention || mentionRegex.findFirstMatchIn(fullText).nonEmpty)
+  def matches(relevantMessageText: String, includesBotMention: Boolean): Boolean = {
+    regex.findFirstMatchIn(relevantMessageText).nonEmpty && (!requiresBotMention || includesBotMention)
   }
 
   def isActivatedBy(event: Event): Boolean = {
     event match {
-      case e: SlackMessageEvent => matches(e.context.message.text, e.context.relevantMessageText, e.context.toBotRegex)
+      case e: SlackMessageEvent => matches(e.context.relevantMessageText, e.context.includesBotMention)
       case _ => false
     }
   }

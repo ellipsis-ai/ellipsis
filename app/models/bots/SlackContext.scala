@@ -22,15 +22,20 @@ case class SlackContext(
     message.channel.startsWith("D")
   }
 
-  lazy val isToBot: Boolean = {
-    isDirectMessage || toBotRegex.findFirstMatchIn(message.text).nonEmpty
+  lazy val relevantMessageText: String = SlackContext.toBotRegexFor(botId).replaceFirstIn(message.text, "")
+
+  // either a DM to the bot or explicitly mentions bot
+  lazy val includesBotMention: Boolean = {
+    isDirectMessage || SlackContext.mentionRegexFor(botId).findFirstMatchIn(message.text).nonEmpty
   }
-
-  lazy val toBotRegex: Regex = s"""^<@$botId>:?\\s*""".r
-
-  lazy val relevantMessageText: String = toBotRegex.replaceFirstIn(message.text, "")
 
   def sendMessage(text: String)(implicit ec: ExecutionContext): Unit = {
     client.apiClient.postChatMessage(message.channel, text)
   }
+}
+
+object SlackContext {
+
+  def mentionRegexFor(botId: String): Regex = s"""<@$botId>""".r
+  def toBotRegexFor(botId: String): Regex = s"""^<@$botId>:?\\s*""".r
 }

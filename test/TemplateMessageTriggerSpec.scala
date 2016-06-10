@@ -5,10 +5,10 @@ import org.joda.time.DateTime
 
 class TemplateMessageTriggerSpec extends MessageTriggerSpec {
 
-  def triggerFor(template: String): TemplateMessageTrigger = {
+  def triggerFor(template: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): TemplateMessageTrigger = {
     val team = Team(IDs.next, "Team!")
     val behavior = Behavior(IDs.next, team, None, None, None, None, DateTime.now)
-    TemplateMessageTrigger(IDs.next, behavior, template, requiresBotMention = false, isCaseSensitive = false)
+    TemplateMessageTrigger(IDs.next, behavior, template, requiresBotMention, isCaseSensitive)
   }
 
   "TemplateMessageTrigger" should {
@@ -46,6 +46,16 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
     "not be activated when not at beginning of text" in {
       val trigger = triggerFor("deploy {version}")
       matches(trigger, "yo deploy") mustBe false
+    }
+
+    "not be activated when missing required bot mention" in {
+      val trigger = triggerFor("deploy {version}", requiresBotMention = true)
+      matches(trigger, "deploy foo", includesBotMention = false) mustBe false
+    }
+
+    "be activated when includes required bot mention" in {
+      val trigger = triggerFor("deploy {version}", requiresBotMention = true)
+      matches(trigger, "deploy foo", includesBotMention = true) mustBe true
     }
 
     "build an invocation parameter" in {
