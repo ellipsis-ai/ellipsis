@@ -6,10 +6,6 @@ Development configuration lives in main.js
 requirejs.config({
   packages: [
     {
-      name: 'classnames',
-      location: '../lib/classnames',
-      main: 'classnames'
-    }, {
       name: 'codemirror',
       location: '../lib/codemirror',
       main: 'lib/codemirror'

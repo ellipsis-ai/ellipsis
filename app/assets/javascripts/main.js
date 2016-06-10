@@ -6,10 +6,6 @@ Production configuration lives in build.js.
 requirejs.config({
   packages: [
     {
-      name: 'classnames',
-      location: '../lib/classnames',
-      main: 'classnames'
-    }, {
       name: 'codemirror',
       location: '../lib/codemirror',
       main: 'lib/codemirror'
