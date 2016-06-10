@@ -195,7 +195,7 @@ class SlackService @Inject() (
     val helpRegex = s"""^help\\s*(\\S*.*)$$""".r
     val rememberRegex = s"""^(remember|\\^)\\s*$$""".r
 
-    if (messageContext.isToBot) {
+    if (messageContext.includesBotMention) {
       messageContext.relevantMessageText match {
         case setEnvironmentVariableRegex(name, value) => setEnvironmentVariable(name, value, messageContext)
         case startLearnConversationRegex() => startLearnConversationFor(messageContext)
