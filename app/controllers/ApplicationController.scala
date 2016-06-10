@@ -225,7 +225,7 @@ class ApplicationController @Inject() (
                     data.triggers.
                       filterNot(_.text.trim.isEmpty)
                       map { trigger =>
-                        MessageTriggerQueries.ensureFor(behavior, trigger.text)
+                        MessageTriggerQueries.createFor(behavior, trigger.text, trigger.isRegex, trigger.caseSensitive)
                       }
                     )
                 } yield Unit) transactionally
