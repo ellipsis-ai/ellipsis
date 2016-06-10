@@ -170,9 +170,9 @@ class SlackService @Inject() (
         BehaviorQueries.createFor(team).flatMap { behavior =>
           behavior.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)).save.flatMap { behaviorWithContent =>
             qaExtractor.maybeLastQuestion.map { lastQuestion =>
-              MessageTriggerQueries.ensureFor(behavior, lastQuestion)
+              MessageTriggerQueries.createFor(behavior, lastQuestion, shouldTreatAsRegex = false, isCaseSensitive = false)
             }.getOrElse {
-              DBIO.successful()
+              DBIO.successful(Unit)
             }.map(_ => behaviorWithContent)
           }
         }.map(Some(_)) transactionally
