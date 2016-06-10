@@ -683,6 +683,10 @@ input, select, textarea, .form-field {
   line-height: @xl;
 }
 
+label {
+  cursor: pointer;
+}
+
 @form-padding-vertical: @s;
 @form-padding-horizontal: @s;
 @form-input-height: @s * 2 + @xl;
@@ -1227,7 +1231,7 @@ button.button-dropdown-trigger {
 }
 
 .display-none {
-  display: none;
+  display: none !important;
 }
 
 .display-inline {

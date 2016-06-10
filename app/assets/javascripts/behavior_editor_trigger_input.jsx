@@ -1,19 +1,21 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
+  BehaviorEditorCheckbox = require('./behavior_editor_checkbox'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorInput = require('./behavior_editor_input');
 
 return React.createClass({
   displayName: 'BehaviorEditorTriggerInput',
   mixins: [BehaviorEditorMixin],
-  onChange: function(newValue) {
+  onChange: function(prop, newValue) {
     var newTrigger = {
-      text: newValue,
-      requiresMention: false,
-      isRegex: false,
-      caseSensitive: false
+      text: this.props.value,
+      requiresMention: this.props.requiresMention,
+      isRegex: this.props.isRegex,
+      caseSensitive: this.props.caseSensitive
     };
+    newTrigger[prop] = newValue;
     this.props.onChange(newTrigger);
   },
   isEmpty: function() {
@@ -27,12 +29,10 @@ return React.createClass({
   render: function() {
     return (
       <div className="columns columns-elastic mbs">
-        <div className="column column-shrink prn">
-          <div className={"display-ellipsis type-s form-input form-input-borderless prxs " +
+        <div className={"column column-shrink prn " + (this.props.requiresMention ? "" : "display-none")}>
+          <div className={"display-ellipsis type-weak type-s form-input form-input-borderless prxs " +
             (this.props.className || "")}>
-            <label className="type-weak">
-              @ellipsis:
-            </label>
+            @ellipsis:
           </div>
         </div>
         <div className="column column-expand prn">
@@ -41,7 +41,7 @@ return React.createClass({
             ref="input"
             value={this.props.value}
             placeholder="Add a trigger phrase"
-            onChange={this.onChange}
+            onChange={this.onChange.bind(this, 'text')}
             onEnterKey={this.props.onEnterKey}
           />
         </div>
@@ -49,13 +49,22 @@ return React.createClass({
           <div className={"display-ellipsis form-input form-input-borderless " +
             (this.props.className || "")}>
             <label className="mrm type-label">
-              <input type="checkbox" checked="checked" /> Mention?
+              <BehaviorEditorCheckbox
+                checked={this.props.requiresMention}
+                onChange={this.onChange.bind(this, 'requiresMention')}
+              /> Mention
             </label>
             <label className="mrm type-label">
-              <input type="checkbox" /> Case?
+              <BehaviorEditorCheckbox
+                checked={this.props.caseSensitive}
+                onChange={this.onChange.bind(this, 'caseSensitive')}
+              /> Case
             </label>
             <label className="type-label">
-              <input type="checkbox" /> Regexp
+              <BehaviorEditorCheckbox
+                checked={this.props.isRegex}
+                onChange={this.onChange.bind(this, 'isRegex')}
+              /> Regex
             </label>
           </div>
         </div>

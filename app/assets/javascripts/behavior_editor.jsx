@@ -99,12 +99,7 @@ var BehaviorEditor = React.createClass({
     if (this.props.triggers && this.props.triggers.length > 0) {
       return this.props.triggers;
     } else {
-      return [{
-        text: "",
-        requiresMention: false,
-        isRegex: false,
-        caseSensitive: false
-      }];
+      return [this.createBlankTrigger()];
     }
   },
 
@@ -242,8 +237,17 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  createBlankTrigger: function() {
+    return {
+      text: "",
+      requiresMention: false,
+      isRegex: false,
+      caseSensitive: false
+    };
+  },
+
   addTrigger: function() {
-    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(['']), this.focusOnFirstBlankTrigger);
+    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.createBlankTrigger()), this.focusOnFirstBlankTrigger);
   },
 
   focusOnFirstBlankTrigger: function() {
@@ -509,6 +513,9 @@ var BehaviorEditor = React.createClass({
                     key={"BehaviorEditorTrigger" + index}
                     ref={"trigger" + index}
                     value={trigger.text}
+                    requiresMention={trigger.requiresMention}
+                    isRegex={trigger.isRegex}
+                    caseSensitive={trigger.caseSensitive}
                     hideDelete={index === 0}
                     onChange={this.onTriggerChange.bind(this, index)}
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
