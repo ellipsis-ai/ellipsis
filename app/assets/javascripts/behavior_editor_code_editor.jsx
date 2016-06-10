@@ -109,6 +109,7 @@ return React.createClass({
     return (
       <Codemirror value={this.props.value}
         onChange={this.props.onChange}
+        onCursorChange={this.props.onCursorChange}
         options={{
           mode: "javascript",
           firstLineNumber: this.props.firstLineNumber,
