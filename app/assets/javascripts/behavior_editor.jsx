@@ -452,7 +452,16 @@ var BehaviorEditor = React.createClass({
         <form action="/delete_behavior" method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-          <button type="submit" className="button-warning">Delete behavior</button>
+          <button type="submit" className="button-warning"
+            onClick={function(event) {
+              if (!window.confirm("Are you sure you want to delete this behavior?")) {
+                event.preventDefault();
+                event.target.blur();
+              }
+            }}
+          >
+            Delete behavior
+          </button>
         </form>
       );
     } else {
