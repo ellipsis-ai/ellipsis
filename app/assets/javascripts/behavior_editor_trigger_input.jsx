@@ -8,15 +8,32 @@ var React = require('react'),
 return React.createClass({
   displayName: 'BehaviorEditorTriggerInput',
   mixins: [BehaviorEditorMixin],
-  onChange: function(propName, newValue) {
+  changeTrigger: function(props) {
     var newTrigger = {
       text: this.props.value,
       requiresMention: this.props.requiresMention,
       isRegex: this.props.isRegex,
       caseSensitive: this.props.caseSensitive
     };
-    newTrigger[propName] = newValue;
+    Object.keys(props).forEach(function(key) {
+      newTrigger[key] = props[key];
+    });
     this.props.onChange(newTrigger);
+  },
+  onChange: function(propName, newValue) {
+    var changes = {};
+    changes[propName] = newValue;
+    this.changeTrigger(changes);
+  },
+  validateText: function(newValue) {
+    var text = newValue;
+    var changes = {};
+    if (this.props.isRegex && this.props.caseSensitive && text.indexOf("(?i)") === 0) {
+      text = text.replace(/^\(\?i\)/, '');
+      changes.caseSensitive = false;
+      changes.text = text;
+      this.changeTrigger(changes);
+    }
   },
   isEmpty: function() {
     return !this.props.value;
@@ -30,8 +47,10 @@ return React.createClass({
     return (
       <div className="columns columns-elastic mbs">
         <div className={"column column-shrink prn " + (this.props.requiresMention ? "" : "display-none")}>
-          <div className={"display-ellipsis type-weak type-s form-input form-input-borderless prxs " +
-            (this.props.className || "")}>
+          <div className={
+            "type-weak type-s form-input form-input-borderless prxs " +
+            (this.props.className || "")
+          }>
             @ellipsis:
           </div>
         </div>
@@ -49,6 +68,7 @@ return React.createClass({
             value={this.props.value}
             placeholder="Add a trigger phrase"
             onChange={this.onChange.bind(this, 'text')}
+            onBlur={this.validateText}
             onEnterKey={this.props.onEnterKey}
           />
         </div>
@@ -62,7 +82,7 @@ return React.createClass({
               <BehaviorEditorCheckbox
                 checked={this.props.requiresMention}
                 onChange={this.onChange.bind(this, 'requiresMention')}
-              /> 💬🤖
+              /> 🗣🤖
             </label>
             <label className="mrm type-s" title="Match uppercase and lowercase letters exactly — if unchecked, case is ignored">
               <BehaviorEditorCheckbox
