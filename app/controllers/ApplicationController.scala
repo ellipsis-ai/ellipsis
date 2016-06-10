@@ -173,7 +173,7 @@ class ApplicationController @Inject() (
               BehaviorParameterData(ea.name, ea.question)
             },
             triggers.map( ea =>
-              BehaviorTriggerData(ea.pattern, false, false, false)
+              BehaviorTriggerData(ea.pattern, false, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
             )
           )
           Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))

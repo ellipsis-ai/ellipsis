@@ -45,8 +45,8 @@ return React.createClass({
         <div className="column column-three-quarters">
           <div className="columns columns-elastic">
             <div className="column column-expand prn">
-              <div className="form-field-with-prefix">
-                <label className="form-input-prefix"
+              <div className="form-field-capped">
+                <label className="form-input-prefix type-weak"
                   htmlFor={"question" + this.props.id}
                   title="Write a question for @ellipsis to ask the user to provide this parameter."
                 >Q:</label>
