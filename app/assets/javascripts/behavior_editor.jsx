@@ -461,6 +461,15 @@ var BehaviorEditor = React.createClass({
     }
   },
 
+  ensureCursorVisible: function(editor, from, to) {
+    var cursorBottom = editor.cursorCoords(false).bottom;
+    var visibleBottom = window.innerHeight + window.scrollY - this.refs.footer.clientHeight;
+
+    if (cursorBottom > visibleBottom) {
+      window.scrollBy(0, cursorBottom - visibleBottom);
+    }
+  },
+
   render: function() {
     return (
 
@@ -620,6 +629,7 @@ var BehaviorEditor = React.createClass({
                 <BehaviorEditorCodeEditor
                   value={this.getBehaviorNodeFunction()}
                   onChange={this.onCodeChange}
+                  onViewportChange={this.ensureCursorVisible}
                   firstLineNumber={this.getFirstLineNumberForCode()}
                   lineWrapping={this.state.codeEditorUseLineWrapping}
                   autocompletions={this.getCodeAutocompletions()}
@@ -671,6 +681,7 @@ var BehaviorEditor = React.createClass({
               <div className="position-relative CodeMirror-container-no-gutter">
                 <Codemirror value={this.getBehaviorTemplate()}
                   onChange={this.onTemplateChange}
+                  onViewportChange={this.ensureCursorVisible}
                   options={{
                     mode: {
                       name: "markdown",
@@ -694,7 +705,7 @@ var BehaviorEditor = React.createClass({
           </div>
         </div> {/* End of container */}
 
-        <footer className={"position-fixed-bottom pvm border-top " +
+        <footer ref="footer" className={"position-fixed-bottom pvm border-top " +
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
           <div className="container">

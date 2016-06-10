@@ -73,6 +73,7 @@ var CodeMirror = React.createClass({
 		this.codeMirror.on('focus', this.focusChanged.bind(this, true));
 		this.codeMirror.on('blur', this.focusChanged.bind(this, false));
 		this.codeMirror.on('scroll', this.scrollChanged);
+		this.codeMirror.on('viewportChange', this.viewportChanged);
 		this.codeMirror.setValue(this.props.defaultValue || this.props.value || '');
 		this.updateProps = debounce(function (nextProps) {
 			if (this.codeMirror && nextProps.value !== undefined && this.codeMirror.getValue() != nextProps.value) {
@@ -118,6 +119,9 @@ var CodeMirror = React.createClass({
 	},
 	scrollChanged: function scrollChanged(cm) {
 		this.props.onScroll && this.props.onScroll(cm.getScrollInfo());
+	},
+	viewportChanged: function viewportChanged(cm, from, to) {
+		this.props.onViewportChange && this.props.onViewportChange(cm, from, to);
 	},
 	codemirrorValueChanged: function codemirrorValueChanged(doc, change) {
 		if (this.props.onChange && change.origin != 'setValue') {
