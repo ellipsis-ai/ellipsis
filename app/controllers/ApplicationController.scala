@@ -173,7 +173,7 @@ class ApplicationController @Inject() (
               BehaviorParameterData(ea.name, ea.question)
             },
             triggers.map( ea =>
-              BehaviorTriggerData(ea.pattern, false, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
+              BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
             )
           )
           Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
@@ -225,7 +225,7 @@ class ApplicationController @Inject() (
                     data.triggers.
                       filterNot(_.text.trim.isEmpty)
                       map { trigger =>
-                        MessageTriggerQueries.createFor(behavior, trigger.text, trigger.isRegex, trigger.caseSensitive)
+                        MessageTriggerQueries.createFor(behavior, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
                       }
                     )
                 } yield Unit) transactionally

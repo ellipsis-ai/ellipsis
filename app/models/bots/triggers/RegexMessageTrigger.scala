@@ -7,6 +7,7 @@ case class RegexMessageTrigger(
                                 id: String,
                                 behavior: Behavior,
                                 regex: Regex,
+                                requiresBotMention: Boolean,
                                 isCaseSensitive: Boolean
                                 ) extends MessageTrigger {
 
