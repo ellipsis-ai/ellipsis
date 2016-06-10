@@ -45,6 +45,8 @@
 @blue-lightest: hsl(231, 97%, 98.5%);
 
 @pink-medium: hsl(341, 93%, 65%);
+@pink-medium-text: hsl(341, 93%, 56%);
+@pink-dark: hsl(341, 93%, 45%);
 @green-lightest: hsl(127, 93%, 95.5%);
 @green-light: hsl(127, 93%, 63%);
 @green-medium: hsl(127, 93%, 48%);
@@ -924,6 +926,11 @@ button {
   vertical-align: bottom;
 }
 
+button.button-warning {
+  border-color: @pink-medium;
+  color: @pink-medium-text;
+}
+
 button.button-s {
   font-size: @type-s;
   line-height: @l;
@@ -985,6 +992,10 @@ button:focus {
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
 }
 
+button.button-warning:focus {
+  border-color: @pink-dark;
+}
+
 button.button-s:focus {
   padding: (@xs - @border-width-thick + 1) (@m - @border-width-thick) (@xs - @border-width-thick - 1);
 }
@@ -1008,6 +1019,10 @@ button.button-s.button-symbol:focus {
 button:active {
   background-color: @black-translucent;
   border-color: @blue-dark;
+}
+
+button.button-warning:active {
+  border-color: @pink-dark;
 }
 
 button.button-subtle:active {

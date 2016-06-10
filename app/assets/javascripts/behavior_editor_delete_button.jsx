@@ -16,7 +16,7 @@ return React.createClass({
       <span className="type-weak"><button type="button"
         ref="button"
         className={"button-subtle button-symbol" + this.visibleWhen(!this.props.hidden)}
-        onMouseUp={this.onClick}
+        onClick={this.onClick}
         title={this.props.title || "Delete"}
       >
         <SVGXIcon label="Delete" />
