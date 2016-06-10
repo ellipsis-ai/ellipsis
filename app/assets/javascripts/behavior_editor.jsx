@@ -527,12 +527,13 @@ var BehaviorEditor = React.createClass({
                   <BehaviorEditorTriggerInput
                     className={index === 0 ? "form-input-large" : ""}
                     key={"BehaviorEditorTrigger" + index}
+                    id={"trigger" + index}
                     ref={"trigger" + index}
                     value={trigger.text}
                     requiresMention={trigger.requiresMention}
                     isRegex={trigger.isRegex}
                     caseSensitive={trigger.caseSensitive}
-                    hideDelete={index === 0}
+                    hideDelete={!this.hasMultipleTriggers()}
                     onChange={this.onTriggerChange.bind(this, index)}
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}

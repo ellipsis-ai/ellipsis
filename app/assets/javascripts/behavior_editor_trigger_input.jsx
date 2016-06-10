@@ -8,15 +8,42 @@ var React = require('react'),
 return React.createClass({
   displayName: 'BehaviorEditorTriggerInput',
   mixins: [BehaviorEditorMixin],
-  onChange: function(prop, newValue) {
+  getInitialState: function() {
+    return {
+      highlightCaseSensitivity: false
+    };
+  },
+  changeTrigger: function(props) {
     var newTrigger = {
       text: this.props.value,
       requiresMention: this.props.requiresMention,
       isRegex: this.props.isRegex,
       caseSensitive: this.props.caseSensitive
     };
-    newTrigger[prop] = newValue;
+    Object.keys(props).forEach(function(key) {
+      newTrigger[key] = props[key];
+    });
     this.props.onChange(newTrigger);
+  },
+  onChange: function(propName, newValue) {
+    var changes = {};
+    changes[propName] = newValue;
+    this.changeTrigger(changes);
+  },
+  validateText: function(newValue) {
+    var text = newValue;
+    var changes = {};
+    if (this.props.isRegex && this.props.caseSensitive && text.indexOf("(?i)") === 0) {
+      text = text.replace(/^\(\?i\)/, '');
+      changes.caseSensitive = false;
+      changes.text = text;
+      this.changeTrigger(changes);
+      this.setState({ highlightCaseSensitivity: true });
+      var callback = function() {
+        this.setState({ highlightCaseSensitivity: false });
+      }.bind(this);
+      window.setTimeout(callback, 1000);
+    }
   },
   isEmpty: function() {
     return !this.props.value;
@@ -30,13 +57,17 @@ return React.createClass({
     return (
       <div className="columns columns-elastic mbs">
         <div className={"column column-shrink prn " + (this.props.requiresMention ? "" : "display-none")}>
-          <div className={"display-ellipsis type-weak type-s form-input form-input-borderless prxs " +
-            (this.props.className || "")}>
-            @ellipsis:
+          <div className={
+            "type-weak type-s form-input form-input-borderless prxs " +
+            (this.props.className || "")
+          }>
+            <label htmlFor={this.props.id}>@ellipsis:</label>
           </div>
         </div>
         <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-          <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.className || "")}>/</div>
+          <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.className || "")}>
+            <label htmlFor={this.props.id}>/</label>
+          </div>
         </div>
         <div className="column column-expand prn">
           <BehaviorEditorInput
@@ -45,15 +76,19 @@ return React.createClass({
               (this.props.isRegex ? " type-monospace " : "") +
               (this.props.className || "")
             }
+            id={this.props.id}
             ref="input"
             value={this.props.value}
             placeholder="Add a trigger phrase"
             onChange={this.onChange.bind(this, 'text')}
+            onBlur={this.validateText}
             onEnterKey={this.props.onEnterKey}
           />
         </div>
         <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-          <div className={"type-disabled type-monospace form-input form-input-borderless prs " + (this.props.className || "")}>/</div>
+          <div className={"type-disabled type-monospace form-input form-input-borderless prs " + (this.props.className || "")}>
+            <label htmlFor={this.props.id}>/</label>
+          </div>
         </div>
         <div className="column column-shrink prn">
           <div className={"display-ellipsis form-input form-input-borderless " +
@@ -62,9 +97,12 @@ return React.createClass({
               <BehaviorEditorCheckbox
                 checked={this.props.requiresMention}
                 onChange={this.onChange.bind(this, 'requiresMention')}
-              /> 💬🤖
+              /> 🗣🤖
             </label>
-            <label className="mrm type-s" title="Match uppercase and lowercase letters exactly — if unchecked, case is ignored">
+            <label
+              className={"mrm type-s " + (this.state.highlightCaseSensitivity ? "blink-twice" : "")}
+              title="Match uppercase and lowercase letters exactly — if unchecked, case is ignored"
+            >
               <BehaviorEditorCheckbox
                 checked={this.props.caseSensitive}
                 onChange={this.onChange.bind(this, 'caseSensitive')}
@@ -79,9 +117,7 @@ return React.createClass({
           </div>
         </div>
         <div className="column column-shrink">
-          <div className={this.visibleWhen(!this.props.hideDelete)}>
-            <BehaviorEditorDeleteButton onClick={this.props.onDelete} />
-          </div>
+          <BehaviorEditorDeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
         </div>
       </div>
     );

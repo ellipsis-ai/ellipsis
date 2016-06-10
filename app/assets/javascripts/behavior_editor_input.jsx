@@ -7,6 +7,12 @@ return React.createClass({
     this.props.onChange(this.refs.input.value);
   },
 
+  onBlur: function() {
+    if (typeof(this.props.onBlur) == 'function') {
+      this.props.onBlur(this.refs.input.value);
+    }
+  },
+
   handleEnterKey: function(event) {
     if (event.which == 13) {
       event.preventDefault();
@@ -38,6 +44,7 @@ return React.createClass({
         placeholder={this.props.placeholder}
         autoFocus={this.props.autoFocus}
         onChange={this.onChange}
+        onBlur={this.onBlur}
         onKeyPress={this.handleEnterKey}
       />
     );

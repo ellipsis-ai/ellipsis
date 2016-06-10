@@ -236,6 +236,10 @@ So for example:
 
 /* Background utilities */
 
+.bg-black {
+  background-color: @black;
+}
+
 .bg-dark-translucent {
   background-color: @black-translucent;
 }
@@ -1272,9 +1276,15 @@ button.button-dropdown-trigger {
 }
 
 .fade-in {
--webkit-animation: fadein 0.2s; /* Safari, Chrome and Opera > 12.1 */
-  -ms-animation: fadein 0.2s; /* Internet Explorer */
-      animation: fadein 0.2s;
+  -webkit-animation: fadein 0.2s; /* Safari, Chrome and Opera > 12.1 */
+      -ms-animation: fadein 0.2s; /* Internet Explorer */
+          animation: fadein 0.2s;
+}
+
+.blink-twice {
+  -webkit-animation: blink 0.4s;
+      -ms-animation: blink 0.4s;
+          animation: blink 0.4s;
 }
 
 @keyframes fadein {
@@ -1290,6 +1300,54 @@ button.button-dropdown-trigger {
 @-ms-keyframes fadein {
   from { opacity: 0; }
     to { opacity: 1; }
+}
+
+@keyframes blink {
+  0% {
+    background-color: @black;
+    color: @white;
+  } 33% {
+    background-color: transparent;
+    color: inherit;
+  } 66% {
+    background-color: @black;
+    color: @white;
+  } 100% {
+    background-color: transparent;
+    color: inherit;
+  }
+}
+
+@-webkit-keyframes blink {
+  0% {
+    background-color: @black;
+    color: @white;
+  } 33% {
+    background-color: transparent;
+    color: inherit;
+  } 66% {
+    background-color: @black;
+    color: @white;
+  } 100% {
+    background-color: transparent;
+    color: inherit;
+  }
+}
+
+@-ms-keyframes blink {
+  0% {
+    background-color: @black;
+    color: @white;
+  } 33% {
+    background-color: transparent;
+    color: inherit;
+  } 66% {
+    background-color: @black;
+    color: @white;
+  } 100% {
+    background-color: transparent;
+    color: inherit;
+  }
 }
 
 /* Positioning */
