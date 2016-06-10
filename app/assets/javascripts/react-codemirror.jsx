@@ -1,7 +1,6 @@
-define('react-codemirror', function(require, exports, module) {
-
-var React = require('react');
-var debounce = require('lodash.debounce');
+define('react-codemirror', function(require) {
+var React = require('react'),
+  debounce = require('lodash.debounce');
 
 function deepEquals(thing1, thing2) {
   if (thing1 === thing2) {
@@ -41,13 +40,15 @@ function objectsEqual(obj1, obj2) {
   });
 }
 
-var CodeMirror = React.createClass({
+return React.createClass({
   displayName: 'CodeMirror',
 
   propTypes: {
     onChange: React.PropTypes.func,
     onFocusChange: React.PropTypes.func,
     onScroll: React.PropTypes.func,
+    onViewportChange: React.PropTypes.func,
+    onCursorChange: React.PropTypes.func,
     options: React.PropTypes.object,
     path: React.PropTypes.string,
     value: React.PropTypes.string,
@@ -71,6 +72,7 @@ var CodeMirror = React.createClass({
     this.codeMirror.on('blur', this.focusChanged.bind(this, false));
     this.codeMirror.on('scroll', this.scrollChanged);
     this.codeMirror.on('viewportChange', this.viewportChanged);
+    this.codeMirror.on('cursorActivity', this.cursorChanged);
     this.codeMirror.setValue(this.props.defaultValue || this.props.value || '');
     this.updateProps = debounce(function (nextProps) {
       if (this.codeMirror && nextProps.value !== undefined && this.codeMirror.getValue() != nextProps.value) {
@@ -120,14 +122,15 @@ var CodeMirror = React.createClass({
   viewportChanged: function viewportChanged(cm, from, to) {
     this.props.onViewportChange && this.props.onViewportChange(cm, from, to);
   },
+  cursorChanged: function cursorChanged(cm) {
+    this.props.onCursorChange && this.props.onCursorChange(cm);
+  },
   codemirrorValueChanged: function codemirrorValueChanged(doc, change) {
     if (this.props.onChange && change.origin != 'setValue') {
       this.props.onChange(doc.getValue());
     }
   },
   render: function render() {
-    var _this = this;
-
     return (
       <div className={
         'ReactCodeMirror ' +
@@ -144,7 +147,5 @@ var CodeMirror = React.createClass({
     );
   }
 });
-
-module.exports = CodeMirror;
 
 });
