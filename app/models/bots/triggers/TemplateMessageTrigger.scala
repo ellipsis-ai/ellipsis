@@ -9,6 +9,7 @@ case class TemplateMessageTrigger(
                                 id: String,
                                 behavior: Behavior,
                                 template: String,
+                                requiresBotMention: Boolean,
                                 isCaseSensitive: Boolean
                                 ) extends MessageTrigger {
 

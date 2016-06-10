@@ -13,6 +13,7 @@ trait MessageTrigger extends Trigger {
 
   val pattern: String
   val regex: Regex
+  val requiresBotMention: Boolean
   val shouldTreatAsRegex: Boolean
   val isCaseSensitive: Boolean
   val sortRank: Int
@@ -36,11 +37,13 @@ trait MessageTrigger extends Trigger {
     }
   }
 
-  def matches(text: String): Boolean = regex.findFirstMatchIn(text).nonEmpty
+  def matches(fullText: String, relevantMessageText: String, mentionRegex: Regex): Boolean = {
+    regex.findFirstMatchIn(relevantMessageText).nonEmpty && (!requiresBotMention || mentionRegex.findFirstMatchIn(fullText).nonEmpty)
+  }
 
   def isActivatedBy(event: Event): Boolean = {
     event match {
-      case e: SlackMessageEvent => matches(e.context.relevantMessageText)
+      case e: SlackMessageEvent => matches(e.context.message.text, e.context.relevantMessageText, e.context.toBotRegex)
       case _ => false
     }
   }
@@ -51,6 +54,7 @@ case class RawMessageTrigger(
                               id: String,
                               behaviorId: String,
                               pattern: String,
+                              requiresBotMention: Boolean,
                               shouldTreatAsRegex: Boolean,
                               isCaseSensitive: Boolean
                               )
@@ -60,11 +64,12 @@ class MessageTriggersTable(tag: Tag) extends Table[RawMessageTrigger](tag, "mess
   def id = column[String]("id", O.PrimaryKey)
   def behaviorId = column[String]("behavior_id")
   def pattern = column[String]("pattern")
+  def requiresBotMention = column[Boolean]("requires_bot_mention")
   def shouldTreatAsRegex = column[Boolean]("treat_as_regex")
   def isCaseSensitive = column[Boolean]("is_case_sensitive")
 
   def * =
-    (id, behaviorId, pattern, shouldTreatAsRegex, isCaseSensitive) <> ((RawMessageTrigger.apply _).tupled, RawMessageTrigger.unapply _)
+    (id, behaviorId, pattern, requiresBotMention, shouldTreatAsRegex, isCaseSensitive) <> ((RawMessageTrigger.apply _).tupled, RawMessageTrigger.unapply _)
 }
 
 object MessageTriggerQueries {
@@ -76,9 +81,9 @@ object MessageTriggerQueries {
     val raw = tuple._1
     val behavior = BehaviorQueries.tuple2Behavior(tuple._2)
     if (raw.shouldTreatAsRegex) {
-      RegexMessageTrigger(raw.id, behavior, raw.pattern.r, raw.isCaseSensitive)
+      RegexMessageTrigger(raw.id, behavior, raw.pattern.r, raw.requiresBotMention, raw.isCaseSensitive)
     } else {
-      TemplateMessageTrigger(raw.id, behavior, raw.pattern, raw.isCaseSensitive)
+      TemplateMessageTrigger(raw.id, behavior, raw.pattern, raw.requiresBotMention, raw.isCaseSensitive)
     }
   }
 
@@ -120,15 +125,15 @@ object MessageTriggerQueries {
     }
   }
 
-  def createFor(behavior: Behavior, pattern: String, shouldTreatAsRegex: Boolean, isCaseSensitive: Boolean): DBIO[MessageTrigger] = {
+  def createFor(behavior: Behavior, pattern: String, requiresBotMention: Boolean, shouldTreatAsRegex: Boolean, isCaseSensitive: Boolean): DBIO[MessageTrigger] = {
     val processedPattern = patternWithoutCaseInsensitiveFlag(pattern, shouldTreatAsRegex)
     val isCaseSensitiveIntended = isCaseSensitive && (!shouldTreatAsRegex || caseInsensitiveRegex.findFirstMatchIn(pattern).isEmpty)
-    val newRaw = RawMessageTrigger(IDs.next, behavior.id, processedPattern, shouldTreatAsRegex, isCaseSensitiveIntended)
+    val newRaw = RawMessageTrigger(IDs.next, behavior.id, processedPattern, requiresBotMention, shouldTreatAsRegex, isCaseSensitiveIntended)
     (all += newRaw).map(_ => newRaw).map { _ =>
       if (shouldTreatAsRegex) {
-        RegexMessageTrigger(newRaw.id, behavior, newRaw.pattern.r, newRaw.isCaseSensitive)
+        RegexMessageTrigger(newRaw.id, behavior, newRaw.pattern.r, newRaw.requiresBotMention, newRaw.isCaseSensitive)
       } else {
-        TemplateMessageTrigger(newRaw.id, behavior, newRaw.pattern, newRaw.isCaseSensitive)
+        TemplateMessageTrigger(newRaw.id, behavior, newRaw.pattern, newRaw.requiresBotMention, newRaw.isCaseSensitive)
       }
     }
   }
