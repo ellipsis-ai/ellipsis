@@ -8,7 +8,7 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
   def triggerFor(pattern: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): RegexMessageTrigger = {
     val team = Team(IDs.next, "Team!")
     val behavior = Behavior(IDs.next, team, None, None, None, None, DateTime.now)
-    RegexMessageTrigger(IDs.next, behavior, pattern.r, requiresBotMention, isCaseSensitive)
+    RegexMessageTrigger(IDs.next, behavior, pattern, requiresBotMention, isCaseSensitive)
   }
 
   val oneParamPattern = """deploy\s+(\S+)"""
@@ -44,6 +44,12 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
     "be activated when includes required bot mention" in {
       val trigger = triggerFor(oneParamPattern, requiresBotMention = true)
       matches(trigger, "deploy foo", includesBotMention = true) mustBe true
+    }
+
+    "doesn't blow up with an invalid regex pattern but is never activated" in {
+      val trigger = triggerFor("""yo {yo} yo""")
+      matches(trigger, "yo {yo} yo") mustBe false
+      trigger.isValidRegex mustBe false
     }
 
     "build an invocation parameter" in {
