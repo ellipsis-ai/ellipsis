@@ -243,7 +243,7 @@ var BehaviorEditor = React.createClass({
   },
 
   addTrigger: function() {
-    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(['']), this.focusOnFirstBlankTrigger);
+    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat([{ text: '', requiresMention: false, isRegex: false, caseSensitive: false }]), this.focusOnFirstBlankTrigger);
   },
 
   focusOnFirstBlankTrigger: function() {
