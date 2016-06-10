@@ -19,12 +19,17 @@ case class TemplateApplier(
     }
   }
 
-  private def lookUp(obj: JsLookupResult, properties: Array[String]): Option[String] = {
+  private def lookUp(obj: JsLookupResult, properties: Array[String]): JsLookupResult = {
     properties.headOption.map { property =>
       lookUp(obj \ property, properties.tail)
     }.getOrElse {
-      obj.toOption.map(printJsValue)
+      obj
     }
+  }
+
+  private def lookUp(obj: JsLookupResult, path: String): JsLookupResult = {
+    val segments = path.split("\\.").filter(_.nonEmpty)
+    lookUp(result, segments)
   }
 
   private def pathReplacement(result: JsLookupResult): Regex.Match => String = {
@@ -33,8 +38,7 @@ case class TemplateApplier(
         if (path == null) {
           result.toOption.map(printJsValue).getOrElse("not found")
         } else {
-          val segments = path.split("\\.").filter(_.nonEmpty)
-          lookUp(result, segments).getOrElse(s"$RESULT_KEY$path not found")
+          lookUp(result, path).toOption.map(printJsValue).getOrElse(s"$RESULT_KEY$path not found")
         }
       }.getOrElse(m.toString())
   }
@@ -52,9 +56,32 @@ case class TemplateApplier(
     pathsRegex.replaceAllIn(responseTemplate, pathReplacement(result))
   }
 
+  def applyIterationTo(responseTemplate: String): String = {
+    val iterationRegex = """(?s)\{\s*for\s+(\S+)\s+in\s+(\S+)\s*\}(.*?)\{\s*endfor\s*\}""".r
+    iterationRegex.replaceAllIn(responseTemplate, iterationMatch => {
+      val captured = iterationMatch.subgroups
+      val itemName = captured.head
+      val listName = captured(1)
+      val itemTemplate = captured(2)
+      s"""$RESULT_KEY(\\..*)?""".r.findFirstMatchIn(listName).flatMap { listNameMatch =>
+        val listNameWithoutResult = listNameMatch.subgroups.head
+        val listValue = if (listNameWithoutResult == null) {
+          result
+        } else {
+          lookUp(result, listNameWithoutResult)
+        }
+        listValue.asOpt[Array[String]].map { items =>
+          items.map { item =>
+            s"""\\{\\s*$itemName\\s*\\}""".r.replaceAllIn(itemTemplate, item)
+          }.mkString("")
+        }
+      }.getOrElse(iterationMatch.source.toString)
+    })
+  }
+
   def apply: String = {
     maybeResponseTemplate.map { responseTemplate =>
-      applyInputsTo(applyResultTo(responseTemplate), inputs)
+      applyInputsTo(applyResultTo(applyIterationTo(responseTemplate)), inputs)
     }.getOrElse("")
   }
 

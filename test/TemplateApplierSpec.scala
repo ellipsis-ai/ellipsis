@@ -62,6 +62,40 @@ class TemplateApplierSpec extends PlaySpec {
       applier.apply mustBe "1 + {madeUp} = 3"
     }
 
+    "apply for iteration over a list" in {
+      val resultJson = Json.toJson(Map("items" -> Array("first", "second", "third")))
+      val applier = TemplateApplier(Some(
+        """{for item in successResult.items}
+          |1. {item}
+          |{endfor}
+        """.stripMargin), JsDefined(resultJson))
+      applier.apply.trim mustBe "1. first\n\n1. second\n\n1. third"
+    }
+
+    "apply for multiple iterations over a list" in {
+      val resultJson = Json.toJson(Map("items" -> Array("first", "second", "third")))
+      val applier = TemplateApplier(Some(
+        """{for item in successResult.items}
+          |1. {item}
+          |{endfor}
+          |
+          |{for ea in successResult.items}
+          |- {ea}
+          |{endfor}
+        """.stripMargin), JsDefined(resultJson))
+      applier.apply.trim mustBe "1. first\n\n1. second\n\n1. third\n\n\n\n- first\n\n- second\n\n- third"
+    }
+
+    "apply for iteration over top-level list result" in {
+      val resultJson = Json.toJson(Array("first", "second", "third"))
+      val applier = TemplateApplier(Some(
+        """{for item in successResult}
+          |1. {item}
+          |{endfor}
+        """.stripMargin), JsDefined(resultJson))
+      applier.apply.trim mustBe "1. first\n\n1. second\n\n1. third"
+    }
+
   }
 
 }
