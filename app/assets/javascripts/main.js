@@ -22,10 +22,6 @@ requirejs.config({
       location: '../lib/react',
       main: 'react'
     }, {
-      name: 'react-codemirror',
-      location: '../lib/react-codemirror',
-      main: 'react-codemirror'
-    }, {
       name: 'react-dom',
       location: '../lib/react',
       main: 'react-dom'
