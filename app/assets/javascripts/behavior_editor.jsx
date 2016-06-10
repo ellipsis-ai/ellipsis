@@ -9,6 +9,7 @@ var React = require('react'),
   BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
   BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
+  BehaviorEditorDeleteBehaviorForm = require('./behavior_editor_delete_behavior_form'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
@@ -446,29 +447,6 @@ var BehaviorEditor = React.createClass({
     }
   },
 
-  renderDeleteBehaviorButton: function() {
-    if (this.props.behaviorId !== undefined) {
-      return (
-        <form action="/delete_behavior" method="POST">
-          <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-          <button type="submit" className="button-warning"
-            onClick={function(event) {
-              if (!window.confirm("Are you sure you want to delete this behavior?")) {
-                event.preventDefault();
-                event.target.blur();
-              }
-            }}
-          >
-            Delete behavior
-          </button>
-        </form>
-      );
-    } else {
-      return "";
-    }
-  },
-
   render: function() {
     return (
 
@@ -485,7 +463,10 @@ var BehaviorEditor = React.createClass({
             </div>
 
             <div className="column column-shrink ptl align-r">
-              {this.renderDeleteBehaviorButton()}
+              <BehaviorEditorDeleteBehaviorForm
+                behaviorId={this.props.behaviorId}
+                csrfToken={this.props.csrfToken}
+              />
             </div>
           </div>
         </div>
