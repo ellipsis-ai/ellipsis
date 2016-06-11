@@ -13,7 +13,7 @@ import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
 import org.commonmark.node.{Image, AbstractVisitor, Node}
 import org.commonmark.parser.Parser
 import org.joda.time.DateTime
-import play.api.libs.json.{JsDefined, Json, JsValue}
+import play.api.libs.json.{JsString, JsDefined, Json, JsValue}
 import play.api.{Configuration, Play}
 import renderers.SlackRenderer
 import services.AWSLambdaConstants._
@@ -101,7 +101,7 @@ case class Behavior(
   }
 
   def successResultStringFor(result: JsValue, parametersWithValues: Seq[ParameterWithValue]): String = {
-    val inputs = parametersWithValues.map { ea => (ea.parameter.name, ea.value) }
+    val inputs = parametersWithValues.map { ea => (ea.parameter.name, JsString(ea.value)) }
     slackFormattedBodyTextFor(TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply)
   }
 
