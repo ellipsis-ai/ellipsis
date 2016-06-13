@@ -7,7 +7,7 @@ import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
 import models.{EnvironmentVariable, Models, InvocationToken}
-import models.bots.{ParameterWithValue, Behavior}
+import models.bots.{ParameterWithValue, BehaviorVersion}
 import play.api.Configuration
 import play.api.libs.json._
 import sun.misc.BASE64Decoder
@@ -25,11 +25,11 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
-  def invoke(behavior: Behavior, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
-    if (behavior.functionBody.isEmpty) {
-      Future.successful(behavior.successResultStringFor(JsNull, parametersWithValues))
+  def invoke(behaviorVersion: BehaviorVersion, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
+    if (behaviorVersion.functionBody.isEmpty) {
+      Future.successful(behaviorVersion.successResultStringFor(JsNull, parametersWithValues))
     } else {
-      val token = models.runNow(InvocationToken.createFor(behavior.team))
+      val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
       val payloadJson = JsObject(
         parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
           Seq(CONTEXT_PARAM -> JsObject(Seq(
@@ -43,12 +43,12 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
       val invokeRequest =
         new InvokeRequest().
           withLogType(LogType.Tail).
-          withFunctionName(behavior.functionName).
+          withFunctionName(behaviorVersion.functionName).
           withInvocationType(InvocationType.RequestResponse).
           withPayload(payloadJson.toString())
       JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
         val logResult = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
-        behavior.resultStringFor(result.getPayload, logResult, parametersWithValues)
+        behaviorVersion.resultStringFor(result.getPayload, logResult, parametersWithValues)
       }
     }
   }
@@ -61,7 +61,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules)
   }
 
-  private def nodeCodeFor(functionBody: String, params: Array[String], behavior: Behavior): String = {
+  private def nodeCodeFor(functionBody: String, params: Array[String], behaviorVersion: BehaviorVersion): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
 
@@ -85,13 +85,13 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   private def dirNameFor(functionName: String) = s"/tmp/$functionName"
   private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
-  private def createZipWithModulesFor(behavior: Behavior, functionBody: String, params: Array[String]): Unit = {
-    val dirName = dirNameFor(behavior.functionName)
+  private def createZipWithModulesFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String]): Unit = {
+    val dirName = dirNameFor(behaviorVersion.functionName)
     val path = Path(dirName)
     path.createDirectory()
 
     val writer = new PrintWriter(new File(s"$dirName/index.js"))
-    writer.write(nodeCodeFor(functionBody, params, behavior))
+    writer.write(nodeCodeFor(functionBody, params, behaviorVersion))
     writer.close()
 
     requiredModulesIn(functionBody).foreach { moduleName =>
@@ -99,12 +99,12 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
       Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
     }
 
-    Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(behavior.functionName)} *")).!
+    Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(behaviorVersion.functionName)} *")).!
   }
 
-  private def getZipFor(behavior: Behavior, functionBody: String, params: Array[String]): ByteBuffer = {
-    createZipWithModulesFor(behavior, functionBody, params)
-    val path = Paths.get(zipFileNameFor(behavior.functionName))
+  private def getZipFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String]): ByteBuffer = {
+    createZipWithModulesFor(behaviorVersion, functionBody, params)
+    val path = Paths.get(zipFileNameFor(behaviorVersion.functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
 
@@ -118,8 +118,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     }
   }
 
-  def deployFunctionFor(behavior: Behavior, functionBody: String, params: Array[String]): Future[Unit] = {
-    val functionName = behavior.functionName
+  def deployFunctionFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String]): Future[Unit] = {
+    val functionName = behaviorVersion.functionName
 
     // blocks
     deleteFunction(functionName)
@@ -129,7 +129,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     } else {
       val functionCode =
         new FunctionCode().
-          withZipFile(getZipFor(behavior, functionBody, params))
+          withZipFile(getZipFor(behaviorVersion, functionBody, params))
       val createFunctionRequest =
         new CreateFunctionRequest().
           withFunctionName(functionName).

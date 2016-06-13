@@ -5,7 +5,7 @@ import scala.util.matching.Regex
 
 case class RegexMessageTrigger(
                                 id: String,
-                                behavior: Behavior,
+                                behaviorVersion: BehaviorVersion,
                                 pattern: String,
                                 requiresBotMention: Boolean,
                                 isCaseSensitive: Boolean

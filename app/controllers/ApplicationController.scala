@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.bots.triggers.MessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
-import models.bots.{BehaviorParameterQueries, BehaviorQueries}
+import models.bots.{BehaviorParameterQueries, BehaviorVersionQueries}
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
@@ -147,28 +147,28 @@ class ApplicationController @Inject() (
   def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeBehavior <- BehaviorQueries.find(id, user)
-      maybeParameters <- maybeBehavior.map { behavior =>
-        BehaviorParameterQueries.allFor(behavior).map(Some(_))
+      maybeBehaviorVersion <- BehaviorVersionQueries.find(id, user)
+      maybeParameters <- maybeBehaviorVersion.map { behaviorVersion =>
+        BehaviorParameterQueries.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      maybeTriggers <- maybeBehavior.map { behavior =>
-        MessageTriggerQueries.allFor(behavior).map(Some(_))
+      maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
+        MessageTriggerQueries.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      maybeEnvironmentVariables <- maybeBehavior.map { behavior =>
-        EnvironmentVariableQueries.allFor(behavior.team).map(Some(_))
+      maybeEnvironmentVariables <- maybeBehaviorVersion.map { behaviorVersion =>
+        EnvironmentVariableQueries.allFor(behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
         (for {
-          behavior <- maybeBehavior
+          behaviorVersion <- maybeBehaviorVersion
           params <- maybeParameters
           triggers <- maybeTriggers
           envVars <- maybeEnvironmentVariables
         } yield {
           val data = BehaviorData(
-            behavior.team.id,
-            Some(behavior.id),
-            behavior.functionBody,
-            behavior.maybeResponseTemplate.getOrElse(""),
+            behaviorVersion.team.id,
+            Some(behaviorVersion.id),
+            behaviorVersion.functionBody,
+            behaviorVersion.maybeResponseTemplate.getOrElse(""),
             params.map { ea =>
               BehaviorParameterData(ea.name, ea.question)
             },
@@ -205,34 +205,34 @@ class ApplicationController @Inject() (
           case JsSuccess(data, jsPath) => {
             val action = for {
               maybeTeam <- Team.find(data.teamId, user)
-              maybeBehavior <- data.maybeId.map { behaviorId =>
-                BehaviorQueries.find(behaviorId, user)
+              maybeBehaviorVersion <- data.maybeId.map { behaviorVersionId =>
+                BehaviorVersionQueries.find(behaviorVersionId, user)
               }.getOrElse {
                 maybeTeam.map { team =>
-                  BehaviorQueries.createFor(team).map(Some(_))
+                  BehaviorVersionQueries.createFor(team).map(Some(_))
                 }.getOrElse(DBIO.successful(None))
               }
-              _ <- maybeBehavior.map { behavior =>
+              _ <- maybeBehaviorVersion.map { behaviorVersion =>
                 (for {
-                  _ <- DBIO.from(lambdaService.deployFunctionFor(behavior, data.functionBody, BehaviorQueries.withoutBuiltin(data.params.map(_.name).toArray)))
-                  _ <- behavior.copy(
+                  _ <- DBIO.from(lambdaService.deployFunctionFor(behaviorVersion, data.functionBody, BehaviorVersionQueries.withoutBuiltin(data.params.map(_.name).toArray)))
+                  _ <- behaviorVersion.copy(
                     maybeFunctionBody = Some(data.functionBody),
                     maybeResponseTemplate = Some(data.responseTemplate)
                   ).save
-                  _ <- BehaviorParameterQueries.ensureFor(behavior, data.params.map(ea => (ea.name, Some(ea.question))))
-                  _ <- MessageTriggerQueries.deleteAllFor(behavior)
+                  _ <- BehaviorParameterQueries.ensureFor(behaviorVersion, data.params.map(ea => (ea.name, Some(ea.question))))
+                  _ <- MessageTriggerQueries.deleteAllFor(behaviorVersion)
                   _ <- DBIO.sequence(
                     data.triggers.
                       filterNot(_.text.trim.isEmpty)
                       map { trigger =>
-                        MessageTriggerQueries.createFor(behavior, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
+                        MessageTriggerQueries.createFor(behaviorVersion, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
                       }
                     )
                 } yield Unit) transactionally
               }.getOrElse(DBIO.successful(Unit))
             } yield {
-                maybeBehavior.map { behavior =>
-                  Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
+                maybeBehaviorVersion.map { behaviorVersion =>
+                  Redirect(routes.ApplicationController.editBehavior(behaviorVersion.id, justSaved = Some(true)))
                 }.getOrElse {
                   NotFound("Behavior not found")
                 }
@@ -255,11 +255,11 @@ class ApplicationController @Inject() (
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
-      behaviorId => {
+      behaviorVersionId => {
         val action = for {
-          maybeBehavior <- BehaviorQueries.find(behaviorId, request.identity)
-          _ <- maybeBehavior.map { behavior =>
-            behavior.unlearn(lambdaService)
+          maybeBehaviorVersion <- BehaviorVersionQueries.find(behaviorVersionId, request.identity)
+          _ <- maybeBehaviorVersion.map { behaviorVersion =>
+            behaviorVersion.unlearn(lambdaService)
           }.getOrElse(DBIO.successful(Unit))
         } yield Redirect(routes.ApplicationController.index())
 
