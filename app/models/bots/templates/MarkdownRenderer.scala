@@ -1,7 +1,7 @@
-package renderers
+package models.bots.templates
 
+import models.bots.templates.ast._
 import play.api.libs.json._
-import utils._
 
 
 case class Environment(maybeParent: Option[Environment], data: Map[String, JsValue], result: JsLookupResult) {

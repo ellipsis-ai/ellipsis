@@ -1,4 +1,4 @@
-import _root_.util.TemplateApplier
+import models.bots.templates.TemplateApplier
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
 

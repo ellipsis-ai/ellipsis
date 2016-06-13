@@ -1,5 +1,6 @@
+import models.bots.templates._
+import models.bots.templates.ast._
 import org.scalatestplus.play.PlaySpec
-import utils._
 
 class TemplateParserSpec extends PlaySpec {
 
