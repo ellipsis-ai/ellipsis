@@ -84,7 +84,6 @@ return React.createClass({
 
   render: function() {
     return (
-      <div>
       <div className="columns columns-elastic mbs">
         <div className={"column column-shrink prn " + (this.props.requiresMention ? "" : "display-none")}>
           <div className={
@@ -155,7 +154,6 @@ return React.createClass({
         <div className="column column-shrink">
           <BehaviorEditorDeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
         </div>
-      </div>
       </div>
     );
   }
