@@ -334,7 +334,7 @@ var BehaviorEditor = React.createClass({
   },
 
   validateTrigger: function(index, trigger) {
-    var url = '/regex_validation_errors/' + encodeURI(trigger);
+    var url = '/regex_validation_errors/' + encodeURIComponent(trigger);
     fetch(url).then(function(response) {
       return response.json();
     }).then(function(json) {
