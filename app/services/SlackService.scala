@@ -125,10 +125,6 @@ class SlackService @Inject() (
   }
 
   def startLearnConversationFor(messageContext: SlackContext): DBIO[Unit] = {
-    val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ApplicationController.newBehavior(messageContext.profile.teamId)
-      s"$baseUrl$path"
-    }.get
     messageContext.sendMessage(s"I love to learn. Come ${teachMeLinkFor(messageContext)}.")
     DBIO.successful(Unit)
   }
