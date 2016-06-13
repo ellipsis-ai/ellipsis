@@ -1,8 +1,6 @@
-package util
+package models.bots.templates
 
 import play.api.libs.json._
-import renderers.MarkdownRenderer
-import utils.TemplateParser
 
 case class TemplateApplier(
                             maybeResponseTemplate: Option[String],

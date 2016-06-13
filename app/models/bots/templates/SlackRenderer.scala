@@ -1,4 +1,4 @@
-package renderers
+package models.bots.templates
 
 import org.commonmark.ext.gfm.strikethrough.Strikethrough
 import org.commonmark.node._
