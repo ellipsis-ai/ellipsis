@@ -20,6 +20,12 @@ return React.createClass({
       showError: false
     };
   },
+  clearError: function() {
+    this.setState({
+      regexError: null,
+      showError: false
+    });
+  },
   changeTrigger: function(props) {
     var newTrigger = {
       text: this.props.value,
@@ -34,16 +40,14 @@ return React.createClass({
     if (newTrigger.isRegex) {
       this.validateTrigger();
     } else {
-      this.setState({
-        regexError: null,
-        showError: false
-      });
+      this.clearError();
     }
   },
   onChange: function(propName, newValue) {
     var changes = {};
     changes[propName] = newValue;
     this.changeTrigger(changes);
+    this.focus();
   },
   onBlur: function(newValue) {
     var text = newValue;
@@ -62,7 +66,7 @@ return React.createClass({
   },
   validateTrigger: debounce(function() {
     if (!this.props.value) {
-      this.setState({ regexError: null });
+      this.clearError();
       return;
     }
 
@@ -71,9 +75,11 @@ return React.createClass({
       .then(function(response) {
         return response.json();
       }).then(function(json) {
+        var error = json[0].length ? json[0][0] : null;
         this.setState({
           validated: true,
-          regexError: json[0].length ? json[0][0] : null
+          regexError: error,
+          showError: !!(this.state.showError && error)
         });
       }.bind(this)).catch(function(ex) {
         console.log(ex);
@@ -84,7 +90,7 @@ return React.createClass({
   },
   toggleError: function(event) {
     this.setState({ showError: !this.state.showError });
-    this.refs.errorButton.blur();
+    this.focus();
   },
 
   focus: function() {
