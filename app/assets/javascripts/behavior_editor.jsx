@@ -335,7 +335,9 @@ var BehaviorEditor = React.createClass({
 
   validateTrigger: function(index, trigger) {
     var url = '/regex_validation_errors/' + encodeURIComponent(trigger);
-    fetch(url).then(function(response) {
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function(response) {
       return response.json();
     }).then(function(json) {
       console.log('the json', json);
