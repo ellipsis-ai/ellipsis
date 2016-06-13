@@ -20,7 +20,8 @@
 
 @border-width: 1px;
 @border-width-thick: 2px;
-@border-radius: @s;
+@border-radius: 8px;
+@border-radius-small: 6px;
 
 /* Colors */
 @black: hsl(231, 15%, 15%);
@@ -458,7 +459,7 @@ code.type-bold {
 }
 
 .type-white {
-  color: white;
+  color: @white;
 }
 
 .type-monospace, code, pre, .CodeMirror-hints {
@@ -1031,6 +1032,7 @@ button.button-s {
   line-height: @l;
   padding: (@xs - @border-width + 1) (@m - @border-width) (@xs - @border-width - 1);
   height: @button-small-height;
+  border-radius: @border-radius-small;
 }
 
 button[disabled] {
@@ -1043,11 +1045,6 @@ button.button-shrink {
   min-width: 0;
   padding-left: (@s - @border-width);
   padding-right: (@s - @border-width);
-}
-
-button.button-s.button-shrink {
-  padding-left: (@xs - @border-width);
-  padding-right: (@xs - @border-width);
 }
 
 button.button-symbol {
@@ -1105,11 +1102,10 @@ button.button-symbol:focus {
   padding-right: (@s - @border-width-thick) !important;
 }
 
-button.button-s.button-shrink:focus,
 button.button-s.button-symbol:focus {
   padding-left: (@xs - @border-width-thick) !important;
   padding-right: (@xs - @border-width-thick) !important;
-}
+}x
 
 button:active {
   background-color: @black-translucent;
@@ -1138,13 +1134,17 @@ button.button-none:active {
   text-align: inherit;
 }
 
-button.button-primary {
+button.button-primary,
+button.button-error {
   font-weight: 600;
-  background-color: @blue-medium;
-  border-color: @blue-medium;
   color: @white;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
+}
+
+button.button-primary {
+  background-color: @blue-medium;
+  border-color: @blue-medium;
 }
 
 button.button-primary:focus {
@@ -1155,6 +1155,22 @@ button.button-primary:focus {
 button.button-primary:active {
   background-color: @blue-dark;
   border-color: @blue-dark;
+  color: @white;
+}
+
+button.button-error {
+  background-color: @pink-medium;
+  border-color: @pink-medium;
+}
+
+button.button-primary:focus {
+  background-color: @pink-medium;
+  border-color: @pink-dark;
+}
+
+button.button-primary:active {
+  background-color: @pink-dark;
+  border-color: @pink-dark;
   color: @white;
 }
 
@@ -1172,6 +1188,7 @@ button.button-help-toggled:active {
 }
 
 button.button-primary[disabled],
+button.button-error[disabled],
 button.button-help-toggled[disabled] {
   background-color: @gray-light !important;
   border-color: @gray-light !important;

@@ -1,10 +1,12 @@
 define(function(require) {
 var React = require('react'),
+  debounce = require('lodash.debounce'),
   ES6Promise = require('es6-promise'),
   Fetch = require('fetch'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorCheckbox = require('./behavior_editor_checkbox'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
+  BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorInput = require('./behavior_editor_input'),
   Collapsible = require('./collapsible');
 
@@ -14,8 +16,8 @@ return React.createClass({
   getInitialState: function() {
     return {
       highlightCaseSensitivity: false,
-      validated: false,
-      regexError: null
+      regexError: null,
+      showError: false
     };
   },
   changeTrigger: function(props) {
@@ -30,7 +32,12 @@ return React.createClass({
     });
     this.props.onChange(newTrigger);
     if (newTrigger.isRegex) {
-      this.setState({ validated: false });
+      this.validateTrigger();
+    } else {
+      this.setState({
+        regexError: null,
+        showError: false
+      });
     }
   },
   onChange: function(propName, newValue) {
@@ -52,11 +59,13 @@ return React.createClass({
       }.bind(this);
       window.setTimeout(callback, 1000);
     }
-    if (!this.state.validated) {
-      this.validateTrigger(text);
-    }
   },
-  validateTrigger: function() {
+  validateTrigger: debounce(function() {
+    if (!this.props.value) {
+      this.setState({ regexError: null });
+      return;
+    }
+
     var url = '/regex_validation_errors/' + encodeURIComponent(this.props.value);
     fetch(url, { credentials: 'same-origin' })
       .then(function(response) {
@@ -69,9 +78,13 @@ return React.createClass({
       }.bind(this)).catch(function(ex) {
         console.log(ex);
       });
-  },
+  }, 500),
   isEmpty: function() {
     return !this.props.value;
+  },
+  toggleError: function(event) {
+    this.setState({ showError: !this.state.showError });
+    this.refs.errorButton.blur();
   },
 
   focus: function() {
@@ -79,7 +92,9 @@ return React.createClass({
   },
 
   componentDidMount: function() {
-    this.validateTrigger();
+    if (this.props.isRegex) {
+      this.validateTrigger();
+    }
   },
 
   render: function() {
@@ -98,7 +113,7 @@ return React.createClass({
             <label htmlFor={this.props.id}>/</label>
           </div>
         </div>
-        <div className="column column-expand prn">
+        <div className="column column-expand prn position-relative">
           <BehaviorEditorInput
             className={
               " form-input-borderless " +
@@ -113,8 +128,23 @@ return React.createClass({
             onBlur={this.onBlur}
             onEnterKey={this.props.onEnterKey}
           />
-          <Collapsible revealWhen={this.state.regexError}>
-            <div className="border-left border-bottom border-right bg-blue-lighter border-blue border-error pts phm type-s">
+          {this.state.regexError ? (
+            <div className="position-absolute position-top-right mts mrxs fade-in">
+              <button type="button"
+                className="button-error button-s button-shrink"
+                ref="errorButton"
+                onClick={this.toggleError}
+              >
+                <span>{this.state.showError ? "▾" : "▸" }</span>
+                <span> Error</span>
+              </button>
+            </div>
+          ) : ""}
+          <Collapsible revealWhen={this.state.showError} className="position-absolute display-limit-width">
+            <div className="border-left border-bottom border-right bg-blue-lighter border-blue border-error pts phm type-s popup-shadow">
+              <div className="position-absolute position-top-right ptxs prxs">
+                <BehaviorEditorHelpButton onClick={this.toggleError} toggled={true} inline={true} />
+              </div>
               <div><b>Error parsing regular expression pattern:</b></div>
               <pre>{this.state.regexError || "\n\n\n"}</pre>
             </div>
