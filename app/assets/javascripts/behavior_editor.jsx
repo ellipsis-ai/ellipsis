@@ -1,6 +1,8 @@
 define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
+  ES6Promise = require('es6-promise'),
+  Fetch = require('fetch'),
   Codemirror = require('./react-codemirror'),
   CodemirrorMarkdownMode = require('./codemirror/mode/markdown/markdown'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
@@ -331,6 +333,17 @@ var BehaviorEditor = React.createClass({
     this.setBehaviorProp('triggers', this.utils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
   },
 
+  validateTrigger: function(index, trigger) {
+    var url = '/regex_validation_errors/' + encodeURI(trigger);
+    fetch(url).then(function(response) {
+      return response.json();
+    }).then(function(json) {
+      console.log('the json', json);
+    }).catch(function(ex) {
+      console.log('oops', ex);
+    });
+  },
+
   toggleTriggerHelp: function() {
     this.setState({
       triggerHelpVisible: !this.state.triggerHelpVisible
@@ -549,6 +562,7 @@ var BehaviorEditor = React.createClass({
                     onChange={this.onTriggerChange.bind(this, index)}
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}
+                    onBlur={this.validateTrigger.bind(this, index)}
                   />
                 );
               }, this)}

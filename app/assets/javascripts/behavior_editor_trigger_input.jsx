@@ -30,7 +30,7 @@ return React.createClass({
     changes[propName] = newValue;
     this.changeTrigger(changes);
   },
-  validateText: function(newValue) {
+  onBlur: function(newValue) {
     var text = newValue;
     var changes = {};
     if (this.props.isRegex && this.props.caseSensitive && text.indexOf("(?i)") === 0) {
@@ -43,6 +43,9 @@ return React.createClass({
         this.setState({ highlightCaseSensitivity: false });
       }.bind(this);
       window.setTimeout(callback, 1000);
+    }
+    if (this.props.onBlur) {
+      this.props.onBlur(text);
     }
   },
   isEmpty: function() {
@@ -81,7 +84,7 @@ return React.createClass({
             value={this.props.value}
             placeholder="Add a trigger phrase"
             onChange={this.onChange.bind(this, 'text')}
-            onBlur={this.validateText}
+            onBlur={this.onBlur}
             onEnterKey={this.props.onEnterKey}
           />
         </div>
