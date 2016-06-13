@@ -1,16 +1,21 @@
 define(function(require) {
 var React = require('react'),
+  ES6Promise = require('es6-promise'),
+  Fetch = require('fetch'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorCheckbox = require('./behavior_editor_checkbox'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
-  BehaviorEditorInput = require('./behavior_editor_input');
+  BehaviorEditorInput = require('./behavior_editor_input'),
+  Collapsible = require('./collapsible');
 
 return React.createClass({
   displayName: 'BehaviorEditorTriggerInput',
   mixins: [BehaviorEditorMixin],
   getInitialState: function() {
     return {
-      highlightCaseSensitivity: false
+      highlightCaseSensitivity: false,
+      validated: false,
+      regexError: null
     };
   },
   changeTrigger: function(props) {
@@ -24,6 +29,9 @@ return React.createClass({
       newTrigger[key] = props[key];
     });
     this.props.onChange(newTrigger);
+    if (newTrigger.isRegex) {
+      this.setState({ validated: false });
+    }
   },
   onChange: function(propName, newValue) {
     var changes = {};
@@ -44,9 +52,23 @@ return React.createClass({
       }.bind(this);
       window.setTimeout(callback, 1000);
     }
-    if (this.props.onBlur) {
-      this.props.onBlur(text);
+    if (!this.state.validated) {
+      this.validateTrigger(text);
     }
+  },
+  validateTrigger: function() {
+    var url = '/regex_validation_errors/' + encodeURIComponent(this.props.value);
+    fetch(url, { credentials: 'same-origin' })
+      .then(function(response) {
+        return response.json();
+      }).then(function(json) {
+        this.setState({
+          validated: true,
+          regexError: json[0].length ? json[0][0] : null
+        });
+      }.bind(this)).catch(function(ex) {
+        console.log(ex);
+      });
   },
   isEmpty: function() {
     return !this.props.value;
@@ -56,8 +78,13 @@ return React.createClass({
     this.refs.input.focus();
   },
 
+  componentDidMount: function() {
+    this.validateTrigger();
+  },
+
   render: function() {
     return (
+      <div>
       <div className="columns columns-elastic mbs">
         <div className={"column column-shrink prn " + (this.props.requiresMention ? "" : "display-none")}>
           <div className={
@@ -87,6 +114,12 @@ return React.createClass({
             onBlur={this.onBlur}
             onEnterKey={this.props.onEnterKey}
           />
+          <Collapsible revealWhen={this.state.regexError}>
+            <div className="border-left border-bottom border-right bg-blue-lighter border-blue border-error pts phm type-s">
+              <div><b>Error parsing regular expression pattern:</b></div>
+              <pre>{this.state.regexError || "\n\n\n"}</pre>
+            </div>
+          </Collapsible>
         </div>
         <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
           <div className={"type-disabled type-monospace form-input form-input-borderless prs " + (this.props.className || "")}>
@@ -100,7 +133,7 @@ return React.createClass({
               <BehaviorEditorCheckbox
                 checked={this.props.requiresMention}
                 onChange={this.onChange.bind(this, 'requiresMention')}
-              /> 🗣🤖
+              /> <span>🗣 🤖</span>
             </label>
             <label
               className={"mrm type-s " + (this.state.highlightCaseSensitivity ? "blink-twice" : "")}
@@ -122,6 +155,7 @@ return React.createClass({
         <div className="column column-shrink">
           <BehaviorEditorDeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
         </div>
+      </div>
       </div>
     );
   }

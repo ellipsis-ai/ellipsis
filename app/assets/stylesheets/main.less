@@ -56,6 +56,7 @@
 @orange-lighter: hsl(24, 100%, 77%);
 
 @yellow-light: hsl(45, 100%, 73%);
+@yellow-lighter: hsl(45, 100%, 90%);
 
 @border-color: @gray-light;
 @border-color-focus: @pink-medium;
@@ -382,6 +383,14 @@ So for example:
   border-bottom-right-radius: @border-radius;
 }
 
+.border-warning {
+  border-left: @xs solid @yellow-light;
+}
+
+.border-error {
+  border-left: @xs solid @pink-medium;
+}
+
 /* Boxes combined background and border */
 
 .box-help {
@@ -463,6 +472,10 @@ code.type-bold {
 
 code {
   white-space: pre;
+}
+
+pre {
+  margin: 0;
 }
 
 /* Alignment utilities */
