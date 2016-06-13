@@ -71,7 +71,7 @@ case class RawMessageTrigger(
 class MessageTriggersTable(tag: Tag) extends Table[RawMessageTrigger](tag, "message_triggers") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def behaviorVersionId = column[String]("behavior_id")
+  def behaviorVersionId = column[String]("behavior_version_id")
   def pattern = column[String]("pattern")
   def requiresBotMention = column[Boolean]("requires_bot_mention")
   def shouldTreatAsRegex = column[Boolean]("treat_as_regex")

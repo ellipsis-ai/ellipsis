@@ -188,7 +188,7 @@ case class RawBehaviorVersion(
                         createdAt: DateTime
                         )
 
-class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "behaviors") {
+class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "behavior_versions") {
 
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
