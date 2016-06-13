@@ -268,5 +268,13 @@ class ApplicationController @Inject() (
     )
   }
 
+  def regexValidationErrorsFor(pattern: String) = SecuredAction { implicit request =>
+    val content = MessageTriggerQueries.maybeRegexValidationErrorFor(pattern).map { errMessage =>
+      Array(errMessage)
+    }.getOrElse {
+      Array()
+    }
+    Ok(Json.toJson(Array(content)))
+  }
 
 }

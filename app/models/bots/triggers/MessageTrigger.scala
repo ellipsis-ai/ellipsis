@@ -156,12 +156,12 @@ object MessageTriggerQueries {
     }
   }
 
-  private def canCompileAsRegex(pattern: String): Boolean = {
+  def maybeRegexValidationErrorFor(pattern: String): Option[String] = {
     try {
       pattern.r
-      true
+      None
     } catch {
-      case e: PatternSyntaxException => false
+      case e: PatternSyntaxException => Some(e.getMessage)
     }
   }
 

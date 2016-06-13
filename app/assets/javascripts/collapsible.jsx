@@ -95,7 +95,7 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
 
   render: function() {
     return (
-      <div ref="container" style={{ maxHeight: '0px', overflow: 'hidden' }}>
+      <div ref="container" style={{ maxHeight: '0px', overflow: 'hidden' }} className={this.props.className || ""}>
         {React.Children.map(this.props.children, function(child) { return child; })}
       </div>
     );
