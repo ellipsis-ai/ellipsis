@@ -47,7 +47,7 @@ case class RawConversation(
 class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversations") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def behaviorVersionId = column[String]("behavior_id")
+  def behaviorVersionId = column[String]("behavior_version_id")
   def conversationType = column[String]("conversation_type")
   def context = column[String]("context")
   def userIdForContext = column[String]("user_id_for_context")

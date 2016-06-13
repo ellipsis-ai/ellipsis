@@ -40,7 +40,7 @@ class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag,
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
   def rank = column[Int]("rank")
-  def behaviorVersionId = column[String]("behavior_id")
+  def behaviorVersionId = column[String]("behavior_version_id")
   def maybeQuestion = column[Option[String]]("question")
   def maybeParamType = column[Option[String]]("param_type")
 
