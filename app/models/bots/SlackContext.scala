@@ -29,6 +29,8 @@ case class SlackContext(
     isDirectMessage || SlackContext.mentionRegexFor(botId).findFirstMatchIn(message.text).nonEmpty
   }
 
+  lazy val isResponseExpected: Boolean = includesBotMention
+
   def sendMessage(text: String)(implicit ec: ExecutionContext): Unit = {
     client.apiClient.postChatMessage(message.channel, text)
   }

@@ -134,7 +134,17 @@ class SlackService @Inject() (
       maybeResponse <- DBIO.successful(behaviorResponses.headOption)
       _ <- maybeResponse.map { response =>
         response.run(lambdaService)
-      }.getOrElse(DBIO.successful(Unit))
+      }.getOrElse {
+        if (messageContext.isResponseExpected) {
+          messageContext.sendMessage(
+            s"""
+               |I don't know how to respond to `${messageContext.message.text}`
+               |
+               |Try `@ellipsis: help` to see what I can do.
+             """.stripMargin)
+        }
+        DBIO.successful(Unit)
+      }
     } yield Unit
   }
 
