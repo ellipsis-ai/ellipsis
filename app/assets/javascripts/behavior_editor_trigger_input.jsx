@@ -82,7 +82,8 @@ return React.createClass({
           showError: !!(this.state.showError && error)
         });
       }.bind(this)).catch(function(ex) {
-        console.log(ex);
+        // TODO: figure out what to do if there's a request error; for now clear user-visible errors
+        this.clearError();
       });
   }, 500),
   isEmpty: function() {
