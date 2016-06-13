@@ -3,19 +3,17 @@ package models.bots
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.util
-
-import _root_.util.TemplateApplier
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.accounts.User
+import models.bots.templates.{SlackRenderer, TemplateApplier}
 import models.{EnvironmentVariableQueries, IDs, Team}
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
 import org.commonmark.node.{Image, AbstractVisitor, Node}
 import org.commonmark.parser.Parser
 import org.joda.time.DateTime
-import play.api.libs.json.{JsDefined, Json, JsValue}
+import play.api.libs.json.{JsString, JsDefined, Json, JsValue}
 import play.api.{Configuration, Play}
-import renderers.SlackRenderer
 import services.AWSLambdaConstants._
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
@@ -101,7 +99,7 @@ case class Behavior(
   }
 
   def successResultStringFor(result: JsValue, parametersWithValues: Seq[ParameterWithValue]): String = {
-    val inputs = parametersWithValues.map { ea => (ea.parameter.name, ea.value) }
+    val inputs = parametersWithValues.map { ea => (ea.parameter.name, JsString(ea.value)) }
     slackFormattedBodyTextFor(TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply)
   }
 

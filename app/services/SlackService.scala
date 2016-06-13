@@ -116,12 +116,16 @@ class SlackService @Inject() (
       }
   }
 
-  def startLearnConversationFor(messageContext: SlackContext): DBIO[Unit] = {
+  def teachMeLinkFor(messageContext: SlackContext): String = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ApplicationController.newBehavior(messageContext.profile.teamId)
       s"$baseUrl$path"
     }.get
-    messageContext.sendMessage(s"I love to learn. Come <$newBehaviorLink|teach me something new>.")
+    s"<$newBehaviorLink|teach me something new>"
+  }
+
+  def startLearnConversationFor(messageContext: SlackContext): DBIO[Unit] = {
+    messageContext.sendMessage(s"I love to learn. Come ${teachMeLinkFor(messageContext)}.")
     DBIO.successful(Unit)
   }
 
@@ -134,7 +138,17 @@ class SlackService @Inject() (
       maybeResponse <- DBIO.successful(behaviorResponses.headOption)
       _ <- maybeResponse.map { response =>
         response.run(lambdaService)
-      }.getOrElse(DBIO.successful(Unit))
+      }.getOrElse {
+        if (messageContext.isResponseExpected) {
+          messageContext.sendMessage(
+            s"""
+               |I don't know how to respond to `${messageContext.message.text}`
+               |
+               |Type `@ellipsis: help` to see what I can do or ${teachMeLinkFor(messageContext)}
+             """.stripMargin)
+        }
+        DBIO.successful(Unit)
+      }
     } yield Unit
   }
 
