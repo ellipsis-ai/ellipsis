@@ -403,12 +403,22 @@ var BehaviorEditor = React.createClass({
     return template && template.match(/\{\S+?\}/);
   },
 
-  getTemplateHelp: function() {
+  templateIncludesPath: function() {
+    var template = this.getBehaviorTemplate();
+    return template && template.match(/\{(\S+\.\S+)+?\}/);
+  },
+
+  templateIncludesIteration: function() {
+    var template = this.getBehaviorTemplate();
+    return template && template.match(/\{endfor\}/);
+  },
+
+  getBasicTemplateHelp: function() {
     if (this.state.revealCodeEditor) {
       return (
         <span checkedWhen={this.templateIncludesParam()}>
           <span>Use <code>{"{exampleParamName}"}</code> to show any user-supplied parameter, or </span>
-          <span><code>{"{successResult}"}</code> to show the parameter provided to </span>
+          <span><code>{"{successResult}"}</code> to show the result provided to </span>
           <span><code>onSuccess</code> in your code.</span>
         </span>
       );
@@ -421,6 +431,26 @@ var BehaviorEditor = React.createClass({
     } else {
       return (
         <span>Add code above if you want to collect user input before returning a response.</span>
+      );
+    }
+  },
+
+  getPathTemplateHelp: function() {
+    if (this.state.revealCodeEditor) {
+      return (
+        <span checkedWhen={this.templateIncludesPath()}>
+          <span>If that result is an object, you can refer to its properties:<code>{"\n{successResult.user.name}"}</code></span>
+        </span>
+      );
+    }
+  },
+
+  getIterationTemplateHelp: function() {
+    if (this.state.revealCodeEditor) {
+      return (
+        <span checkedWhen={this.templateIncludesIteration()}>
+          <span>You can also iterate through a list:<code>{"\n{for item in successResult.items}\n - {item}\n{endfor}"}</code></span>
+        </span>
       );
     }
   },
@@ -675,7 +705,9 @@ var BehaviorEditor = React.createClass({
                   <span>to format the response, add links, etc.</span>
                 </span>
 
-                {this.getTemplateHelp()}
+                {this.getBasicTemplateHelp()}
+                {this.getPathTemplateHelp()}
+                {this.getIterationTemplateHelp()}
               </BehaviorEditorChecklist>
 
             </div>
