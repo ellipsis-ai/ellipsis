@@ -26,7 +26,7 @@ class CommonmarkVisitor extends AbstractVisitor {
   }
 }
 
-case class Behavior(
+case class BehaviorVersion(
                      id: String,
                      team: Team,
                      maybeDescription: Option[String],
@@ -66,11 +66,11 @@ case class Behavior(
 
   def unlearn(lambdaService: AWSLambdaService): DBIO[Unit] = {
     lambdaService.deleteFunction(id)
-    BehaviorQueries.delete(this).map(_ => Unit)
+    BehaviorVersionQueries.delete(this).map(_ => Unit)
   }
 
   def learnCode(code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
-    BehaviorQueries.learnCodeFor(this, code, lambdaService)
+    BehaviorVersionQueries.learnCodeFor(this, code, lambdaService)
   }
 
   private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
@@ -170,15 +170,15 @@ case class Behavior(
     }
   }
 
-  def save: DBIO[Behavior] = BehaviorQueries.save(this)
+  def save: DBIO[BehaviorVersion] = BehaviorVersionQueries.save(this)
 
-  def toRaw: RawBehavior = {
-    RawBehavior(id, team.id, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt)
+  def toRaw: RawBehaviorVersion = {
+    RawBehaviorVersion(id, team.id, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt)
   }
 
 }
 
-case class RawBehavior(
+case class RawBehaviorVersion(
                         id: String,
                         teamId: String,
                         maybeDescription: Option[String],
@@ -188,7 +188,7 @@ case class RawBehavior(
                         createdAt: DateTime
                         )
 
-class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
+class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "behaviors") {
 
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
@@ -200,17 +200,17 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
 
   def * =
     (id, teamId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt) <>
-      ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+      ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
-object BehaviorQueries {
+object BehaviorVersionQueries {
 
-  def all = TableQuery[BehaviorsTable]
+  def all = TableQuery[BehaviorVersionsTable]
   def allWithTeam = all.join(Team.all).on(_.teamId === _.id)
 
-  def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
+  def tuple2BehaviorVersion(tuple: (RawBehaviorVersion, Team)): BehaviorVersion = {
     val raw = tuple._1
-    Behavior(
+    BehaviorVersion(
       raw.id,
       tuple._2,
       raw.maybeDescription,
@@ -227,23 +227,23 @@ object BehaviorQueries {
   val findQuery = Compiled(uncompiledFindQuery _)
 
   // doesn't check if accessible to a user so private
-  private def find(id: String): DBIO[Option[Behavior]] = {
-    findQuery(id).result.map(_.headOption.map(tuple2Behavior))
+  private def find(id: String): DBIO[Option[BehaviorVersion]] = {
+    findQuery(id).result.map(_.headOption.map(tuple2BehaviorVersion))
   }
 
-  def find(id: String, user: User): DBIO[Option[Behavior]] = {
+  def find(id: String, user: User): DBIO[Option[BehaviorVersion]] = {
     for {
-      maybeBehavior <- find(id)
-      maybeAccessibleBehavior <- maybeBehavior.map { behavior =>
-        user.canAccess(behavior.team).map { canAccess =>
+      maybeBehaviorVersion <- find(id)
+      maybeAccessibleBehaviorVersion <- maybeBehaviorVersion.map { behaviorVersion =>
+        user.canAccess(behaviorVersion.team).map { canAccess =>
           if (canAccess) {
-            Some(behavior)
+            Some(behaviorVersion)
           } else {
             None
           }
         }
       }.getOrElse(DBIO.successful(None))
-    } yield maybeAccessibleBehavior
+    } yield maybeAccessibleBehaviorVersion
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
@@ -252,33 +252,33 @@ object BehaviorQueries {
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
-  def allForTeam(team: Team): DBIO[Seq[Behavior]] = {
-    allForTeamQuery(team.id).result.map { tuples => tuples.map(tuple2Behavior) }
+  def allForTeam(team: Team): DBIO[Seq[BehaviorVersion]] = {
+    allForTeamQuery(team.id).result.map { tuples => tuples.map(tuple2BehaviorVersion) }
   }
 
-  def createFor(team: Team): DBIO[Behavior] = {
-    val raw = RawBehavior(IDs.next, team.id, None, None, None, None, DateTime.now)
+  def createFor(team: Team): DBIO[BehaviorVersion] = {
+    val raw = RawBehaviorVersion(IDs.next, team.id, None, None, None, None, DateTime.now)
 
     (all += raw).map { _ =>
-      Behavior(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.createdAt)
+      BehaviorVersion(raw.id, team, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.createdAt)
     }
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
-  def save(behavior: Behavior): DBIO[Behavior] = {
-    val raw = behavior.toRaw
+  def save(behaviorVersion: BehaviorVersion): DBIO[BehaviorVersion] = {
+    val raw = behaviorVersion.toRaw
     val query = findQueryFor(raw.id)
     query.result.flatMap { r =>
       r.headOption.map { existing =>
         query.update(raw)
       }.getOrElse(all += raw)
-    }.map(_ => behavior)
+    }.map(_ => behaviorVersion)
   }
 
-  def delete(behavior: Behavior): DBIO[Behavior] = {
-    all.filter(_.id === behavior.id).delete.map(_ => behavior)
+  def delete(behaviorVersion: BehaviorVersion): DBIO[BehaviorVersion] = {
+    all.filter(_.id === behaviorVersion.id).delete.map(_ => behaviorVersion)
   }
 
   private def paramsIn(code: String): Array[String] = {
@@ -295,15 +295,15 @@ object BehaviorQueries {
 
   val functionBodyRegex = """(?s)^\s*function\s*\([^\)]*\)\s*\{(.*)\}$""".r
 
-  def learnCodeFor(behavior: Behavior, code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
+  def learnCodeFor(behaviorVersion: BehaviorVersion, code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
     val actualParams = paramsIn(code)
     val paramsWithoutBuiltin = withoutBuiltin(actualParams)
     val functionBody = functionBodyRegex.findFirstMatchIn(code).flatMap { m =>
       m.subgroups.headOption
     }.getOrElse("")
     (for {
-      _ <- DBIO.from(lambdaService.deployFunctionFor(behavior, functionBody, paramsWithoutBuiltin))
-      b <- behavior.copy(maybeFunctionBody = Some(functionBody)).save
+      _ <- DBIO.from(lambdaService.deployFunctionFor(behaviorVersion, functionBody, paramsWithoutBuiltin))
+      b <- behaviorVersion.copy(maybeFunctionBody = Some(functionBody)).save
       params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin.map(ea => (ea, None)))
     } yield params) transactionally
   }

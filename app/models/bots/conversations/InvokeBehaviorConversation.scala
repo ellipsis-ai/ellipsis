@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class InvokeBehaviorConversation(
                                       id: String,
-                                      behavior: Behavior,
+                                      behaviorVersion: BehaviorVersion,
                                       context: String, // Slack, etc
                                       userIdForContext: String, // id for Slack, etc user
                                       startedAt: DateTime,
@@ -44,7 +44,7 @@ case class InvokeBehaviorConversation(
 
   private def paramInfo: DBIO[ParamInfo] = {
     for {
-      params <- BehaviorParameterQueries.allFor(behavior)
+      params <- BehaviorParameterQueries.allFor(behaviorVersion)
       collected <- CollectedParameterValueQueries.allFor(this)
     } yield ParamInfo(params, collected)
   }
@@ -97,7 +97,7 @@ case class InvokeBehaviorConversation(
     paramInfo.flatMap { info =>
       state match {
         case COLLECT_PARAM_VALUES_STATE => DBIO.successful(sendPromptFor(event, info))
-        case DONE_STATE => BehaviorResponse.buildFor(event, behavior, info.invocationMap).map(_.runCode(lambdaService))
+        case DONE_STATE => BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap).map(_.runCode(lambdaService))
       }
     }
 
@@ -110,11 +110,11 @@ object InvokeBehaviorConversation {
   val COLLECT_PARAM_VALUES_STATE = "collect_param_values"
 
   def createFor(
-                 behavior: Behavior,
+                 behaviorVersion: BehaviorVersion,
                  context: String,
                  userIdForContext: String
                  ): DBIO[InvokeBehaviorConversation] = {
-    val newInstance = InvokeBehaviorConversation(IDs.next, behavior, context, userIdForContext, DateTime.now, Conversation.NEW_STATE)
+    val newInstance = InvokeBehaviorConversation(IDs.next, behaviorVersion, context, userIdForContext, DateTime.now, Conversation.NEW_STATE)
     newInstance.save.map(_ => newInstance)
   }
 }
