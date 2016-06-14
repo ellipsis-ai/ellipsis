@@ -392,6 +392,10 @@ So for example:
   border-left: @xs solid @pink-medium;
 }
 
+.border-error-top {
+  border-top: @border-width-thick solid @pink-medium;
+}
+
 /* Boxes combined background and border */
 
 .box-help {
@@ -1226,22 +1230,22 @@ button.button-dropdown-trigger {
 
 /* Popup */
 
-.popup-shadow {
-  box-shadow: 0 2px 20px @black-translucent;
-}
-
 .popup {
   position: absolute;
   z-index: 12;
-  background-color: @white;
-  border: @border-width-thick solid @border-color;
-  border-radius: @border-radius;
-  .popup-shadow();
+}
+
+.popup-shadow {
+  box-shadow: 0 2px 20px @black-translucent;
 }
 
 /* Dropdown menu */
 
 .popup-dropdown-menu {
+  background-color: @white;
+  border: @border-width-thick solid @border-color;
+  border-radius: @border-radius;
+  .popup-shadow();
   width: 10em;
   left: 0;
   margin: -42px 0 0 0;

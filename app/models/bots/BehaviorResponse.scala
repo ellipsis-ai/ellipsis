@@ -54,7 +54,7 @@ object BehaviorResponse {
 
   def allFor(event: Event, team: Team): DBIO[Seq[BehaviorResponse]] = {
     for {
-      triggers <- MessageTriggerQueries.allFor(team)
+      triggers <- MessageTriggerQueries.allActiveFor(team)
       activated <- DBIO.successful(triggers.filter(_.isActivatedBy(event)))
       responses <- DBIO.sequence(activated.map { trigger =>
         for {

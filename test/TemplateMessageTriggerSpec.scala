@@ -1,5 +1,5 @@
 import models.{IDs, Team}
-import models.bots.{BehaviorParameter, BehaviorVersion}
+import models.bots.{Behavior, BehaviorParameter, BehaviorVersion}
 import models.bots.triggers.TemplateMessageTrigger
 import org.joda.time.DateTime
 
@@ -7,7 +7,8 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
 
   def triggerFor(template: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): TemplateMessageTrigger = {
     val team = Team(IDs.next, "Team!")
-    val behaviorVersion = BehaviorVersion(IDs.next, team, None, None, None, None, DateTime.now)
+    val behavior = Behavior(IDs.next, team, DateTime.now)
+    val behaviorVersion = BehaviorVersion(IDs.next, behavior, isActive = true, None, None, None, None, DateTime.now)
     TemplateMessageTrigger(IDs.next, behaviorVersion, template, requiresBotMention, isCaseSensitive)
   }
 
