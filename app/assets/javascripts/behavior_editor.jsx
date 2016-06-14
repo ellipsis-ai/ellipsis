@@ -178,26 +178,11 @@ var BehaviorEditor = React.createClass({
   },
 
   getDefaultBehaviorTemplate: function() {
-    var result = '',
-      params = this.getBehaviorParams();
-
-    params.forEach(function(param) {
-      var name = param.name ? '{'+param.name+'}' : '(blank parameter name)';
-      var question = param.question ? '“'+param.question+'”' : '(blank question)';
-      result += 'You said ' + name + ' for ' + question + '.\n';
-    });
-
-    if (params.length) {
-      result += '\n';
-    }
-
     if (this.hasCalledOnSuccess()) {
-      result += 'The answer is: {successResult}.';
+      return 'The answer is: {successResult}.';
     } else {
-      result += this.state.magic8BallResponse;
+      return this.state.magic8BallResponse;
     }
-
-    return result;
   },
 
   getFirstLineNumberForCode: function() {
@@ -403,26 +388,83 @@ var BehaviorEditor = React.createClass({
     return template && template.match(/\{\S+?\}/);
   },
 
-  getTemplateHelp: function() {
+  templateIncludesSuccessResult: function() {
+    var template = this.getBehaviorTemplate();
+    return template && template.match(/\{successResult.*?\}/);
+  },
+
+  templateIncludesPath: function() {
+    var template = this.getBehaviorTemplate();
+    return template && template.match(/\{(\S+\.\S+)+?\}/);
+  },
+
+  templateIncludesIteration: function() {
+    var template = this.getBehaviorTemplate();
+    return template && template.match(/\{endfor\}/);
+  },
+
+  getTemplateDataHelp: function() {
     if (this.state.revealCodeEditor) {
       return (
-        <span checkedWhen={this.templateIncludesParam()}>
-          <span>Use <code>{"{exampleParamName}"}</code> to show any user-supplied parameter, or </span>
-          <span><code>{"{successResult}"}</code> to show the parameter provided to </span>
-          <span><code>onSuccess</code> in your code.</span>
-        </span>
-      );
-    } else if (this.hasUserParameters()) {
-      return (
-        <span checkedWhen={this.templateIncludesParam()}>
-          Use <code>{"{exampleParamName}"}</code> to show any user-supplied parameter.
-        </span>
-      )
-    } else {
-      return (
-        <span>Add code above if you want to collect user input before returning a response.</span>
+        <div>
+          <span>You can include data in your response.<br /></span>
+          <BehaviorEditorChecklist className="mtxs">
+            {this.getUserParamTemplateHelp()}
+            {this.getSuccessResultTemplateHelp()}
+            {this.getPathTemplateHelp()}
+            {this.getIterationTemplateHelp()}
+          </BehaviorEditorChecklist>
+        </div>
       );
     }
+  },
+
+  getUserParamTemplateHelp: function() {
+    return (
+      <div checkedWhen={this.templateIncludesParam()}>
+        User-supplied parameters:<br />
+        <div className="box-code-example">
+        You said {this.hasParams() && this.getBehaviorParams()[0].name ?
+          "{" + this.getBehaviorParams()[0].name + "}" :
+          "{exampleParamName}"}
+        </div>
+      </div>
+    );
+  },
+
+  getSuccessResultTemplateHelp: function() {
+    return (
+      <div checkedWhen={this.templateIncludesSuccessResult()}>
+        The result provided to <code>onSuccess</code>:<br />
+        <div className="box-code-example">
+          The answer is {"{successResult}"}
+        </div>
+      </div>
+    );
+  },
+
+  getPathTemplateHelp: function() {
+    return (
+      <span checkedWhen={this.templateIncludesPath()}>
+        Properties of the result:<br />
+        <div className="box-code-example">
+          Name: {"{successResult.user.name}"}
+        </div>
+      </span>
+    );
+  },
+
+  getIterationTemplateHelp: function() {
+    return (
+      <div checkedWhen={this.templateIncludesIteration()}>
+        Iterating through a list:<br />
+        <div className="box-code-example">
+          {"{for item in successResult.items}"}<br />
+          &nbsp;* {"{item}"}<br />
+          {"{endfor}"}
+        </div>
+      </div>
+    );
   },
 
   getCodeAutocompletions: function() {
@@ -605,8 +647,8 @@ var BehaviorEditor = React.createClass({
                 </span>
 
                 <span checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.isExistingBehavior()}>
-                  <span>Call <code>onSuccess</code> with a string or </span>
-                  <span>object to include in the response.</span>
+                  <span>Call <code>onSuccess</code> with a string, object, or array </span>
+                  <span>to include in the response below.</span>
                 </span>
 
                 <span checkedWhen={this.hasParams()} hiddenWhen={this.isExistingBehavior() && this.hasParams()}>
@@ -677,7 +719,7 @@ var BehaviorEditor = React.createClass({
 
           <div className="columns">
 
-            <div className="column column-one-quarter mbxl">
+            <div className="column column-one-quarter mbxl type-s">
 
               <BehaviorEditorSectionHeading>{this.getResponseHeader()}</BehaviorEditorSectionHeading>
 
@@ -686,10 +728,12 @@ var BehaviorEditor = React.createClass({
                   <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
                   <span>to format the response, add links, etc.</span>
                 </span>
-
-                {this.getTemplateHelp()}
+                {this.state.revealCodeEditor ? "" : (
+                  <span>Add code above if you want to collect user input before returning a response.</span>
+                )}
               </BehaviorEditorChecklist>
 
+              {this.getTemplateDataHelp()}
             </div>
 
             <div className="column column-three-quarters pll mbxl">

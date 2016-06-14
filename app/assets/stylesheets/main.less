@@ -100,13 +100,23 @@ ul {
   list-style-type: circle;
 }
 
+.checklist .checklist > li {
+  list-style-type: none;
+  position: relative;
+  &::before {
+    content: '▹';
+    position: absolute;
+    left: -1.25em;
+  }
+}
+
 .checklist > .checklist-checked {
   list-style-type: none;
   position: relative;
   color: @green-text;
   text-decoration: strikethrough;
   &::before {
-    content: '✓';
+    content: '✓' !important;
     position: absolute;
     left: -1.25em;
     color: @green-text;
@@ -286,6 +296,10 @@ So for example:
   border-color: @border-color;
 }
 
+.border-dotted {
+  border-style: dotted;
+}
+
 .border-thick {
   border-width: @border-width-thick;
 }
@@ -406,6 +420,16 @@ So for example:
   .position-relative();
 }
 
+.box-code-example {
+  .bg-blue-lightest();
+  .border();
+  .border-dotted();
+  .paxs();
+  .type-monospace();
+  .type-xs();
+  .type-weak();
+}
+
 /* Foreground type utilities */
 
 .type-bold {
@@ -477,6 +501,10 @@ code.type-bold {
 
 code {
   white-space: pre;
+}
+
+.type-wrap {
+  white-space: normal;
 }
 
 pre {
