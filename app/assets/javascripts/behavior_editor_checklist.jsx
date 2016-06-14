@@ -6,12 +6,16 @@ return React.createClass({
     return (
       <ul className={"type-s list-space-s checklist " + (this.props.disabledWhen ? "type-weak" : "")}>
         {React.Children.map(this.props.children, function(child) {
-          return (
-            <li className={
-              (child.props.checkedWhen ? " checklist-checked " : "") +
-              (child.props.hiddenWhen ? " display-none " : "")
-            }>{child}</li>
-          );
+          if (child) {
+            return (
+              <li className={
+                (child.props.checkedWhen ? " checklist-checked " : "") +
+                (child.props.hiddenWhen ? " display-none " : "")
+              }>{child}</li>
+            );
+          } else {
+            return null;
+          }
         })}
       </ul>
     );
