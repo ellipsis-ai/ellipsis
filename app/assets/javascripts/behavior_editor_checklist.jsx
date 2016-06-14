@@ -4,7 +4,11 @@ var React = require('react');
 return React.createClass({
   render: function() {
     return (
-      <ul className={"type-s list-space-s checklist " + (this.props.disabledWhen ? "type-weak" : "")}>
+      <ul className={
+        "type-s list-space-s checklist " +
+        (this.props.disabledWhen ? " type-weak " : "") +
+        (this.props.className || "")
+      }>
         {React.Children.map(this.props.children, function(child) {
           if (child) {
             return (

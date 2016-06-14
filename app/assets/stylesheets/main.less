@@ -100,13 +100,23 @@ ul {
   list-style-type: circle;
 }
 
+.checklist .checklist > li {
+  list-style-type: none;
+  position: relative;
+  &::before {
+    content: '▹';
+    position: absolute;
+    left: -1.25em;
+  }
+}
+
 .checklist > .checklist-checked {
   list-style-type: none;
   position: relative;
   color: @green-text;
   text-decoration: strikethrough;
   &::before {
-    content: '✓';
+    content: '✓' !important;
     position: absolute;
     left: -1.25em;
     color: @green-text;
@@ -284,6 +294,10 @@ So for example:
   border-width: @border-width;
   border-style: solid;
   border-color: @border-color;
+}
+
+.border-dotted {
+  border-style: dotted;
 }
 
 .border-thick {
@@ -477,6 +491,10 @@ code.type-bold {
 
 code {
   white-space: pre;
+}
+
+.type-wrap {
+  white-space: normal;
 }
 
 pre {
