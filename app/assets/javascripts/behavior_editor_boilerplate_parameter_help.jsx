@@ -18,7 +18,7 @@ return React.createClass({
         <div className="container position-relative columns phn">
 
           <div className="column column-one-quarter mts">
-            <h4>Function parameters</h4>
+            <h4 className="type-weak">Function parameters</h4>
           </div>
 
           <div className="column column-three-quarters mts pll">

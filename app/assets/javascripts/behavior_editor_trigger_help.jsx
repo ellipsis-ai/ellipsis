@@ -9,7 +9,7 @@ return React.createClass({
         <div className="container position-relative columns phn">
 
         <div className="column column-one-quarter mts">
-          <h4>
+          <h4 className="type-weak">
             Ellipsis listens for “trigger” phrases to activate behaviors
           </h4>
         </div>
