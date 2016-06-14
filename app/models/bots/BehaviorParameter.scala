@@ -51,9 +51,9 @@ class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag,
 object BehaviorParameterQueries {
 
   val all = TableQuery[BehaviorParametersTable]
-  val allWithBehaviors = all.join(BehaviorVersionQueries.allWithTeam).on(_.behaviorVersionId === _._1.id)
+  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1.id)
 
-  type TupleType = (RawBehaviorParameter, (RawBehaviorVersion, Team))
+  type TupleType = (RawBehaviorParameter, (RawBehaviorVersion, (RawBehavior, Team)))
 
   def tuple2Parameter(tuple: TupleType): BehaviorParameter = {
     val raw = tuple._1
@@ -61,7 +61,7 @@ object BehaviorParameterQueries {
   }
 
   def uncompiledAllForQuery(behaviorVersionId: Rep[String]) = {
-    allWithBehaviors.
+    allWithBehaviorVersion.
       filter { case(param, (behaviorVersion, team)) => behaviorVersion.id === behaviorVersionId}.
       sortBy { case(param, _) => param.rank.asc }
   }

@@ -180,8 +180,11 @@ class SlackService @Inject() (
         }
       }.getOrElse(Seq()))
       qaExtractor <- DBIO.successful(QuestionAnswerExtractor(messages))
-      maybeBehaviorVersion <- maybeTeam.map { team =>
-        BehaviorVersionQueries.createFor(team).flatMap { behaviorVersion =>
+      maybeBehavior <- maybeTeam.map { team =>
+        BehaviorQueries.createFor(team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+      maybeBehaviorVersion <- maybeBehavior.map { behavior =>
+        BehaviorVersionQueries.createFor(behavior).flatMap { behaviorVersion =>
           behaviorVersion.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)).save.flatMap { behaviorWithContent =>
             qaExtractor.maybeLastQuestion.map { lastQuestion =>
               MessageTriggerQueries.createFor(behaviorVersion, lastQuestion, requiresBotMention = false, shouldTreatAsRegex = false, isCaseSensitive = false)
