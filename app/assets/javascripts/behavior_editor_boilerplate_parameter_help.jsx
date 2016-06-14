@@ -14,14 +14,20 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="">
-        <div className="box-help type-s">
+      <div className="box-help type-s pts">
+        <div className="container position-relative columns">
 
-          <div className="position-absolute position-top-right ptxs prxs">
+          <div className="column column-one-quarter mts">
+            <h4>Function parameters</h4>
+          </div>
+
+          <div className="column column-three-quarters mts pll">
+
+          <div className="position-absolute position-top-right prm">
             <BehaviorEditorHelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
           </div>
 
-          <p className="prl">
+          <p className="mrxxl">
             <span>The function will automatically receive three parameters from Ellipsis:</span>
           </p>
 
@@ -67,7 +73,7 @@ return React.createClass({
             }
           </button>
         </div>
-        <div className="border-left border-right pts"></div>
+        </div>
       </div>
     );
   }

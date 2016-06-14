@@ -576,16 +576,14 @@ var BehaviorEditor = React.createClass({
                 </span>
                 <span checkedWhen={this.triggersUseParams()}>
                   <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
-                  <span className="pls"><BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} /></span>
+                  <span className="pls">
+                    <BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} toggled={this.state.triggerHelpVisible} />
+                  </span>
                 </span>
               </BehaviorEditorChecklist>
 
             </div>
             <div className="column column-three-quarters pll form-field-group">
-              <Collapsible revealWhen={this.state.triggerHelpVisible}>
-                <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
-              </Collapsible>
-
               <div className="mbm">
               {this.getBehaviorTriggers().map(function(trigger, index) {
                 return (
@@ -673,15 +671,6 @@ var BehaviorEditor = React.createClass({
                 onToggleHelp={this.toggleBoilerplateHelp}
               />
 
-              <Collapsible revealWhen={this.state.boilerplateHelpVisible}>
-                <BehaviorEditorBoilerplateParameterHelp
-                  envVariableNames={this.state.envVariableNames}
-                  onExpandToggle={this.toggleEnvVariableExpansion}
-                  expandEnvVariables={this.state.expandEnvVariables}
-                  onCollapseClick={this.toggleBoilerplateHelp}
-                />
-              </Collapsible>
-
               <div className="position-relative pr-symbol border-right">
                 <BehaviorEditorCodeEditor
                   value={this.getBehaviorNodeFunction()}
@@ -764,10 +753,21 @@ var BehaviorEditor = React.createClass({
           </div>
         </div> {/* End of container */}
 
-        <footer ref="footer" className={"position-fixed-bottom pvm border-top " +
+        <footer ref="footer" className={"position-fixed-bottom border-top " +
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
-          <div className="container">
+          <Collapsible revealWhen={this.state.triggerHelpVisible}>
+            <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
+          </Collapsible>
+          <Collapsible revealWhen={this.state.boilerplateHelpVisible}>
+            <BehaviorEditorBoilerplateParameterHelp
+              envVariableNames={this.state.envVariableNames}
+              onExpandToggle={this.toggleEnvVariableExpansion}
+              expandEnvVariables={this.state.expandEnvVariables}
+              onCollapseClick={this.toggleBoilerplateHelp}
+            />
+          </Collapsible>
+          <div className="container pvm">
             <button type="submit"
               className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
               disabled={!this.isModified()}

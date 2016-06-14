@@ -5,16 +5,21 @@ var React = require('react'),
 return React.createClass({
   render: function() {
     return (
-      <div className="box-help type-s mbm">
-        <div className="position-absolute position-top-right ptxs prxs">
+      <div className="box-help type-s pts">
+        <div className="container position-relative columns">
+
+        <div className="column column-one-quarter mts">
+          <h4>
+            Ellipsis listens for “trigger” phrases to activate behaviors
+          </h4>
+        </div>
+        <div className="column column-three-quarters mts pll">
+
+        <div className="position-absolute position-top-right prm">
           <BehaviorEditorHelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
         </div>
 
-        <h4 className="prl">
-          Ellipsis listens for “trigger” phrases to activate behaviors
-        </h4>
-
-        <p>
+        <p className="mrxxl">
           <span>You can set as many different triggers as you need, and Ellipsis will </span>
           <span>respond to any of them. They can be questions, phrases, words, or even 🤖.</span>
         </p>
@@ -36,6 +41,8 @@ return React.createClass({
           <span>letters, numbers and underscores (_) — <strong>no spaces.</strong></span>
         </p>
 
+        </div>
+        </div>
       </div>
     );
   }
