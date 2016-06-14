@@ -148,11 +148,11 @@ return React.createClass({
             </div>
           ) : ""}
           <Collapsible revealWhen={this.state.showError} className="position-absolute display-limit-width">
-            <div className="border-left border-bottom border-right bg-blue-lighter border-blue border-error pts phm type-s popup-shadow">
+            <div className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
               <div className="position-absolute position-top-right ptxs prxs">
                 <BehaviorEditorHelpButton onClick={this.toggleError} toggled={true} inline={true} />
               </div>
-              <div><b>Error parsing regular expression pattern:</b></div>
+              <div><b>This regex trigger cannot be used because of a format error:</b></div>
               <pre>{this.state.regexError || "\n\n\n"}</pre>
             </div>
           </Collapsible>
