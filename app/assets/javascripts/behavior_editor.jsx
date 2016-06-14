@@ -18,6 +18,7 @@ var React = require('react'),
   BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
   BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
   BehaviorEditorTriggerHelp = require('./behavior_editor_trigger_help'),
+  BehaviorEditorTriggerOptionsHelp = require('./behavior_editor_trigger_options_help'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
   Collapsible = require('./collapsible'),
@@ -114,15 +115,15 @@ var BehaviorEditor = React.createClass({
         params: this.props.params,
         triggers: this.getInitialTriggers()
       },
+      activeHelpPanel: null,
       codeEditorUseLineWrapping: false,
       settingsMenuVisible: false,
-      boilerplateHelpVisible: false,
       expandEnvVariables: false,
       justSaved: this.props.justSaved,
+      isSaving: false,
       envVariableNames: this.props.envVariableNames,
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
-      triggerHelpVisible: false,
       hasModifiedTemplate: !!this.props.responseTemplate
     };
   },
@@ -317,9 +318,11 @@ var BehaviorEditor = React.createClass({
   },
 
   toggleTriggerHelp: function() {
-    this.setState({
-      triggerHelpVisible: !this.state.triggerHelpVisible
-    });
+    this.toggleHelpPanel('triggerParameters');
+  },
+
+  toggleTriggerOptionsHelp: function() {
+    this.toggleHelpPanel('triggerOptions');
   },
 
   toggleCodeEditor: function(forceState) {
@@ -341,10 +344,14 @@ var BehaviorEditor = React.createClass({
     });
   },
 
-  toggleBoilerplateHelp: function() {
+  toggleHelpPanel: function(name) {
     this.setState({
-      boilerplateHelpVisible: !this.state.boilerplateHelpVisible
+      activeHelpPanel: this.state.activeHelpPanel === name ? null : name
     });
+  },
+
+  toggleBoilerplateHelp: function() {
+    this.toggleHelpPanel('boilerplateParameters');
   },
 
   toggleEnvVariableExpansion: function() {
@@ -576,16 +583,14 @@ var BehaviorEditor = React.createClass({
                 </span>
                 <span checkedWhen={this.triggersUseParams()}>
                   <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
-                  <span className="pls"><BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} /></span>
+                  <span className="pls">
+                    <BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} toggled={this.state.activeHelpPanel === 'triggerParameters'} />
+                  </span>
                 </span>
               </BehaviorEditorChecklist>
 
             </div>
             <div className="column column-three-quarters pll form-field-group">
-              <Collapsible revealWhen={this.state.triggerHelpVisible}>
-                <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
-              </Collapsible>
-
               <div className="mbm">
               {this.getBehaviorTriggers().map(function(trigger, index) {
                 return (
@@ -603,6 +608,8 @@ var BehaviorEditor = React.createClass({
                     onChange={this.onTriggerChange.bind(this, index)}
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}
+                    onHelpClick={this.toggleTriggerOptionsHelp}
+                    helpVisible={this.state.activeHelpPanel === 'triggerOptions'}
                   />
                 );
               }, this)}
@@ -618,7 +625,7 @@ var BehaviorEditor = React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
-            <div className="box-help form-field-group">
+            <div className="box-help border form-field-group">
             <div className="columns columns-elastic">
               <div className="column column-expand">
                 <p className="mbn">
@@ -669,18 +676,9 @@ var BehaviorEditor = React.createClass({
                 onParamDelete={this.deleteParamAtIndex}
                 onParamAdd={this.addParam}
                 onEnterKey={this.onParamEnterKey}
-                helpVisible={this.state.boilerplateHelpVisible}
+                helpVisible={this.state.activeHelpPanel === 'boilerplateParameters'}
                 onToggleHelp={this.toggleBoilerplateHelp}
               />
-
-              <Collapsible revealWhen={this.state.boilerplateHelpVisible}>
-                <BehaviorEditorBoilerplateParameterHelp
-                  envVariableNames={this.state.envVariableNames}
-                  onExpandToggle={this.toggleEnvVariableExpansion}
-                  expandEnvVariables={this.state.expandEnvVariables}
-                  onCollapseClick={this.toggleBoilerplateHelp}
-                />
-              </Collapsible>
 
               <div className="position-relative pr-symbol border-right">
                 <BehaviorEditorCodeEditor
@@ -764,10 +762,24 @@ var BehaviorEditor = React.createClass({
           </div>
         </div> {/* End of container */}
 
-        <footer ref="footer" className={"position-fixed-bottom pvm border-top " +
+        <footer ref="footer" className={"position-fixed-bottom border-top " +
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
-          <div className="container">
+          <Collapsible revealWhen={this.state.activeHelpPanel === 'triggerParameters'}>
+            <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
+          </Collapsible>
+          <Collapsible revealWhen={this.state.activeHelpPanel === 'triggerOptions'}>
+            <BehaviorEditorTriggerOptionsHelp onCollapseClick={this.toggleTriggerOptionsHelp} />
+          </Collapsible>
+          <Collapsible revealWhen={this.state.activeHelpPanel === 'boilerplateParameters'}>
+            <BehaviorEditorBoilerplateParameterHelp
+              envVariableNames={this.state.envVariableNames}
+              onExpandToggle={this.toggleEnvVariableExpansion}
+              expandEnvVariables={this.state.expandEnvVariables}
+              onCollapseClick={this.toggleBoilerplateHelp}
+            />
+          </Collapsible>
+          <div className="container pvm">
             <button type="submit"
               className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
               disabled={!this.isModified()}

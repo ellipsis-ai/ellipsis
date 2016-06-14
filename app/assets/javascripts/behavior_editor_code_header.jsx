@@ -72,9 +72,7 @@ return React.createClass({
               </div>
               <div className="column column-expand plxs">
                 <code className="type-weak type-s">{this.boilerplateLine()}</code>
-                <span className={this.visibleWhen(!this.props.helpVisible)}>
-                  <BehaviorEditorHelpButton onClick={this.props.onToggleHelp} />
-                </span>
+                <BehaviorEditorHelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible} />
               </div>
             </div>
           </div>

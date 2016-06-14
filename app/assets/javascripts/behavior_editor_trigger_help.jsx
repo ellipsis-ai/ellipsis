@@ -1,19 +1,14 @@
 define(function(require) {
 var React = require('react'),
-  BehaviorEditorHelpButton = require('./behavior_editor_help_button');
+  BehaviorEditorHelpPanel = require('./behavior_editor_help_panel');
 
 return React.createClass({
   render: function() {
     return (
-      <div className="box-help type-s mbm">
-        <div className="position-absolute position-top-right ptxs prxs">
-          <BehaviorEditorHelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
-        </div>
-
-        <h4 className="prl">
-          Ellipsis listens for “trigger” phrases to activate behaviors
-        </h4>
-
+      <BehaviorEditorHelpPanel
+        heading="Ellipsis listens for “trigger” phrases to activate behaviors"
+        onCollapseClick={this.props.onCollapseClick}
+      >
         <p>
           <span>You can set as many different triggers as you need, and Ellipsis will </span>
           <span>respond to any of them. They can be questions, phrases, words, or even 🤖.</span>
@@ -35,8 +30,7 @@ return React.createClass({
           <span>Parameter names must begin with a letter of the alphabet, and may only include </span>
           <span>letters, numbers and underscores (_) — <strong>no spaces.</strong></span>
         </p>
-
-      </div>
+      </BehaviorEditorHelpPanel>
     );
   }
 });

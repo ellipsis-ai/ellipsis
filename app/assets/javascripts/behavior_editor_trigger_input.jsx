@@ -17,8 +17,7 @@ return React.createClass({
     return {
       highlightCaseSensitivity: false,
       regexError: null,
-      showError: false,
-      showHelp: false
+      showError: false
     };
   },
   clearError: function() {
@@ -95,7 +94,7 @@ return React.createClass({
     this.focus();
   },
   toggleHelp: function() {
-    this.setState({ showHelp: !this.state.showHelp });
+    this.props.onHelpClick();
   },
   focus: function() {
     this.refs.input.focus();
@@ -169,7 +168,7 @@ return React.createClass({
           <div className={"display-ellipsis form-input form-input-borderless " +
             (this.props.className || "")}>
             {this.props.includeHelp ? (
-              <BehaviorEditorHelpButton onClick={this.toggleHelp} toggled={this.state.showHelp} className="align-m mrs" />
+              <BehaviorEditorHelpButton onClick={this.toggleHelp} toggled={this.props.helpVisible} className="align-m mrs" />
               ) : ""}
             <label className="mrm type-s" title="Only respond when someone mentions @ellipsis">
               <BehaviorEditorCheckbox
@@ -193,23 +192,6 @@ return React.createClass({
               /> <code>/^…$/</code>
             </label>
           </div>
-          <Collapsible revealWhen={this.state.showHelp} className="popup display-limit-width">
-            <div className="border bg-blue-lighter border-blue border-error-top pts phm type-xs popup-shadow">
-              <p>
-                🗣 🤖: if checked, only respond to this trigger if someone mentions
-                Ellipsis by name.
-              </p>
-              <p>
-                <i>Aa</i>: if checked, only respond to this trigger if someone
-                uses the same capitalization.
-              </p>
-              <p>
-                <code>/^…$/</code>: if checked, process this trigger as a regular
-                expression pattern (regex) instead of normal text. Use regex capturing parentheses
-                to collect user input instead of the <code>{"{paramName}"}</code> style.
-              </p>
-            </div>
-          </Collapsible>
         </div>
         <div className="column column-shrink">
           <BehaviorEditorDeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
