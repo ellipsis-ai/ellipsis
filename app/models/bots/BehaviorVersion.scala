@@ -275,6 +275,7 @@ object BehaviorVersionQueries {
 
   def deactivateAllFor(behavior: Behavior): DBIO[Behavior] = {
     all.
+      filter(_.behaviorId === behavior.id).
       map(_.isActive).
       update(false).
       map { _ => behavior }
