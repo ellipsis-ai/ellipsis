@@ -2,7 +2,7 @@ package models.bots.conversations
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.Team
-import models.bots.{Event, RawBehaviorVersion, BehaviorVersionQueries, BehaviorVersion}
+import models.bots._
 import org.joda.time.DateTime
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
@@ -61,9 +61,9 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
 
 object ConversationQueries {
   def all = TableQuery[ConversationsTable]
-  def allWithBehavior = all.join(BehaviorVersionQueries.allWithTeam).on(_.behaviorVersionId === _._1.id)
+  def allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1.id)
 
-  type TupleType = (RawConversation, (RawBehaviorVersion, Team))
+  type TupleType = (RawConversation, (RawBehaviorVersion, (RawBehavior, Team)))
 
   def tuple2Conversation(tuple: TupleType): Conversation = {
     val raw = tuple._1
@@ -72,7 +72,7 @@ object ConversationQueries {
     InvokeBehaviorConversation(raw.id, behavior, raw.context, raw.userIdForContext, raw.startedAt, raw.state)
   }
 
-  def uncompiledFindQueryFor(id: Rep[String]) = allWithBehavior.filter(_._1.id === id)
+  def uncompiledFindQueryFor(id: Rep[String]) = allWithBehaviorVersion.filter(_._1.id === id)
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
   def find(id: String): DBIO[Option[Conversation]] = {
@@ -92,7 +92,7 @@ object ConversationQueries {
   }
 
   def uncompiledFindWithoutStateQueryFor(userIdForContext: Rep[String], context: Rep[String], state: Rep[String]) = {
-    allWithBehavior.
+    allWithBehaviorVersion.
       filter { case(conversation, _) => conversation.userIdForContext === userIdForContext }.
       filter { case(conversation, _) => conversation.context === context}.
       filterNot { case(conversation, _) => conversation.state === state }

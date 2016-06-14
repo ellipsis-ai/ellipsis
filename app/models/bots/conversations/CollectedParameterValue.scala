@@ -27,8 +27,8 @@ object CollectedParameterValueQueries {
   val all = TableQuery[CollectedParameterValuesTable]
   val joined =
     all.
-      join(BehaviorParameterQueries.allWithBehaviors).on(_.parameterId === _._1.id).
-      join(ConversationQueries.allWithBehavior).on(_._1.conversationId === _._1.id)
+      join(BehaviorParameterQueries.allWithBehaviorVersion).on(_.parameterId === _._1.id).
+      join(ConversationQueries.allWithBehaviorVersion).on(_._1.conversationId === _._1.id)
 
   type TupleType = ((RawCollectedParameterValue, BehaviorParameterQueries.TupleType), ConversationQueries.TupleType)
 

@@ -84,9 +84,9 @@ class MessageTriggersTable(tag: Tag) extends Table[RawMessageTrigger](tag, "mess
 object MessageTriggerQueries {
 
   val all = TableQuery[MessageTriggersTable]
-  val allWithBehaviorVersions = all.join(BehaviorVersionQueries.allWithTeam).on(_.behaviorVersionId === _._1.id)
+  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1.id)
 
-  def tuple2Trigger(tuple: (RawMessageTrigger, (RawBehaviorVersion, Team))): MessageTrigger = {
+  def tuple2Trigger(tuple: (RawMessageTrigger, (RawBehaviorVersion, (RawBehavior, Team)))): MessageTrigger = {
     val raw = tuple._1
     val behaviorVersion = BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2)
     val triggerType = if (raw.shouldTreatAsRegex) RegexMessageTrigger else TemplateMessageTrigger
@@ -94,7 +94,7 @@ object MessageTriggerQueries {
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
-    allWithBehaviorVersions.filter { case(trigger, (behaviorVersion, team)) => team.id === teamId}
+    allWithBehaviorVersion.filter { case(trigger, (behaviorVersion, (behavior, team))) => team.id === teamId}
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
@@ -102,16 +102,27 @@ object MessageTriggerQueries {
     allForTeamQuery(team.id).result.map(_.map(tuple2Trigger))
   }
 
+  def uncompiledAllActiveForTeamQuery(teamId: Rep[String]) = {
+    allWithBehaviorVersion.
+      filter { case(trigger, (behaviorVersion, (behavior, team))) => team.id === teamId}.
+      filter { case(trigger, (behaviorVersion, _)) => behaviorVersion.isActive }
+  }
+  val allActiveForTeamQuery = Compiled(uncompiledAllActiveForTeamQuery _)
+
+  def allActiveFor(team: Team): DBIO[Seq[MessageTrigger]] = {
+    allActiveForTeamQuery(team.id).result.map(_.map(tuple2Trigger))
+  }
+
   def allWithExactPattern(pattern: String, teamId: String): DBIO[Seq[MessageTrigger]] = {
-    allWithBehaviorVersions.
-      filter { case(trigger, (behavior, team)) => team.id === teamId }.
+    allWithBehaviorVersion.
+      filter { case(trigger, (behaviorVersion, (behavior, team))) => team.id === teamId }.
       filter { case(trigger, _) => trigger.pattern === pattern }.
       result.
       map(_.map(tuple2Trigger))
   }
 
   def uncompiledAllForBehaviorQuery(behaviorVersionId: Rep[String]) = {
-    allWithBehaviorVersions.filter { case(_, (behavior, _)) => behavior.id === behaviorVersionId}
+    allWithBehaviorVersion.filter { case(_, (behavior, _)) => behavior.id === behaviorVersionId}
   }
   val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
 
