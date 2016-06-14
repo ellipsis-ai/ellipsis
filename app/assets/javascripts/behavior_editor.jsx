@@ -18,6 +18,7 @@ var React = require('react'),
   BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
   BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
   BehaviorEditorTriggerHelp = require('./behavior_editor_trigger_help'),
+  BehaviorEditorTriggerOptionsHelp = require('./behavior_editor_trigger_options_help'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
   Collapsible = require('./collapsible'),
@@ -322,6 +323,12 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  toggleTriggerOptionsHelp: function() {
+    this.setState({
+      triggerOptionsHelpVisible: !this.state.triggerOptionsHelpVisible
+    });
+  },
+
   toggleCodeEditor: function(forceState) {
     var newState = forceState !== undefined ? forceState : !this.state.revealCodeEditor;
     this.setState({
@@ -601,6 +608,8 @@ var BehaviorEditor = React.createClass({
                     onChange={this.onTriggerChange.bind(this, index)}
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}
+                    onHelpClick={this.toggleTriggerOptionsHelp}
+                    helpVisible={this.state.triggerOptionsHelpVisible}
                   />
                 );
               }, this)}
@@ -758,6 +767,9 @@ var BehaviorEditor = React.createClass({
         >
           <Collapsible revealWhen={this.state.triggerHelpVisible}>
             <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
+          </Collapsible>
+          <Collapsible revealWhen={this.state.triggerOptionsHelpVisible}>
+            <BehaviorEditorTriggerOptionsHelp onCollapseClick={this.toggleTriggerOptionsHelp} />
           </Collapsible>
           <Collapsible revealWhen={this.state.boilerplateHelpVisible}>
             <BehaviorEditorBoilerplateParameterHelp
