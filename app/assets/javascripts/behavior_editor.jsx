@@ -423,7 +423,7 @@ var BehaviorEditor = React.createClass({
     return (
       <div checkedWhen={this.templateIncludesParam()}>
         User-supplied parameters:<br />
-        <div className="bg-blue-lightest border border-dotted paxs type-monospace type-xs type-weak">
+        <div className="box-code-example">
         You said {this.hasParams() && this.getBehaviorParams()[0].name ?
           "{" + this.getBehaviorParams()[0].name + "}" :
           "{exampleParamName}"}
@@ -436,7 +436,7 @@ var BehaviorEditor = React.createClass({
     return (
       <div checkedWhen={this.templateIncludesSuccessResult()}>
         The result provided to <code>onSuccess</code>:<br />
-        <div className="bg-blue-lightest border border-dotted paxs type-monospace type-xs type-weak">
+        <div className="box-code-example">
           The answer is {"{successResult}"}
         </div>
       </div>
@@ -447,7 +447,7 @@ var BehaviorEditor = React.createClass({
     return (
       <span checkedWhen={this.templateIncludesPath()}>
         Properties of the result:<br />
-        <div className="bg-blue-lightest border border-dotted paxs type-monospace type-xs type-weak">
+        <div className="box-code-example">
           Name: {"{successResult.user.name}"}
         </div>
       </span>
@@ -458,7 +458,7 @@ var BehaviorEditor = React.createClass({
     return (
       <div checkedWhen={this.templateIncludesIteration()}>
         Iterating through a list:<br />
-        <div className="bg-blue-lightest border border-dotted paxs type-monospace type-xs type-weak">
+        <div className="box-code-example">
           {"{for item in successResult.items}"}<br />
           &nbsp;* {"{item}"}<br />
           {"{endfor}"}
