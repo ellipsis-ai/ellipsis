@@ -408,7 +408,7 @@ var BehaviorEditor = React.createClass({
       return (
         <div>
           <span>You can include data in your response.<br /></span>
-          <BehaviorEditorChecklist className="mtxs">
+          <BehaviorEditorChecklist className="mtxs" disabledWhen={this.isExistingBehavior()}>
             {this.getUserParamTemplateHelp()}
             {this.getSuccessResultTemplateHelp()}
             {this.getPathTemplateHelp()}
