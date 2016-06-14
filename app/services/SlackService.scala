@@ -97,7 +97,7 @@ class SlackService @Inject() (
           MessageTriggerQueries.allFor(team)
         }
       }.getOrElse(DBIO.successful(Seq()))
-      behaviorVersions <- DBIO.successful(matchingTriggers.map(_.behaviorVersion).distinct)
+      behaviorVersions <- DBIO.successful(matchingTriggers.map(_.behaviorVersion).filter(_.isActive).distinct)
       (skills, knowledge) <- DBIO.successful(behaviorVersions.partition(_.isSkill))
       matchString <- DBIO.successful(maybeHelpSearch.map { s =>
         s" that matches `$s`"
