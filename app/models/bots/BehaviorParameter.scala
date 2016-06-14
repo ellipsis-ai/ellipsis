@@ -8,7 +8,7 @@ case class BehaviorParameter(
                             id: String,
                             name: String,
                             rank: Int,
-                            behavior: Behavior,
+                            behaviorVersion: BehaviorVersion,
                             maybeQuestion: Option[String],
                             maybeParamType: Option[String]
                               ) {
@@ -22,7 +22,7 @@ case class BehaviorParameter(
   def save: DBIO[BehaviorParameter] = BehaviorParameterQueries.save(this)
 
   def toRaw: RawBehaviorParameter = {
-    RawBehaviorParameter(id, name, rank, behavior.id, maybeQuestion, maybeParamType)
+    RawBehaviorParameter(id, name, rank, behaviorVersion.id, maybeQuestion, maybeParamType)
   }
 }
 
@@ -30,7 +30,7 @@ case class RawBehaviorParameter(
                                id: String,
                                name: String,
                                rank: Int,
-                               behaviorId: String,
+                               behaviorVersionId: String,
                                maybeQuestion: Option[String],
                                maybeParamType: Option[String]
                                  )
@@ -40,47 +40,47 @@ class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag,
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
   def rank = column[Int]("rank")
-  def behaviorId = column[String]("behavior_id")
+  def behaviorVersionId = column[String]("behavior_version_id")
   def maybeQuestion = column[Option[String]]("question")
   def maybeParamType = column[Option[String]]("param_type")
 
   def * =
-    (id, name, rank, behaviorId, maybeQuestion, maybeParamType) <> ((RawBehaviorParameter.apply _).tupled, RawBehaviorParameter.unapply _)
+    (id, name, rank, behaviorVersionId, maybeQuestion, maybeParamType) <> ((RawBehaviorParameter.apply _).tupled, RawBehaviorParameter.unapply _)
 }
 
 object BehaviorParameterQueries {
 
   val all = TableQuery[BehaviorParametersTable]
-  val allWithBehaviors = all.join(BehaviorQueries.allWithTeam).on(_.behaviorId === _._1.id)
+  val allWithBehaviors = all.join(BehaviorVersionQueries.allWithTeam).on(_.behaviorVersionId === _._1.id)
 
-  type TupleType = (RawBehaviorParameter, (RawBehavior, Team))
+  type TupleType = (RawBehaviorParameter, (RawBehaviorVersion, Team))
 
   def tuple2Parameter(tuple: TupleType): BehaviorParameter = {
     val raw = tuple._1
-    BehaviorParameter(raw.id, raw.name, raw.rank, BehaviorQueries.tuple2Behavior(tuple._2), raw.maybeQuestion, raw.maybeParamType)
+    BehaviorParameter(raw.id, raw.name, raw.rank, BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2), raw.maybeQuestion, raw.maybeParamType)
   }
 
-  def uncompiledAllForQuery(behaviorId: Rep[String]) = {
+  def uncompiledAllForQuery(behaviorVersionId: Rep[String]) = {
     allWithBehaviors.
-      filter { case(param, (behavior, team)) => behavior.id === behaviorId}.
+      filter { case(param, (behaviorVersion, team)) => behaviorVersion.id === behaviorVersionId}.
       sortBy { case(param, _) => param.rank.asc }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def allFor(behavior: Behavior): DBIO[Seq[BehaviorParameter]] = {
-    allForQuery(behavior.id).result.map(_.map(tuple2Parameter))
+  def allFor(behaviorVersion: BehaviorVersion): DBIO[Seq[BehaviorParameter]] = {
+    allForQuery(behaviorVersion.id).result.map(_.map(tuple2Parameter))
   }
 
-  def nextIncompleteFor(behavior: Behavior): DBIO[Option[BehaviorParameter]] = {
-    allFor(behavior).map { params =>
+  def nextIncompleteFor(behaviorVersion: BehaviorVersion): DBIO[Option[BehaviorParameter]] = {
+    allFor(behaviorVersion).map { params =>
       params.filterNot(_.isComplete).headOption
     }
   }
 
-  def createFor(name: String, maybeQuestion: Option[String], rank: Int, behavior: Behavior): DBIO[BehaviorParameter] = {
-    val raw = RawBehaviorParameter(IDs.next, name, rank, behavior.id, maybeQuestion, None)
+  def createFor(name: String, maybeQuestion: Option[String], rank: Int, behaviorVersion: BehaviorVersion): DBIO[BehaviorParameter] = {
+    val raw = RawBehaviorParameter(IDs.next, name, rank, behaviorVersion.id, maybeQuestion, None)
     (all += raw).map { _ =>
-      BehaviorParameter(raw.id, raw.name, raw.rank, behavior, raw.maybeQuestion, raw.maybeParamType)
+      BehaviorParameter(raw.id, raw.name, raw.rank, behaviorVersion, raw.maybeQuestion, raw.maybeParamType)
     }
   }
 
@@ -96,11 +96,11 @@ object BehaviorParameterQueries {
     }.map(_ => parameter)
   }
 
-  def ensureFor(behavior: Behavior, params: Seq[(String, Option[String])]): DBIO[Seq[BehaviorParameter]] = {
+  def ensureFor(behaviorVersion: BehaviorVersion, params: Seq[(String, Option[String])]): DBIO[Seq[BehaviorParameter]] = {
     for {
-      _ <- all.filter(_.behaviorId === behavior.id).delete
+      _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
       newParams <- DBIO.sequence(params.zipWithIndex.map { case((name, maybeQuestion), i) =>
-        createFor(name, maybeQuestion, i + 1, behavior)
+        createFor(name, maybeQuestion, i + 1, behaviorVersion)
       })
     } yield newParams
   }

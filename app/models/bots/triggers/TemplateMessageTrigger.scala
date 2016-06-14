@@ -7,7 +7,7 @@ import scala.util.matching.Regex
 
 case class TemplateMessageTrigger(
                                 id: String,
-                                behavior: Behavior,
+                                behaviorVersion: BehaviorVersion,
                                 template: String,
                                 requiresBotMention: Boolean,
                                 isCaseSensitive: Boolean

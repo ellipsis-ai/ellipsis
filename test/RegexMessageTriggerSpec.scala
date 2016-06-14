@@ -1,5 +1,5 @@
 import models.{IDs, Team}
-import models.bots.{BehaviorParameter, Behavior}
+import models.bots.{BehaviorParameter, BehaviorVersion}
 import models.bots.triggers.RegexMessageTrigger
 import org.joda.time.DateTime
 
@@ -7,8 +7,8 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
 
   def triggerFor(pattern: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): RegexMessageTrigger = {
     val team = Team(IDs.next, "Team!")
-    val behavior = Behavior(IDs.next, team, None, None, None, None, DateTime.now)
-    RegexMessageTrigger(IDs.next, behavior, pattern, requiresBotMention, isCaseSensitive)
+    val behaviorVersion = BehaviorVersion(IDs.next, team, None, None, None, None, DateTime.now)
+    RegexMessageTrigger(IDs.next, behaviorVersion, pattern, requiresBotMention, isCaseSensitive)
   }
 
   val oneParamPattern = """deploy\s+(\S+)"""
@@ -54,7 +54,7 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
 
     "build an invocation parameter" in {
       val trigger = triggerFor(oneParamPattern)
-      val params = Seq(BehaviorParameter(IDs.next, "version", 1, trigger.behavior, None, None))
+      val params = Seq(BehaviorParameter(IDs.next, "version", 1, trigger.behaviorVersion, None, None))
       val invocationParams = trigger.invocationParamsFor("deploy ellipsis-12345", params)
       invocationParams mustBe Map("param0" -> "ellipsis-12345")
     }
@@ -62,8 +62,8 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
     "build two invocation parameters" in {
       val trigger = triggerFor(twoParamPattern)
       val params = Seq(
-        BehaviorParameter(IDs.next, "version", 1, trigger.behavior, None, None),
-        BehaviorParameter(IDs.next, "subversion", 2, trigger.behavior, None, None)
+        BehaviorParameter(IDs.next, "version", 1, trigger.behaviorVersion, None, None),
+        BehaviorParameter(IDs.next, "subversion", 2, trigger.behaviorVersion, None, None)
       )
       val invocationParams = trigger.invocationParamsFor("deploy ellipsis-12345 0.0.1", params)
       invocationParams mustBe Map("param0" -> "ellipsis-12345", "param1" -> "0.0.1")

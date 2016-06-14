@@ -14,7 +14,7 @@ case class ParameterWithValue(parameter: BehaviorParameter, invocationName: Stri
 
 case class BehaviorResponse(
                              event: Event,
-                             behavior: Behavior,
+                             behaviorVersion: BehaviorVersion,
                              parametersWithValues: Seq[ParameterWithValue]
                              ) {
 
@@ -23,7 +23,7 @@ case class BehaviorResponse(
   }
 
   def runCode(service: AWSLambdaService): Future[Unit] = {
-    behavior.resultFor(parametersWithValues, service).map { result =>
+    behaviorVersion.resultFor(parametersWithValues, service).map { result =>
       event.context.sendMessage(result)
     }
   }
@@ -33,7 +33,7 @@ case class BehaviorResponse(
       DBIO.from(runCode(service))
     } else {
       for {
-        convo <- InvokeBehaviorConversation.createFor(behavior, event.context.name, event.context.userIdForContext)
+        convo <- InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext)
         _ <- convo.replyFor(event, service)
       } yield Unit
     }
@@ -42,13 +42,13 @@ case class BehaviorResponse(
 
 object BehaviorResponse {
 
-  def buildFor(event: Event, behavior: Behavior, paramValues: Map[String, String]): DBIO[BehaviorResponse] = {
-    BehaviorParameterQueries.allFor(behavior).map { params =>
+  def buildFor(event: Event, behaviorVersion: BehaviorVersion, paramValues: Map[String, String]): DBIO[BehaviorResponse] = {
+    BehaviorParameterQueries.allFor(behaviorVersion).map { params =>
       val paramsWithValues = params.zipWithIndex.map { case (ea, i) =>
         val invocationName = AWSLambdaConstants.invocationParamFor(i)
         ParameterWithValue(ea, invocationName, paramValues.get(invocationName))
       }
-      BehaviorResponse(event, behavior, paramsWithValues)
+      BehaviorResponse(event, behaviorVersion, paramsWithValues)
     }
   }
 
@@ -58,8 +58,8 @@ object BehaviorResponse {
       activated <- DBIO.successful(triggers.filter(_.isActivatedBy(event)))
       responses <- DBIO.sequence(activated.map { trigger =>
         for {
-          params <- BehaviorParameterQueries.allFor(trigger.behavior)
-          response <- BehaviorResponse.buildFor(event, trigger.behavior, trigger.invocationParamsFor(event, params))
+          params <- BehaviorParameterQueries.allFor(trigger.behaviorVersion)
+          response <- BehaviorResponse.buildFor(event, trigger.behaviorVersion, trigger.invocationParamsFor(event, params))
         } yield response
       })
     } yield responses

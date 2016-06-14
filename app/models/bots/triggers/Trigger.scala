@@ -1,10 +1,10 @@
 package models.bots.triggers
 
-import models.bots.{Behavior, Event}
+import models.bots.{BehaviorVersion, Event}
 
 trait Trigger {
   val id: String
-  val behavior: Behavior
+  val behaviorVersion: BehaviorVersion
 
   def isActivatedBy(event: Event): Boolean
 }

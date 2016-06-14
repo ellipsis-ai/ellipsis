@@ -52,7 +52,7 @@ class SlackService @Inject() (
     val eventualReply = try {
       for {
         triggers <- MessageTriggerQueries.allWithExactPattern(patternString, messageContext.profile.teamId)
-        _ <- DBIO.sequence(triggers.map(_.behavior.unlearn(lambdaService)))
+        _ <- DBIO.sequence(triggers.map(_.behaviorVersion.unlearn(lambdaService)))
       } yield {
         s"$patternString? Never heard of it."
       }
@@ -64,11 +64,11 @@ class SlackService @Inject() (
     }
   }
 
-  private def helpStringFor(behaviors: Seq[Behavior], prompt: String, matchString: String): DBIO[String] = {
+  private def helpStringFor(behaviors: Seq[BehaviorVersion], prompt: String, matchString: String): DBIO[String] = {
     DBIO.sequence(behaviors.map { ea =>
       MessageTriggerQueries.allFor(ea)
     }).map(_.flatten).map { triggersForBehaviors =>
-      val grouped = triggersForBehaviors.groupBy(_.behavior)
+      val grouped = triggersForBehaviors.groupBy(_.behaviorVersion)
       val behaviorStrings = grouped.map { case(behavior, triggers) =>
         val triggersString = triggers.map { ea =>
           s"`${ea.pattern}`"
@@ -97,7 +97,7 @@ class SlackService @Inject() (
           MessageTriggerQueries.allFor(team)
         }
       }.getOrElse(DBIO.successful(Seq()))
-      behaviors <- DBIO.successful(matchingTriggers.map(_.behavior).distinct)
+      behaviors <- DBIO.successful(matchingTriggers.map(_.behaviorVersion).distinct)
       (skills, knowledge) <- DBIO.successful(behaviors.partition(_.isSkill))
       matchString <- DBIO.successful(maybeHelpSearch.map { s =>
         s" that matches `$s`"
@@ -116,12 +116,16 @@ class SlackService @Inject() (
       }
   }
 
-  def startLearnConversationFor(messageContext: SlackContext): DBIO[Unit] = {
+  def teachMeLinkFor(messageContext: SlackContext): String = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ApplicationController.newBehavior(messageContext.profile.teamId)
       s"$baseUrl$path"
     }.get
-    messageContext.sendMessage(s"I love to learn. Come <$newBehaviorLink|teach me something new>.")
+    s"<$newBehaviorLink|teach me something new>"
+  }
+
+  def startLearnConversationFor(messageContext: SlackContext): DBIO[Unit] = {
+    messageContext.sendMessage(s"I love to learn. Come ${teachMeLinkFor(messageContext)}.")
     DBIO.successful(Unit)
   }
 
@@ -140,7 +144,7 @@ class SlackService @Inject() (
             s"""
                |I don't know how to respond to `${messageContext.message.text}`
                |
-               |Try `@ellipsis: help` to see what I can do.
+               |Type `@ellipsis: help` to see what I can do or ${teachMeLinkFor(messageContext)}
              """.stripMargin)
         }
         DBIO.successful(Unit)
@@ -176,11 +180,11 @@ class SlackService @Inject() (
         }
       }.getOrElse(Seq()))
       qaExtractor <- DBIO.successful(QuestionAnswerExtractor(messages))
-      maybeBehavior <- maybeTeam.map { team =>
-        BehaviorQueries.createFor(team).flatMap { behavior =>
-          behavior.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)).save.flatMap { behaviorWithContent =>
+      maybeBehaviorVersion <- maybeTeam.map { team =>
+        BehaviorVersionQueries.createFor(team).flatMap { behaviorVersion =>
+          behaviorVersion.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)).save.flatMap { behaviorWithContent =>
             qaExtractor.maybeLastQuestion.map { lastQuestion =>
-              MessageTriggerQueries.createFor(behavior, lastQuestion, requiresBotMention = false, shouldTreatAsRegex = false, isCaseSensitive = false)
+              MessageTriggerQueries.createFor(behaviorVersion, lastQuestion, requiresBotMention = false, shouldTreatAsRegex = false, isCaseSensitive = false)
             }.getOrElse {
               DBIO.successful(Unit)
             }.map(_ => behaviorWithContent)
@@ -188,8 +192,8 @@ class SlackService @Inject() (
         }.map(Some(_)) transactionally
       }.getOrElse(DBIO.successful(None))
     } yield {
-      maybeBehavior.foreach { behavior =>
-        behavior.editLinkFor(lambdaService.configuration).foreach { link =>
+      maybeBehaviorVersion.foreach { behaviorVersion =>
+        behaviorVersion.editLinkFor(lambdaService.configuration).foreach { link =>
           SlackMessageEvent(messageContext).context.sendMessage(s"OK, I compiled recent messages at $link")
         }
       }

@@ -61,7 +61,7 @@ trait MessageTrigger extends Trigger {
 
 case class RawMessageTrigger(
                               id: String,
-                              behaviorId: String,
+                              behaviorVersionId: String,
                               pattern: String,
                               requiresBotMention: Boolean,
                               shouldTreatAsRegex: Boolean,
@@ -71,30 +71,30 @@ case class RawMessageTrigger(
 class MessageTriggersTable(tag: Tag) extends Table[RawMessageTrigger](tag, "message_triggers") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def behaviorId = column[String]("behavior_id")
+  def behaviorVersionId = column[String]("behavior_version_id")
   def pattern = column[String]("pattern")
   def requiresBotMention = column[Boolean]("requires_bot_mention")
   def shouldTreatAsRegex = column[Boolean]("treat_as_regex")
   def isCaseSensitive = column[Boolean]("is_case_sensitive")
 
   def * =
-    (id, behaviorId, pattern, requiresBotMention, shouldTreatAsRegex, isCaseSensitive) <> ((RawMessageTrigger.apply _).tupled, RawMessageTrigger.unapply _)
+    (id, behaviorVersionId, pattern, requiresBotMention, shouldTreatAsRegex, isCaseSensitive) <> ((RawMessageTrigger.apply _).tupled, RawMessageTrigger.unapply _)
 }
 
 object MessageTriggerQueries {
 
   val all = TableQuery[MessageTriggersTable]
-  val allWithBehaviors = all.join(BehaviorQueries.allWithTeam).on(_.behaviorId === _._1.id)
+  val allWithBehaviorVersions = all.join(BehaviorVersionQueries.allWithTeam).on(_.behaviorVersionId === _._1.id)
 
-  def tuple2Trigger(tuple: (RawMessageTrigger, (RawBehavior, Team))): MessageTrigger = {
+  def tuple2Trigger(tuple: (RawMessageTrigger, (RawBehaviorVersion, Team))): MessageTrigger = {
     val raw = tuple._1
-    val behavior = BehaviorQueries.tuple2Behavior(tuple._2)
+    val behaviorVersion = BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2)
     val triggerType = if (raw.shouldTreatAsRegex) RegexMessageTrigger else TemplateMessageTrigger
-    triggerType(raw.id, behavior, raw.pattern, raw.requiresBotMention, raw.isCaseSensitive)
+    triggerType(raw.id, behaviorVersion, raw.pattern, raw.requiresBotMention, raw.isCaseSensitive)
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
-    allWithBehaviors.filter { case(trigger, (behavior, team)) => team.id === teamId}
+    allWithBehaviorVersions.filter { case(trigger, (behaviorVersion, team)) => team.id === teamId}
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
@@ -103,20 +103,20 @@ object MessageTriggerQueries {
   }
 
   def allWithExactPattern(pattern: String, teamId: String): DBIO[Seq[MessageTrigger]] = {
-    allWithBehaviors.
+    allWithBehaviorVersions.
       filter { case(trigger, (behavior, team)) => team.id === teamId }.
       filter { case(trigger, _) => trigger.pattern === pattern }.
       result.
       map(_.map(tuple2Trigger))
   }
 
-  def uncompiledAllForBehaviorQuery(behaviorId: Rep[String]) = {
-    allWithBehaviors.filter { case(_, (behavior, _)) => behavior.id === behaviorId}
+  def uncompiledAllForBehaviorQuery(behaviorVersionId: Rep[String]) = {
+    allWithBehaviorVersions.filter { case(_, (behavior, _)) => behavior.id === behaviorVersionId}
   }
   val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
 
-  def allFor(behavior: Behavior): DBIO[Seq[MessageTrigger]] = {
-    allForBehaviorQuery(behavior.id).
+  def allFor(behaviorVersion: BehaviorVersion): DBIO[Seq[MessageTrigger]] = {
+    allForBehaviorQuery(behaviorVersion.id).
       result.
       map(_.map(tuple2Trigger))
   }
@@ -131,18 +131,18 @@ object MessageTriggerQueries {
     }
   }
 
-  def createFor(behavior: Behavior, pattern: String, requiresBotMention: Boolean, shouldTreatAsRegex: Boolean, isCaseSensitive: Boolean): DBIO[MessageTrigger] = {
+  def createFor(behaviorVersion: BehaviorVersion, pattern: String, requiresBotMention: Boolean, shouldTreatAsRegex: Boolean, isCaseSensitive: Boolean): DBIO[MessageTrigger] = {
     val processedPattern = patternWithoutCaseInsensitiveFlag(pattern, shouldTreatAsRegex)
     val isCaseSensitiveIntended = isCaseSensitive && (!shouldTreatAsRegex || caseInsensitiveRegex.findFirstMatchIn(pattern).isEmpty)
-    val newRaw = RawMessageTrigger(IDs.next, behavior.id, processedPattern, requiresBotMention, shouldTreatAsRegex, isCaseSensitiveIntended)
+    val newRaw = RawMessageTrigger(IDs.next, behaviorVersion.id, processedPattern, requiresBotMention, shouldTreatAsRegex, isCaseSensitiveIntended)
     (all += newRaw).map(_ => newRaw).map { _ =>
       val triggerType = if (newRaw.shouldTreatAsRegex) RegexMessageTrigger else TemplateMessageTrigger
-      triggerType(newRaw.id, behavior, newRaw.pattern, newRaw.requiresBotMention, newRaw.isCaseSensitive)
+      triggerType(newRaw.id, behaviorVersion, newRaw.pattern, newRaw.requiresBotMention, newRaw.isCaseSensitive)
     }
   }
 
-  def deleteAllFor(behavior: Behavior): DBIO[Unit] = {
-    all.filter(_.behaviorId === behavior.id).delete.map(_ => Unit)
+  def deleteAllFor(behaviorVersion: BehaviorVersion): DBIO[Unit] = {
+    all.filter(_.behaviorVersionId === behaviorVersion.id).delete.map(_ => Unit)
   }
 
   def allMatching(pattern: String, team: Team): DBIO[Seq[MessageTrigger]] = {
@@ -156,12 +156,12 @@ object MessageTriggerQueries {
     }
   }
 
-  private def canCompileAsRegex(pattern: String): Boolean = {
+  def maybeRegexValidationErrorFor(pattern: String): Option[String] = {
     try {
       pattern.r
-      true
+      None
     } catch {
-      case e: PatternSyntaxException => false
+      case e: PatternSyntaxException => Some(e.getMessage)
     }
   }
 
