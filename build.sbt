@@ -26,6 +26,8 @@ libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk" % "1.10.72",
   "org.webjars" % "requirejs" % "2.1.14-1",
   "org.webjars" % "react" % "15.0.1",
+  "org.webjars.bower" % "es6-promise" % "3.2.2",
+  "org.webjars.bower" % "fetch" % "0.11.0",
   "com.atlassian.commonmark" % "commonmark" % "0.3.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.3.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.3.0"
