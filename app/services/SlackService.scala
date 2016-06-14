@@ -64,11 +64,11 @@ class SlackService @Inject() (
     }
   }
 
-  private def helpStringFor(behaviors: Seq[BehaviorVersion], prompt: String, matchString: String): DBIO[String] = {
-    DBIO.sequence(behaviors.map { ea =>
+  private def helpStringFor(behaviorVersions: Seq[BehaviorVersion], prompt: String, matchString: String): DBIO[String] = {
+    DBIO.sequence(behaviorVersions.map { ea =>
       MessageTriggerQueries.allFor(ea)
-    }).map(_.flatten).map { triggersForBehaviors =>
-      val grouped = triggersForBehaviors.groupBy(_.behaviorVersion)
+    }).map(_.flatten).map { triggersForBehaviorVersions =>
+      val grouped = triggersForBehaviorVersions.groupBy(_.behaviorVersion)
       val behaviorStrings = grouped.map { case(behavior, triggers) =>
         val triggersString = triggers.map { ea =>
           s"`${ea.pattern}`"
@@ -97,8 +97,8 @@ class SlackService @Inject() (
           MessageTriggerQueries.allFor(team)
         }
       }.getOrElse(DBIO.successful(Seq()))
-      behaviors <- DBIO.successful(matchingTriggers.map(_.behaviorVersion).distinct)
-      (skills, knowledge) <- DBIO.successful(behaviors.partition(_.isSkill))
+      behaviorVersions <- DBIO.successful(matchingTriggers.map(_.behaviorVersion).distinct)
+      (skills, knowledge) <- DBIO.successful(behaviorVersions.partition(_.isSkill))
       matchString <- DBIO.successful(maybeHelpSearch.map { s =>
         s" that matches `$s`"
       }.getOrElse(""))
