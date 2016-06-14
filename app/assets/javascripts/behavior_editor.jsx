@@ -549,6 +549,7 @@ var BehaviorEditor = React.createClass({
                 return (
                   <BehaviorEditorTriggerInput
                     className={index === 0 ? "form-input-large" : ""}
+                    includeHelp={index === 0}
                     key={"BehaviorEditorTrigger" + index}
                     id={"trigger" + index}
                     ref={"trigger" + index}
