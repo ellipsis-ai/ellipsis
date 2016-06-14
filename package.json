@@ -1,0 +1,46 @@
+{
+  "name": "ellipsis",
+  "version": "0.0.1",
+  "description": "Ellipsis manages programmable bots",
+  "main": "index.js",
+  "private": true,
+  "directories": {
+    "test": "__tests__"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "babel-jest": "^12.1.0",
+    "babel-polyfill": "^6.9.1",
+    "babel-preset-es2015": "*",
+    "babel-preset-react": "*",
+    "jest-cli": "^12.1.1",
+    "react-addons-test-utils": "^15.1.0"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "moduleFileExtensions": ["js", "jsx", "json", "node"],
+    "unmockedModulePathPatterns": [
+      "<rootDir>/node_modules/amdefine/",
+      "<rootDir>/node_modules/react/",
+      "<rootDir>/node_modules/react-dom/",
+      "<rootDir>/node_modules/react-addons-test-utils/",
+      "<rootDir>/node_modules/requirejs/"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/project/"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ellipsis-ai/ellipsis.git"
+  },
+  "author": "Ellipsis Co.",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/ellipsis-ai/ellipsis/issues"
+  },
+  "homepage": "https://github.com/ellipsis-ai/ellipsis#readme"
+}
