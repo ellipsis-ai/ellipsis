@@ -454,10 +454,21 @@ var BehaviorEditor = React.createClass({
     });
   },
 
+  resetURL: function() {
+    var path = window.location.pathname;
+    var qps = window.location.search
+      .replace(/^\?/, '')
+      .split('&')
+      .filter(function(qp) { return qp !== 'justSaved=true'; })
+      .join('&');
+    window.history.replaceState({}, "", path + (qps ? '?' + qps : ''));
+  },
+
   componentDidUpdate: function() {
     // Note that calling setState on every update triggers an infinite loop
     if (this.state.justSaved) {
       this.setState({ justSaved: false });
+      this.resetURL();
     }
   },
 
