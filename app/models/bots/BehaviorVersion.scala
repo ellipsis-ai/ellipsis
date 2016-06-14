@@ -273,19 +273,24 @@ object BehaviorVersionQueries {
     }
   }
 
-  def deactivateAllFor(behavior: Behavior): DBIO[Behavior] = {
+  def uncompiledDeactivateAllQueryFor(behaviorId: Rep[String]) = {
     all.
-      filter(_.behaviorId === behavior.id).
-      map(_.isActive).
+      filter(_.behaviorId === behaviorId).
+      map(_.isActive)
+  }
+  val deactivateAllQueryFor = Compiled(uncompiledDeactivateAllQueryFor _)
+
+  def deactivateAllFor(behavior: Behavior): DBIO[Behavior] = {
+    deactivateAllQueryFor(behavior.id).
       update(false).
       map { _ => behavior }
   }
 
   def activate(behaviorVersion: BehaviorVersion): DBIO[BehaviorVersion] = {
-    for {
+    (for {
       _ <- deactivateAllFor(behaviorVersion.behavior)
       saved <- behaviorVersion.copy(isActive = true).save
-    } yield saved
+    } yield saved) transactionally
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)

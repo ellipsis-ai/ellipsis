@@ -115,7 +115,7 @@ object BehaviorQueries {
   }
 
   def delete(behavior: Behavior): DBIO[Behavior] = {
-    all.filter(_.id === behavior.id).delete.map(_ => behavior)
+    findQueryFor(behavior.id).delete.map(_ => behavior)
   }
 
 }
