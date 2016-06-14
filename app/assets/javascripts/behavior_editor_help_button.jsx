@@ -17,9 +17,10 @@ return React.createClass({
         <button type="button"
           ref="button"
           className={
-            "button-symbol button-s" +
+            "button-symbol button-s " +
             (this.props.toggled ? " button-help-toggled " : "") +
-            (this.props.inline ? " button-subtle " : "")
+            (this.props.inline ? " button-subtle " : "") +
+            (this.props.className || "")
           }
           onClick={this.onClick}
         >
