@@ -141,7 +141,7 @@ return React.createClass({
           {this.state.regexError ? (
             <div className="position-absolute position-top-right mts mrxs fade-in">
               <button type="button"
-                className="button-error button-s button-shrink mrxs"
+                className="button-error button-s button-shrink"
                 ref="errorButton"
                 onClick={this.toggleError}
               >
