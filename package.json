@@ -23,10 +23,11 @@
     "moduleFileExtensions": ["js", "jsx", "json", "node"],
     "unmockedModulePathPatterns": [
       "<rootDir>/node_modules/amdefine/",
+      "<rootDir>/node_modules/codemirror/",
+      "<rootDir>/node_modules/lodash.debounce/",
       "<rootDir>/node_modules/react/",
       "<rootDir>/node_modules/react-dom/",
-      "<rootDir>/node_modules/react-addons-test-utils/",
-      "<rootDir>/node_modules/requirejs/"
+      "<rootDir>/node_modules/react-addons-test-utils/"
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
