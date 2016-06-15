@@ -18,9 +18,9 @@ requirejs.config({
       location: '../lib/fetch',
       main: 'fetch'
     }, {
-      name: 'lodash.debounce',
-      location: '../lib/lodash.debounce',
-      main: 'lodash.debounce'
+      name: 'javascript-debounce',
+      location: '../lib/javascript-debounce/dist',
+      main: 'javascript-debounce.min'
     }, {
       name: 'react',
       location: '../lib/react',

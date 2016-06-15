@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  debounce = require('lodash.debounce'),
+  debounce = require('javascript-debounce'),
   ES6Promise = require('es6-promise'),
   Fetch = require('fetch'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
