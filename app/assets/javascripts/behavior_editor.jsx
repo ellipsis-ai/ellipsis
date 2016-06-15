@@ -139,9 +139,13 @@ return React.createClass({
     return this.getBehaviorProp('params') || [];
   },
 
+  hasModifiedTemplate: function() {
+    return this.state.hasModifiedTemplate;
+  },
+
   getBehaviorTemplate: function() {
     var template = this.getBehaviorProp('responseTemplate');
-    if (!template && !this.state.hasModifiedTemplate) {
+    if (!template && !this.hasModifiedTemplate()) {
       return this.getDefaultBehaviorTemplate();
     } else {
       return template;
@@ -502,14 +506,30 @@ return React.createClass({
     });
   },
 
+  getBrowserPathname: function() {
+    return window.location.pathname;
+  },
+
+  getBrowserQueryParams: function() {
+    return window.location.search;
+  },
+
+  setBrowserURL: function(url) {
+    window.history.replaceState({}, "", url);
+  },
+
   resetURL: function() {
-    var path = window.location.pathname;
-    var qps = window.location.search
+    var path = this.getBrowserPathname();
+    var queryParams = this.getBrowserQueryParams();
+    var newQueryParams = queryParams
       .replace(/^\?/, '')
       .split('&')
       .filter(function(qp) { return qp !== 'justSaved=true'; })
       .join('&');
-    window.history.replaceState({}, "", path + (qps ? '?' + qps : ''));
+    var newURL = path + (newQueryParams ? '?' + newQueryParams : '');
+    if (newURL !== path + queryParams) {
+      this.setBrowserURL(newURL);
+    }
   },
 
   componentDidUpdate: function() {
