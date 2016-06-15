@@ -121,7 +121,7 @@ return React.createClass({
       expandEnvVariables: false,
       justSaved: this.props.justSaved,
       isSaving: false,
-      envVariableNames: this.props.envVariableNames,
+      envVariableNames: this.props.envVariableNames || [],
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate
@@ -133,11 +133,11 @@ return React.createClass({
   },
 
   getBehaviorNodeFunction: function() {
-    return this.getBehaviorProp('nodeFunction');
+    return this.getBehaviorProp('nodeFunction') || "";
   },
 
   getBehaviorParams: function() {
-    return this.getBehaviorProp('params');
+    return this.getBehaviorProp('params') || [];
   },
 
   getBehaviorTemplate: function() {
@@ -201,7 +201,7 @@ return React.createClass({
   },
 
   hasParams: function() {
-    return this.getBehaviorParams().length > 0;
+    return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
 
   isModified: function() {
@@ -483,7 +483,7 @@ return React.createClass({
   },
 
   getCodeFunctionParams: function() {
-    var userParams = this.getBehaviorProp('params').map(function(param) { return param.name; });
+    var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
     return userParams.concat(["onSuccess", "onError", "ellipsis"]);
   },
 
