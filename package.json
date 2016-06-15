@@ -1,0 +1,64 @@
+{
+  "name": "ellipsis",
+  "version": "0.0.1",
+  "description": "Ellipsis manages programmable bots",
+  "main": "index.js",
+  "private": true,
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "amdefine": "^1.0.0",
+    "babel-jest": "^12.1.0",
+    "babel-polyfill": "^6.9.1",
+    "babel-preset-es2015": "*",
+    "babel-preset-react": "*",
+    "codemirror": "^5.15.2",
+    "fetch": "^1.1.0",
+    "jest-cli": "^12.1.1",
+    "lodash.debounce": "^4.0.6",
+    "react": "^15.1.0",
+    "react-addons-test-utils": "^15.1.0",
+    "react-dom": "^15.1.0"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ],
+    "modulePathIgnorePatterns": [
+      "Ben Newman"
+    ],
+    "scriptPreprocessor": "<rootDir>/app/assets/javascripts/amdefinerator",
+    "unmockedModulePathPatterns": [
+      "<rootDir>/node_modules/amdefine/",
+      "<rootDir>/node_modules/codemirror/",
+      "<rootDir>/node_modules/lodash.debounce/",
+      "<rootDir>/node_modules/react/",
+      "<rootDir>/node_modules/react-dom/",
+      "<rootDir>/node_modules/react-addons-test-utils/"
+    ],
+    "testDirectoryName": "test",
+    "testPathIgnorePatterns": [
+      "/node_modules/.+",
+      "/project/.+",
+      "/target/.+"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ellipsis-ai/ellipsis.git"
+  },
+  "author": "Ellipsis Co.",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/ellipsis-ai/ellipsis/issues"
+  },
+  "homepage": "https://github.com/ellipsis-ai/ellipsis#readme"
+}

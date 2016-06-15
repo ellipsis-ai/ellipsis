@@ -1,4 +1,4 @@
-define('react-codemirror', function(require) {
+define(function(require) {
 var React = require('react'),
   debounce = require('lodash.debounce');
 

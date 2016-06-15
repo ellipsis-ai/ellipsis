@@ -1,8 +1,7 @@
 define(function(require) {
 var React = require('react'),
-  ReactDOM = require('react-dom'),
   Codemirror = require('./react-codemirror'),
-  CodemirrorMarkdownMode = require('./codemirror/mode/markdown/markdown'),
+  CodemirrorMarkdownMode = require('codemirror/mode/markdown/markdown'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
   BehaviorEditorChecklist = require('./behavior_editor_checklist'),
@@ -24,7 +23,7 @@ var React = require('react'),
   Collapsible = require('./collapsible'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input');
 
-var BehaviorEditor = React.createClass({
+return React.createClass({
   displayName: 'BehaviorEditor',
   mixins: [BehaviorEditorMixin],
 
@@ -121,7 +120,7 @@ var BehaviorEditor = React.createClass({
       expandEnvVariables: false,
       justSaved: this.props.justSaved,
       isSaving: false,
-      envVariableNames: this.props.envVariableNames,
+      envVariableNames: this.props.envVariableNames || [],
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate
@@ -133,11 +132,11 @@ var BehaviorEditor = React.createClass({
   },
 
   getBehaviorNodeFunction: function() {
-    return this.getBehaviorProp('nodeFunction');
+    return this.getBehaviorProp('nodeFunction') || "";
   },
 
   getBehaviorParams: function() {
-    return this.getBehaviorProp('params');
+    return this.getBehaviorProp('params') || [];
   },
 
   getBehaviorTemplate: function() {
@@ -201,7 +200,7 @@ var BehaviorEditor = React.createClass({
   },
 
   hasParams: function() {
-    return this.getBehaviorParams().length > 0;
+    return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
 
   isModified: function() {
@@ -483,7 +482,7 @@ var BehaviorEditor = React.createClass({
   },
 
   getCodeFunctionParams: function() {
-    var userParams = this.getBehaviorProp('params').map(function(param) { return param.name; });
+    var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
     return userParams.concat(["onSuccess", "onError", "ellipsis"]);
   },
 
@@ -800,13 +799,5 @@ var BehaviorEditor = React.createClass({
     );
   }
 });
-
-return {
-  load: function(config) {
-    var additionalData = { csrfToken: config.csrfToken, envVariableNames: config.envVariableNames, justSaved: config.justSaved };
-    var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(config.data, additionalData));
-    ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
-  }
-};
 
 });
