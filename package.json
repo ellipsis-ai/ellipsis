@@ -5,7 +5,7 @@
   "main": "index.js",
   "private": true,
   "directories": {
-    "test": "__tests__"
+    "test": "test"
   },
   "dependencies": {},
   "devDependencies": {
@@ -31,9 +31,11 @@
       "<rootDir>/node_modules/react-dom/",
       "<rootDir>/node_modules/react-addons-test-utils/"
     ],
+    "testDirectoryName": "test",
     "testPathIgnorePatterns": [
       "/node_modules/.+",
-      "/project/.+"
+      "/project/.+",
+      "/target/.+"
     ]
   },
   "repository": {
