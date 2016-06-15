@@ -223,6 +223,19 @@ object BehaviorVersionQueries {
     )
   }
 
+  def uncompiledAllForQuery(behaviorId: Rep[String]) = {
+    allWithBehavior.
+      filter { case(version, _) => version.behaviorId === behaviorId }.
+      sortBy { case(version, _) => version.createdAt.desc }
+  }
+  val allForQuery = Compiled(uncompiledAllForQuery _)
+
+  def allFor(behavior: Behavior): DBIO[Seq[BehaviorVersion]] = {
+    allForQuery(behavior.id).result.map { r =>
+      r.map(tuple2BehaviorVersion)
+    }
+  }
+
   def uncompiledFindQuery(id: Rep[String]) = {
     allWithBehavior.filter { case(version, _) => version.id === id }
   }
