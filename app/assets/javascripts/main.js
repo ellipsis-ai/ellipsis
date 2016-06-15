@@ -33,6 +33,9 @@ requirejs.config({
   ]
 });
 
-requirejs(['./behavior_editor'], function(behaviorEditor) {
-  behaviorEditor.load(BehaviorEditorConfiguration);
+requirejs(['react', 'react-dom', './behavior_editor'], function(React, ReactDOM, BehaviorEditor) {
+  var config = BehaviorEditorConfiguration;
+  var additionalData = { csrfToken: config.csrfToken, envVariableNames: config.envVariableNames, justSaved: config.justSaved };
+  var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(config.data, additionalData));
+  ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
 });

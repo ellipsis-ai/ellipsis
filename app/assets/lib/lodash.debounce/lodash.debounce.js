@@ -1,3 +1,4 @@
+if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define('lodash.debounce', function(require, exports, module) {
 /**
  * lodash 4.0.6 (Custom Build) <https://lodash.com/>

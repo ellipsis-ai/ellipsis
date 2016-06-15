@@ -1,12 +1,8 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
+if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(function(require) {
 var React = require('react'),
-  ReactDOM = require('react-dom'),
   Codemirror = require('./react-codemirror'),
-  CodemirrorMarkdownMode = require('./codemirror/mode/markdown/markdown'),
+  CodemirrorMarkdownMode = require('codemirror/mode/markdown/markdown'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
   BehaviorEditorChecklist = require('./behavior_editor_checklist'),
@@ -28,7 +24,7 @@ var React = require('react'),
   Collapsible = require('./collapsible'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input');
 
-var BehaviorEditor = React.createClass({
+return React.createClass({
   displayName: 'BehaviorEditor',
   mixins: [BehaviorEditorMixin],
 
@@ -804,13 +800,5 @@ var BehaviorEditor = React.createClass({
     );
   }
 });
-
-return {
-  load: function(config) {
-    var additionalData = { csrfToken: config.csrfToken, envVariableNames: config.envVariableNames, justSaved: config.justSaved };
-    var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(config.data, additionalData));
-    ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
-  }
-};
 
 });

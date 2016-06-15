@@ -1,10 +1,12 @@
+if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(function(require) {
 var React = require('react'),
   Codemirror = require('./react-codemirror'),
-  CodemirrorJSMode = require('./codemirror/mode/javascript/javascript'),
-  CodeMirrorLint = require('./codemirror/addon/lint/lint'),
-  CodeMirrorJSLint = require('./codemirror/addon/lint/javascript-lint'),
-  CodemirrorShowHint = require('./codemirror/addon/hint/show-hint');
+  CodeMirror = require('codemirror'),
+  CodeMirrorJSMode = require('codemirror/mode/javascript/javascript'),
+  CodeMirrorLint = require('codemirror/addon/lint/lint'),
+  CodeMirrorJSLint = require('codemirror/addon/lint/javascript-lint'),
+  CodeMirrorShowHint = require('codemirror/addon/hint/show-hint');
 
 return React.createClass({
   getJsHintOptions: function() {
