@@ -9,7 +9,7 @@ describe('BehaviorEditor', () => {
   const defaultConfig = {
     teamId: "A",
     behaviorId: "1",
-    nodeFunction: "onSuccess('Woot')",
+    functionBody: "onSuccess('Woot')",
     responseTemplate: "{successResult}",
     params: [],
     triggers: [{
