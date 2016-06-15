@@ -30,12 +30,12 @@ describe('BehaviorEditor', () => {
 
   describe('utils', () => {
     describe('arrayWithNewElementAtIndex', () => {
-      const array = [0, 1, 2];
+      const array = ['a', 'b', 'c'];
 
       it('copies an array before modifying it', () => {
-        const newArray = editor.utils.arrayWithNewElementAtIndex(array, 3, 2);
-        expect(array).toEqual([0, 1, 2]);
-        expect(newArray).toEqual([0, 1, 3]);
+        const newArray = editor.utils.arrayWithNewElementAtIndex(array, 'z', 2);
+        expect(array).toEqual(['a', 'b', 'c']);
+        expect(newArray).toEqual(['a', 'b', 'z']);
       });
     });
   });
