@@ -9,6 +9,7 @@ import models.bots.triggers.MessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
 import models.bots.{BehaviorQueries, BehaviorParameterQueries, BehaviorVersionQueries}
+import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
@@ -69,13 +70,14 @@ class ApplicationController @Inject() (
           team <- maybeTeam
           envVars <- maybeEnvironmentVariables
         } yield {
-            val data = BehaviorData(
+            val data = BehaviorVersionData(
               team.id,
               None,
               "",
               "",
               Seq(),
-              Seq()
+              Seq(),
+              None
             )
             Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), justSaved = false))
           }).getOrElse {
@@ -93,14 +95,18 @@ class ApplicationController @Inject() (
                                   isRegex: Boolean,
                                   caseSensitive: Boolean
                                 )
-  case class BehaviorData(
+
+  case class BehaviorVersionData(
                          teamId: String,
                          maybeId: Option[String],
                          functionBody: String,
                          responseTemplate: String,
                          params: Seq[BehaviorParameterData],
-                         triggers: Seq[BehaviorTriggerData]
+                         triggers: Seq[BehaviorTriggerData],
+                         maybeCreatedAt: Option[DateTime]
                            )
+
+  case class BehaviorData(behaviorId: String, versions: Seq[BehaviorVersionData])
 
   implicit val behaviorParameterReads: Reads[BehaviorParameterData] = (
     (JsPath \ "name").read[String] and
@@ -126,22 +132,34 @@ class ApplicationController @Inject() (
       (JsPath \ "caseSensitive").write[Boolean]
     )(unlift(BehaviorTriggerData.unapply))
 
-  implicit val behaviorReads: Reads[BehaviorData] = (
+  implicit val behaviorVersionReads: Reads[BehaviorVersionData] = (
     (JsPath \ "teamId").read[String] and
       (JsPath \ "behaviorId").readNullable[String] and
       (JsPath \ "nodeFunction").read[String] and
       (JsPath \ "responseTemplate").read[String] and
       (JsPath \ "params").read[Seq[BehaviorParameterData]] and
-      (JsPath \ "triggers").read[Seq[BehaviorTriggerData]]
-    )(BehaviorData.apply _)
+      (JsPath \ "triggers").read[Seq[BehaviorTriggerData]] and
+      (JsPath \ "createdAt").readNullable[DateTime]
+    )(BehaviorVersionData.apply _)
 
-  implicit val behaviorWrites: Writes[BehaviorData] = (
+  implicit val behaviorVersionWrites: Writes[BehaviorVersionData] = (
     (JsPath \ "teamId").write[String] and
       (JsPath \ "behaviorId").writeNullable[String] and
       (JsPath \ "nodeFunction").write[String] and
       (JsPath \ "responseTemplate").write[String] and
       (JsPath \ "params").write[Seq[BehaviorParameterData]] and
-      (JsPath \ "triggers").write[Seq[BehaviorTriggerData]]
+      (JsPath \ "triggers").write[Seq[BehaviorTriggerData]] and
+      (JsPath \ "createdAt").writeNullable[DateTime]
+    )(unlift(BehaviorVersionData.unapply))
+
+  implicit val behaviorReads: Reads[BehaviorData] = (
+    (JsPath \ "behaviorId").read[String] and
+      (JsPath \ "versions").read[Seq[BehaviorVersionData]]
+    )(BehaviorData.apply _)
+
+  implicit val behaviorWrites: Writes[BehaviorData] = (
+    (JsPath \ "behaviorId").write[String] and
+      (JsPath \ "versions").write[Seq[BehaviorVersionData]]
     )(unlift(BehaviorData.unapply))
 
   def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
@@ -168,7 +186,7 @@ class ApplicationController @Inject() (
           triggers <- maybeTriggers
           envVars <- maybeEnvironmentVariables
         } yield {
-          val data = BehaviorData(
+          val data = BehaviorVersionData(
             behaviorVersion.team.id,
             Some(behavior.id),
             behaviorVersion.functionBody,
@@ -178,7 +196,8 @@ class ApplicationController @Inject() (
             },
             triggers.map( ea =>
               BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
-            )
+            ),
+            Some(behaviorVersion.createdAt)
           )
           Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
         }).getOrElse {
@@ -205,7 +224,7 @@ class ApplicationController @Inject() (
       },
       info => {
         val json = Json.parse(info.dataJson)
-        json.validate[BehaviorData] match {
+        json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
             val action = (for {
               maybeTeam <- Team.find(data.teamId, user)
@@ -272,6 +291,53 @@ class ApplicationController @Inject() (
         models.run(action)
       }
     )
+  }
+
+  def versionInfoFor(behaviorId: String) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      maybeBehavior <- BehaviorQueries.find(behaviorId, user)
+      versions <- maybeBehavior.map { behavior =>
+        BehaviorVersionQueries.allFor(behavior)
+      }.getOrElse(DBIO.successful(Seq()))
+      parametersByVersion <- DBIO.sequence(versions.map { version =>
+        BehaviorParameterQueries.allFor(version).map { params =>
+          (version, params)
+        }
+      }).map(_.toMap)
+      triggersByVersion <- DBIO.sequence(versions.map { version =>
+        MessageTriggerQueries.allFor(version).map { triggers =>
+          (version, triggers)
+        }
+      }).map(_.toMap)
+    } yield {
+        maybeBehavior.map { behavior =>
+          val versionsData = versions.map { version =>
+            BehaviorVersionData(
+              version.team.id,
+              Some(behavior.id),
+              version.functionBody,
+              version.maybeResponseTemplate.getOrElse(""),
+              parametersByVersion.get(version).map { params =>
+                params.map { ea =>
+                  BehaviorParameterData(ea.name, ea.question)
+                }
+              }.getOrElse(Seq()),
+              triggersByVersion.get(version).map { triggers =>
+                triggers.map { ea =>
+                  BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
+                }
+              }.getOrElse(Seq()),
+              Some(version.createdAt)
+            )
+          }
+          Ok(Json.toJson(versionsData))
+        }.getOrElse {
+          NotFound("Behavior not found")
+        }
+      }
+
+    models.run(action)
   }
 
   def regexValidationErrorsFor(pattern: String) = SecuredAction { implicit request =>
