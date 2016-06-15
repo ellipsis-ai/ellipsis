@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  debounce = require('lodash.debounce');
+  debounce = require('javascript-debounce');
 
 function deepEquals(thing1, thing2) {
   if (thing1 === thing2) {

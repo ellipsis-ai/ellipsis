@@ -30,6 +30,7 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "fetch" % "1.0.0",
   "org.webjars.bower" % "codemirror" % "5.15.2",
   "org.webjars.bower" % "jshint" % "2.8.0",
+  "org.webjars.bower" % "javascript-debounce" % "1.0.0",
   "com.atlassian.commonmark" % "commonmark" % "0.3.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.3.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.3.0"
