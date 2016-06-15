@@ -21,6 +21,8 @@
   },
   "jest": {
     "moduleFileExtensions": ["js", "jsx", "json", "node"],
+    "modulePathIgnorePatterns": ["Ben Newman"],
+    "scriptPreprocessor": "<rootDir>/app/assets/javascripts/amdefinerator",
     "unmockedModulePathPatterns": [
       "<rootDir>/node_modules/amdefine/",
       "<rootDir>/node_modules/codemirror/",
@@ -30,8 +32,8 @@
       "<rootDir>/node_modules/react-addons-test-utils/"
     ],
     "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/project/"
+      "/node_modules/.+",
+      "/project/.+"
     ]
   },
   "repository": {

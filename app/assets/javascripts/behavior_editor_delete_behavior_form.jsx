@@ -1,4 +1,3 @@
-if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(function(require) {
 var React = require('react'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input');

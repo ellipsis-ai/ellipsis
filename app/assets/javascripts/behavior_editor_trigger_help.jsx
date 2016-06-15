@@ -1,4 +1,3 @@
-if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(function(require) {
 var React = require('react'),
   BehaviorEditorHelpPanel = require('./behavior_editor_help_panel');
