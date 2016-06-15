@@ -117,7 +117,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
 
   override def visit(paragraph: Paragraph) {
     visitChildren(paragraph)
-    stringBuilder.append("\r")
+    stringBuilder.append("\r\r")
   }
 
   override def visit(softLineBreak: SoftLineBreak) {
