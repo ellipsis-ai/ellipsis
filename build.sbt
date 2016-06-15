@@ -29,7 +29,7 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "es6-promise" % "3.2.2",
   "org.webjars.bower" % "fetch" % "1.0.0",
   "org.webjars.bower" % "codemirror" % "5.15.2",
-  "org.webjars.bower" % "jshint" % "2.8.0",
+  "org.webjars.bower" % "jshint" % "2.9.2",
   "org.webjars.bower" % "javascript-debounce" % "1.0.0",
   "com.atlassian.commonmark" % "commonmark" % "0.3.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.3.0",

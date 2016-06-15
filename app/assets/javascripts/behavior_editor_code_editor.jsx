@@ -14,8 +14,7 @@ return React.createClass({
       bitwise: false,
       curly: false,
       eqeqeq: false,
-      esnext: true, // Deprecated in JSHint 2.9+
-      esversion: 6, // Only supported in JSHint 2.9+
+      esversion: 6,
       forin: false,
       freeze: false,
       funcscope: false,
