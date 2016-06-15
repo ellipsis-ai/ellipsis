@@ -65,12 +65,15 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
 
+    val definitionUserParamsString = if (params.isEmpty) {
+      ""
+    } else {
+      s"""\n${params.map(ea => ea ++ ",").mkString("\n")}\n"""
+    }
+    val definitionBuiltinParamsString = (HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = function(
-      |     ${params.map(ea => ea ++ ",").mkString("\n")}
-      |     ${(HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")}
-      |   ) {
+    s"""exports.handler = function(event, context, callback) { var fn = function($definitionUserParamsString$definitionBuiltinParamsString) {
       |     $functionBody
       |   };
       |   var $ON_SUCCESS_PARAM = function(result) {
