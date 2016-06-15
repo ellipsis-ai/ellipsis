@@ -119,7 +119,7 @@ case class BehaviorVersion(
   }
 
   private def maybeDetailedErrorInfoIn(logResult: String): Option[String] = {
-    val logRegex = """(?s).*\n.*\t.*\t(Error:.*)\n[^\n]*\nEND.*""".r
+    val logRegex = """(?s).*\n.*\t.*\t(\S*Error:.*)\n[^\n]*\nEND.*""".r
     logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption).map(translateFromLambdaErrorDetails)
   }
 
