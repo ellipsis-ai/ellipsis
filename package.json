@@ -16,8 +16,8 @@
     "babel-preset-react": "*",
     "codemirror": "^5.15.2",
     "fetch": "^1.1.0",
+    "javascript-debounce": "^1.0.0",
     "jest-cli": "^12.1.1",
-    "lodash.debounce": "^4.0.6",
     "react": "^15.1.0",
     "react-addons-test-utils": "^15.1.0",
     "react-dom": "^15.1.0"
