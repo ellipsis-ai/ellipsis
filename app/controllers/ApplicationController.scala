@@ -77,7 +77,7 @@ class ApplicationController @Inject() (
               "",
               Seq(),
               Seq(),
-              DateTime.now
+              None
             )
             Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), justSaved = false))
           }).getOrElse {
@@ -103,7 +103,7 @@ class ApplicationController @Inject() (
                          responseTemplate: String,
                          params: Seq[BehaviorParameterData],
                          triggers: Seq[BehaviorTriggerData],
-                         createdAt: DateTime
+                         maybeCreatedAt: Option[DateTime]
                            )
 
   case class BehaviorData(behaviorId: String, versions: Seq[BehaviorVersionData])
@@ -139,7 +139,7 @@ class ApplicationController @Inject() (
       (JsPath \ "responseTemplate").read[String] and
       (JsPath \ "params").read[Seq[BehaviorParameterData]] and
       (JsPath \ "triggers").read[Seq[BehaviorTriggerData]] and
-      (JsPath \ "createdAt").read[DateTime]
+      (JsPath \ "createdAt").readNullable[DateTime]
     )(BehaviorVersionData.apply _)
 
   implicit val behaviorVersionWrites: Writes[BehaviorVersionData] = (
@@ -149,7 +149,7 @@ class ApplicationController @Inject() (
       (JsPath \ "responseTemplate").write[String] and
       (JsPath \ "params").write[Seq[BehaviorParameterData]] and
       (JsPath \ "triggers").write[Seq[BehaviorTriggerData]] and
-      (JsPath \ "createdAt").write[DateTime]
+      (JsPath \ "createdAt").writeNullable[DateTime]
     )(unlift(BehaviorVersionData.unapply))
 
   implicit val behaviorReads: Reads[BehaviorData] = (
@@ -197,7 +197,7 @@ class ApplicationController @Inject() (
             triggers.map( ea =>
               BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
             ),
-            behaviorVersion.createdAt
+            Some(behaviorVersion.createdAt)
           )
           Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
         }).getOrElse {
@@ -328,7 +328,7 @@ class ApplicationController @Inject() (
                   BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
                 }
               }.getOrElse(Seq()),
-              version.createdAt
+              Some(version.createdAt)
             )
           }
           Ok(Json.toJson(versionsData))
