@@ -105,7 +105,7 @@ object MessageTriggerQueries {
   def uncompiledAllActiveForTeamQuery(teamId: Rep[String]) = {
     allWithBehaviorVersion.
       filter { case(trigger, (behaviorVersion, (behavior, team))) => team.id === teamId}.
-      filter { case(trigger, (behaviorVersion, _)) => behaviorVersion.isActive }
+      filter { case(trigger, (behaviorVersion, (behavior, team))) => behaviorVersion.id === behavior.maybeCurrentVersionId }
   }
   val allActiveForTeamQuery = Compiled(uncompiledAllActiveForTeamQuery _)
 
@@ -158,7 +158,7 @@ object MessageTriggerQueries {
 
   def allMatching(pattern: String, team: Team): DBIO[Seq[MessageTrigger]] = {
     for {
-      triggers <- allFor(team)
+      triggers <- allActiveFor(team)
     } yield {
       val regex = ("(?i)" ++ pattern).r
       (triggers).filter { ea =>
