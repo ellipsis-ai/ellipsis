@@ -70,7 +70,7 @@ class ApplicationController @Inject() (
           team <- maybeTeam
           envVars <- maybeEnvironmentVariables
         } yield {
-            val data = BehaviorData(
+            val data = BehaviorVersionData(
               team.id,
               None,
               "",
@@ -95,8 +95,8 @@ class ApplicationController @Inject() (
                                   isRegex: Boolean,
                                   caseSensitive: Boolean
                                 )
-  // TODO: change name to BehaviorVersionData, etc
-  case class BehaviorData(
+
+  case class BehaviorVersionData(
                          teamId: String,
                          maybeId: Option[String],
                          functionBody: String,
@@ -106,7 +106,7 @@ class ApplicationController @Inject() (
                          createdAt: DateTime
                            )
 
-  case class BehaviorVersionsData(behaviorId: String, versions: Seq[BehaviorData])
+  case class BehaviorData(behaviorId: String, versions: Seq[BehaviorVersionData])
 
   implicit val behaviorParameterReads: Reads[BehaviorParameterData] = (
     (JsPath \ "name").read[String] and
@@ -132,7 +132,7 @@ class ApplicationController @Inject() (
       (JsPath \ "caseSensitive").write[Boolean]
     )(unlift(BehaviorTriggerData.unapply))
 
-  implicit val behaviorReads: Reads[BehaviorData] = (
+  implicit val behaviorVersionReads: Reads[BehaviorVersionData] = (
     (JsPath \ "teamId").read[String] and
       (JsPath \ "behaviorId").readNullable[String] and
       (JsPath \ "nodeFunction").read[String] and
@@ -140,9 +140,9 @@ class ApplicationController @Inject() (
       (JsPath \ "params").read[Seq[BehaviorParameterData]] and
       (JsPath \ "triggers").read[Seq[BehaviorTriggerData]] and
       (JsPath \ "createdAt").read[DateTime]
-    )(BehaviorData.apply _)
+    )(BehaviorVersionData.apply _)
 
-  implicit val behaviorWrites: Writes[BehaviorData] = (
+  implicit val behaviorVersionWrites: Writes[BehaviorVersionData] = (
     (JsPath \ "teamId").write[String] and
       (JsPath \ "behaviorId").writeNullable[String] and
       (JsPath \ "nodeFunction").write[String] and
@@ -150,17 +150,17 @@ class ApplicationController @Inject() (
       (JsPath \ "params").write[Seq[BehaviorParameterData]] and
       (JsPath \ "triggers").write[Seq[BehaviorTriggerData]] and
       (JsPath \ "createdAt").write[DateTime]
-    )(unlift(BehaviorData.unapply))
+    )(unlift(BehaviorVersionData.unapply))
 
-  implicit val behaviorVersionsReads: Reads[BehaviorVersionsData] = (
+  implicit val behaviorReads: Reads[BehaviorData] = (
     (JsPath \ "behaviorId").read[String] and
-      (JsPath \ "versions").read[Seq[BehaviorData]]
-    )(BehaviorVersionsData.apply _)
+      (JsPath \ "versions").read[Seq[BehaviorVersionData]]
+    )(BehaviorData.apply _)
 
-  implicit val behaviorVersionsWrites: Writes[BehaviorVersionsData] = (
+  implicit val behaviorWrites: Writes[BehaviorData] = (
     (JsPath \ "behaviorId").write[String] and
-      (JsPath \ "versions").write[Seq[BehaviorData]]
-    )(unlift(BehaviorVersionsData.unapply))
+      (JsPath \ "versions").write[Seq[BehaviorVersionData]]
+    )(unlift(BehaviorData.unapply))
 
   def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
     val user = request.identity
@@ -186,7 +186,7 @@ class ApplicationController @Inject() (
           triggers <- maybeTriggers
           envVars <- maybeEnvironmentVariables
         } yield {
-          val data = BehaviorData(
+          val data = BehaviorVersionData(
             behaviorVersion.team.id,
             Some(behavior.id),
             behaviorVersion.functionBody,
@@ -224,7 +224,7 @@ class ApplicationController @Inject() (
       },
       info => {
         val json = Json.parse(info.dataJson)
-        json.validate[BehaviorData] match {
+        json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
             val action = (for {
               maybeTeam <- Team.find(data.teamId, user)
@@ -313,7 +313,7 @@ class ApplicationController @Inject() (
     } yield {
         maybeBehavior.map { behavior =>
           val versionsData = versions.map { version =>
-            BehaviorData(
+            BehaviorVersionData(
               version.team.id,
               Some(behavior.id),
               version.functionBody,
