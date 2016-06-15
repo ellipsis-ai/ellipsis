@@ -11,11 +11,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class Behavior(
                     id: String,
                     team: Team,
+                    maybeCurrentVersionId: Option[String],
                     createdAt: DateTime
                     ) {
 
-  def maybeLatestVersion: DBIO[Option[BehaviorVersion]] = {
-    BehaviorVersionQueries.latestFor(this)
+  def maybeCurrentVersion: DBIO[Option[BehaviorVersion]] = {
+    maybeCurrentVersionId.map { versionId =>
+      BehaviorVersionQueries.findWithoutAccessCheck(versionId)
+    }.getOrElse(DBIO.successful(None))
   }
 
   def unlearn(lambdaService: AWSLambdaService): DBIO[Unit] = {
@@ -24,7 +27,7 @@ case class Behavior(
   }
 
   def toRaw: RawBehavior = {
-    RawBehavior(id, team.id, createdAt)
+    RawBehavior(id, team.id, maybeCurrentVersionId, createdAt)
   }
 
 }
@@ -32,6 +35,7 @@ case class Behavior(
 case class RawBehavior(
                        id: String,
                        teamId: String,
+                       maybeCurrentVersionId: Option[String],
                        createdAt: DateTime
                        )
 
@@ -39,9 +43,10 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
 
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
+  def maybeCurrentVersionId = column[Option[String]]("current_version_id")
   def createdAt = column[DateTime]("created_at")
 
-  def * = (id, teamId, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+  def * = (id, teamId, maybeCurrentVersionId, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
 object BehaviorQueries {
@@ -54,6 +59,7 @@ object BehaviorQueries {
     Behavior(
       raw.id,
       tuple._2,
+      raw.maybeCurrentVersionId,
       raw.createdAt
     )
   }
@@ -94,25 +100,15 @@ object BehaviorQueries {
   }
 
   def createFor(team: Team): DBIO[Behavior] = {
-    val raw = RawBehavior(IDs.next, team.id, DateTime.now)
+    val raw = RawBehavior(IDs.next, team.id, None, DateTime.now)
 
     (all += raw).map { _ =>
-      Behavior(raw.id, team, raw.createdAt)
+      Behavior(raw.id, team, raw.maybeCurrentVersionId, raw.createdAt)
     }
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
-
-  def save(behavior: Behavior): DBIO[Behavior] = {
-    val raw = behavior.toRaw
-    val query = findQueryFor(raw.id)
-    query.result.flatMap { r =>
-      r.headOption.map { existing =>
-        query.update(raw)
-      }.getOrElse(all += raw)
-    }.map(_ => behavior)
-  }
 
   def delete(behavior: Behavior): DBIO[Behavior] = {
     findQueryFor(behavior.id).delete.map(_ => behavior)

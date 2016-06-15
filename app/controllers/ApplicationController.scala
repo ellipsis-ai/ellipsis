@@ -149,7 +149,7 @@ class ApplicationController @Inject() (
     val action = for {
       maybeBehavior <- BehaviorQueries.find(id, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        behavior.maybeLatestVersion
+        behavior.maybeCurrentVersion
       }.getOrElse(DBIO.successful(None))
       maybeParameters <- maybeBehaviorVersion.map { behaviorVersion =>
         BehaviorParameterQueries.allFor(behaviorVersion).map(Some(_))
@@ -234,7 +234,6 @@ class ApplicationController @Inject() (
                         MessageTriggerQueries.createFor(behaviorVersion, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
                       }
                     )
-                  _ <- BehaviorVersionQueries.activate(updated)
                 } yield Unit
               }.getOrElse(DBIO.successful(Unit))
             } yield {
