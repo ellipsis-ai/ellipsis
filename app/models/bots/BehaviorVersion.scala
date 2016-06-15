@@ -29,7 +29,6 @@ class CommonmarkVisitor extends AbstractVisitor {
 case class BehaviorVersion(
                      id: String,
                      behavior: Behavior,
-                     isActive: Boolean,
                      maybeDescription: Option[String],
                      maybeShortName: Option[String],
                      maybeFunctionBody: Option[String],
@@ -120,7 +119,7 @@ case class BehaviorVersion(
   }
 
   private def maybeDetailedErrorInfoIn(logResult: String): Option[String] = {
-    val logRegex = """(?s).*\n.*\t.*\t(Error:.*)\n[^\n]*\nEND.*""".r
+    val logRegex = """(?s).*\n.*\t.*\t(\S*Error:.*)\n[^\n]*\nEND.*""".r
     logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption).map(translateFromLambdaErrorDetails)
   }
 
@@ -176,7 +175,7 @@ case class BehaviorVersion(
   def save: DBIO[BehaviorVersion] = BehaviorVersionQueries.save(this)
 
   def toRaw: RawBehaviorVersion = {
-    RawBehaviorVersion(id, behavior.id, isActive, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt)
+    RawBehaviorVersion(id, behavior.id, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt)
   }
 
 }
@@ -184,7 +183,6 @@ case class BehaviorVersion(
 case class RawBehaviorVersion(
                         id: String,
                         behaviorId: String,
-                        isActive: Boolean,
                         maybeDescription: Option[String],
                         maybeShortName: Option[String],
                         maybeFunctionBody: Option[String],
@@ -196,7 +194,6 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 
   def id = column[String]("id", O.PrimaryKey)
   def behaviorId = column[String]("behavior_id")
-  def isActive = column[Boolean]("is_active")
   def maybeDescription = column[Option[String]]("description")
   def maybeShortName = column[Option[String]]("short_name")
   def maybeFunctionBody = column[Option[String]]("code")
@@ -204,7 +201,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def createdAt = column[DateTime]("created_at")
 
   def * =
-    (id, behaviorId, isActive, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt) <>
+    (id, behaviorId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -218,7 +215,6 @@ object BehaviorVersionQueries {
     BehaviorVersion(
       raw.id,
       BehaviorQueries.tuple2Behavior(tuple._2),
-      raw.isActive,
       raw.maybeDescription,
       raw.maybeShortName,
       raw.maybeFunctionBody,
@@ -232,14 +228,13 @@ object BehaviorVersionQueries {
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  // doesn't check if accessible to a user so private
-  private def find(id: String): DBIO[Option[BehaviorVersion]] = {
+  def findWithoutAccessCheck(id: String): DBIO[Option[BehaviorVersion]] = {
     findQuery(id).result.map(_.headOption.map(tuple2BehaviorVersion))
   }
 
   def find(id: String, user: User): DBIO[Option[BehaviorVersion]] = {
     for {
-      maybeBehaviorVersion <- find(id)
+      maybeBehaviorVersion <- findWithoutAccessCheck(id)
       maybeAccessibleBehaviorVersion <- maybeBehaviorVersion.map { behaviorVersion =>
         user.canAccess(behaviorVersion.team).map { canAccess =>
           if (canAccess) {
@@ -252,45 +247,12 @@ object BehaviorVersionQueries {
     } yield maybeAccessibleBehaviorVersion
   }
 
-  def uncompiledAllForBehaviorQuery(behaviorId: Rep[String]) = {
-    allWithBehavior.
-      filter { case(behaviorVersion, _) => behaviorVersion.behaviorId === behaviorId }.
-      sortBy { case(behaviorVersion, _) => behaviorVersion.createdAt.desc }
-  }
-  val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
-
-  def latestFor(behavior: Behavior): DBIO[Option[BehaviorVersion]] = {
-    allForBehaviorQuery(behavior.id).result.map { r =>
-      r.headOption.map(tuple2BehaviorVersion)
-    }
-  }
-
   def createFor(behavior: Behavior): DBIO[BehaviorVersion] = {
-    val raw = RawBehaviorVersion(IDs.next, behavior.id, false, None, None, None, None, DateTime.now)
+    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, DateTime.now)
 
     (all += raw).map { _ =>
-      BehaviorVersion(raw.id, behavior, raw.isActive, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.createdAt)
+      BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.createdAt)
     }
-  }
-
-  def uncompiledDeactivateAllQueryFor(behaviorId: Rep[String]) = {
-    all.
-      filter(_.behaviorId === behaviorId).
-      map(_.isActive)
-  }
-  val deactivateAllQueryFor = Compiled(uncompiledDeactivateAllQueryFor _)
-
-  def deactivateAllFor(behavior: Behavior): DBIO[Behavior] = {
-    deactivateAllQueryFor(behavior.id).
-      update(false).
-      map { _ => behavior }
-  }
-
-  def activate(behaviorVersion: BehaviorVersion): DBIO[BehaviorVersion] = {
-    (for {
-      _ <- deactivateAllFor(behaviorVersion.behavior)
-      saved <- behaviorVersion.copy(isActive = true).save
-    } yield saved) transactionally
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)

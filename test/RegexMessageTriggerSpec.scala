@@ -7,8 +7,9 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
 
   def triggerFor(pattern: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): RegexMessageTrigger = {
     val team = Team(IDs.next, "Team!")
-    val behavior = Behavior(IDs.next, team, DateTime.now)
-    val behaviorVersion = BehaviorVersion(IDs.next, behavior, isActive = true, None, None, None, None, DateTime.now)
+    val versionId = IDs.next
+    val behavior = Behavior(IDs.next, team, Some(versionId), DateTime.now)
+    val behaviorVersion = BehaviorVersion(versionId, behavior, None, None, None, None, DateTime.now)
     RegexMessageTrigger(IDs.next, behaviorVersion, pattern, requiresBotMention, isCaseSensitive)
   }
 
