@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{ Environment, LogoutEvent, Silhouette }
+import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.bots.triggers.MessageTriggerQueries
@@ -15,7 +15,6 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 import play.utils.UriEncoding
 import services.AWSLambdaService
 import slick.dbio.DBIO
@@ -98,69 +97,27 @@ class ApplicationController @Inject() (
 
   case class BehaviorVersionData(
                          teamId: String,
-                         maybeId: Option[String],
+                         behaviorId: Option[String],
                          functionBody: String,
                          responseTemplate: String,
                          params: Seq[BehaviorParameterData],
                          triggers: Seq[BehaviorTriggerData],
-                         maybeCreatedAt: Option[DateTime]
+                         createdAt: Option[DateTime]
                            )
 
   case class BehaviorData(behaviorId: String, versions: Seq[BehaviorVersionData])
 
-  implicit val behaviorParameterReads: Reads[BehaviorParameterData] = (
-    (JsPath \ "name").read[String] and
-      (JsPath \ "question").read[String]
-    )(BehaviorParameterData.apply _)
+  implicit val behaviorParameterReads = Json.reads[BehaviorParameterData]
+  implicit val behaviorParameterWrites = Json.writes[BehaviorParameterData]
 
-  implicit val behaviorParameterWrites: Writes[BehaviorParameterData] = (
-    (JsPath \ "name").write[String] and
-      (JsPath \ "question").write[String]
-    )(unlift(BehaviorParameterData.unapply))
+  implicit val behaviorTriggerReads = Json.reads[BehaviorTriggerData]
+  implicit val behaviorTriggerWrites = Json.writes[BehaviorTriggerData]
 
-  implicit val behaviorTriggerReads: Reads[BehaviorTriggerData] = (
-    (JsPath \ "text").read[String] and
-      (JsPath \ "requiresMention").read[Boolean] and
-      (JsPath \ "isRegex").read[Boolean] and
-      (JsPath \ "caseSensitive").read[Boolean]
-    )(BehaviorTriggerData.apply _)
+  implicit val behaviorVersionReads = Json.reads[BehaviorVersionData]
+  implicit val behaviorVersionWrites = Json.writes[BehaviorVersionData]
 
-  implicit val behaviorTriggerWrites: Writes[BehaviorTriggerData] = (
-    (JsPath \ "text").write[String] and
-      (JsPath \ "requiresMention").write[Boolean] and
-      (JsPath \ "isRegex").write[Boolean] and
-      (JsPath \ "caseSensitive").write[Boolean]
-    )(unlift(BehaviorTriggerData.unapply))
-
-  implicit val behaviorVersionReads: Reads[BehaviorVersionData] = (
-    (JsPath \ "teamId").read[String] and
-      (JsPath \ "behaviorId").readNullable[String] and
-      (JsPath \ "nodeFunction").read[String] and
-      (JsPath \ "responseTemplate").read[String] and
-      (JsPath \ "params").read[Seq[BehaviorParameterData]] and
-      (JsPath \ "triggers").read[Seq[BehaviorTriggerData]] and
-      (JsPath \ "createdAt").readNullable[DateTime]
-    )(BehaviorVersionData.apply _)
-
-  implicit val behaviorVersionWrites: Writes[BehaviorVersionData] = (
-    (JsPath \ "teamId").write[String] and
-      (JsPath \ "behaviorId").writeNullable[String] and
-      (JsPath \ "nodeFunction").write[String] and
-      (JsPath \ "responseTemplate").write[String] and
-      (JsPath \ "params").write[Seq[BehaviorParameterData]] and
-      (JsPath \ "triggers").write[Seq[BehaviorTriggerData]] and
-      (JsPath \ "createdAt").writeNullable[DateTime]
-    )(unlift(BehaviorVersionData.unapply))
-
-  implicit val behaviorReads: Reads[BehaviorData] = (
-    (JsPath \ "behaviorId").read[String] and
-      (JsPath \ "versions").read[Seq[BehaviorVersionData]]
-    )(BehaviorData.apply _)
-
-  implicit val behaviorWrites: Writes[BehaviorData] = (
-    (JsPath \ "behaviorId").write[String] and
-      (JsPath \ "versions").write[Seq[BehaviorVersionData]]
-    )(unlift(BehaviorData.unapply))
+  implicit val behaviorReads = Json.reads[BehaviorData]
+  implicit val behaviorWrites = Json.writes[BehaviorData]
 
   def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
     val user = request.identity
@@ -228,7 +185,7 @@ class ApplicationController @Inject() (
           case JsSuccess(data, jsPath) => {
             val action = (for {
               maybeTeam <- Team.find(data.teamId, user)
-              maybeBehavior <- data.maybeId.map { behaviorId =>
+              maybeBehavior <- data.behaviorId.map { behaviorId =>
                 BehaviorQueries.find(behaviorId, user)
               }.getOrElse {
                 maybeTeam.map { team =>

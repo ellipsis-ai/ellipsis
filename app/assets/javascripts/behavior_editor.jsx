@@ -30,7 +30,7 @@ return React.createClass({
   propTypes: {
     teamId: React.PropTypes.string.isRequired,
     behaviorId: React.PropTypes.string,
-    nodeFunction: React.PropTypes.string,
+    functionBody: React.PropTypes.string,
     responseTemplate: React.PropTypes.string,
     params: React.PropTypes.arrayOf(React.PropTypes.shape({
       name: React.PropTypes.string.isRequired,
@@ -76,11 +76,11 @@ return React.createClass({
   },
 
   isExistingBehavior: function() {
-    return !!(this.props.nodeFunction || this.props.responseTemplate);
+    return !!(this.props.functionBody || this.props.responseTemplate);
   },
 
   shouldRevealCodeEditor: function() {
-    return !!(this.props.shouldRevealCodeEditor || this.props.nodeFunction)
+    return !!(this.props.shouldRevealCodeEditor || this.props.functionBody)
   },
 
   getMagic8BallResponse: function() {
@@ -109,7 +109,7 @@ return React.createClass({
       behavior: {
         teamId: this.props.teamId,
         behaviorId: this.props.behaviorId,
-        nodeFunction: this.props.nodeFunction,
+        functionBody: this.props.functionBody,
         responseTemplate: this.props.responseTemplate,
         params: this.props.params,
         triggers: this.getInitialTriggers()
@@ -131,8 +131,8 @@ return React.createClass({
     return this.state.behavior[key];
   },
 
-  getBehaviorNodeFunction: function() {
-    return this.getBehaviorProp('nodeFunction') || "";
+  getBehaviorFunctionBody: function() {
+    return this.getBehaviorProp('functionBody') || "";
   },
 
   getBehaviorParams: function() {
@@ -153,11 +153,11 @@ return React.createClass({
   },
 
   hasCode: function() {
-    return this.getBehaviorNodeFunction().match(/\S/);
+    return this.getBehaviorFunctionBody().match(/\S/);
   },
 
   hasCalledOnSuccess: function() {
-    var code = this.getBehaviorNodeFunction();
+    var code = this.getBehaviorFunctionBody();
     var success = code && code.match(/\bonSuccess\([\s\S]+?\)/);
     return success;
   },
@@ -190,7 +190,7 @@ return React.createClass({
   },
 
   getLastLineNumberForCode: function() {
-    var numLines = this.getBehaviorNodeFunction().split('\n').length;
+    var numLines = this.getBehaviorFunctionBody().split('\n').length;
     return this.getFirstLineNumberForCode() + numLines;
   },
 
@@ -259,13 +259,13 @@ return React.createClass({
   },
 
   onCodeChange: function(newCode) {
-    this.setBehaviorProp('nodeFunction', newCode);
+    this.setBehaviorProp('functionBody', newCode);
   },
 
   deleteCode: function() {
     this.confirmAction("Are you sure you want to clear the code?", function() {
       this.setBehaviorProp('params', []);
-      this.setBehaviorProp('nodeFunction', '');
+      this.setBehaviorProp('functionBody', '');
       this.toggleCodeEditor();
     });
   },
@@ -681,7 +681,7 @@ return React.createClass({
 
               <div className="position-relative pr-symbol border-right">
                 <BehaviorEditorCodeEditor
-                  value={this.getBehaviorNodeFunction()}
+                  value={this.getBehaviorFunctionBody()}
                   onChange={this.onCodeChange}
                   onCursorChange={this.ensureCursorVisible}
                   firstLineNumber={this.getFirstLineNumberForCode()}
