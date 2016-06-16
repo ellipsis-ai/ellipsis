@@ -85,18 +85,18 @@ describe('BehaviorEditor', () => {
     });
   });
 
-  describe('getBehaviorNodeFunction', () => {
+  describe('getBehaviorFunctionBody', () => {
     it('returns the defined function', () => {
-      editorConfig.nodeFunction = 'return;';
+      editorConfig.functionBody = 'return;';
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorNodeFunction()).toEqual('return;');
+      expect(editor.getBehaviorFunctionBody()).toEqual('return;');
     });
 
     it('returns a string even when no function is defined', () => {
-      delete editorConfig.nodeFunction;
+      delete editorConfig.functionBody;
       editorConfig.shouldRevealCodeEditor = false;
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorNodeFunction()).toEqual("");
+      expect(editor.getBehaviorFunctionBody()).toEqual("");
     });
   });
 
