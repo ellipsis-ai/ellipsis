@@ -297,6 +297,35 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
+  private val restoreToVersionForm = Form(
+    "behaviorVersionId" -> nonEmptyText
+  )
+
+  def restoreToVersion = SecuredAction.async { implicit request =>
+    val user = request.identity
+    restoreToVersionForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      behaviorVersionId => {
+        val action = for {
+          maybeBehaviorVersion <- BehaviorVersionQueries.find(behaviorVersionId, user)
+          _ <- maybeBehaviorVersion.map { behaviorVersion =>
+            behaviorVersion.restore
+          }.getOrElse(DBIO.successful(Unit))
+        } yield {
+          maybeBehaviorVersion.map { behaviorVersion =>
+            Redirect(routes.ApplicationController.editBehavior(behaviorVersion.behavior.id))
+          }.getOrElse {
+            NotFound(s"Behavior version not found: $behaviorVersionId")
+          }
+        }
+
+        models.run(action)
+      }
+    )
+  }
+
   def regexValidationErrorsFor(pattern: String) = SecuredAction { implicit request =>
     val content = MessageTriggerQueries.maybeRegexValidationErrorFor(pattern).map { errMessage =>
       Array(errMessage)

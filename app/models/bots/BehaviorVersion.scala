@@ -6,6 +6,7 @@ import java.util
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.accounts.User
 import models.bots.templates.{SlackRenderer, TemplateApplier}
+import models.bots.triggers.MessageTriggerQueries
 import models.{EnvironmentVariableQueries, IDs, Team}
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
@@ -37,6 +38,20 @@ case class BehaviorVersion(
                      ) {
 
   val team: Team = behavior.team
+
+  def restore: DBIO[BehaviorVersion] = {
+    (for {
+      newVersion <- this.copy(id = IDs.next, createdAt = DateTime.now).save
+      currentTriggers <- MessageTriggerQueries.allFor(this)
+      newTriggers <- DBIO.sequence(currentTriggers.map { t =>
+        MessageTriggerQueries.createFor(newVersion, t.pattern, t.requiresBotMention, t.shouldTreatAsRegex, t.isCaseSensitive)
+      })
+      currentParams <- BehaviorParameterQueries.allFor(this)
+      newParams <- DBIO.sequence(currentParams.map { p =>
+        BehaviorParameterQueries.createFor(p.name, p.maybeQuestion, p.rank, newVersion)
+      })
+    } yield newVersion) transactionally
+  }
 
   def isSkill: Boolean = {
     maybeFunctionBody.map { body =>
