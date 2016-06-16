@@ -231,7 +231,7 @@ return React.createClass({
       behavior: this.getInitialState().behavior,
       revealCodeEditor: this.shouldRevealCodeEditor()
     });
-    this.hideConfirmUndo();
+    this.hideActivePanel();
   },
 
   confirmDeleteBehavior: function() {
@@ -242,6 +242,19 @@ return React.createClass({
 
   deleteBehavior: function() {
     this.refs.deleteBehaviorForm.submit();
+  },
+
+  confirmDeleteCode: function() {
+    this.setState({
+      activePanel: { name: 'confirmDeleteCode', modal: true }
+    });
+  },
+
+  deleteCode: function() {
+    this.setBehaviorProp('params', []);
+    this.setBehaviorProp('functionBody', '');
+    this.toggleCodeEditor();
+    this.hideActivePanel();
   },
 
   hideActivePanel: function() {
@@ -287,14 +300,6 @@ return React.createClass({
 
   onCodeChange: function(newCode) {
     this.setBehaviorProp('functionBody', newCode);
-  },
-
-  deleteCode: function() {
-    this.confirmAction("Are you sure you want to clear the code?", function() {
-      this.setBehaviorProp('params', []);
-      this.setBehaviorProp('functionBody', '');
-      this.toggleCodeEditor();
-    });
   },
 
   onTemplateChange: function(newTemplateString) {
@@ -758,7 +763,7 @@ return React.createClass({
 
               <BehaviorEditorCodeFooter
                 lineNumber={this.getLastLineNumberForCode()}
-                onCodeDelete={this.deleteCode}
+                onCodeDelete={this.confirmDeleteCode}
               />
 
             </div>
@@ -827,6 +832,12 @@ return React.createClass({
           <Collapsible revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
             <BehaviorEditorConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
               <p>Are you sure you want to delete this behavior?</p>
+            </BehaviorEditorConfirmActionPanel>
+          </Collapsible>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'confirmDeleteCode'}>
+            <BehaviorEditorConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.hideActivePanel}>
+              <p>Are you sure you want to remove all of the code?</p>
             </BehaviorEditorConfirmActionPanel>
           </Collapsible>
 
