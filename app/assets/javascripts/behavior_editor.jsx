@@ -114,7 +114,7 @@ return React.createClass({
         params: this.props.params,
         triggers: this.getInitialTriggers()
       },
-      activeHelpPanel: null,
+      activePanel: null,
       codeEditorUseLineWrapping: false,
       settingsMenuVisible: false,
       expandEnvVariables: false,
@@ -349,7 +349,7 @@ return React.createClass({
 
   toggleHelpPanel: function(name) {
     this.setState({
-      activeHelpPanel: this.state.activeHelpPanel === name ? null : name
+      activePanel: this.state.activePanel === name ? null : name
     });
   },
 
@@ -552,6 +552,10 @@ return React.createClass({
     }
   },
 
+  getActivePanel: function() {
+    return this.state.activePanel;
+  },
+
   render: function() {
     return (
 
@@ -603,7 +607,7 @@ return React.createClass({
                 <span checkedWhen={this.triggersUseParams()}>
                   <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
                   <span className="pls">
-                    <BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} toggled={this.state.activeHelpPanel === 'triggerParameters'} />
+                    <BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} toggled={this.getActivePanel() === 'triggerParameters'} />
                   </span>
                 </span>
               </BehaviorEditorChecklist>
@@ -628,7 +632,7 @@ return React.createClass({
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}
                     onHelpClick={this.toggleTriggerOptionsHelp}
-                    helpVisible={this.state.activeHelpPanel === 'triggerOptions'}
+                    helpVisible={this.getActivePanel() === 'triggerOptions'}
                   />
                 );
               }, this)}
@@ -695,7 +699,7 @@ return React.createClass({
                 onParamDelete={this.deleteParamAtIndex}
                 onParamAdd={this.addParam}
                 onEnterKey={this.onParamEnterKey}
-                helpVisible={this.state.activeHelpPanel === 'boilerplateParameters'}
+                helpVisible={this.getActivePanel() === 'boilerplateParameters'}
                 onToggleHelp={this.toggleBoilerplateHelp}
               />
 
@@ -784,13 +788,13 @@ return React.createClass({
         <footer ref="footer" className={"position-fixed-bottom border-top " +
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
-          <Collapsible revealWhen={this.state.activeHelpPanel === 'triggerParameters'}>
+          <Collapsible revealWhen={this.getActivePanel() === 'triggerParameters'}>
             <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
           </Collapsible>
-          <Collapsible revealWhen={this.state.activeHelpPanel === 'triggerOptions'}>
+          <Collapsible revealWhen={this.getActivePanel() === 'triggerOptions'}>
             <BehaviorEditorTriggerOptionsHelp onCollapseClick={this.toggleTriggerOptionsHelp} />
           </Collapsible>
-          <Collapsible revealWhen={this.state.activeHelpPanel === 'boilerplateParameters'}>
+          <Collapsible revealWhen={this.getActivePanel() === 'boilerplateParameters'}>
             <BehaviorEditorBoilerplateParameterHelp
               envVariableNames={this.state.envVariableNames}
               onExpandToggle={this.toggleEnvVariableExpansion}
