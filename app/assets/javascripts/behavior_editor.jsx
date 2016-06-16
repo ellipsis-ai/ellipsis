@@ -234,12 +234,6 @@ return React.createClass({
     this.hideConfirmUndo();
   },
 
-  hideConfirmUndo: function() {
-    this.setState({
-      activePanel: null
-    });
-  },
-
   confirmDeleteBehavior: function() {
     this.setState({
       activePanel: { name: 'confirmDeleteBehavior', modal: true }
@@ -250,7 +244,7 @@ return React.createClass({
     this.refs.deleteBehaviorForm.submit();
   },
 
-  hideConfirmDelete: function() {
+  hideActivePanel: function() {
     this.setState({
       activePanel: null
     });
@@ -825,13 +819,13 @@ return React.createClass({
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
           <Collapsible revealWhen={this.getActivePanel() === 'confirmUndo'}>
-            <BehaviorEditorConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideConfirmUndo}>
+            <BehaviorEditorConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
             </BehaviorEditorConfirmActionPanel>
           </Collapsible>
 
           <Collapsible revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
-            <BehaviorEditorConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideConfirmDelete}>
+            <BehaviorEditorConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
               <p>Are you sure you want to delete this behavior?</p>
             </BehaviorEditorConfirmActionPanel>
           </Collapsible>
