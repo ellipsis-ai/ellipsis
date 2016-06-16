@@ -23,6 +23,6 @@ ALTER TABLE behavior_versions DROP COLUMN team_id;
 
 # --- !Downs
 
-ALTER TABLE behavior_versions ADD COLUMN team_id TEXT NOT NULL REFERENCES teams(id);
+ALTER TABLE behavior_versions ADD COLUMN team_id TEXT REFERENCES teams(id);
 ALTER TABLE behavior_versions DROP COLUMN behavior_id;
 DROP TABLE IF EXISTS behaviors;

@@ -39,5 +39,5 @@ AFTER INSERT OR UPDATE OR DELETE ON slack_bot_profiles
 
 # --- !Downs
 
-DROP TRIGGER IF EXISTS slack_bot_profiles_notify_event;
+DROP TRIGGER IF EXISTS slack_bot_profiles_notify_event ON slack_bot_profiles;
 DROP FUNCTION IF EXISTS notify_event();
