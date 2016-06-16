@@ -211,15 +211,6 @@ return React.createClass({
     return JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
   },
 
-  confirmAction: function(message, confirmCallback, cancelCallback) {
-    var didConfirm = window.confirm(message);
-    if (didConfirm && typeof(confirmCallback) === 'function') {
-      confirmCallback.call(this);
-    } else if (!didConfirm && typeof(cancelCallback) === 'function') {
-      cancelCallback.call(this);
-    }
-  },
-
   confirmUndo: function() {
     this.setState({
       activePanel: { name: 'confirmUndo', modal: true }
