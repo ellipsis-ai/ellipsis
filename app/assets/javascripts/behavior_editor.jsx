@@ -8,7 +8,7 @@ var React = require('react'),
   BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
   BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
-  BehaviorEditorDeleteBehaviorForm = require('./behavior_editor_delete_behavior_form'),
+  BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
@@ -114,7 +114,7 @@ return React.createClass({
         params: this.props.params,
         triggers: this.getInitialTriggers()
       },
-      activeHelpPanel: null,
+      activePanel: null,
       codeEditorUseLineWrapping: false,
       settingsMenuVisible: false,
       expandEnvVariables: false,
@@ -211,19 +211,46 @@ return React.createClass({
     return JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
   },
 
-  confirmAction: function(message, confirmCallback, cancelCallback) {
-    var didConfirm = window.confirm(message);
-    if (didConfirm && typeof(confirmCallback) === 'function') {
-      confirmCallback.call(this);
-    } else if (!didConfirm && typeof(cancelCallback) === 'function') {
-      cancelCallback.call(this);
-    }
+  confirmUndo: function() {
+    this.setState({
+      activePanel: { name: 'confirmUndo', modal: true }
+    });
   },
 
   undoChanges: function() {
-    this.confirmAction("Are you sure you want to undo changes?", function() {
-      this.setState({ behavior: this.getInitialState().behavior });
-      this.toggleCodeEditor(this.shouldRevealCodeEditor());
+    this.setState({
+      behavior: this.getInitialState().behavior,
+      revealCodeEditor: this.shouldRevealCodeEditor()
+    });
+    this.hideActivePanel();
+  },
+
+  confirmDeleteBehavior: function() {
+    this.setState({
+      activePanel: { name: 'confirmDeleteBehavior', modal: true }
+    });
+  },
+
+  deleteBehavior: function() {
+    this.refs.deleteBehaviorForm.submit();
+  },
+
+  confirmDeleteCode: function() {
+    this.setState({
+      activePanel: { name: 'confirmDeleteCode', modal: true }
+    });
+  },
+
+  deleteCode: function() {
+    this.setBehaviorProp('params', []);
+    this.setBehaviorProp('functionBody', '');
+    this.toggleCodeEditor();
+    this.hideActivePanel();
+  },
+
+  hideActivePanel: function() {
+    this.setState({
+      activePanel: null
     });
   },
 
@@ -264,14 +291,6 @@ return React.createClass({
 
   onCodeChange: function(newCode) {
     this.setBehaviorProp('functionBody', newCode);
-  },
-
-  deleteCode: function() {
-    this.confirmAction("Are you sure you want to clear the code?", function() {
-      this.setBehaviorProp('params', []);
-      this.setBehaviorProp('functionBody', '');
-      this.toggleCodeEditor();
-    });
   },
 
   onTemplateChange: function(newTemplateString) {
@@ -321,17 +340,16 @@ return React.createClass({
   },
 
   toggleTriggerHelp: function() {
-    this.toggleHelpPanel('triggerParameters');
+    this.toggleActivePanel('helpForTriggerParameters');
   },
 
   toggleTriggerOptionsHelp: function() {
-    this.toggleHelpPanel('triggerOptions');
+    this.toggleActivePanel('helpForTriggerOptions');
   },
 
-  toggleCodeEditor: function(forceState) {
-    var newState = forceState !== undefined ? forceState : !this.state.revealCodeEditor;
+  toggleCodeEditor: function() {
     this.setState({
-      revealCodeEditor: newState
+      revealCodeEditor: !this.state.revealCodeEditor
     });
   },
 
@@ -347,14 +365,15 @@ return React.createClass({
     });
   },
 
-  toggleHelpPanel: function(name) {
+  toggleActivePanel: function(name, beModal) {
+    var alreadyOpen = this.state.activePanel && this.state.activePanel.name === name;
     this.setState({
-      activeHelpPanel: this.state.activeHelpPanel === name ? null : name
+      activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
     });
   },
 
   toggleBoilerplateHelp: function() {
-    this.toggleHelpPanel('boilerplateParameters');
+    this.toggleActivePanel('helpForBoilerplateParameters');
   },
 
   toggleEnvVariableExpansion: function() {
@@ -552,6 +571,14 @@ return React.createClass({
     }
   },
 
+  getActivePanel: function() {
+    return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
+  },
+
+  hasModalPanel: function() {
+    return !!(this.state.activePanel && this.state.activePanel.modal);
+  },
+
   render: function() {
     return (
 
@@ -568,10 +595,12 @@ return React.createClass({
             </div>
 
             <div className="column column-shrink ptl align-r">
-              <BehaviorEditorDeleteBehaviorForm
-                behaviorId={this.props.behaviorId}
-                csrfToken={this.props.csrfToken}
-              />
+              <button type="submit"
+                className={"button-warning " + (this.props.behaviorId ? "" : "display-none")}
+                onClick={this.confirmDeleteBehavior}
+              >
+                Delete behavior
+              </button>
             </div>
           </div>
         </div>
@@ -603,7 +632,7 @@ return React.createClass({
                 <span checkedWhen={this.triggersUseParams()}>
                   <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
                   <span className="pls">
-                    <BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} toggled={this.state.activeHelpPanel === 'triggerParameters'} />
+                    <BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} toggled={this.getActivePanel() === 'helpForTriggerParameters'} />
                   </span>
                 </span>
               </BehaviorEditorChecklist>
@@ -628,7 +657,7 @@ return React.createClass({
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}
                     onHelpClick={this.toggleTriggerOptionsHelp}
-                    helpVisible={this.state.activeHelpPanel === 'triggerOptions'}
+                    helpVisible={this.getActivePanel() === 'helpForTriggerOptions'}
                   />
                 );
               }, this)}
@@ -695,7 +724,7 @@ return React.createClass({
                 onParamDelete={this.deleteParamAtIndex}
                 onParamAdd={this.addParam}
                 onEnterKey={this.onParamEnterKey}
-                helpVisible={this.state.activeHelpPanel === 'boilerplateParameters'}
+                helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
                 onToggleHelp={this.toggleBoilerplateHelp}
               />
 
@@ -725,7 +754,7 @@ return React.createClass({
 
               <BehaviorEditorCodeFooter
                 lineNumber={this.getLastLineNumberForCode()}
-                onCodeDelete={this.deleteCode}
+                onCodeDelete={this.confirmDeleteCode}
               />
 
             </div>
@@ -781,16 +810,37 @@ return React.createClass({
           </div>
         </div> {/* End of container */}
 
-        <footer ref="footer" className={"position-fixed-bottom border-top " +
+        <div className={"bg-scrim position-z-almost-front position-fixed-full " + (this.hasModalPanel() ? "fade-in" : "display-none")}></div>
+        <footer ref="footer" className={"position-fixed-bottom position-z-front border-top " +
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
-          <Collapsible revealWhen={this.state.activeHelpPanel === 'triggerParameters'}>
+          <Collapsible revealWhen={this.getActivePanel() === 'confirmUndo'}>
+            <BehaviorEditorConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
+              <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
+            </BehaviorEditorConfirmActionPanel>
+          </Collapsible>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
+            <BehaviorEditorConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
+              <p>Are you sure you want to delete this behavior?</p>
+            </BehaviorEditorConfirmActionPanel>
+          </Collapsible>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'confirmDeleteCode'}>
+            <BehaviorEditorConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.hideActivePanel}>
+              <p>Are you sure you want to remove all of the code?</p>
+            </BehaviorEditorConfirmActionPanel>
+          </Collapsible>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerParameters'}>
             <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
           </Collapsible>
-          <Collapsible revealWhen={this.state.activeHelpPanel === 'triggerOptions'}>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerOptions'}>
             <BehaviorEditorTriggerOptionsHelp onCollapseClick={this.toggleTriggerOptionsHelp} />
           </Collapsible>
-          <Collapsible revealWhen={this.state.activeHelpPanel === 'boilerplateParameters'}>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
             <BehaviorEditorBoilerplateParameterHelp
               envVariableNames={this.state.envVariableNames}
               onExpandToggle={this.toggleEnvVariableExpansion}
@@ -798,21 +848,29 @@ return React.createClass({
               onCollapseClick={this.toggleBoilerplateHelp}
             />
           </Collapsible>
-          <div className="container pvm">
-            <button type="submit"
-              className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
-              disabled={!this.isModified()}
-              onClick={this.onSaveClick}
-            >
-              <span className="button-labels">
-                <span className="button-normal-label">Save changes</span>
-                <span className="button-activated-label">Saving…</span>
-              </span>
-            </button>
-            <button type="button" disabled={!this.isModified()} onClick={this.undoChanges}>Undo changes</button>
-          </div>
+
+          <Collapsible revealWhen={!this.hasModalPanel()}>
+            <div className="container pvm">
+              <button type="submit"
+                className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
+                disabled={!this.isModified()}
+                onClick={this.onSaveClick}
+              >
+                <span className="button-labels">
+                  <span className="button-normal-label">Save changes</span>
+                  <span className="button-activated-label">Saving…</span>
+                </span>
+              </button>
+              <button type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>Undo changes</button>
+            </div>
+          </Collapsible>
+
         </footer>
 
+      </form>
+      <form ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
+        <CsrfTokenHiddenInput value={this.props.csrfToken} />
+        <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
       </form>
 
       </div>

@@ -5,7 +5,7 @@ return React.createClass({
   render: function() {
     return (
       <h4 className="position-relative">
-        <span className="position-relative position-raised bg-lightest prl">
+        <span className="position-relative position-z-above bg-lightest prl">
           {React.Children.map(this.props.children, function(child) { return child; })}
         </span>
         <div className="arrow-right"></div>
