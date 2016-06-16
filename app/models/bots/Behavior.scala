@@ -69,14 +69,13 @@ object BehaviorQueries {
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  // doesn't check if accessible to a user so private
-  private def find(id: String): DBIO[Option[Behavior]] = {
+  def findWithoutAccessCheck(id: String): DBIO[Option[Behavior]] = {
     findQuery(id).result.map(_.headOption.map(tuple2Behavior))
   }
 
   def find(id: String, user: User): DBIO[Option[Behavior]] = {
     for {
-      maybeBehavior <- find(id)
+      maybeBehavior <- findWithoutAccessCheck(id)
       maybeAccessibleBehavior <- maybeBehavior.map { behavior =>
         user.canAccess(behavior.team).map { canAccess =>
           if (canAccess) {
