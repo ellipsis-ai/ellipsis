@@ -9,7 +9,6 @@ var React = require('react'),
   BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
   BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
-  BehaviorEditorDeleteBehaviorForm = require('./behavior_editor_delete_behavior_form'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
@@ -236,6 +235,22 @@ return React.createClass({
   },
 
   hideConfirmUndo: function() {
+    this.setState({
+      activePanel: null
+    });
+  },
+
+  confirmDeleteBehavior: function() {
+    this.setState({
+      activePanel: { name: 'confirmDeleteBehavior', modal: true }
+    });
+  },
+
+  deleteBehavior: function() {
+    this.refs.deleteBehaviorForm.submit();
+  },
+
+  hideConfirmDelete: function() {
     this.setState({
       activePanel: null
     });
@@ -590,10 +605,12 @@ return React.createClass({
             </div>
 
             <div className="column column-shrink ptl align-r">
-              <BehaviorEditorDeleteBehaviorForm
-                behaviorId={this.props.behaviorId}
-                csrfToken={this.props.csrfToken}
-              />
+              <button type="submit"
+                className={"button-warning " + (this.props.behaviorId ? "" : "display-none")}
+                onClick={this.confirmDeleteBehavior}
+              >
+                Delete behavior
+              </button>
             </div>
           </div>
         </div>
@@ -808,16 +825,25 @@ return React.createClass({
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
           <Collapsible revealWhen={this.getActivePanel() === 'confirmUndo'}>
-            <BehaviorEditorConfirmActionPanel onConfirmClick={this.undoChanges} onCancelClick={this.hideConfirmUndo}>
-              <p>Are you sure you want to undo unsaved changes?</p>
+            <BehaviorEditorConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideConfirmUndo}>
+              <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
             </BehaviorEditorConfirmActionPanel>
           </Collapsible>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
+            <BehaviorEditorConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideConfirmDelete}>
+              <p>Are you sure you want to delete this behavior?</p>
+            </BehaviorEditorConfirmActionPanel>
+          </Collapsible>
+
           <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerParameters'}>
             <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
           </Collapsible>
+
           <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerOptions'}>
             <BehaviorEditorTriggerOptionsHelp onCollapseClick={this.toggleTriggerOptionsHelp} />
           </Collapsible>
+
           <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
             <BehaviorEditorBoilerplateParameterHelp
               envVariableNames={this.state.envVariableNames}
@@ -826,6 +852,7 @@ return React.createClass({
               onCollapseClick={this.toggleBoilerplateHelp}
             />
           </Collapsible>
+
           <Collapsible revealWhen={!this.hasModalPanel()}>
             <div className="container pvm">
               <button type="submit"
@@ -841,8 +868,13 @@ return React.createClass({
               <button type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>Undo changes</button>
             </div>
           </Collapsible>
+
         </footer>
 
+      </form>
+      <form ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
+        <CsrfTokenHiddenInput value={this.props.csrfToken} />
+        <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
       </form>
 
       </div>
