@@ -16,7 +16,7 @@ libraryDependencies ++= Seq(
   filters,
   "com.zaxxer" % "HikariCP" % "2.4.1",
   "com.github.tototoshi" %% "slick-joda-mapper" % "2.0.0",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.0-RC1" % Test,
+  "org.scalatestplus" % "play_2.11" % "1.4.0" % Test,
   "com.github.gilbertw1" %% "slack-scala-client" % "0.1.4",
   "com.mohiva" %% "play-silhouette" % "3.0.2",
   "com.typesafe.slick" %% "slick" % "3.0.0",
