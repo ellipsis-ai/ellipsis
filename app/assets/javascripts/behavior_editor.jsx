@@ -8,6 +8,7 @@ var React = require('react'),
   BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
   BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
+  BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
   BehaviorEditorDeleteBehaviorForm = require('./behavior_editor_delete_behavior_form'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
@@ -220,10 +221,23 @@ return React.createClass({
     }
   },
 
+  confirmUndo: function() {
+    this.setState({
+      activePanel: { name: 'confirmUndo', modal: true }
+    });
+  },
+
   undoChanges: function() {
-    this.confirmAction("Are you sure you want to undo changes?", function() {
-      this.setState({ behavior: this.getInitialState().behavior });
-      this.toggleCodeEditor(this.shouldRevealCodeEditor());
+    this.setState({
+      behavior: this.getInitialState().behavior,
+      revealCodeEditor: this.shouldRevealCodeEditor()
+    });
+    this.hideConfirmUndo();
+  },
+
+  hideConfirmUndo: function() {
+    this.setState({
+      activePanel: null
     });
   },
 
@@ -321,17 +335,16 @@ return React.createClass({
   },
 
   toggleTriggerHelp: function() {
-    this.toggleHelpPanel('helpForTriggerParameters');
+    this.toggleActivePanel('helpForTriggerParameters');
   },
 
   toggleTriggerOptionsHelp: function() {
-    this.toggleHelpPanel('helpForTriggerOptions');
+    this.toggleActivePanel('helpForTriggerOptions');
   },
 
-  toggleCodeEditor: function(forceState) {
-    var newState = forceState !== undefined ? forceState : !this.state.revealCodeEditor;
+  toggleCodeEditor: function() {
     this.setState({
-      revealCodeEditor: newState
+      revealCodeEditor: !this.state.revealCodeEditor
     });
   },
 
@@ -347,14 +360,15 @@ return React.createClass({
     });
   },
 
-  toggleHelpPanel: function(name) {
+  toggleActivePanel: function(name, beModal) {
+    var alreadyOpen = this.state.activePanel && this.state.activePanel.name === name;
     this.setState({
-      activePanel: this.state.activePanel === name ? null : name
+      activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
     });
   },
 
   toggleBoilerplateHelp: function() {
-    this.toggleHelpPanel('helpForBoilerplateParameters');
+    this.toggleActivePanel('helpForBoilerplateParameters');
   },
 
   toggleEnvVariableExpansion: function() {
@@ -553,7 +567,11 @@ return React.createClass({
   },
 
   getActivePanel: function() {
-    return this.state.activePanel;
+    return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
+  },
+
+  hasModalPanel: function() {
+    return !!(this.state.activePanel && this.state.activePanel.modal);
   },
 
   render: function() {
@@ -785,9 +803,15 @@ return React.createClass({
           </div>
         </div> {/* End of container */}
 
-        <footer ref="footer" className={"position-fixed-bottom border-top " +
+        <div className={"bg-scrim position-z-almost-front position-fixed-full " + (this.hasModalPanel() ? "fade-in" : "display-none")}></div>
+        <footer ref="footer" className={"position-fixed-bottom position-z-front border-top " +
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
+          <Collapsible revealWhen={this.getActivePanel() === 'confirmUndo'}>
+            <BehaviorEditorConfirmActionPanel onConfirmClick={this.undoChanges} onCancelClick={this.hideConfirmUndo}>
+              <p>Are you sure you want to undo unsaved changes?</p>
+            </BehaviorEditorConfirmActionPanel>
+          </Collapsible>
           <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerParameters'}>
             <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
           </Collapsible>
@@ -802,19 +826,21 @@ return React.createClass({
               onCollapseClick={this.toggleBoilerplateHelp}
             />
           </Collapsible>
-          <div className="container pvm">
-            <button type="submit"
-              className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
-              disabled={!this.isModified()}
-              onClick={this.onSaveClick}
-            >
-              <span className="button-labels">
-                <span className="button-normal-label">Save changes</span>
-                <span className="button-activated-label">Saving…</span>
-              </span>
-            </button>
-            <button type="button" disabled={!this.isModified()} onClick={this.undoChanges}>Undo changes</button>
-          </div>
+          <Collapsible revealWhen={!this.hasModalPanel()}>
+            <div className="container pvm">
+              <button type="submit"
+                className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
+                disabled={!this.isModified()}
+                onClick={this.onSaveClick}
+              >
+                <span className="button-labels">
+                  <span className="button-normal-label">Save changes</span>
+                  <span className="button-activated-label">Saving…</span>
+                </span>
+              </button>
+              <button type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>Undo changes</button>
+            </div>
+          </Collapsible>
         </footer>
 
       </form>

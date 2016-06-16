@@ -31,6 +31,7 @@
 @gray-lightest: hsl(231, 10%, 92.5%);
 @gray-lightest-translucent: hsla(231, 10%, 93%, 0.95);
 @gray-light: hsl(231, 11%, 81%);
+@gray-light-translucent: hsla(231, 11%, 81%, 0.5);
 @gray-medium: hsl(231, 9%, 65%);
 @gray-dark: hsl(231, 10%, 45%);
 @gray-darkest: hsl(231, 13%, 25%);
@@ -288,6 +289,10 @@ So for example:
   background-color: @blue-lightest;
 }
 
+.bg-scrim {
+  background-color: @gray-light-translucent;
+}
+
 /* Border utilities */
 
 .border {
@@ -429,6 +434,14 @@ So for example:
   .type-monospace();
   .type-xs();
   .type-weak();
+}
+
+.box-action {
+  .bg-white();
+  .border-emphasis-top();
+  .border-pink();
+  .position-relative();
+  padding: @xxl @l;
 }
 
 /* Foreground type utilities */
@@ -1196,12 +1209,12 @@ button.button-error {
   border-color: @pink-medium;
 }
 
-button.button-primary:focus {
+button.button-error:focus {
   background-color: @pink-medium;
   border-color: @pink-dark;
 }
 
-button.button-primary:active {
+button.button-error:active {
   background-color: @pink-dark;
   border-color: @pink-dark;
   color: @white;
@@ -1433,16 +1446,31 @@ button.button-dropdown-trigger {
   right: 0;
 }
 
+.position-fixed-full {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
 .position-fixed-bottom {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1000;
 }
 
-.position-raised {
+.position-z-above {
   z-index: 1;
+}
+
+.position-z-almost-front {
+  z-index: 999;
+}
+
+.position-z-front {
+  z-index: 1000;
 }
 
 /* Normal content style */
