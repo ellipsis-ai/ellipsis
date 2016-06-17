@@ -5,7 +5,9 @@ case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, 
 object AWSLambdaLogResult {
 
   def extractErrorAndNonErrorContentFrom(text: String): (Option[String], String) = {
-    var nonErrorContent = text
+    var nonErrorContent = """(?s)(.*\n)END RequestId:""".r.findFirstMatchIn(text).flatMap { m =>
+      m.subgroups.headOption
+    }.getOrElse(text)
     var maybeErrorContent: Option[String] = None
     val extractErrorRegex = """(?s)(.*\n)\S+\t\S+\t(\S*Error:.*)\n[^\n]*\nEND.*""".r
     extractErrorRegex.findFirstMatchIn(text).foreach { m =>
