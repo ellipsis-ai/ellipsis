@@ -47,7 +47,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
           withInvocationType(InvocationType.RequestResponse).
           withPayload(payloadJson.toString())
       JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
-        val logResult = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
+        val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
+        val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
         behaviorVersion.resultStringFor(result.getPayload, logResult, parametersWithValues)
       }
     }
