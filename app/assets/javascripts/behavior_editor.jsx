@@ -11,6 +11,7 @@ var React = require('react'),
   BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
+  BehaviorEditorDropdownTrigger = require('./behavior_editor_dropdown_trigger'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
   BehaviorEditorInput = require('./behavior_editor_input'),
@@ -368,6 +369,10 @@ return React.createClass({
     this.toggleActiveDropdown('codeEditorSettings');
   },
 
+  toggleManageBehaviorMenu: function() {
+    this.toggleActiveDropdown('manageBehavior');
+  },
+
   toggleCodeEditorLineWrapping: function() {
     this.setState({
       codeEditorUseLineWrapping: !this.state.codeEditorUseLineWrapping
@@ -604,12 +609,20 @@ return React.createClass({
             </div>
 
             <div className="column column-shrink ptl align-r">
-              <button type="submit"
-                className={"button-warning " + (this.props.behaviorId ? "" : "display-none")}
-                onClick={this.confirmDeleteBehavior}
+              <BehaviorEditorDropdownTrigger
+                onClick={this.toggleManageBehaviorMenu}
+                openWhen={this.getActiveDropdown() === 'manageBehavior'}
               >
-                Delete behavior
-              </button>
+                Manage behavior
+              </BehaviorEditorDropdownTrigger>
+              <BehaviorEditorDropdownMenu
+                isVisible={this.getActiveDropdown() === 'manageBehavior'}
+                onItemClick={this.toggleManageBehaviorMenu}
+              >
+                <button type="button" className="button-invisible" onMouseUp={this.confirmDeleteBehavior}>
+                  Delete behavior
+                </button>
+              </BehaviorEditorDropdownMenu>
             </div>
           </div>
         </div>
@@ -752,7 +765,7 @@ return React.createClass({
                     onClick={this.toggleEditorSettingsMenu}
                     buttonActive={this.getActiveDropdown() === 'codeEditorSettings'}
                   />
-                  <BehaviorEditorDropdownMenu isVisible={this.getActiveDropdown() === 'codeEditorSettings'} onItemClick={this.toggleEditorSettingsMenu}>
+                  <BehaviorEditorDropdownMenu className="popup-dropdown-menu-overlay" isVisible={this.getActiveDropdown() === 'codeEditorSettings'} onItemClick={this.toggleEditorSettingsMenu}>
                     <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
                       <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
                       <span> Enable line wrap</span>
