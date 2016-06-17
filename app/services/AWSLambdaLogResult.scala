@@ -1,6 +1,17 @@
 package services
 
-case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, maybeError: Option[String])
+case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, maybeError: Option[String]) {
+
+  def maybeTranslated: Option[String] = {
+    maybeError.map { error =>
+      var translated = error
+      translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
+      translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
+      translated
+    }
+  }
+
+}
 
 object AWSLambdaLogResult {
 
