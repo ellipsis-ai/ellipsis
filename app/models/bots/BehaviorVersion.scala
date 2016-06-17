@@ -129,20 +129,9 @@ case class BehaviorVersion(
     Array(Some(prompt), maybeDetail).flatten.mkString(": ")
   }
 
-  private def translateFromLambdaErrorDetails(details: String): String = {
-    var translated = details
-    translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
-    translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
-    translated
-  }
-
-  private def maybeDetailedErrorInfoIn(logResult: AWSLambdaLogResult): Option[String] = {
-    logResult.maybeError.map(translateFromLambdaErrorDetails)
-  }
-
   private def unhandledErrorResultStringFor(logResult: AWSLambdaLogResult): String = {
     val prompt = s"\nWe hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
-    Array(Some(prompt), maybeDetailedErrorInfoIn(logResult)).flatten.mkString(":\n\n")
+    Array(Some(prompt), logResult.maybeTranslated).flatten.mkString(":\n\n")
   }
 
   private def noCallbackTriggeredResultString: String = {
@@ -154,7 +143,7 @@ case class BehaviorVersion(
        |There's a syntax error in your function:
        |
        |${(json \ "errorMessage").asOpt[String].getOrElse("")}
-       |${maybeDetailedErrorInfoIn(logResult).getOrElse("")}
+       |${logResult.maybeTranslated.getOrElse("")}
      """.stripMargin
   }
 
