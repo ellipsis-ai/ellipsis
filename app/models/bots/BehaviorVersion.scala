@@ -16,7 +16,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.{JsString, JsDefined, Json, JsValue}
 import play.api.{Configuration, Play}
 import services.AWSLambdaConstants._
-import services.AWSLambdaService
+import services.{AWSLambdaLogResult, AWSLambdaService}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -38,6 +38,9 @@ case class BehaviorVersion(
                      ) {
 
   val team: Team = behavior.team
+
+  // TODO: make this real
+  def isInDevelopmentMode: Boolean = true
 
   def restore: DBIO[BehaviorVersion] = {
     (for {
@@ -133,13 +136,12 @@ case class BehaviorVersion(
     translated
   }
 
-  private def maybeDetailedErrorInfoIn(logResult: String): Option[String] = {
-    val logRegex = """(?s).*\n.*\t.*\t(\S*Error:.*)\n[^\n]*\nEND.*""".r
-    logRegex.findFirstMatchIn(logResult).flatMap(_.subgroups.headOption).map(translateFromLambdaErrorDetails)
+  private def maybeDetailedErrorInfoIn(logResult: AWSLambdaLogResult): Option[String] = {
+    logResult.maybeError.map(translateFromLambdaErrorDetails)
   }
 
-  private def unhandledErrorResultStringFor(logResult: String): String = {
-    val prompt = s"We hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
+  private def unhandledErrorResultStringFor(logResult: AWSLambdaLogResult): String = {
+    val prompt = s"\nWe hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
     Array(Some(prompt), maybeDetailedErrorInfoIn(logResult)).flatten.mkString(":\n\n")
   }
 
@@ -147,7 +149,7 @@ case class BehaviorVersion(
     s"It looks like neither callback was triggered — you need to make sure that `$ON_SUCCESS_PARAM` is called to end every successful invocation and `$ON_ERROR_PARAM` is called to end every unsuccessful one"
   }
 
-  private def syntaxErrorResultStringFor(json: JsValue, logResult: String): String = {
+  private def syntaxErrorResultStringFor(json: JsValue, logResult: AWSLambdaLogResult): String = {
     s"""
        |There's a syntax error in your function:
        |
@@ -168,11 +170,11 @@ case class BehaviorVersion(
     }.isDefined
   }
 
-  def resultStringFor(payload: ByteBuffer, logResult: String, parametersWithValues: Seq[ParameterWithValue]): String = {
+  def resultStringFor(payload: ByteBuffer, logResult: AWSLambdaLogResult, parametersWithValues: Seq[ParameterWithValue]): String = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
-    (json \ "result").toOption.map { successResult =>
+    val mainResultString = (json \ "result").toOption.map { successResult =>
       successResultStringFor(successResult, parametersWithValues)
     }.getOrElse {
       if (isUnhandledError(json)) {
@@ -185,6 +187,7 @@ case class BehaviorVersion(
           handledErrorResultStringFor(json)
       }
     }
+    logResult.userDefinedLogStatements ++ mainResultString
   }
 
   def save: DBIO[BehaviorVersion] = BehaviorVersionQueries.save(this)
