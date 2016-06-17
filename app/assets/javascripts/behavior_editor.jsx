@@ -114,9 +114,9 @@ return React.createClass({
         params: this.props.params,
         triggers: this.getInitialTriggers()
       },
+      activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
-      settingsMenuVisible: false,
       expandEnvVariables: false,
       justSaved: this.props.justSaved,
       isSaving: false,
@@ -353,10 +353,19 @@ return React.createClass({
     });
   },
 
-  toggleEditorSettingsMenu: function() {
+  getActiveDropdown: function() {
+    return this.state.activeDropdown && this.state.activeDropdown.name ? this.state.activeDropdown.name : "";
+  },
+
+  toggleActiveDropdown: function(name) {
+    var alreadyOpen = this.state.activeDropdown && this.state.activeDropdown.name === name;
     this.setState({
-      settingsMenuVisible: !this.state.settingsMenuVisible
+      activeDropdown: alreadyOpen ? null : { name: name }
     });
+  },
+
+  toggleEditorSettingsMenu: function() {
+    this.toggleActiveDropdown('codeEditorSettings');
   },
 
   toggleCodeEditorLineWrapping: function() {
@@ -741,9 +750,9 @@ return React.createClass({
                 <div className="position-absolute position-top-right">
                   <BehaviorEditorSettingsButton
                     onClick={this.toggleEditorSettingsMenu}
-                    buttonActive={this.state.settingsMenuVisible}
+                    buttonActive={this.getActiveDropdown() === 'codeEditorSettings'}
                   />
-                  <BehaviorEditorDropdownMenu isVisible={this.state.settingsMenuVisible} onItemClick={this.toggleEditorSettingsMenu}>
+                  <BehaviorEditorDropdownMenu isVisible={this.getActiveDropdown() === 'codeEditorSettings'} onItemClick={this.toggleEditorSettingsMenu}>
                     <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
                       <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
                       <span> Enable line wrap</span>
