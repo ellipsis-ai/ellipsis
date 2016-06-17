@@ -22,7 +22,9 @@ var React = require('react'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
   Collapsible = require('./collapsible'),
-  CsrfTokenHiddenInput = require('./csrf_token_hidden_input');
+  CsrfTokenHiddenInput = require('./csrf_token_hidden_input'),
+  BrowserUtils = require('./browser_utils'),
+  ImmutableObjectUtils = require('./immutable_object_utils');
 
 return React.createClass({
   displayName: 'BehaviorEditor',
@@ -49,87 +51,15 @@ return React.createClass({
     shouldRevealCodeEditor: React.PropTypes.bool
   },
 
-  utils: {
-    // Create a copy of an array before modifying it
-    arrayWithNewElementAtIndex: function(array, newElement, index) {
-      var newArray = array.slice();
-      newArray[index] = newElement;
-      return newArray;
-    },
 
-    arrayRemoveElementAtIndex: function(array, index) {
-      var newArray = array.slice();
-      newArray.splice(index, 1);
-      return newArray;
-    },
+  /* Getters */
 
-    objectWithNewValueAtKey: function(obj, newValue, keyToChange) {
-      var newObj = {};
-      Object.keys(obj).forEach(function(key) {
-        if (key === keyToChange) {
-          newObj[key] = newValue;
-        } else {
-          newObj[key] = obj[key];
-        }
-      });
-      return newObj;
-    }
+  getActiveDropdown: function() {
+    return this.state.activeDropdown && this.state.activeDropdown.name ? this.state.activeDropdown.name : "";
   },
 
-  isExistingBehavior: function() {
-    return !!(this.props.functionBody || this.props.responseTemplate);
-  },
-
-  shouldRevealCodeEditor: function() {
-    return !!(this.props.shouldRevealCodeEditor || this.props.functionBody)
-  },
-
-  getMagic8BallResponse: function() {
-    var responses = [
-      "Reply hazy try again",
-      "Ask again later",
-      "Better not tell you now",
-      "Cannot predict now",
-      "Concentrate and ask again"
-    ];
-
-    var rand = Math.floor(Math.random() * responses.length);
-    return "The magic 8-ball says:\n\n“" + responses[rand] + "”";
-  },
-
-  getInitialTriggers: function() {
-    if (this.props.triggers && this.props.triggers.length > 0) {
-      return this.props.triggers;
-    } else {
-      return [this.createBlankTrigger()];
-    }
-  },
-
-  getInitialState: function() {
-    return {
-      behavior: {
-        teamId: this.props.teamId,
-        behaviorId: this.props.behaviorId,
-        functionBody: this.props.functionBody,
-        responseTemplate: this.props.responseTemplate,
-        params: this.props.params,
-        triggers: this.getInitialTriggers()
-      },
-      activeDropdown: null,
-      activePanel: null,
-      codeEditorUseLineWrapping: false,
-      expandEnvVariables: false,
-      justSaved: this.props.justSaved,
-      isSaving: false,
-      envVariableNames: this.props.envVariableNames || [],
-      revealCodeEditor: this.shouldRevealCodeEditor(),
-      magic8BallResponse: this.getMagic8BallResponse(),
-      hasModifiedTemplate: !!this.props.responseTemplate
-    };
-  },
-
-  getBehaviorProp: function(key) {
-    return this.state.behavior[key];
+  getActivePanel: function() {
+    return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
   },
 
   getBehaviorFunctionBody: function() {
@@ -140,8 +70,18 @@ return React.createClass({
     return this.getBehaviorProp('params') || [];
   },
 
-  hasModifiedTemplate: function() {
-    return this.state.hasModifiedTemplate;
+  getBehaviorProp: function(key) {
+    return this.state.behavior[key];
+  },
+
+  getBehaviorStatusText: function() {
+    if (this.state.justSaved) {
+      return (<span className="type-green fade-in"> — saved successfully</span>);
+    } else if (this.isModified()) {
+      return (<span className="type-pink fade-in"> — unsaved changes</span>);
+    } else {
+      return (<span>&nbsp;</span>);
+    }
   },
 
   getBehaviorTemplate: function() {
@@ -157,29 +97,17 @@ return React.createClass({
     return this.getBehaviorProp('triggers');
   },
 
-  hasCode: function() {
-    return this.getBehaviorFunctionBody().match(/\S/);
-  },
-
-  hasCalledOnSuccess: function() {
-    var code = this.getBehaviorFunctionBody();
-    var success = code && code.match(/\bonSuccess\([\s\S]+?\)/);
-    return success;
-  },
-
-  hasPrimaryTrigger: function() {
-    var triggers = this.getBehaviorTriggers();
-    return triggers.length > 0 && triggers[0];
-  },
-
-  hasMultipleTriggers: function() {
-    return this.getBehaviorTriggers().length > 1;
-  },
-
-  triggersUseParams: function() {
-    return this.getBehaviorTriggers().some(function(trigger) {
-      return trigger.text.match(/{.+}/);
+  getCodeAutocompletions: function() {
+    var envVars = this.state.envVariableNames.map(function(name) {
+      return 'ellipsis.env.' + name;
     });
+
+    return this.getCodeFunctionParams().concat(envVars);
+  },
+
+  getCodeFunctionParams: function() {
+    var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
+    return userParams.concat(["onSuccess", "onError", "ellipsis"]);
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -194,68 +122,46 @@ return React.createClass({
     return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
   },
 
+  getInitialTriggers: function() {
+    if (this.props.triggers && this.props.triggers.length > 0) {
+      return this.props.triggers;
+    } else {
+      return [this.getNewBlankTrigger()];
+    }
+  },
+
+  getIterationTemplateHelp: function() {
+    return (
+      <div checkedWhen={this.templateIncludesIteration()}>
+        Iterating through a list:<br />
+        <div className="box-code-example">
+          {"{for item in successResult.items}"}<br />
+          &nbsp;* {"{item}"}<br />
+          {"{endfor}"}
+        </div>
+      </div>
+    );
+  },
+
   getLastLineNumberForCode: function() {
     var numLines = this.getBehaviorFunctionBody().split('\n').length;
     return this.getFirstLineNumberForCode() + numLines;
   },
 
-  setBehaviorProp: function(key, value, callback) {
-    var newData = this.utils.objectWithNewValueAtKey(this.state.behavior, value, key);
-    this.setState({ behavior: newData }, callback);
+  getMagic8BallResponse: function() {
+    var responses = [
+      "Reply hazy try again",
+      "Ask again later",
+      "Better not tell you now",
+      "Cannot predict now",
+      "Concentrate and ask again"
+    ];
+
+    var rand = Math.floor(Math.random() * responses.length);
+    return "The magic 8-ball says:\n\n“" + responses[rand] + "”";
   },
 
-  hasParams: function() {
-    return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
-  },
-
-  isModified: function() {
-    return JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
-  },
-
-  confirmUndo: function() {
-    this.setState({
-      activePanel: { name: 'confirmUndo', modal: true }
-    });
-  },
-
-  undoChanges: function() {
-    this.setState({
-      behavior: this.getInitialState().behavior,
-      revealCodeEditor: this.shouldRevealCodeEditor()
-    });
-    this.hideActivePanel();
-  },
-
-  confirmDeleteBehavior: function() {
-    this.setState({
-      activePanel: { name: 'confirmDeleteBehavior', modal: true }
-    });
-  },
-
-  deleteBehavior: function() {
-    this.refs.deleteBehaviorForm.submit();
-  },
-
-  confirmDeleteCode: function() {
-    this.setState({
-      activePanel: { name: 'confirmDeleteCode', modal: true }
-    });
-  },
-
-  deleteCode: function() {
-    this.setBehaviorProp('params', []);
-    this.setBehaviorProp('functionBody', '');
-    this.toggleCodeEditor();
-    this.hideActivePanel();
-  },
-
-  hideActivePanel: function() {
-    this.setState({
-      activePanel: null
-    });
-  },
-
-  createBlankTrigger: function() {
+  getNewBlankTrigger: function() {
     return {
       text: "",
       requiresMention: false,
@@ -264,186 +170,30 @@ return React.createClass({
     };
   },
 
-  addTrigger: function() {
-    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.createBlankTrigger()), this.focusOnFirstBlankTrigger);
-  },
-
-  focusOnFirstBlankTrigger: function() {
-    var blankTrigger = Object.keys(this.refs).find(function(key) {
-      return key.match(/^trigger\d+$/) && this.refs[key].isEmpty();
-    }, this);
-    if (blankTrigger) {
-      this.refs[blankTrigger].focus();
-    }
-  },
-
-  deleteTriggerAtIndex: function(index) {
-    var triggers = this.utils.arrayRemoveElementAtIndex(this.getBehaviorTriggers(), index);
-    this.setBehaviorProp('triggers', triggers);
-  },
-
-  focusOnParamIndex: function(index) {
-    this.refs.codeHeader.focusIndex(index);
-  },
-
-  focusOnLastParam: function() {
-    this.focusOnParamIndex(this.getBehaviorParams().length - 1)
-  },
-
-  onCodeChange: function(newCode) {
-    this.setBehaviorProp('functionBody', newCode);
-  },
-
-  onTemplateChange: function(newTemplateString) {
-    var callback = function() {
-      this.setState({ hasModifiedTemplate: true });
-    };
-    this.setBehaviorProp('responseTemplate', newTemplateString, callback)
-  },
-
-  addParam: function() {
-    var newParamIndex = this.getBehaviorParams().length + 1;
-    while (this.getBehaviorParams().some(function(param) {
-      return param.name == 'userInput' + newParamIndex;
-    })) {
-      newParamIndex++;
-    }
-    var newParams = this.getBehaviorParams().concat([{ name: 'userInput' + newParamIndex, question: '' }]);
-    this.setBehaviorProp('params', newParams, this.focusOnLastParam);
-  },
-
-  replaceParamAtIndexWithParam: function(index, newParam) {
-    this.setBehaviorProp('params', this.utils.arrayWithNewElementAtIndex(this.getBehaviorParams(), newParam, index));
-  },
-
-  deleteParamAtIndex: function(index) {
-    this.setBehaviorProp('params', this.utils.arrayRemoveElementAtIndex(this.getBehaviorParams(), index));
-  },
-
-  onParamEnterKey: function(index) {
-    if (index + 1 < this.getBehaviorParams().length) {
-      this.focusOnParamIndex(index + 1);
-    } else if (this.getBehaviorParams()[index].question != '') {
-      this.addParam();
-    }
-  },
-
-  onTriggerEnterKey: function(index) {
-    if (index + 1 < this.getBehaviorTriggers().length) {
-      this.refs['trigger' + (index + 1)].focus();
-    } else if (this.getBehaviorTriggers()[index] != '') {
-      this.addTrigger();
-    }
-  },
-
-  onTriggerChange: function(index, newTrigger) {
-    this.setBehaviorProp('triggers', this.utils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
-  },
-
-  toggleTriggerHelp: function() {
-    this.toggleActivePanel('helpForTriggerParameters');
-  },
-
-  toggleTriggerOptionsHelp: function() {
-    this.toggleActivePanel('helpForTriggerOptions');
-  },
-
-  toggleCodeEditor: function() {
-    this.setState({
-      revealCodeEditor: !this.state.revealCodeEditor
-    });
-  },
-
-  getActiveDropdown: function() {
-    return this.state.activeDropdown && this.state.activeDropdown.name ? this.state.activeDropdown.name : "";
-  },
-
-  toggleActiveDropdown: function(name) {
-    var alreadyOpen = this.state.activeDropdown && this.state.activeDropdown.name === name;
-    this.setState({
-      activeDropdown: alreadyOpen ? null : { name: name }
-    });
-  },
-
-  toggleEditorSettingsMenu: function() {
-    this.toggleActiveDropdown('codeEditorSettings');
-  },
-
-  toggleManageBehaviorMenu: function() {
-    this.toggleActiveDropdown('manageBehavior');
-  },
-
-  toggleCodeEditorLineWrapping: function() {
-    this.setState({
-      codeEditorUseLineWrapping: !this.state.codeEditorUseLineWrapping
-    });
-  },
-
-  toggleActivePanel: function(name, beModal) {
-    var alreadyOpen = this.state.activePanel && this.state.activePanel.name === name;
-    this.setState({
-      activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
-    });
-  },
-
-  toggleBoilerplateHelp: function() {
-    this.toggleActivePanel('helpForBoilerplateParameters');
-  },
-
-  toggleEnvVariableExpansion: function() {
-    this.setState({
-      expandEnvVariables: !this.state.expandEnvVariables
-    });
+  getPathTemplateHelp: function() {
+    return (
+      <span checkedWhen={this.templateIncludesPath()}>
+        Properties of the result:<br />
+        <div className="box-code-example">
+          Name: {"{successResult.user.name}"}
+        </div>
+      </span>
+    );
   },
 
   getResponseHeader: function() {
     return this.state.revealCodeEditor ? "Then respond with" : "Ellipsis will respond with";
   },
 
-  hasUserParameters: function() {
-    // TODO: when we have user parameters that aren't part of code, include those
-    return this.hasParams();
-  },
-
-  templateUsesMarkdown: function() {
-    var template = this.getBehaviorTemplate();
-    /* Big ugly flaming pile of regex to try and guess at Markdown usage: */
-    var matches = [
-      '\\*.+?\\*', /* Bold/italics */
-      '_.+?_', /* Bold/italics */
-      '\\[.+?\\]\\(.+?\\)', /* Links */
-      '(\\[.+?\\]){2}', /* Links by reference */
-      '^.+\\n[=-]+', /* Underlined headers */
-      '^#+\\s+.+', /* # Headers */
-      '^\\d\\.\\s+.+', /* Numbered lists */
-      '^\\*\\s+.+', /* Bulleted lists */
-      '^>.+', /* Block quote */
-      '`.+?`', /* Code */
-      '```', /* Code block */
-      '^\\s*[-\\*]\\s*[-\\*]\\s*[-\\*]' /* Horizontal rule */
-    ];
-    var matchRegExp = new RegExp( '(' + matches.join( ')|(' ) + ')' );
-    return template && template.match(matchRegExp);
-  },
-
-  templateIncludesParam: function() {
-    var template = this.getBehaviorTemplate();
-    return template && template.match(/\{\S+?\}/);
-  },
-
-  templateIncludesSuccessResult: function() {
-    var template = this.getBehaviorTemplate();
-    return template && template.match(/\{successResult.*?\}/);
-  },
-
-  templateIncludesPath: function() {
-    var template = this.getBehaviorTemplate();
-    return template && template.match(/\{(\S+\.\S+)+?\}/);
-  },
-
-  templateIncludesIteration: function() {
-    var template = this.getBehaviorTemplate();
-    return template && template.match(/\{endfor\}/);
+  getSuccessResultTemplateHelp: function() {
+    return (
+      <div checkedWhen={this.templateIncludesSuccessResult()}>
+        The result provided to <code>onSuccess</code>:<br />
+        <div className="box-code-example">
+          The answer is {"{successResult}"}
+        </div>
+      </div>
+    );
   },
 
   getTemplateDataHelp: function() {
@@ -475,62 +225,65 @@ return React.createClass({
     );
   },
 
-  getSuccessResultTemplateHelp: function() {
-    return (
-      <div checkedWhen={this.templateIncludesSuccessResult()}>
-        The result provided to <code>onSuccess</code>:<br />
-        <div className="box-code-example">
-          The answer is {"{successResult}"}
-        </div>
-      </div>
-    );
-  },
+  /* Setters/togglers */
 
-  getPathTemplateHelp: function() {
-    return (
-      <span checkedWhen={this.templateIncludesPath()}>
-        Properties of the result:<br />
-        <div className="box-code-example">
-          Name: {"{successResult.user.name}"}
-        </div>
-      </span>
-    );
-  },
-
-  getIterationTemplateHelp: function() {
-    return (
-      <div checkedWhen={this.templateIncludesIteration()}>
-        Iterating through a list:<br />
-        <div className="box-code-example">
-          {"{for item in successResult.items}"}<br />
-          &nbsp;* {"{item}"}<br />
-          {"{endfor}"}
-        </div>
-      </div>
-    );
-  },
-
-  getCodeAutocompletions: function() {
-    var envVars = this.state.envVariableNames.map(function(name) {
-      return 'ellipsis.env.' + name;
-    });
-
-    return this.getCodeFunctionParams().concat(envVars);
-  },
-
-  getCodeFunctionParams: function() {
-    var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
-    return userParams.concat(["onSuccess", "onError", "ellipsis"]);
-  },
-
-  getBehaviorStatusText: function() {
-    if (this.state.justSaved) {
-      return (<span className="type-green fade-in"> — saved successfully</span>);
-    } else if (this.isModified()) {
-      return (<span className="type-pink fade-in"> — unsaved changes</span>);
-    } else {
-      return (<span>&nbsp;</span>);
+  addParam: function() {
+    var newParamIndex = this.getBehaviorParams().length + 1;
+    while (this.getBehaviorParams().some(function(param) {
+      return param.name == 'userInput' + newParamIndex;
+    })) {
+      newParamIndex++;
     }
+    var newParams = this.getBehaviorParams().concat([{ name: 'userInput' + newParamIndex, question: '' }]);
+    this.setBehaviorProp('params', newParams, this.focusOnLastParam);
+  },
+
+  addTrigger: function() {
+    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), this.focusOnFirstBlankTrigger);
+  },
+
+  confirmDeleteBehavior: function() {
+    this.setState({
+      activePanel: { name: 'confirmDeleteBehavior', modal: true }
+    });
+  },
+
+  confirmDeleteCode: function() {
+    this.setState({
+      activePanel: { name: 'confirmDeleteCode', modal: true }
+    });
+  },
+
+  confirmUndo: function() {
+    this.setState({
+      activePanel: { name: 'confirmUndo', modal: true }
+    });
+  },
+
+  deleteBehavior: function() {
+    this.refs.deleteBehaviorForm.submit();
+  },
+
+  deleteCode: function() {
+    this.setBehaviorProp('params', []);
+    this.setBehaviorProp('functionBody', '');
+    this.toggleCodeEditor();
+    this.hideActivePanel();
+  },
+
+  deleteParamAtIndex: function(index) {
+    this.setBehaviorProp('params', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getBehaviorParams(), index));
+  },
+
+  deleteTriggerAtIndex: function(index) {
+    var triggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getBehaviorTriggers(), index);
+    this.setBehaviorProp('triggers', triggers);
+  },
+
+  hideActivePanel: function() {
+    this.setState({
+      activePanel: null
+    });
   },
 
   onSaveClick: function() {
@@ -539,58 +292,262 @@ return React.createClass({
     });
   },
 
-  getBrowserPathname: function() {
-    return window.location.pathname;
+  setBehaviorProp: function(key, value, callback) {
+    var newData = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
+    this.setState({ behavior: newData }, callback);
   },
 
-  getBrowserQueryParams: function() {
-    return window.location.search;
+  toggleActiveDropdown: function(name) {
+    var alreadyOpen = this.getActiveDropdown() === name;
+    this.setState({
+      activeDropdown: alreadyOpen ? null : { name: name }
+    });
   },
 
-  setBrowserURL: function(url) {
-    window.history.replaceState({}, "", url);
+  toggleActivePanel: function(name, beModal) {
+    var alreadyOpen = this.getActivePanel() === name;
+    this.setState({
+      activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
+    });
   },
 
-  resetURL: function() {
-    var path = this.getBrowserPathname();
-    var queryParams = this.getBrowserQueryParams();
-    var newQueryParams = queryParams
-      .replace(/^\?/, '')
-      .split('&')
-      .filter(function(qp) { return qp !== 'justSaved=true'; })
-      .join('&');
-    var newURL = path + (newQueryParams ? '?' + newQueryParams : '');
-    if (newURL !== path + queryParams) {
-      this.setBrowserURL(newURL);
-    }
+  toggleBoilerplateHelp: function() {
+    this.toggleActivePanel('helpForBoilerplateParameters');
   },
 
-  componentDidUpdate: function() {
-    // Note that calling setState on every update triggers an infinite loop
-    if (this.state.justSaved) {
-      this.setState({ justSaved: false });
-      this.resetURL();
-    }
+  toggleCodeEditor: function() {
+    this.setState({
+      revealCodeEditor: !this.state.revealCodeEditor
+    });
   },
+
+  toggleCodeEditorLineWrapping: function() {
+    this.setState({
+      codeEditorUseLineWrapping: !this.state.codeEditorUseLineWrapping
+    });
+  },
+
+  toggleEditorSettingsMenu: function() {
+    this.toggleActiveDropdown('codeEditorSettings');
+  },
+
+  toggleEnvVariableExpansion: function() {
+    this.setState({
+      expandEnvVariables: !this.state.expandEnvVariables
+    });
+  },
+
+  toggleManageBehaviorMenu: function() {
+    this.toggleActiveDropdown('manageBehavior');
+  },
+
+  toggleTriggerHelp: function() {
+    this.toggleActivePanel('helpForTriggerParameters');
+  },
+
+  toggleTriggerOptionsHelp: function() {
+    this.toggleActivePanel('helpForTriggerOptions');
+  },
+
+  updateCode: function(newCode) {
+    this.setBehaviorProp('functionBody', newCode);
+  },
+
+  updateParamAtIndexWithParam: function(index, newParam) {
+    this.setBehaviorProp('params', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorParams(), newParam, index));
+  },
+
+  updateTemplate: function(newTemplateString) {
+    var callback = function() {
+      this.setState({ hasModifiedTemplate: true });
+    };
+    this.setBehaviorProp('responseTemplate', newTemplateString, callback)
+  },
+
+  updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
+    this.setBehaviorProp('triggers', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
+  },
+
+  undoChanges: function() {
+    this.setState({
+      behavior: this.getInitialState().behavior,
+      revealCodeEditor: this.shouldRevealCodeEditor()
+    });
+    this.hideActivePanel();
+  },
+
+
+  /* Booleans */
+
+  hasCalledOnSuccess: function() {
+    var code = this.getBehaviorFunctionBody();
+    var success = code && code.match(/\bonSuccess\([\s\S]+?\)/);
+    return success;
+  },
+
+  hasCode: function() {
+    return this.getBehaviorFunctionBody().match(/\S/);
+  },
+
+  hasModalPanel: function() {
+    return !!(this.state.activePanel && this.state.activePanel.modal);
+  },
+
+  hasModifiedTemplate: function() {
+    return this.state.hasModifiedTemplate;
+  },
+
+  hasMultipleTriggers: function() {
+    return this.getBehaviorTriggers().length > 1;
+  },
+
+  hasParams: function() {
+    return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
+  },
+
+  hasPrimaryTrigger: function() {
+    var triggers = this.getBehaviorTriggers();
+    return triggers.length > 0 && triggers[0];
+  },
+
+  hasUserParameters: function() {
+    // TODO: when we have user parameters that aren't part of code, include those
+    return this.hasParams();
+  },
+
+  isExistingBehavior: function() {
+    return !!(this.props.functionBody || this.props.responseTemplate);
+  },
+
+  isModified: function() {
+    return JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
+  },
+
+  shouldRevealCodeEditor: function() {
+    return !!(this.props.shouldRevealCodeEditor || this.props.functionBody)
+  },
+
+  templateIncludesIteration: function() {
+    var template = this.getBehaviorTemplate();
+    return template && template.match(/\{endfor\}/);
+  },
+
+  templateUsesMarkdown: function() {
+    var template = this.getBehaviorTemplate();
+    /* Big ugly flaming pile of regex to try and guess at Markdown usage: */
+    var matches = [
+      '\\*.+?\\*', /* Bold/italics */
+      '_.+?_', /* Bold/italics */
+      '\\[.+?\\]\\(.+?\\)', /* Links */
+      '(\\[.+?\\]){2}', /* Links by reference */
+      '^.+\\n[=-]+', /* Underlined headers */
+      '^#+\\s+.+', /* # Headers */
+      '^\\d\\.\\s+.+', /* Numbered lists */
+      '^\\*\\s+.+', /* Bulleted lists */
+      '^>.+', /* Block quote */
+      '`.+?`', /* Code */
+      '```', /* Code block */
+      '^\\s*[-\\*]\\s*[-\\*]\\s*[-\\*]' /* Horizontal rule */
+    ];
+    var matchRegExp = new RegExp( '(' + matches.join( ')|(' ) + ')' );
+    return template && template.match(matchRegExp);
+  },
+
+  templateIncludesParam: function() {
+    var template = this.getBehaviorTemplate();
+    return template && template.match(/\{\S+?\}/);
+  },
+
+  templateIncludesPath: function() {
+    var template = this.getBehaviorTemplate();
+    return template && template.match(/\{(\S+\.\S+)+?\}/);
+  },
+
+  templateIncludesSuccessResult: function() {
+    var template = this.getBehaviorTemplate();
+    return template && template.match(/\{successResult.*?\}/);
+  },
+
+  triggersUseParams: function() {
+    return this.getBehaviorTriggers().some(function(trigger) {
+      return trigger.text.match(/{.+}/);
+    });
+  },
+
+
+  /* Interaction and event handling */
 
   ensureCursorVisible: function(editor) {
     if (!this.refs.footer) {
       return;
     }
     var cursorBottom = editor.cursorCoords(false).bottom;
-    var visibleBottom = window.innerHeight + window.scrollY - this.refs.footer.clientHeight;
+    BrowserUtils.ensureYPosInView(cursorBottom, this.refs.footer.clientHeight);
+  },
 
-    if (cursorBottom > visibleBottom) {
-      window.scrollBy(0, cursorBottom - visibleBottom);
+  focusOnFirstBlankTrigger: function() {
+    var blankTrigger = Object.keys(this.refs).find(function(key) {
+      return key.match(/^trigger\d+$/) && this.refs[key].isEmpty();
+    }, this);
+    if (blankTrigger) {
+      this.refs[blankTrigger].focus();
     }
   },
 
-  getActivePanel: function() {
-    return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
+  focusOnParamIndex: function(index) {
+    this.refs.codeHeader.focusIndex(index);
   },
 
-  hasModalPanel: function() {
-    return !!(this.state.activePanel && this.state.activePanel.modal);
+  focusOnLastParam: function() {
+    this.focusOnParamIndex(this.getBehaviorParams().length - 1)
+  },
+
+  onParamEnterKey: function(index) {
+    if (index + 1 < this.getBehaviorParams().length) {
+      this.focusOnParamIndex(index + 1);
+    } else if (this.getBehaviorParams()[index].question != '') {
+      this.addParam();
+    }
+  },
+
+  onTriggerEnterKey: function(index) {
+    if (index + 1 < this.getBehaviorTriggers().length) {
+      this.refs['trigger' + (index + 1)].focus();
+    } else if (this.getBehaviorTriggers()[index] != '') {
+      this.addTrigger();
+    }
+  },
+
+  /* Component API methods */
+  componentDidUpdate: function() {
+    // Note that calling setState on every update triggers an infinite loop
+    if (this.state.justSaved) {
+      this.setState({ justSaved: false });
+      BrowserUtils.removeQueryParam('justSaved');
+    }
+  },
+
+  getInitialState: function() {
+    return {
+      behavior: {
+        teamId: this.props.teamId,
+        behaviorId: this.props.behaviorId,
+        functionBody: this.props.functionBody,
+        responseTemplate: this.props.responseTemplate,
+        params: this.props.params,
+        triggers: this.getInitialTriggers()
+      },
+      activeDropdown: null,
+      activePanel: null,
+      codeEditorUseLineWrapping: false,
+      expandEnvVariables: false,
+      justSaved: this.props.justSaved,
+      isSaving: false,
+      envVariableNames: this.props.envVariableNames || [],
+      revealCodeEditor: this.shouldRevealCodeEditor(),
+      magic8BallResponse: this.getMagic8BallResponse(),
+      hasModifiedTemplate: !!this.props.responseTemplate
+    };
   },
 
   render: function() {
@@ -675,7 +632,7 @@ return React.createClass({
                     isRegex={trigger.isRegex}
                     caseSensitive={trigger.caseSensitive}
                     hideDelete={!this.hasMultipleTriggers()}
-                    onChange={this.onTriggerChange.bind(this, index)}
+                    onChange={this.updateTriggerAtIndexWithTrigger.bind(this, index)}
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}
                     onHelpClick={this.toggleTriggerOptionsHelp}
@@ -742,7 +699,7 @@ return React.createClass({
                 ref="codeHeader"
                 hasParams={this.hasParams()}
                 params={this.getBehaviorParams()}
-                onParamChange={this.replaceParamAtIndexWithParam}
+                onParamChange={this.updateParamAtIndexWithParam}
                 onParamDelete={this.deleteParamAtIndex}
                 onParamAdd={this.addParam}
                 onEnterKey={this.onParamEnterKey}
@@ -753,7 +710,7 @@ return React.createClass({
               <div className="position-relative pr-symbol border-right">
                 <BehaviorEditorCodeEditor
                   value={this.getBehaviorFunctionBody()}
-                  onChange={this.onCodeChange}
+                  onChange={this.updateCode}
                   onCursorChange={this.ensureCursorVisible}
                   firstLineNumber={this.getFirstLineNumberForCode()}
                   lineWrapping={this.state.codeEditorUseLineWrapping}
@@ -807,7 +764,7 @@ return React.createClass({
             <div className="column column-three-quarters pll mbxl">
               <div className="position-relative CodeMirror-container-no-gutter">
                 <Codemirror value={this.getBehaviorTemplate()}
-                  onChange={this.onTemplateChange}
+                  onChange={this.updateTemplate}
                   onCursorChange={this.ensureCursorVisible}
                   options={{
                     mode: {
