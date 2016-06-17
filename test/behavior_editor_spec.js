@@ -112,46 +112,4 @@ describe('BehaviorEditor', () => {
       expect(editor.getBehaviorTemplate()).toEqual('');
     });
   });
-
-  describe('resetURL', () => {
-    let editor;
-
-    beforeEach(() => {
-      editor = createEditor(editorConfig);
-      editor.getBrowserPathname = jest.fn();
-      editor.getBrowserPathname.mockReturnValue('/edit_behavior/abcdef');
-      editor.getBrowserQueryParams = jest.fn();
-      editor.setBrowserURL = jest.fn();
-    });
-
-    it('removes justSaved=true when it’s the only query parameter', () => {
-      editor.getBrowserQueryParams.mockReturnValue('?justSaved=true');
-      editor.resetURL();
-      expect(editor.setBrowserURL.mock.calls[0][0]).toEqual('/edit_behavior/abcdef');
-    });
-
-    it('removes justSaved=true but leaves trailing parameters', () => {
-      editor.getBrowserQueryParams.mockReturnValue('?justSaved=true&sky=blue&earth=round');
-      editor.resetURL();
-      expect(editor.setBrowserURL.mock.calls[0][0]).toEqual('/edit_behavior/abcdef?sky=blue&earth=round');
-    });
-
-    it('removes justSaved=true but leaves leading parameters', () => {
-      editor.getBrowserQueryParams.mockReturnValue('?sky=blue&earth=round&justSaved=true');
-      editor.resetURL();
-      expect(editor.setBrowserURL.mock.calls[0][0]).toEqual('/edit_behavior/abcdef?sky=blue&earth=round');
-    });
-
-    it('removes justSaved=true but leaves leading and trailing parameters', () => {
-      editor.getBrowserQueryParams.mockReturnValue('?sky=blue&justSaved=true&earth=round');
-      editor.resetURL();
-      expect(editor.setBrowserURL.mock.calls[0][0]).toEqual('/edit_behavior/abcdef?sky=blue&earth=round');
-    });
-
-    it('doesn’t set the browser URL if justSaved=true isn’t a query parameter', () => {
-      editor.getBrowserQueryParams.mockReturnValue('');
-      editor.resetURL();
-      expect(editor.setBrowserURL.mock.calls.length).toBe(0);
-    });
-  });
 });

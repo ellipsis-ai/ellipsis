@@ -23,6 +23,7 @@ var React = require('react'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
   Collapsible = require('./collapsible'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input'),
+  BrowserUtils = require('./browser_utils'),
   ImmutableObjectUtils = require('./immutable_object_utils');
 
 return React.createClass({
@@ -94,14 +95,6 @@ return React.createClass({
 
   getBehaviorTriggers: function() {
     return this.getBehaviorProp('triggers');
-  },
-
-  getBrowserPathname: function() {
-    return window.location.pathname;
-  },
-
-  getBrowserQueryParams: function() {
-    return window.location.search;
   },
 
   getCodeAutocompletions: function() {
@@ -341,27 +334,9 @@ return React.createClass({
     this.setBehaviorProp('params', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorParams(), newParam, index));
   },
 
-  resetURL: function() {
-    var path = this.getBrowserPathname();
-    var queryParams = this.getBrowserQueryParams();
-    var newQueryParams = queryParams
-      .replace(/^\?/, '')
-      .split('&')
-      .filter(function(qp) { return qp !== 'justSaved=true'; })
-      .join('&');
-    var newURL = path + (newQueryParams ? '?' + newQueryParams : '');
-    if (newURL !== path + queryParams) {
-      this.setBrowserURL(newURL);
-    }
-  },
-
   setBehaviorProp: function(key, value, callback) {
     var newData = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
     this.setState({ behavior: newData }, callback);
-  },
-
-  setBrowserURL: function(url) {
-    window.history.replaceState({}, "", url);
   },
 
   toggleActiveDropdown: function(name) {
@@ -530,11 +505,7 @@ return React.createClass({
       return;
     }
     var cursorBottom = editor.cursorCoords(false).bottom;
-    var visibleBottom = window.innerHeight + window.scrollY - this.refs.footer.clientHeight;
-
-    if (cursorBottom > visibleBottom) {
-      window.scrollBy(0, cursorBottom - visibleBottom);
-    }
+    BrowserUtils.ensureYPosInView(cursorBottom, this.refs.footer.clientHeight);
   },
 
   focusOnFirstBlankTrigger: function() {
@@ -575,7 +546,7 @@ return React.createClass({
     // Note that calling setState on every update triggers an infinite loop
     if (this.state.justSaved) {
       this.setState({ justSaved: false });
-      this.resetURL();
+      BrowserUtils.removeQueryParam('justSaved');
     }
   },
 
