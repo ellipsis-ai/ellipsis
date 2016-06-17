@@ -122,29 +122,6 @@ return React.createClass({
     return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
   },
 
-  getInitialState: function() {
-    return {
-      behavior: {
-        teamId: this.props.teamId,
-        behaviorId: this.props.behaviorId,
-        functionBody: this.props.functionBody,
-        responseTemplate: this.props.responseTemplate,
-        params: this.props.params,
-        triggers: this.getInitialTriggers()
-      },
-      activeDropdown: null,
-      activePanel: null,
-      codeEditorUseLineWrapping: false,
-      expandEnvVariables: false,
-      justSaved: this.props.justSaved,
-      isSaving: false,
-      envVariableNames: this.props.envVariableNames || [],
-      revealCodeEditor: this.shouldRevealCodeEditor(),
-      magic8BallResponse: this.getMagic8BallResponse(),
-      hasModifiedTemplate: !!this.props.responseTemplate
-    };
-  },
-
   getInitialTriggers: function() {
     if (this.props.triggers && this.props.triggers.length > 0) {
       return this.props.triggers;
@@ -548,6 +525,29 @@ return React.createClass({
       this.setState({ justSaved: false });
       BrowserUtils.removeQueryParam('justSaved');
     }
+  },
+
+  getInitialState: function() {
+    return {
+      behavior: {
+        teamId: this.props.teamId,
+        behaviorId: this.props.behaviorId,
+        functionBody: this.props.functionBody,
+        responseTemplate: this.props.responseTemplate,
+        params: this.props.params,
+        triggers: this.getInitialTriggers()
+      },
+      activeDropdown: null,
+      activePanel: null,
+      codeEditorUseLineWrapping: false,
+      expandEnvVariables: false,
+      justSaved: this.props.justSaved,
+      isSaving: false,
+      envVariableNames: this.props.envVariableNames || [],
+      revealCodeEditor: this.shouldRevealCodeEditor(),
+      magic8BallResponse: this.getMagic8BallResponse(),
+      hasModifiedTemplate: !!this.props.responseTemplate
+    };
   },
 
   render: function() {
