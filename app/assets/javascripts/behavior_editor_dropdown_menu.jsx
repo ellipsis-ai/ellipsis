@@ -3,7 +3,6 @@ var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin');
 
 return React.createClass({
-  displayName: 'BehaviorEditorSettingsMenu',
   mixins: [BehaviorEditorMixin],
   render: function() {
     return (

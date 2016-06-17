@@ -10,12 +10,12 @@ var React = require('react'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
   BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
+  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
   BehaviorEditorInput = require('./behavior_editor_input'),
   BehaviorEditorSectionHeading = require('./behavior_editor_section_heading'),
   BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
-  BehaviorEditorSettingsMenu = require('./behavior_editor_settings_menu'),
   BehaviorEditorTriggerHelp = require('./behavior_editor_trigger_help'),
   BehaviorEditorTriggerOptionsHelp = require('./behavior_editor_trigger_options_help'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
@@ -743,12 +743,12 @@ return React.createClass({
                     onClick={this.toggleEditorSettingsMenu}
                     buttonActive={this.state.settingsMenuVisible}
                   />
-                  <BehaviorEditorSettingsMenu isVisible={this.state.settingsMenuVisible} onItemClick={this.toggleEditorSettingsMenu}>
+                  <BehaviorEditorDropdownMenu isVisible={this.state.settingsMenuVisible} onItemClick={this.toggleEditorSettingsMenu}>
                     <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
                       <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
                       <span> Enable line wrap</span>
                     </button>
-                  </BehaviorEditorSettingsMenu>
+                  </BehaviorEditorDropdownMenu>
                 </div>
               </div>
 
