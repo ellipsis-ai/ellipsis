@@ -286,29 +286,10 @@ return React.createClass({
     });
   },
 
-  onCodeChange: function(newCode) {
-    this.setBehaviorProp('functionBody', newCode);
-  },
-
   onSaveClick: function() {
     this.setState({
       isSaving: true
     });
-  },
-
-  onTemplateChange: function(newTemplateString) {
-    var callback = function() {
-      this.setState({ hasModifiedTemplate: true });
-    };
-    this.setBehaviorProp('responseTemplate', newTemplateString, callback)
-  },
-
-  onTriggerChange: function(index, newTrigger) {
-    this.setBehaviorProp('triggers', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
-  },
-
-  replaceParamAtIndexWithParam: function(index, newParam) {
-    this.setBehaviorProp('params', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorParams(), newParam, index));
   },
 
   setBehaviorProp: function(key, value, callback) {
@@ -317,14 +298,14 @@ return React.createClass({
   },
 
   toggleActiveDropdown: function(name) {
-    var alreadyOpen = this.state.activeDropdown && this.state.activeDropdown.name === name;
+    var alreadyOpen = this.getActiveDropdown() === name;
     this.setState({
       activeDropdown: alreadyOpen ? null : { name: name }
     });
   },
 
   toggleActivePanel: function(name, beModal) {
-    var alreadyOpen = this.state.activePanel && this.state.activePanel.name === name;
+    var alreadyOpen = this.getActivePanel() === name;
     this.setState({
       activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
     });
@@ -366,6 +347,25 @@ return React.createClass({
 
   toggleTriggerOptionsHelp: function() {
     this.toggleActivePanel('helpForTriggerOptions');
+  },
+
+  updateCode: function(newCode) {
+    this.setBehaviorProp('functionBody', newCode);
+  },
+
+  updateParamAtIndexWithParam: function(index, newParam) {
+    this.setBehaviorProp('params', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorParams(), newParam, index));
+  },
+
+  updateTemplate: function(newTemplateString) {
+    var callback = function() {
+      this.setState({ hasModifiedTemplate: true });
+    };
+    this.setBehaviorProp('responseTemplate', newTemplateString, callback)
+  },
+
+  updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
+    this.setBehaviorProp('triggers', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
   },
 
   undoChanges: function() {
@@ -632,7 +632,7 @@ return React.createClass({
                     isRegex={trigger.isRegex}
                     caseSensitive={trigger.caseSensitive}
                     hideDelete={!this.hasMultipleTriggers()}
-                    onChange={this.onTriggerChange.bind(this, index)}
+                    onChange={this.updateTriggerAtIndexWithTrigger.bind(this, index)}
                     onDelete={this.deleteTriggerAtIndex.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}
                     onHelpClick={this.toggleTriggerOptionsHelp}
@@ -699,7 +699,7 @@ return React.createClass({
                 ref="codeHeader"
                 hasParams={this.hasParams()}
                 params={this.getBehaviorParams()}
-                onParamChange={this.replaceParamAtIndexWithParam}
+                onParamChange={this.updateParamAtIndexWithParam}
                 onParamDelete={this.deleteParamAtIndex}
                 onParamAdd={this.addParam}
                 onEnterKey={this.onParamEnterKey}
@@ -710,7 +710,7 @@ return React.createClass({
               <div className="position-relative pr-symbol border-right">
                 <BehaviorEditorCodeEditor
                   value={this.getBehaviorFunctionBody()}
-                  onChange={this.onCodeChange}
+                  onChange={this.updateCode}
                   onCursorChange={this.ensureCursorVisible}
                   firstLineNumber={this.getFirstLineNumberForCode()}
                   lineWrapping={this.state.codeEditorUseLineWrapping}
@@ -764,7 +764,7 @@ return React.createClass({
             <div className="column column-three-quarters pll mbxl">
               <div className="position-relative CodeMirror-container-no-gutter">
                 <Codemirror value={this.getBehaviorTemplate()}
-                  onChange={this.onTemplateChange}
+                  onChange={this.updateTemplate}
                   onCursorChange={this.ensureCursorVisible}
                   options={{
                     mode: {
