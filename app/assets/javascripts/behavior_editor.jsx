@@ -22,7 +22,8 @@ var React = require('react'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
   Collapsible = require('./collapsible'),
-  CsrfTokenHiddenInput = require('./csrf_token_hidden_input');
+  CsrfTokenHiddenInput = require('./csrf_token_hidden_input'),
+  ImmutableObjectUtils = require('./immutable_object_utils');
 
 return React.createClass({
   displayName: 'BehaviorEditor',
@@ -47,33 +48,6 @@ return React.createClass({
     justSaved: React.PropTypes.bool,
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
     shouldRevealCodeEditor: React.PropTypes.bool
-  },
-
-  utils: {
-    // Create a copy of an array before modifying it
-    arrayWithNewElementAtIndex: function(array, newElement, index) {
-      var newArray = array.slice();
-      newArray[index] = newElement;
-      return newArray;
-    },
-
-    arrayRemoveElementAtIndex: function(array, index) {
-      var newArray = array.slice();
-      newArray.splice(index, 1);
-      return newArray;
-    },
-
-    objectWithNewValueAtKey: function(obj, newValue, keyToChange) {
-      var newObj = {};
-      Object.keys(obj).forEach(function(key) {
-        if (key === keyToChange) {
-          newObj[key] = newValue;
-        } else {
-          newObj[key] = obj[key];
-        }
-      });
-      return newObj;
-    }
   },
 
 
@@ -328,11 +302,11 @@ return React.createClass({
   },
 
   deleteParamAtIndex: function(index) {
-    this.setBehaviorProp('params', this.utils.arrayRemoveElementAtIndex(this.getBehaviorParams(), index));
+    this.setBehaviorProp('params', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getBehaviorParams(), index));
   },
 
   deleteTriggerAtIndex: function(index) {
-    var triggers = this.utils.arrayRemoveElementAtIndex(this.getBehaviorTriggers(), index);
+    var triggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getBehaviorTriggers(), index);
     this.setBehaviorProp('triggers', triggers);
   },
 
@@ -360,11 +334,11 @@ return React.createClass({
   },
 
   onTriggerChange: function(index, newTrigger) {
-    this.setBehaviorProp('triggers', this.utils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
+    this.setBehaviorProp('triggers', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
   },
 
   replaceParamAtIndexWithParam: function(index, newParam) {
-    this.setBehaviorProp('params', this.utils.arrayWithNewElementAtIndex(this.getBehaviorParams(), newParam, index));
+    this.setBehaviorProp('params', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorParams(), newParam, index));
   },
 
   resetURL: function() {
@@ -382,7 +356,7 @@ return React.createClass({
   },
 
   setBehaviorProp: function(key, value, callback) {
-    var newData = this.utils.objectWithNewValueAtKey(this.state.behavior, value, key);
+    var newData = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
     this.setState({ behavior: newData }, callback);
   },
 

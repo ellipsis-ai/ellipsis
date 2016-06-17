@@ -36,39 +36,6 @@ describe('BehaviorEditor', () => {
     );
   }
 
-  describe('utils', () => {
-    const array = ['a', 'b', 'c'];
-    const obj = { a: 0, b: { c: 1 } };
-    let editor;
-    beforeEach(() => {
-      editor = createEditor(defaultConfig);
-    });
-
-    describe('arrayWithNewElementAtIndex', () => {
-      it('copies an array before modifying it', () => {
-        const newArray = editor.utils.arrayWithNewElementAtIndex(array, 'z', 2);
-        expect(array).toEqual(['a', 'b', 'c']);
-        expect(newArray).toEqual(['a', 'b', 'z']);
-      });
-    });
-
-    describe('arrayRemoveElementAtIndex', () => {
-      it('copies an array before removing an element from it', () => {
-        const newArray = editor.utils.arrayRemoveElementAtIndex(array, 2);
-        expect(array).toEqual(['a', 'b', 'c']);
-        expect(newArray).toEqual(['a', 'b']);
-      });
-    });
-
-    describe('objectWithNewValueAtKey', () => {
-      it('copies an object before modifying a property of it', () => {
-        const newObj = editor.utils.objectWithNewValueAtKey(obj, 1, 'a');
-        expect(obj).toEqual({ a: 0, b: { c: 1 } });
-        expect(newObj).toEqual({ a: 1, b: { c: 1 } });
-      });
-    });
-  });
-
   describe('getBehaviorTriggers', () => {
     it('returns the defined triggers', () => {
       editorConfig.triggers = [{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }];
