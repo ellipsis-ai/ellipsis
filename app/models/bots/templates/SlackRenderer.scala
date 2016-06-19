@@ -82,10 +82,13 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
     link.getFirstChild match {
       case e: Text => {
         if (e.getLiteral == link.getDestination) {
-          stringBuilder.append(link.getDestination)
+          stringBuilder.append(s"<${link.getDestination}>")
         } else {
+          stringBuilder.append("<")
+          stringBuilder.append(s"${link.getDestination}")
+          stringBuilder.append("|")
           visitChildren(link)
-          stringBuilder.append(s" (${link.getDestination}) ")
+          stringBuilder.append(">")
         }
       }
       case _ => visitChildren(link)
