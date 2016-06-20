@@ -23,7 +23,7 @@ case class BehaviorResponse(
   }
 
   def runCode(service: AWSLambdaService): Future[Unit] = {
-    behaviorVersion.resultFor(parametersWithValues, service).map { result =>
+    behaviorVersion.unformattedResultFor(parametersWithValues, service).map { result =>
       event.context.sendMessage(result)
     }
   }

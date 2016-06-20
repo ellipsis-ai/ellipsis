@@ -3,7 +3,7 @@ package models.bots
 import models.Team
 import models.accounts.{OAuth2Token, SlackBotProfile}
 import models.bots.conversations.{ConversationQueries, Conversation}
-import services.AWSLambdaService
+import models.bots.templates.SlackRenderer
 import slack.api.SlackApiClient
 import slack.models.Message
 import slack.rtm.SlackRtmClient
@@ -19,6 +19,8 @@ case class SlackContext(
                         profile: SlackBotProfile,
                         message: Message
                         ) extends MessageContext {
+
+  val fullMessageText = message.text
 
   val teamId: String = profile.teamId
 
@@ -39,16 +41,16 @@ case class SlackContext(
 
   lazy val isResponseExpected: Boolean = includesBotMention
 
-  def sendMessage(text: String)(implicit ec: ExecutionContext): Unit = {
-    client.apiClient.postChatMessage(message.channel, text)
+  def slackFormattedBodyTextFor(text: String): String = {
+    val builder = StringBuilder.newBuilder
+    val slack = new SlackRenderer(builder)
+    commonmarkNodeFor(text).accept(slack)
+    builder.toString
   }
 
-  def sendIDontKnowHowToRespondMessageFor(lambdaService: AWSLambdaService)(implicit ec: ExecutionContext): Unit = {
-    sendMessage(s"""
-       |I don't know how to respond to `${message.text}`
-       |
-       |Type `@ellipsis: help` to see what I can do or ${teachMeLinkFor(lambdaService)}
-    """.stripMargin)
+  def sendMessage(unformattedText: String)(implicit ec: ExecutionContext): Unit = {
+    val formattedText = slackFormattedBodyTextFor(unformattedText)
+    client.apiClient.postChatMessage(message.channel, formattedText)
   }
 
   def recentMessages: DBIO[Seq[String]] = {
@@ -67,14 +69,6 @@ case class SlackContext(
         }
       }.getOrElse(Seq()))
     } yield messages
-  }
-
-  def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
-    val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ApplicationController.newBehavior(teamId)
-      s"$baseUrl$path"
-    }.get
-    s"<$newBehaviorLink|teach me something new>"
   }
 
   def maybeOngoingConversation: DBIO[Option[Conversation]] = {

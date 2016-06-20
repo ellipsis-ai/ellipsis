@@ -9,7 +9,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class DisplayHelpBehavior(helpString: String, messageContext: MessageContext, lambdaService: AWSLambdaService) extends BuiltinBehavior {
 
-  // TODO: lose slack-specific formatting
   private def helpStringFor(behaviorVersions: Seq[BehaviorVersion], prompt: String, matchString: String): DBIO[String] = {
     DBIO.sequence(behaviorVersions.map { ea =>
       MessageTriggerQueries.allFor(ea)
@@ -20,9 +19,9 @@ case class DisplayHelpBehavior(helpString: String, messageContext: MessageContex
           s"`${ea.pattern}`"
         }.mkString(" or ")
         val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
-          s" <$link|Details>"
+          s"[Details]($link)"
         }.getOrElse("")
-        s"\n• $triggersString $editLink"
+        s"\n- $triggersString $editLink"
       }
       if (behaviorStrings.isEmpty) {
         ""
