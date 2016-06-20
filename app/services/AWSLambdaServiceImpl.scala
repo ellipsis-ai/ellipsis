@@ -27,7 +27,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
 
   def invoke(behaviorVersion: BehaviorVersion, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
     if (behaviorVersion.functionBody.isEmpty) {
-      Future.successful(behaviorVersion.successResultStringFor(JsNull, parametersWithValues))
+      Future.successful(behaviorVersion.unformattedSuccessResultStringFor(JsNull, parametersWithValues))
     } else {
       val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
       val payloadJson = JsObject(
@@ -49,7 +49,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
       JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
         val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
         val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
-        behaviorVersion.resultStringFor(result.getPayload, logResult, parametersWithValues)
+        behaviorVersion.unformattedResultStringFor(result.getPayload, logResult, parametersWithValues)
       }
     }
   }

@@ -77,7 +77,7 @@ case class BehaviorVersion(
 
   def functionName: String = id
 
-  def resultFor(parametersWithValues: Seq[ParameterWithValue], service: AWSLambdaService): Future[String] = {
+  def unformattedResultFor(parametersWithValues: Seq[ParameterWithValue], service: AWSLambdaService): Future[String] = {
     for {
       envVars <- service.models.run(EnvironmentVariableQueries.allFor(team))
       result <- service.invoke(this, parametersWithValues, envVars)
@@ -99,28 +99,9 @@ case class BehaviorVersion(
     dropEnclosingDoubleQuotes(result.as[String])
   }
 
-  val COMMONMARK_EXTENSIONS = util.Arrays.asList(StrikethroughExtension.create, AutolinkExtension.create)
-
-  def commonmarkParser = {
-    Parser.builder().extensions(COMMONMARK_EXTENSIONS).build()
-  }
-
-  def commonmarkNodeFor(text: String): Node = {
-    val node = commonmarkParser.parse(text)
-    node.accept(new CommonmarkVisitor())
-    node
-  }
-
-  def slackFormattedBodyTextFor(text: String): String = {
-    val builder = StringBuilder.newBuilder
-    val slack = new SlackRenderer(builder)
-    commonmarkNodeFor(text).accept(slack)
-    builder.toString
-  }
-
-  def successResultStringFor(result: JsValue, parametersWithValues: Seq[ParameterWithValue]): String = {
+  def unformattedSuccessResultStringFor(result: JsValue, parametersWithValues: Seq[ParameterWithValue]): String = {
     val inputs = parametersWithValues.map { ea => (ea.parameter.name, JsString(ea.value)) }
-    slackFormattedBodyTextFor(TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply)
+    TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply
   }
 
   private def handledErrorResultStringFor(json: JsValue): String = {
@@ -159,12 +140,12 @@ case class BehaviorVersion(
     }.isDefined
   }
 
-  def resultStringFor(payload: ByteBuffer, logResult: AWSLambdaLogResult, parametersWithValues: Seq[ParameterWithValue]): String = {
+  def unformattedResultStringFor(payload: ByteBuffer, logResult: AWSLambdaLogResult, parametersWithValues: Seq[ParameterWithValue]): String = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
     val mainResultString = (json \ "result").toOption.map { successResult =>
-      successResultStringFor(successResult, parametersWithValues)
+      unformattedSuccessResultStringFor(successResult, parametersWithValues)
     }.getOrElse {
       if (isUnhandledError(json)) {
         unhandledErrorResultStringFor(logResult)

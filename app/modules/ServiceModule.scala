@@ -2,7 +2,10 @@ package modules
 
 import com.google.inject.{Provides, AbstractModule}
 import models.Models
+import models.bots.EventHandler
 import play.api.Configuration
+import play.api.i18n.MessagesApi
+import play.api.inject.ApplicationLifecycle
 import services._
 import net.codingwell.scalaguice.ScalaModule
 
@@ -22,6 +25,16 @@ class ServiceModule extends AbstractModule with ScalaModule {
   @Provides
   def provideAWSDynamoDBService(configuration: Configuration): AWSDynamoDBService = {
     new AWSDynamoDBServiceImpl(configuration)
+  }
+
+  @Provides
+  def providesEventHandler(
+                            lambdaService: AWSLambdaService,
+                            appLifecycle: ApplicationLifecycle,
+                            models: Models,
+                            messages: MessagesApi
+                            ): EventHandler = {
+    new EventHandler(lambdaService, appLifecycle, models, messages)
   }
 
 }
