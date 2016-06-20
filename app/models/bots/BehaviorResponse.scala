@@ -1,7 +1,7 @@
 package models.bots
 
 import models.Team
-import models.bots.conversations.InvokeBehaviorConversation
+import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
 import models.bots.triggers.MessageTriggerQueries
 import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.dbio.DBIO
@@ -34,6 +34,11 @@ case class BehaviorResponse(
     } else {
       for {
         convo <- InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext)
+        _ <- DBIO.sequence(parametersWithValues.map { p =>
+          p.maybeValue.map { v =>
+            CollectedParameterValue(p.parameter, convo, v).save
+          }.getOrElse(DBIO.successful(Unit))
+        })
         _ <- convo.replyFor(event, service)
       } yield Unit
     }
