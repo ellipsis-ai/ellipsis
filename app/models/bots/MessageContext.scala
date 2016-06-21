@@ -34,7 +34,7 @@ trait MessageContext {
     """.stripMargin)
   }
 
-  def recentMessages: DBIO[Seq[String]]
+  def recentMessages: DBIO[Seq[String]] = DBIO.successful(Seq())
   def maybeOngoingConversation: DBIO[Option[Conversation]]
 
   val name: String

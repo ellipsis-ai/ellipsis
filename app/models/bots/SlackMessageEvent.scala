@@ -1,3 +1,3 @@
 package models.bots
 
-case class SlackMessageEvent(context: SlackContext) extends Event
+case class SlackMessageEvent(context: SlackContext) extends MessageEvent

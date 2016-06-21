@@ -2,7 +2,7 @@ package modules
 
 import com.google.inject.{Provides, AbstractModule}
 import models.Models
-import models.bots.EventHandler
+import models.bots.{BehaviorTestReportBuilder, EventHandler}
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import services._
@@ -14,6 +14,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
   override def configure() = {
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).asEagerSingleton()
+    bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()
   }
 
   @Provides

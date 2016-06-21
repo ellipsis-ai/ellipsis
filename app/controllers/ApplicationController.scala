@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.bots.triggers.MessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
-import models.bots.{BehaviorQueries, BehaviorParameterQueries, BehaviorVersionQueries}
+import models.bots._
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.data.Form
@@ -30,6 +30,7 @@ class ApplicationController @Inject() (
                                         val configuration: Configuration,
                                         val models: Models,
                                         val lambdaService: AWSLambdaService,
+                                        val testReportBuilder: BehaviorTestReportBuilder,
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
@@ -320,6 +321,45 @@ class ApplicationController @Inject() (
             NotFound(s"Behavior version not found: $behaviorVersionId")
           }
         }
+
+        models.run(action)
+      }
+    )
+  }
+
+  case class TestBehaviorInfo(behaviorId: String, message: String)
+
+  private val testBehaviorForm = Form(
+    mapping(
+      "behaviorId" -> nonEmptyText,
+      "message" -> nonEmptyText
+    )(TestBehaviorInfo.apply)(TestBehaviorInfo.unapply)
+  )
+
+  def testBehaviorVersion = SecuredAction.async { implicit request =>
+    val user = request.identity
+    testBehaviorForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val action = for {
+          maybeBehavior <- BehaviorQueries.find(info.behaviorId, user)
+          maybeBehaviorVersion <- maybeBehavior.map { behavior =>
+            behavior.maybeCurrentVersion
+          }.getOrElse(DBIO.successful(None))
+          maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
+            val context = TestMessageContext(info.message, includesBotMention = true)
+            testReportBuilder.buildFor(TestEvent(context), behaviorVersion).map(Some(_))
+          }.getOrElse(DBIO.successful(None))
+
+        } yield {
+            maybeReport.map { report =>
+              Ok(report.json)
+            }.getOrElse {
+              NotFound(s"Behavior not found: ${info.behaviorId}")
+            }
+          }
 
         models.run(action)
       }

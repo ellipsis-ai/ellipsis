@@ -13,6 +13,7 @@ POST        /delete_behavior                          @controllers.ApplicationCo
 GET         /regex_validation_errors/:pattern         @controllers.ApplicationController.regexValidationErrorsFor(pattern: String)
 GET         /version_info/:behaviorId                 @controllers.ApplicationController.versionInfoFor(behaviorId: String)
 POST        /restore_to_version                       @controllers.ApplicationController.restoreToVersion
+POST        /test_behavior_version                    @controllers.ApplicationController.testBehaviorVersion
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate

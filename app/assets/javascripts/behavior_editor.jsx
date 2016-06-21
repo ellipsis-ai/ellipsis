@@ -565,6 +565,15 @@ return React.createClass({
               </h3>
             </div>
 
+            {/*
+             <form ref="testBehaviorForm" action="/test_behavior_version" method="POST">
+               <CsrfTokenHiddenInput value={this.props.csrfToken} />
+               <input type="text" name="message" />
+               <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+               <input type="submit" />
+             </form>
+            */}
+
             <div className="column column-shrink ptl align-r">
               <BehaviorEditorDropdownTrigger
                 onClick={this.toggleManageBehaviorMenu}
