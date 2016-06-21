@@ -25,7 +25,7 @@ class BehaviorTestReportBuilder @Inject() (lambdaService: AWSLambdaService) {
         behaviorResponse.run(lambdaService)
       }.getOrElse(DBIO.successful(Unit))
     } yield {
-      BehaviorTestReport(event, behaviorVersion, maybeActivatedTrigger)
+      BehaviorTestReport(event, behaviorVersion, maybeActivatedTrigger, maybeResponse)
     }
   }
 

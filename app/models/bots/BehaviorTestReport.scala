@@ -27,21 +27,29 @@ case class TestMessageContext(fullMessageText: String, includesBotMention: Boole
 
 case class TestEvent(context: TestMessageContext) extends MessageEvent
 
-case class BehaviorTestReportOutput(activatedTrigger: String, responseMessage: String)
+case class BehaviorTestReportOutput(activatedTrigger: String, paramValues: Map[String, String], responseMessage: String)
 
 case class BehaviorTestReport  (
                                event: TestEvent,
                                behaviorVersion: BehaviorVersion,
-                               maybeActivatedTrigger: Option[MessageTrigger]
+                               maybeActivatedTrigger: Option[MessageTrigger],
+                               maybeBehaviorResponse: Option[BehaviorResponse]
                                ) {
 
   def messages: Array[String] = event.context.messageBuffer.toArray
+
+  def paramValues: Map[String, String] = maybeBehaviorResponse.map { behaviorResponse =>
+    behaviorResponse.parametersWithValues.map { p =>
+      (p.parameter.name, p.maybeValue.getOrElse("<none>"))
+    }.toMap
+  }.getOrElse(Map())
 
   implicit val outputWrites = Json.writes[BehaviorTestReportOutput]
 
   def json: JsValue = {
     val data = BehaviorTestReportOutput(
       maybeActivatedTrigger.map(_.pattern).getOrElse("<no match>"),
+      paramValues,
       messages.headOption.getOrElse("<no response>")
     )
     Json.toJson(data)
