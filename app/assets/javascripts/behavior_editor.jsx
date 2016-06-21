@@ -620,7 +620,7 @@ return React.createClass({
                 className="popup-dropdown-menu-right"
               >
                 <button type="button" className="button-invisible" onMouseUp={this.showVersions}>
-                  Review/restore previous versions
+                  View/restore previous versions
                 </button>
                 <button type="button" className="button-invisible" onMouseUp={this.confirmDeleteBehavior}>
                   Delete behavior

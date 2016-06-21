@@ -77,7 +77,7 @@ return React.createClass({
           >
             {this.getCurrentVersion()}
           </BehaviorEditorDropdownTrigger>
-          <button type="button" className="button-primary mrs">Preview version</button>
+          <button type="button" className="button-primary mrs">View version</button>
           <button type="button" className="mrs">Restore version</button>
           <button type="button" onClick={this.cancel}>Cancel</button>
           <BehaviorEditorDropdownMenu
