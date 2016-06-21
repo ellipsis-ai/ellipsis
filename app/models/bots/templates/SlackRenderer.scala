@@ -119,12 +119,12 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(paragraph: Paragraph) {
-    visitChildren(paragraph)
-    stringBuilder.append("\r")
     paragraph.getParent match {
       case li: ListItem =>
       case _ => stringBuilder.append("\r")
     }
+    visitChildren(paragraph)
+    stringBuilder.append("\r")
   }
 
   override def visit(softLineBreak: SoftLineBreak) {
