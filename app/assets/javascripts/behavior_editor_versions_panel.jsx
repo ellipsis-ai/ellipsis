@@ -5,13 +5,42 @@ var React = require('react'),
 
 return React.createClass({
   propTypes: {
-    onCancelClick: React.PropTypes.func.isRequired,
-    onConfirmClick: React.PropTypes.func.isRequired
+    onCancelClick: React.PropTypes.func.isRequired
+  },
+  getDateForVersion: function(version) {
+    var d = new Date(version.createdAt);
+    // N.B. Safari doesn't support toLocaleString options at present
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      timeZoneName: 'short'
+    });
   },
   getInitialState: function() {
     return {
       versionsMenuIsOpen: false
     };
+  },
+  getVersionsMenu: function() {
+    if (this.props.versions) {
+      return this.props.versions.map(function(version) {
+        return (
+          <button type="button" className="button-invisible" onMouseUp={function(){}}>
+            {this.getDateForVersion(version)}
+          </button>
+        );
+      }, this)
+    } else {
+      return (
+        <button type="button" className="button-invisible">
+          Loading…
+        </button>
+      );
+    }
   },
   cancel: function() {
     this.props.onCancelClick();
@@ -44,9 +73,7 @@ return React.createClass({
               onItemClick={this.toggleVersionsMenu}
               className="popup-dropdown-menu-above"
             >
-              <button type="button" className="button-invisible" onMouseUp={function(){}}>
-                Current version
-              </button>
+              {this.getVersionsMenu()}
             </BehaviorEditorDropdownMenu>
           </div>
           <div className="mtl">

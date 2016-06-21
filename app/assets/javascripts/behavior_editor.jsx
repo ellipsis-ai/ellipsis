@@ -226,6 +226,10 @@ return React.createClass({
     );
   },
 
+  getVersions: function() {
+    return this.state.versions;
+  },
+
   /* Setters/togglers */
 
   addParam: function() {
@@ -281,6 +285,27 @@ return React.createClass({
     this.setBehaviorProp('triggers', triggers);
   },
 
+  loadVersions: function() {
+    var url = '/version_info/' + encodeURIComponent(this.props.behaviorId);
+    this.setState({
+      versionsLoadStatus: 'loading'
+    });
+    fetch(url, { credentials: 'same-origin' })
+      .then(function(response) {
+        return response.json();
+      }).then(function(json) {
+        this.setState({
+          versions: json,
+          versionsLoadStatus: 'loaded'
+        });
+      }.bind(this)).catch(function(ex) {
+        // TODO: figure out what to do if there's a request error; for now clear user-visible errors
+        this.setState({
+          versionsLoadStatus: 'error'
+        });
+      });
+  },
+
   hideActivePanel: function() {
     this.setState({
       activePanel: null
@@ -299,6 +324,9 @@ return React.createClass({
   },
 
   showVersions: function() {
+    if (!this.versionsMaybeLoaded()) {
+      this.loadVersions();
+    }
     this.setState({
       activePanel: { name: 'versionHistory', modal: true }
     });
@@ -482,6 +510,9 @@ return React.createClass({
     });
   },
 
+  versionsMaybeLoaded: function() {
+    return this.state.versionsLoadStatus === 'loading' || this.state.versionsLoadStatus === 'loaded';
+  },
 
   /* Interaction and event handling */
 
@@ -554,7 +585,9 @@ return React.createClass({
       envVariableNames: this.props.envVariableNames || [],
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
-      hasModifiedTemplate: !!this.props.responseTemplate
+      hasModifiedTemplate: !!this.props.responseTemplate,
+      versions: null,
+      versionsLoadStatus: null
     };
   },
 
@@ -842,7 +875,10 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={this.getActivePanel() === 'versionHistory'}>
-            <BehaviorEditorVersionsPanel onCancelClick={this.hideActivePanel} />
+            <BehaviorEditorVersionsPanel
+              onCancelClick={this.hideActivePanel}
+              versions={this.getVersions()}
+            />
           </Collapsible>
 
           <Collapsible revealWhen={!this.hasModalPanel()}>
