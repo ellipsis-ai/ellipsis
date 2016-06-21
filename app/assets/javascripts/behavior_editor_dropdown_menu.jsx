@@ -8,7 +8,7 @@ return React.createClass({
     return (
       <div className="position-relative">
         <ul className={
-          "popup popup-dropdown-menu popup-dropdown-menu-right " +
+          "type-s popup popup-dropdown-menu popup-dropdown-menu-right " +
           (this.props.className || "") +
           this.visibleWhen(this.props.isVisible)
         }>

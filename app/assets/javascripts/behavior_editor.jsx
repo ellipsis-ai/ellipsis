@@ -21,6 +21,7 @@ var React = require('react'),
   BehaviorEditorTriggerOptionsHelp = require('./behavior_editor_trigger_options_help'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
+  BehaviorEditorVersionsPanel = require('./behavior_editor_versions_panel'),
   Collapsible = require('./collapsible'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input'),
   BrowserUtils = require('./browser_utils'),
@@ -297,6 +298,12 @@ return React.createClass({
     this.setState({ behavior: newData }, callback);
   },
 
+  showVersions: function() {
+    this.setState({
+      activePanel: { name: 'versionHistory', modal: true }
+    });
+  },
+
   toggleActiveDropdown: function(name) {
     var alreadyOpen = this.getActiveDropdown() === name;
     this.setState({
@@ -339,6 +346,7 @@ return React.createClass({
 
   toggleManageBehaviorMenu: function() {
     this.toggleActiveDropdown('manageBehavior');
+    this.refs.manageBehaviorDropdownTrigger.blur();
   },
 
   toggleTriggerHelp: function() {
@@ -567,6 +575,7 @@ return React.createClass({
 
             <div className="column column-shrink ptl align-r">
               <BehaviorEditorDropdownTrigger
+                ref="manageBehaviorDropdownTrigger"
                 onClick={this.toggleManageBehaviorMenu}
                 openWhen={this.getActiveDropdown() === 'manageBehavior'}
               >
@@ -576,6 +585,9 @@ return React.createClass({
                 isVisible={this.getActiveDropdown() === 'manageBehavior'}
                 onItemClick={this.toggleManageBehaviorMenu}
               >
+                <button type="button" className="button-invisible" onMouseUp={this.showVersions}>
+                  Review/restore previous versions
+                </button>
                 <button type="button" className="button-invisible" onMouseUp={this.confirmDeleteBehavior}>
                   Delete behavior
                 </button>
@@ -826,6 +838,10 @@ return React.createClass({
               expandEnvVariables={this.state.expandEnvVariables}
               onCollapseClick={this.toggleBoilerplateHelp}
             />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'versionHistory'}>
+            <BehaviorEditorVersionsPanel onCancelClick={this.hideActivePanel} />
           </Collapsible>
 
           <Collapsible revealWhen={!this.hasModalPanel()}>

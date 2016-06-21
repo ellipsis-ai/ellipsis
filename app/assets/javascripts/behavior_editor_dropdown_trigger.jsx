@@ -7,6 +7,10 @@ return React.createClass({
   },
 
   onMouseUp: function() {
+    this.blur();
+  },
+
+  blur: function() {
     this.refs.button.blur();
   },
 

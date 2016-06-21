@@ -23,7 +23,7 @@
 @border-radius: 8px;
 @border-radius-small: 6px;
 
-@dropdown-menu-width: 12em;
+@dropdown-menu-width: 12 * @type-m;
 
 /* Colors */
 @black: hsl(231, 15%, 15%);
@@ -1136,9 +1136,13 @@ button.button-subtle {
 }
 
 button.button-invisible {
+  font-size: @type-s;
+  line-height: @l;
   border-color: transparent !important;
   color: inherit;
   text-align: left;
+  height: auto;
+  min-height: 40px;
 }
 
 button:focus {
