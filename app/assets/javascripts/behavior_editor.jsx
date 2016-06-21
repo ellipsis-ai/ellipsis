@@ -213,6 +213,10 @@ return React.createClass({
     }
   },
 
+  getTimestampedBehavior: function(behavior) {
+    return ImmutableObjectUtils.objectWithNewValueAtKey(behavior, 'createdAt', Date.now());
+  },
+
   getUserParamTemplateHelp: function() {
     return (
       <div checkedWhen={this.templateIncludesParam()}>
@@ -295,11 +299,12 @@ return React.createClass({
         return response.json();
       }).then(function(json) {
         this.setState({
-          versions: json,
+          versions: this.state.versions.concat(json),
           versionsLoadStatus: 'loaded'
         });
+        this.refs.versionsPanel.reset();
       }.bind(this)).catch(function(ex) {
-        // TODO: figure out what to do if there's a request error; for now clear user-visible errors
+        // TODO: figure out what to do if there's a request error
         this.setState({
           versionsLoadStatus: 'error'
         });
@@ -319,8 +324,13 @@ return React.createClass({
   },
 
   setBehaviorProp: function(key, value, callback) {
-    var newData = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
-    this.setState({ behavior: newData }, callback);
+    var newBehavior = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
+    var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
+    var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
+    this.setState({
+      behavior: newBehavior,
+      versions: newVersions
+    }, callback);
   },
 
   showVersions: function() {
@@ -405,8 +415,12 @@ return React.createClass({
   },
 
   undoChanges: function() {
+    var newBehavior = this.getInitialState().behavior;
+    var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
+    var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     this.setState({
-      behavior: this.getInitialState().behavior,
+      behavior: newBehavior,
+      versions: newVersions,
       revealCodeEditor: this.shouldRevealCodeEditor()
     });
     this.hideActivePanel();
@@ -459,6 +473,11 @@ return React.createClass({
     return JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
   },
 
+  shouldFilterCurrentVersion: function() {
+    var firstTwoVersions = this.getVersions().slice(0, 2);
+    return firstTwoVersions.length === 2 && this.versionEqualsVersion(firstTwoVersions[0], firstTwoVersions[1]);
+  },
+
   shouldRevealCodeEditor: function() {
     return !!(this.props.shouldRevealCodeEditor || this.props.functionBody)
   },
@@ -508,6 +527,22 @@ return React.createClass({
     return this.getBehaviorTriggers().some(function(trigger) {
       return trigger.text.match(/{.+}/);
     });
+  },
+
+  versionEqualsVersion: function(version1, version2) {
+    var shallow1 = JSON.stringify({
+      functionBody: version1.functionBody,
+      responseTemplate: version1.responseTemplate,
+      params: version1.params,
+      triggers: version1.triggers
+    });
+    var shallow2 = JSON.stringify({
+      functionBody: version2.functionBody,
+      responseTemplate: version2.responseTemplate,
+      params: version2.params,
+      triggers: version2.triggers
+    });
+    return shallow1 === shallow2;
   },
 
   versionsMaybeLoaded: function() {
@@ -567,15 +602,16 @@ return React.createClass({
   },
 
   getInitialState: function() {
+    var initialBehavior = {
+      teamId: this.props.teamId,
+      behaviorId: this.props.behaviorId,
+      functionBody: this.props.functionBody,
+      responseTemplate: this.props.responseTemplate,
+      params: this.props.params,
+      triggers: this.getInitialTriggers()
+    };
     return {
-      behavior: {
-        teamId: this.props.teamId,
-        behaviorId: this.props.behaviorId,
-        functionBody: this.props.functionBody,
-        responseTemplate: this.props.responseTemplate,
-        params: this.props.params,
-        triggers: this.getInitialTriggers()
-      },
+      behavior: initialBehavior,
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
@@ -586,7 +622,7 @@ return React.createClass({
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate,
-      versions: null,
+      versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null
     };
   },
@@ -880,8 +916,10 @@ return React.createClass({
 
           <Collapsible revealWhen={this.getActivePanel() === 'versionHistory'}>
             <BehaviorEditorVersionsPanel
+              ref="versionsPanel"
               onCancelClick={this.hideActivePanel}
               versions={this.getVersions()}
+              shouldFilterCurrentVersion={this.shouldFilterCurrentVersion()}
             />
           </Collapsible>
 

@@ -10,10 +10,12 @@ return React.createClass({
     onCancelClick: React.PropTypes.func.isRequired
   },
   getVersionText: function(versionIndex) {
-    if (!this.props.versions || !this.props.versions[versionIndex]) {
+    if (versionIndex === 0 && this.props.versions.length === 1) {
       return "Loading…";
     } else if (versionIndex === 0) {
-      return "Current version";
+      return "Unsaved version";
+    } else if (versionIndex === 1) {
+      return "Last saved version";
     } else {
       return this.getDateForVersion(this.props.versions[versionIndex]);
     }
@@ -33,22 +35,32 @@ return React.createClass({
   },
   getInitialState: function() {
     return {
-      selectedVersionIndex: 0,
+      selectedVersionIndex: null,
       versionsMenuIsOpen: false
     };
   },
   getSelectedVersionIndex: function() {
-    return this.state.selectedVersionIndex;
+    if (this.state.selectedVersionIndex !== null) {
+      return this.state.selectedVersionIndex;
+    } else if (this.props.shouldFilterCurrentVersion) {
+      return 1;
+    } else {
+      return 0;
+    }
   },
   getVersionsMenu: function() {
     if (this.props.versions) {
       return this.props.versions.map(function(version, index) {
-        return (
-          <button key={"version" + index} type="button" className="button-invisible" onMouseUp={this.selectVersionIndex.bind(this, index)}>
-            <span className={"mrxs " + this.visibleWhen(this.getSelectedVersionIndex() === index)}>✓</span>
-            <span className={this.getSelectedVersionIndex() === index ? "type-bold" : ""}>{this.getVersionText(index)}</span>
-          </button>
-        );
+        if (index === 0 && this.props.shouldFilterCurrentVersion) {
+          return null;
+        } else {
+          return (
+            <button key={"version" + index} type="button" className="button-invisible" onMouseUp={this.selectVersionIndex.bind(this, index)}>
+              <span className={"mrxs " + this.visibleWhen(this.getSelectedVersionIndex() === index)}>✓</span>
+              <span className={this.getSelectedVersionIndex() === index ? "type-bold" : ""}>{this.getVersionText(index)}</span>
+            </button>
+          );
+        }
       }, this)
     } else {
       return (
@@ -60,6 +72,9 @@ return React.createClass({
   },
   cancel: function() {
     this.props.onCancelClick();
+    this.reset();
+  },
+  reset: function() {
     this.setState(this.getInitialState());
   },
   selectVersionIndex: function(index) {
@@ -72,7 +87,8 @@ return React.createClass({
     this.refs.versionListTrigger.blur();
   },
   currentVersionSelected: function() {
-    return this.getSelectedVersionIndex() === 0;
+    var selectedIndex = this.getSelectedVersionIndex();
+    return selectedIndex === 0 || (selectedIndex === 1 && this.props.shouldFilterCurrentVersion);
   },
   versionsMenuIsOpen: function() {
     return this.state.versionsMenuIsOpen
@@ -81,7 +97,7 @@ return React.createClass({
     return (
       <div className="box-action">
         <div className="container phn">
-          <span className="align-button mrs">Version:</span>
+          <span className="align-button mrs">View version:</span>
           <div className="display-inline-block position-relative">
             <BehaviorEditorDropdownTrigger
               ref="versionListTrigger"
@@ -99,9 +115,6 @@ return React.createClass({
               {this.getVersionsMenu()}
             </BehaviorEditorDropdownMenu>
           </div>
-          <button type="button" disabled={this.currentVersionSelected()} className="button-primary mrs">
-            View
-          </button>
           <button type="button" disabled={this.currentVersionSelected()} className="mrs">
             Restore
           </button>
