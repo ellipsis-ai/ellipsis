@@ -35,12 +35,14 @@ return React.createClass({
               ref="versionListTrigger"
               onClick={this.toggleVersionsMenu}
               openWhen={this.versionsMenuIsOpen()}
+              className="button-dropdown-trigger-menu-above"
             >
               Current version
             </BehaviorEditorDropdownTrigger>
             <BehaviorEditorDropdownMenu
               isVisible={this.versionsMenuIsOpen()}
               onItemClick={this.toggleVersionsMenu}
+              className="popup-dropdown-menu-above"
             >
               <button type="button" className="button-invisible" onMouseUp={function(){}}>
                 Current version

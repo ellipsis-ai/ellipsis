@@ -584,6 +584,7 @@ return React.createClass({
               <BehaviorEditorDropdownMenu
                 isVisible={this.getActiveDropdown() === 'manageBehavior'}
                 onItemClick={this.toggleManageBehaviorMenu}
+                className="popup-dropdown-menu-right"
               >
                 <button type="button" className="button-invisible" onMouseUp={this.showVersions}>
                   Review/restore previous versions
