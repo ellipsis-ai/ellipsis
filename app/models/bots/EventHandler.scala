@@ -5,7 +5,6 @@ import models.{Team, Models}
 import models.bots.builtins.BuiltinBehavior
 import models.bots.conversations.Conversation
 import play.api.i18n.MessagesApi
-import play.api.inject.ApplicationLifecycle
 import services.AWSLambdaService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -14,8 +13,7 @@ import slick.driver.PostgresDriver.api._
 @Singleton
 class EventHandler @Inject() (
                                lambdaService: AWSLambdaService,
-                               appLifecycle: ApplicationLifecycle,
-                               val models: Models,
+                               models: Models,
                                messages: MessagesApi
                                ) {
 
