@@ -37,7 +37,7 @@ object AWSLambdaLogResult {
         map(_.trim).
         filter(_.nonEmpty).
         map(s => """\n""".r.replaceAllIn(s, "\n\t")).
-        map(s => s"\nYou logged:\n\n\t$s").
+        map(s => s"\nYou logged:\n\n\t$s\n").
         mkString("")
     }.getOrElse("")
   }
