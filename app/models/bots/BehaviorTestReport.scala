@@ -37,9 +37,10 @@ case class BehaviorTestReportOutput(
 case class BehaviorTestReport  (
                                event: TestEvent,
                                behaviorVersion: BehaviorVersion,
-                               maybeActivatedTrigger: Option[MessageTrigger],
                                maybeBehaviorResponse: Option[BehaviorResponse]
                                ) {
+
+  val maybeActivatedTrigger = maybeBehaviorResponse.map(_.activatedTrigger)
 
   def messages: Array[String] = event.context.messageBuffer.toArray
 

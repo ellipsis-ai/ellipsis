@@ -2,6 +2,7 @@ package models.bots.conversations
 
 import models.IDs
 import models.bots._
+import models.bots.triggers.MessageTrigger
 import org.joda.time.DateTime
 import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.driver.PostgresDriver.api._
@@ -9,7 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class InvokeBehaviorConversation(
                                       id: String,
-                                      behaviorVersion: BehaviorVersion,
+                                      trigger: MessageTrigger,
                                       context: String, // Slack, etc
                                       userIdForContext: String, // id for Slack, etc user
                                       startedAt: DateTime,
@@ -97,7 +98,7 @@ case class InvokeBehaviorConversation(
     paramInfo.flatMap { info =>
       state match {
         case COLLECT_PARAM_VALUES_STATE => DBIO.successful(sendPromptFor(event, info))
-        case DONE_STATE => BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap).map(_.runCode(lambdaService))
+        case DONE_STATE => BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger).map(_.runCode(lambdaService))
       }
     }
 
@@ -112,9 +113,10 @@ object InvokeBehaviorConversation {
   def createFor(
                  behaviorVersion: BehaviorVersion,
                  context: String,
-                 userIdForContext: String
+                 userIdForContext: String,
+                 activatedTrigger: MessageTrigger
                  ): DBIO[InvokeBehaviorConversation] = {
-    val newInstance = InvokeBehaviorConversation(IDs.next, behaviorVersion, context, userIdForContext, DateTime.now, Conversation.NEW_STATE)
+    val newInstance = InvokeBehaviorConversation(IDs.next, activatedTrigger, context, userIdForContext, DateTime.now, Conversation.NEW_STATE)
     newInstance.save.map(_ => newInstance)
   }
 }

@@ -13,19 +13,12 @@ class BehaviorTestReportBuilder @Inject() (lambdaService: AWSLambdaService) {
 
   def buildFor(event: TestEvent, behaviorVersion: BehaviorVersion): DBIO[BehaviorTestReport] = {
     for {
-      triggers <- MessageTriggerQueries.allFor(behaviorVersion)
-      maybeActivatedTrigger <- DBIO.successful(triggers.find(_.isActivatedBy(event)))
-      maybeResponse <- maybeActivatedTrigger.map { trigger =>
-        for {
-          params <- BehaviorParameterQueries.allFor(trigger.behaviorVersion)
-          response <- BehaviorResponse.buildFor(event, trigger.behaviorVersion, trigger.invocationParamsFor(event, params))
-        } yield Some(response)
-      }.getOrElse(DBIO.successful(None))
+      maybeResponse <- BehaviorResponse.chooseFor(event, None, Some(behaviorVersion.behavior))
       _ <- maybeResponse.map { behaviorResponse =>
         behaviorResponse.run(lambdaService)
       }.getOrElse(DBIO.successful(Unit))
     } yield {
-      BehaviorTestReport(event, behaviorVersion, maybeActivatedTrigger, maybeResponse)
+      BehaviorTestReport(event, behaviorVersion, maybeResponse)
     }
   }
 
