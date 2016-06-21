@@ -53,7 +53,7 @@ case class SlackContext(
     client.apiClient.postChatMessage(message.channel, formattedText)
   }
 
-  def recentMessages: DBIO[Seq[String]] = {
+  override def recentMessages: DBIO[Seq[String]] = {
     for {
       maybeTeam <- Team.find(profile.teamId)
       maybeOAuthToken <- OAuth2Token.maybeFullForSlackTeamId(profile.slackTeamId)

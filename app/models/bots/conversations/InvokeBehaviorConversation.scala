@@ -49,7 +49,7 @@ case class InvokeBehaviorConversation(
     } yield ParamInfo(params, collected)
   }
 
-  private def collectParamValueFrom(event: SlackMessageEvent, info: ParamInfo): DBIO[Conversation] = {
+  private def collectParamValueFrom(event: MessageEvent, info: ParamInfo): DBIO[Conversation] = {
     for {
       _ <- info.maybeNextToCollect.map { param =>
         CollectedParameterValue(param, this, event.context.relevantMessageText).save
@@ -68,7 +68,7 @@ case class InvokeBehaviorConversation(
     import InvokeBehaviorConversation._
 
     event match {
-      case e: SlackMessageEvent => {
+      case e: MessageEvent => {
         paramInfo.flatMap { info =>
           state match {
             case NEW_STATE => updateStateTo(COLLECT_PARAM_VALUES_STATE)
