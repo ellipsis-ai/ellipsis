@@ -27,7 +27,12 @@ case class TestMessageContext(fullMessageText: String, includesBotMention: Boole
 
 case class TestEvent(context: TestMessageContext) extends MessageEvent
 
-case class BehaviorTestReportOutput(activatedTrigger: String, paramValues: Map[String, String], responseMessage: String)
+case class BehaviorTestReportOutput(
+                                     message: String,
+                                     activatedTrigger: String,
+                                     paramValues: Map[String, String],
+                                     responseMessage: String
+                                     )
 
 case class BehaviorTestReport  (
                                event: TestEvent,
@@ -48,6 +53,7 @@ case class BehaviorTestReport  (
 
   def json: JsValue = {
     val data = BehaviorTestReportOutput(
+      event.context.fullMessageText,
       maybeActivatedTrigger.map(_.pattern).getOrElse("<no match>"),
       paramValues,
       messages.headOption.getOrElse("<no response>")
