@@ -7,7 +7,9 @@ var React = require('react'),
 return React.createClass({
   mixins: [BehaviorEditorMixin],
   propTypes: {
-    onCancelClick: React.PropTypes.func.isRequired
+    onCancelClick: React.PropTypes.func.isRequired,
+    onRestoreClick: React.PropTypes.func.isRequired,
+    onSwitchVersions: React.PropTypes.func.isRequired
   },
   getVersionText: function(versionIndex) {
     if (versionIndex === 0 && this.props.versions.length === 1) {
@@ -77,8 +79,12 @@ return React.createClass({
   reset: function() {
     this.setState(this.getInitialState());
   },
+  restore: function() {
+    this.props.onRestoreClick(this.getSelectedVersionIndex())
+  },
   selectVersionIndex: function(index) {
     this.setState({ selectedVersionIndex: index });
+    this.props.onSwitchVersions(index);
   },
   toggleVersionsMenu: function() {
     this.setState({
@@ -115,7 +121,7 @@ return React.createClass({
               {this.getVersionsMenu()}
             </BehaviorEditorDropdownMenu>
           </div>
-          <button type="button" disabled={this.currentVersionSelected()} className="mrs">
+          <button type="button" disabled={this.currentVersionSelected()} className="mrs" onClick={this.restore}>
             Restore
           </button>
           <button type="button" onClick={this.cancel}>Cancel</button>

@@ -251,6 +251,11 @@ return React.createClass({
     this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), this.focusOnFirstBlankTrigger);
   },
 
+  cancelVersionPanel: function() {
+    this.hideActivePanel();
+    this.showVersionIndex(0);
+  },
+
   confirmDeleteBehavior: function() {
     this.setState({
       activePanel: { name: 'confirmDeleteBehavior', modal: true }
@@ -321,6 +326,25 @@ return React.createClass({
     this.setState({
       isSaving: true
     });
+  },
+
+  showVersionIndex: function(versionIndex) {
+    var version = this.getVersions()[versionIndex];
+    this.setState({
+      behavior: {
+        teamId: this.props.teamId,
+        behaviorId: this.props.behaviorId,
+        functionBody: version.functionBody,
+        responseTemplate: version.responseTemplate,
+        params: version.params,
+        triggers: version.triggers
+      }
+    });
+  },
+
+  restoreVersionIndex: function(versionIndex) {
+    // TODO
+    console.log('restoreVersionIndex', versionIndex);
   },
 
   setBehaviorProp: function(key, value, callback) {
@@ -917,7 +941,9 @@ return React.createClass({
           <Collapsible revealWhen={this.getActivePanel() === 'versionHistory'}>
             <BehaviorEditorVersionsPanel
               ref="versionsPanel"
-              onCancelClick={this.hideActivePanel}
+              onCancelClick={this.cancelVersionPanel}
+              onRestoreClick={this.restoreVersionIndex}
+              onSwitchVersions={this.showVersionIndex}
               versions={this.getVersions()}
               shouldFilterCurrentVersion={this.shouldFilterCurrentVersion()}
             />
