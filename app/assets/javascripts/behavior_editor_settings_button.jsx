@@ -3,9 +3,14 @@ var React = require('react');
 
 return React.createClass({
   displayName: 'BehaviorEditorSettingsButton',
-  onMouseDown: function() {
+
+  blur: function() {
     this.refs.button.blur();
+  },
+
+  onMouseDown: function() {
     this.props.onClick();
+    window.setTimeout(function() { this.blur() }.bind(this), 1);
   },
 
   render: function() {

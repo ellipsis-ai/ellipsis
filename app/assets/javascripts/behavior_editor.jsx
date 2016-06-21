@@ -768,7 +768,11 @@ return React.createClass({
                     onClick={this.toggleEditorSettingsMenu}
                     buttonActive={this.getActiveDropdown() === 'codeEditorSettings'}
                   />
-                  <BehaviorEditorDropdownMenu className="popup-dropdown-menu-overlay" isVisible={this.getActiveDropdown() === 'codeEditorSettings'} onItemClick={this.toggleEditorSettingsMenu}>
+                  <BehaviorEditorDropdownMenu
+                    className="popup-dropdown-menu-right popup-dropdown-menu-overlay"
+                    isVisible={this.getActiveDropdown() === 'codeEditorSettings'}
+                    onItemClick={this.toggleEditorSettingsMenu}
+                  >
                     <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
                       <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
                       <span> Enable line wrap</span>
