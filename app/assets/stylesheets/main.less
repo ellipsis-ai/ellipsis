@@ -1160,7 +1160,7 @@ button.button-subtle {
   color: inherit;
 }
 
-button.button-invisible {
+button.button-dropdown-item {
   font-size: @type-s;
   line-height: @l;
   border-color: transparent !important;
@@ -1177,11 +1177,12 @@ button:focus {
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
 }
 
-button.button-invisible:focus {
+button.button-dropdown-item:focus {
   background-color: @blue-lightest;
 }
 
-button.button-invisible:hover {
+button.button-dropdown-item:hover,
+button.button-dropdown-item-hover {
   background-color: @blue-lightest;
 }
 

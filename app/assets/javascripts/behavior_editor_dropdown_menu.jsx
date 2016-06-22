@@ -13,14 +13,14 @@ return React.createClass({
   },
   toggle: function() {
     this.props.toggle();
-    this.blur();
   },
 
   onMouseDown: function() {
     this.toggle();
   },
 
-  onMouseUp: function() {
+  onItemMouseUp: function() {
+    this.toggle();
     this.blur();
   },
 
@@ -30,6 +30,11 @@ return React.createClass({
     if (event.which === ENTER || event.which === SPACEBAR) {
       this.toggle();
     }
+  },
+
+  onItemKeyPress: function(event) {
+    this.onKeyPress(event);
+    this.blur();
   },
 
   blur: function() {
@@ -46,7 +51,6 @@ return React.createClass({
           }
           ref="button"
           onMouseDown={this.onMouseDown}
-          onMouseUp={this.onMouseUp}
           onKeyPress={this.onKeyPress}
         >
           {this.props.label}
@@ -58,7 +62,7 @@ return React.createClass({
             (this.props.openWhen ? " fade-in " : " display-none ")
           }>
             {React.Children.map(this.props.children, function(child) {
-              return (<li onMouseUp={this.toggle} onKeyPress={this.onKeyPress}>{child}</li>);
+              return (<li onMouseUp={this.onItemMouseUp} onKeyPress={this.onItemKeyPress}>{child}</li>);
             }, this)}
           </ul>
         </div>

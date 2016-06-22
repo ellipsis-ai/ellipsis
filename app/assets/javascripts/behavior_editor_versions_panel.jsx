@@ -1,7 +1,8 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu');
+  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
+  BehaviorEditorDropdownMenuItem = require('./behavior_editor_dropdown_menu_item');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
@@ -57,18 +58,18 @@ return React.createClass({
           return null;
         } else {
           return (
-            <button key={"version" + index} type="button" className="button-invisible" onMouseUp={this.selectVersionIndex.bind(this, index)}>
-              <span className={"mrxs " + this.visibleWhen(this.getSelectedVersionIndex() === index)}>✓</span>
-              <span className={this.getSelectedVersionIndex() === index ? "type-bold" : ""}>{this.getVersionText(index)}</span>
-            </button>
+            <BehaviorEditorDropdownMenuItem
+              key={"version" + index}
+              onClick={this.selectVersionIndex.bind(this, index)}
+              checkedWhen={this.getSelectedVersionIndex() === index}
+              label={this.getVersionText(index)}
+            />
           );
         }
       }, this)
     } else {
       return (
-        <button type="button" className="button-invisible">
-          Loading…
-        </button>
+        <BehaviorEditorDropdownMenuItem label="Loading…" />
       );
     }
   },
