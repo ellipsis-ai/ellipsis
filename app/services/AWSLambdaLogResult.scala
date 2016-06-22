@@ -1,6 +1,17 @@
 package services
 
-case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, maybeError: Option[String])
+case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, maybeError: Option[String]) {
+
+  def maybeTranslated: Option[String] = {
+    maybeError.map { error =>
+      var translated = error
+      translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
+      translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
+      translated
+    }
+  }
+
+}
 
 object AWSLambdaLogResult {
 
@@ -12,7 +23,7 @@ object AWSLambdaLogResult {
     val extractErrorRegex = """(?s)(.*\n)\S+\t\S+\t(\S*Error:.*)\n[^\n]*\nEND.*""".r
     extractErrorRegex.findFirstMatchIn(text).foreach { m =>
       nonErrorContent = m.subgroups.head
-      maybeErrorContent = m.subgroups.tail.headOption.map(s => s"```$s```")
+      maybeErrorContent = m.subgroups.tail.headOption.map(s => s"\t$s")
     }
     (maybeErrorContent, nonErrorContent)
   }
@@ -24,8 +35,9 @@ object AWSLambdaLogResult {
     }.map { strings =>
       strings.
         map(_.trim).
-        filter(_.nonEmpty)
-        .map(s => s"You logged: ```$s```\n").
+        filter(_.nonEmpty).
+        map(s => """\n""".r.replaceAllIn(s, "\n\t")).
+        map(s => s"\nYou logged:\n\n\t$s\n").
         mkString("")
     }.getOrElse("")
   }

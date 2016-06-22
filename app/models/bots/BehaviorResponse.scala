@@ -1,8 +1,8 @@
 package models.bots
 
 import models.Team
-import models.bots.conversations.InvokeBehaviorConversation
-import models.bots.triggers.MessageTriggerQueries
+import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
+import models.bots.triggers.{MessageTrigger, MessageTriggerQueries}
 import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,7 +15,8 @@ case class ParameterWithValue(parameter: BehaviorParameter, invocationName: Stri
 case class BehaviorResponse(
                              event: Event,
                              behaviorVersion: BehaviorVersion,
-                             parametersWithValues: Seq[ParameterWithValue]
+                             parametersWithValues: Seq[ParameterWithValue],
+                             activatedTrigger: MessageTrigger
                              ) {
 
   def isFilledOut: Boolean = {
@@ -23,7 +24,7 @@ case class BehaviorResponse(
   }
 
   def runCode(service: AWSLambdaService): Future[Unit] = {
-    behaviorVersion.resultFor(parametersWithValues, service).map { result =>
+    behaviorVersion.unformattedResultFor(parametersWithValues, service).map { result =>
       event.context.sendMessage(result)
     }
   }
@@ -33,7 +34,12 @@ case class BehaviorResponse(
       DBIO.from(runCode(service))
     } else {
       for {
-        convo <- InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext)
+        convo <- InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext, activatedTrigger)
+        _ <- DBIO.sequence(parametersWithValues.map { p =>
+          p.maybeValue.map { v =>
+            CollectedParameterValue(p.parameter, convo, v).save
+          }.getOrElse(DBIO.successful(Unit))
+        })
         _ <- convo.replyFor(event, service)
       } yield Unit
     }
@@ -42,26 +48,40 @@ case class BehaviorResponse(
 
 object BehaviorResponse {
 
-  def buildFor(event: Event, behaviorVersion: BehaviorVersion, paramValues: Map[String, String]): DBIO[BehaviorResponse] = {
+  def buildFor(
+                event: Event,
+                behaviorVersion: BehaviorVersion,
+                paramValues: Map[String, String],
+                activatedTrigger: MessageTrigger
+                ): DBIO[BehaviorResponse] = {
     BehaviorParameterQueries.allFor(behaviorVersion).map { params =>
       val paramsWithValues = params.zipWithIndex.map { case (ea, i) =>
         val invocationName = AWSLambdaConstants.invocationParamFor(i)
         ParameterWithValue(ea, invocationName, paramValues.get(invocationName))
       }
-      BehaviorResponse(event, behaviorVersion, paramsWithValues)
+      BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger)
     }
   }
 
-  def allFor(event: Event, team: Team): DBIO[Seq[BehaviorResponse]] = {
+  def chooseFor(event: Event, maybeTeam: Option[Team], maybeLimitToBehavior: Option[Behavior]): DBIO[Option[BehaviorResponse]] = {
     for {
-      triggers <- MessageTriggerQueries.allActiveFor(team)
-      activated <- DBIO.successful(triggers.filter(_.isActivatedBy(event)))
-      responses <- DBIO.sequence(activated.map { trigger =>
+      maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
+        limitToBehavior.maybeCurrentVersion
+      }.getOrElse(DBIO.successful(None))
+      triggers <- maybeLimitToBehaviorVersion.map { limitToBehaviorVersion =>
+        MessageTriggerQueries.allFor(limitToBehaviorVersion)
+      }.getOrElse {
+        maybeTeam.map { team =>
+          MessageTriggerQueries.allActiveFor(team)
+        }.getOrElse(DBIO.successful(Seq()))
+      }
+      maybeActivatedTrigger <- DBIO.successful(triggers.find(_.isActivatedBy(event)))
+      maybeResponse <- maybeActivatedTrigger.map { trigger =>
         for {
           params <- BehaviorParameterQueries.allFor(trigger.behaviorVersion)
-          response <- BehaviorResponse.buildFor(event, trigger.behaviorVersion, trigger.invocationParamsFor(event, params))
-        } yield response
-      })
-    } yield responses
+          response <- BehaviorResponse.buildFor(event, trigger.behaviorVersion, trigger.invocationParamsFor(event, params), trigger)
+        } yield Some(response)
+      }.getOrElse(DBIO.successful(None))
+    } yield maybeResponse
   }
 }

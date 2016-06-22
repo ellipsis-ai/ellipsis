@@ -27,7 +27,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
 
   def invoke(behaviorVersion: BehaviorVersion, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
     if (behaviorVersion.functionBody.isEmpty) {
-      Future.successful(behaviorVersion.successResultStringFor(JsNull, parametersWithValues))
+      Future.successful(behaviorVersion.unformattedSuccessResultStringFor(JsNull, parametersWithValues))
     } else {
       val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
       val payloadJson = JsObject(
@@ -49,7 +49,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
       JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
         val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
         val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
-        behaviorVersion.resultStringFor(result.getPayload, logResult, parametersWithValues)
+        behaviorVersion.unformattedResultStringFor(result.getPayload, logResult, parametersWithValues)
       }
     }
   }
@@ -72,9 +72,10 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
       s"""\n${params.map(ea => ea ++ ",").mkString("\n")}\n"""
     }
     val definitionBuiltinParamsString = (HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")
+    val possibleEndOfParamsNewline = if (params.isEmpty) { "" } else { "\n" }
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = function($definitionUserParamsString$definitionBuiltinParamsString) {
+    s"""exports.handler = function(event, context, callback) { var fn = function($definitionUserParamsString$definitionBuiltinParamsString$possibleEndOfParamsNewline) {
       |     $functionBody
       |   };
       |   var $ON_SUCCESS_PARAM = function(result) {

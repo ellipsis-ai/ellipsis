@@ -82,10 +82,13 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
     link.getFirstChild match {
       case e: Text => {
         if (e.getLiteral == link.getDestination) {
-          stringBuilder.append(link.getDestination)
+          stringBuilder.append(s"<${link.getDestination}>")
         } else {
+          stringBuilder.append("<")
+          stringBuilder.append(s"${link.getDestination}")
+          stringBuilder.append("|")
           visitChildren(link)
-          stringBuilder.append(s" (${link.getDestination}) ")
+          stringBuilder.append(">")
         }
       }
       case _ => visitChildren(link)
@@ -116,8 +119,12 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(paragraph: Paragraph) {
+    paragraph.getParent match {
+      case li: ListItem =>
+      case _ => stringBuilder.append("\r")
+    }
     visitChildren(paragraph)
-    stringBuilder.append("\r\r")
+    stringBuilder.append("\r")
   }
 
   override def visit(softLineBreak: SoftLineBreak) {
