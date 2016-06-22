@@ -1,8 +1,7 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
-  BehaviorEditorDropdownTrigger = require('./behavior_editor_dropdown_trigger');
+  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
@@ -92,7 +91,7 @@ return React.createClass({
     this.setState({
       versionsMenuIsOpen: !this.state.versionsMenuIsOpen
     });
-    this.refs.versionListTrigger.blur();
+    this.refs.versionListMenu.blur();
   },
   currentVersionSelected: function() {
     var selectedIndex = this.getSelectedVersionIndex();
@@ -107,18 +106,13 @@ return React.createClass({
         <div className="container phn">
           <span className="align-button mrs">View version:</span>
           <div className="display-inline-block position-relative">
-            <BehaviorEditorDropdownTrigger
-              ref="versionListTrigger"
-              onClick={this.toggleVersionsMenu}
-              openWhen={this.versionsMenuIsOpen()}
-              className="button-dropdown-trigger-menu-above button-dropdown-trigger-wide mrs"
-            >
-              {this.getVersionText(this.getSelectedVersionIndex())}
-            </BehaviorEditorDropdownTrigger>
             <BehaviorEditorDropdownMenu
-              isVisible={this.versionsMenuIsOpen()}
-              onItemClick={this.toggleVersionsMenu}
-              className="popup-dropdown-menu-above popup-dropdown-menu-wide"
+              ref="versionListMenu"
+              openWhen={this.versionsMenuIsOpen()}
+              label={this.getVersionText(this.getSelectedVersionIndex())}
+              labelClassName="button-dropdown-trigger-menu-above button-dropdown-trigger-wide mrs"
+              menuClassName="popup-dropdown-menu-above popup-dropdown-menu-wide"
+              toggle={this.toggleVersionsMenu}
             >
               {this.getVersionsMenu()}
             </BehaviorEditorDropdownMenu>
