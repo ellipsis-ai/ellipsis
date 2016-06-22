@@ -50,7 +50,7 @@ case class SlackContext(
 
   def sendMessage(unformattedText: String)(implicit ec: ExecutionContext): Unit = {
     val formattedText = slackFormattedBodyTextFor(unformattedText)
-    client.apiClient.postChatMessage(message.channel, formattedText)
+    client.apiClient.postChatMessage(message.channel, formattedText, asUser = Some(true))
   }
 
   override def recentMessages: DBIO[Seq[String]] = {
