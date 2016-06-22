@@ -1191,17 +1191,22 @@ button.button-dropdown-trigger-menu-open {
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
   padding-right: 33px - @border-width-thick;
   background-color: white;
-  color: @gray-medium;
   border-width: @border-width-thick;
-  border-color: @border-color;
+  border-color: @gray-medium;
   &::before {
+    top: 11px - @border-width-thick;
     right: 19px - @border-width-thick;
   }
 }
 
 button.button-dropdown-trigger-menu-open {
+  color: @gray-medium;
+  border-color: @border-color;
   border-radius: @border-radius @border-radius 0 0;
   border-bottom-width: 0 !important;
+  &::before {
+    top: 11px - @border-width;
+  }
 }
 
 button.button-dropdown-trigger-menu-above.button-dropdown-trigger-menu-open {
