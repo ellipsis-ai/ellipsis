@@ -16,11 +16,12 @@ var React = require('react'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
   BehaviorEditorInput = require('./behavior_editor_input'),
   BehaviorEditorSectionHeading = require('./behavior_editor_section_heading'),
-  BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
   BehaviorEditorTriggerHelp = require('./behavior_editor_trigger_help'),
   BehaviorEditorTriggerOptionsHelp = require('./behavior_editor_trigger_options_help'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
+  BehaviorEditorVersionsPanel = require('./behavior_editor_versions_panel'),
+  SVGSettingsIcon = require('./svg/settings'),
   Collapsible = require('./collapsible'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input'),
   BrowserUtils = require('./browser_utils'),
@@ -212,6 +213,10 @@ return React.createClass({
     }
   },
 
+  getTimestampedBehavior: function(behavior) {
+    return ImmutableObjectUtils.objectWithNewValueAtKey(behavior, 'createdAt', Date.now());
+  },
+
   getUserParamTemplateHelp: function() {
     return (
       <div checkedWhen={this.templateIncludesParam()}>
@@ -223,6 +228,10 @@ return React.createClass({
         </div>
       </div>
     );
+  },
+
+  getVersions: function() {
+    return this.state.versions;
   },
 
   /* Setters/togglers */
@@ -240,6 +249,11 @@ return React.createClass({
 
   addTrigger: function() {
     this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), this.focusOnFirstBlankTrigger);
+  },
+
+  cancelVersionPanel: function() {
+    this.hideActivePanel();
+    this.showVersionIndex(0);
   },
 
   confirmDeleteBehavior: function() {
@@ -280,6 +294,28 @@ return React.createClass({
     this.setBehaviorProp('triggers', triggers);
   },
 
+  loadVersions: function() {
+    var url = '/version_info/' + encodeURIComponent(this.props.behaviorId);
+    this.setState({
+      versionsLoadStatus: 'loading'
+    });
+    fetch(url, { credentials: 'same-origin' })
+      .then(function(response) {
+        return response.json();
+      }).then(function(json) {
+        this.setState({
+          versions: this.state.versions.concat(json),
+          versionsLoadStatus: 'loaded'
+        });
+        this.refs.versionsPanel.reset();
+      }.bind(this)).catch(function(ex) {
+        // TODO: figure out what to do if there's a request error
+        this.setState({
+          versionsLoadStatus: 'error'
+        });
+      });
+  },
+
   hideActivePanel: function() {
     this.setState({
       activePanel: null
@@ -292,9 +328,43 @@ return React.createClass({
     });
   },
 
+  showVersionIndex: function(versionIndex, optionalCallback) {
+    var version = this.getVersions()[versionIndex];
+    this.setState({
+      behavior: {
+        teamId: this.props.teamId,
+        behaviorId: this.props.behaviorId,
+        functionBody: version.functionBody,
+        responseTemplate: version.responseTemplate,
+        params: version.params,
+        triggers: version.triggers
+      }
+    }, optionalCallback);
+  },
+
+  restoreVersionIndex: function(versionIndex) {
+    this.showVersionIndex(versionIndex, function() {
+      this.refs.behaviorForm.submit();
+    });
+  },
+
   setBehaviorProp: function(key, value, callback) {
-    var newData = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
-    this.setState({ behavior: newData }, callback);
+    var newBehavior = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
+    var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
+    var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
+    this.setState({
+      behavior: newBehavior,
+      versions: newVersions
+    }, callback);
+  },
+
+  showVersions: function() {
+    if (!this.versionsMaybeLoaded()) {
+      this.loadVersions();
+    }
+    this.setState({
+      activePanel: { name: 'versionHistory', modal: true }
+    });
   },
 
   toggleActiveDropdown: function(name) {
@@ -339,6 +409,7 @@ return React.createClass({
 
   toggleManageBehaviorMenu: function() {
     this.toggleActiveDropdown('manageBehavior');
+    this.refs.manageBehaviorDropdownTrigger.blur();
   },
 
   toggleTriggerHelp: function() {
@@ -369,8 +440,12 @@ return React.createClass({
   },
 
   undoChanges: function() {
+    var newBehavior = this.getInitialState().behavior;
+    var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
+    var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     this.setState({
-      behavior: this.getInitialState().behavior,
+      behavior: newBehavior,
+      versions: newVersions,
       revealCodeEditor: this.shouldRevealCodeEditor()
     });
     this.hideActivePanel();
@@ -420,7 +495,14 @@ return React.createClass({
   },
 
   isModified: function() {
-    return JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
+    var currentMatchesInitial = JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
+    var previewingVersions = this.getActivePanel() === 'versionHistory';
+    return currentMatchesInitial && !previewingVersions;
+  },
+
+  shouldFilterCurrentVersion: function() {
+    var firstTwoVersions = this.getVersions().slice(0, 2);
+    return firstTwoVersions.length === 2 && this.versionEqualsVersion(firstTwoVersions[0], firstTwoVersions[1]);
   },
 
   shouldRevealCodeEditor: function() {
@@ -474,6 +556,25 @@ return React.createClass({
     });
   },
 
+  versionEqualsVersion: function(version1, version2) {
+    var shallow1 = JSON.stringify({
+      functionBody: version1.functionBody,
+      responseTemplate: version1.responseTemplate,
+      params: version1.params,
+      triggers: version1.triggers
+    });
+    var shallow2 = JSON.stringify({
+      functionBody: version2.functionBody,
+      responseTemplate: version2.responseTemplate,
+      params: version2.params,
+      triggers: version2.triggers
+    });
+    return shallow1 === shallow2;
+  },
+
+  versionsMaybeLoaded: function() {
+    return this.state.versionsLoadStatus === 'loading' || this.state.versionsLoadStatus === 'loaded';
+  },
 
   /* Interaction and event handling */
 
@@ -528,15 +629,16 @@ return React.createClass({
   },
 
   getInitialState: function() {
+    var initialBehavior = {
+      teamId: this.props.teamId,
+      behaviorId: this.props.behaviorId,
+      functionBody: this.props.functionBody,
+      responseTemplate: this.props.responseTemplate,
+      params: this.props.params,
+      triggers: this.getInitialTriggers()
+    };
     return {
-      behavior: {
-        teamId: this.props.teamId,
-        behaviorId: this.props.behaviorId,
-        functionBody: this.props.functionBody,
-        responseTemplate: this.props.responseTemplate,
-        params: this.props.params,
-        triggers: this.getInitialTriggers()
-      },
+      behavior: initialBehavior,
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
@@ -546,7 +648,9 @@ return React.createClass({
       envVariableNames: this.props.envVariableNames || [],
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
-      hasModifiedTemplate: !!this.props.responseTemplate
+      hasModifiedTemplate: !!this.props.responseTemplate,
+      versions: [this.getTimestampedBehavior(initialBehavior)],
+      versionsLoadStatus: null
     };
   },
 
@@ -576,6 +680,7 @@ return React.createClass({
 
             <div className="column column-shrink ptl align-r">
               <BehaviorEditorDropdownTrigger
+                ref="manageBehaviorDropdownTrigger"
                 onClick={this.toggleManageBehaviorMenu}
                 openWhen={this.getActiveDropdown() === 'manageBehavior'}
               >
@@ -584,7 +689,11 @@ return React.createClass({
               <BehaviorEditorDropdownMenu
                 isVisible={this.getActiveDropdown() === 'manageBehavior'}
                 onItemClick={this.toggleManageBehaviorMenu}
+                className="popup-dropdown-menu-right"
               >
+                <button type="button" className="button-invisible" onMouseUp={this.showVersions}>
+                  View/restore previous versions
+                </button>
                 <button type="button" className="button-invisible" onMouseUp={this.confirmDeleteBehavior}>
                   Delete behavior
                 </button>
@@ -594,7 +703,7 @@ return React.createClass({
         </div>
       </div>
 
-      <form action="/save_behavior" method="POST">
+      <form action="/save_behavior" method="POST" ref="behaviorForm">
 
         <CsrfTokenHiddenInput
           value={this.props.csrfToken}
@@ -727,11 +836,18 @@ return React.createClass({
                   functionParams={this.getCodeFunctionParams()}
                 />
                 <div className="position-absolute position-top-right">
-                  <BehaviorEditorSettingsButton
+                  <BehaviorEditorDropdownTrigger
                     onClick={this.toggleEditorSettingsMenu}
-                    buttonActive={this.getActiveDropdown() === 'codeEditorSettings'}
-                  />
-                  <BehaviorEditorDropdownMenu className="popup-dropdown-menu-overlay" isVisible={this.getActiveDropdown() === 'codeEditorSettings'} onItemClick={this.toggleEditorSettingsMenu}>
+                    openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
+                    className="button-dropdown-trigger-symbol"
+                  >
+                    <SVGSettingsIcon label="Editor settings" />
+                  </BehaviorEditorDropdownTrigger>
+                  <BehaviorEditorDropdownMenu
+                    className="popup-dropdown-menu-right"
+                    isVisible={this.getActiveDropdown() === 'codeEditorSettings'}
+                    onItemClick={this.toggleEditorSettingsMenu}
+                  >
                     <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
                       <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
                       <span> Enable line wrap</span>
@@ -834,6 +950,17 @@ return React.createClass({
               onExpandToggle={this.toggleEnvVariableExpansion}
               expandEnvVariables={this.state.expandEnvVariables}
               onCollapseClick={this.toggleBoilerplateHelp}
+            />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'versionHistory'}>
+            <BehaviorEditorVersionsPanel
+              ref="versionsPanel"
+              onCancelClick={this.cancelVersionPanel}
+              onRestoreClick={this.restoreVersionIndex}
+              onSwitchVersions={this.showVersionIndex}
+              versions={this.getVersions()}
+              shouldFilterCurrentVersion={this.shouldFilterCurrentVersion()}
             />
           </Collapsible>
 

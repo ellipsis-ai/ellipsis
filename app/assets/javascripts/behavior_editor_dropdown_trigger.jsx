@@ -7,6 +7,10 @@ return React.createClass({
   },
 
   onMouseUp: function() {
+    this.blur();
+  },
+
+  blur: function() {
     this.refs.button.blur();
   },
 
@@ -15,7 +19,8 @@ return React.createClass({
       <button type="button"
         className={
           "button-dropdown-trigger position-z-popup-trigger " +
-          (this.props.openWhen ? "button-dropdown-trigger-menu-open" : "")
+          (this.props.openWhen ? " button-dropdown-trigger-menu-open " : "") +
+          (this.props.className || "")
         }
         ref="button"
         onMouseDown={this.onMouseDown}
