@@ -37,6 +37,7 @@ return React.createClass({
   },
   getInitialState: function() {
     return {
+      isRestoring: false,
       selectedVersionIndex: null,
       versionsMenuIsOpen: false
     };
@@ -80,6 +81,7 @@ return React.createClass({
     this.setState(this.getInitialState());
   },
   restore: function() {
+    this.setState({ isRestoring: true });
     this.props.onRestoreClick(this.getSelectedVersionIndex())
   },
   selectVersionIndex: function(index) {
@@ -121,8 +123,14 @@ return React.createClass({
               {this.getVersionsMenu()}
             </BehaviorEditorDropdownMenu>
           </div>
-          <button type="button" disabled={this.currentVersionSelected()} className="mrs" onClick={this.restore}>
-            Restore
+          <button type="button" disabled={this.currentVersionSelected()}
+            className={"mrs " + (this.state.isRestoring ? "button-activated" : "")}
+            onClick={this.restore}
+          >
+            <span className="button-labels">
+              <span className="button-normal-label">Restore</span>
+              <span className="button-activated-label">Restoring…</span>
+            </span>
           </button>
           <button type="button" onClick={this.cancel}>Cancel</button>
         </div>

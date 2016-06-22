@@ -16,12 +16,12 @@ var React = require('react'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
   BehaviorEditorInput = require('./behavior_editor_input'),
   BehaviorEditorSectionHeading = require('./behavior_editor_section_heading'),
-  BehaviorEditorSettingsButton = require('./behavior_editor_settings_button'),
   BehaviorEditorTriggerHelp = require('./behavior_editor_trigger_help'),
   BehaviorEditorTriggerOptionsHelp = require('./behavior_editor_trigger_options_help'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
   BehaviorEditorVersionsPanel = require('./behavior_editor_versions_panel'),
+  SVGSettingsIcon = require('./svg/settings'),
   Collapsible = require('./collapsible'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input'),
   BrowserUtils = require('./browser_utils'),
@@ -343,8 +343,7 @@ return React.createClass({
   },
 
   restoreVersionIndex: function(versionIndex) {
-    // TODO
-    console.log('restoreVersionIndex', versionIndex);
+    this.refs.behaviorForm.submit();
   },
 
   setBehaviorProp: function(key, value, callback) {
@@ -693,7 +692,7 @@ return React.createClass({
         </div>
       </div>
 
-      <form action="/save_behavior" method="POST">
+      <form action="/save_behavior" method="POST" ref="behaviorForm">
 
         <CsrfTokenHiddenInput
           value={this.props.csrfToken}
@@ -826,12 +825,15 @@ return React.createClass({
                   functionParams={this.getCodeFunctionParams()}
                 />
                 <div className="position-absolute position-top-right">
-                  <BehaviorEditorSettingsButton
+                  <BehaviorEditorDropdownTrigger
                     onClick={this.toggleEditorSettingsMenu}
-                    buttonActive={this.getActiveDropdown() === 'codeEditorSettings'}
-                  />
+                    openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
+                    className="button-dropdown-trigger-symbol"
+                  >
+                    <SVGSettingsIcon label="Editor settings" />
+                  </BehaviorEditorDropdownTrigger>
                   <BehaviorEditorDropdownMenu
-                    className="popup-dropdown-menu-right popup-dropdown-menu-overlay"
+                    className="popup-dropdown-menu-right"
                     isVisible={this.getActiveDropdown() === 'codeEditorSettings'}
                     onItemClick={this.toggleEditorSettingsMenu}
                   >
