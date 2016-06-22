@@ -319,10 +319,20 @@ return React.createClass({
       });
   },
 
+  hideActiveDropdown: function() {
+    this.setState({
+      activeDropdown: null
+    });
+  },
+
   hideActivePanel: function() {
     this.setState({
       activePanel: null
     });
+  },
+
+  onDocumentClick: function(event) {
+    this.hideActiveDropdown();
   },
 
   onSaveClick: function() {
@@ -619,6 +629,10 @@ return React.createClass({
     } else if (this.getBehaviorTriggers()[index] != '') {
       this.addTrigger();
     }
+  },
+
+  componentDidMount: function() {
+    window.document.addEventListener('click', this.onDocumentClick, false);
   },
 
   /* Component API methods */

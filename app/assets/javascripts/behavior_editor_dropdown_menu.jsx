@@ -19,7 +19,18 @@ var BehaviorEditorDropdownMenu = React.createClass({
     this.toggle();
   },
 
-  onItemMouseUp: function() {
+  // Next two handlers needed to prevent clicks bubbling to the document which
+  // might close an open dropdown
+
+  onClick: function(event) {
+    event.nativeEvent.stopImmediatePropagation();
+  },
+
+  onItemClick: function(event) {
+    event.nativeEvent.stopImmediatePropagation();
+  },
+
+  onItemMouseUp: function(event) {
     this.toggle();
     this.blur();
   },
@@ -51,6 +62,7 @@ var BehaviorEditorDropdownMenu = React.createClass({
           }
           ref="button"
           onMouseDown={this.onMouseDown}
+          onClick={this.onClick}
           onKeyPress={this.onKeyPress}
         >
           {this.props.label}
@@ -62,7 +74,7 @@ var BehaviorEditorDropdownMenu = React.createClass({
             (this.props.openWhen ? " fade-in " : " display-none ")
           }>
             {React.Children.map(this.props.children, function(child) {
-              return (<li onMouseUp={this.onItemMouseUp} onKeyPress={this.onItemKeyPress}>{child}</li>);
+              return (<li onMouseUp={this.onItemMouseUp} onClick={this.onItemClick} onKeyPress={this.onItemKeyPress}>{child}</li>);
             }, this)}
           </ul>
         </div>
