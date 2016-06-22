@@ -432,6 +432,10 @@ return React.createClass({
     this.toggleActivePanel('helpForTriggerOptions');
   },
 
+  toggleVersionListMenu: function() {
+    this.toggleActiveDropdown('versionList');
+  },
+
   updateCode: function(newCode) {
     this.setBehaviorProp('functionBody', newCode);
   },
@@ -958,11 +962,13 @@ return React.createClass({
           <Collapsible revealWhen={this.getActivePanel() === 'versionHistory'}>
             <BehaviorEditorVersionsPanel
               ref="versionsPanel"
+              menuToggle={this.toggleVersionListMenu}
               onCancelClick={this.cancelVersionPanel}
               onRestoreClick={this.restoreVersionIndex}
               onSwitchVersions={this.showVersionIndex}
-              versions={this.getVersions()}
+              openMenuWhen={this.getActiveDropdown() === 'versionList'}
               shouldFilterCurrentVersion={this.shouldFilterCurrentVersion()}
+              versions={this.getVersions()}
             />
           </Collapsible>
 
