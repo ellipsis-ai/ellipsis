@@ -9,7 +9,7 @@ import play.api.inject.ApplicationLifecycle
 import slack.rtm.SlackRtmClient
 import akka.actor.ActorSystem
 import slick.driver.PostgresDriver.api._
-import scala.concurrent.Future
+import scala.concurrent.{Promise, Future}
 import scala.concurrent.duration._
 
 @Singleton
@@ -52,7 +52,16 @@ class SlackService @Inject() (
 
     client.onMessage { message =>
       if (message.user != selfId) {
-        eventHandler.handle(SlackMessageEvent(SlackContext(client, profile, message)))
+        val p = Promise[Unit]()
+        val handleMessage = eventHandler.handle(SlackMessageEvent(SlackContext(client, profile, message)))
+        p.completeWith(handleMessage)
+        val indicateTyping = Future {
+          Thread.sleep(500)
+          while (!p.isCompleted) {
+            client.indicateTyping(message.channel)
+            Thread.sleep(3000)
+          }
+        }
       }
     }
 
