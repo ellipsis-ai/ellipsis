@@ -5,10 +5,19 @@ name := """ellipsis"""
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
+lazy val root =
+  (project in file(".")).
+    dependsOn(slackClientProject).
+    enablePlugins(PlayScala, SbtWeb)
+
 pipelineStages := Seq(rjs, digest, gzip)
 
 scalaVersion := "2.11.7"
+
+lazy val slackClientVersion = "535f97bf539d39abf892e08120e5d18f956e1d1a"
+
+lazy val slackClientProject =
+  RootProject(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"))
 
 libraryDependencies ++= Seq(
   evolutions,
@@ -17,7 +26,6 @@ libraryDependencies ++= Seq(
   "com.zaxxer" % "HikariCP" % "2.4.1",
   "com.github.tototoshi" %% "slick-joda-mapper" % "2.0.0",
   "org.scalatestplus" % "play_2.11" % "1.4.0" % Test,
-  "com.github.gilbertw1" %% "slack-scala-client" % "0.1.4",
   "com.mohiva" %% "play-silhouette" % "3.0.2",
   "com.typesafe.slick" %% "slick" % "3.0.0",
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc4",
