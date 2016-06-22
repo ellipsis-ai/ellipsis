@@ -1,8 +1,7 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
-  BehaviorEditorDropdownMenuItem = require('./behavior_editor_dropdown_menu_item');
+  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
@@ -58,7 +57,7 @@ return React.createClass({
           return null;
         } else {
           return (
-            <BehaviorEditorDropdownMenuItem
+            <BehaviorEditorDropdownMenu.Item
               key={"version" + index}
               onClick={this.selectVersionIndex.bind(this, index)}
               checkedWhen={this.getSelectedVersionIndex() === index}
@@ -69,7 +68,7 @@ return React.createClass({
       }, this)
     } else {
       return (
-        <BehaviorEditorDropdownMenuItem label="Loading…" />
+        <BehaviorEditorDropdownMenu.Item label="Loading…" />
       );
     }
   },

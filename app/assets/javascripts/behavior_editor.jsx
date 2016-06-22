@@ -11,7 +11,6 @@ var React = require('react'),
   BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
-  BehaviorEditorDropdownMenuItem = require('./behavior_editor_dropdown_menu_item'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
   BehaviorEditorInput = require('./behavior_editor_input'),
@@ -689,8 +688,8 @@ return React.createClass({
                 menuClassName="popup-dropdown-menu-right"
                 toggle={this.toggleManageBehaviorMenu}
               >
-                <BehaviorEditorDropdownMenuItem onClick={this.showVersions} label="View/restore previous versions" />
-                <BehaviorEditorDropdownMenuItem onClick={this.confirmDeleteBehavior} label="Delete behavior" />
+                <BehaviorEditorDropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
+                <BehaviorEditorDropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
               </BehaviorEditorDropdownMenu>
             </div>
           </div>
@@ -837,7 +836,7 @@ return React.createClass({
                     menuClassName="popup-dropdown-menu-right"
                     toggle={this.toggleEditorSettingsMenu}
                   >
-                    <BehaviorEditorDropdownMenuItem
+                    <BehaviorEditorDropdownMenu.Item
                       onClick={this.toggleCodeEditorLineWrapping}
                       checkedWhen={this.state.codeEditorUseLineWrapping}
                       label="Enable line wrap"
