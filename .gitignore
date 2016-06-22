@@ -23,3 +23,5 @@ activator
 .DS_Store
 node_modules
 /conf/version.conf
+tags
+.ctags
