@@ -494,7 +494,9 @@ return React.createClass({
   },
 
   isModified: function() {
-    return JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
+    var currentMatchesInitial = JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
+    var previewingVersions = this.getActivePanel() === 'versionHistory';
+    return currentMatchesInitial && !previewingVersions;
   },
 
   shouldFilterCurrentVersion: function() {
