@@ -682,7 +682,6 @@ return React.createClass({
 
             <div className="column column-shrink ptl align-r">
               <BehaviorEditorDropdownMenu
-                ref="manageBehaviorDropdown"
                 openWhen={this.getActiveDropdown() === 'manageBehavior'}
                 label="Manage behavior"
                 menuClassName="popup-dropdown-menu-right"

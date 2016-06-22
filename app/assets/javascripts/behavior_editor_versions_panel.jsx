@@ -91,7 +91,6 @@ return React.createClass({
     this.setState({
       versionsMenuIsOpen: !this.state.versionsMenuIsOpen
     });
-    this.refs.versionListMenu.blur();
   },
   currentVersionSelected: function() {
     var selectedIndex = this.getSelectedVersionIndex();
@@ -107,7 +106,6 @@ return React.createClass({
           <span className="align-button mrs">View version:</span>
           <div className="display-inline-block position-relative">
             <BehaviorEditorDropdownMenu
-              ref="versionListMenu"
               openWhen={this.versionsMenuIsOpen()}
               label={this.getVersionText(this.getSelectedVersionIndex())}
               labelClassName="button-dropdown-trigger-menu-above button-dropdown-trigger-wide mrs"
