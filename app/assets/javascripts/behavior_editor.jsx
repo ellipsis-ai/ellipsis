@@ -328,7 +328,7 @@ return React.createClass({
     });
   },
 
-  showVersionIndex: function(versionIndex) {
+  showVersionIndex: function(versionIndex, optionalCallback) {
     var version = this.getVersions()[versionIndex];
     this.setState({
       behavior: {
@@ -339,11 +339,13 @@ return React.createClass({
         params: version.params,
         triggers: version.triggers
       }
-    });
+    }, optionalCallback);
   },
 
   restoreVersionIndex: function(versionIndex) {
-    this.refs.behaviorForm.submit();
+    this.showVersionIndex(versionIndex, function() {
+      this.refs.behaviorForm.submit();
+    });
   },
 
   setBehaviorProp: function(key, value, callback) {
