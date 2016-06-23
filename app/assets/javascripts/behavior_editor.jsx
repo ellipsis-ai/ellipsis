@@ -351,7 +351,8 @@ return React.createClass({
         responseTemplate: version.responseTemplate,
         params: version.params,
         triggers: version.triggers
-      }
+      },
+      revealCodeEditor: !!version.functionBody
     }, optionalCallback);
   },
 
