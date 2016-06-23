@@ -36,28 +36,6 @@ class ApplicationController @Inject() (
 
   def index = SecuredAction { implicit request => Ok(views.html.yay()) }
 
-  def addToSlack = UserAwareAction { implicit request =>
-    val maybeResult = for {
-      scopes <- configuration.getString("silhouette.slack.scope")
-      clientId <- configuration.getString("silhouette.slack.clientID")
-    } yield {
-        val redirectUrl = routes.SocialAuthController.installForSlack().absoluteURL(secure=true)
-        Ok(views.html.addToSlack(request.identity, scopes, clientId, redirectUrl))
-      }
-    maybeResult.getOrElse(Redirect(routes.ApplicationController.index))
-  }
-
-  def signInWithSlack(maybeRedirectUrl: Option[String]) = UserAwareAction { implicit request =>
-    val maybeResult = for {
-      scopes <- configuration.getString("silhouette.slack.signInScope")
-      clientId <- configuration.getString("silhouette.slack.clientID")
-    } yield {
-        val redirectUrl = routes.SocialAuthController.authenticateSlack(maybeRedirectUrl.map(UriEncoding.encodePathSegment(_, "utf-8"))).absoluteURL(secure=true)
-        Ok(views.html.signInWithSlack(request.identity, scopes, clientId, redirectUrl))
-      }
-    maybeResult.getOrElse(Redirect(routes.ApplicationController.index))
-  }
-
   def newBehavior(teamId: String) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
@@ -81,7 +59,8 @@ class ApplicationController @Inject() (
             )
             Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), justSaved = false))
           }).getOrElse {
-          Redirect(routes.ApplicationController.signInWithSlack(Some(request.uri)))
+          // TODO: platform-agnostic
+          Redirect(routes.SlackController.signIn(Some(request.uri)))
         }
       }
 
