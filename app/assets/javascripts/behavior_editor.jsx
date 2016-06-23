@@ -11,7 +11,6 @@ var React = require('react'),
   BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
-  BehaviorEditorDropdownTrigger = require('./behavior_editor_dropdown_trigger'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
   BehaviorEditorInput = require('./behavior_editor_input'),
@@ -104,6 +103,10 @@ return React.createClass({
     });
 
     return this.getCodeFunctionParams().concat(envVars);
+  },
+
+  getCodeEditorDropdownLabel: function() {
+    return (<SVGSettingsIcon label="Editor settings" />);
   },
 
   getCodeFunctionParams: function() {
@@ -316,10 +319,20 @@ return React.createClass({
       });
   },
 
+  hideActiveDropdown: function() {
+    this.setState({
+      activeDropdown: null
+    });
+  },
+
   hideActivePanel: function() {
     this.setState({
       activePanel: null
     });
+  },
+
+  onDocumentClick: function(event) {
+    this.hideActiveDropdown();
   },
 
   onSaveClick: function() {
@@ -409,7 +422,6 @@ return React.createClass({
 
   toggleManageBehaviorMenu: function() {
     this.toggleActiveDropdown('manageBehavior');
-    this.refs.manageBehaviorDropdownTrigger.blur();
   },
 
   toggleTriggerHelp: function() {
@@ -418,6 +430,10 @@ return React.createClass({
 
   toggleTriggerOptionsHelp: function() {
     this.toggleActivePanel('helpForTriggerOptions');
+  },
+
+  toggleVersionListMenu: function() {
+    this.toggleActiveDropdown('versionList');
   },
 
   updateCode: function(newCode) {
@@ -619,6 +635,10 @@ return React.createClass({
     }
   },
 
+  componentDidMount: function() {
+    window.document.addEventListener('click', this.onDocumentClick, false);
+  },
+
   /* Component API methods */
   componentDidUpdate: function() {
     // Note that calling setState on every update triggers an infinite loop
@@ -679,24 +699,14 @@ return React.createClass({
             */}
 
             <div className="column column-shrink ptl align-r">
-              <BehaviorEditorDropdownTrigger
-                ref="manageBehaviorDropdownTrigger"
-                onClick={this.toggleManageBehaviorMenu}
-                openWhen={this.getActiveDropdown() === 'manageBehavior'}
-              >
-                Manage behavior
-              </BehaviorEditorDropdownTrigger>
               <BehaviorEditorDropdownMenu
-                isVisible={this.getActiveDropdown() === 'manageBehavior'}
-                onItemClick={this.toggleManageBehaviorMenu}
-                className="popup-dropdown-menu-right"
+                openWhen={this.getActiveDropdown() === 'manageBehavior'}
+                label="Manage behavior"
+                menuClassName="popup-dropdown-menu-right"
+                toggle={this.toggleManageBehaviorMenu}
               >
-                <button type="button" className="button-invisible" onMouseUp={this.showVersions}>
-                  View/restore previous versions
-                </button>
-                <button type="button" className="button-invisible" onMouseUp={this.confirmDeleteBehavior}>
-                  Delete behavior
-                </button>
+                <BehaviorEditorDropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
+                <BehaviorEditorDropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
               </BehaviorEditorDropdownMenu>
             </div>
           </div>
@@ -836,22 +846,18 @@ return React.createClass({
                   functionParams={this.getCodeFunctionParams()}
                 />
                 <div className="position-absolute position-top-right">
-                  <BehaviorEditorDropdownTrigger
-                    onClick={this.toggleEditorSettingsMenu}
-                    openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
-                    className="button-dropdown-trigger-symbol"
-                  >
-                    <SVGSettingsIcon label="Editor settings" />
-                  </BehaviorEditorDropdownTrigger>
                   <BehaviorEditorDropdownMenu
-                    className="popup-dropdown-menu-right"
-                    isVisible={this.getActiveDropdown() === 'codeEditorSettings'}
-                    onItemClick={this.toggleEditorSettingsMenu}
+                    openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
+                    label={this.getCodeEditorDropdownLabel()}
+                    labelClassName="button-dropdown-trigger-symbol"
+                    menuClassName="popup-dropdown-menu-right"
+                    toggle={this.toggleEditorSettingsMenu}
                   >
-                    <button type="button" className="button-invisible" onMouseUp={this.toggleCodeEditorLineWrapping}>
-                      <span className={this.visibleWhen(this.state.codeEditorUseLineWrapping)}>✓</span>
-                      <span> Enable line wrap</span>
-                    </button>
+                    <BehaviorEditorDropdownMenu.Item
+                      onClick={this.toggleCodeEditorLineWrapping}
+                      checkedWhen={this.state.codeEditorUseLineWrapping}
+                      label="Enable line wrap"
+                    />
                   </BehaviorEditorDropdownMenu>
                 </div>
               </div>
@@ -956,11 +962,13 @@ return React.createClass({
           <Collapsible revealWhen={this.getActivePanel() === 'versionHistory'}>
             <BehaviorEditorVersionsPanel
               ref="versionsPanel"
+              menuToggle={this.toggleVersionListMenu}
               onCancelClick={this.cancelVersionPanel}
               onRestoreClick={this.restoreVersionIndex}
               onSwitchVersions={this.showVersionIndex}
-              versions={this.getVersions()}
+              openMenuWhen={this.getActiveDropdown() === 'versionList'}
               shouldFilterCurrentVersion={this.shouldFilterCurrentVersion()}
+              versions={this.getVersions()}
             />
           </Collapsible>
 

@@ -3,7 +3,7 @@ jest.unmock('../app/assets/javascripts/behavior_editor');
 import React from 'react';
 import ReactDOM from 'react-dom';
 import TestUtils from 'react-addons-test-utils';
-var BehaviorEditor = require('../app/assets/javascripts/behavior_editor');
+const BehaviorEditor = require('../app/assets/javascripts/behavior_editor');
 
 describe('BehaviorEditor', () => {
   const defaultConfig = {

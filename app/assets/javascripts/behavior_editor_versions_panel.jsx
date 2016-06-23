@@ -1,15 +1,16 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
-  BehaviorEditorDropdownTrigger = require('./behavior_editor_dropdown_trigger');
+  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
   propTypes: {
+    menuToggle: React.PropTypes.func.isRequired,
     onCancelClick: React.PropTypes.func.isRequired,
     onRestoreClick: React.PropTypes.func.isRequired,
-    onSwitchVersions: React.PropTypes.func.isRequired
+    onSwitchVersions: React.PropTypes.func.isRequired,
+    openMenuWhen: React.PropTypes.bool.isRequired
   },
   getVersionText: function(versionIndex) {
     if (versionIndex === 0 && this.props.versions.length === 1) {
@@ -38,8 +39,7 @@ return React.createClass({
   getInitialState: function() {
     return {
       isRestoring: false,
-      selectedVersionIndex: null,
-      versionsMenuIsOpen: false
+      selectedVersionIndex: null
     };
   },
   getSelectedVersionIndex: function() {
@@ -58,18 +58,18 @@ return React.createClass({
           return null;
         } else {
           return (
-            <button key={"version" + index} type="button" className="button-invisible" onMouseUp={this.selectVersionIndex.bind(this, index)}>
-              <span className={"mrxs " + this.visibleWhen(this.getSelectedVersionIndex() === index)}>✓</span>
-              <span className={this.getSelectedVersionIndex() === index ? "type-bold" : ""}>{this.getVersionText(index)}</span>
-            </button>
+            <BehaviorEditorDropdownMenu.Item
+              key={"version" + index}
+              onClick={this.selectVersionIndex.bind(this, index)}
+              checkedWhen={this.getSelectedVersionIndex() === index}
+              label={this.getVersionText(index)}
+            />
           );
         }
       }, this)
     } else {
       return (
-        <button type="button" className="button-invisible">
-          Loading…
-        </button>
+        <BehaviorEditorDropdownMenu.Item label="Loading…" />
       );
     }
   },
@@ -88,18 +88,9 @@ return React.createClass({
     this.setState({ selectedVersionIndex: index });
     this.props.onSwitchVersions(index);
   },
-  toggleVersionsMenu: function() {
-    this.setState({
-      versionsMenuIsOpen: !this.state.versionsMenuIsOpen
-    });
-    this.refs.versionListTrigger.blur();
-  },
   currentVersionSelected: function() {
     var selectedIndex = this.getSelectedVersionIndex();
     return selectedIndex === 0 || (selectedIndex === 1 && this.props.shouldFilterCurrentVersion);
-  },
-  versionsMenuIsOpen: function() {
-    return this.state.versionsMenuIsOpen
   },
   render: function() {
     return (
@@ -107,18 +98,12 @@ return React.createClass({
         <div className="container phn">
           <span className="align-button mrs">View version:</span>
           <div className="display-inline-block position-relative">
-            <BehaviorEditorDropdownTrigger
-              ref="versionListTrigger"
-              onClick={this.toggleVersionsMenu}
-              openWhen={this.versionsMenuIsOpen()}
-              className="button-dropdown-trigger-menu-above button-dropdown-trigger-wide mrs"
-            >
-              {this.getVersionText(this.getSelectedVersionIndex())}
-            </BehaviorEditorDropdownTrigger>
             <BehaviorEditorDropdownMenu
-              isVisible={this.versionsMenuIsOpen()}
-              onItemClick={this.toggleVersionsMenu}
-              className="popup-dropdown-menu-above popup-dropdown-menu-wide"
+              openWhen={this.props.openMenuWhen}
+              label={this.getVersionText(this.getSelectedVersionIndex())}
+              labelClassName="button-dropdown-trigger-menu-above button-dropdown-trigger-wide mrs"
+              menuClassName="popup-dropdown-menu-above popup-dropdown-menu-wide"
+              toggle={this.props.menuToggle}
             >
               {this.getVersionsMenu()}
             </BehaviorEditorDropdownMenu>
