@@ -50,18 +50,30 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
     this.setMaxHeight('none');
   },
 
+  setHidden: function() {
+    this.refs.container.style.display = 'none';
+  },
+  setVisible: function() {
+    this.refs.container.style.display = null;
+  },
+
   collapse: function() {
     this.removeTransition();
     this.setCurrentHeight();
     this.setOverflow('hidden');
-    this.after(this.finishCollapse);
+    this.after(this.doCollapse);
   },
-  finishCollapse: function() {
+  doCollapse: function() {
     this.addTransition();
     this.setNoHeight();
+    this.afterAnimation(this.finishCollapse);
+  },
+  finishCollapse: function() {
+    this.setHidden();
   },
 
   reveal: function() {
+    this.setVisible();
     this.addTransition();
     this.setCurrentHeight();
     this.afterAnimation(this.afterReveal);
