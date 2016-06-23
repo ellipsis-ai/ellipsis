@@ -1,5 +1,6 @@
 define(function(require) {
 var React = require('react'),
+  ReactDOM = require('react-dom'),
   Codemirror = require('./react-codemirror'),
   CodemirrorMarkdownMode = require('codemirror/mode/markdown/markdown'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
@@ -56,6 +57,14 @@ return React.createClass({
 
   getActiveDropdown: function() {
     return this.state.activeDropdown && this.state.activeDropdown.name ? this.state.activeDropdown.name : "";
+  },
+
+  getActiveModalElement: function() {
+    if (this.state.activePanel && this.state.activePanel.name && this.state.activePanel.modal) {
+      return ReactDOM.findDOMNode(this.refs[this.state.activePanel.name]);
+    } else {
+      return null;
+    }
   },
 
   getActivePanel: function() {
@@ -297,6 +306,14 @@ return React.createClass({
     this.setBehaviorProp('triggers', triggers);
   },
 
+  focusOnFirstPossibleElement: function(parentElement) {
+    var tabSelector = 'a[href], area[href], input:not([disabled]), button:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, object, embed, *[tabindex], *[contenteditable]';
+    var firstFocusableElement = parentElement.querySelector(tabSelector);
+    if (firstFocusableElement) {
+      firstFocusableElement.focus();
+    }
+  },
+
   loadVersions: function() {
     var url = '/version_info/' + encodeURIComponent(this.props.behaviorId);
     this.setState({
@@ -319,6 +336,30 @@ return React.createClass({
       });
   },
 
+  handleEscKey: function(event) {
+    if (this.getActiveDropdown()) {
+      this.hideActiveDropdown();
+    } else if (this.getActivePanel()) {
+      this.hideActivePanel();
+    }
+  },
+
+  handleModalFocus: function(event) {
+    var activeModal = this.getActiveModalElement();
+    if (!activeModal) {
+      return;
+    }
+    var focusTarget = event.target;
+    var possibleMatches = activeModal.getElementsByTagName(focusTarget.tagName);
+    var match = Array.prototype.some.call(possibleMatches, function(element) {
+      return element === focusTarget;
+    });
+    if (!match) {
+      event.preventDefault();
+      this.focusOnFirstPossibleElement(activeModal);
+    }
+  },
+
   hideActiveDropdown: function() {
     this.setState({
       activeDropdown: null
@@ -333,6 +374,13 @@ return React.createClass({
 
   onDocumentClick: function(event) {
     this.hideActiveDropdown();
+  },
+
+  onDocumentKeyDown: function(event) {
+    var pressedEsc = this.eventKeyPressWasEsc(event);
+    if (pressedEsc) {
+      this.handleEscKey(event);
+    }
   },
 
   onSaveClick: function() {
@@ -638,6 +686,8 @@ return React.createClass({
 
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
+    window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
+    window.document.addEventListener('focus', this.handleModalFocus, true);
   },
 
   /* Component API methods */
@@ -925,19 +975,19 @@ return React.createClass({
         <footer ref="footer" className={"position-fixed-bottom position-z-front border-top " +
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
-          <Collapsible revealWhen={this.getActivePanel() === 'confirmUndo'}>
+          <Collapsible ref="confirmUndo" revealWhen={this.getActivePanel() === 'confirmUndo'}>
             <BehaviorEditorConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
             </BehaviorEditorConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
+          <Collapsible ref="confirmDeleteBehavior" revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
             <BehaviorEditorConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
               <p>Are you sure you want to delete this behavior?</p>
             </BehaviorEditorConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'confirmDeleteCode'}>
+          <Collapsible ref="confirmDeleteCode" revealWhen={this.getActivePanel() === 'confirmDeleteCode'}>
             <BehaviorEditorConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.hideActivePanel}>
               <p>Are you sure you want to remove all of the code?</p>
             </BehaviorEditorConfirmActionPanel>
@@ -960,7 +1010,7 @@ return React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'versionHistory'}>
+          <Collapsible ref="versionHistory" revealWhen={this.getActivePanel() === 'versionHistory'}>
             <BehaviorEditorVersionsPanel
               ref="versionsPanel"
               menuToggle={this.toggleVersionListMenu}
