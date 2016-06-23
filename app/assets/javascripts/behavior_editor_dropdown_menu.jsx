@@ -23,11 +23,11 @@ var BehaviorEditorDropdownMenu = React.createClass({
   // might close an open dropdown
 
   onClick: function(event) {
-    event.nativeEvent.stopImmediatePropagation();
+    event.stopPropagation();
   },
 
   onItemClick: function(event) {
-    event.nativeEvent.stopImmediatePropagation();
+    event.stopPropagation();
   },
 
   onItemMouseUp: function(event) {
@@ -51,9 +51,21 @@ var BehaviorEditorDropdownMenu = React.createClass({
   blur: function() {
     this.refs.button.blur();
   },
+
+  componentDidMount: function() {
+    // Add click events the old-fashioned way so that propagation up to the document
+    // can be stopped. (React events don't bubble up outside of React.)
+    this.refs.button.addEventListener('click', this.onClick, false);
+    var itemKeys = Object.keys(this.refs).filter(function(key) { return key.match(/^menuItem/); });
+    itemKeys.forEach(function(key) {
+      this.refs[key].addEventListener('click', this.onItemClick, false);
+    }, this);
+  },
+
   render: function() {
+    // "container" ref is used for testing
     return (
-      <div className="display-inline-block">
+      <div ref="container" className="display-inline-block">
         <button type="button"
           className={
             "button-dropdown-trigger position-z-popup-trigger " +
@@ -62,7 +74,6 @@ var BehaviorEditorDropdownMenu = React.createClass({
           }
           ref="button"
           onMouseDown={this.onMouseDown}
-          onClick={this.onClick}
           onKeyPress={this.onKeyPress}
         >
           {this.props.label}
@@ -73,8 +84,11 @@ var BehaviorEditorDropdownMenu = React.createClass({
             (this.props.menuClassName || "") +
             (this.props.openWhen ? " fade-in " : " display-none ")
           }>
-            {React.Children.map(this.props.children, function(child) {
-              return (<li onMouseUp={this.onItemMouseUp} onClick={this.onItemClick} onKeyPress={this.onItemKeyPress}>{child}</li>);
+            {React.Children.map(this.props.children, function(child, index) {
+              return (
+                <li ref={"menuItem" + index} onMouseUp={this.onItemMouseUp} onKeyPress={this.onItemKeyPress}>
+                  {child}
+                </li>);
             }, this)}
           </ul>
         </div>
