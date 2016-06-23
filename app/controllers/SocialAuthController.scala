@@ -79,7 +79,7 @@ class SocialAuthController @Inject() (
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
-        Left(Redirect(routes.ApplicationController.addToSlack()))
+        Left(Redirect(routes.SlackController.add()))
       }
       case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
         Left(Redirect(routes.ApplicationController.index))
@@ -132,7 +132,7 @@ class SocialAuthController @Inject() (
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
-        Left(Redirect(routes.ApplicationController.signInWithSlack(maybeRedirect)))
+        Left(Redirect(routes.SlackController.signIn(maybeRedirect)))
       }
       case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
         Left(Redirect(routes.ApplicationController.index))

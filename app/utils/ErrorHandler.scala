@@ -34,7 +34,8 @@ class ErrorHandler @Inject() (
    * @return The result to send to the client.
    */
   override def onNotAuthenticated(request: RequestHeader, messages: Messages): Option[Future[Result]] = {
-    Some(Future.successful(Redirect(routes.ApplicationController.signInWithSlack(Some(request.uri)))))
+    // TODO: platform-agnostic
+    Some(Future.successful(Redirect(routes.SlackController.signIn(Some(request.uri)))))
   }
 
   /**
