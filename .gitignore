@@ -1,4 +1,5 @@
 bin/
+core/
 /db
 .eclipse
 /lib/
