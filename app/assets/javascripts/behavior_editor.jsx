@@ -269,21 +269,15 @@ return React.createClass({
   },
 
   confirmDeleteBehavior: function() {
-    this.setState({
-      activePanel: { name: 'confirmDeleteBehavior', modal: true }
-    });
+    this.toggleActivePanel('confirmDeleteBehavior', true);
   },
 
   confirmDeleteCode: function() {
-    this.setState({
-      activePanel: { name: 'confirmDeleteCode', modal: true }
-    });
+    this.toggleActivePanel('confirmDeleteCode', true);
   },
 
   confirmUndo: function() {
-    this.setState({
-      activePanel: { name: 'confirmUndo', modal: true }
-    });
+    this.toggleActivePanel('confirmUndo', true);
   },
 
   deleteBehavior: function() {
@@ -311,6 +305,15 @@ return React.createClass({
     var firstFocusableElement = parentElement.querySelector(tabSelector);
     if (firstFocusableElement) {
       firstFocusableElement.focus();
+    }
+  },
+
+  focusOnPrimaryOrFirstPossibleElement: function(parentElement) {
+    var primaryElement = parentElement.querySelector('button.button-primary');
+    if (primaryElement) {
+      primaryElement.focus();
+    } else {
+      this.focusOnFirstPossibleElement(parentElement);
     }
   },
 
@@ -424,9 +427,7 @@ return React.createClass({
     if (!this.versionsMaybeLoaded()) {
       this.loadVersions();
     }
-    this.setState({
-      activePanel: { name: 'versionHistory', modal: true }
-    });
+    this.toggleActivePanel('versionHistory', true);
   },
 
   toggleActiveDropdown: function(name) {
@@ -440,6 +441,11 @@ return React.createClass({
     var alreadyOpen = this.getActivePanel() === name;
     this.setState({
       activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
+    }, function() {
+      var activeModal = this.getActiveModalElement();
+      if (activeModal) {
+        this.focusOnPrimaryOrFirstPossibleElement(activeModal);
+      }
     });
   },
 
