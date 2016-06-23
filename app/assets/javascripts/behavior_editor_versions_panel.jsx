@@ -117,7 +117,7 @@ return React.createClass({
               <span className="button-activated-label">Restoring…</span>
             </span>
           </button>
-          <button type="button" onClick={this.cancel}>Cancel</button>
+          <button className="button-primary" type="button" onClick={this.cancel}>Cancel</button>
         </div>
       </div>
     );

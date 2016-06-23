@@ -8,7 +8,6 @@ return React.createClass({
   displayName: 'BehaviorEditorHelpButton',
   mixins: [BehaviorEditorMixin],
   onClick: function() {
-    this.refs.button.blur();
     this.props.onClick();
   },
   render: function() {

@@ -36,9 +36,7 @@ var BehaviorEditorDropdownMenu = React.createClass({
   },
 
   onKeyPress: function(event) {
-    var ENTER = 13;
-    var SPACEBAR = 32;
-    if (event.which === ENTER || event.which === SPACEBAR) {
+    if (this.eventKeyPressWasEnter(event) || this.eventKeyPressWasSpace(event)) {
       this.toggle();
     }
   },
@@ -135,9 +133,7 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
   },
 
   onKeyPress: function(event) {
-    var ENTER = 13;
-    var SPACEBAR = 32;
-    if (event.which === ENTER || event.which === SPACEBAR) {
+    if (this.eventKeyPressWasEnter(event) || this.eventKeyPressWasSpace(event)) {
       this.onMouseUp();
     }
   },
