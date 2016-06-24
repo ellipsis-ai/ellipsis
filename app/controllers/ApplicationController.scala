@@ -119,7 +119,7 @@ class ApplicationController @Inject() (
       maybeTuple.map { case(data, envVars) =>
         Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
       }.getOrElse {
-        NotFound("Behavior not found")
+        NotFound(views.html.notFound(Some("Behavior not found"), Some("The behavior you are trying to access could not be found.")))
       }
     }
 
@@ -160,7 +160,7 @@ class ApplicationController @Inject() (
                 maybeBehavior.map { behavior =>
                   Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
                 }.getOrElse {
-                  NotFound("Behavior not found")
+                  NotFound(views.html.notFound(Some("Behavior not found"), Some("The behavior you were trying to save could not be found.")))
                 }
               }) transactionally
 
@@ -234,7 +234,7 @@ class ApplicationController @Inject() (
           }
           Ok(Json.toJson(versionsData))
         }.getOrElse {
-          NotFound("Behavior not found")
+          NotFound(Json.toJson("Error: behavior not found"))
         }
       }
 
@@ -261,7 +261,7 @@ class ApplicationController @Inject() (
           maybeBehaviorVersion.map { behaviorVersion =>
             Redirect(routes.ApplicationController.editBehavior(behaviorVersion.behavior.id))
           }.getOrElse {
-            NotFound(s"Behavior version not found: $behaviorVersionId")
+            NotFound(s"The behavior version $behaviorVersionId could not be found.")
           }
         }
 
