@@ -1168,6 +1168,7 @@ button.button-dropdown-item {
   text-align: left;
   height: auto;
   min-height: 32px;
+  transition: none !important;
 }
 
 button:focus {
@@ -1177,13 +1178,11 @@ button:focus {
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
 }
 
-button.button-dropdown-item:focus {
-  background-color: @blue-lightest;
-}
-
+button.button-dropdown-item:focus,
 button.button-dropdown-item:hover,
 button.button-dropdown-item-hover {
-  background-color: @blue-lightest;
+  background-color: @blue-medium;
+  color: white;
 }
 
 button.button-dropdown-trigger:focus,
