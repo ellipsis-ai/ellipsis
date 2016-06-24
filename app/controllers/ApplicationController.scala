@@ -5,17 +5,18 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import json.EditorFormat._
+import json.ExportFormat._
 import models.bots.triggers.MessageTriggerQueries
-import models.{Team, EnvironmentVariableQueries, Models}
+import models.{EnvironmentVariable, Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
 import models.bots._
-import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.utils.UriEncoding
+import play.api.mvc.AnyContent
 import services.AWSLambdaService
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
@@ -67,42 +68,14 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  case class BehaviorParameterData(name: String, question: String)
-  case class BehaviorTriggerData(
-                                  text: String,
-                                  requiresMention: Boolean,
-                                  isRegex: Boolean,
-                                  caseSensitive: Boolean
-                                )
+  private def maybeVersionDataFor(
+                                   behaviorId: String
+                                   )(implicit request: SecuredRequest[AnyContent]
+    ): DBIO[Option[(BehaviorVersionData, Seq[EnvironmentVariable])]] = {
 
-  case class BehaviorVersionData(
-                         teamId: String,
-                         behaviorId: Option[String],
-                         functionBody: String,
-                         responseTemplate: String,
-                         params: Seq[BehaviorParameterData],
-                         triggers: Seq[BehaviorTriggerData],
-                         createdAt: Option[DateTime]
-                           )
-
-  case class BehaviorData(behaviorId: String, versions: Seq[BehaviorVersionData])
-
-  implicit val behaviorParameterReads = Json.reads[BehaviorParameterData]
-  implicit val behaviorParameterWrites = Json.writes[BehaviorParameterData]
-
-  implicit val behaviorTriggerReads = Json.reads[BehaviorTriggerData]
-  implicit val behaviorTriggerWrites = Json.writes[BehaviorTriggerData]
-
-  implicit val behaviorVersionReads = Json.reads[BehaviorVersionData]
-  implicit val behaviorVersionWrites = Json.writes[BehaviorVersionData]
-
-  implicit val behaviorReads = Json.reads[BehaviorData]
-  implicit val behaviorWrites = Json.writes[BehaviorData]
-
-  def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      maybeBehavior <- BehaviorQueries.find(id, user)
+    for {
+      maybeBehavior <- BehaviorQueries.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
         behavior.maybeCurrentVersion
       }.getOrElse(DBIO.successful(None))
@@ -116,31 +89,39 @@ class ApplicationController @Inject() (
         EnvironmentVariableQueries.allFor(behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
-        (for {
-          behavior <- maybeBehavior
-          behaviorVersion <- maybeBehaviorVersion
-          params <- maybeParameters
-          triggers <- maybeTriggers
-          envVars <- maybeEnvironmentVariables
-        } yield {
-          val data = BehaviorVersionData(
-            behaviorVersion.team.id,
-            Some(behavior.id),
-            behaviorVersion.functionBody,
-            behaviorVersion.maybeResponseTemplate.getOrElse(""),
-            params.map { ea =>
-              BehaviorParameterData(ea.name, ea.question)
-            },
-            triggers.map( ea =>
-              BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
-            ),
-            Some(behaviorVersion.createdAt)
-          )
-          Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
-        }).getOrElse {
-          NotFound("Behavior not found")
-        }
+      for {
+        behavior <- maybeBehavior
+        behaviorVersion <- maybeBehaviorVersion
+        params <- maybeParameters
+        triggers <- maybeTriggers
+        envVars <- maybeEnvironmentVariables
+      } yield {
+        val data = BehaviorVersionData(
+          behaviorVersion.team.id,
+          Some(behavior.id),
+          behaviorVersion.functionBody,
+          behaviorVersion.maybeResponseTemplate.getOrElse(""),
+          params.map { ea =>
+            BehaviorParameterData(ea.name, ea.question)
+          },
+          triggers.map( ea =>
+            BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
+          ),
+          Some(behaviorVersion.createdAt)
+        )
+        (data, envVars)
       }
+    }
+  }
+
+  def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
+    val action = maybeVersionDataFor(id).map { maybeTuple =>
+      maybeTuple.map { case(data, envVars) =>
+        Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
+      }.getOrElse {
+        NotFound("Behavior not found")
+      }
+    }
 
     models.run(action)
   }
@@ -343,6 +324,18 @@ class ApplicationController @Inject() (
         models.run(action)
       }
     )
+  }
+
+  def exportBehavior(id: String) = SecuredAction.async { implicit request =>
+    val action = maybeVersionDataFor(id).map { maybeTuple =>
+      maybeTuple.map { case(data, _) =>
+        Ok(Json.prettyPrint(Json.toJson(data.forExport)))
+      }.getOrElse {
+        NotFound("Behavior not found")
+      }
+    }
+
+    models.run(action)
   }
 
   def regexValidationErrorsFor(pattern: String) = SecuredAction { implicit request =>
