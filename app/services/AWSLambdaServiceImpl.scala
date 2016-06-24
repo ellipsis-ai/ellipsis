@@ -25,8 +25,22 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
+  def missingEnvVarsMessageFor(envVars: Seq[String]) = {
+    s"""
+      |To use this behavior, you need the following environment variables defined:
+      |${envVars.map( ea => s"\n- $ea").mkString("")}
+      |
+      |You can define an environment variable by typing something like:
+      |
+      |`@ellipsis: set env ENV_VAR_NAME value`
+    """.stripMargin
+  }
+
   def invoke(behaviorVersion: BehaviorVersion, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
-    if (behaviorVersion.functionBody.isEmpty) {
+    val missingEnvVars = behaviorVersion.missingEnvironmentVariablesIn(environmentVariables)
+    if (missingEnvVars.nonEmpty) {
+      Future.successful(missingEnvVarsMessageFor(missingEnvVars))
+    } else if (behaviorVersion.functionBody.isEmpty) {
       Future.successful(behaviorVersion.unformattedSuccessResultStringFor(JsNull, parametersWithValues))
     } else {
       val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))

@@ -7,7 +7,7 @@ import json.BehaviorVersionData
 import models.accounts.User
 import models.bots.templates.TemplateApplier
 import models.bots.triggers.MessageTriggerQueries
-import models.{EnvironmentVariableQueries, IDs, Team}
+import models.{EnvironmentVariable, EnvironmentVariableQueries, IDs, Team}
 import org.commonmark.node.{Image, AbstractVisitor}
 import org.joda.time.DateTime
 import play.api.libs.json.{JsString, JsDefined, Json, JsValue}
@@ -35,6 +35,15 @@ case class BehaviorVersion(
                      ) {
 
   val team: Team = behavior.team
+
+  private def environmentVariablesUsed: Seq[String] = {
+    // regex quite incomplete, but we're just trying to provide some guidance
+    """(?s)ellipsis\.env\.([$A-Za-z_][0-9A-Za-z_$]*)""".r.findAllIn(functionBody).toSeq
+  }
+
+  def missingEnvironmentVariablesIn(environmentVariables: Seq[EnvironmentVariable]): Seq[String] = {
+    environmentVariablesUsed diff environmentVariables.map(_.name)
+  }
 
   // TODO: make this real
   def isInDevelopmentMode: Boolean = true
