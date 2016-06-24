@@ -119,7 +119,14 @@ return React.createClass({
     return (
       <div className="box-action">
         <div className="container phn">
-          <span className="align-button mrs">View version:</span>
+          <div className="columns"><div className="column column-one-half">
+          <button type="button" disabled={this.oldestVersionSelected()}
+            className="button-symbol mrs"
+            onClick={this.incrementSelectedIndex}
+            title="Previous version"
+          >
+            ←
+          </button>
           <div className="display-inline-block position-relative">
             <BehaviorEditorDropdownMenu
               openWhen={this.props.openMenuWhen}
@@ -133,18 +140,15 @@ return React.createClass({
               {this.getVersionsMenu()}
             </BehaviorEditorDropdownMenu>
           </div>
-          <button type="button" disabled={this.oldestVersionSelected()}
-            className="button-symbol mrs"
-            onClick={this.incrementSelectedIndex}
-          >
-            ←
-          </button>
           <button type="button" disabled={this.newestVersionSelected()}
             className="button-symbol mrs"
             onClick={this.decrementSelectedIndex}
+            title="Next version"
           >
             →
           </button>
+          </div><div className="column column-one-half align-r">
+
           <button type="button" disabled={this.currentVersionSelected()}
             className={"mrs " + (this.state.isRestoring ? "button-activated" : "")}
             onClick={this.restore}
@@ -155,6 +159,7 @@ return React.createClass({
             </span>
           </button>
           <button className="button-primary" type="button" onClick={this.cancel}>Cancel</button>
+          </div></div>
         </div>
       </div>
     );
