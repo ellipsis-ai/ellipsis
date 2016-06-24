@@ -35,7 +35,7 @@ class ApplicationController @Inject() (
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
-  def index = SecuredAction { implicit request => Ok(views.html.yay()) }
+  def index = SecuredAction { implicit request => Ok(views.html.index()) }
 
   def newBehavior(teamId: String) = SecuredAction.async { implicit request =>
     val user = request.identity
