@@ -32,31 +32,43 @@ var BehaviorEditorDropdownMenu = React.createClass({
 
   onItemMouseUp: function(event) {
     this.toggle();
-    this.blur();
+    event.target.blur();
+    this.focus();
   },
 
-  onKeyPress: function(event) {
+  onKeyDown: function(event) {
     if (this.eventKeyPressWasEnter(event) || this.eventKeyPressWasSpace(event)) {
       this.toggle();
+    } else if (this.eventKeyPressWasUp(event) && this.props.onUpArrow) {
+      this.props.onUpArrow();
+      event.preventDefault();
+    } else if (this.eventKeyPressWasDown(event) && this.props.onDownArrow) {
+      this.props.onDownArrow();
+      event.preventDefault();
     }
   },
 
-  onItemKeyPress: function(event) {
-    this.onKeyPress(event);
-    this.blur();
+  onItemKeyDown: function(event) {
+    this.onKeyDown(event);
   },
 
   blur: function() {
     this.refs.button.blur();
   },
 
+  focus: function() {
+    this.refs.button.focus();
+  },
+
   componentDidMount: function() {
     // Add click events the old-fashioned way so that propagation up to the document
     // can be stopped. (React events don't bubble up outside of React.)
     this.refs.button.addEventListener('click', this.onClick, false);
+    this.refs.button.addEventListener('keydown', this.onKeyDown, false);
     var itemKeys = Object.keys(this.refs).filter(function(key) { return key.match(/^menuItem/); });
     itemKeys.forEach(function(key) {
       this.refs[key].addEventListener('click', this.onItemClick, false);
+      this.refs[key].addEventListener('keydown', this.onItemKeyDown, false);
     }, this);
   },
 
@@ -72,7 +84,6 @@ var BehaviorEditorDropdownMenu = React.createClass({
           }
           ref="button"
           onMouseDown={this.onMouseDown}
-          onKeyPress={this.onKeyPress}
         >
           {this.props.label}
         </button>
@@ -83,10 +94,15 @@ var BehaviorEditorDropdownMenu = React.createClass({
             (this.props.openWhen ? " fade-in " : " display-none ")
           }>
             {React.Children.map(this.props.children, function(child, index) {
-              return (
-                <li ref={"menuItem" + index} onMouseUp={this.onItemMouseUp} onKeyPress={this.onItemKeyPress}>
-                  {child}
-                </li>);
+              if (child) {
+                return (
+                  <li ref={"menuItem" + index} onMouseUp={this.onItemMouseUp}>
+                    {child}
+                  </li>
+                );
+              } else {
+                return null;
+              }
             }, this)}
           </ul>
         </div>
@@ -129,7 +145,6 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
     if (this.props.onClick) {
       this.props.onClick();
     }
-    this.refs.button.blur();
   },
 
   onKeyPress: function(event) {
