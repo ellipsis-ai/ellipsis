@@ -7,6 +7,8 @@ GET         /                                         @controllers.ApplicationCo
 GET         /new_behavior/:teamId                     @controllers.ApplicationController.newBehavior(teamId: String)
 GET         /edit_behavior/:id                        @controllers.ApplicationController.editBehavior(id: String, justSaved: Option[Boolean] ?= None)
 GET         /export_behavior/:id                      @controllers.ApplicationController.exportBehavior(id: String)
+GET         /import_behavior/:teamId                  @controllers.ApplicationController.importBehavior(teamId: String)
+POST        /import_behavior                          @controllers.ApplicationController.doImportBehavior
 POST        /save_behavior                            @controllers.ApplicationController.saveBehavior
 POST        /delete_behavior                          @controllers.ApplicationController.deleteBehavior
 GET         /regex_validation_errors/:pattern         @controllers.ApplicationController.regexValidationErrorsFor(pattern: String)

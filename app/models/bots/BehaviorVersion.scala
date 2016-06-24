@@ -2,16 +2,13 @@ package models.bots
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
-import java.util
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import json.BehaviorVersionData
 import models.accounts.User
-import models.bots.templates.{SlackRenderer, TemplateApplier}
+import models.bots.templates.TemplateApplier
 import models.bots.triggers.MessageTriggerQueries
 import models.{EnvironmentVariableQueries, IDs, Team}
-import org.commonmark.ext.autolink.AutolinkExtension
-import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
-import org.commonmark.node.{Image, AbstractVisitor, Node}
-import org.commonmark.parser.Parser
+import org.commonmark.node.{Image, AbstractVisitor}
 import org.joda.time.DateTime
 import play.api.libs.json.{JsString, JsDefined, Json, JsValue}
 import play.api.{Configuration, Play}
@@ -254,6 +251,28 @@ object BehaviorVersionQueries {
     (all += raw).map { _ =>
       BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.createdAt)
     }
+  }
+
+  def createFor(behavior: Behavior, lambdaService: AWSLambdaService, data: BehaviorVersionData): DBIO[BehaviorVersion] = {
+    (for {
+      behaviorVersion <- createFor(behavior)
+      _ <-
+        for {
+          _ <- DBIO.from(lambdaService.deployFunctionFor(behaviorVersion, data.functionBody, BehaviorVersionQueries.withoutBuiltin(data.params.map(_.name).toArray)))
+          updated <- behaviorVersion.copy(
+            maybeFunctionBody = Some(data.functionBody),
+            maybeResponseTemplate = Some(data.responseTemplate)
+          ).save
+          _ <- BehaviorParameterQueries.ensureFor(behaviorVersion, data.params.map(ea => (ea.name, Some(ea.question))))
+          _ <- DBIO.sequence(
+            data.triggers.
+              filterNot(_.text.trim.isEmpty)
+              map { trigger =>
+              MessageTriggerQueries.createFor(behaviorVersion, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
+            }
+          )
+        } yield Unit
+    } yield behaviorVersion) transactionally
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)

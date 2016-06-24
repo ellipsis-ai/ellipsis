@@ -14,7 +14,7 @@ object EditorFormat {
                                   caseSensitive: Boolean
                                   )
 
-  case class BehaviorVersionData(
+  case class SaveBehaviorVersionData(
                                   teamId: String,
                                   behaviorId: Option[String],
                                   functionBody: String,
@@ -22,7 +22,7 @@ object EditorFormat {
                                   params: Seq[BehaviorParameterData],
                                   triggers: Seq[BehaviorTriggerData],
                                   createdAt: Option[DateTime]
-                                  ) {
+                                  ) extends BehaviorVersionData {
     def forExport: ExportBehaviorVersionData = ExportBehaviorVersionData(
       functionBody,
       responseTemplate,
@@ -31,7 +31,7 @@ object EditorFormat {
     )
   }
 
-  case class BehaviorData(behaviorId: String, versions: Seq[BehaviorVersionData])
+  case class BehaviorData(behaviorId: String, versions: Seq[SaveBehaviorVersionData])
 
   implicit val behaviorParameterReads = Json.reads[BehaviorParameterData]
   implicit val behaviorParameterWrites = Json.writes[BehaviorParameterData]
@@ -39,8 +39,8 @@ object EditorFormat {
   implicit val behaviorTriggerReads = Json.reads[BehaviorTriggerData]
   implicit val behaviorTriggerWrites = Json.writes[BehaviorTriggerData]
 
-  implicit val behaviorVersionReads = Json.reads[BehaviorVersionData]
-  implicit val behaviorVersionWrites = Json.writes[BehaviorVersionData]
+  implicit val behaviorVersionReads = Json.reads[SaveBehaviorVersionData]
+  implicit val behaviorVersionWrites = Json.writes[SaveBehaviorVersionData]
 
   implicit val behaviorReads = Json.reads[BehaviorData]
   implicit val behaviorWrites = Json.writes[BehaviorData]
