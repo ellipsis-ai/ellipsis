@@ -13,15 +13,17 @@ return React.createClass({
     openMenuWhen: React.PropTypes.bool.isRequired
   },
   getVersionText: function(versionIndex) {
+    var text;
     if (versionIndex === 0 && this.props.versions.length === 1) {
-      return "Loading…";
+      text = "Loading…";
     } else if (versionIndex === 0) {
-      return "Unsaved version";
+      text = "Unsaved version";
     } else if (versionIndex === 1) {
-      return "Last saved version";
+      text = "Last saved version";
     } else {
-      return this.getDateForVersion(this.props.versions[versionIndex]);
+      text = this.getDateForVersion(this.props.versions[versionIndex]);
     }
+    return this.getVersionNumberForIndex(versionIndex) + text;
   },
   getDateForVersion: function(version) {
     var d = new Date(version.createdAt);
@@ -73,6 +75,9 @@ return React.createClass({
       );
     }
   },
+  getVersionNumberForIndex(index) {
+    return (this.props.versions.length - index) + '. ';
+  },
   cancel: function() {
     this.props.onCancelClick();
     this.reset();
@@ -96,6 +101,12 @@ return React.createClass({
     if (selectedIndex + 1 < this.props.versions.length) {
       this.selectVersionIndex(selectedIndex + 1);
     }
+  },
+  selectNewestVersion: function() {
+    this.selectVersionIndex(this.props.shouldFilterCurrentVersion ? 1 : 0);
+  },
+  selectOldestVersion: function() {
+    this.selectVersionIndex(this.props.versions.length - 1);
   },
   selectVersionIndex: function(index) {
     this.setState({ selectedVersionIndex: index });
@@ -122,11 +133,14 @@ return React.createClass({
           <div className="columns"><div className="column column-one-half">
           <button type="button" disabled={this.oldestVersionSelected()}
             className="button-symbol mrs"
+            onClick={this.selectOldestVersion}
+            title="Initial version"
+          >|◄</button>
+          <button type="button" disabled={this.oldestVersionSelected()}
+            className="button-symbol mrs"
             onClick={this.incrementSelectedIndex}
             title="Previous version"
-          >
-            ←
-          </button>
+          >◄</button>
           <div className="display-inline-block position-relative">
             <BehaviorEditorDropdownMenu
               openWhen={this.props.openMenuWhen}
@@ -144,9 +158,12 @@ return React.createClass({
             className="button-symbol mrs"
             onClick={this.decrementSelectedIndex}
             title="Next version"
-          >
-            →
-          </button>
+          >►</button>
+          <button type="button" disabled={this.newestVersionSelected()}
+            className="button-symbol mrs"
+            onClick={this.selectNewestVersion}
+            title="Current version"
+          >►|</button>
           </div><div className="column column-one-half align-r">
 
           <button type="button" disabled={this.currentVersionSelected()}
