@@ -1,0 +1,28 @@
+@(
+  team: models.Team
+  )(implicit messages: Messages, r: RequestHeader)
+
+@import helper._
+
+@main("Import a behavior") {
+
+  <div id="content" class="content">
+    <div class="container ptxxxxl">
+      <h1>Import a behavior (for testing)</h1>
+
+      <p>
+        Paste in exported JSON:
+      </p>
+
+      <form action="@routes.ApplicationController.doImportBehavior()" method="POST">
+        @CSRF.formField
+        <input type="hidden" name="teamId" value="@team.id"/>
+        <textarea cols="100" rows="10" name="dataJson"></textarea>
+        <div class="actions">
+          <input type="submit" value="Import"/>
+        </div>
+      </form>
+
+    </div>
+  </div>
+}

@@ -9,7 +9,7 @@ object ExportFormat {
                                   responseTemplate: String,
                                   params: Seq[EditorFormat.BehaviorParameterData],
                                   triggers: Seq[EditorFormat.BehaviorTriggerData]
-                                  )
+                                  ) extends BehaviorVersionData
 
   implicit val exportBehaviorVersionReads = Json.reads[ExportBehaviorVersionData]
   implicit val exportBehaviorVersionWrites = Json.writes[ExportBehaviorVersionData]

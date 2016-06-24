@@ -49,7 +49,7 @@ class ApplicationController @Inject() (
           team <- maybeTeam
           envVars <- maybeEnvironmentVariables
         } yield {
-            val data = BehaviorVersionData(
+            val data = SaveBehaviorVersionData(
               team.id,
               None,
               "",
@@ -71,7 +71,7 @@ class ApplicationController @Inject() (
   private def maybeVersionDataFor(
                                    behaviorId: String
                                    )(implicit request: SecuredRequest[AnyContent]
-    ): DBIO[Option[(BehaviorVersionData, Seq[EnvironmentVariable])]] = {
+    ): DBIO[Option[(SaveBehaviorVersionData, Seq[EnvironmentVariable])]] = {
 
     val user = request.identity
     for {
@@ -96,7 +96,7 @@ class ApplicationController @Inject() (
         triggers <- maybeTriggers
         envVars <- maybeEnvironmentVariables
       } yield {
-        val data = BehaviorVersionData(
+        val data = SaveBehaviorVersionData(
           behaviorVersion.team.id,
           Some(behavior.id),
           behaviorVersion.functionBody,
@@ -142,7 +142,7 @@ class ApplicationController @Inject() (
       },
       info => {
         val json = Json.parse(info.dataJson)
-        json.validate[BehaviorVersionData] match {
+        json.validate[SaveBehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
             val action = (for {
               maybeTeam <- Team.find(data.teamId, user)
@@ -154,25 +154,8 @@ class ApplicationController @Inject() (
                 }.getOrElse(DBIO.successful(None))
               }
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-                BehaviorVersionQueries.createFor(behavior).map(Some(_))
+                BehaviorVersionQueries.createFor(behavior, lambdaService, data).map(Some(_))
               }.getOrElse(DBIO.successful(None))
-              _ <- maybeBehaviorVersion.map { behaviorVersion =>
-                for {
-                  _ <- DBIO.from(lambdaService.deployFunctionFor(behaviorVersion, data.functionBody, BehaviorVersionQueries.withoutBuiltin(data.params.map(_.name).toArray)))
-                  updated <- behaviorVersion.copy(
-                    maybeFunctionBody = Some(data.functionBody),
-                    maybeResponseTemplate = Some(data.responseTemplate)
-                  ).save
-                  _ <- BehaviorParameterQueries.ensureFor(behaviorVersion, data.params.map(ea => (ea.name, Some(ea.question))))
-                  _ <- DBIO.sequence(
-                    data.triggers.
-                      filterNot(_.text.trim.isEmpty)
-                      map { trigger =>
-                        MessageTriggerQueries.createFor(behaviorVersion, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
-                      }
-                    )
-                } yield Unit
-              }.getOrElse(DBIO.successful(Unit))
             } yield {
                 maybeBehavior.map { behavior =>
                   Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
@@ -231,7 +214,7 @@ class ApplicationController @Inject() (
     } yield {
         maybeBehavior.map { behavior =>
           val versionsData = versions.map { version =>
-            BehaviorVersionData(
+            SaveBehaviorVersionData(
               version.team.id,
               Some(behavior.id),
               version.functionBody,
@@ -336,6 +319,62 @@ class ApplicationController @Inject() (
     }
 
     models.run(action)
+  }
+
+  def importBehavior(teamId: String) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = Team.find(teamId, user).map { maybeTeam =>
+      maybeTeam.map { team =>
+        Ok(views.html.importBehavior(team))
+      }.getOrElse {
+        NotFound(s"Team not found $teamId")
+      }
+    }
+
+    models.run(action)
+  }
+
+  case class ImportBehaviorInfo(teamId: String, dataJson: String)
+
+  private val importBehaviorForm = Form(
+    mapping(
+      "teamId" -> nonEmptyText,
+      "dataJson" -> nonEmptyText
+    )(ImportBehaviorInfo.apply)(ImportBehaviorInfo.unapply)
+  )
+
+  def doImportBehavior = SecuredAction.async { implicit request =>
+    val user = request.identity
+    importBehaviorForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val json = Json.parse(info.dataJson)
+        json.validate[ExportBehaviorVersionData] match {
+          case JsSuccess(data, jsPath) => {
+            val action = for {
+              maybeTeam <- Team.find(info.teamId, user)
+              maybeBehavior <- maybeTeam.map { team =>
+                BehaviorQueries.createFor(team).map(Some(_))
+              }.getOrElse(DBIO.successful(None))
+              maybeBehaviorVersion <- maybeBehavior.map { behavior =>
+                BehaviorVersionQueries.createFor(behavior, lambdaService, data).map(Some(_))
+              }.getOrElse(DBIO.successful(None))
+            } yield {
+                maybeBehaviorVersion.map { behaviorVersion =>
+                  Redirect(routes.ApplicationController.editBehavior(behaviorVersion.behavior.id))
+                }.getOrElse {
+                  NotFound(s"Team not found: ${info.teamId}")
+                }
+              }
+
+            models.run(action)
+          }
+          case e: JsError => Future.successful(BadRequest("Malformatted data"))
+        }
+      }
+    )
   }
 
   def regexValidationErrorsFor(pattern: String) = SecuredAction { implicit request =>
