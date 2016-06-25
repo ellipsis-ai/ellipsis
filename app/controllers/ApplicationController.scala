@@ -5,10 +5,10 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import export.{BehaviorVersionImporter, BehaviorVersionExporter}
 import json.EditorFormat._
-import json.ExportFormat._
 import models.bots.triggers.MessageTriggerQueries
-import models.{EnvironmentVariable, Team, EnvironmentVariableQueries, Models}
+import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
 import models.bots._
 import play.api.Configuration
@@ -49,7 +49,7 @@ class ApplicationController @Inject() (
           team <- maybeTeam
           envVars <- maybeEnvironmentVariables
         } yield {
-            val data = SaveBehaviorVersionData(
+            val data = BehaviorVersionData(
               team.id,
               None,
               "",
@@ -68,59 +68,26 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  private def maybeVersionDataFor(
-                                   behaviorId: String
-                                   )(implicit request: SecuredRequest[AnyContent]
-    ): DBIO[Option[(SaveBehaviorVersionData, Seq[EnvironmentVariable])]] = {
-
+  def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
     val user = request.identity
-    for {
-      maybeBehavior <- BehaviorQueries.find(behaviorId, user)
+    val action = for {
+      maybeVersionData <- BehaviorVersionData.maybeFor(id, user)
+      maybeBehavior <- BehaviorQueries.find(id, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
         behavior.maybeCurrentVersion
-      }.getOrElse(DBIO.successful(None))
-      maybeParameters <- maybeBehaviorVersion.map { behaviorVersion =>
-        BehaviorParameterQueries.allFor(behaviorVersion).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-      maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
-        MessageTriggerQueries.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeEnvironmentVariables <- maybeBehaviorVersion.map { behaviorVersion =>
         EnvironmentVariableQueries.allFor(behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
-      for {
-        behavior <- maybeBehavior
-        behaviorVersion <- maybeBehaviorVersion
-        params <- maybeParameters
-        triggers <- maybeTriggers
-        envVars <- maybeEnvironmentVariables
-      } yield {
-        val data = SaveBehaviorVersionData(
-          behaviorVersion.team.id,
-          Some(behavior.id),
-          behaviorVersion.functionBody,
-          behaviorVersion.maybeResponseTemplate.getOrElse(""),
-          params.map { ea =>
-            BehaviorParameterData(ea.name, ea.question)
-          },
-          triggers.map( ea =>
-            BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
-          ),
-          Some(behaviorVersion.createdAt)
-        )
-        (data, envVars)
-      }
-    }
-  }
-
-  def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
-    val action = maybeVersionDataFor(id).map { maybeTuple =>
-      maybeTuple.map { case(data, envVars) =>
-        Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
-      }.getOrElse {
-        NotFound("Behavior not found")
-      }
+        (for {
+          data <- maybeVersionData
+          envVars <- maybeEnvironmentVariables
+        } yield {
+          Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
+        }).getOrElse {
+          NotFound("Behavior not found")
+        }
     }
 
     models.run(action)
@@ -142,7 +109,7 @@ class ApplicationController @Inject() (
       },
       info => {
         val json = Json.parse(info.dataJson)
-        json.validate[SaveBehaviorVersionData] match {
+        json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
             val action = (for {
               maybeTeam <- Team.find(data.teamId, user)
@@ -214,7 +181,7 @@ class ApplicationController @Inject() (
     } yield {
         maybeBehavior.map { behavior =>
           val versionsData = versions.map { version =>
-            SaveBehaviorVersionData(
+            BehaviorVersionData(
               version.team.id,
               Some(behavior.id),
               version.functionBody,
@@ -310,11 +277,11 @@ class ApplicationController @Inject() (
   }
 
   def exportBehavior(id: String) = SecuredAction.async { implicit request =>
-    val action = maybeVersionDataFor(id).map { maybeTuple =>
-      maybeTuple.map { case(data, _) =>
-        Ok(Json.prettyPrint(Json.toJson(data.forExport)))
+    val action = BehaviorVersionExporter.maybeFor(id, request.identity).map { maybeExporter =>
+      maybeExporter.map { exporter =>
+        Ok.sendFile(exporter.getZipFile)
       }.getOrElse {
-        NotFound("Behavior not found")
+        NotFound(s"Behavior not found: $id")
       }
     }
 
@@ -334,47 +301,45 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  case class ImportBehaviorInfo(teamId: String, dataJson: String)
+  case class ImportBehaviorInfo(teamId: String)
 
   private val importBehaviorForm = Form(
     mapping(
-      "teamId" -> nonEmptyText,
-      "dataJson" -> nonEmptyText
+      "teamId" -> nonEmptyText
     )(ImportBehaviorInfo.apply)(ImportBehaviorInfo.unapply)
   )
 
   def doImportBehavior = SecuredAction.async { implicit request =>
-    val user = request.identity
-    importBehaviorForm.bindFromRequest.fold(
-      formWithErrors => {
-        Future.successful(BadRequest(formWithErrors.errorsAsJson))
-      },
-      info => {
-        val json = Json.parse(info.dataJson)
-        json.validate[ExportBehaviorVersionData] match {
-          case JsSuccess(data, jsPath) => {
-            val action = for {
-              maybeTeam <- Team.find(info.teamId, user)
-              maybeBehavior <- maybeTeam.map { team =>
-                BehaviorQueries.createFor(team).map(Some(_))
-              }.getOrElse(DBIO.successful(None))
-              maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-                BehaviorVersionQueries.createFor(behavior, lambdaService, data).map(Some(_))
-              }.getOrElse(DBIO.successful(None))
-            } yield {
-                maybeBehaviorVersion.map { behaviorVersion =>
-                  Redirect(routes.ApplicationController.editBehavior(behaviorVersion.behavior.id))
-                }.getOrElse {
-                  NotFound(s"Team not found: ${info.teamId}")
-                }
+    (for {
+      formData <- request.body.asMultipartFormData
+      zipFile <- formData.file("zipFile")
+    } yield {
+      importBehaviorForm.bindFromRequest.fold(
+        formWithErrors => {
+          Future.successful(BadRequest(formWithErrors.errorsAsJson))
+        },
+        info => {
+          val action = for {
+            maybeTeam <- Team.find(info.teamId, request.identity)
+            maybeImporter <- DBIO.successful(maybeTeam.map { team =>
+              BehaviorVersionImporter(team, lambdaService, zipFile.ref.file)
+            })
+            maybeBehaviorVersion <- maybeImporter.map { importer =>
+              importer.run.map(Some(_))
+            }.getOrElse(DBIO.successful(None))
+          } yield {
+              maybeBehaviorVersion.map { behaviorVersion =>
+                Redirect(routes.ApplicationController.editBehavior(behaviorVersion.behavior.id))
+              }.getOrElse {
+                NotFound(s"Team not found: ${info.teamId}")
               }
+            }
 
-            models.run(action)
-          }
-          case e: JsError => Future.successful(BadRequest("Malformatted data"))
+          models.run(action)
         }
-      }
-    )
+      )
+    }).getOrElse(Future.successful(BadRequest("")))
+
   }
 
   def regexValidationErrorsFor(pattern: String) = SecuredAction { implicit request =>

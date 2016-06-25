@@ -3,7 +3,7 @@ package models.bots
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import com.github.tototoshi.slick.PostgresJodaSupport._
-import json.BehaviorVersionData
+import json.EditorFormat.BehaviorVersionData
 import models.accounts.User
 import models.bots.templates.TemplateApplier
 import models.bots.triggers.MessageTriggerQueries
@@ -78,6 +78,27 @@ case class BehaviorVersion(
   def description: String = maybeDescription.getOrElse("")
 
   def functionBody: String = maybeFunctionBody.getOrElse("")
+
+  def functionWithParams(params: Array[String]): String = {
+    val definitionUserParamsString = if (params.isEmpty) {
+      ""
+    } else {
+      s"""\n${params.map(ea => ea ++ ",").mkString("\n")}\n"""
+    }
+    val definitionBuiltinParamsString = (HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")
+    val possibleEndOfParamsNewline = if (params.isEmpty) { "" } else { "\n" }
+    s"""function($definitionUserParamsString$definitionBuiltinParamsString$possibleEndOfParamsNewline) {
+      |  $functionBody
+      |}""".stripMargin
+  }
+
+  def maybeFunction: DBIO[Option[String]] = {
+    maybeFunctionBody.map { functionBody =>
+      BehaviorParameterQueries.allFor(this).map { params =>
+        functionWithParams(params.map(_.name).toArray)
+      }.map(Some(_))
+    }.getOrElse(DBIO.successful(None))
+  }
 
   lazy val conf = Play.current.configuration
 
@@ -267,17 +288,17 @@ object BehaviorVersionQueries {
       behaviorVersion <- createFor(behavior)
       _ <-
         for {
-          _ <- DBIO.from(lambdaService.deployFunctionFor(behaviorVersion, data.functionBody, BehaviorVersionQueries.withoutBuiltin(data.params.map(_.name).toArray)))
           updated <- behaviorVersion.copy(
             maybeFunctionBody = Some(data.functionBody),
             maybeResponseTemplate = Some(data.responseTemplate)
           ).save
-          _ <- BehaviorParameterQueries.ensureFor(behaviorVersion, data.params.map(ea => (ea.name, Some(ea.question))))
+          _ <- DBIO.from(lambdaService.deployFunctionFor(updated, data.functionBody, BehaviorVersionQueries.withoutBuiltin(data.params.map(_.name).toArray)))
+          _ <- BehaviorParameterQueries.ensureFor(updated, data.params.map(ea => (ea.name, Some(ea.question))))
           _ <- DBIO.sequence(
             data.triggers.
               filterNot(_.text.trim.isEmpty)
               map { trigger =>
-              MessageTriggerQueries.createFor(behaviorVersion, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
+              MessageTriggerQueries.createFor(updated, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
             }
           )
         } yield Unit
