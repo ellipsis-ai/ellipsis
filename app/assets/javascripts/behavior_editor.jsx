@@ -431,6 +431,10 @@ return React.createClass({
     this.toggleActivePanel('versionHistory', true);
   },
 
+  exportVersion: function() {
+    window.location = '/export_behavior/' + encodeURIComponent(this.props.behaviorId);
+  },
+
   toggleActiveDropdown: function(name) {
     var alreadyOpen = this.getActiveDropdown() === name;
     this.setState({
@@ -1046,6 +1050,7 @@ return React.createClass({
                     toggle={this.toggleManageBehaviorMenu}
                   >
                     <BehaviorEditorDropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
+                    <BehaviorEditorDropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
                     <BehaviorEditorDropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
                   </BehaviorEditorDropdownMenu>
                 </div>
