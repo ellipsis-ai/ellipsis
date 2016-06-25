@@ -38,7 +38,9 @@ case class BehaviorVersion(
 
   private def environmentVariablesUsed: Seq[String] = {
     // regex quite incomplete, but we're just trying to provide some guidance
-    """(?s)ellipsis\.env\.([$A-Za-z_][0-9A-Za-z_$]*)""".r.findAllIn(functionBody).toSeq
+    """(?s)ellipsis\.env\.([$A-Za-z_][0-9A-Za-z_$]*)""".r.findAllMatchIn(functionBody).flatMap { m =>
+      m.subgroups.headOption
+    }.toSeq
   }
 
   def missingEnvironmentVariablesIn(environmentVariables: Seq[EnvironmentVariable]): Seq[String] = {
