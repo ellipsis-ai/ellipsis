@@ -122,7 +122,7 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
   getInitialState: function() {
     return {
       hover: false
-    }
+    };
   },
 
   hasHover: function() {

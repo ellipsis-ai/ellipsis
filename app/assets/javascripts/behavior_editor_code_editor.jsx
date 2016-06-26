@@ -103,7 +103,7 @@ return React.createClass({
       list: matches,
       from: { line: cursor.line, ch: start },
       to: { line: cursor.line, ch: end }
-    }
+    };
   },
 
   render: function() {
