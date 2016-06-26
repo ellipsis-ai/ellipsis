@@ -1,20 +1,108 @@
 #!/bin/sh
 
-pushd `git rev-parse --show-toplevel`
+hold_on_to_your_butts() {
+  printf "\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;138m0\e[38;5;145m0\e[38;5;52m1\e[0m \e[0m \e[38;5;53m0\e[38;5;139m1\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;225m0\e[38;5;181m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;24m0\e[0m \e[0m \e[38;5;17m0\e[38;5;17m1\e[38;5;17m1\e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m0\e[38;5;225m1\e[38;5;96m0\e[38;5;139m0\e[38;5;182m1\e[38;5;188m1\e[38;5;145m1\e[38;5;96m0\e[38;5;139m0\e[38;5;188m0\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m1\e[38;5;224m0\e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;24m1\e[38;5;61m1\e[38;5;18m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m0\e[38;5;189m1\e[38;5;96m0\e[38;5;139m0\e[38;5;102m1\e[38;5;145m0\e[38;5;182m1\e[38;5;96m0\e[38;5;95m1\e[38;5;95m0\e[38;5;132m1\e[38;5;225m0\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;145m1\e[0m \e[38;5;17m1\e[38;5;24m0\e[38;5;24m1\e[38;5;17m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m1\e[38;5;95m0\e[38;5;95m0\e[38;5;95m1\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m1\e[38;5;231m0\e[38;5;139m0\e[38;5;52m0\e[38;5;60m1\e[38;5;145m1\e[38;5;182m1\e[38;5;95m1\e[38;5;53m0\e[38;5;95m0\e[38;5;139m1\e[38;5;225m1\e[38;5;224m0\e[38;5;224m1\e[38;5;225m0\e[38;5;231m0\e[38;5;231m0\e[38;5;189m0\e[38;5;146m0\e[38;5;67m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;88m0\e[38;5;131m0\e[38;5;131m0\e[38;5;174m1\e[38;5;174m1\e[38;5;95m0\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;231m1\e[38;5;59m1\e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;96m1\e[38;5;95m1\e[38;5;96m1\e[38;5;182m1\e[38;5;231m1\e[38;5;224m1\e[38;5;230m1\e[38;5;231m0\e[38;5;231m1\e[38;5;104m1\e[38;5;25m0\e[38;5;104m1\e[38;5;59m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m0\e[38;5;88m1\e[38;5;88m0\e[38;5;131m1\e[38;5;174m0\e[38;5;138m1\e[38;5;94m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;102m0\e[38;5;145m1\e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;59m1\e[38;5;139m1\e[38;5;96m1\e[38;5;140m0\e[38;5;224m1\e[38;5;224m0\e[38;5;181m0\e[38;5;231m1\e[38;5;231m0\e[38;5;189m1\e[38;5;61m0\e[38;5;60m0\e[38;5;104m1\e[38;5;146m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;88m1\e[38;5;95m0\e[38;5;95m0\e[38;5;88m0\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[0m \e[38;5;102m0\e[38;5;139m0\e[38;5;59m1\e[38;5;53m1\e[38;5;52m1\e[38;5;53m1\e[38;5;182m0\e[38;5;188m1\e[38;5;139m1\e[38;5;131m1\e[38;5;181m0\e[38;5;231m1\e[38;5;225m1\e[38;5;104m1\e[38;5;60m1\e[38;5;61m0\e[38;5;103m0\e[38;5;61m1\e[38;5;188m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m1\e[38;5;88m0\e[38;5;88m0\e[38;5;95m0\e[38;5;95m0\e[38;5;95m0\e[38;5;88m1\e[38;5;52m1\e[38;5;59m1\e[38;5;95m0\e[38;5;59m1\e[38;5;52m1\e[38;5;52m0\e[38;5;95m0\e[38;5;52m1\e[38;5;131m0\e[38;5;138m1\e[38;5;132m1\e[38;5;181m0\e[38;5;182m0\e[38;5;17m1\e[38;5;17m0\e[38;5;68m1\e[38;5;25m0\e[38;5;68m1\e[38;5;145m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;52m1\e[38;5;52m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;94m1\e[38;5;95m0\e[38;5;95m0\e[38;5;138m0\e[38;5;96m0\e[38;5;53m1\e[38;5;182m1\e[38;5;224m1\e[38;5;225m1\e[38;5;140m0\e[38;5;68m1\e[38;5;231m0\e[38;5;58m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;95m1\e[38;5;225m1\e[38;5;145m0\e[38;5;52m0\e[38;5;52m0\e[0m \e[0m \e[0m \e[38;5;138m1\e[38;5;52m1\e[0m \e[0m \e[38;5;53m0\e[38;5;52m0\e[38;5;95m0\e[38;5;224m1\e[38;5;231m0\e[38;5;182m0\e[38;5;146m1\e[38;5;231m1\e[38;5;102m1\e[0m \e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[38;5;59m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m1\e[38;5;95m1\e[38;5;88m1\e[38;5;52m0\e[38;5;52m0\e[0m \e[38;5;52m1\e[38;5;96m0\e[38;5;59m0\e[38;5;53m1\e[38;5;59m0\e[38;5;138m0\e[38;5;132m0\e[38;5;95m0\e[38;5;174m1\e[38;5;181m1\e[38;5;59m0\e[38;5;102m0\e[38;5;59m0\e[38;5;17m0\e[38;5;59m0\e[38;5;17m1\e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[38;5;59m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;53m1\e[38;5;138m0\e[38;5;145m1\e[38;5;139m0\e[38;5;95m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[38;5;59m1\e[38;5;59m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;96m0\e[38;5;103m1\e[38;5;60m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m0\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m1\e[38;5;96m1\e[38;5;103m1\e[38;5;140m1\e[38;5;182m1\e[38;5;182m1\e[38;5;60m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m0\e[0m \e[0m \e[38;5;59m1\e[38;5;103m1\e[38;5;231m1\e[38;5;231m1\e[38;5;60m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;181m0\e[38;5;224m0\e[38;5;53m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;95m1\e[38;5;131m0\e[38;5;95m1\e[0m \e[0m \e[0m \e[0m \e[38;5;17m0\e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;95m1\e[38;5;102m1\e[38;5;188m0\e[38;5;59m0\e[38;5;52m1\e[38;5;138m1\e[38;5;188m0\e[38;5;188m1\e[38;5;102m1\e[38;5;17m0\e[38;5;17m0\e[38;5;17m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m1\e[38;5;138m1\e[38;5;145m0\e[38;5;145m0\e[38;5;182m1\e[38;5;188m0\e[38;5;231m1\e[38;5;60m1\e[0m \e[0m \e[0m \e[38;5;60m1\e[38;5;146m0\e[38;5;189m1\e[38;5;189m0\e[38;5;146m0\e[38;5;96m0\e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[38;5;60m1\e[38;5;59m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m0\e[38;5;139m1\e[38;5;225m0\e[38;5;224m0\e[38;5;231m0\e[38;5;231m0\e[38;5;231m0\e[38;5;102m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m1\e[38;5;103m1\e[38;5;188m0\e[38;5;225m1\e[38;5;188m1\e[38;5;102m0\e[0m \e[0m \e[38;5;52m1\e[0m \e[0m
+\e[38;5;60m0\e[38;5;102m0\e[38;5;102m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m0\e[38;5;175m0\e[38;5;225m0\e[38;5;231m1\e[38;5;231m1\e[38;5;59m0\e[38;5;17m1\e[38;5;17m0\e[38;5;17m0\e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[38;5;53m1\e[38;5;96m0\e[38;5;59m0\e[38;5;102m1\e[38;5;182m0\e[38;5;95m1\e[38;5;52m0\e[38;5;89m1\e[38;5;53m0
+\e[38;5;60m1\e[38;5;102m0\e[38;5;103m1\e[38;5;59m1\e[0m \e[38;5;59m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;53m1\e[38;5;53m1\e[38;5;53m1\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;95m1\e[38;5;189m0\e[38;5;231m0\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;60m0\e[38;5;59m1\e[38;5;53m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m0\e[38;5;59m0\e[38;5;52m0\e[38;5;52m0\e[38;5;53m0
+\e[38;5;59m1\e[38;5;103m1\e[38;5;146m0\e[38;5;146m1\e[0m \e[38;5;59m0\e[38;5;145m0\e[38;5;59m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;53m0\e[38;5;53m0\e[38;5;53m1\e[38;5;53m0\e[38;5;53m0\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;138m1\e[38;5;182m1\e[38;5;188m1\e[38;5;224m0\e[38;5;224m0\e[38;5;102m1\e[38;5;53m1\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[0m \e[0m \e[38;5;52m1
+\e[38;5;146m1\e[38;5;103m0\e[38;5;103m0\e[38;5;153m0\e[38;5;103m0\e[0m \e[38;5;189m1\e[38;5;189m1\e[38;5;146m0\e[38;5;103m0\e[38;5;96m0\e[38;5;102m1\e[38;5;59m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m1\e[38;5;53m1\e[38;5;53m0\e[38;5;53m1\e[38;5;52m1\e[38;5;52m0\e[0m \e[38;5;52m1\e[0m \e[0m \e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;95m0\e[38;5;95m1\e[38;5;95m0\e[38;5;131m1\e[38;5;95m0\e[38;5;52m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[38;5;231m1\e[38;5;231m0\e[38;5;146m0\e[38;5;103m0\e[38;5;146m0\e[38;5;59m1\e[38;5;152m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;188m0\e[38;5;96m0\e[0m \e[0m \e[38;5;53m0\e[38;5;59m0\e[38;5;53m1\e[38;5;53m0\e[38;5;96m0\e[38;5;138m0\e[38;5;139m1\e[38;5;96m0\e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;189m0\e[38;5;146m0\e[38;5;60m0\e[38;5;59m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;145m0\e[38;5;96m0\e[38;5;96m0\e[38;5;96m0\e[38;5;95m0\e[38;5;139m0\e[38;5;139m0\e[38;5;96m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;60m0\e[38;5;110m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;231m0\e[38;5;145m0\e[38;5;96m1\e[38;5;139m1\e[38;5;225m0\e[38;5;145m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
+\e[0m\n\n"
+  printf "Hold on to your butts...\n"
+}
+
+MAGENTA=`tput setaf 5`
+GREEN=`tput setaf 2`
+BOLD=`tput bold`
+PLAIN=`tput sgr0`
+
+pushd `git rev-parse --show-toplevel` > /dev/null
+
+if [ ! -f node_modules/.bin/eslint ];
+then
+
+  printf "
+${GREEN}eslint${PLAIN} is not installed. Try running ${GREEN}npm install${PLAIN}.
+
+"
+  exit 1
+
+fi
+
+if [ ! -f node_modules/.bin/jest ];
+then
+
+  printf "
+${GREEN}jest${PLAIN} is not installed. Try running ${GREEN}npm install${PLAIN}.
+
+"
+  exit 1
+
+fi
+
+printf "Running eslint...\n"
+npm run lint
+if [ $? -eq 1 ];
+then
+  read -p "eslint failed. You should probably stop. Do you want to continue anyway? [y/N]: " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+    printf "See ya later.\n"
+    exit 1
+  else
+    printf "Okay, continuing anyway...\n"
+  fi
+fi
+
+printf "Running jest...\n"
+npm test
+if [ $? -eq 1 ];
+then
+  printf "\n\n"
+  read -p "${BOLD}JavaScript tests failed.${PLAIN} You should probably stop. Do you want to continue anyway? [y/N]: " -n 1 -r
+  printf "\n"
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+    printf "You are wise.\n"
+    exit 1
+  else
+    hold_on_to_your_butts
+  fi
+fi
+
 touch conf/version.conf
 echo application.version=\"`git rev-parse --short HEAD`\" >conf/version.conf
 activator docker:stage
 cp deploy/Docker* target/docker/
-pushd target/docker
+pushd target/docker > /dev/null
 VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
 BUNDLE=$VERSION_LABEL.zip
 BUNDLE_PATH=~/Desktop/$BUNDLE
-MAGENTA=`tput setaf 5`
-GREEN=`tput setaf 2`
-PLAIN=`tput sgr0`
 zip -r $BUNDLE_PATH .
-popd
-popd
+popd > /dev/null
+popd > /dev/null
 
 BUCKET=elasticbeanstalk-us-east-1-170937251085
 APP_NAME="My First Elastic Beanstalk Application"
@@ -22,7 +110,7 @@ APP_NAME="My First Elastic Beanstalk Application"
 if ! type aws > /dev/null;
 then
 
-  echo -e "
+  printf "
 You need to set up the aws CLI tools. Try ${GREEN}brew install awscli${PLAIN} if you’re using
 brew, or go to ${GREEN}https://aws.amazon.com/cli/${PLAIN}.";
 
@@ -31,7 +119,7 @@ else
   if [ -z ${AWS_ELLIPSIS_PROFILE+x} ];
   then
 
-    echo -e "
+    printf "
 You need to set the ${GREEN}AWS_ELLIPSIS_PROFILE${PLAIN} env var with the
 profile to use for AWS.
 
@@ -54,7 +142,7 @@ profile to use for AWS.
   else
 
     S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
-    echo -e "
+    printf "
 ${MAGENTA}Uploading ${GREEN}$BUNDLE${MAGENTA} to S3...${PLAIN}";
     aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$BUCKET/$S3_KEY
 
