@@ -25,7 +25,7 @@
     "react-dom": "^15.1.0"
   },
   "scripts": {
-    "lint": "eslint app/assets/",
+    "lint": "eslint --ext .js,.jsx -- app/assets/ || true",
     "test": "jest"
   },
   "jest": {
