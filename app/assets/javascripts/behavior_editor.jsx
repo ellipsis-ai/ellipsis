@@ -251,7 +251,7 @@ return React.createClass({
   addParam: function() {
     var newParamIndex = this.getBehaviorParams().length + 1;
     while (this.getBehaviorParams().some(function(param) {
-      return param.name == 'userInput' + newParamIndex;
+      return param.name === 'userInput' + newParamIndex;
     })) {
       newParamIndex++;
     }
@@ -508,7 +508,7 @@ return React.createClass({
     var callback = function() {
       this.setState({ hasModifiedTemplate: true });
     };
-    this.setBehaviorProp('responseTemplate', newTemplateString, callback)
+    this.setBehaviorProp('responseTemplate', newTemplateString, callback);
   },
 
   updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
@@ -582,7 +582,7 @@ return React.createClass({
   },
 
   shouldRevealCodeEditor: function() {
-    return !!(this.props.shouldRevealCodeEditor || this.props.functionBody)
+    return !!(this.props.shouldRevealCodeEditor || this.props.functionBody);
   },
 
   templateIncludesIteration: function() {
@@ -676,21 +676,25 @@ return React.createClass({
   },
 
   focusOnLastParam: function() {
-    this.focusOnParamIndex(this.getBehaviorParams().length - 1)
+    this.focusOnParamIndex(this.getBehaviorParams().length - 1);
+  },
+
+  focusOnTriggerIndex: function(index) {
+    this.refs['trigger' + index].focus();
   },
 
   onParamEnterKey: function(index) {
     if (index + 1 < this.getBehaviorParams().length) {
       this.focusOnParamIndex(index + 1);
-    } else if (this.getBehaviorParams()[index].question != '') {
+    } else if (this.getBehaviorParams()[index].question) {
       this.addParam();
     }
   },
 
   onTriggerEnterKey: function(index) {
     if (index + 1 < this.getBehaviorTriggers().length) {
-      this.refs['trigger' + (index + 1)].focus();
-    } else if (this.getBehaviorTriggers()[index] != '') {
+      this.focusOnTriggerIndex(index + 1);
+    } else if (this.getBehaviorTriggers()[index].text) {
       this.addTrigger();
     }
   },
