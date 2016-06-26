@@ -2,6 +2,11 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
+  propTypes: {
+    children: React.PropTypes.node.isRequired,
+    className: React.PropTypes.string,
+    disabledWhen: React.PropTypes.bool.isRequired
+  },
   render: function() {
     return (
       <ul className={

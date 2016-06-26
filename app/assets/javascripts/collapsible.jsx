@@ -2,8 +2,6 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
-  displayName: 'Collapsible',
-
 /*
 The Collapsible component reveals or collapses its children in the DOM in response
 to the boolean value of its revealWhen property, using the max-height CSS property.
@@ -14,6 +12,13 @@ which should be set with a number (not a string).
 Note: to allow for child content to be dynamic in height and to overflow the
 bounds, max-height and overflow get cleared after reveal, and reset before collapse.
 */
+
+  propTypes: {
+    animationDuration: React.PropTypes.number,
+    children: React.PropTypes.node.isRequired,
+    className: React.PropTypes.string,
+    revealWhen: React.PropTypes.bool.isRequired
+  },
 
   animationDurationSeconds: function() {
     return this.props.animationDuration || 0.25;

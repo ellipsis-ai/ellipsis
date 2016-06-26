@@ -2,7 +2,10 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
-  displayName: 'BehaviorEditorEnvVariableList',
+  propTypes: {
+    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    expandEnvVariables: React.PropTypes.bool
+  },
   lineHeight: 1.5,
   isLastIndex: function(index) {
     return index + 1 === this.props.envVariableNames.length;

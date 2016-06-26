@@ -2,6 +2,9 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
+  propTypes: {
+    label: React.PropTypes.string
+  },
   label: function() {
     return this.props.label || 'Settings';
   },

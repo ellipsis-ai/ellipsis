@@ -4,9 +4,13 @@ var React = require('react'),
   SVGXIcon = require('./svg/x');
 
 return React.createClass({
-  displayName: 'BehaviorEditorDeleteButton',
   mixins: [BehaviorEditorMixin],
-  onClick: function(event) {
+  propTypes: {
+    hidden: React.PropTypes.bool,
+    onClick: React.PropTypes.func.isRequired,
+    title: React.PropTypes.string
+  },
+  onClick: function() {
     this.props.onClick();
     this.refs.button.blur();
   },

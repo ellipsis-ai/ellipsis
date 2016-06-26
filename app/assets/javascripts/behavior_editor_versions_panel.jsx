@@ -10,7 +10,9 @@ return React.createClass({
     onCancelClick: React.PropTypes.func.isRequired,
     onRestoreClick: React.PropTypes.func.isRequired,
     onSwitchVersions: React.PropTypes.func.isRequired,
-    openMenuWhen: React.PropTypes.bool.isRequired
+    openMenuWhen: React.PropTypes.bool.isRequired,
+    shouldFilterCurrentVersion: React.PropTypes.bool,
+    versions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
   },
   getVersionText: function(versionIndex) {
     var text;

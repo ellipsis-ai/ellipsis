@@ -73,7 +73,7 @@ return React.createClass({
     this.codeMirror.on('scroll', this.scrollChanged);
     this.codeMirror.on('viewportChange', this.viewportChanged);
     this.codeMirror.on('cursorActivity', this.cursorChanged);
-    this.codeMirror.setValue(this.props.defaultValue || this.props.value || '');
+    this.codeMirror.setValue(this.props.value || '');
     this.updateProps = debounce(function (nextProps) {
       if (this.codeMirror && nextProps.value !== undefined && this.codeMirror.getValue() !== nextProps.value) {
         this.codeMirror.setValue(nextProps.value);

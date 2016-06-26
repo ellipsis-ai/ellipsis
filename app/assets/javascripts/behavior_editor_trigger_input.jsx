@@ -11,8 +11,25 @@ var React = require('react'),
   Collapsible = require('./collapsible');
 
 return React.createClass({
-  displayName: 'BehaviorEditorTriggerInput',
   mixins: [BehaviorEditorMixin],
+  propTypes: {
+    caseSensitive: React.PropTypes.bool.isRequired,
+    className: React.PropTypes.string,
+    helpVisible: React.PropTypes.bool.isRequired,
+    hideDelete: React.PropTypes.bool.isRequired,
+    id: React.PropTypes.oneOfType([
+      React.PropTypes.number,
+      React.PropTypes.string
+    ]).isRequired,
+    includeHelp: React.PropTypes.bool.isRequired,
+    isRegex: React.PropTypes.bool.isRequired,
+    onChange: React.PropTypes.func.isRequired,
+    onDelete: React.PropTypes.func.isRequired,
+    onEnterKey: React.PropTypes.func.isRequired,
+    onHelpClick: React.PropTypes.func.isRequired,
+    requiresMention: React.PropTypes.bool.isRequired,
+    value: React.PropTypes.string.isRequired
+  },
   getInitialState: function() {
     return {
       highlightCaseSensitivity: false,
@@ -81,7 +98,7 @@ return React.createClass({
           regexError: error,
           showError: !!(this.state.showError && error)
         });
-      }.bind(this)).catch(function(ex) {
+      }.bind(this)).catch(function() {
         // TODO: figure out what to do if there's a request error; for now clear user-visible errors
         this.clearError();
       });
@@ -89,7 +106,7 @@ return React.createClass({
   isEmpty: function() {
     return !this.props.value;
   },
-  toggleError: function(event) {
+  toggleError: function() {
     this.setState({ showError: !this.state.showError });
     this.focus();
   },

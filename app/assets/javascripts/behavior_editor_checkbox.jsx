@@ -2,6 +2,11 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
+  propTypes: {
+    checked: React.PropTypes.bool.isRequired,
+    onChange: React.PropTypes.func.isRequired,
+    onEnterKey: React.PropTypes.func
+  },
   onChange: function() {
     this.props.onChange(!!this.refs.input.checked);
   },

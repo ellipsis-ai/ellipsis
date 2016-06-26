@@ -8,6 +8,18 @@ var React = require('react'),
   CodeMirrorShowHint = require('codemirror/addon/hint/show-hint');
 
 return React.createClass({
+  propTypes: {
+    autocompletions: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    firstLineNumber: React.PropTypes.oneOfType([
+      React.PropTypes.number,
+      React.PropTypes.string
+    ]).isRequired,
+    functionParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    lineWrapping: React.PropTypes.bool,
+    onChange: React.PropTypes.func.isRequired,
+    onCursorChange: React.PropTypes.func.isRequired,
+    value: React.PropTypes.string.isRequired
+  },
   getJsHintOptions: function() {
     return {
       // Enforcing options
@@ -74,7 +86,7 @@ return React.createClass({
     };
   },
 
-  autocompleteParams: function(cm, options) {
+  autocompleteParams: function(cm) {
     var matches = [];
     var possibleWords = this.props.autocompletions;
 
