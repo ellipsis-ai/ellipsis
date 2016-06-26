@@ -68,14 +68,14 @@ return React.createClass({
             />
           );
         }
-      }, this)
+      }, this);
     } else {
       return (
         <BehaviorEditorDropdownMenu.Item label="Loading…" />
       );
     }
   },
-  getVersionNumberForIndex(index) {
+  getVersionNumberForIndex: function(index) {
     return (this.props.versions.length - index) + '. ';
   },
   cancel: function() {
