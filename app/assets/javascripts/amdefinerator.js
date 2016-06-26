@@ -1,4 +1,4 @@
-/*eslint-env node*/
+/* eslint-env node */
 /* Wraps a source file with amdefine's define function so RequireJS code can be
    used in node and jest */
 var babelJest = require("babel-jest");
