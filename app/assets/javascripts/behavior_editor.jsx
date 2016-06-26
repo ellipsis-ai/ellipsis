@@ -404,7 +404,8 @@ return React.createClass({
         params: version.params,
         triggers: version.triggers
       },
-      revealCodeEditor: !!version.functionBody
+      revealCodeEditor: !!version.functionBody,
+      justSaved: false
     }, optionalCallback);
   },
 
@@ -418,9 +419,13 @@ return React.createClass({
     var newBehavior = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
+    if (this.state.justSaved) {
+      BrowserUtils.removeQueryParam('justSaved');
+    }
     this.setState({
       behavior: newBehavior,
-      versions: newVersions
+      versions: newVersions,
+      justSaved: false
     }, callback);
   },
 
@@ -699,19 +704,11 @@ return React.createClass({
     }
   },
 
+  /* Component API methods */
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.document.addEventListener('focus', this.handleModalFocus, true);
-  },
-
-  /* Component API methods */
-  componentDidUpdate: function() {
-    // Note that calling setState on every update triggers an infinite loop
-    if (this.state.justSaved) {
-      this.setState({ justSaved: false });
-      BrowserUtils.removeQueryParam('justSaved');
-    }
   },
 
   getInitialState: function() {
