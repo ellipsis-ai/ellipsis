@@ -1,3 +1,4 @@
+/* global BehaviorEditorConfiguration:false */
 /*
 RequireJS development configuration
 Production configuration lives in build.js.

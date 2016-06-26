@@ -15,6 +15,8 @@
     "babel-preset-es2015": "*",
     "babel-preset-react": "*",
     "codemirror": "^5.15.2",
+    "eslint": "^2.13.1",
+    "eslint-plugin-react": "^5.2.2",
     "fetch": "^1.1.0",
     "javascript-debounce": "^1.0.0",
     "jest-cli": "^12.1.1",
@@ -23,6 +25,7 @@
     "react-dom": "^15.1.0"
   },
   "scripts": {
+    "lint": "./node_modules/.bin/eslint --ext .js,.jsx -- app/assets/",
     "test": "jest"
   },
   "jest": {

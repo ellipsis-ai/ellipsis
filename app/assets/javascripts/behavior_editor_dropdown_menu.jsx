@@ -5,8 +5,11 @@ var React = require('react'),
 var BehaviorEditorDropdownMenu = React.createClass({
   mixins: [BehaviorEditorMixin],
   propTypes: {
+    children: React.PropTypes.node.isRequired,
     labelClassName: React.PropTypes.string,
     label: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
+    onDownArrow: React.PropTypes.func,
+    onUpArrow: React.PropTypes.func,
     openWhen: React.PropTypes.bool.isRequired,
     menuClassName: React.PropTypes.string,
     toggle: React.PropTypes.func.isRequired
@@ -122,7 +125,7 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
   getInitialState: function() {
     return {
       hover: false
-    }
+    };
   },
 
   hasHover: function() {

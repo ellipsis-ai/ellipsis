@@ -112,4 +112,111 @@ describe('BehaviorEditor', () => {
       expect(editor.getBehaviorTemplate()).toEqual('');
     });
   });
+
+  describe('onParamEnterKey', () => {
+    it('focuses on the next param if there is one', () => {
+      editorConfig.params = [{
+        name: 'param1', question: 'What am I?'
+      }, {
+        name: 'param2', question: 'Who are you?'
+      }];
+      const editor = createEditor(editorConfig);
+      editor.focusOnParamIndex = jest.fn();
+      editor.addParam = jest.fn();
+      editor.onParamEnterKey(0);
+      expect(editor.focusOnParamIndex.mock.calls[0][0]).toBe(1);
+      expect(editor.addParam.mock.calls.length).toBe(0);
+    });
+
+    it('adds a param if this is the last one and it has a question', () => {
+      editorConfig.params = [{
+        name: 'param1', question: 'What am I?'
+      }, {
+        name: 'param2', question: 'Who are you?'
+      }];
+      const editor = createEditor(editorConfig);
+      editor.focusOnParamIndex = jest.fn();
+      editor.addParam = jest.fn();
+      editor.onParamEnterKey(1);
+      expect(editor.focusOnParamIndex.mock.calls.length).toBe(0);
+      expect(editor.addParam.mock.calls.length).toBe(1);
+    });
+
+    it('does nothing if this is the last one and has no question', () => {
+      editorConfig.params = [{
+        name: 'param1', question: 'What am I?'
+      }, {
+        name: 'param2', question: ''
+      }];
+      const editor = createEditor(editorConfig);
+      editor.focusOnParamIndex = jest.fn();
+      editor.addParam = jest.fn();
+      editor.onParamEnterKey(1);
+      expect(editor.focusOnParamIndex.mock.calls.length).toBe(0);
+      expect(editor.addParam.mock.calls.length).toBe(0);
+    });
+  });
+
+  describe('onTriggerEnterKey', () => {
+    it('focuses on the next param if there is one', () => {
+      editorConfig.triggers = [{
+        text: "trigger1",
+        requiresMention: false,
+        isRegex: false,
+        caseSensitive: false
+      }, {
+        text: "trigger2",
+        requiresMention: false,
+        isRegex: false,
+        caseSensitive: false
+      }];
+      const editor = createEditor(editorConfig);
+      editor.focusOnTriggerIndex = jest.fn();
+      editor.addTrigger = jest.fn();
+      editor.onTriggerEnterKey(0);
+      expect(editor.focusOnTriggerIndex.mock.calls[0][0]).toBe(1);
+      expect(editor.addTrigger.mock.calls.length).toBe(0);
+    });
+
+    it('adds a trigger if this is the last one and it has text', () => {
+      editorConfig.triggers = [{
+        text: "trigger1",
+        requiresMention: false,
+        isRegex: false,
+        caseSensitive: false
+      }, {
+        text: "trigger2",
+        requiresMention: false,
+        isRegex: false,
+        caseSensitive: false
+      }];
+      const editor = createEditor(editorConfig);
+      editor.focusOnTriggerIndex = jest.fn();
+      editor.addTrigger = jest.fn();
+      editor.onTriggerEnterKey(1);
+      expect(editor.focusOnTriggerIndex.mock.calls.length).toBe(0);
+      expect(editor.addTrigger.mock.calls.length).toBe(1);
+    });
+
+    it('does nothing if this is the last one and has no text', () => {
+      editorConfig.triggers = [{
+        text: "trigger1",
+        requiresMention: false,
+        isRegex: false,
+        caseSensitive: false
+      }, {
+        text: "",
+        requiresMention: false,
+        isRegex: false,
+        caseSensitive: false
+      }];
+      const editor = createEditor(editorConfig);
+      editor.focusOnTriggerIndex = jest.fn();
+      editor.addTrigger = jest.fn();
+      editor.onTriggerEnterKey(1);
+      expect(editor.focusOnTriggerIndex.mock.calls.length).toBe(0);
+      expect(editor.addTrigger.mock.calls.length).toBe(0);
+    });
+  });
+
 });

@@ -2,7 +2,9 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
-  displayName: 'SVGXIcon',
+  propTypes: {
+    label: React.PropTypes.string
+  },
   label: function() {
     return this.props.label || '×';
   },

@@ -73,9 +73,9 @@ return React.createClass({
     this.codeMirror.on('scroll', this.scrollChanged);
     this.codeMirror.on('viewportChange', this.viewportChanged);
     this.codeMirror.on('cursorActivity', this.cursorChanged);
-    this.codeMirror.setValue(this.props.defaultValue || this.props.value || '');
+    this.codeMirror.setValue(this.props.value || '');
     this.updateProps = debounce(function (nextProps) {
-      if (this.codeMirror && nextProps.value !== undefined && this.codeMirror.getValue() != nextProps.value) {
+      if (this.codeMirror && nextProps.value !== undefined && this.codeMirror.getValue() !== nextProps.value) {
         this.codeMirror.setValue(nextProps.value);
       }
       if (typeof nextProps.options === 'object') {
@@ -114,19 +114,27 @@ return React.createClass({
     this.setState({
       isFocused: focused
     });
-    this.props.onFocusChange && this.props.onFocusChange(focused);
+    if (this.props.onFocusChange) {
+      this.props.onFocusChange(focused);
+    }
   },
   scrollChanged: function scrollChanged(cm) {
-    this.props.onScroll && this.props.onScroll(cm.getScrollInfo());
+    if (this.props.onScroll) {
+      this.props.onScroll(cm.getScrollInfo());
+    }
   },
   viewportChanged: function viewportChanged(cm, from, to) {
-    this.props.onViewportChange && this.props.onViewportChange(cm, from, to);
+    if (this.props.onViewportChange) {
+      this.props.onViewportChange(cm, from, to);
+    }
   },
   cursorChanged: function cursorChanged(cm) {
-    this.props.onCursorChange && this.props.onCursorChange(cm);
+    if (this.props.onCursorChange) {
+      this.props.onCursorChange(cm);
+    }
   },
   codemirrorValueChanged: function codemirrorValueChanged(doc, change) {
-    if (this.props.onChange && change.origin != 'setValue') {
+    if (this.props.onChange && change.origin !== 'setValue') {
       this.props.onChange(doc.getValue());
     }
   },

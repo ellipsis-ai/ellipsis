@@ -1,4 +1,4 @@
-define(function(require) {
+define(function() {
   return {
     // Create a copy of an array before modifying it
     arrayWithNewElementAtIndex: function(array, newElement, index) {

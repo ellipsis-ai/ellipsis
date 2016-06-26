@@ -6,8 +6,13 @@ var React = require('react'),
   BehaviorEditorNoEnvVariables = require('./behavior_editor_no_env_variables');
 
 return React.createClass({
-  displayName: 'BehaviorEditorBoilerplateParameterHelp',
   mixins: [BehaviorEditorMixin],
+  propTypes: {
+    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
+    expandEnvVariables: React.PropTypes.bool.isRequired,
+    onCollapseClick: React.PropTypes.func.isRequired,
+    onExpandToggle: React.PropTypes.func.isRequired
+  },
   onExpandToggle: function() {
     this.refs.button.blur();
     this.props.onExpandToggle();

@@ -3,6 +3,9 @@ var React = require('react');
 
 return React.createClass({
   propTypes: {
+    children: React.PropTypes.node.isRequired,
+    confirmText: React.PropTypes.node,
+    cancelText: React.PropTypes.node,
     onCancelClick: React.PropTypes.func.isRequired,
     onConfirmClick: React.PropTypes.func.isRequired
   },

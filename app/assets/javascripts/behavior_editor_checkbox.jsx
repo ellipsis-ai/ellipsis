@@ -2,12 +2,17 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
+  propTypes: {
+    checked: React.PropTypes.bool.isRequired,
+    onChange: React.PropTypes.func.isRequired,
+    onEnterKey: React.PropTypes.func
+  },
   onChange: function() {
     this.props.onChange(!!this.refs.input.checked);
   },
 
   handleEnterKey: function(event) {
-    if (event.which == 13) {
+    if (event.which === 13) {
       event.preventDefault();
       if (typeof this.props.onEnterKey == 'function') {
         this.props.onEnterKey();

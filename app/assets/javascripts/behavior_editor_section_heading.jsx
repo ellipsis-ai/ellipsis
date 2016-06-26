@@ -2,6 +2,9 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
+  propTypes: {
+    children: React.PropTypes.node.isRequired
+  },
   render: function() {
     return (
       <h4 className="position-relative">

@@ -3,6 +3,9 @@ var React = require('react'),
   BehaviorEditorHelpPanel = require('./behavior_editor_help_panel');
 
 return React.createClass({
+  propTypes: {
+    onCollapseClick: React.PropTypes.func.isRequired
+  },
   render: function() {
     return (
       <BehaviorEditorHelpPanel

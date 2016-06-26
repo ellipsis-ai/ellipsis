@@ -2,7 +2,6 @@ define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
   Codemirror = require('./react-codemirror'),
-  CodemirrorMarkdownMode = require('codemirror/mode/markdown/markdown'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
   BehaviorEditorChecklist = require('./behavior_editor_checklist'),
@@ -10,22 +9,20 @@ var React = require('react'),
   BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
   BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
-  BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
-  BehaviorEditorInput = require('./behavior_editor_input'),
   BehaviorEditorSectionHeading = require('./behavior_editor_section_heading'),
   BehaviorEditorTriggerHelp = require('./behavior_editor_trigger_help'),
   BehaviorEditorTriggerOptionsHelp = require('./behavior_editor_trigger_options_help'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
-  BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
   BehaviorEditorVersionsPanel = require('./behavior_editor_versions_panel'),
   SVGSettingsIcon = require('./svg/settings'),
   Collapsible = require('./collapsible'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input'),
   BrowserUtils = require('./browser_utils'),
   ImmutableObjectUtils = require('./immutable_object_utils');
+  require('codemirror/mode/markdown/markdown');
 
 return React.createClass({
   displayName: 'BehaviorEditor',
@@ -251,7 +248,7 @@ return React.createClass({
   addParam: function() {
     var newParamIndex = this.getBehaviorParams().length + 1;
     while (this.getBehaviorParams().some(function(param) {
-      return param.name == 'userInput' + newParamIndex;
+      return param.name === 'userInput' + newParamIndex;
     })) {
       newParamIndex++;
     }
@@ -331,7 +328,7 @@ return React.createClass({
           versionsLoadStatus: 'loaded'
         });
         this.refs.versionsPanel.reset();
-      }.bind(this)).catch(function(ex) {
+      }.bind(this)).catch(function() {
         // TODO: figure out what to do if there's a request error
         this.setState({
           versionsLoadStatus: 'error'
@@ -339,7 +336,7 @@ return React.createClass({
       });
   },
 
-  handleEscKey: function(event) {
+  handleEscKey: function() {
     if (this.getActiveDropdown()) {
       this.hideActiveDropdown();
     } else if (this.getActivePanel()) {
@@ -376,7 +373,7 @@ return React.createClass({
     });
   },
 
-  onDocumentClick: function(event) {
+  onDocumentClick: function() {
     this.hideActiveDropdown();
   },
 
@@ -404,7 +401,8 @@ return React.createClass({
         params: version.params,
         triggers: version.triggers
       },
-      revealCodeEditor: !!version.functionBody
+      revealCodeEditor: !!version.functionBody,
+      justSaved: false
     }, optionalCallback);
   },
 
@@ -418,9 +416,13 @@ return React.createClass({
     var newBehavior = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
+    if (this.state.justSaved) {
+      BrowserUtils.removeQueryParam('justSaved');
+    }
     this.setState({
       behavior: newBehavior,
-      versions: newVersions
+      versions: newVersions,
+      justSaved: false
     }, callback);
   },
 
@@ -508,7 +510,7 @@ return React.createClass({
     var callback = function() {
       this.setState({ hasModifiedTemplate: true });
     };
-    this.setBehaviorProp('responseTemplate', newTemplateString, callback)
+    this.setBehaviorProp('responseTemplate', newTemplateString, callback);
   },
 
   updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
@@ -582,7 +584,7 @@ return React.createClass({
   },
 
   shouldRevealCodeEditor: function() {
-    return !!(this.props.shouldRevealCodeEditor || this.props.functionBody)
+    return !!(this.props.shouldRevealCodeEditor || this.props.functionBody);
   },
 
   templateIncludesIteration: function() {
@@ -676,38 +678,34 @@ return React.createClass({
   },
 
   focusOnLastParam: function() {
-    this.focusOnParamIndex(this.getBehaviorParams().length - 1)
+    this.focusOnParamIndex(this.getBehaviorParams().length - 1);
+  },
+
+  focusOnTriggerIndex: function(index) {
+    this.refs['trigger' + index].focus();
   },
 
   onParamEnterKey: function(index) {
     if (index + 1 < this.getBehaviorParams().length) {
       this.focusOnParamIndex(index + 1);
-    } else if (this.getBehaviorParams()[index].question != '') {
+    } else if (this.getBehaviorParams()[index].question) {
       this.addParam();
     }
   },
 
   onTriggerEnterKey: function(index) {
     if (index + 1 < this.getBehaviorTriggers().length) {
-      this.refs['trigger' + (index + 1)].focus();
-    } else if (this.getBehaviorTriggers()[index] != '') {
+      this.focusOnTriggerIndex(index + 1);
+    } else if (this.getBehaviorTriggers()[index].text) {
       this.addTrigger();
     }
   },
 
+  /* Component API methods */
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.document.addEventListener('focus', this.handleModalFocus, true);
-  },
-
-  /* Component API methods */
-  componentDidUpdate: function() {
-    // Note that calling setState on every update triggers an infinite loop
-    if (this.state.justSaved) {
-      this.setState({ justSaved: false });
-      BrowserUtils.removeQueryParam('justSaved');
-    }
   },
 
   getInitialState: function() {

@@ -4,7 +4,18 @@ var React = require('react'),
   BehaviorEditorInput = require('./behavior_editor_input');
 
 return React.createClass({
-  displayName: 'BehaviorEditorUserInputDefinition',
+  propTypes: {
+    id: React.PropTypes.oneOfType([
+      React.PropTypes.number,
+      React.PropTypes.string
+    ]).isRequired,
+    name: React.PropTypes.string.isRequired,
+    onChange: React.PropTypes.func.isRequired,
+    onDelete: React.PropTypes.func.isRequired,
+    onEnterKey: React.PropTypes.func.isRequired,
+    question: React.PropTypes.string.isRequired,
+    shouldGrabFocus: React.PropTypes.bool
+  },
 
   onNameChange: function(newName) {
     this.props.onChange({ name: newName, question: this.props.question });
