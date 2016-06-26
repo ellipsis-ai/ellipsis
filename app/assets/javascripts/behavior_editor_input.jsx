@@ -14,7 +14,7 @@ return React.createClass({
   },
 
   handleEnterKey: function(event) {
-    if (event.which == 13) {
+    if (event.which === 13) {
       event.preventDefault();
       if (typeof this.props.onEnterKey == 'function') {
         this.props.onEnterKey();

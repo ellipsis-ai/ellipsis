@@ -28,7 +28,7 @@ return React.createClass({
   getDateForVersion: function(version) {
     var d = new Date(version.createdAt);
     // N.B. Safari doesn't support toLocaleString options at present
-    return d.toLocaleString(undefined, {
+    return d.toLocaleString(void(0), {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -87,7 +87,7 @@ return React.createClass({
   },
   restore: function() {
     this.setState({ isRestoring: true });
-    this.props.onRestoreClick(this.getSelectedVersionIndex())
+    this.props.onRestoreClick(this.getSelectedVersionIndex());
   },
   decrementSelectedIndex: function() {
     var selectedIndex = this.getSelectedVersionIndex();

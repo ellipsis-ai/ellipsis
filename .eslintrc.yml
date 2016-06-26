@@ -76,6 +76,8 @@ rules:
     - warn
   no-implicit-coercion:
     - warn
+    - allow:
+      - "!!"
   no-implicit-globals:
     - error
   no-native-reassign:
@@ -102,14 +104,12 @@ rules:
     - warn
   no-undef:
     - error
-  no-undefined:
-    - error
   no-unused-vars:
     - warn
   no-use-before-define:
     - error
     - functions: false
   react/prop-types:
-    - off
+    - warn
   react/display-name:
     - off
