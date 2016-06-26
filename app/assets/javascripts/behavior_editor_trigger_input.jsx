@@ -1,14 +1,14 @@
 define(function(require) {
 var React = require('react'),
   debounce = require('javascript-debounce'),
-  ES6Promise = require('es6-promise'),
-  Fetch = require('fetch'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorCheckbox = require('./behavior_editor_checkbox'),
   BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorInput = require('./behavior_editor_input'),
   Collapsible = require('./collapsible');
+  require('es6-promise');
+  require('fetch');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],

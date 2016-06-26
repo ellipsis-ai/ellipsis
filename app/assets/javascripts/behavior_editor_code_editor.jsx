@@ -1,11 +1,11 @@
 define(function(require) {
 var React = require('react'),
-  Codemirror = require('./react-codemirror'),
-  CodeMirror = require('codemirror'),
-  CodeMirrorJSMode = require('codemirror/mode/javascript/javascript'),
-  CodeMirrorLint = require('codemirror/addon/lint/lint'),
-  CodeMirrorJSLint = require('codemirror/addon/lint/javascript-lint'),
-  CodeMirrorShowHint = require('codemirror/addon/hint/show-hint');
+  Codemirror = require('./react-codemirror');
+  require('codemirror');
+  require('codemirror/mode/javascript/javascript');
+  require('codemirror/addon/lint/lint');
+  require('codemirror/addon/lint/javascript-lint');
+  require('codemirror/addon/hint/show-hint');
 
 return React.createClass({
   propTypes: {

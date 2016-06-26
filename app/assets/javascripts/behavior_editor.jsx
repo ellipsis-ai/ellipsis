@@ -2,7 +2,6 @@ define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
   Codemirror = require('./react-codemirror'),
-  CodemirrorMarkdownMode = require('codemirror/mode/markdown/markdown'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
   BehaviorEditorChecklist = require('./behavior_editor_checklist'),
@@ -10,22 +9,20 @@ var React = require('react'),
   BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
   BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
-  BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
   BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
   BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
-  BehaviorEditorInput = require('./behavior_editor_input'),
   BehaviorEditorSectionHeading = require('./behavior_editor_section_heading'),
   BehaviorEditorTriggerHelp = require('./behavior_editor_trigger_help'),
   BehaviorEditorTriggerOptionsHelp = require('./behavior_editor_trigger_options_help'),
   BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
-  BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition'),
   BehaviorEditorVersionsPanel = require('./behavior_editor_versions_panel'),
   SVGSettingsIcon = require('./svg/settings'),
   Collapsible = require('./collapsible'),
   CsrfTokenHiddenInput = require('./csrf_token_hidden_input'),
   BrowserUtils = require('./browser_utils'),
   ImmutableObjectUtils = require('./immutable_object_utils');
+  require('codemirror/mode/markdown/markdown');
 
 return React.createClass({
   displayName: 'BehaviorEditor',
@@ -331,7 +328,7 @@ return React.createClass({
           versionsLoadStatus: 'loaded'
         });
         this.refs.versionsPanel.reset();
-      }.bind(this)).catch(function(ex) {
+      }.bind(this)).catch(function() {
         // TODO: figure out what to do if there's a request error
         this.setState({
           versionsLoadStatus: 'error'
@@ -339,7 +336,7 @@ return React.createClass({
       });
   },
 
-  handleEscKey: function(event) {
+  handleEscKey: function() {
     if (this.getActiveDropdown()) {
       this.hideActiveDropdown();
     } else if (this.getActivePanel()) {
@@ -376,7 +373,7 @@ return React.createClass({
     });
   },
 
-  onDocumentClick: function(event) {
+  onDocumentClick: function() {
     this.hideActiveDropdown();
   },
 
