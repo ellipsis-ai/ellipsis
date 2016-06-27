@@ -4,10 +4,12 @@
 
 # An example controller showing a sample home page
 GET         /                                         @controllers.ApplicationController.index
+GET         /published_behaviors/:teamId              @controllers.ApplicationController.publishedBehaviors(teamId: String)
 GET         /new_behavior/:teamId                     @controllers.ApplicationController.newBehavior(teamId: String)
 GET         /edit_behavior/:id                        @controllers.ApplicationController.editBehavior(id: String, justSaved: Option[Boolean] ?= None)
 GET         /export_behavior/:id                      @controllers.ApplicationController.exportBehavior(id: String)
-GET         /import_behavior/:teamId                  @controllers.ApplicationController.importBehavior(teamId: String)
+GET         /import_behavior_zip/:teamId              @controllers.ApplicationController.importBehaviorZip(teamId: String)
+POST        /import_behavior_zip                      @controllers.ApplicationController.doImportBehaviorZip
 POST        /import_behavior                          @controllers.ApplicationController.doImportBehavior
 POST        /save_behavior                            @controllers.ApplicationController.saveBehavior
 POST        /delete_behavior                          @controllers.ApplicationController.deleteBehavior
