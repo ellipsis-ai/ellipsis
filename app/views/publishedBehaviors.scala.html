@@ -1,0 +1,30 @@
+@(
+  team: Team,
+  behaviorVersions: Seq[json.EditorFormat.BehaviorVersionData]
+  )(implicit messages: Messages, r: RequestHeader)
+
+@import helper._
+@import play.api.libs.json._
+@import json.EditorFormat._
+
+@main("Published behaviors") {
+
+  <div id="content" class="content">
+    <div class="container ptxxxxl">
+      <h1>Published behaviors:</h1>
+
+      @behaviorVersions.map { ea =>
+        <form action="@routes.ApplicationController.doImportBehavior()" method="POST">
+          <div>@ea.triggers.map(_.text).mkString(" or ")</div>
+          @CSRF.formField
+          <input type="hidden" name="teamId" value="@team.id"/>
+          <input type="hidden" name="dataJson" value="@Json.toJson(ea).toString">
+          <div class="actions">
+            <input type="submit" value="Import"/>
+          </div>
+        </form>
+      }
+
+    </div>
+  </div>
+}

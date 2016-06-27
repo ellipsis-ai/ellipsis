@@ -31,6 +31,24 @@ object EditorFormat {
 
   object BehaviorVersionData {
 
+    private def extractFunctionBodyFrom(function: String): String = {
+      """(?s)^\s*function\s*\([^\)]*\)\s*\{\s*(.*)\s*\}\s*$""".r.findFirstMatchIn(function).flatMap { m =>
+        m.subgroups.headOption
+      }.getOrElse("")
+    }
+
+    def fromStrings(teamId: String, function: String, response: String, params: String, triggers: String): BehaviorVersionData = {
+      BehaviorVersionData(
+        teamId,
+        None,
+        extractFunctionBodyFrom(function),
+        response,
+        Json.parse(params).validate[Seq[BehaviorParameterData]].get,
+        Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
+        None
+      )
+    }
+
     def maybeFor(behaviorId: String, user: User): DBIO[Option[BehaviorVersionData]] = {
       for {
         maybeBehavior <- BehaviorQueries.find(behaviorId, user)

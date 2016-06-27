@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import export.{BehaviorVersionImporter, BehaviorVersionExporter}
+import export.{BehaviorVersionImporter, BehaviorVersionZipImporter, BehaviorVersionExporter}
 import json.EditorFormat._
 import models.bots.triggers.MessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
@@ -16,8 +16,8 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.mvc.AnyContent
-import services.AWSLambdaService
+import play.api.libs.ws.WSClient
+import services.{GithubService, AWSLambdaService}
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
 
@@ -32,10 +32,32 @@ class ApplicationController @Inject() (
                                         val models: Models,
                                         val lambdaService: AWSLambdaService,
                                         val testReportBuilder: BehaviorTestReportBuilder,
+                                        val ws: WSClient,
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
   def index = SecuredAction { implicit request => Ok(views.html.index()) }
+
+  def publishedBehaviors(teamId: String) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      maybeTeam <- Team.find(teamId, user)
+      maybeGithubService <- DBIO.successful(maybeTeam.map { team =>
+        GithubService(team, ws, configuration)
+      })
+      data <- maybeGithubService.map { service =>
+        DBIO.from(service.fetchPublishedBehaviors)
+      }.getOrElse(DBIO.successful(Seq()))
+    } yield {
+        maybeTeam.map { team =>
+          Ok(views.html.publishedBehaviors(team, data))
+        }.getOrElse {
+          NotFound(s"Team not found: $teamId")
+        }
+      }
+
+    models.run(action)
+  }
 
   def newBehavior(teamId: String) = SecuredAction.async { implicit request =>
     val user = request.identity
@@ -288,11 +310,11 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  def importBehavior(teamId: String) = SecuredAction.async { implicit request =>
+  def importBehaviorZip(teamId: String) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = Team.find(teamId, user).map { maybeTeam =>
       maybeTeam.map { team =>
-        Ok(views.html.importBehavior(team))
+        Ok(views.html.importBehaviorZip(team))
       }.getOrElse {
         NotFound(s"Team not found $teamId")
       }
@@ -301,20 +323,20 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  case class ImportBehaviorInfo(teamId: String)
+  case class ImportBehaviorZipInfo(teamId: String)
 
-  private val importBehaviorForm = Form(
+  private val importBehaviorZipForm = Form(
     mapping(
       "teamId" -> nonEmptyText
-    )(ImportBehaviorInfo.apply)(ImportBehaviorInfo.unapply)
+    )(ImportBehaviorZipInfo.apply)(ImportBehaviorZipInfo.unapply)
   )
 
-  def doImportBehavior = SecuredAction.async { implicit request =>
+  def doImportBehaviorZip = SecuredAction.async { implicit request =>
     (for {
       formData <- request.body.asMultipartFormData
       zipFile <- formData.file("zipFile")
     } yield {
-      importBehaviorForm.bindFromRequest.fold(
+      importBehaviorZipForm.bindFromRequest.fold(
         formWithErrors => {
           Future.successful(BadRequest(formWithErrors.errorsAsJson))
         },
@@ -322,7 +344,7 @@ class ApplicationController @Inject() (
           val action = for {
             maybeTeam <- Team.find(info.teamId, request.identity)
             maybeImporter <- DBIO.successful(maybeTeam.map { team =>
-              BehaviorVersionImporter(team, lambdaService, zipFile.ref.file)
+              BehaviorVersionZipImporter(team, lambdaService, zipFile.ref.file)
             })
             maybeBehaviorVersion <- maybeImporter.map { importer =>
               importer.run.map(Some(_))
@@ -340,6 +362,49 @@ class ApplicationController @Inject() (
       )
     }).getOrElse(Future.successful(BadRequest("")))
 
+  }
+
+  case class ImportBehaviorInfo(teamId: String, dataJson: String)
+
+  private val importBehaviorForm = Form(
+    mapping(
+      "teamId" -> nonEmptyText,
+      "dataJson" -> nonEmptyText
+    )(ImportBehaviorInfo.apply)(ImportBehaviorInfo.unapply)
+  )
+
+  def doImportBehavior = SecuredAction.async { implicit request =>
+    val user = request.identity
+    importBehaviorForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val json = Json.parse(info.dataJson)
+        json.validate[BehaviorVersionData] match {
+          case JsSuccess(data, jsPath) => {
+            val action = for {
+              maybeTeam <- Team.find(data.teamId, user)
+              maybeImporter <- DBIO.successful(maybeTeam.map { team =>
+                BehaviorVersionImporter(team, lambdaService, data)
+              })
+              maybeBehaviorVersion <- maybeImporter.map { importer =>
+                importer.run.map(Some(_))
+              }.getOrElse(DBIO.successful(None))
+            } yield {
+                maybeBehaviorVersion.map { behaviorVersion =>
+                  Redirect(routes.ApplicationController.editBehavior(behaviorVersion.behavior.id, justSaved = Some(true)))
+                }.getOrElse {
+                  NotFound("Behavior not found")
+                }
+              }
+
+            models.run(action)
+          }
+          case e: JsError => Future.successful(BadRequest("Malformatted data"))
+        }
+      }
+    )
   }
 
   def regexValidationErrorsFor(pattern: String) = SecuredAction { implicit request =>
