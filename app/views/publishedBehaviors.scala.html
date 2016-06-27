@@ -14,14 +14,14 @@
       <h1>Published behaviors:</h1>
 
       @behaviorVersions.map { ea =>
-        <form action="@routes.ApplicationController.doImportBehavior()" method="POST">
-          <div>@ea.triggers.map(_.text).mkString(" or ")</div>
+        <form action="@routes.ApplicationController.doImportBehavior()" method="POST" class="mbl">
+          @ea.triggers.map { t =>
+            <span class="box-code-example">@t.text</span>
+          }
           @CSRF.formField
           <input type="hidden" name="teamId" value="@team.id"/>
           <input type="hidden" name="dataJson" value="@Json.toJson(ea).toString">
-          <div class="actions">
-            <input type="submit" value="Import"/>
-          </div>
+          <input type="submit" value="Import"/>
         </form>
       }
 
