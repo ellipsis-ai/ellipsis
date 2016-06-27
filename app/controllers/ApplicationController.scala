@@ -17,6 +17,8 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
+import play.api.mvc.Action
+import play.api.routing.JavaScriptReverseRouter
 import services.{GithubService, AWSLambdaService}
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
@@ -414,6 +416,16 @@ class ApplicationController @Inject() (
       Array()
     }
     Ok(Json.toJson(Array(content)))
+  }
+
+  def javascriptRoutes = Action { implicit request =>
+    Ok(
+      JavaScriptReverseRouter("jsRoutes")(
+        routes.javascript.ApplicationController.regexValidationErrorsFor,
+        routes.javascript.ApplicationController.versionInfoFor
+
+      )
+    ).as("text/javascript")
   }
 
 }
