@@ -1,7 +1,9 @@
 @(
     title: String,
     user: Option[models.accounts.User] = None
-    )(content: Html)(implicit messages: Messages)
+    )(content: Html)(implicit messages: Messages, r: RequestHeader)
+
+@import helper._
 
 <!DOCTYPE html>
 <html lang="en">
@@ -67,9 +69,10 @@
             </a>
           </div>
           <div class="column column-one-half align-r pvxs">
-            <form action='@routes.SocialAuthController.signOut()' method="post">
+            <form action='@routes.SocialAuthController.signOut()' method="POST">
+              @CSRF.formField
               <div class="link-blue-light type-bold">
-                <button type="submit" class="button-subtle button-shrink" href='@routes.SlackController.signIn()'>Sign out</button>
+                <button type="submit" class="button-subtle button-shrink">Sign out</button>
               </div>
             </form>
           </div>

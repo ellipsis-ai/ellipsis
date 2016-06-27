@@ -1,7 +1,7 @@
 @(
   maybeHeading: Option[String],
   maybeErrorMessage: Option[String]
-)(implicit messages: Messages)
+)(implicit messages: Messages, r: RequestHeader)
 
 @main(maybeHeading.getOrElse("Page not found")) {
 
