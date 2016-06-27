@@ -6,7 +6,7 @@
     maybeTeam: Option[Team] = None
     )(implicit r: RequestHeader, m: Messages)
 
-@main("Sign in with Slack") {
+@main("Sign in with Slack", maybeUser) {
 
   <div id="content" class="content">
     <div class="container ptxxxxl">

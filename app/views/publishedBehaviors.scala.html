@@ -1,4 +1,5 @@
 @(
+  maybeUser: Option[models.accounts.User],
   team: Team,
   behaviorVersions: Seq[json.EditorFormat.BehaviorVersionData]
   )(implicit messages: Messages, r: RequestHeader)
@@ -7,7 +8,7 @@
 @import play.api.libs.json._
 @import json.EditorFormat._
 
-@main("Published behaviors") {
+@main("Published behaviors", maybeUser) {
 
   <div id="content" class="content">
     <div class="container ptxxxxl">

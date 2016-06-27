@@ -146,6 +146,31 @@ a:hover {
   text-decoration: underline;
 }
 
+.link-green,
+.link-green:link,
+.link-green:visited {
+  color: @green-light;
+  height: 28px;
+  margin: -2px 0;
+}
+
+.link-green:hover {
+  color: @blue-medium;
+}
+
+.link-blue-light,
+.link-blue-light:link,
+.link-blue-light:visited {
+  color: @blue-lighter;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+}
+
+.link-blue-light:hover {
+  color: @blue-light;
+  text-decoration: none;
+}
+
 /*
 
 Margin and padding utilities
@@ -555,16 +580,6 @@ pre {
   line-height: @xl;
   padding: @s 0;
   vertical-align: bottom;
-}
-
-.logo {
-  color: @green-light;
-  height: 28px;
-  margin: -2px 0;
-}
-
-.logo:hover {
-  color: @blue-medium;
 }
 
 /* Headers */

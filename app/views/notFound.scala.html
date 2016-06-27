@@ -1,0 +1,26 @@
+@(
+  maybeUser: Option[models.accounts.User],
+  maybeHeading: Option[String],
+  maybeErrorMessage: Option[String]
+)(implicit messages: Messages, r: RequestHeader)
+
+@main(maybeHeading.getOrElse("Page not found"), maybeUser) {
+
+<div id="content" class="content">
+  <div class="container ptxxxxl">
+    <h1>@maybeHeading.getOrElse("Page not found")</h1>
+
+    <div class="columns">
+      <div class="column column-three-quarters">
+        <p>
+          @maybeErrorMessage.getOrElse("The page you are trying to access could not be found.")
+          It may have been removed,
+          or you may not have access to it. You may want to try signing in with a different
+          team if you have more than one account.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+}

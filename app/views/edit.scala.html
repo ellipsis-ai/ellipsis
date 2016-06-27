@@ -1,4 +1,5 @@
 @(
+  maybeUser: Option[models.accounts.User],
   json: String,
   envVariableNames: Seq[String],
   justSaved: Boolean
@@ -12,7 +13,7 @@
   routes.javascript.ApplicationController.versionInfoFor
 )
 
-@main("Ellipsis behavior editor") {
+@main("Ellipsis behavior editor", maybeUser) {
 
   <div id="content" class="content">
     <div>
