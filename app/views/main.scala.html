@@ -14,9 +14,9 @@
   </head>
   <body class="bg-lightest">
     <header class="bg-blue-dark border-emphasis-bottom border-pink type-white">
-      <div class="container ptm pbxs">
+      <div class="container">
         <div class="columns">
-          <div class="column column-one-half">
+          <div class="column column-one-half ptm pbxs">
             <a href='@routes.ApplicationController.index' class="link-green display-inline-block">
               <svg role="img" aria-label="Ellipsis"
               version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
@@ -66,8 +66,12 @@
               </svg>
             </a>
           </div>
-          <div class="column column-one-half align-r">
-            <a class="link-blue-light type-bold" href='@routes.SlackController.signIn()'>Sign out</a>
+          <div class="column column-one-half align-r pvxs">
+            <form action='@routes.SocialAuthController.signOut()' method="post">
+              <div class="link-blue-light type-bold">
+                <button type="submit" class="button-subtle button-shrink" href='@routes.SlackController.signIn()'>Sign out</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
