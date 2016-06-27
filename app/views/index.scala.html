@@ -1,6 +1,8 @@
-@()(implicit messages: Messages, r: RequestHeader)
+@(
+  maybeUser: Option[models.accounts.User]
+  )(implicit messages: Messages, r: RequestHeader)
 
-@main("Ellipsis behavior editor") {
+@main("Ellipsis behavior editor", maybeUser) {
 
   <div id="content" class="content">
     <div class="container ptxxxxl">

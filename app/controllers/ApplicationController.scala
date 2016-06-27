@@ -36,7 +36,7 @@ class ApplicationController @Inject() (
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
-  def index = SecuredAction { implicit request => Ok(views.html.index()) }
+  def index = SecuredAction { implicit request => Ok(views.html.index(Some(request.identity))) }
 
   def publishedBehaviors(teamId: String) = SecuredAction.async { implicit request =>
     val user = request.identity
@@ -50,7 +50,7 @@ class ApplicationController @Inject() (
       }.getOrElse(DBIO.successful(Seq()))
     } yield {
         maybeTeam.map { team =>
-          Ok(views.html.publishedBehaviors(team, data))
+          Ok(views.html.publishedBehaviors(Some(user), team, data))
         }.getOrElse {
           NotFound(s"Team not found: $teamId")
         }
@@ -80,7 +80,7 @@ class ApplicationController @Inject() (
               Seq(),
               None
             )
-            Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), justSaved = false))
+            Ok(views.html.edit(Some(user), Json.toJson(data).toString, envVars.map(_.name), justSaved = false))
           }).getOrElse {
           // TODO: platform-agnostic
           Redirect(routes.SlackController.signIn(Some(request.uri)))
@@ -106,9 +106,9 @@ class ApplicationController @Inject() (
           data <- maybeVersionData
           envVars <- maybeEnvironmentVariables
         } yield {
-          Ok(views.html.edit(Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
+          Ok(views.html.edit(Some(user), Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
         }).getOrElse {
-          NotFound(views.html.notFound(Some("Behavior not found"), Some("The behavior you are trying to access could not be found.")))
+          NotFound(views.html.notFound(Some(user), Some("Behavior not found"), Some("The behavior you are trying to access could not be found.")))
         }
     }
 
@@ -149,7 +149,7 @@ class ApplicationController @Inject() (
                 maybeBehavior.map { behavior =>
                   Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
                 }.getOrElse {
-                  NotFound(views.html.notFound(Some("Behavior not found"), Some("The behavior you were trying to save could not be found.")))
+                  NotFound(views.html.notFound(Some(user), Some("Behavior not found"), Some("The behavior you were trying to save could not be found.")))
                 }
               }) transactionally
 
@@ -314,7 +314,7 @@ class ApplicationController @Inject() (
     val user = request.identity
     val action = Team.find(teamId, user).map { maybeTeam =>
       maybeTeam.map { team =>
-        Ok(views.html.importBehaviorZip(team))
+        Ok(views.html.importBehaviorZip(Some(user), team))
       }.getOrElse {
         NotFound(s"Team not found $teamId")
       }

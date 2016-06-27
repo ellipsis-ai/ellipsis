@@ -1,6 +1,6 @@
 @(
     title: String,
-    user: Option[models.accounts.User] = None
+    maybeUser: Option[models.accounts.User]
     )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
@@ -68,14 +68,16 @@
               </svg>
             </a>
           </div>
-          <div class="column column-one-half align-r pvxs">
-            <form action='@routes.SocialAuthController.signOut()' method="POST">
-              @CSRF.formField
-              <div class="link-blue-light type-bold">
-                <button type="submit" class="button-subtle button-shrink">Sign out</button>
-              </div>
-            </form>
-          </div>
+          @maybeUser.map { _ =>
+            <div class="column column-one-half align-r pvxs">
+              <form action='@routes.SocialAuthController.signOut()' method="POST">
+                @CSRF.formField
+                <div class="link-blue-light type-bold">
+                  <button type="submit" class="button-subtle button-shrink">Sign out</button>
+                </div>
+              </form>
+            </div>
+          }
         </div>
       </div>
     </header>
