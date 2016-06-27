@@ -75,15 +75,17 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration) {
     }
   }
 
-  private def fetchBehaviorCodeFor(behaviorUrl: String): Future[Option[BehaviorCode]] = {
-    withTreeFor(behaviorUrl).map { maybeTree =>
-      for {
+  private def fetchBehaviorDataFor(behaviorUrl: String): Future[Option[BehaviorVersionData]] = {
+    withTreeFor(behaviorUrl).flatMap { maybeTree =>
+      (for {
         tree <- maybeTree
         functionUrl <- urlForTreeFileNamed("function.js", tree)
         responseUrl <- urlForTreeFileNamed("response.md", tree)
         triggersUrl <- urlForTreeFileNamed("triggers.json", tree)
         paramsUrl <- urlForTreeFileNamed("params.json", tree)
-      } yield BehaviorCode(functionUrl, responseUrl, triggersUrl, paramsUrl)
+      } yield {
+          BehaviorCode(functionUrl, responseUrl, triggersUrl, paramsUrl).fetchData.map(Some(_))
+        }).getOrElse(Future.successful(None))
     }
   }
 
@@ -93,8 +95,10 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration) {
       behaviorUrls <- maybePublishedUrl.map { publishedUrl =>
         fetchBehaviorUrlsFor(publishedUrl)
       }.getOrElse(Future.successful(Seq()))
-      behaviorCodes <- Future.sequence(behaviorUrls.map(fetchBehaviorCodeFor)).map(_.flatten)
-      behaviorData <- Future.sequence(behaviorCodes.map(_.fetchData))
+      behaviorData <- {
+        val eventualBehaviorData = behaviorUrls.map(fetchBehaviorDataFor)
+        Future.sequence(eventualBehaviorData).map(_.flatten)
+      }
     } yield behaviorData
   }
 
