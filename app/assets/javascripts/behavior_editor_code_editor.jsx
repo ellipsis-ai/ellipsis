@@ -1,13 +1,25 @@
 define(function(require) {
 var React = require('react'),
-  Codemirror = require('./react-codemirror'),
-  CodeMirror = require('codemirror'),
-  CodeMirrorJSMode = require('codemirror/mode/javascript/javascript'),
-  CodeMirrorLint = require('codemirror/addon/lint/lint'),
-  CodeMirrorJSLint = require('codemirror/addon/lint/javascript-lint'),
-  CodeMirrorShowHint = require('codemirror/addon/hint/show-hint');
+  Codemirror = require('./react-codemirror');
+  require('codemirror');
+  require('codemirror/mode/javascript/javascript');
+  require('codemirror/addon/lint/lint');
+  require('codemirror/addon/lint/javascript-lint');
+  require('codemirror/addon/hint/show-hint');
 
 return React.createClass({
+  propTypes: {
+    autocompletions: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    firstLineNumber: React.PropTypes.oneOfType([
+      React.PropTypes.number,
+      React.PropTypes.string
+    ]).isRequired,
+    functionParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    lineWrapping: React.PropTypes.bool,
+    onChange: React.PropTypes.func.isRequired,
+    onCursorChange: React.PropTypes.func.isRequired,
+    value: React.PropTypes.string.isRequired
+  },
   getJsHintOptions: function() {
     return {
       // Enforcing options
@@ -74,7 +86,7 @@ return React.createClass({
     };
   },
 
-  autocompleteParams: function(cm, options) {
+  autocompleteParams: function(cm) {
     var matches = [];
     var possibleWords = this.props.autocompletions;
 
@@ -103,7 +115,7 @@ return React.createClass({
       list: matches,
       from: { line: cursor.line, ch: start },
       to: { line: cursor.line, ch: end }
-    }
+    };
   },
 
   render: function() {

@@ -5,8 +5,17 @@ var React = require('react'),
   BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition');
 
 return React.createClass({
-  displayName: 'BehaviorEditorCodeHeader',
   mixins: [BehaviorEditorMixin],
+  propTypes: {
+    hasParams: React.PropTypes.bool,
+    helpVisible: React.PropTypes.bool,
+    onEnterKey: React.PropTypes.func.isRequired,
+    onParamAdd: React.PropTypes.func.isRequired,
+    onParamChange: React.PropTypes.func.isRequired,
+    onParamDelete: React.PropTypes.func.isRequired,
+    onToggleHelp: React.PropTypes.func.isRequired,
+    params: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
+  },
   onChange: function(index, data) {
     this.props.onParamChange(index, data);
   },

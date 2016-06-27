@@ -2,7 +2,20 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
-  displayName: 'BehaviorEditorInput',
+  propTypes: {
+    autoFocus: React.PropTypes.bool,
+    className: React.PropTypes.string,
+    id: React.PropTypes.oneOfType([
+      React.PropTypes.number,
+      React.PropTypes.string
+    ]),
+    onBlur: React.PropTypes.func,
+    onChange: React.PropTypes.func.isRequired,
+    onEnterKey: React.PropTypes.func,
+    placeholder: React.PropTypes.string,
+    value: React.PropTypes.string.isRequired
+  },
+
   onChange: function() {
     this.props.onChange(this.refs.input.value);
   },
@@ -14,7 +27,7 @@ return React.createClass({
   },
 
   handleEnterKey: function(event) {
-    if (event.which == 13) {
+    if (event.which === 13) {
       event.preventDefault();
       if (typeof this.props.onEnterKey == 'function') {
         this.props.onEnterKey();

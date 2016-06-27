@@ -2,6 +2,13 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
+  propTypes: {
+    lineNumber: React.PropTypes.oneOfType([
+      React.PropTypes.number,
+      React.PropTypes.string
+    ]).isRequired,
+    onCodeDelete: React.PropTypes.func.isRequired
+  },
   render: function() {
     return (
       <div className="border-left border-bottom border-right border-radius-bottom pvs">

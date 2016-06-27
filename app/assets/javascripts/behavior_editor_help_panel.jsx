@@ -3,6 +3,11 @@ var React = require('react'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button');
 
 return React.createClass({
+  propTypes: {
+    children: React.PropTypes.node.isRequired,
+    heading: React.PropTypes.node.isRequired,
+    onCollapseClick: React.PropTypes.func.isRequired
+  },
   render: function() {
     return (
       <div className="box-help type-s pts">

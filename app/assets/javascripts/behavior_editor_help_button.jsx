@@ -5,8 +5,15 @@ var React = require('react'),
   SVGXIcon = require('./svg/x');
 
 return React.createClass({
-  displayName: 'BehaviorEditorHelpButton',
   mixins: [BehaviorEditorMixin],
+  propTypes: {
+    className: React.PropTypes.string,
+    children: React.PropTypes.node,
+    inline: React.PropTypes.bool,
+    onClick: React.PropTypes.func.isRequired,
+    showHelp: React.PropTypes.bool,
+    toggled: React.PropTypes.bool
+  },
   onClick: function() {
     this.props.onClick();
   },

@@ -11,13 +11,13 @@
       <h1>Import a behavior (for testing)</h1>
 
       <p>
-        Paste in exported JSON:
+        Upload an exported zip:
       </p>
 
-      <form action="@routes.ApplicationController.doImportBehavior()" method="POST">
+      <form action="@routes.ApplicationController.doImportBehaviorZip()" method="POST" enctype="multipart/form-data">
         @CSRF.formField
         <input type="hidden" name="teamId" value="@team.id"/>
-        <textarea cols="100" rows="10" name="dataJson"></textarea>
+        <input type="file" name="zipFile">
         <div class="actions">
           <input type="submit" value="Import"/>
         </div>
