@@ -315,7 +315,7 @@ return React.createClass({
   },
 
   loadVersions: function() {
-    var url = '/version_info/' + encodeURIComponent(this.props.behaviorId);
+    var url = jsRoutes.controllers.ApplicationController.versionInfoFor(this.props.behaviorId).url;
     this.setState({
       versionsLoadStatus: 'loading'
     });

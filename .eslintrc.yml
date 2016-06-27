@@ -11,6 +11,7 @@ plugins:
 globals:
   requirejs: false
   define: false
+  jsRoutes: false
 rules:
   no-mixed-spaces-and-tabs:
     - error
