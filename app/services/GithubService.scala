@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class GithubService(team: Team, ws: WSClient, config: Configuration) {
 
-  val repoCredentials: (String, String) = ("access_token", config.getString("GITHUB_REPO_TOKEN").get)
+  val repoCredentials: (String, String) = ("access_token", config.getString("github.repoAccessToken").get)
 
   private def withTreeFor(url: String): Future[Option[Seq[JsValue]]] = {
     ws.url(url).withQueryString(repoCredentials).get().map { response =>
