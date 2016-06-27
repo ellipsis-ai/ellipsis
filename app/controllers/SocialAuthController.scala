@@ -166,4 +166,9 @@ class SocialAuthController @Inject() (
     }
   }
 
+  def signOut = SecuredAction.async { implicit request =>
+    val redirect = request.request.headers.get("referer").getOrElse(routes.ApplicationController.index.toString)
+    env.authenticatorService.discard(request.authenticator, Redirect(redirect))
+  }
+
 }
