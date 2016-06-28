@@ -16,7 +16,7 @@ class BehaviorVersionSpec extends PlaySpec with DBMixin {
     "should load the current version" in {
       withDatabase { db =>
         val team = runNow(db, Team(IDs.next, "").save)
-        val behavior = runNow(db, BehaviorQueries.createFor(team))
+        val behavior = runNow(db, BehaviorQueries.createFor(team, None))
         val firstVersion = runNow(db, BehaviorVersionQueries.createFor(behavior))
         reloadBehavior(db, behavior).maybeCurrentVersionId mustBe Some(firstVersion.id)
         val secondVersion = runNow(db, BehaviorVersionQueries.createFor(behavior))
@@ -29,7 +29,7 @@ class BehaviorVersionSpec extends PlaySpec with DBMixin {
         val firstCode = Some("first code")
         val secondCode = Some("second code")
         val team = runNow(db, Team(IDs.next, "").save)
-        val behavior = runNow(db, BehaviorQueries.createFor(team))
+        val behavior = runNow(db, BehaviorQueries.createFor(team, None))
 
         var firstVersion = runNow(db, BehaviorVersionQueries.createFor(behavior))
         firstVersion = runNow(db, firstVersion.copy(maybeFunctionBody = firstCode).save)

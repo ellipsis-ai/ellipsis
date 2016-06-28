@@ -8,7 +8,7 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
   def triggerFor(template: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): TemplateMessageTrigger = {
     val team = Team(IDs.next, "Team!")
     val versionId = IDs.next
-    val behavior = Behavior(IDs.next, team, Some(versionId), DateTime.now)
+    val behavior = Behavior(IDs.next, team, Some(versionId), None, DateTime.now)
     val behaviorVersion = BehaviorVersion(versionId, behavior, None, None, None, None, DateTime.now)
     TemplateMessageTrigger(IDs.next, behaviorVersion, template, requiresBotMention, isCaseSensitive)
   }

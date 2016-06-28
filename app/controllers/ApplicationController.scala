@@ -47,12 +47,17 @@ class ApplicationController @Inject() (
       maybeGithubService <- DBIO.successful(maybeTeam.map { team =>
         GithubService(team, ws, configuration)
       })
+      importedIds <- maybeTeam.map { team =>
+        BehaviorQueries.allForTeam(team).map { behaviors =>
+          behaviors.flatMap(_.maybeImportedId)
+        }
+      }.getOrElse(DBIO.successful(Seq()))
       data <- maybeGithubService.map { service =>
         DBIO.from(service.fetchPublishedBehaviors)
       }.getOrElse(DBIO.successful(Seq()))
     } yield {
         maybeTeam.map { team =>
-          Ok(views.html.publishedBehaviors(Some(user), team, data))
+          Ok(views.html.publishedBehaviors(Some(user), team, data, importedIds))
         }.getOrElse {
           NotFound(s"Team not found: $teamId")
         }
@@ -80,6 +85,7 @@ class ApplicationController @Inject() (
               "",
               Seq(),
               Seq(),
+              None,
               None
             )
             Ok(views.html.edit(Some(user), Json.toJson(data).toString, envVars.map(_.name), justSaved = false))
@@ -141,7 +147,7 @@ class ApplicationController @Inject() (
                 BehaviorQueries.find(behaviorId, user)
               }.getOrElse {
                 maybeTeam.map { team =>
-                  BehaviorQueries.createFor(team).map(Some(_))
+                  BehaviorQueries.createFor(team, None).map(Some(_))
                 }.getOrElse(DBIO.successful(None))
               }
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
@@ -220,6 +226,7 @@ class ApplicationController @Inject() (
                   BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
                 }
               }.getOrElse(Seq()),
+              None,
               Some(version.createdAt)
             )
           }

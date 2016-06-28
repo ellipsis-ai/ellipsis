@@ -11,7 +11,7 @@ case class BehaviorVersionImporter(team: Team, lambdaService: AWSLambdaService, 
 
   def run: DBIO[BehaviorVersion] = {
     for {
-      behavior <- BehaviorQueries.createFor(team)
+      behavior <- BehaviorQueries.createFor(team, data.config.map(_.publishedId))
       version <- BehaviorVersionQueries.createFor(behavior, lambdaService, data)
     } yield version
 
