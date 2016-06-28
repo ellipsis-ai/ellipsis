@@ -3,7 +3,7 @@ package export
 import java.io.{ByteArrayOutputStream, FileInputStream, File}
 import java.util.zip.{ZipEntry, ZipInputStream}
 
-import json.EditorFormat.BehaviorVersionData
+import json.BehaviorVersionData
 import models.Team
 import models.bots.BehaviorVersion
 import services.AWSLambdaService

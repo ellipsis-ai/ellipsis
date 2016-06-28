@@ -1,6 +1,6 @@
 package services
 
-import json.EditorFormat.BehaviorVersionData
+import json._
 import models.Team
 import play.api.Configuration
 import play.api.libs.json.{JsValue, Json}

@@ -1,13 +1,13 @@
 @(
   maybeUser: Option[models.accounts.User],
   team: Team,
-  behaviorVersions: Seq[json.EditorFormat.BehaviorVersionData],
+  behaviorVersions: Seq[json.BehaviorVersionData],
   alreadyImportedIds: Seq[String]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
 @import play.api.libs.json._
-@import json.EditorFormat._
+@import json.Formatting._
 
 @main("Published behaviors", maybeUser) {
 

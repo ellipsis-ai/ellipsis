@@ -1,6 +1,6 @@
 package export
 
-import json.EditorFormat.BehaviorVersionData
+import json.BehaviorVersionData
 import models.Team
 import models.bots.{BehaviorQueries, BehaviorVersionQueries, BehaviorVersion}
 import services.AWSLambdaService

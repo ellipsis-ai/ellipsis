@@ -6,7 +6,8 @@ import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import export.{BehaviorVersionImporter, BehaviorVersionZipImporter, BehaviorVersionExporter}
-import json.EditorFormat._
+import json._
+import json.Formatting._
 import models.bots.triggers.MessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
