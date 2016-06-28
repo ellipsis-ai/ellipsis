@@ -3,7 +3,7 @@ package models.bots
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import com.github.tototoshi.slick.PostgresJodaSupport._
-import json.EditorFormat.BehaviorVersionData
+import json.BehaviorVersionData
 import models.accounts.User
 import models.bots.templates.TemplateApplier
 import models.bots.triggers.MessageTriggerQueries

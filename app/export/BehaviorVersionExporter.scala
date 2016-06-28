@@ -1,7 +1,8 @@
 package export
 
 import java.io.{PrintWriter, File}
-import json.EditorFormat._
+import json._
+import json.Formatting._
 import models.accounts.User
 import models.bots.{BehaviorVersion, BehaviorQueries}
 import play.api.libs.json.Json
