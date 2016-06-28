@@ -8,13 +8,11 @@
 @import play.filters.csrf._
 @import play.api.libs.json._
 
-@helper.javascriptRouter("jsRoutes")(
-  routes.javascript.ApplicationController.regexValidationErrorsFor,
-  routes.javascript.ApplicationController.versionInfoFor
-)
-
 @main("Ellipsis behavior editor", maybeUser) {
-
+  @helper.javascriptRouter("jsRoutes")(
+    routes.javascript.ApplicationController.regexValidationErrorsFor,
+    routes.javascript.ApplicationController.versionInfoFor
+  )
   <div id="content" class="content">
     <div>
       <div id="editorContainer"></div>
