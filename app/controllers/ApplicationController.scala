@@ -54,7 +54,7 @@ class ApplicationController @Inject() (
         }
       }.getOrElse(DBIO.successful(Seq()))
       data <- maybeGithubService.map { service =>
-        DBIO.from(service.fetchPublishedBehaviors)
+        DBIO.from(service.fetchPublishedBehaviorCategories)
       }.getOrElse(DBIO.successful(Seq()))
     } yield {
         maybeTeam.map { team =>
