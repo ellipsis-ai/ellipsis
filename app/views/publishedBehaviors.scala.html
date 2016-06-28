@@ -1,7 +1,7 @@
 @(
   maybeUser: Option[models.accounts.User],
   team: Team,
-  behaviorVersions: Seq[json.BehaviorVersionData],
+  behaviorCategories: Seq[json.BehaviorCategory],
   alreadyImportedIds: Seq[String]
   )(implicit messages: Messages, r: RequestHeader)
 
@@ -15,19 +15,22 @@
     <div class="container ptxxxxl">
       <h1>Published behaviors:</h1>
 
-      @behaviorVersions.map { ea =>
-        <form action="@routes.ApplicationController.doImportBehavior()" method="POST" class="mbl">
-          @ea.triggers.map { t =>
-            <span class="box-code-example">@t.text</span>
-          }
-          @CSRF.formField
-          <input type="hidden" name="teamId" value="@team.id"/>
-          <input type="hidden" name="dataJson" value="@Json.toJson(ea).toString">
-          <input type="submit" value="Import"/>
-          @if(ea.config.exists { c => alreadyImportedIds.contains(c.publishedId) }) {
-            <span>(already imported)</span>
-          }
-        </form>
+      @behaviorCategories.map { category =>
+        <h3>@category.name – @category.description</h3>
+        @category.behaviorVersions.map { ea =>
+          <form action="@routes.ApplicationController.doImportBehavior()" method="POST" class="mbl">
+            @ea.triggers.map { t =>
+              <span class="box-code-example">@t.text</span>
+            }
+            @CSRF.formField
+            <input type="hidden" name="teamId" value="@team.id"/>
+            <input type="hidden" name="dataJson" value="@Json.toJson(ea).toString">
+            <input type="submit" value="Import"/>
+            @if(ea.config.exists { c => alreadyImportedIds.contains(c.publishedId) }) {
+              <span>(already imported)</span>
+            }
+          </form>
+        }
       }
 
     </div>

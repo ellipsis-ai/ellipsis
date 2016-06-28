@@ -30,13 +30,26 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration) {
     }
   }
 
-  private def fetchBehaviorUrlsFor(publishedUrl: String): Future[Seq[String]] = {
-    withTreeFor(publishedUrl).map { maybeTree =>
+  private def fetchPropertyFrom(property: String, treeUrl: String): Future[Seq[String]] = {
+    withTreeFor(treeUrl).map { maybeTree =>
       maybeTree.map { tree =>
         tree.flatMap { item =>
-          (item \ "url").asOpt[String]
+          (item \ property).asOpt[String]
         }
       }.getOrElse(Seq())
+    }
+  }
+
+  private def fetchTreeUrlsFor(treeUrl: String): Future[Seq[String]] = fetchPropertyFrom("url", treeUrl)
+  private def fetchPathsFor(treeUrl: String): Future[Seq[String]] = fetchPropertyFrom("path", treeUrl)
+
+  private def fetchTextFor(url: String): Future[String] = {
+    ws.url(url).
+      withQueryString(repoCredentials).
+      withHeaders(("Accept", "application/vnd.github.v3.raw")).
+      get().
+      map { response =>
+      response.body
     }
   }
 
@@ -47,16 +60,6 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration) {
                            triggersUrl: String,
                            paramsUrl: String
                            ) {
-
-    private def fetchTextFor(url: String): Future[String] = {
-      ws.url(url).
-        withQueryString(repoCredentials).
-        withHeaders(("Accept", "application/vnd.github.v3.raw")).
-        get().
-        map { response =>
-          response.body
-        }
-    }
 
     def fetchData: Future[BehaviorVersionData] = {
       for {
@@ -98,17 +101,46 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration) {
     }
   }
 
-  def fetchPublishedBehaviors: Future[Seq[BehaviorVersionData]] = {
+  private def fetchCategoryDataFor(categoryUrl: String, categoryPath: String): Future[Option[BehaviorCategory]] = {
+    withTreeFor(categoryUrl).flatMap { maybeTree =>
+      (for {
+        tree <- maybeTree
+        readmeUrl <- urlForTreeFileNamed("README", tree)
+      } yield {
+          (for {
+            readme <- fetchTextFor(readmeUrl)
+            behaviors <- fetchBehaviorsFor(categoryUrl)
+          } yield {
+            BehaviorCategory(categoryPath, readme, behaviors)
+          }).map(Some(_))
+        }).getOrElse(Future.successful(None))
+    }
+  }
+
+  def fetchBehaviorsFor(categoryUrl: String): Future[Seq[BehaviorVersionData]] = {
     for {
-      maybePublishedUrl <- fetchPublishedUrl
-      behaviorUrls <- maybePublishedUrl.map { publishedUrl =>
-        fetchBehaviorUrlsFor(publishedUrl)
-      }.getOrElse(Future.successful(Seq()))
+      behaviorUrls <- fetchTreeUrlsFor(categoryUrl)
       behaviorData <- {
         val eventualBehaviorData = behaviorUrls.map(fetchBehaviorDataFor)
         Future.sequence(eventualBehaviorData).map(_.flatten)
       }
     } yield behaviorData
+  }
+
+  def fetchPublishedBehaviorCategories: Future[Seq[BehaviorCategory]] = {
+    for {
+      maybePublishedUrl <- fetchPublishedUrl
+      categoryUrls <- maybePublishedUrl.map { publishedUrl =>
+        fetchTreeUrlsFor(publishedUrl)
+      }.getOrElse(Future.successful(Seq()))
+      categoryPaths <- maybePublishedUrl.map { publishedUrl =>
+        fetchPathsFor(publishedUrl)
+      }.getOrElse(Future.successful(Seq()))
+      categoryData <- {
+        val eventualCategoryData = categoryUrls.zip(categoryPaths).map((fetchCategoryDataFor _).tupled)
+        Future.sequence(eventualCategoryData).map(_.flatten)
+      }
+    } yield categoryData
   }
 
 }

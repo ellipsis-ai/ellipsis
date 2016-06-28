@@ -19,4 +19,7 @@ object Formatting {
   implicit val behaviorReads = Json.reads[BehaviorData]
   implicit val behaviorWrites = Json.writes[BehaviorData]
 
+  implicit val behaviorCategoryReads = Json.reads[BehaviorCategory]
+  implicit val behaviorCategoryWrites = Json.writes[BehaviorCategory]
+
 }
