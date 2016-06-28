@@ -61,6 +61,15 @@ ${GREEN}jest${PLAIN} is not installed. Try running ${GREEN}npm install${PLAIN}.
 
 fi
 
+type activator >/dev/null 2>&1 || {
+
+  printf "
+${GREEN}activator${PLAIN} is not installed. Visit ${GREEN}https://www.lightbend.com/activator/download${PLAIN} to download it.
+
+";
+  exit 1
+}
+
 printf "Running eslint...\n"
 npm run lint
 if [ $? -eq 1 ];
