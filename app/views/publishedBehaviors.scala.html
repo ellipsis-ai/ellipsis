@@ -1,7 +1,8 @@
 @(
   maybeUser: Option[models.accounts.User],
   team: Team,
-  behaviorVersions: Seq[json.EditorFormat.BehaviorVersionData]
+  behaviorVersions: Seq[json.EditorFormat.BehaviorVersionData],
+  alreadyImportedIds: Seq[String]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
@@ -23,6 +24,9 @@
           <input type="hidden" name="teamId" value="@team.id"/>
           <input type="hidden" name="dataJson" value="@Json.toJson(ea).toString">
           <input type="submit" value="Import"/>
+          @if(ea.config.exists { c => alreadyImportedIds.contains(c.publishedId) }) {
+            <span>(already imported)</span>
+          }
         </form>
       }
 

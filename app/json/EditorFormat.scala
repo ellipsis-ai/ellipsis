@@ -26,8 +26,11 @@ object EditorFormat {
                                   responseTemplate: String,
                                   params: Seq[BehaviorParameterData],
                                   triggers: Seq[BehaviorTriggerData],
+                                  config: Option[BehaviorConfig],
                                   createdAt: Option[DateTime]
                                   )
+
+  case class BehaviorConfig(publishedId: String)
 
   object BehaviorVersionData {
 
@@ -37,7 +40,7 @@ object EditorFormat {
       }.getOrElse("")
     }
 
-    def fromStrings(teamId: String, function: String, response: String, params: String, triggers: String): BehaviorVersionData = {
+    def fromStrings(teamId: String, function: String, response: String, params: String, triggers: String, config: String): BehaviorVersionData = {
       BehaviorVersionData(
         teamId,
         None,
@@ -45,11 +48,12 @@ object EditorFormat {
         response,
         Json.parse(params).validate[Seq[BehaviorParameterData]].get,
         Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
+        Json.parse(config).validate[BehaviorConfig].asOpt,
         None
       )
     }
 
-    def maybeFor(behaviorId: String, user: User): DBIO[Option[BehaviorVersionData]] = {
+    def maybeFor(behaviorId: String, user: User, maybePublishedId: Option[String] = None): DBIO[Option[BehaviorVersionData]] = {
       for {
         maybeBehavior <- BehaviorQueries.find(behaviorId, user)
         maybeBehaviorVersion <- maybeBehavior.map { behavior =>
@@ -79,6 +83,7 @@ object EditorFormat {
             triggers.map(ea =>
               BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
             ),
+            maybePublishedId.map( id => BehaviorConfig(id)),
             Some(behaviorVersion.createdAt)
           )
         }
@@ -93,6 +98,9 @@ object EditorFormat {
 
   implicit val behaviorTriggerReads = Json.reads[BehaviorTriggerData]
   implicit val behaviorTriggerWrites = Json.writes[BehaviorTriggerData]
+
+  implicit val behaviorConfigReads = Json.reads[BehaviorConfig]
+  implicit val behaviorConfigWrites = Json.writes[BehaviorConfig]
 
   implicit val behaviorVersionReads = Json.reads[BehaviorVersionData]
   implicit val behaviorVersionWrites = Json.writes[BehaviorVersionData]

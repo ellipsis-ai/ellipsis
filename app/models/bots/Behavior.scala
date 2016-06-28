@@ -12,6 +12,7 @@ case class Behavior(
                     id: String,
                     team: Team,
                     maybeCurrentVersionId: Option[String],
+                    maybeImportedId: Option[String],
                     createdAt: DateTime
                     ) {
 
@@ -27,7 +28,7 @@ case class Behavior(
   }
 
   def toRaw: RawBehavior = {
-    RawBehavior(id, team.id, maybeCurrentVersionId, createdAt)
+    RawBehavior(id, team.id, maybeCurrentVersionId, maybeImportedId, createdAt)
   }
 
 }
@@ -36,6 +37,7 @@ case class RawBehavior(
                        id: String,
                        teamId: String,
                        maybeCurrentVersionId: Option[String],
+                       maybeImportedId: Option[String],
                        createdAt: DateTime
                        )
 
@@ -44,9 +46,10 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
   def maybeCurrentVersionId = column[Option[String]]("current_version_id")
+  def maybeImportedId = column[Option[String]]("imported_id")
   def createdAt = column[DateTime]("created_at")
 
-  def * = (id, teamId, maybeCurrentVersionId, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+  def * = (id, teamId, maybeCurrentVersionId, maybeImportedId, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
 object BehaviorQueries {
@@ -60,6 +63,7 @@ object BehaviorQueries {
       raw.id,
       tuple._2,
       raw.maybeCurrentVersionId,
+      raw.maybeImportedId,
       raw.createdAt
     )
   }
@@ -98,11 +102,11 @@ object BehaviorQueries {
     allForTeamQuery(team.id).result.map { tuples => tuples.map(tuple2Behavior) }
   }
 
-  def createFor(team: Team): DBIO[Behavior] = {
-    val raw = RawBehavior(IDs.next, team.id, None, DateTime.now)
+  def createFor(team: Team, maybeImportedId: Option[String]): DBIO[Behavior] = {
+    val raw = RawBehavior(IDs.next, team.id, None, maybeImportedId, DateTime.now)
 
     (all += raw).map { _ =>
-      Behavior(raw.id, team, raw.maybeCurrentVersionId, raw.createdAt)
+      Behavior(raw.id, team, raw.maybeCurrentVersionId, raw.maybeImportedId, raw.createdAt)
     }
   }
 

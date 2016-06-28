@@ -40,7 +40,13 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration) {
     }
   }
 
-  case class BehaviorCode(functionUrl: String, responseUrl: String, triggersUrl: String, paramsUrl: String) {
+  case class BehaviorCode(
+                           configUrl: String,
+                           functionUrl: String,
+                           responseUrl: String,
+                           triggersUrl: String,
+                           paramsUrl: String
+                           ) {
 
     private def fetchTextFor(url: String): Future[String] = {
       ws.url(url).
@@ -54,6 +60,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration) {
 
     def fetchData: Future[BehaviorVersionData] = {
       for {
+        config <- fetchTextFor(configUrl)
         function <- fetchTextFor(functionUrl)
         response <- fetchTextFor(responseUrl)
         params <- fetchTextFor(paramsUrl)
@@ -63,7 +70,8 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration) {
         function,
         response,
         params,
-        triggers
+        triggers,
+        config
       )
     }
 
@@ -79,12 +87,13 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration) {
     withTreeFor(behaviorUrl).flatMap { maybeTree =>
       (for {
         tree <- maybeTree
+        configUrl <- urlForTreeFileNamed("config.json", tree)
         functionUrl <- urlForTreeFileNamed("function.js", tree)
         responseUrl <- urlForTreeFileNamed("response.md", tree)
         triggersUrl <- urlForTreeFileNamed("triggers.json", tree)
         paramsUrl <- urlForTreeFileNamed("params.json", tree)
       } yield {
-          BehaviorCode(functionUrl, responseUrl, triggersUrl, paramsUrl).fetchData.map(Some(_))
+          BehaviorCode(configUrl, functionUrl, responseUrl, triggersUrl, paramsUrl).fetchData.map(Some(_))
         }).getOrElse(Future.successful(None))
     }
   }

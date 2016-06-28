@@ -1,7 +1,7 @@
 package export
 
 import java.io.{PrintWriter, File}
-import json.EditorFormat.{BehaviorParameterData, BehaviorTriggerData, BehaviorVersionData}
+import json.EditorFormat._
 import models.accounts.User
 import models.bots.{BehaviorVersion, BehaviorQueries}
 import play.api.libs.json.Json
@@ -15,11 +15,13 @@ case class BehaviorVersionExporter(
                                     maybeFunction: Option[String],
                                     paramsData: Seq[BehaviorParameterData],
                                     triggersData: Seq[BehaviorTriggerData],
+                                    config: BehaviorConfig,
                                     responseTemplate: String) {
 
   def functionString: String = maybeFunction.getOrElse("")
   def paramsString: String = Json.prettyPrint(Json.toJson(paramsData))
   def triggersString: String = Json.prettyPrint(Json.toJson(triggersData))
+  def configString: String = Json.prettyPrint(Json.toJson(config))
 
   private def dirName = s"/tmp/exports/${behaviorVersion.id}"
   private def zipFileName = s"$dirName.zip"
@@ -38,6 +40,7 @@ case class BehaviorVersionExporter(
     writeFileFor("triggers.json", triggersString)
     writeFileFor("params.json", paramsString)
     writeFileFor("response.md", responseTemplate)
+    writeFileFor("config.json", configString)
 
     Process(Seq("bash","-c",s"cd $dirName && zip -r $zipFileName *")).!
   }
@@ -46,26 +49,6 @@ case class BehaviorVersionExporter(
     createZip
     new File(zipFileName)
   }
-
-  def exportString: String =
-    s"""
-       |//function.js:
-       |
-       |$functionString
-       |
-       |
-       |//params.json:
-       |$paramsString
-       |
-       |
-       |//triggers.json:
-       |$triggersString
-       |
-       |
-       |//response.md:
-       |$responseTemplate
-       |
-     """.stripMargin
 
 }
 
@@ -80,14 +63,21 @@ object BehaviorVersionExporter {
       maybeFunction <- maybeBehaviorVersion.map { behaviorVersion =>
         behaviorVersion.maybeFunction
       }.getOrElse(DBIO.successful(None))
-      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user)
+      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, Some(behaviorId))
     } yield {
       for {
         behaviorVersion <- maybeBehaviorVersion
         function <- maybeFunction
         versionData <- maybeVersionData
+        config <- versionData.config
       } yield {
-        BehaviorVersionExporter(behaviorVersion, maybeFunction, versionData.params, versionData.triggers, versionData.responseTemplate)
+        BehaviorVersionExporter(
+          behaviorVersion,
+          maybeFunction,
+          versionData.params,
+          versionData.triggers,
+          config,
+          versionData.responseTemplate)
       }
     }
   }
