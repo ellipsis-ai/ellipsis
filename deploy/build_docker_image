@@ -92,6 +92,22 @@ then
   fi
 fi
 
+printf "Running activator test...\n"
+activator test
+if [ $? -eq 1 ];
+then
+  printf "\n\n"
+  read -p "${BOLD}Scala tests failed.${PLAIN} You should probably stop. Do you want to continue anyway? [y/N]: " -n 1 -r
+  printf "\n"
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+    printf "You are wise.\n"
+    exit 1
+  else
+    hold_on_to_your_butts
+  fi
+fi
+
 touch conf/version.conf
 echo application.version=\"`git rev-parse --short HEAD`\" >conf/version.conf
 activator docker:stage
