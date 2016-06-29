@@ -40,10 +40,10 @@
                 @if(ea.config.exists { c => alreadyImportedIds.contains(c.publishedId) }) {
                   <span class="type-weak">(installed)</span>
                 }
-                @ea.triggers.zipWithIndex.map{ case(trigger, index) =>
-                  <span class='type-monospace @{if(index > 0) "type-weak"}'>
+                @ea.triggers.map{ trigger =>
+                  <span class='type-monospace @{if(trigger != ea.triggers.head) "type-weak"}'>
                     <span>@trigger.text</span>
-                    @if(index < ea.triggers.size - 1) {
+                    @if(trigger != ea.triggers.last) {
                       <span class="type-disabled"> · </span>
                     }
                   </span>
