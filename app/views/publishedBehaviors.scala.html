@@ -12,27 +12,47 @@
 @main("Published behaviors", maybeUser) {
 
   <div id="content" class="content">
-    <div class="container ptxxxxl">
-      <h1>Published behaviors:</h1>
+    <div class="bg-light">
+      <div class="container ptxxxl pbm">
+        <h2 class="type-weak mvn">Install behaviors from Ellipsis</h2>
+      </div>
+    </div>
+    <div class="bg-white">
+      <div class="container ">
 
-      @behaviorCategories.map { category =>
-        <h3>@category.name – @category.description</h3>
-        @category.behaviorVersions.map { ea =>
-          <form action="@routes.ApplicationController.doImportBehavior()" method="POST" class="mbl">
-            @ea.triggers.map { t =>
-              <span class="box-code-example">@t.text</span>
+        @behaviorCategories.map { category =>
+          <div class="pvxl">
+            <h3 class="border-bottom pbm">
+              <span>@category.name</span>
+              <span class="type-m type-regular type-weak"> &nbsp; – &nbsp; @category.description</span>
+            </h3>
+            @category.behaviorVersions.map { ea =>
+            <div class="columns columns-elastic mbm">
+              <div class="column column-shrink">
+                <form action="@routes.ApplicationController.doImportBehavior()" method="POST">
+                  @CSRF.formField
+                  <input type="hidden" name="teamId" value="@team.id"/>
+                  <input type="hidden" name="dataJson" value="@Json.toJson(ea).toString">
+                  <button type="submit" class="button-s button-shrink">Install</button>
+                </form>
+              </div>
+              <div class="column column-expand type-s">
+                @if(ea.config.exists { c => alreadyImportedIds.contains(c.publishedId) }) {
+                  <span class="type-weak">(installed)</span>
+                }
+                @ea.triggers.zipWithIndex.map{ case(trigger, index) =>
+                  <span class='type-monospace @{if(index > 0) "type-weak"}'>
+                    <span>@trigger.text</span>
+                    @if(index < ea.triggers.size - 1) {
+                      <span class="type-disabled"> · </span>
+                    }
+                  </span>
+                }
+              </div>
+            </div>
             }
-            @CSRF.formField
-            <input type="hidden" name="teamId" value="@team.id"/>
-            <input type="hidden" name="dataJson" value="@Json.toJson(ea).toString">
-            <input type="submit" value="Import"/>
-            @if(ea.config.exists { c => alreadyImportedIds.contains(c.publishedId) }) {
-              <span>(already imported)</span>
-            }
-          </form>
         }
-      }
-
+      </div>
     </div>
   </div>
 }
