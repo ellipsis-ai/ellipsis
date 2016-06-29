@@ -37,16 +37,16 @@
                 </form>
               </div>
               <div class="column column-expand type-s">
-                @if(ea.config.exists { c => alreadyImportedIds.contains(c.publishedId) }) {
-                  <span class="type-weak">(installed)</span>
-                }
                 @ea.triggers.map{ trigger =>
-                  <span class='type-monospace @{if(trigger != ea.triggers.head) "type-weak"}'>
+                  <span class='type-monospace @{if(trigger ne ea.triggers.head) "type-weak"}'>
                     <span>@trigger.text</span>
-                    @if(trigger != ea.triggers.last) {
+                    @if(trigger ne ea.triggers.last) {
                       <span class="type-disabled"> · </span>
                     }
                   </span>
+                }
+                @if(ea.config.exists { c => alreadyImportedIds.contains(c.publishedId) }) {
+                <span class="type-weak mls phs bg-green border border-green border-radius"><span class="type-green">✓</span> Installed</span>
                 }
               </div>
             </div>
