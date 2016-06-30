@@ -53,4 +53,5 @@ routesGenerator := InjectedRoutesGenerator
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 RjsKeys.mainConfig := "build"
+RjsKeys.mainModule := "build"
 updateOptions := updateOptions.value.withCachedResolution(true)
