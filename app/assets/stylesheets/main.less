@@ -44,6 +44,7 @@
 @blue-dark: hsl(231, 71%, 42%);
 @blue-medium-text: hsl(231, 74%, 57%);
 @blue-medium: hsl(231, 97%, 64%);
+@blue-medium-alt: hsl(231, 100%, 74%);
 @blue-light: hsl(231, 97%, 88%);
 @blue-lighter: hsl(231, 97%, 97%);
 @blue-lightest: hsl(231, 97%, 98.5%);
@@ -1180,6 +1181,12 @@ button.button-symbol {
   text-align: center !important;
 }
 
+button.button-raw {
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
 button.button-s.button-symbol {
   width: 24px;
   min-width: 24px;
@@ -1276,6 +1283,12 @@ button.button-s.button-symbol:focus {
   padding-right: (@xs - @border-width-thick) !important;
 }
 
+button.button-raw:focus {
+  padding: 0;
+  padding: 0;
+  color: @blue-medium-alt;
+}
+
 button:active {
   background-color: @black-translucent;
   border-color: @blue-dark;
@@ -1287,6 +1300,12 @@ button.button-warning:active {
 
 button.button-subtle:active {
   border-color: @blue-dark !important;
+}
+
+button.button-raw:active {
+  border: none;
+  background-color: transparent;
+  color: @blue-dark;
 }
 
 button.button-none,

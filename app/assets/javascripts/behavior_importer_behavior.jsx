@@ -1,5 +1,7 @@
 define(function(require) {
-  var React = require('react');
+  var React = require('react'),
+    SVGInstall = require('./svg/install'),
+    SVGInstalled = require('./svg/installed');
 
   return React.createClass({
     propTypes: {
@@ -9,40 +11,68 @@ define(function(require) {
       triggers: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
     },
 
+    getInstallButton: function() {
+      if (this.behaviorAlreadyInstalled()) {
+        return (
+          <button type="button" className="button-raw button-s">
+            <SVGInstalled />
+          </button>
+        );
+      } else {
+        return (
+          <button type="submit" className="button-raw button-s">
+            <SVGInstall />
+          </button>
+        );
+      }
+    },
+
+    behaviorAlreadyInstalled: function() {
+      return !!this.props.isInstalled;
+    },
+
+    isFirstTriggerIndex: function(index) {
+      return index === 0;
+    },
+
+    isLastTriggerIndex: function(index) {
+      return index === this.props.triggers.length - 1;
+    },
+
     render: function() {
       return (
-        <div className="columns columns-elastic mbm">
-          <div className="column column-shrink">
-            <form action={jsRoutes.controllers.ApplicationController.doImportBehavior().url} method="POST">
-              <input type="hidden" name="csrfToken" value={this.props.csrfToken} />
-              <input type="hidden" name="teamId" value={this.props.behaviorData.teamId} />
-              <input type="hidden" name="dataJson" value={JSON.stringify(this.props.behaviorData)} />
-              <button type="submit" className="button-s button-shrink">Install</button>
-            </form>
-          </div>
-          <div className="column column-expand type-s">
-            {this.props.triggers.map(function(trigger, index) {
-              return (
-                <span key={"trigger" + index} className={"type-monospace " + (index > 0 ? "type-weak" : "")}>
-                  <span>{trigger.text}</span>
-                  {(index < this.props.triggers.length - 1) ? (
-                      <span className="type-disabled"> · </span>
-                    ) : null
-                  }
-                </span>
+        <form action={jsRoutes.controllers.ApplicationController.doImportBehavior().url} method="POST">
+          <input type="hidden" name="csrfToken" value={this.props.csrfToken} />
+          <input type="hidden" name="teamId" value={this.props.behaviorData.teamId} />
+          <input type="hidden" name="dataJson" value={JSON.stringify(this.props.behaviorData)} />
+          <div className="columns columns-elastic mbm">
+            <div className="column column-shrink">
+              {this.getInstallButton()}
+            </div>
+            <div className="column column-expand type-s">
+              {this.props.triggers.map(function(trigger, index) {
+                return (
+                  <span key={"trigger" + index}
+                    className={
+                      "type-monospace " +
+                      (!this.isFirstTriggerIndex(index) ? "type-weak" : "")
+                    }
+                  >
+                    <span>{trigger.text}</span>
+                    <span className="type-disabled">
+                      {this.isLastTriggerIndex(index) ? "" : " · "}
+                    </span>
+                  </span>
 
-              );
-            }, this)}
+                );
+              }, this)}
 
-            {this.props.isInstalled ? (
-                <span className="type-weak mls phs bg-green border border-green border-radius">
-                  <span className="type-green">✓</span>
-                  <span> Installed</span>
-                </span>
-              ) : null
-            }
+              {this.behaviorAlreadyInstalled() ? (
+                <button type="submit" className="mlm button-s button-shrink">Re-install</button>
+              ) : ""}
+            </div>
           </div>
-        </div>
+        </form>
       );
     }
   });
