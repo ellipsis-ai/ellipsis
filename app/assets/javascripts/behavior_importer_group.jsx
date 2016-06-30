@@ -5,17 +5,18 @@ define(function(require) {
   return React.createClass({
     propTypes: {
       behaviors: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      checkInstalled: React.PropTypes.func.isRequired,
+      checkImported: React.PropTypes.func.isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       description: React.PropTypes.string,
-      name: React.PropTypes.string.isRequired
+      name: React.PropTypes.string.isRequired,
+      onBehaviorImport: React.PropTypes.func.isRequired
     },
 
-    behaviorIsInstalled: function(behavior) {
+    behaviorIsImported: function(behavior) {
       if (!behavior.config || !behavior.config.publishedId) {
         return false;
       }
-      return this.props.checkInstalled(behavior.config.publishedId);
+      return this.props.checkImported(behavior.config.publishedId);
     },
 
     getBehaviors: function() {
@@ -34,9 +35,10 @@ define(function(require) {
               <BehaviorImporterBehavior
                 key={"behavior" + index}
                 behaviorData={behavior}
-                isInstalled={this.behaviorIsInstalled(behavior)}
+                isImported={this.behaviorIsImported(behavior)}
                 csrfToken={this.props.csrfToken}
                 triggers={behavior.triggers}
+                onBehaviorImport={this.props.onBehaviorImport}
               />
             );
           }, this)}

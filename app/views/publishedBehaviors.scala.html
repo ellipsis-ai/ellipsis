@@ -11,7 +11,8 @@
 
 @main("Published behaviors", maybeUser) {
   @helper.javascriptRouter("jsRoutes")(
-    routes.javascript.ApplicationController.doImportBehavior
+    routes.javascript.ApplicationController.doImportBehavior,
+    routes.javascript.ApplicationController.editBehavior
   )
   <div id="content" class="content">
     <div id="importerContainer"></div>

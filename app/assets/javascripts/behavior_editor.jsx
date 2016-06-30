@@ -23,6 +23,8 @@ var React = require('react'),
   BrowserUtils = require('./browser_utils'),
   ImmutableObjectUtils = require('./immutable_object_utils');
   require('codemirror/mode/markdown/markdown');
+  require('es6-promise');
+  require('fetch');
 
 return React.createClass({
   displayName: 'BehaviorEditor',

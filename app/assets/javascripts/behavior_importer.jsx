@@ -9,10 +9,14 @@ define(function(require) {
       csrfToken: React.PropTypes.string.isRequired
     },
 
-    behaviorVersionIsInstalled: function(versionId) {
-      return this.props.alreadyImportedIds.some(function(id) {
+    behaviorVersionIsImported: function(versionId) {
+      return this.getAlreadyImportedIds().some(function(id) {
         return id === versionId;
       });
+    },
+
+    getAlreadyImportedIds: function() {
+      return this.state.alreadyImportedIds || [];
     },
 
     getBehaviorGroups: function() {
@@ -21,8 +25,36 @@ define(function(require) {
 
     getInitialState: function() {
       return {
+        alreadyImportedIds: this.props.alreadyImportedIds,
         behaviorGroups: this.props.behaviorGroups
       };
+    },
+
+    onBehaviorImport: function(importId, localId) {
+      var newState = {
+        behaviorGroups: this.getBehaviorGroups().map(function(group) {
+          return {
+            name: group.name,
+            description: group.description,
+            behaviorVersions: group.behaviorVersions.map(function(behavior) {
+              if (behavior.config.publishedId !== importId) {
+                return behavior;
+              }
+
+              var newBehavior = {};
+              Object.keys(behavior).forEach(function(key) {
+                newBehavior[key] = behavior[key];
+              });
+              newBehavior.localBehaviorId = localId;
+              return newBehavior;
+            })
+          };
+        })
+      };
+      if (!this.behaviorVersionIsImported(importId)) {
+        newState.alreadyImportedIds = this.state.alreadyImportedIds.concat(importId);
+      }
+      this.setState(newState);
     },
 
     render: function() {
@@ -43,7 +75,8 @@ define(function(require) {
                     name={group.name}
                     description={group.description}
                     behaviors={group.behaviorVersions}
-                    checkInstalled={this.behaviorVersionIsInstalled}
+                    checkImported={this.behaviorVersionIsImported}
+                    onBehaviorImport={this.onBehaviorImport}
                   />
                 );
               }, this)}
