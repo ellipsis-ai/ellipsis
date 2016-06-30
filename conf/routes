@@ -15,7 +15,6 @@ POST        /save_behavior                            @controllers.ApplicationCo
 POST        /delete_behavior                          @controllers.ApplicationController.deleteBehavior
 GET         /regex_validation_errors/:pattern         @controllers.ApplicationController.regexValidationErrorsFor(pattern: String)
 GET         /version_info/:behaviorId                 @controllers.ApplicationController.versionInfoFor(behaviorId: String)
-POST        /restore_to_version                       @controllers.ApplicationController.restoreToVersion
 POST        /test_behavior_version                    @controllers.ApplicationController.testBehaviorVersion
 
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
