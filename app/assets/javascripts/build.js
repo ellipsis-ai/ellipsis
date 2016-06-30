@@ -1,6 +1,6 @@
 /*
 RequireJS production configuration
-Development configuration lives in main.js
+Development configuration lives in common.js
 */
 
 requirejs.config({

@@ -26,7 +26,7 @@
           envVariableNames: @Html(Json.toJson(envVariableNames).toString)
         };
       </script>
-      <script data-main='@routes.Assets.versioned("javascripts/main.js")' src='@routes.Assets.versioned("lib/requirejs/require.js")'></script>
+      <script data-main='@routes.Assets.versioned("javascripts/behavior_editor_loader.js")' src='@routes.Assets.versioned("lib/requirejs/require.min.js")'></script>
     </div>
   </div>
 }
