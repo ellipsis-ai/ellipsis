@@ -2,7 +2,7 @@
   maybeUser: Option[models.accounts.User],
   team: Team,
   behaviorCategories: Seq[json.BehaviorCategory],
-  alreadyImportedIds: Seq[String]
+  installedBehaviors: Seq[json.InstalledBehaviorData]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
@@ -18,7 +18,7 @@
     <div id="importerContainer"></div>
     <script>
       var BehaviorImporterConfig = {
-        alreadyImportedIds: @Html(Json.toJson(alreadyImportedIds).toString),
+        installedBehaviors: @Html(Json.toJson(installedBehaviors).toString),
         containerId: 'importerContainer',
         csrfToken: "@CSRF.getToken(r).map(_.value)",
         behaviorGroups: @Html(Json.toJson(behaviorCategories).toString)
