@@ -18,7 +18,7 @@ define(function(require) {
     getInitialState: function() {
       return {
         importing: false
-      }
+      };
     },
 
     getLocalBehaviorEditLink: function() {
@@ -90,7 +90,7 @@ define(function(require) {
         method: 'POST',
         body: new FormData(this.refs.form)
       }).then(function(response) {
-        return response.json()
+        return response.json();
       }).then(function(json) {
         this.setState({
           importing: false

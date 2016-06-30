@@ -30,7 +30,7 @@ define(function(require) {
         behaviorGroups: this.props.behaviorGroups.map(function(group) {
           var versionsWithLocalIds = group.behaviorVersions.map(function(behaviorVersion) {
             var match = installed.find(function(ea) {
-              return ea.importedId == behaviorVersion.config.publishedId;
+              return ea.importedId === behaviorVersion.config.publishedId;
             });
             if ( match === undefined ) {
               return behaviorVersion;
