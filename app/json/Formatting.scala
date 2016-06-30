@@ -22,4 +22,7 @@ object Formatting {
   implicit val behaviorCategoryReads = Json.reads[BehaviorCategory]
   implicit val behaviorCategoryWrites = Json.writes[BehaviorCategory]
 
+  implicit val installedBehaviorReads = Json.reads[InstalledBehaviorData]
+  implicit val installedBehaviorWrites = Json.writes[InstalledBehaviorData]
+
 }

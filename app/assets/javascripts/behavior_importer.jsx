@@ -4,19 +4,19 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
-      alreadyImportedIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+      installedBehaviors: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       csrfToken: React.PropTypes.string.isRequired
     },
 
-    behaviorVersionIsImported: function(versionId) {
-      return this.getAlreadyImportedIds().some(function(id) {
-        return id === versionId;
+    behaviorIsImported: function(importId) {
+      return this.getInstalledBehaviors().some(function(ea) {
+        return ea.importedId === importId;
       });
     },
 
-    getAlreadyImportedIds: function() {
-      return this.state.alreadyImportedIds || [];
+    getInstalledBehaviors: function() {
+      return this.state.installedBehaviors || [];
     },
 
     getBehaviorGroups: function() {
@@ -24,9 +24,22 @@ define(function(require) {
     },
 
     getInitialState: function() {
+      var installed = this.props.installedBehaviors;
       return {
-        alreadyImportedIds: this.props.alreadyImportedIds,
-        behaviorGroups: this.props.behaviorGroups
+        installedBehaviors: installed,
+        behaviorGroups: this.props.behaviorGroups.map(function(group) {
+          var versionsWithLocalIds = group.behaviorVersions.map(function(behaviorVersion) {
+            var match = installed.find(function(ea) {
+              return ea.importedId == behaviorVersion.config.publishedId;
+            });
+            if ( match === undefined ) {
+              return behaviorVersion;
+            } else {
+              return Object.assign({}, behaviorVersion, { localBehaviorId: match.behaviorId });
+            }
+          });
+          return Object.assign({}, group, { behaviorVersions: versionsWithLocalIds });
+        })
       };
     },
 
@@ -51,8 +64,9 @@ define(function(require) {
           };
         })
       };
-      if (!this.behaviorVersionIsImported(importId)) {
-        newState.alreadyImportedIds = this.state.alreadyImportedIds.concat(importId);
+      var installedBehavior = { behaviorId: localId, importedId: importId };
+      if (!this.behaviorIsImported(importId)) {
+        newState.installedBehaviors = this.state.installedBehaviors.concat(installedBehavior);
       }
       this.setState(newState);
     },
@@ -75,7 +89,7 @@ define(function(require) {
                     name={group.name}
                     description={group.description}
                     behaviors={group.behaviorVersions}
-                    checkImported={this.behaviorVersionIsImported}
+                    checkImported={this.behaviorIsImported}
                     onBehaviorImport={this.onBehaviorImport}
                   />
                 );

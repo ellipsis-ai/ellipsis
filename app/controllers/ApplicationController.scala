@@ -48,9 +48,9 @@ class ApplicationController @Inject() (
       maybeGithubService <- DBIO.successful(maybeTeam.map { team =>
         GithubService(team, ws, configuration)
       })
-      importedIds <- maybeTeam.map { team =>
+      installedBehaviors <- maybeTeam.map { team =>
         BehaviorQueries.allForTeam(team).map { behaviors =>
-          behaviors.flatMap(_.maybeImportedId)
+          behaviors.map { ea => InstalledBehaviorData(ea.id, ea.maybeImportedId)}
         }
       }.getOrElse(DBIO.successful(Seq()))
       data <- maybeGithubService.map { service =>
@@ -58,7 +58,7 @@ class ApplicationController @Inject() (
       }.getOrElse(DBIO.successful(Seq()))
     } yield {
         maybeTeam.map { team =>
-          Ok(views.html.publishedBehaviors(Some(user), team, data, importedIds))
+          Ok(views.html.publishedBehaviors(Some(user), team, data, installedBehaviors))
         }.getOrElse {
           NotFound(s"Team not found: $teamId")
         }
