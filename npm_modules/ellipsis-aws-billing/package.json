@@ -1,0 +1,12 @@
+{
+  "name": "ellipsis-aws-billing",
+  "version": "0.1.4",
+  "description": "Fetching data from AWS billing reports",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ellipsis Co. <a@ellipsis.ai> (http://ellipsis.ai)",
+  "license": "ISC",
+  "dependencies": {}
+}
