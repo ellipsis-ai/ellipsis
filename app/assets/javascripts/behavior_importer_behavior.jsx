@@ -22,7 +22,7 @@ define(function(require) {
     },
 
     getLocalBehaviorEditLink: function() {
-      if (this.isInstalling()) {
+      if (this.isImporting()) {
         return (
           <span className="mhm fade-in type-weak type-bold">Installing…</span>
         );
@@ -46,7 +46,7 @@ define(function(require) {
     },
 
     getInstallButton: function() {
-      if (this.isInstalling()) {
+      if (this.isImporting()) {
         return (
           <button type="button" className="button-raw button-s">
             <SVGInstalling />
@@ -71,7 +71,7 @@ define(function(require) {
       return !!this.props.isImported;
     },
 
-    isInstalling: function() {
+    isImporting: function() {
       return this.state.importing;
     },
 
@@ -110,7 +110,7 @@ define(function(require) {
           <input type="hidden" name="csrfToken" value={this.props.csrfToken} />
           <input type="hidden" name="teamId" value={this.props.behaviorData.teamId} />
           <input type="hidden" name="dataJson" value={JSON.stringify(this.props.behaviorData)} />
-          <div className={"columns columns-elastic mbm " + (this.isInstalling() ? "pulse" : "")}>
+          <div className={"columns columns-elastic mbm " + (this.isImporting() ? "pulse" : "")}>
             <div className="column column-shrink">
               {this.getInstallButton()}
             </div>
