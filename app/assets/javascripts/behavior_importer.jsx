@@ -67,7 +67,7 @@ define(function(require) {
         <div>
           <div className="bg-light">
             <div className="container ptxxxl pbm">
-              <h2 className="type-weak mvn">Install behaviors from Ellipsis</h2>
+              <h2 className="type-weak mvn">Add behaviors to Ellipsis</h2>
             </div>
           </div>
           <div className="bg-white">
