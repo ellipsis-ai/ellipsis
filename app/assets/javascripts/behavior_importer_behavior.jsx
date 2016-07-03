@@ -22,12 +22,17 @@ define(function(require) {
     },
 
     getLocalBehaviorEditLink: function() {
+      if (this.isInstalling()) {
+        return (
+          <span className="mhm fade-in type-weak type-bold">Installing…</span>
+        );
+      }
       var localBehaviorId = this.getLocalBehaviorId();
       if (localBehaviorId) {
         var url = jsRoutes.controllers.ApplicationController.editBehavior(localBehaviorId).url;
         return (
           <a
-            className="mhm"
+            className="mhm fade-in"
             href={url}
           >Edit installed version</a>
         );
@@ -105,7 +110,7 @@ define(function(require) {
           <input type="hidden" name="csrfToken" value={this.props.csrfToken} />
           <input type="hidden" name="teamId" value={this.props.behaviorData.teamId} />
           <input type="hidden" name="dataJson" value={JSON.stringify(this.props.behaviorData)} />
-          <div className="columns columns-elastic mbm">
+          <div className={"columns columns-elastic mbm " + (this.isInstalling() ? "pulse" : "")}>
             <div className="column column-shrink">
               {this.getInstallButton()}
             </div>
