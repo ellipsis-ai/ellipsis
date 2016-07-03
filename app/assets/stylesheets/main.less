@@ -1523,6 +1523,12 @@ button.button-activated {
           animation: blink 0.4s;
 }
 
+.pulse {
+ -webkit-animation: pulse 2s ease 0s infinite;
+     -ms-animation: pulse 2s ease 0s infinite;
+         animation: pulse 2s ease 0s infinite;
+}
+
 @keyframes fadein {
   from { opacity: 0; }
     to { opacity: 1; }
@@ -1584,6 +1590,24 @@ button.button-activated {
     background-color: transparent;
     color: inherit;
   }
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+   50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+@-webkit-keyframes pulse {
+    0% { opacity: 1; }
+   50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+@-ms-keyframes pulse {
+    0% { opacity: 1; }
+   50% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
 /* Positioning */
