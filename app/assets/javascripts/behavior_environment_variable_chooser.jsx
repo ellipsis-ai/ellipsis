@@ -23,18 +23,19 @@ define(function(require) {
 
     render: function () {
       return (
-        <div className="pvs">
+        <div className="columns">
 
-          <span>{this.props.label}</span>
-          <select name={this.props.property} value={this.props.chosenName || ""} onChange={this.onChange}>
-            <option value="" key={this.keyFor("none")}>-- Pick an environment variable --</option>
-            {this.props.envVariableNames.map(function(envVarName) {
-              return (
-                <option value={envVarName} key={this.keyFor(envVarName)}>{envVarName}</option>
-              );
-            }, this)}
-          </select>
-
+          <div className="column column-one-quarter align-r">{this.props.label}</div>
+          <div className="column column-three-quarters">
+            <select name={this.props.property} value={this.props.chosenName || ""} onChange={this.onChange}>
+              <option value="" key={this.keyFor("none")}>-- Pick an environment variable --</option>
+              {this.props.envVariableNames.map(function(envVarName) {
+                return (
+                  <option value={envVarName} key={this.keyFor(envVarName)}>{envVarName}</option>
+                );
+              }, this)}
+            </select>
+          </div>
         </div>
       );
     }

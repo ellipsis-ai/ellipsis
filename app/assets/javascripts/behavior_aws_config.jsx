@@ -16,10 +16,10 @@ define(function(require) {
 
       return (
 
-        <div className="border-top border-left border-right border-radius-top pvs">
+        <div className="columns pvl">
 
           <BehaviorEnvironmentVariableChooser
-            label="AWS Access Key"
+            label="Access&nbsp;Key"
             property="accessKeyName"
             chosenName={this.props.accessKeyName}
             envVariableNames={this.props.envVariableNames}
@@ -27,7 +27,7 @@ define(function(require) {
             />
 
           <BehaviorEnvironmentVariableChooser
-            label="AWS Secret Key"
+            label="Secret&nbsp;Key"
             property="secretKeyName"
             chosenName={this.props.secretKeyName}
             envVariableNames={this.props.envVariableNames}
@@ -35,7 +35,7 @@ define(function(require) {
             />
 
           <BehaviorEnvironmentVariableChooser
-            label="AWS Region"
+            label="Region"
             property="regionName"
             chosenName={this.props.regionName}
             envVariableNames={this.props.envVariableNames}
