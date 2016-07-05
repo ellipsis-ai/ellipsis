@@ -727,6 +727,14 @@ return React.createClass({
     this.setAWSEnvVar(property, envVarName);
   },
 
+  onAddAWSConfig: function() {
+    this.setBehaviorProp('awsConfig', {});
+  },
+
+  onRemoveAWSConfig: function() {
+    this.setBehaviorProp('awsConfig', undefined);
+  },
+
   onParamEnterKey: function(index) {
     if (index + 1 < this.getBehaviorParams().length) {
       this.focusOnParamIndex(index + 1);
@@ -917,13 +925,21 @@ return React.createClass({
 
             <div className="column column-three-quarters pll form-field-group">
 
-              <BehaviorAWSConfig
-                envVariableNames={this.props.envVariableNames}
-                accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                regionName={this.getAWSConfigProperty('regionName')}
-                onChange={this.onAWSConfigChange}
-              />
+              <Collapsible revealWhen={!this.state.behavior.awsConfig}>
+                <div className="pvm">
+                  <button type="button" className="button-s" onClick={this.onAddAWSConfig}>Use the AWS SDK</button>
+                </div>
+              </Collapsible>
+              <Collapsible revealWhen={!!this.state.behavior.awsConfig}>
+                <BehaviorAWSConfig
+                  envVariableNames={this.props.envVariableNames}
+                  accessKeyName={this.getAWSConfigProperty('accessKeyName')}
+                  secretKeyName={this.getAWSConfigProperty('secretKeyName')}
+                  regionName={this.getAWSConfigProperty('regionName')}
+                  onChange={this.onAWSConfigChange}
+                  onRemoveAWSConfig={this.onRemoveAWSConfig}
+                />
+              </Collapsible>
 
               <BehaviorEditorCodeHeader
                 ref="codeHeader"

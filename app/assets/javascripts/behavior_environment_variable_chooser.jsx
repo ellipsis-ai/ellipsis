@@ -26,7 +26,7 @@ define(function(require) {
         <div className="columns">
 
           <div className="column column-one-quarter align-r">{this.props.label}</div>
-          <div className="column column-three-quarters">
+          <div className="column column-one-half">
             <select name={this.props.property} value={this.props.chosenName || ""} onChange={this.onChange}>
               <option value="" key={this.keyFor("none")}>-- Pick an environment variable --</option>
               {this.props.envVariableNames.map(function(envVarName) {
