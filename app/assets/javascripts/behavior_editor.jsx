@@ -46,10 +46,12 @@ return React.createClass({
       isRegex: React.PropTypes.bool,
       caseSensitive: React.PropTypes.bool
     })),
-    awsConfig: React.PropTypes.shape({
-      accessKeyName: React.PropTypes.string,
-      secretKeyName: React.PropTypes.string,
-      regionName: React.PropTypes.string
+    config: React.PropTypes.shape({
+      aws: React.PropTypes.shape({
+        accessKeyName: React.PropTypes.string,
+        secretKeyName: React.PropTypes.string,
+        regionName: React.PropTypes.string
+      })
     }),
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
@@ -77,7 +79,7 @@ return React.createClass({
   },
 
   getAWSConfig: function() {
-    return this.getBehaviorProp('awsConfig');
+    return this.getBehaviorConfig()['aws'];
   },
 
   getAWSConfigProperty: function(property) {
@@ -124,6 +126,10 @@ return React.createClass({
     return this.getBehaviorProp('triggers');
   },
 
+  getBehaviorConfig: function() {
+    return this.getBehaviorProp('config');
+  },
+
   getCodeAutocompletions: function() {
     var envVars = this.state.envVariableNames.map(function(name) {
       return 'ellipsis.env.' + name;
@@ -138,7 +144,7 @@ return React.createClass({
 
   getBuiltinParams: function() {
     var params = ["onSuccess", "onError", "ellipsis"];
-    if (!!this.state.behavior.awsConfig) {
+    if (!!this.getAWSConfig()) {
       params = params.concat(["AWS"]);
     }
     return params;
@@ -429,7 +435,7 @@ return React.createClass({
         responseTemplate: version.responseTemplate,
         params: version.params,
         triggers: version.triggers,
-        awsConfig: version.awsConfig
+        config: version.config
       },
       revealCodeEditor: !!version.functionBody,
       justSaved: false
@@ -443,9 +449,9 @@ return React.createClass({
   },
 
   setAWSEnvVar: function(property, envVarName) {
-    var config = Object.assign({}, this.getAWSConfig());
-    config[property] = envVarName;
-    this.setBehaviorProp('awsConfig', config);
+    var awsConfig = this.getAWSConfig() || {};
+    awsConfig[property] = envVarName;
+    setConfigProperty('aws', awsConfig);
   },
 
   setBehaviorProp: function(key, value, callback) {
@@ -460,6 +466,12 @@ return React.createClass({
       versions: newVersions,
       justSaved: false
     }, callback);
+  },
+
+  setConfigProperty: function(property, value) {
+    var config = Object.assign({}, this.getBehaviorConfig());
+    config[property] = value;
+    this.setBehaviorProp('config', config);
   },
 
   showVersions: function() {
@@ -676,14 +688,14 @@ return React.createClass({
       responseTemplate: version1.responseTemplate,
       params: version1.params,
       triggers: version1.triggers,
-      awsConfig: version1.awsConfig
+      config: version1.config
     });
     var shallow2 = JSON.stringify({
       functionBody: version2.functionBody,
       responseTemplate: version2.responseTemplate,
       params: version2.params,
       triggers: version2.triggers,
-      awsConfig: version2.awsConfig
+      config: version2.config
     });
     return shallow1 === shallow2;
   },
@@ -728,11 +740,11 @@ return React.createClass({
   },
 
   onAddAWSConfig: function() {
-    this.setBehaviorProp('awsConfig', {});
+    this.setConfigProperty('aws', {});
   },
 
   onRemoveAWSConfig: function() {
-    this.setBehaviorProp('awsConfig', undefined);
+    this.setConfigProperty('aws', undefined);
   },
 
   onParamEnterKey: function(index) {
@@ -766,7 +778,7 @@ return React.createClass({
       responseTemplate: this.props.responseTemplate,
       params: this.props.params,
       triggers: this.getInitialTriggers(),
-      awsConfig: this.props.awsConfig
+      config: this.props.config
     };
     return {
       behavior: initialBehavior,
@@ -925,12 +937,12 @@ return React.createClass({
 
             <div className="column column-three-quarters pll form-field-group">
 
-              <Collapsible revealWhen={!this.state.behavior.awsConfig}>
+              <Collapsible revealWhen={!this.getAWSConfig()}>
                 <div className="pvm">
                   <button type="button" className="button-s" onClick={this.onAddAWSConfig}>Use the AWS SDK</button>
                 </div>
               </Collapsible>
-              <Collapsible revealWhen={!!this.state.behavior.awsConfig}>
+              <Collapsible revealWhen={!!this.getAWSConfig()}>
                 <BehaviorAWSConfig
                   envVariableNames={this.props.envVariableNames}
                   accessKeyName={this.getAWSConfigProperty('accessKeyName')}

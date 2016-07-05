@@ -17,10 +17,11 @@ case class BehaviorVersionData(
                                 responseTemplate: String,
                                 params: Seq[BehaviorParameterData],
                                 triggers: Seq[BehaviorTriggerData],
-                                config: Option[BehaviorConfig],
-                                awsConfig: Option[AWSConfigData],
+                                config: BehaviorConfig,
                                 createdAt: Option[DateTime]
-                                )
+                                ) {
+  val awsConfig: Option[AWSConfigData] = config.aws
+}
 
 object BehaviorVersionData {
 
@@ -38,8 +39,7 @@ object BehaviorVersionData {
       response,
       Json.parse(params).validate[Seq[BehaviorParameterData]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
-      Json.parse(config).validate[BehaviorConfig].asOpt,
-      awsConfig = None,
+      Json.parse(config).validate[BehaviorConfig].get,
       createdAt = None
     )
   }
@@ -66,6 +66,9 @@ object BehaviorVersionData {
         params <- maybeParameters
         triggers <- maybeTriggers
       } yield {
+        val maybeAWSConfigData = maybeAWSConfig.map { config =>
+          AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
+        }
         BehaviorVersionData(
           behaviorVersion.team.id,
           Some(behavior.id),
@@ -77,8 +80,7 @@ object BehaviorVersionData {
           triggers.map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
-          maybePublishedId.map( id => BehaviorConfig(id)),
-          maybeAWSConfig.map( config => AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)),
+          BehaviorConfig(maybePublishedId, maybeAWSConfigData),
           Some(behaviorVersion.createdAt)
         )
       }

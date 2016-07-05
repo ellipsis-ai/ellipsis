@@ -313,9 +313,6 @@ object BehaviorVersionQueries {
               MessageTriggerQueries.createFor(updated, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
             }
           )
-          _ <- data.awsConfig.map { config =>
-            AWSConfigQueries.createFor(updated, config.accessKeyName, config.secretKeyName, config.regionName)
-          }.getOrElse(DBIO.successful(Unit))
         } yield Unit
     } yield behaviorVersion) transactionally
   }

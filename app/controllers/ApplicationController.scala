@@ -87,8 +87,7 @@ class ApplicationController @Inject() (
               "",
               Seq(),
               Seq(),
-              None,
-              None,
+              BehaviorConfig(None, None),
               None
             )
             Ok(views.html.edit(Some(user), Json.toJson(data).toString, envVars.map(_.name), justSaved = false))
@@ -219,6 +218,11 @@ class ApplicationController @Inject() (
     } yield {
         maybeBehavior.map { behavior =>
           val versionsData = versions.map { version =>
+            val maybeAwsConfigData = awsConfigByVersion.get(version).flatMap { maybeConfig =>
+              maybeConfig.map { config =>
+                AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
+              }
+            }
             BehaviorVersionData(
               version.team.id,
               Some(behavior.id),
@@ -234,12 +238,7 @@ class ApplicationController @Inject() (
                   BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
                 }
               }.getOrElse(Seq()),
-              None,
-              awsConfigByVersion.get(version).flatMap { maybeConfig =>
-                maybeConfig.map { config =>
-                  AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
-                }
-              },
+              BehaviorConfig(None, maybeAwsConfigData),
               Some(version.createdAt)
             )
           }
