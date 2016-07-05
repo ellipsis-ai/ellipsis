@@ -85,7 +85,7 @@ return React.createClass({
     if (config) {
       return config[property];
     } else {
-      return undefined;
+      return "";
     }
   },
 

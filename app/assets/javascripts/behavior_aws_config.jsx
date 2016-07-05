@@ -14,8 +14,6 @@ define(function(require) {
 
     render: function () {
 
-      console.log("rendering aws config", JSON.stringify(this.props));
-
       return (
 
         <div className="border-top border-left border-right border-radius-top pvs">

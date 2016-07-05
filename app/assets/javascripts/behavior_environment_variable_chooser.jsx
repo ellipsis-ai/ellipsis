@@ -17,17 +17,20 @@ define(function(require) {
       this.props.onChange(property, chosen);
     },
 
+    keyFor: function(envVarName) {
+      return 'AWSEnvVarName-' + this.props.property + '-' + envVarName;
+    },
+
     render: function () {
-      console.log("chosen env var for " + this.props.property + ": " + this.props.chosenName);
       return (
         <div className="pvs">
 
           <span>{this.props.label}</span>
-          <select name={this.props.property} value={this.props.chosenName} onChange={this.onChange}>
-            <option value={undefined}>-- Pick an environment variable --</option>
+          <select name={this.props.property} value={this.props.chosenName || ""} onChange={this.onChange}>
+            <option value="" key={this.keyFor("none")}>-- Pick an environment variable --</option>
             {this.props.envVariableNames.map(function(envVarName) {
               return (
-                <option value={envVarName} key={'AWSEnvVarName-' + this.props.property + '-' + envVarName}>{envVarName}</option>
+                <option value={envVarName} key={this.keyFor(envVarName)}>{envVarName}</option>
               );
             }, this)}
           </select>
