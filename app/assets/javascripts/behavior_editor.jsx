@@ -632,7 +632,7 @@ return React.createClass({
   },
 
   shouldRevealCodeEditor: function() {
-    return true; //!!(this.props.shouldRevealCodeEditor || this.props.functionBody);
+    return !!(this.props.shouldRevealCodeEditor || this.props.functionBody);
   },
 
   templateIncludesIteration: function() {
