@@ -54,17 +54,22 @@ object EnvironmentVariableQueries {
     findQueryFor(name, team.id).result.map { r => r.headOption.map(tuple2EnvironmentVariable) }
   }
 
-  def ensureFor(name: String, value: String, team: Team): DBIO[EnvironmentVariable] = {
-    val newInstance = EnvironmentVariable(name, value, team, DateTime.now)
-    val raw = newInstance.toRaw
+  def ensureFor(name: String, maybeValue: Option[String], team: Team): DBIO[EnvironmentVariable] = {
     val query = all.filter(_.name === name).filter(_.teamId === team.id)
     query.result.flatMap { r =>
       r.headOption.map { existing =>
-        query.update(raw)
+        maybeValue.map { value =>
+          val raw = RawEnvironmentVariable(name, value, team.id, DateTime.now)
+          query.update(raw).map(_ => raw)
+        }.getOrElse(DBIO.successful(existing))
       }.getOrElse {
-        all += raw
+        val value = maybeValue.getOrElse("")
+        val raw = RawEnvironmentVariable(name, value, team.id, DateTime.now)
+        (all += raw).map(_ => raw)
+      }.map { raw =>
+        EnvironmentVariable(raw.name, raw.value, team, raw.createdAt)
       }
-    }.map(_ => newInstance)
+    }
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = allWithTeam.filter(_._1.teamId === teamId)

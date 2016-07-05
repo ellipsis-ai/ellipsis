@@ -18,7 +18,7 @@ case class SetEnvironmentVariableBehavior(
     for {
       maybeTeam <- Team.find(messageContext.teamId)
       maybeEnvVar <- maybeTeam.map { team =>
-        EnvironmentVariableQueries.ensureFor(name, value, team)
+        EnvironmentVariableQueries.ensureFor(name, Some(value), team)
       }.getOrElse(DBIO.successful(None))
     } yield {
       messageContext.sendMessage(s"OK, saved $name!")

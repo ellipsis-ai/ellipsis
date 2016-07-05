@@ -77,13 +77,13 @@ object AWSConfigQueries {
                  ): DBIO[AWSConfig] = {
     for {
       maybeAccessKey <- maybeAccessKeyName.map { name =>
-        EnvironmentVariableQueries.find(name, behaviorVersion.team)
+        EnvironmentVariableQueries.ensureFor(name, None, behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeSecretKey <- maybeSecretKeyName.map { name =>
-        EnvironmentVariableQueries.find(name, behaviorVersion.team)
+        EnvironmentVariableQueries.ensureFor(name, None, behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeRegion <- maybeRegionName.map { name =>
-        EnvironmentVariableQueries.find(name, behaviorVersion.team)
+        EnvironmentVariableQueries.ensureFor(name, None, behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       newInstance <- {
         val raw =
