@@ -5,6 +5,7 @@ import java.nio.charset.Charset
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import json.BehaviorVersionData
 import models.accounts.User
+import models.bots.config.{AWSConfig, AWSConfigQueries}
 import models.bots.templates.TemplateApplier
 import models.bots.triggers.MessageTriggerQueries
 import models.{EnvironmentVariable, EnvironmentVariableQueries, IDs, Team}
@@ -81,13 +82,17 @@ case class BehaviorVersion(
 
   def functionBody: String = maybeFunctionBody.getOrElse("")
 
-  def functionWithParams(params: Array[String]): String = {
+  def awsParamsFor(maybeAWSConfig: Option[AWSConfig]): Array[String] = {
+    maybeAWSConfig.map(_ => Array("AWS")).getOrElse(Array())
+  }
+
+  def functionWithParams(params: Array[String], awsParams: Array[String]): String = {
     val definitionUserParamsString = if (params.isEmpty) {
       ""
     } else {
       s"""\n${params.map(ea => ea ++ ",").mkString("\n")}\n"""
     }
-    val definitionBuiltinParamsString = (HANDLER_PARAMS ++ Array(CONTEXT_PARAM)).mkString(", ")
+    val definitionBuiltinParamsString = (HANDLER_PARAMS ++ Array(CONTEXT_PARAM) ++ awsParams).mkString(", ")
     val possibleEndOfParamsNewline = if (params.isEmpty) { "" } else { "\n" }
     s"""function($definitionUserParamsString$definitionBuiltinParamsString$possibleEndOfParamsNewline) {
       |  $functionBody
@@ -96,8 +101,10 @@ case class BehaviorVersion(
 
   def maybeFunction: DBIO[Option[String]] = {
     maybeFunctionBody.map { functionBody =>
-      BehaviorParameterQueries.allFor(this).map { params =>
-        functionWithParams(params.map(_.name).toArray)
+      BehaviorParameterQueries.allFor(this).flatMap { params =>
+        AWSConfigQueries.maybeFor(this).map { maybeAWSConfig =>
+          functionWithParams(params.map(_.name).toArray, awsParamsFor(maybeAWSConfig))
+        }
       }.map(Some(_))
     }.getOrElse(DBIO.successful(None))
   }
@@ -294,7 +301,10 @@ object BehaviorVersionQueries {
             maybeFunctionBody = Some(data.functionBody),
             maybeResponseTemplate = Some(data.responseTemplate)
           ).save
-          _ <- DBIO.from(lambdaService.deployFunctionFor(updated, data.functionBody, BehaviorVersionQueries.withoutBuiltin(data.params.map(_.name).toArray)))
+          maybeAWSConfig <- data.awsConfig.map { c =>
+            AWSConfigQueries.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
+          }.getOrElse(DBIO.successful(None))
+          _ <- DBIO.from(lambdaService.deployFunctionFor(updated, data.functionBody, BehaviorVersionQueries.withoutBuiltin(data.params.map(_.name).toArray), maybeAWSConfig))
           _ <- BehaviorParameterQueries.ensureFor(updated, data.params.map(ea => (ea.name, Some(ea.question))))
           _ <- DBIO.sequence(
             data.triggers.
@@ -303,6 +313,9 @@ object BehaviorVersionQueries {
               MessageTriggerQueries.createFor(updated, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
             }
           )
+          _ <- data.awsConfig.map { config =>
+            AWSConfigQueries.createFor(updated, config.accessKeyName, config.secretKeyName, config.regionName)
+          }.getOrElse(DBIO.successful(Unit))
         } yield Unit
     } yield behaviorVersion) transactionally
   }
@@ -345,7 +358,8 @@ object BehaviorVersionQueries {
       m.subgroups.headOption
     }.getOrElse("")
     (for {
-      _ <- DBIO.from(lambdaService.deployFunctionFor(behaviorVersion, functionBody, paramsWithoutBuiltin))
+      maybeAWSConfig <- AWSConfigQueries.maybeFor(behaviorVersion)
+      _ <- DBIO.from(lambdaService.deployFunctionFor(behaviorVersion, functionBody, paramsWithoutBuiltin, maybeAWSConfig))
       b <- behaviorVersion.copy(maybeFunctionBody = Some(functionBody)).save
       params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin.map(ea => (ea, None)))
     } yield params) transactionally

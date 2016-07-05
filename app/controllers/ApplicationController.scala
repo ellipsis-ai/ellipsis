@@ -8,6 +8,7 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import export.{BehaviorVersionImporter, BehaviorVersionZipImporter, BehaviorVersionExporter}
 import json._
 import json.Formatting._
+import models.bots.config.AWSConfigQueries
 import models.bots.triggers.MessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
@@ -86,6 +87,7 @@ class ApplicationController @Inject() (
               "",
               Seq(),
               Seq(),
+              None,
               None,
               None
             )
@@ -209,6 +211,11 @@ class ApplicationController @Inject() (
           (version, triggers)
         }
       }).map(_.toMap)
+      awsConfigByVersion <- DBIO.sequence(versions.map { version =>
+        AWSConfigQueries.maybeFor(version).map { config =>
+          (version, config)
+        }
+      }).map(_.toMap)
     } yield {
         maybeBehavior.map { behavior =>
           val versionsData = versions.map { version =>
@@ -228,6 +235,11 @@ class ApplicationController @Inject() (
                 }
               }.getOrElse(Seq()),
               None,
+              awsConfigByVersion.get(version).flatMap { maybeConfig =>
+                maybeConfig.map { config =>
+                  AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
+                }
+              },
               Some(version.createdAt)
             )
           }

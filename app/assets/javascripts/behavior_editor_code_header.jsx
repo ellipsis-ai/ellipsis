@@ -14,7 +14,8 @@ return React.createClass({
     onParamChange: React.PropTypes.func.isRequired,
     onParamDelete: React.PropTypes.func.isRequired,
     onToggleHelp: React.PropTypes.func.isRequired,
-    params: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
+    params: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+    builtInParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
   },
   onChange: function(index, data) {
     this.props.onParamChange(index, data);
@@ -33,8 +34,8 @@ return React.createClass({
   },
   boilerplateLine: function() {
     return this.props.hasParams ?
-      (<span className="pll">{"onSuccess, onError, ellipsis "}</span>) :
-      "function(onSuccess, onError, ellipsis) { ";
+      (<span className="pll">{this.props.builtInParams.join(", ") + " "}</span>) :
+      "function(" + this.props.builtInParams.join(", ") + ") { ";
   },
   render: function() {
     return (
