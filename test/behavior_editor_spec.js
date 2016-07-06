@@ -18,6 +18,7 @@ describe('BehaviorEditor', () => {
       isRegex: false,
       caseSensitive: false
     }],
+    config: {},
     csrfToken: "2",
     justSaved: false,
     envVariableNames: ["HOT_DOG"],

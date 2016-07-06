@@ -144,7 +144,7 @@ return React.createClass({
 
   getBuiltinParams: function() {
     var params = ["onSuccess", "onError", "ellipsis"];
-    if (!!this.getAWSConfig()) {
+    if (this.getAWSConfig() !== undefined) {
       params = params.concat(["AWS"]);
     }
     return params;
@@ -449,9 +449,9 @@ return React.createClass({
   },
 
   setAWSEnvVar: function(property, envVarName) {
-    var awsConfig = this.getAWSConfig() || {};
+    var awsConfig = Object.assign({}, this.getAWSConfig());
     awsConfig[property] = envVarName;
-    setConfigProperty('aws', awsConfig);
+    this.setConfigProperty('aws', awsConfig);
   },
 
   setBehaviorProp: function(key, value, callback) {
@@ -621,9 +621,9 @@ return React.createClass({
   },
 
   isModified: function() {
-    var currentMatchesInitial = JSON.stringify(this.state.behavior) !== JSON.stringify(this.getInitialState().behavior);
+    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialState().behavior);
     var previewingVersions = this.getActivePanel() === 'versionHistory';
-    return currentMatchesInitial && !previewingVersions;
+    return !currentMatchesInitial && !previewingVersions;
   },
 
   shouldFilterCurrentVersion: function() {

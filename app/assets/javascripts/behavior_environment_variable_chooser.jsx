@@ -1,5 +1,5 @@
 define(function(require) {
-  var React = require('react')
+  var React = require('react');
 
   return React.createClass({
     propTypes: {
@@ -11,7 +11,6 @@ define(function(require) {
     },
 
     onChange: function(event) {
-      event.preventDefault();
       var property = this.props.property;
       var chosen = event.target.value;
       this.props.onChange(property, chosen);
