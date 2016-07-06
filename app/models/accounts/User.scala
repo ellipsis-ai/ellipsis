@@ -19,6 +19,22 @@ case class User(
     }
   }
 
+  def accessibleTeams: DBIO[Seq[Team]] = {
+    for {
+      linkedAccounts <- LinkedAccount.allFor(this)
+      teams <- DBIO.sequence(linkedAccounts.map(_.teams)).map(_.flatten)
+    } yield teams.distinct
+  }
+
+  // TODO: deal with users associated with multiple teams
+  def maybeFirstTeam: DBIO[Option[Team]] = accessibleTeams.map(_.headOption)
+
+  def maybeTeamFor(maybeTeamId: Option[String]) = {
+    maybeTeamId.map { teamId =>
+      Team.find(teamId, this)
+    }.getOrElse(maybeFirstTeam)
+  }
+
   def loginInfo: LoginInfo = LoginInfo(User.EPHEMERAL_USER_ID, id)
 
   def save: DBIO[User] = User.save(this)
