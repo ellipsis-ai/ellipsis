@@ -70,14 +70,13 @@ object BehaviorVersionExporter {
         behaviorVersion <- maybeBehaviorVersion
         function <- maybeFunction
         versionData <- maybeVersionData
-        config <- versionData.config
       } yield {
         BehaviorVersionExporter(
           behaviorVersion,
           maybeFunction,
           versionData.params,
           versionData.triggers,
-          config,
+          versionData.config,
           versionData.responseTemplate)
       }
     }

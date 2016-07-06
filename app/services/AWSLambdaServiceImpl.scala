@@ -6,6 +6,7 @@ import java.nio.file.{Files, Paths}
 import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
+import models.bots.config.AWSConfig
 import models.{EnvironmentVariable, Models, InvocationToken}
 import models.bots.{ParameterWithValue, BehaviorVersion}
 import play.api.Configuration
@@ -76,17 +77,34 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules)
   }
 
-  private def nodeCodeFor(functionBody: String, params: Array[String], behaviorVersion: BehaviorVersion): String = {
+  private def awsCodeFor(maybeAwsConfig: Option[AWSConfig]): String = {
+    maybeAwsConfig.map { awsConfig =>
+      s"""
+         |var AWS = require('aws-sdk');
+         |var ellipsis = event.ellipsis;
+         |
+         |AWS.config.update({
+         |  ${awsConfig.maybeAccessKeyName.map(n => s"accessKeyId: ellipsis.env.$n,").getOrElse("")}
+         |  ${awsConfig.maybeSecretKeyName.map(n => s"secretAccessKey: ellipsis.env.$n,").getOrElse("")}
+         |  ${awsConfig.maybeRegionName.map(n => s"region:  ellipsis.env.$n").getOrElse("")}
+         | });
+       """.stripMargin
+    }.getOrElse("")
+  }
+
+  private def nodeCodeFor(functionBody: String, params: Array[String], behaviorVersion: BehaviorVersion, maybeAwsConfig: Option[AWSConfig]): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
-    val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
+    val awsParams = behaviorVersion.awsParamsFor(maybeAwsConfig)
+    val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM") ++ awsParams).mkString(", ")
 
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = ${behaviorVersion.functionWithParams(params)};
+    s"""exports.handler = function(event, context, callback) { var fn = ${behaviorVersion.functionWithParams(params, awsParams)};
       |   var $ON_SUCCESS_PARAM = function(result) {
       |     callback(null, { "result": result === undefined ? null : result });
       |   };
       |   var $ON_ERROR_PARAM = function(err) { callback(err); };
+      |   ${awsCodeFor(maybeAwsConfig)}
       |   fn($invocationParamsString);
       |}
     """.stripMargin
@@ -95,13 +113,13 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   private def dirNameFor(functionName: String) = s"/tmp/$functionName"
   private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
-  private def createZipWithModulesFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String]): Unit = {
+  private def createZipWithModulesFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String], maybeAWSConfig: Option[AWSConfig]): Unit = {
     val dirName = dirNameFor(behaviorVersion.functionName)
     val path = Path(dirName)
     path.createDirectory()
 
     val writer = new PrintWriter(new File(s"$dirName/index.js"))
-    writer.write(nodeCodeFor(functionBody, params, behaviorVersion))
+    writer.write(nodeCodeFor(functionBody, params, behaviorVersion, maybeAWSConfig))
     writer.close()
 
     requiredModulesIn(functionBody).foreach { moduleName =>
@@ -112,8 +130,8 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(behaviorVersion.functionName)} *")).!
   }
 
-  private def getZipFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String]): ByteBuffer = {
-    createZipWithModulesFor(behaviorVersion, functionBody, params)
+  private def getZipFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String], maybeAWSConfig: Option[AWSConfig]): ByteBuffer = {
+    createZipWithModulesFor(behaviorVersion, functionBody, params, maybeAWSConfig)
     val path = Paths.get(zipFileNameFor(behaviorVersion.functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -128,7 +146,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     }
   }
 
-  def deployFunctionFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String]): Future[Unit] = {
+  def deployFunctionFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String], maybeAWSConfig: Option[AWSConfig]): Future[Unit] = {
     val functionName = behaviorVersion.functionName
 
     // blocks
@@ -139,7 +157,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     } else {
       val functionCode =
         new FunctionCode().
-          withZipFile(getZipFor(behaviorVersion, functionBody, params))
+          withZipFile(getZipFor(behaviorVersion, functionBody, params, maybeAWSConfig))
       val createFunctionRequest =
         new CreateFunctionRequest().
           withFunctionName(functionName).

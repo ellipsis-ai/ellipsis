@@ -8,6 +8,7 @@ var React = require('react'),
   BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
   BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
   BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
+  BehaviorAWSConfig = require('./behavior_aws_config'),
   BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
   BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
   BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
@@ -45,6 +46,13 @@ return React.createClass({
       isRegex: React.PropTypes.bool,
       caseSensitive: React.PropTypes.bool
     })),
+    config: React.PropTypes.shape({
+      aws: React.PropTypes.shape({
+        accessKeyName: React.PropTypes.string,
+        secretKeyName: React.PropTypes.string,
+        regionName: React.PropTypes.string
+      })
+    }),
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
@@ -68,6 +76,19 @@ return React.createClass({
 
   getActivePanel: function() {
     return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
+  },
+
+  getAWSConfig: function() {
+    return this.getBehaviorConfig()['aws'];
+  },
+
+  getAWSConfigProperty: function(property) {
+    var config = this.getAWSConfig();
+    if (config) {
+      return config[property];
+    } else {
+      return "";
+    }
   },
 
   getBehaviorFunctionBody: function() {
@@ -105,6 +126,10 @@ return React.createClass({
     return this.getBehaviorProp('triggers');
   },
 
+  getBehaviorConfig: function() {
+    return this.getBehaviorProp('config');
+  },
+
   getCodeAutocompletions: function() {
     var envVars = this.state.envVariableNames.map(function(name) {
       return 'ellipsis.env.' + name;
@@ -117,9 +142,17 @@ return React.createClass({
     return (<SVGSettingsIcon label="Editor settings" />);
   },
 
+  getBuiltinParams: function() {
+    var params = ["onSuccess", "onError", "ellipsis"];
+    if (!!this.getAWSConfig()) {
+      params = params.concat(["AWS"]);
+    }
+    return params;
+  },
+
   getCodeFunctionParams: function() {
     var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
-    return userParams.concat(["onSuccess", "onError", "ellipsis"]);
+    return userParams.concat(this.getBuiltinParams());
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -401,7 +434,8 @@ return React.createClass({
         functionBody: version.functionBody,
         responseTemplate: version.responseTemplate,
         params: version.params,
-        triggers: version.triggers
+        triggers: version.triggers,
+        config: version.config
       },
       revealCodeEditor: !!version.functionBody,
       justSaved: false
@@ -412,6 +446,12 @@ return React.createClass({
     this.showVersionIndex(versionIndex, function() {
       this.refs.behaviorForm.submit();
     });
+  },
+
+  setAWSEnvVar: function(property, envVarName) {
+    var awsConfig = this.getAWSConfig() || {};
+    awsConfig[property] = envVarName;
+    setConfigProperty('aws', awsConfig);
   },
 
   setBehaviorProp: function(key, value, callback) {
@@ -426,6 +466,12 @@ return React.createClass({
       versions: newVersions,
       justSaved: false
     }, callback);
+  },
+
+  setConfigProperty: function(property, value) {
+    var config = Object.assign({}, this.getBehaviorConfig());
+    config[property] = value;
+    this.setBehaviorProp('config', config);
   },
 
   showVersions: function() {
@@ -641,13 +687,15 @@ return React.createClass({
       functionBody: version1.functionBody,
       responseTemplate: version1.responseTemplate,
       params: version1.params,
-      triggers: version1.triggers
+      triggers: version1.triggers,
+      config: version1.config
     });
     var shallow2 = JSON.stringify({
       functionBody: version2.functionBody,
       responseTemplate: version2.responseTemplate,
       params: version2.params,
-      triggers: version2.triggers
+      triggers: version2.triggers,
+      config: version2.config
     });
     return shallow1 === shallow2;
   },
@@ -687,6 +735,18 @@ return React.createClass({
     this.refs['trigger' + index].focus();
   },
 
+  onAWSConfigChange: function(property, envVarName) {
+    this.setAWSEnvVar(property, envVarName);
+  },
+
+  onAddAWSConfig: function() {
+    this.setConfigProperty('aws', {});
+  },
+
+  onRemoveAWSConfig: function() {
+    this.setConfigProperty('aws', undefined);
+  },
+
   onParamEnterKey: function(index) {
     if (index + 1 < this.getBehaviorParams().length) {
       this.focusOnParamIndex(index + 1);
@@ -717,7 +777,8 @@ return React.createClass({
       functionBody: this.props.functionBody,
       responseTemplate: this.props.responseTemplate,
       params: this.props.params,
-      triggers: this.getInitialTriggers()
+      triggers: this.getInitialTriggers(),
+      config: this.props.config
     };
     return {
       behavior: initialBehavior,
@@ -876,6 +937,22 @@ return React.createClass({
 
             <div className="column column-three-quarters pll form-field-group">
 
+              <Collapsible revealWhen={!this.getAWSConfig()}>
+                <div className="pvm">
+                  <button type="button" className="button-s" onClick={this.onAddAWSConfig}>Use the AWS SDK</button>
+                </div>
+              </Collapsible>
+              <Collapsible revealWhen={!!this.getAWSConfig()}>
+                <BehaviorAWSConfig
+                  envVariableNames={this.props.envVariableNames}
+                  accessKeyName={this.getAWSConfigProperty('accessKeyName')}
+                  secretKeyName={this.getAWSConfigProperty('secretKeyName')}
+                  regionName={this.getAWSConfigProperty('regionName')}
+                  onChange={this.onAWSConfigChange}
+                  onRemoveAWSConfig={this.onRemoveAWSConfig}
+                />
+              </Collapsible>
+
               <BehaviorEditorCodeHeader
                 ref="codeHeader"
                 hasParams={this.hasParams()}
@@ -886,6 +963,7 @@ return React.createClass({
                 onEnterKey={this.onParamEnterKey}
                 helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
                 onToggleHelp={this.toggleBoilerplateHelp}
+                builtInParams={this.getBuiltinParams()}
               />
 
               <div className="position-relative pr-symbol border-right">

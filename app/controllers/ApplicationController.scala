@@ -8,6 +8,7 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import export.{BehaviorVersionImporter, BehaviorVersionZipImporter, BehaviorVersionExporter}
 import json._
 import json.Formatting._
+import models.bots.config.AWSConfigQueries
 import models.bots.triggers.MessageTriggerQueries
 import models.{Team, EnvironmentVariableQueries, Models}
 import models.accounts.User
@@ -86,7 +87,7 @@ class ApplicationController @Inject() (
               "",
               Seq(),
               Seq(),
-              None,
+              BehaviorConfig(None, None),
               None
             )
             Ok(views.html.edit(Some(user), Json.toJson(data).toString, envVars.map(_.name), justSaved = false))
@@ -209,9 +210,19 @@ class ApplicationController @Inject() (
           (version, triggers)
         }
       }).map(_.toMap)
+      awsConfigByVersion <- DBIO.sequence(versions.map { version =>
+        AWSConfigQueries.maybeFor(version).map { config =>
+          (version, config)
+        }
+      }).map(_.toMap)
     } yield {
         maybeBehavior.map { behavior =>
           val versionsData = versions.map { version =>
+            val maybeAwsConfigData = awsConfigByVersion.get(version).flatMap { maybeConfig =>
+              maybeConfig.map { config =>
+                AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
+              }
+            }
             BehaviorVersionData(
               version.team.id,
               Some(behavior.id),
@@ -227,7 +238,7 @@ class ApplicationController @Inject() (
                   BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
                 }
               }.getOrElse(Seq()),
-              None,
+              BehaviorConfig(None, maybeAwsConfigData),
               Some(version.createdAt)
             )
           }

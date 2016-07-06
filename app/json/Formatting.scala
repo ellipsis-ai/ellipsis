@@ -10,6 +10,9 @@ object Formatting {
   implicit val behaviorTriggerReads = Json.reads[BehaviorTriggerData]
   implicit val behaviorTriggerWrites = Json.writes[BehaviorTriggerData]
 
+  implicit val awsConfigReads = Json.reads[AWSConfigData]
+  implicit val awsConfigWrites = Json.writes[AWSConfigData]
+
   implicit val behaviorConfigReads = Json.reads[BehaviorConfig]
   implicit val behaviorConfigWrites = Json.writes[BehaviorConfig]
 

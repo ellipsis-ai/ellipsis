@@ -1,6 +1,7 @@
 package json
 
 import models.accounts.User
+import models.bots.config.AWSConfigQueries
 import models.bots.triggers.MessageTriggerQueries
 import models.bots.{BehaviorParameterQueries, BehaviorQueries}
 import org.joda.time.DateTime
@@ -16,9 +17,11 @@ case class BehaviorVersionData(
                                 responseTemplate: String,
                                 params: Seq[BehaviorParameterData],
                                 triggers: Seq[BehaviorTriggerData],
-                                config: Option[BehaviorConfig],
+                                config: BehaviorConfig,
                                 createdAt: Option[DateTime]
-                                )
+                                ) {
+  val awsConfig: Option[AWSConfigData] = config.aws
+}
 
 object BehaviorVersionData {
 
@@ -36,8 +39,8 @@ object BehaviorVersionData {
       response,
       Json.parse(params).validate[Seq[BehaviorParameterData]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
-      Json.parse(config).validate[BehaviorConfig].asOpt,
-      None
+      Json.parse(config).validate[BehaviorConfig].get,
+      createdAt = None
     )
   }
 
@@ -53,6 +56,9 @@ object BehaviorVersionData {
       maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
         MessageTriggerQueries.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(DBIO.successful(None))
+      maybeAWSConfig <- maybeBehaviorVersion.map { behaviorVersion =>
+        AWSConfigQueries.maybeFor(behaviorVersion)
+      }.getOrElse(DBIO.successful(None))
     } yield {
       for {
         behavior <- maybeBehavior
@@ -60,6 +66,9 @@ object BehaviorVersionData {
         params <- maybeParameters
         triggers <- maybeTriggers
       } yield {
+        val maybeAWSConfigData = maybeAWSConfig.map { config =>
+          AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
+        }
         BehaviorVersionData(
           behaviorVersion.team.id,
           Some(behavior.id),
@@ -71,7 +80,7 @@ object BehaviorVersionData {
           triggers.map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
-          maybePublishedId.map( id => BehaviorConfig(id)),
+          BehaviorConfig(maybePublishedId, maybeAWSConfigData),
           Some(behaviorVersion.createdAt)
         )
       }
