@@ -42,10 +42,10 @@ class ApplicationController @Inject() (
 
   def index = SecuredAction { implicit request => Ok(views.html.index(Some(request.identity))) }
 
-  def publishedBehaviors(teamId: String) = SecuredAction.async { implicit request =>
+  def publishedBehaviors(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeTeam <- Team.find(teamId, user)
+      maybeTeam <- user.maybeTeamFor(maybeTeamId)
       maybeGithubService <- DBIO.successful(maybeTeam.map { team =>
         GithubService(team, ws, configuration)
       })
@@ -61,17 +61,17 @@ class ApplicationController @Inject() (
         maybeTeam.map { team =>
           Ok(views.html.publishedBehaviors(Some(user), team, data, installedBehaviors))
         }.getOrElse {
-          NotFound(s"Team not found: $teamId")
+          NotFound(s"No accessible team")
         }
       }
 
     models.run(action)
   }
 
-  def newBehavior(teamId: String) = SecuredAction.async { implicit request =>
+  def newBehavior(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeTeam <- Team.find(teamId, user)
+      maybeTeam <- user.maybeTeamFor(maybeTeamId)
       maybeEnvironmentVariables <- maybeTeam.map { team =>
         EnvironmentVariableQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
@@ -302,13 +302,13 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  def importBehaviorZip(teamId: String) = SecuredAction.async { implicit request =>
+  def importBehaviorZip(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = Team.find(teamId, user).map { maybeTeam =>
+    val action = user.maybeTeamFor(maybeTeamId).map { maybeTeam =>
       maybeTeam.map { team =>
         Ok(views.html.importBehaviorZip(Some(user), team))
       }.getOrElse {
-        NotFound(s"Team not found $teamId")
+        NotFound(s"No accessible team")
       }
     }
 

@@ -25,16 +25,19 @@ case class LinkedAccount(user: User, loginInfo: LoginInfo, createdAt: DateTime) 
 
   def maybeSlackTeamId: DBIO[Option[String]] = maybeSlackProfile.map(_.map(_.teamId))
 
-  def canAccess(team: Team): DBIO[Boolean] = {
+  def teams: DBIO[Seq[Team]] = {
     for {
       maybeId <- maybeSlackTeamId
       botProfiles <- maybeId.map { slackTeamId =>
         SlackBotProfileQueries.allForSlackTeamId(slackTeamId)
       }.getOrElse(DBIO.successful(Seq()))
-    } yield {
-      botProfiles.exists(_.teamId == team.id)
-    }
+      teams <- DBIO.sequence(botProfiles.map { profile =>
+        Team.find(profile.teamId)
+      }).map(_.flatten)
+    } yield teams
   }
+
+  def canAccess(team: Team): DBIO[Boolean] = teams.map(_.contains(team))
 }
 
 case class RawLinkedAccount(userId: String, loginInfo: LoginInfo, createdAt: DateTime)
