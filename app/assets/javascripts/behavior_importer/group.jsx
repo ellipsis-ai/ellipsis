@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    BehaviorImporterBehavior = require('./behavior_importer_behavior');
+    Behavior = require('./behavior');
 
   return React.createClass({
     propTypes: {
@@ -32,7 +32,7 @@ define(function(require) {
           </h3>
           {this.getBehaviors().map(function(behavior, index) {
             return (
-              <BehaviorImporterBehavior
+              <Behavior
                 key={"behavior" + index}
                 behaviorData={behavior}
                 isImported={this.behaviorIsImported(behavior)}

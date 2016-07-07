@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    BehaviorImporterGroup = require('./behavior_importer_group');
+    Group = require('./group');
 
   return React.createClass({
     propTypes: {
@@ -74,7 +74,7 @@ define(function(require) {
             <div className="container">
               {this.getBehaviorGroups().map(function(group, index) {
                 return (
-                  <BehaviorImporterGroup
+                  <Group
                     key={"group" + index}
                     csrfToken={this.props.csrfToken}
                     name={group.name}
