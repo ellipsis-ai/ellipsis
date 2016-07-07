@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    BehaviorEnvironmentVariableChooser = require('./behavior_environment_variable_chooser');
+    EnvironmentVariableChooser = require('./environment_variable_chooser');
 
   return React.createClass({
 
@@ -21,7 +21,7 @@ define(function(require) {
 
           <div className="column column-three-quarters">
 
-            <BehaviorEnvironmentVariableChooser
+            <EnvironmentVariableChooser
               label="Access&nbsp;Key"
               property="accessKeyName"
               chosenName={this.props.accessKeyName}
@@ -29,7 +29,7 @@ define(function(require) {
               onChange={this.props.onChange}
               />
 
-            <BehaviorEnvironmentVariableChooser
+            <EnvironmentVariableChooser
               label="Secret&nbsp;Key"
               property="secretKeyName"
               chosenName={this.props.secretKeyName}
@@ -37,7 +37,7 @@ define(function(require) {
               onChange={this.props.onChange}
               />
 
-            <BehaviorEnvironmentVariableChooser
+            <EnvironmentVariableChooser
               label="Region"
               property="regionName"
               chosenName={this.props.regionName}

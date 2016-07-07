@@ -1,7 +1,7 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu');
+  DropdownMenu = require('./dropdown_menu');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
@@ -62,7 +62,7 @@ return React.createClass({
           return null;
         } else {
           return (
-            <BehaviorEditorDropdownMenu.Item
+            <DropdownMenu.Item
               key={"version" + index}
               onClick={this.selectVersionIndex.bind(this, index)}
               checkedWhen={this.getSelectedVersionIndex() === index}
@@ -73,7 +73,7 @@ return React.createClass({
       }, this);
     } else {
       return (
-        <BehaviorEditorDropdownMenu.Item label="Loading…" />
+        <DropdownMenu.Item label="Loading…" />
       );
     }
   },
@@ -144,7 +144,7 @@ return React.createClass({
             title="Previous version"
           >◄</button>
           <div className="display-inline-block position-relative">
-            <BehaviorEditorDropdownMenu
+            <DropdownMenu
               openWhen={this.props.openMenuWhen}
               label={this.getVersionText(this.getSelectedVersionIndex())}
               labelClassName="button-dropdown-trigger-menu-above button-dropdown-trigger-wide mrs"
@@ -154,7 +154,7 @@ return React.createClass({
               toggle={this.props.menuToggle}
             >
               {this.getVersionsMenu()}
-            </BehaviorEditorDropdownMenu>
+            </DropdownMenu>
           </div>
           <button type="button" disabled={this.newestVersionSelected()}
             className="button-symbol mrs"

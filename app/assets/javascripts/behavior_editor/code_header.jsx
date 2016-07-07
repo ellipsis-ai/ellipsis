@@ -1,8 +1,8 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
-  BehaviorEditorUserInputDefinition = require('./behavior_editor_user_input_definition');
+  HelpButton = require('./help_button'),
+  UserInputDefinition = require('./user_input_definition');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
@@ -59,8 +59,8 @@ return React.createClass({
                 <code className="type-disabled type-s position-absolute position-top-right pts prxs">{paramIndex + 2}</code>
               </div>
               <div className="column column-expand pll">
-                <BehaviorEditorUserInputDefinition
-                  key={'BehaviorEditorUserInputDefinition' + paramIndex}
+                <UserInputDefinition
+                  key={'UserInputDefinition' + paramIndex}
                   ref={'param' + paramIndex}
                   name={param.name}
                   question={param.question}
@@ -82,7 +82,7 @@ return React.createClass({
               </div>
               <div className="column column-expand plxs">
                 <code className="type-weak type-s">{this.boilerplateLine()}</code>
-                <BehaviorEditorHelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible} />
+                <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible} />
               </div>
             </div>
           </div>

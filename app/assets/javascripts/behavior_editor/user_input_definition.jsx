@@ -1,7 +1,7 @@
 define(function(require) {
 var React = require('react'),
-  BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
-  BehaviorEditorInput = require('./behavior_editor_input');
+  DeleteButton = require('./delete_button'),
+  Input = require('./input');
 
 return React.createClass({
   propTypes: {
@@ -40,7 +40,7 @@ return React.createClass({
         <div className="column column-one-quarter">
           <div className="columns columns-elastic">
             <div className="column column-expand prs">
-              <BehaviorEditorInput
+              <Input
                 ref="name"
                 className="form-input-borderless type-monospace type-s"
                 placeholder="userInput"
@@ -61,7 +61,7 @@ return React.createClass({
                   htmlFor={"question" + this.props.id}
                   title="Write a question for @ellipsis to ask the user to provide this parameter."
                 >Q:</label>
-                <BehaviorEditorInput
+                <Input
                   id={"question" + this.props.id}
                   ref="question"
                   placeholder="Write a question to ask the user for this parameter"
@@ -73,7 +73,7 @@ return React.createClass({
               </div>
             </div>
             <div className="column column-shrink">
-              <BehaviorEditorDeleteButton
+              <DeleteButton
                 onClick={this.onDeleteClick}
                 title={"Delete the “" + this.props.name + "” parameter"}
               />

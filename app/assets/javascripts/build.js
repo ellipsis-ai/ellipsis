@@ -4,6 +4,7 @@ Development configuration lives in common.js
 */
 
 requirejs.config({
+  baseUrl: '/assets/javascripts/',
   packages: [
     {
       name: 'codemirror',
