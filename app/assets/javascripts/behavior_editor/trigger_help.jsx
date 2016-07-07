@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  BehaviorEditorHelpPanel = require('./behavior_editor_help_panel');
+  HelpPanel = require('./help_panel');
 
 return React.createClass({
   propTypes: {
@@ -8,7 +8,7 @@ return React.createClass({
   },
   render: function() {
     return (
-      <BehaviorEditorHelpPanel
+      <HelpPanel
         heading="Ellipsis listens for “trigger” phrases to activate behaviors"
         onCollapseClick={this.props.onCollapseClick}
       >
@@ -33,7 +33,7 @@ return React.createClass({
           <span>Parameter names must begin with a letter of the alphabet, and may only include </span>
           <span>letters, numbers and underscores (_) — <strong>no spaces.</strong></span>
         </p>
-      </BehaviorEditorHelpPanel>
+      </HelpPanel>
     );
   }
 });

@@ -1,28 +1,28 @@
 define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
-  Codemirror = require('./react-codemirror'),
+  Codemirror = require('../react-codemirror'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  BehaviorEditorBoilerplateParameterHelp = require('./behavior_editor_boilerplate_parameter_help'),
-  BehaviorEditorChecklist = require('./behavior_editor_checklist'),
-  BehaviorEditorCodeEditor = require('./behavior_editor_code_editor'),
-  BehaviorEditorCodeFooter = require('./behavior_editor_code_footer'),
-  BehaviorEditorCodeHeader = require('./behavior_editor_code_header'),
-  BehaviorAWSConfig = require('./behavior_aws_config'),
-  BehaviorEditorConfirmActionPanel = require('./behavior_editor_confirm_action_panel'),
-  BehaviorEditorDropdownMenu = require('./behavior_editor_dropdown_menu'),
-  BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
-  BehaviorEditorHiddenJsonInput = require('./behavior_editor_hidden_json_input'),
-  BehaviorEditorSectionHeading = require('./behavior_editor_section_heading'),
-  BehaviorEditorTriggerHelp = require('./behavior_editor_trigger_help'),
-  BehaviorEditorTriggerOptionsHelp = require('./behavior_editor_trigger_options_help'),
-  BehaviorEditorTriggerInput = require('./behavior_editor_trigger_input'),
-  BehaviorEditorVersionsPanel = require('./behavior_editor_versions_panel'),
-  SVGSettingsIcon = require('./svg/settings'),
-  Collapsible = require('./collapsible'),
-  CsrfTokenHiddenInput = require('./csrf_token_hidden_input'),
-  BrowserUtils = require('./browser_utils'),
-  ImmutableObjectUtils = require('./immutable_object_utils');
+  BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
+  Checklist = require('./checklist'),
+  CodeEditor = require('./code_editor'),
+  CodeFooter = require('./code_footer'),
+  CodeHeader = require('./code_header'),
+  AWSConfig = require('./aws_config'),
+  ConfirmActionPanel = require('./confirm_action_panel'),
+  DropdownMenu = require('./dropdown_menu'),
+  HelpButton = require('./help_button'),
+  HiddenJsonInput = require('./hidden_json_input'),
+  SectionHeading = require('./section_heading'),
+  TriggerHelp = require('./trigger_help'),
+  TriggerOptionsHelp = require('./trigger_options_help'),
+  TriggerInput = require('./trigger_input'),
+  VersionsPanel = require('./versions_panel'),
+  SVGSettingsIcon = require('../svg/settings'),
+  Collapsible = require('../collapsible'),
+  CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
+  BrowserUtils = require('../browser_utils'),
+  ImmutableObjectUtils = require('../immutable_object_utils');
   require('codemirror/mode/markdown/markdown');
   require('es6-promise');
   require('fetch');
@@ -246,12 +246,12 @@ return React.createClass({
       return (
         <div>
           <span>You can include data in your response.<br /></span>
-          <BehaviorEditorChecklist className="mtxs" disabledWhen={this.isExistingBehavior()}>
+          <Checklist className="mtxs" disabledWhen={this.isExistingBehavior()}>
             {this.getUserParamTemplateHelp()}
             {this.getSuccessResultTemplateHelp()}
             {this.getPathTemplateHelp()}
             {this.getIterationTemplateHelp()}
-          </BehaviorEditorChecklist>
+          </Checklist>
         </div>
       );
     }
@@ -832,7 +832,7 @@ return React.createClass({
         <CsrfTokenHiddenInput
           value={this.props.csrfToken}
           />
-        <BehaviorEditorHiddenJsonInput
+        <HiddenJsonInput
           value={JSON.stringify(this.state.behavior)}
         />
 
@@ -841,9 +841,9 @@ return React.createClass({
 
           <div className="columns">
             <div className="column column-one-quarter form-field-group mts">
-              <BehaviorEditorSectionHeading>When someone says</BehaviorEditorSectionHeading>
+              <SectionHeading>When someone says</SectionHeading>
 
-              <BehaviorEditorChecklist disabledWhen={this.isExistingBehavior()}>
+              <Checklist disabledWhen={this.isExistingBehavior()}>
                 <span checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.isExistingBehavior()}>
                   Write a question or phrase people should use to trigger a response.
                 </span>
@@ -853,17 +853,17 @@ return React.createClass({
                 <span checkedWhen={this.triggersUseParams()}>
                   <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
                   <span className="pls">
-                    <BehaviorEditorHelpButton onClick={this.toggleTriggerHelp} toggled={this.getActivePanel() === 'helpForTriggerParameters'} />
+                    <HelpButton onClick={this.toggleTriggerHelp} toggled={this.getActivePanel() === 'helpForTriggerParameters'} />
                   </span>
                 </span>
-              </BehaviorEditorChecklist>
+              </Checklist>
 
             </div>
             <div className="column column-three-quarters pll form-field-group">
               <div className="mbm">
               {this.getBehaviorTriggers().map(function(trigger, index) {
                 return (
-                  <BehaviorEditorTriggerInput
+                  <TriggerInput
                     className={index === 0 ? "form-input-large" : ""}
                     includeHelp={index === 0}
                     key={"BehaviorEditorTrigger" + index}
@@ -915,9 +915,9 @@ return React.createClass({
           <div className="columns">
             <div className="column column-one-quarter form-field-group">
 
-              <BehaviorEditorSectionHeading>Ellipsis will do</BehaviorEditorSectionHeading>
+              <SectionHeading>Ellipsis will do</SectionHeading>
 
-              <BehaviorEditorChecklist disabledWhen={this.isExistingBehavior()}>
+              <Checklist disabledWhen={this.isExistingBehavior()}>
                 <span checkedWhen={this.hasCode()} hiddenWhen={this.isExistingBehavior()}>
                   Write a node.js function to determine a result.
                 </span>
@@ -931,7 +931,7 @@ return React.createClass({
                   <span>If you need more information from the user, add one or more parameters </span>
                   <span>to your function.</span>
                 </span>
-              </BehaviorEditorChecklist>
+              </Checklist>
 
             </div>
 
@@ -943,7 +943,7 @@ return React.createClass({
                 </div>
               </Collapsible>
               <Collapsible revealWhen={!!this.getAWSConfig()}>
-                <BehaviorAWSConfig
+                <AWSConfig
                   envVariableNames={this.props.envVariableNames}
                   accessKeyName={this.getAWSConfigProperty('accessKeyName')}
                   secretKeyName={this.getAWSConfigProperty('secretKeyName')}
@@ -953,7 +953,7 @@ return React.createClass({
                 />
               </Collapsible>
 
-              <BehaviorEditorCodeHeader
+              <CodeHeader
                 ref="codeHeader"
                 hasParams={this.hasParams()}
                 params={this.getBehaviorParams()}
@@ -967,7 +967,7 @@ return React.createClass({
               />
 
               <div className="position-relative pr-symbol border-right">
-                <BehaviorEditorCodeEditor
+                <CodeEditor
                   value={this.getBehaviorFunctionBody()}
                   onChange={this.updateCode}
                   onCursorChange={this.ensureCursorVisible}
@@ -977,23 +977,23 @@ return React.createClass({
                   functionParams={this.getCodeFunctionParams()}
                 />
                 <div className="position-absolute position-top-right">
-                  <BehaviorEditorDropdownMenu
+                  <DropdownMenu
                     openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
                     label={this.getCodeEditorDropdownLabel()}
                     labelClassName="button-dropdown-trigger-symbol"
                     menuClassName="popup-dropdown-menu-right"
                     toggle={this.toggleEditorSettingsMenu}
                   >
-                    <BehaviorEditorDropdownMenu.Item
+                    <DropdownMenu.Item
                       onClick={this.toggleCodeEditorLineWrapping}
                       checkedWhen={this.state.codeEditorUseLineWrapping}
                       label="Enable line wrap"
                     />
-                  </BehaviorEditorDropdownMenu>
+                  </DropdownMenu>
                 </div>
               </div>
 
-              <BehaviorEditorCodeFooter
+              <CodeFooter
                 lineNumber={this.getLastLineNumberForCode()}
                 onCodeDelete={this.confirmDeleteCode}
               />
@@ -1008,9 +1008,9 @@ return React.createClass({
 
             <div className="column column-one-quarter mbxl type-s">
 
-              <BehaviorEditorSectionHeading>{this.getResponseHeader()}</BehaviorEditorSectionHeading>
+              <SectionHeading>{this.getResponseHeader()}</SectionHeading>
 
-              <BehaviorEditorChecklist disabledWhen={this.isExistingBehavior()}>
+              <Checklist disabledWhen={this.isExistingBehavior()}>
                 <span checkedWhen={this.templateUsesMarkdown()}>
                   <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
                   <span>to format the response, add links, etc.</span>
@@ -1018,7 +1018,7 @@ return React.createClass({
                 {this.state.revealCodeEditor ? "" : (
                   <span>Add code above if you want to collect user input before returning a response.</span>
                 )}
-              </BehaviorEditorChecklist>
+              </Checklist>
 
               {this.getTemplateDataHelp()}
             </div>
@@ -1056,33 +1056,33 @@ return React.createClass({
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
         >
           <Collapsible ref="confirmUndo" revealWhen={this.getActivePanel() === 'confirmUndo'}>
-            <BehaviorEditorConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
+            <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
-            </BehaviorEditorConfirmActionPanel>
+            </ConfirmActionPanel>
           </Collapsible>
 
           <Collapsible ref="confirmDeleteBehavior" revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
-            <BehaviorEditorConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
+            <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
               <p>Are you sure you want to delete this behavior?</p>
-            </BehaviorEditorConfirmActionPanel>
+            </ConfirmActionPanel>
           </Collapsible>
 
           <Collapsible ref="confirmDeleteCode" revealWhen={this.getActivePanel() === 'confirmDeleteCode'}>
-            <BehaviorEditorConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.hideActivePanel}>
+            <ConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.hideActivePanel}>
               <p>Are you sure you want to remove all of the code?</p>
-            </BehaviorEditorConfirmActionPanel>
+            </ConfirmActionPanel>
           </Collapsible>
 
           <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerParameters'}>
-            <BehaviorEditorTriggerHelp onCollapseClick={this.toggleTriggerHelp} />
+            <TriggerHelp onCollapseClick={this.toggleTriggerHelp} />
           </Collapsible>
 
           <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerOptions'}>
-            <BehaviorEditorTriggerOptionsHelp onCollapseClick={this.toggleTriggerOptionsHelp} />
+            <TriggerOptionsHelp onCollapseClick={this.toggleTriggerOptionsHelp} />
           </Collapsible>
 
           <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
-            <BehaviorEditorBoilerplateParameterHelp
+            <BoilerplateParameterHelp
               envVariableNames={this.state.envVariableNames}
               onExpandToggle={this.toggleEnvVariableExpansion}
               expandEnvVariables={this.state.expandEnvVariables}
@@ -1091,7 +1091,7 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible ref="versionHistory" revealWhen={this.getActivePanel() === 'versionHistory'}>
-            <BehaviorEditorVersionsPanel
+            <VersionsPanel
               ref="versionsPanel"
               menuToggle={this.toggleVersionListMenu}
               onCancelClick={this.cancelVersionPanel}
@@ -1120,17 +1120,17 @@ return React.createClass({
                   <button type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>Undo changes</button>
                 </div>
                 <div className="column column-one-half align-r">
-                  <BehaviorEditorDropdownMenu
+                  <DropdownMenu
                     openWhen={this.getActiveDropdown() === 'manageBehavior'}
                     label="Manage behavior"
                     labelClassName="button-dropdown-trigger-menu-above"
                     menuClassName="popup-dropdown-menu-right popup-dropdown-menu-above"
                     toggle={this.toggleManageBehaviorMenu}
                   >
-                    <BehaviorEditorDropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
-                    <BehaviorEditorDropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
-                    <BehaviorEditorDropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
-                  </BehaviorEditorDropdownMenu>
+                    <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
+                    <DropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
+                    <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
+                  </DropdownMenu>
                 </div>
               </div>
             </div>

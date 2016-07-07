@@ -1,9 +1,9 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  BehaviorEditorHelpPanel = require('./behavior_editor_help_panel'),
-  BehaviorEditorEnvVariableList = require('./behavior_editor_env_variable_list'),
-  BehaviorEditorNoEnvVariables = require('./behavior_editor_no_env_variables');
+  HelpPanel = require('./help_panel'),
+  EnvVariableList = require('./env_variable_list'),
+  NoEnvVariables = require('./no_env_variables');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
@@ -19,7 +19,7 @@ return React.createClass({
   },
   render: function() {
     return (
-      <BehaviorEditorHelpPanel
+      <HelpPanel
         heading="Function parameters"
         onCollapseClick={this.props.onCollapseClick}
       >
@@ -59,16 +59,16 @@ return React.createClass({
         >
           {
             this.props.envVariableNames.length > 0 ? (
-              <BehaviorEditorEnvVariableList
+              <EnvVariableList
                 envVariableNames={this.props.envVariableNames}
                 expandEnvVariables={this.props.expandEnvVariables}
               />
             ) : (
-              <BehaviorEditorNoEnvVariables />
+              <NoEnvVariables />
             )
           }
         </button>
-      </BehaviorEditorHelpPanel>
+      </HelpPanel>
     );
   }
 });

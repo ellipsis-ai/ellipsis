@@ -4,6 +4,7 @@ Production configuration lives in build.js.
 */
 
 requirejs.config({
+  baseUrl: '/assets/javascripts/',
   packages: [
     {
       name: 'codemirror',

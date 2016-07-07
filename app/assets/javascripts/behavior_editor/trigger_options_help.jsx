@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  BehaviorEditorHelpPanel = require('./behavior_editor_help_panel');
+  HelpPanel = require('./help_panel');
 
 return React.createClass({
   propTypes: {
@@ -8,7 +8,7 @@ return React.createClass({
   },
   render: function() {
     return (
-      <BehaviorEditorHelpPanel
+      <HelpPanel
         heading="Options for each trigger"
         onCollapseClick={this.props.onCollapseClick}
       >
@@ -25,7 +25,7 @@ return React.createClass({
           pattern matching (regex) instead of normal text. Use regex capturing parentheses
           to collect user input instead of the <code>{"{paramName}"}</code> style.
         </p>
-      </BehaviorEditorHelpPanel>
+      </HelpPanel>
     );
   }
 });

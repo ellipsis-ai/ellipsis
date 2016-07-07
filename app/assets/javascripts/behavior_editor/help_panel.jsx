@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  BehaviorEditorHelpButton = require('./behavior_editor_help_button');
+  HelpButton = require('./help_button');
 
 return React.createClass({
   propTypes: {
@@ -19,7 +19,7 @@ return React.createClass({
           </div>
           <div className="column column-three-quarters mts pll prxxl">
             <div className="position-absolute position-top-right">
-              <BehaviorEditorHelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
+              <HelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
             </div>
 
             {React.Children.map(this.props.children, function(child) { return child; })}

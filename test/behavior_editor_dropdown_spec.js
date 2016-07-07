@@ -1,12 +1,11 @@
-jest.unmock('../app/assets/javascripts/behavior_editor_dropdown_menu');
+jest.unmock('../app/assets/javascripts/behavior_editor/dropdown_menu');
 
 import React from 'react';
 import ReactDOM from 'react-dom';
 import TestUtils from 'react-addons-test-utils';
-const BehaviorEditor = require('../app/assets/javascripts/behavior_editor_dropdown_menu');
-const BehaviorEditorDropdownMenu = require('../app/assets/javascripts/behavior_editor_dropdown_menu');
+const DropdownMenu = require('../app/assets/javascripts/behavior_editor/dropdown_menu');
 
-describe('BehaviorEditorDropdownMenu', () => {
+describe('DropdownMenu', () => {
   let toggled = false;
 
   const defaultConfig = {
@@ -28,9 +27,9 @@ describe('BehaviorEditorDropdownMenu', () => {
 
   function createDropdown(config, itemConfig) {
     return TestUtils.renderIntoDocument(
-      <BehaviorEditorDropdownMenu {...config}>
-        <BehaviorEditorDropdownMenu.Item {...itemConfig} />
-      </BehaviorEditorDropdownMenu>
+      <DropdownMenu {...config}>
+        <DropdownMenu.Item {...itemConfig} />
+      </DropdownMenu>
     );
   }
 

@@ -1,7 +1,7 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  SVGXIcon = require('./svg/x');
+  SVGXIcon = require('../svg/x');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],

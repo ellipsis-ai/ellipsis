@@ -2,11 +2,11 @@ define(function(require) {
 var React = require('react'),
   debounce = require('javascript-debounce'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  BehaviorEditorCheckbox = require('./behavior_editor_checkbox'),
-  BehaviorEditorDeleteButton = require('./behavior_editor_delete_button'),
-  BehaviorEditorHelpButton = require('./behavior_editor_help_button'),
-  BehaviorEditorInput = require('./behavior_editor_input'),
-  Collapsible = require('./collapsible');
+  Checkbox = require('./checkbox'),
+  DeleteButton = require('./delete_button'),
+  HelpButton = require('./help_button'),
+  Input = require('./input'),
+  Collapsible = require('../collapsible');
   require('es6-promise');
   require('fetch');
 
@@ -140,7 +140,7 @@ return React.createClass({
           </div>
         </div>
         <div className="column column-expand prn position-relative">
-          <BehaviorEditorInput
+          <Input
             className={
               " form-input-borderless " +
               (this.props.isRegex ? " type-monospace " : "") +
@@ -169,7 +169,7 @@ return React.createClass({
           <Collapsible revealWhen={this.state.showError} className="popup display-limit-width">
             <div className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
               <div className="position-absolute position-top-right ptxs prxs">
-                <BehaviorEditorHelpButton onClick={this.toggleError} toggled={true} inline={true} />
+                <HelpButton onClick={this.toggleError} toggled={true} inline={true} />
               </div>
               <div><b>This regex trigger cannot be used because of a format error:</b></div>
               <pre>{this.state.regexError || "\n\n\n"}</pre>
@@ -185,10 +185,10 @@ return React.createClass({
           <div className={"display-ellipsis form-input form-input-borderless " +
             (this.props.className || "")}>
             {this.props.includeHelp ? (
-              <BehaviorEditorHelpButton onClick={this.toggleHelp} toggled={this.props.helpVisible} className="align-m mrs" />
+              <HelpButton onClick={this.toggleHelp} toggled={this.props.helpVisible} className="align-m mrs" />
               ) : ""}
             <label className="mrm type-s" title="Only respond when someone mentions @ellipsis">
-              <BehaviorEditorCheckbox
+              <Checkbox
                 checked={this.props.requiresMention}
                 onChange={this.onChange.bind(this, 'requiresMention')}
               /> <span>🗣 🤖</span>
@@ -197,13 +197,13 @@ return React.createClass({
               className={"mrm type-s " + (this.state.highlightCaseSensitivity ? "blink-twice" : "")}
               title="Match uppercase and lowercase letters exactly — if unchecked, case is ignored"
             >
-              <BehaviorEditorCheckbox
+              <Checkbox
                 checked={this.props.caseSensitive}
                 onChange={this.onChange.bind(this, 'caseSensitive')}
               /> <i>Aa</i>
             </label>
             <label className="type-s" title="Use regular expression pattern matching">
-              <BehaviorEditorCheckbox
+              <Checkbox
                 checked={this.props.isRegex}
                 onChange={this.onChange.bind(this, 'isRegex')}
               /> <code>/^…$/</code>
@@ -211,7 +211,7 @@ return React.createClass({
           </div>
         </div>
         <div className="column column-shrink">
-          <BehaviorEditorDeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
+          <DeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
         </div>
       </div>
     );
