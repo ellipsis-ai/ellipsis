@@ -1,8 +1,8 @@
 define(function(require) {
   var React = require('react'),
-    SVGInstall = require('./svg/install'),
-    SVGInstalled = require('./svg/installed'),
-    SVGInstalling = require('./svg/installing');
+    SVGInstall = require('../svg/install'),
+    SVGInstalled = require('../svg/installed'),
+    SVGInstalling = require('../svg/installing');
     require('es6-promise');
     require('fetch');
 
