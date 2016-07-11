@@ -11,7 +11,7 @@ import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext
 
-trait MessageContext {
+trait MessageContext extends Context {
   val fullMessageText: String
   val relevantMessageText: String
   val includesBotMention: Boolean

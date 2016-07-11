@@ -64,25 +64,21 @@ case class InvokeBehaviorConversation(
     } yield updatedConversation
   }
 
-  def updateWith(event: Event, lambdaService: AWSLambdaService): DBIO[Conversation] = {
+  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Conversation] = {
     import Conversation._
     import InvokeBehaviorConversation._
 
-    event match {
-      case e: MessageEvent => {
-        paramInfo.flatMap { info =>
-          state match {
-            case NEW_STATE => updateStateTo(COLLECT_PARAM_VALUES_STATE)
-            case COLLECT_PARAM_VALUES_STATE => collectParamValueFrom(e, info)
-            case DONE_STATE => DBIO.successful(this)
-          }
-        }
+    paramInfo.flatMap { info =>
+      state match {
+        case NEW_STATE => updateStateTo(COLLECT_PARAM_VALUES_STATE)
+        case COLLECT_PARAM_VALUES_STATE => collectParamValueFrom(event, info)
+        case DONE_STATE => DBIO.successful(this)
       }
     }
 
   }
 
-  private def sendPromptFor(event: Event, info: ParamInfo): Unit = {
+  private def sendPromptFor(event: MessageEvent, info: ParamInfo): Unit = {
     val prompt = (for {
       param <- info.maybeNextToCollect
       question <- param.maybeQuestion
@@ -91,7 +87,7 @@ case class InvokeBehaviorConversation(
     event.context.sendMessage(prompt)
   }
 
-  def respond(event: Event, lambdaService: AWSLambdaService): DBIO[Unit] = {
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Unit] = {
     import Conversation._
     import InvokeBehaviorConversation._
 

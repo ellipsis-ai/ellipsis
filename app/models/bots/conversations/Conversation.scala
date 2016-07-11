@@ -19,10 +19,10 @@ trait Conversation {
   val startedAt: DateTime
   val state: String
 
-  def updateWith(event: Event, lambdaService: AWSLambdaService): DBIO[Conversation]
-  def respond(event: Event, lambdaService: AWSLambdaService): DBIO[Unit]
+  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Conversation]
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Unit]
 
-  def replyFor(event: Event, lambdaService: AWSLambdaService): DBIO[Unit] = {
+  def replyFor(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Unit] = {
     for {
       updatedConversation <- updateWith(event, lambdaService)
       _ <- updatedConversation.respond(event, lambdaService)

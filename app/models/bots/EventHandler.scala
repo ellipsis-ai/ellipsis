@@ -17,7 +17,7 @@ class EventHandler @Inject() (
                                messages: MessagesApi
                                ) {
 
-  def startInvokeConversationFor(event: Event): DBIO[Unit] = {
+  def startInvokeConversationFor(event: MessageEvent): DBIO[Unit] = {
     val context = event.context
     for {
       maybeTeam <- Team.find(context.teamId)
@@ -33,22 +33,28 @@ class EventHandler @Inject() (
     } yield Unit
   }
 
-  def handleInConversation(conversation: Conversation, event: Event): DBIO[Unit] = {
+  def handleInConversation(conversation: Conversation, event: MessageEvent): DBIO[Unit] = {
     conversation.replyFor(event, lambdaService)
   }
 
   def handle(event: Event): Future[Unit] = {
-    val action = event.context.maybeOngoingConversation.flatMap { maybeConversation =>
-      maybeConversation.map { conversation =>
-        handleInConversation(conversation, event)
-      }.getOrElse {
-        BuiltinBehavior.maybeFrom(event.context, lambdaService).map { builtin =>
-          builtin.run
-        }.getOrElse {
-          startInvokeConversationFor(event)
+    event match {
+      case messageEvent: MessageEvent => {
+        val action = event.context.maybeOngoingConversation.flatMap { maybeConversation =>
+          maybeConversation.map { conversation =>
+            handleInConversation(conversation, messageEvent)
+          }.getOrElse {
+            BuiltinBehavior.maybeFrom(messageEvent.context, lambdaService).map { builtin =>
+              builtin.run
+            }.getOrElse {
+              startInvokeConversationFor(messageEvent)
+            }
+          }
         }
+        models.run(action)
       }
+      case _ => Future.successful(Unit)
     }
-    models.run(action)
+
   }
 }
