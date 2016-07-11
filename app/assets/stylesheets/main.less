@@ -11,7 +11,7 @@
 @xxxl: 48px;
 @xxxxl: 64px;
 
-@type-xs: 12px;
+@type-xs: 13px;
 @type-s: 15px;
 @type-m: 18px;
 @type-l: 28px;
@@ -322,6 +322,10 @@ So for example:
   background-color: @gray-light-translucent;
 }
 
+.bg-yellow {
+  background-color: @yellow-lighter;
+}
+
 /* Border utilities */
 
 .border {
@@ -422,6 +426,10 @@ So for example:
   border-color: @green-medium;
 }
 
+.border-yellow {
+  border-color: @yellow-light;
+}
+
 .border-radius {
   border-radius: @border-radius;
 }
@@ -475,6 +483,14 @@ So for example:
   .border-pink();
   .position-relative();
   padding: @xxl @l;
+}
+
+.box-warning {
+  .bg-yellow();
+  .border-top();
+  .border-bottom();
+  .border-yellow();
+  padding: @s;
 }
 
 /* Foreground type utilities */

@@ -13,6 +13,7 @@ var React = require('react'),
   DropdownMenu = require('./dropdown_menu'),
   HelpButton = require('./help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
+  Notification = require('../notification'),
   SectionHeading = require('./section_heading'),
   TriggerHelp = require('./trigger_help'),
   TriggerOptionsHelp = require('./trigger_options_help'),
@@ -56,6 +57,7 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
+    notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool
   },
 
@@ -213,6 +215,10 @@ return React.createClass({
       isRegex: false,
       caseSensitive: false
     };
+  },
+
+  getNotifications: function() {
+    return this.state.notifications;
   },
 
   getPathTemplateHelp: function() {
@@ -792,6 +798,7 @@ return React.createClass({
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate,
+      notifications: this.props.notifications || [],
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null
     };
@@ -821,10 +828,16 @@ return React.createClass({
              </form>
             */}
 
-            <div className="column column-shrink ptl align-r">
-            </div>
+            <div className="column column-shrink ptl position-relative"></div>
           </div>
         </div>
+      </div>
+      <div className="position-relative">
+        {this.getNotifications().map(function(notification, index) {
+          return (
+            <Notification key={"notification" + index} data={notification} index={index} />
+          );
+        }, this)}
       </div>
 
       <form action="/save_behavior" method="POST" ref="behaviorForm">
