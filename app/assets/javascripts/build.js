@@ -36,6 +36,9 @@ requirejs.config({
     {
       name: 'common',
       include: [
+        'es6-promise',
+        'fetch',
+        'javascript-debounce',
         'react',
         'react-dom'
       ]
