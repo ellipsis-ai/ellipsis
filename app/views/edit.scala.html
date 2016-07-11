@@ -2,7 +2,8 @@
   maybeUser: Option[models.accounts.User],
   json: String,
   envVariableNames: Seq[String],
-  justSaved: Boolean
+  justSaved: Boolean,
+  notificationsJson: String
     )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
@@ -23,7 +24,8 @@
           containerId: 'editorContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
           justSaved: @justSaved,
-          envVariableNames: @Html(Json.toJson(envVariableNames).toString)
+          envVariableNames: @Html(Json.toJson(envVariableNames).toString),
+          notifications: @Html(notificationsJson)
         };
       </script>
       <script data-main='@routes.Assets.versioned("javascripts/behavior_editor/loader.js")' src='@routes.Assets.versioned("lib/requirejs/require.min.js")'></script>
