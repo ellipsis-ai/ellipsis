@@ -1,4 +1,5 @@
 /* global BehaviorEditorConfiguration:false */
+
 requirejs(['../common'], function() {
   requirejs(['react', 'react-dom', './behavior_editor/index'], function(React, ReactDOM, BehaviorEditor) {
     var config = BehaviorEditorConfiguration;
