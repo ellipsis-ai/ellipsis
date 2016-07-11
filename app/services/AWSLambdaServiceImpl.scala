@@ -38,33 +38,34 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
   }
 
   def invoke(behaviorVersion: BehaviorVersion, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
-    val missingEnvVars = behaviorVersion.missingEnvironmentVariablesIn(environmentVariables)
-    if (missingEnvVars.nonEmpty) {
-      Future.successful(missingEnvVarsMessageFor(missingEnvVars))
-    } else if (behaviorVersion.functionBody.isEmpty) {
-      Future.successful(behaviorVersion.unformattedSuccessResultStringFor(JsNull, parametersWithValues))
-    } else {
-      val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
-      val payloadJson = JsObject(
-        parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
-          Seq(CONTEXT_PARAM -> JsObject(Seq(
-            API_BASE_URL_KEY -> JsString(apiBaseUrl),
-            TOKEN_KEY -> JsString(token.id),
-            ENV_KEY -> JsObject(environmentVariables.map { ea =>
-              ea.name -> JsString(ea.value)
-            })
-          )))
-      )
-      val invokeRequest =
-        new InvokeRequest().
-          withLogType(LogType.Tail).
-          withFunctionName(behaviorVersion.functionName).
-          withInvocationType(InvocationType.RequestResponse).
-          withPayload(payloadJson.toString())
-      JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
-        val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
-        val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
-        behaviorVersion.unformattedResultStringFor(result.getPayload, logResult, parametersWithValues)
+    models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables)).flatMap { missingEnvVars =>
+      if (missingEnvVars.nonEmpty) {
+        Future.successful(missingEnvVarsMessageFor(missingEnvVars))
+      } else if (behaviorVersion.functionBody.isEmpty) {
+        Future.successful(behaviorVersion.unformattedSuccessResultStringFor(JsNull, parametersWithValues))
+      } else {
+        val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
+        val payloadJson = JsObject(
+          parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
+            Seq(CONTEXT_PARAM -> JsObject(Seq(
+              API_BASE_URL_KEY -> JsString(apiBaseUrl),
+              TOKEN_KEY -> JsString(token.id),
+              ENV_KEY -> JsObject(environmentVariables.map { ea =>
+                ea.name -> JsString(ea.value)
+              })
+            )))
+        )
+        val invokeRequest =
+          new InvokeRequest().
+            withLogType(LogType.Tail).
+            withFunctionName(behaviorVersion.functionName).
+            withInvocationType(InvocationType.RequestResponse).
+            withPayload(payloadJson.toString())
+        JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
+          val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
+          val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
+          behaviorVersion.unformattedResultStringFor(result.getPayload, logResult, parametersWithValues)
+        }
       }
     }
   }

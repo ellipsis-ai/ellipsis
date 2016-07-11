@@ -10,9 +10,10 @@ import json._
 import json.Formatting._
 import models.bots.config.AWSConfigQueries
 import models.bots.triggers.MessageTriggerQueries
-import models.{Team, EnvironmentVariableQueries, Models}
+import models._
 import models.accounts.User
 import models.bots._
+import models.UINotificationFormatting._
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
@@ -90,7 +91,13 @@ class ApplicationController @Inject() (
               BehaviorConfig(None, None),
               None
             )
-            Ok(views.html.edit(Some(user), Json.toJson(data).toString, envVars.map(_.name), justSaved = false))
+            Ok(views.html.edit(
+              Some(user),
+              Json.toJson(data).toString,
+              envVars.map(_.name),
+              justSaved = false,
+              notificationsJson = Json.toJson(Array[String]()).toString
+            ))
           }).getOrElse {
           // TODO: platform-agnostic
           Redirect(routes.SlackController.signIn(Some(request.uri)))
@@ -111,12 +118,21 @@ class ApplicationController @Inject() (
       maybeEnvironmentVariables <- maybeBehaviorVersion.map { behaviorVersion =>
         EnvironmentVariableQueries.allFor(behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
+      environmentVariablesMissing <- maybeBehaviorVersion.map { behaviorVersion =>
+        behaviorVersion.missingEnvironmentVariablesIn(maybeEnvironmentVariables.getOrElse(Seq()))
+      }.getOrElse(DBIO.successful(Seq()))
     } yield {
         (for {
           data <- maybeVersionData
           envVars <- maybeEnvironmentVariables
         } yield {
-          Ok(views.html.edit(Some(user), Json.toJson(data).toString, envVars.map(_.name), maybeJustSaved.exists(identity)))
+          Ok(views.html.edit(
+            Some(user),
+            Json.toJson(data).toString,
+            envVars.map(_.name),
+            maybeJustSaved.exists(identity),
+            notificationsJson = Json.toJson(environmentVariablesMissing.map(UINotification.environmentVariableNotDefined(_))).toString
+          ))
         }).getOrElse {
           NotFound(views.html.notFound(Some(user), Some("Behavior not found"), Some("The behavior you are trying to access could not be found.")))
         }
