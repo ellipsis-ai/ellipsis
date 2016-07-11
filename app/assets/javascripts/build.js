@@ -31,5 +31,24 @@ requirejs.config({
       location: '../lib/react',
       main: 'react-dom.min'
     }
+  ],
+  modules: [
+    {
+      name: 'common',
+      include: [
+        'es6-promise',
+        'javascript-debounce',
+        'react',
+        'react-dom'
+      ]
+    }, {
+      name: 'behavior_editor/loader',
+      include: ['behavior_editor/index'],
+      exclude: ['common']
+    }, {
+      name: 'behavior_importer/loader',
+      include: ['behavior_importer/index'],
+      exclude: ['common']
+    }
   ]
 });
