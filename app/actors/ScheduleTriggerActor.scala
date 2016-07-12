@@ -4,8 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.Actor
 import models.bots.triggers.ScheduleTriggerQueries
-import services.AWSLambdaService
-import slack.rtm.SlackRtmClient
+import services.{SlackService, AWSLambdaService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.duration._
@@ -15,9 +14,9 @@ object ScheduleTriggerActor {
   final val name = "schedule-trigger"
 }
 
-class ScheduleTriggerActor @Inject() (val service: AWSLambdaService, val client: SlackRtmClient) extends Actor {
+class ScheduleTriggerActor @Inject() (val awsService: AWSLambdaService, val slackService: SlackService) extends Actor {
 
-  val models = service.models
+  val models = awsService.models
 
   val tick = context.system.scheduler.schedule(Duration.Zero, 1 minute, self, "tick")
 
@@ -28,8 +27,16 @@ class ScheduleTriggerActor @Inject() (val service: AWSLambdaService, val client:
   def receive = {
     case "tick" => {
       val action = ScheduleTriggerQueries.allToBeTriggered.flatMap { triggers =>
-        DBIO.sequence(triggers.map(_.run(service, client))).map { _ => true }
-      }
+        DBIO.sequence(triggers.map { trigger =>
+          trigger.botProfile.flatMap { maybeProfile =>
+            maybeProfile.flatMap { profile =>
+              slackService.clients.get(profile).map { client =>
+                trigger.run(awsService, client)
+              }
+            }.getOrElse(DBIO.successful(Unit))
+          }
+        })
+      }.map { _ => true }
 
       models.runNow(action)
     }

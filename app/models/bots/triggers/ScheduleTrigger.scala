@@ -1,6 +1,7 @@
 package models.bots.triggers
 
 import models.Team
+import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
 import models.bots._
 import org.joda.time.{LocalTime, DateTime}
 import com.github.tototoshi.slick.PostgresJodaSupport._
@@ -19,14 +20,39 @@ case class ScheduleTrigger(
 
   // TODO: don't be slack-specific and do something about the channel
   def run(lambdaService: AWSLambdaService, client: SlackRtmClient): DBIO[Unit] = {
-    DBIO.from(behaviorVersion.unformattedResultFor(Seq(), lambdaService)).map { result =>
-      val context = SlackNoMessageContext(client, "general")
-      context.sendMessage(result)
+    DBIO.from(behaviorVersion.unformattedResultFor(Seq(), lambdaService)).flatMap { result =>
+      withUpdatedNextTriggeredFor(DateTime.now).save.map { _ =>
+        val context = SlackNoMessageContext(client, "devbot")
+        context.sendMessage(result)
+      }
     }
+  }
+
+  def botProfile: DBIO[Option[SlackBotProfile]] = {
+    SlackBotProfileQueries.allFor(behaviorVersion.team).map(_.headOption)
   }
 
   def withUpdatedNextTriggeredFor(when: DateTime): ScheduleTrigger = {
     this.copy(nextTriggeredAt = recurrence.nextAfter(when))
+  }
+
+  def save: DBIO[ScheduleTrigger] = ScheduleTriggerQueries.save(this)
+
+  def toRaw: RawScheduleTrigger = {
+    RawScheduleTrigger(
+      id,
+      behaviorVersion.id,
+      recurrence.typeName,
+      recurrence.frequency,
+      recurrence.maybeTimeOfDay,
+      recurrence.maybeMinuteOfHour,
+      recurrence.maybeDayOfWeek,
+      recurrence.maybeDayOfMonth,
+      recurrence.maybeNthDayOfWeek,
+      recurrence.maybeMonth,
+      nextTriggeredAt,
+      createdAt
+    )
   }
 }
 
@@ -101,5 +127,17 @@ object ScheduleTriggerQueries {
     allToBeTriggeredQuery(DateTime.now).result.map { r =>
       r.map(tuple2Trigger)
     }
+  }
+
+  def save(trigger: ScheduleTrigger): DBIO[ScheduleTrigger] = {
+    val raw = trigger.toRaw
+    val query = all.filter(_.id === raw.id)
+    query.result.flatMap { r =>
+      r.headOption.map { existing =>
+        query.update(raw)
+      }.getOrElse {
+        all += raw
+      }
+    }.map { _ => trigger }
   }
 }
