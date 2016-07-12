@@ -1,17 +1,11 @@
 package models.bots
 
-import java.util
-
 import models.bots.conversations.Conversation
-import org.commonmark.ext.autolink.AutolinkExtension
-import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
-import org.commonmark.node.Node
-import org.commonmark.parser.Parser
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext
 
-trait MessageContext {
+trait MessageContext extends Context {
   val fullMessageText: String
   val relevantMessageText: String
   val includesBotMention: Boolean
@@ -42,15 +36,4 @@ trait MessageContext {
   val teamId: String
   val isResponseExpected: Boolean
 
-  val COMMONMARK_EXTENSIONS = util.Arrays.asList(StrikethroughExtension.create, AutolinkExtension.create)
-
-  def commonmarkParser = {
-    Parser.builder().extensions(COMMONMARK_EXTENSIONS).build()
-  }
-
-  def commonmarkNodeFor(text: String): Node = {
-    val node = commonmarkParser.parse(text)
-    node.accept(new CommonmarkVisitor())
-    node
-  }
 }

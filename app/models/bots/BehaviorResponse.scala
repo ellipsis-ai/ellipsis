@@ -13,7 +13,7 @@ case class ParameterWithValue(parameter: BehaviorParameter, invocationName: Stri
 }
 
 case class BehaviorResponse(
-                             event: Event,
+                             event: MessageEvent,
                              behaviorVersion: BehaviorVersion,
                              parametersWithValues: Seq[ParameterWithValue],
                              activatedTrigger: MessageTrigger
@@ -49,7 +49,7 @@ case class BehaviorResponse(
 object BehaviorResponse {
 
   def buildFor(
-                event: Event,
+                event: MessageEvent,
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
                 activatedTrigger: MessageTrigger
@@ -63,7 +63,7 @@ object BehaviorResponse {
     }
   }
 
-  def chooseFor(event: Event, maybeTeam: Option[Team], maybeLimitToBehavior: Option[Behavior]): DBIO[Option[BehaviorResponse]] = {
+  def chooseFor(event: MessageEvent, maybeTeam: Option[Team], maybeLimitToBehavior: Option[Behavior]): DBIO[Option[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
         limitToBehavior.maybeCurrentVersion
