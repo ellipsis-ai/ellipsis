@@ -9,6 +9,16 @@ define(function(require) {
       index: React.PropTypes.number.isRequired
     },
 
+    getButtonForEnvVar: function(envVarDetail) {
+      return (
+        <button
+          type="button"
+          className="button-raw button-s type-monospace type-bold mlxs"
+          onClick={this.onClick.bind(this, envVarDetail)}
+        >{envVarDetail.environmentVariableName}</button>
+      );
+    },
+
     getNotificationForKind: function(kind) {
       if (kind === "env_var_not_defined") {
         return this.getNotificationForEnvVarMissing();
@@ -18,11 +28,12 @@ define(function(require) {
     getNotificationForEnvVarMissing: function() {
       var numVarsMissing = this.props.details.length;
       if (numVarsMissing === 1) {
+        var firstDetail = this.props.details[0];
         return (
           <span>
             <span>This behavior requires an environment variable named </span>
-            <code className="type-bold">{this.props.details[0].environmentVariableName}</code>
-            <span> to work properly.</span>
+            {this.getButtonForEnvVar(firstDetail)}
+            <span className="mlxs"> to work properly.</span>
           </span>
         );
       } else {
@@ -32,11 +43,7 @@ define(function(require) {
             {this.props.details.map(function(detail, index) {
               return (
                 <span key={"notificationDetail" + index}>
-                  <button
-                    type="button"
-                    className="button-raw button-s type-monospace type-bold mlxs"
-                    onClick={this.onClick.bind(this, detail)}
-                  >{detail.environmentVariableName}</button>
+                  {this.getButtonForEnvVar(detail)}
                   <span>{index + 1 < numVarsMissing ? ", " : ""}</span>
                 </span>
               );
