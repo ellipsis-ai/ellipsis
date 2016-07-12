@@ -18,13 +18,20 @@ case class ScheduleTrigger(
                             createdAt: DateTime
                             ) extends Trigger {
 
-  // TODO: don't be slack-specific and do something about the channel
+  // TODO: don't be slack-specific
   def run(lambdaService: AWSLambdaService, client: SlackRtmClient): DBIO[Unit] = {
-    DBIO.from(behaviorVersion.unformattedResultFor(Seq(), lambdaService)).flatMap { result =>
-      withUpdatedNextTriggeredFor(DateTime.now).save.map { _ =>
-        val context = SlackNoMessageContext(client, "devbot")
-        context.sendMessage(result)
+    for {
+      result <- DBIO.from(behaviorVersion.unformattedResultFor(Seq(), lambdaService))
+      maybeOutput <- BehaviorOutputQueries.maybeFor(behaviorVersion)
+      _ <- withUpdatedNextTriggeredFor(DateTime.now).save
+    } yield {
+      maybeOutput.foreach {
+        case(output: SlackChannelOutput) => {
+          val context = SlackNoMessageContext(client, output.channelName)
+          context.sendMessage(result)
+        }
       }
+
     }
   }
 
