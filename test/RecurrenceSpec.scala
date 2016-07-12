@@ -1,4 +1,4 @@
-import models.bots.triggers._
+import models.bots._
 import org.scalatestplus.play.PlaySpec
 import org.joda.time._
 

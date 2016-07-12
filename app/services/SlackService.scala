@@ -17,7 +17,7 @@ class SlackService @Inject() (
                                appLifecycle: ApplicationLifecycle,
                                val models: Models,
                                messages: MessagesApi,
-                               eventHandler: EventHandler
+                               val eventHandler: EventHandler
                                ) {
 
   implicit val system = ActorSystem("slack")
