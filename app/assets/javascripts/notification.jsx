@@ -29,16 +29,14 @@ define(function(require) {
         return (
           <span>
             <span>This behavior requires the following environment variables to work properly: </span>
-            <span className="mlxs type-monospace">
-              {this.props.details.map(function(detail, index) {
-                return (
-                  <span key={"notificationDetail" + index}>
-                    <span className="type-bold">{detail.environmentVariableName}</span>
-                    <span>{index + 1 < numVarsMissing ? ", " : ""}</span>
-                  </span>
-                );
-              }, this)}
-            </span>
+            {this.props.details.map(function(detail, index) {
+              return (
+                <span key={"notificationDetail" + index}>
+                  <button type="button" className="button-raw button-s type-monospace type-bold mlxs">{detail.environmentVariableName}</button>
+                  <span>{index + 1 < numVarsMissing ? ", " : ""}</span>
+                </span>
+              );
+            }, this)}
           </span>
         );
       }
