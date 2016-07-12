@@ -1,19 +1,44 @@
 define(function(require) {
-  var React = require('react');
+  var React = require('react'),
+    SVGWarning = require('./svg/warning');
 
   return React.createClass({
     propTypes: {
-      data: React.PropTypes.object.isRequired,
+      details: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      kind: React.PropTypes.string.isRequired,
       index: React.PropTypes.number.isRequired
     },
 
     getNotificationForKind: function(kind) {
       if (kind === "env_var_not_defined") {
+        return this.getNotificationForEnvVarMissing();
+      }
+    },
+
+    getNotificationForEnvVarMissing: function() {
+      var numVarsMissing = this.props.details.length;
+      if (numVarsMissing === 1) {
         return (
           <span>
             <span>This behavior requires an environment variable named </span>
-            <code className="type-bold">{this.props.data.environmentVariableName}</code>
+            <code className="type-bold">{this.props.details[0].environmentVariableName}</code>
             <span> to work properly.</span>
+          </span>
+        );
+      } else {
+        return (
+          <span>
+            <span>This behavior requires the following environment variables to work properly: </span>
+            <span className="mlxs type-monospace">
+              {this.props.details.map(function(detail, index) {
+                return (
+                  <span key={"notificationDetail" + index}>
+                    <span className="type-bold">{detail.environmentVariableName}</span>
+                    <span>{index + 1 < numVarsMissing ? ", " : ""}</span>
+                  </span>
+                );
+              }, this)}
+            </span>
           </span>
         );
       }
@@ -21,14 +46,17 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="box-warning type-xs"
+        <div className="box-warning type-s phn"
           style={{
-            marginTop: (this.props.index > 0 ? -1 : 0),
+            marginTop: -1,
             zIndex: 1
           }}
         >
           <div className="container">
-            {this.getNotificationForKind(this.props.data.kind)}
+            <span className="display-inline-block mrs align-b type-yellow" style={{ height: 24 }}>
+              <SVGWarning />
+            </span>
+            {this.getNotificationForKind(this.props.kind)}
           </div>
         </div>
       );

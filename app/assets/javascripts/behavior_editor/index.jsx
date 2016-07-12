@@ -169,6 +169,23 @@ return React.createClass({
     return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
   },
 
+  getInitialNotifications: function() {
+    var notifications = {};
+    this.props.notifications.forEach(function(notification) {
+      if (notifications[notification.kind]) {
+        notifications[notification.kind].push(notification);
+      } else {
+        notifications[notification.kind] = [notification];
+      }
+    });
+    return Object.keys(notifications).map(function(key) {
+      return {
+        kind: key,
+        details: notifications[key]
+      };
+    });
+  },
+
   getInitialTriggers: function() {
     if (this.props.triggers && this.props.triggers.length > 0) {
       return this.props.triggers;
@@ -798,7 +815,7 @@ return React.createClass({
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate,
-      notifications: this.props.notifications || [],
+      notifications: this.getInitialNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null
     };
@@ -831,13 +848,6 @@ return React.createClass({
             <div className="column column-shrink ptl position-relative"></div>
           </div>
         </div>
-      </div>
-      <div className="position-relative">
-        {this.getNotifications().map(function(notification, index) {
-          return (
-            <Notification key={"notification" + index} data={notification} index={index} />
-          );
-        }, this)}
       </div>
 
       <form action="/save_behavior" method="POST" ref="behaviorForm">
@@ -1117,6 +1127,16 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={!this.hasModalPanel()}>
+            {this.getNotifications().map(function(notification, index) {
+              return (
+                <Notification
+                  key={"notification" + index}
+                  details={notification.details}
+                  index={index}
+                  kind={notification.kind}
+                />
+              );
+            }, this)}
             <div className="container pvm">
               <div className="columns">
                 <div className="column column-one-half">

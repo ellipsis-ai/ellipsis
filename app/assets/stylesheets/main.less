@@ -60,6 +60,7 @@
 @orange-light: hsl(24, 100%, 67%);
 @orange-lighter: hsl(24, 100%, 77%);
 
+@yellow-medium: hsl(45, 70%, 48%);
 @yellow-light: hsl(45, 100%, 73%);
 @yellow-lighter: hsl(45, 100%, 90%);
 
@@ -487,8 +488,8 @@ So for example:
 
 .box-warning {
   .bg-yellow();
-  .border-top();
-  .border-bottom();
+  .border-top-thick();
+  .border-bottom-thick();
   .border-yellow();
   padding: @s;
 }
@@ -556,6 +557,10 @@ code.type-bold {
 
 .type-green {
   color: @green-text;
+}
+
+.type-yellow {
+  color: @yellow-medium;
 }
 
 .type-white {
