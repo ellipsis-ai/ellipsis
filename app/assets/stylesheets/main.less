@@ -833,7 +833,7 @@ label {
 @form-input-height: @s * 2 + @xl;
 @form-input-height-large: @s * 2 + @xxl;
 @form-input-height-h2: @s * 2 + @xxxl;
-@form-bg-disabled: @gray-lightest;
+@form-bg-disabled: @gray-lightest-translucent;
 @form-color-disabled: @gray-medium;
 
 .form-field {
@@ -1021,6 +1021,11 @@ label {
   .columns > .column > .form-field-capped > .form-input-suffix {
     border-radius: 0;
     border-bottom-color: @white;
+  }
+
+  & > .columns {
+    display: table;
+    width: 100%;
   }
 
   & > .form-input,
