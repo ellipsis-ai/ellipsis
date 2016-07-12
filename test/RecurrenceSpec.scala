@@ -4,6 +4,8 @@ import org.joda.time._
 
 class RecurrenceSpec extends PlaySpec {
 
+  val fivePM = LocalTime.parse("17:00:00")
+
   "Hourly" should {
 
     "recur every 2h on the 42nd minute" in  {
@@ -34,7 +36,7 @@ class RecurrenceSpec extends PlaySpec {
   "MonthlyByDayOfMonth" should {
 
     "recur the first of every second month, at 5pm" in  {
-      val recurrence = MonthlyByDayOfMonth(2, 1, LocalTime.parse("17:00:00"))
+      val recurrence = MonthlyByDayOfMonth(2, 1, fivePM)
       recurrence.nextAfter(DateTime.parse("2010-06-07T12:01")) mustBe DateTime.parse("2010-08-01T17:00")
     }
 
@@ -43,22 +45,22 @@ class RecurrenceSpec extends PlaySpec {
   "MonthlyByNthDayOfWeek" should {
 
     "recur the second Tuesday of every month, at 5pm" in  {
-      val recurrence = MonthlyByNthDayOfWeek(1, 2, 2, LocalTime.parse("17:00:00"))
+      val recurrence = MonthlyByNthDayOfWeek(1, 2, 2, fivePM)
       recurrence.nextAfter(DateTime.parse("2010-06-07T12:01")) mustBe DateTime.parse("2010-07-13T17:00")
     }
 
     "recur correctly when month starts with the target day of week" in  {
-      val recurrence = MonthlyByNthDayOfWeek(1, 4, 1, LocalTime.parse("17:00:00"))
+      val recurrence = MonthlyByNthDayOfWeek(1, 4, 1, fivePM)
       recurrence.nextAfter(DateTime.parse("2010-06-07T12:01")) mustBe DateTime.parse("2010-07-01T17:00")
     }
 
     "recur correctly when month starts with a day before the target day of week" in  {
-      val recurrence = MonthlyByNthDayOfWeek(1, 5, 1, LocalTime.parse("17:00:00"))
+      val recurrence = MonthlyByNthDayOfWeek(1, 5, 1, fivePM)
       recurrence.nextAfter(DateTime.parse("2010-06-07T12:01")) mustBe DateTime.parse("2010-07-02T17:00")
     }
 
     "recur correctly when month starts with a day after the target day of week" in  {
-      val recurrence = MonthlyByNthDayOfWeek(1, 3, 1, LocalTime.parse("17:00:00"))
+      val recurrence = MonthlyByNthDayOfWeek(1, 3, 1, fivePM)
       recurrence.nextAfter(DateTime.parse("2010-06-07T12:01")) mustBe DateTime.parse("2010-07-07T17:00")
     }
 
@@ -67,7 +69,7 @@ class RecurrenceSpec extends PlaySpec {
   "Yearly" should {
 
     "recur Jan 14 every year, at 5pm" in  {
-      val recurrence = Yearly(1, new MonthDay(1, 14), LocalTime.parse("17:00:00"))
+      val recurrence = Yearly(1, new MonthDay(1, 14), fivePM)
       recurrence.nextAfter(DateTime.parse("2010-06-07T12:01")) mustBe DateTime.parse("2011-01-14T17:00")
     }
 

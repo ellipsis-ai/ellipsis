@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.util.matching.Regex
 
-case class SlackContext(
+case class SlackMessageContext(
                         client: SlackRtmClient,
                         profile: SlackBotProfile,
                         message: Message
@@ -32,24 +32,17 @@ case class SlackContext(
     message.channel.startsWith("D")
   }
 
-  lazy val relevantMessageText: String = SlackContext.toBotRegexFor(botId).replaceFirstIn(message.text, "")
+  lazy val relevantMessageText: String = SlackMessageContext.toBotRegexFor(botId).replaceFirstIn(message.text, "")
 
   // either a DM to the bot or explicitly mentions bot
   lazy val includesBotMention: Boolean = {
-    isDirectMessage || SlackContext.mentionRegexFor(botId).findFirstMatchIn(message.text).nonEmpty
+    isDirectMessage || SlackMessageContext.mentionRegexFor(botId).findFirstMatchIn(message.text).nonEmpty
   }
 
   lazy val isResponseExpected: Boolean = includesBotMention
 
-  def slackFormattedBodyTextFor(text: String): String = {
-    val builder = StringBuilder.newBuilder
-    val slack = new SlackRenderer(builder)
-    commonmarkNodeFor(text).accept(slack)
-    builder.toString
-  }
-
   def sendMessage(unformattedText: String)(implicit ec: ExecutionContext): Unit = {
-    val formattedText = slackFormattedBodyTextFor(unformattedText)
+    val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
     client.apiClient.postChatMessage(message.channel, formattedText, asUser = Some(true))
   }
 
@@ -76,7 +69,7 @@ case class SlackContext(
   }
 }
 
-object SlackContext {
+object SlackMessageContext {
 
   def mentionRegexFor(botId: String): Regex = s"""<@$botId>""".r
   def toBotRegexFor(botId: String): Regex = s"""^<@$botId>:?\\s*""".r
