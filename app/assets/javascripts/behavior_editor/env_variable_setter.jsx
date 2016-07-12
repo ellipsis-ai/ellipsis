@@ -55,7 +55,7 @@ define(function(require) {
                       readOnly={true}
                     />
                   </div>
-                  <div className="column column-one-third pln">
+                  <div className="column column-one-quarter pln">
                     <Input
                       className="form-input-right"
                       placeholder="Enter value"
@@ -63,7 +63,6 @@ define(function(require) {
                       onChange={this.onChangeVarValue.bind(this, index)}
                     />
                   </div>
-                  <div className="column column-five-twelfths"></div>
                 </div>
               );
             }, this)}
