@@ -13,7 +13,7 @@ case class ScheduleTrigger(
                             id: String,
                             behaviorVersion: BehaviorVersion,
                             recurrence: Recurrence,
-                            nextTriggered: DateTime,
+                            nextTriggeredAt: DateTime,
                             createdAt: DateTime
                             ) extends Trigger {
 
@@ -26,7 +26,7 @@ case class ScheduleTrigger(
   }
 
   def withUpdatedNextTriggeredFor(when: DateTime): ScheduleTrigger = {
-    this.copy(nextTriggered = recurrence.nextAfter(when))
+    this.copy(nextTriggeredAt = recurrence.nextAfter(when))
   }
 }
 
@@ -41,7 +41,7 @@ case class RawScheduleTrigger(
                              maybeDayOfMonth: Option[Int],
                              maybeNthDayOfWeek: Option[Int],
                              maybeMonth: Option[Int],
-                             nextTriggered: DateTime,
+                             nextTriggeredAt: DateTime,
                              createdAt: DateTime
                                )
 
@@ -57,7 +57,7 @@ class ScheduleTriggersTable(tag: Tag) extends Table[RawScheduleTrigger](tag, "sc
   def maybeDayOfMonth = column[Option[Int]]("day_of_month")
   def maybeNthDayOfWeek = column[Option[Int]]("nth_day_of_week")
   def maybeMonth = column[Option[Int]]("month")
-  def nextTriggered = column[DateTime]("next_triggered")
+  def nextTriggeredAt = column[DateTime]("next_triggered_at")
   def createdAt = column[DateTime]("created_at")
 
   def * = (
@@ -71,7 +71,7 @@ class ScheduleTriggersTable(tag: Tag) extends Table[RawScheduleTrigger](tag, "sc
     maybeDayOfMonth,
     maybeNthDayOfWeek,
     maybeMonth,
-    nextTriggered,
+    nextTriggeredAt,
     createdAt
     ) <> ((RawScheduleTrigger.apply _).tupled, RawScheduleTrigger.unapply _)
 }
@@ -87,13 +87,13 @@ object ScheduleTriggerQueries {
       raw.id,
       BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
       Recurrence.buildFor(raw),
-      raw.nextTriggered,
+      raw.nextTriggeredAt,
       raw.createdAt
     )
   }
 
   def uncompiledAllToBeTriggeredQuery(when: Rep[DateTime]) = {
-    allWithBehaviorVersion.filter { case(trigger, _) => trigger.nextTriggered <= when }
+    allWithBehaviorVersion.filter { case(trigger, _) => trigger.nextTriggeredAt <= when }
   }
   val allToBeTriggeredQuery = Compiled(uncompiledAllToBeTriggeredQuery _)
 
