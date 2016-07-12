@@ -32,13 +32,23 @@ define(function(require) {
             {this.props.details.map(function(detail, index) {
               return (
                 <span key={"notificationDetail" + index}>
-                  <button type="button" className="button-raw button-s type-monospace type-bold mlxs">{detail.environmentVariableName}</button>
+                  <button
+                    type="button"
+                    className="button-raw button-s type-monospace type-bold mlxs"
+                    onClick={this.onClick.bind(this, detail)}
+                  >{detail.environmentVariableName}</button>
                   <span>{index + 1 < numVarsMissing ? ", " : ""}</span>
                 </span>
               );
             }, this)}
           </span>
         );
+      }
+    },
+
+    onClick: function(notificationDetail) {
+      if (this.props.onClick) {
+        this.props.onClick(notificationDetail);
       }
     },
 

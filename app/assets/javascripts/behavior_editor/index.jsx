@@ -11,6 +11,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   ConfirmActionPanel = require('./confirm_action_panel'),
   DropdownMenu = require('./dropdown_menu'),
+  EnvVariableSetter = require('./env_variable_setter'),
   HelpButton = require('./help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Notification = require('../notification'),
@@ -163,6 +164,15 @@ return React.createClass({
     } else {
       return this.state.magic8BallResponse;
     }
+  },
+
+  getEnvVariables: function() {
+    return this.state.envVariableNames.map(function(name) {
+      return {
+        name: name,
+        value: ""
+      };
+    });
   },
 
   getFirstLineNumberForCode: function() {
@@ -318,6 +328,10 @@ return React.createClass({
     this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), this.focusOnFirstBlankTrigger);
   },
 
+  cancelEnvVariableSetter: function() {
+    this.hideActivePanel();
+  },
+
   cancelVersionPanel: function() {
     this.hideActivePanel();
     this.showVersionIndex(0);
@@ -442,6 +456,12 @@ return React.createClass({
     }
   },
 
+  onNotificationClick: function(notificationDetail) {
+    if (notificationDetail && notificationDetail.kind === 'env_var_not_defined') {
+      this.showEnvVariableSetter();
+    }
+  },
+
   onSaveClick: function() {
     this.setState({
       isSaving: true
@@ -495,6 +515,10 @@ return React.createClass({
     var config = Object.assign({}, this.getBehaviorConfig());
     config[property] = value;
     this.setBehaviorProp('config', config);
+  },
+
+  showEnvVariableSetter: function() {
+    this.toggleActivePanel('envVariableSetter', true);
   },
 
   showVersions: function() {
@@ -1126,6 +1150,13 @@ return React.createClass({
             />
           </Collapsible>
 
+          <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
+            <EnvVariableSetter
+              vars={this.getEnvVariables()}
+              onCancelClick={this.cancelEnvVariableSetter}
+            />
+          </Collapsible>
+
           <Collapsible revealWhen={!this.hasModalPanel()}>
             {this.getNotifications().map(function(notification, index) {
               return (
@@ -1134,6 +1165,7 @@ return React.createClass({
                   details={notification.details}
                   index={index}
                   kind={notification.kind}
+                  onClick={this.onNotificationClick}
                 />
               );
             }, this)}

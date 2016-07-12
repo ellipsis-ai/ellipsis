@@ -698,6 +698,9 @@ h6 {
   min-height: 1px;
   padding-right: @l;
   box-sizing: border-box;
+  &:first-child {
+    clear: left;
+  }
 }
 
 .column:last-child {
@@ -708,8 +711,16 @@ h6 {
   width: 25%;
 }
 
+.column-one-third {
+  width: 33.3333%;
+}
+
 .column-one-half {
   width: 50%;
+}
+
+.column-five-twelfths {
+  width: 41.6666%;
 }
 
 .column-three-quarters {
@@ -952,6 +963,8 @@ label {
   border-color: @border-color-focus;
   border-width: @border-width-thick;
   padding: (@form-padding-vertical - @border-width-thick) (@form-padding-horizontal - @border-width-thick);
+  position: relative;
+  z-index: 1;
 }
 
 .CodeMirror-focused,
@@ -1108,6 +1121,23 @@ label {
     border-bottom-right-radius: @border-radius;
   }
 }
+
+.form-input-left {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.form-input-middle {
+  border-radius: 0 !important;
+  margin-left: -1px;
+}
+
+.form-input-right {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  margin-left: -1px;
+}
+
 
 /* Buttons */
 
