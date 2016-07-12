@@ -15,8 +15,15 @@ sealed trait Recurrence {
 }
 case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
 
+  def isEarlierInHour(when: DateTime): Boolean = when.getMinuteOfHour < minuteOfHour
+
   def nextAfter(previous: DateTime): DateTime = {
-    previous.plusHours(frequency).withMinuteOfHour(minuteOfHour).withSecondOfMinute(0)
+    val hoursToAdd = if (isEarlierInHour(previous)) {
+      frequency - 1
+    } else {
+      frequency
+    }
+    previous.plusHours(hoursToAdd).withMinuteOfHour(minuteOfHour).withSecondOfMinute(0)
   }
 
   val typeName = Hourly.recurrenceType
@@ -29,8 +36,15 @@ object Hourly {
 
 case class Daily(frequency: Int, timeOfDay: LocalTime) extends Recurrence {
 
+  def isEarlierInDay(when: DateTime): Boolean = when.toLocalTime.isBefore(timeOfDay)
+
   def nextAfter(previous: DateTime): DateTime = {
-    previous.plusDays(frequency).withTime(timeOfDay).withSecondOfMinute(0)
+    val daysToAdd = if (isEarlierInDay(previous)) {
+      frequency - 1
+    } else {
+      frequency
+    }
+    previous.plusDays(daysToAdd).withTime(timeOfDay).withSecondOfMinute(0)
   }
 
   val typeName = Daily.recurrenceType
@@ -44,8 +58,17 @@ object Daily {
 
 case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime) extends Recurrence {
 
+  def isEarlierInWeek(when: DateTime): Boolean = {
+    when.getDayOfWeek < dayOfWeek || (when.getDayOfWeek == dayOfWeek && when.toLocalTime.isBefore(timeOfDay))
+  }
+
   def nextAfter(previous: DateTime): DateTime = {
-    previous.plusWeeks(frequency).withDayOfWeek(dayOfWeek).withTime(timeOfDay).withSecondOfMinute(0)
+    val weeksToAdd = if (isEarlierInWeek(previous)) {
+      frequency - 1
+    } else {
+      frequency
+    }
+    previous.plusWeeks(weeksToAdd).withDayOfWeek(dayOfWeek).withTime(timeOfDay).withSecondOfMinute(0)
   }
 
   val typeName = Weekly.recurrenceType
@@ -60,8 +83,17 @@ object Weekly {
 
 case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: LocalTime) extends Recurrence {
 
+  def isEarlierInMonth(when: DateTime): Boolean = {
+    when.getDayOfMonth < dayOfMonth || (when.getDayOfMonth == dayOfMonth && when.toLocalTime.isBefore(timeOfDay))
+  }
+
   def nextAfter(previous: DateTime): DateTime = {
-    previous.plusMonths(frequency).withDayOfMonth(dayOfMonth).withTime(timeOfDay).withSecondOfMinute(0)
+    val monthsToAdd = if (isEarlierInMonth(previous)) {
+      frequency - 1
+    } else {
+      frequency
+    }
+    previous.plusMonths(monthsToAdd).withDayOfMonth(dayOfMonth).withTime(timeOfDay).withSecondOfMinute(0)
   }
 
   val typeName = MonthlyByDayOfMonth.recurrenceType
@@ -76,17 +108,24 @@ object MonthlyByDayOfMonth {
 
 case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeOfDay: LocalTime) extends Recurrence {
 
-  def nextAfter(previous: DateTime): DateTime = {
-    val firstOfTheMonth = previous.plusMonths(frequency).withDayOfMonth(1)
-    val weeksToAdd = nth - 1
-    val withTheDay = if (firstOfTheMonth.getDayOfWeek == dayOfWeek) {
-      firstOfTheMonth.plusWeeks(weeksToAdd)
-    } else if (firstOfTheMonth.getDayOfWeek < dayOfWeek) {
-      firstOfTheMonth.withDayOfWeek(dayOfWeek).plusWeeks(weeksToAdd)
+  def targetInMonthMatching(when: DateTime): DateTime = {
+    val firstOfTheMonth = when.withDayOfMonth(1)
+    val weeksToAdd = if (firstOfTheMonth.getDayOfWeek <= dayOfWeek) {
+      nth - 1
     } else {
-      firstOfTheMonth.plusWeeks(1).withDayOfWeek(dayOfWeek).plusWeeks(weeksToAdd)
+      nth
     }
-    withTheDay.withTime(timeOfDay).withSecondOfMinute(0)
+    firstOfTheMonth.plusWeeks(weeksToAdd).withDayOfWeek(dayOfWeek).withTime(timeOfDay).withSecondOfMinute(0)
+  }
+
+  def nextAfter(previous: DateTime): DateTime = {
+    val targetInPreviousMonth = targetInMonthMatching(previous)
+    val monthsToAdd = if (targetInPreviousMonth.isAfter(previous)) {
+      frequency - 1
+    } else {
+      frequency
+    }
+    targetInMonthMatching(previous.plusMonths(monthsToAdd))
   }
 
   val typeName = MonthlyByNthDayOfWeek.recurrenceType
@@ -105,8 +144,19 @@ case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime) exte
   val month = monthDay.getMonthOfYear
   val dayOfMonth = monthDay.getDayOfMonth
 
+  def isEarlierInYear(when: DateTime): Boolean = {
+    when.getMonthOfYear < month ||
+      (when.getMonthOfYear == month && when.getDayOfMonth < dayOfMonth) ||
+      (when.getMonthOfYear == month && when.getDayOfMonth == dayOfMonth && when.toLocalTime.isBefore(timeOfDay))
+  }
+
   def nextAfter(previous: DateTime): DateTime = {
-    previous.plusYears(frequency).withMonthOfYear(month).withDayOfMonth(dayOfMonth).withTime(timeOfDay)
+    val yearsToAdd = if (isEarlierInYear(previous)) {
+      frequency - 1
+    } else {
+      frequency
+    }
+    previous.plusYears(yearsToAdd).withMonthOfYear(month).withDayOfMonth(dayOfMonth).withTime(timeOfDay)
   }
 
   val typeName = Yearly.recurrenceType
