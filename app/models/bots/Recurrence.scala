@@ -1,6 +1,6 @@
-package models.bots.triggers
+package models.bots
 
-import org.joda.time.{MonthDay, LocalTime, DateTime}
+import org.joda.time.{DateTime, LocalTime, MonthDay}
 
 sealed trait Recurrence {
   val frequency: Int
@@ -192,7 +192,7 @@ object Recurrence {
     }
   }
 
-  def buildFor(raw: RawScheduleTrigger): Recurrence = {
+  def buildFor(raw: RawScheduledMessage): Recurrence = {
     buildFrom(
       raw.recurrenceType,
       raw.frequency,
