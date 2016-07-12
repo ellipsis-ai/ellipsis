@@ -58,7 +58,7 @@ define(function(require) {
                   <div className="column column-one-third pln">
                     <Input
                       className="form-input-right"
-                      placeholder="Environment variable value"
+                      placeholder="Enter value"
                       value={v.value}
                       onChange={this.onChangeVarValue.bind(this, index)}
                     />
