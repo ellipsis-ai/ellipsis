@@ -1,6 +1,6 @@
 package models.bots
 
-import models.Team
+import models.{IDs, Team}
 import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
 import org.joda.time.{LocalTime, DateTime}
 import com.github.tototoshi.slick.PostgresJodaSupport._
@@ -153,5 +153,19 @@ object ScheduledMessageQueries {
         all += raw
       }
     }.map { _ => trigger }
+  }
+
+  def maybeCreateFor(text: String, recurrenceText: String, team: Team, maybeChannelName: Option[String]): DBIO[Option[ScheduledMessage]] = {
+    Recurrence.maybeFromText(recurrenceText).map { recurrence =>
+      ScheduledMessage(
+        IDs.next,
+        text,
+        team,
+        maybeChannelName,
+        recurrence,
+        recurrence.initial,
+        DateTime.now
+      ).save.map(Some(_))
+    }.getOrElse(DBIO.successful(None))
   }
 }

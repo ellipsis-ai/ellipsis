@@ -12,6 +12,8 @@ sealed trait Recurrence {
   val maybeNthDayOfWeek: Option[Int] = None
   val maybeMonth: Option[Int] = None
   def nextAfter(previous: DateTime): DateTime
+  // TODO: make this better
+  def initial: DateTime = nextAfter(DateTime.now)
 }
 case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
 
@@ -203,5 +205,13 @@ object Recurrence {
       raw.maybeNthDayOfWeek,
       raw.maybeMonth
     )
+  }
+
+  def maybeFromText(text: String): Option[Recurrence] = {
+    val regex = """(?i)every hour""".r
+    text match {
+      case regex() => Some(Hourly(1, DateTime.now.getMinuteOfHour))
+      case _ => None
+    }
   }
 }
