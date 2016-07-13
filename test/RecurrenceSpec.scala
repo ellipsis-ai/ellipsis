@@ -38,6 +38,18 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.initialAfter(DateTime.parse("2010-06-07T09:42")) mustBe DateTime.parse("2010-06-07T09:42")
     }
 
+    "be created with implied frequency of 1" in {
+      Recurrence.maybeFromText("every hour") mustBe Some(Hourly(1, DateTime.now.getMinuteOfHour))
+    }
+
+    "be created with frequency" in {
+      Recurrence.maybeFromText("every 4 hours") mustBe Some(Hourly(4, DateTime.now.getMinuteOfHour))
+    }
+
+    "be created with frequency and minutes" in {
+      Recurrence.maybeFromText("every 4 hours at 15 minutes") mustBe Some(Hourly(4, 15))
+    }
+
   }
 
   "Daily" should {
@@ -72,6 +84,18 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.initialAfter(DateTime.parse("2010-06-07T12:00")) mustBe DateTime.parse("2010-06-07T12:00")
     }
 
+    "be created with implied frequency of 1" in {
+      Recurrence.maybeFromText("every day") mustBe Some(Daily(1, Recurrence.currentAdjustedTime))
+    }
+
+    "be created with frequency" in {
+      Recurrence.maybeFromText("every 4 days") mustBe Some(Daily(4, Recurrence.currentAdjustedTime))
+    }
+
+    "be created with frequency and time" in {
+      Recurrence.maybeFromText("every 4 days at 3pm") mustBe Some(Daily(4, LocalTime.parse("15:00")))
+    }
+
   }
 
   "Weekly" should {
@@ -104,6 +128,18 @@ class RecurrenceSpec extends PlaySpec {
     "have the right initial time when at the same point in the week" in {
       val recurrence = Weekly(2, 3, fivePM)
       recurrence.initialAfter(DateTime.parse("2010-06-09T17:00")) mustBe DateTime.parse("2010-06-09T17:00")
+    }
+
+    "be created with implied frequency of 1" in {
+      Recurrence.maybeFromText("every week") mustBe Some(Weekly(1, DateTime.now.getDayOfWeek, Recurrence.currentAdjustedTime))
+    }
+
+    "be created with frequency" in {
+      Recurrence.maybeFromText("every 2 weeks") mustBe Some(Weekly(2, DateTime.now.getDayOfWeek, Recurrence.currentAdjustedTime))
+    }
+
+    "be created with frequency, day of week and time" in {
+      Recurrence.maybeFromText("every 2 weeks on Monday at 3pm") mustBe Some(Weekly(2, 1, LocalTime.parse("15:00")))
     }
 
   }
