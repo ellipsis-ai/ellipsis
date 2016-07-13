@@ -169,6 +169,8 @@ return React.createClass({
   getEnvVariables: function() {
     return this.state.envVariableNames.map(function(name) {
       return {
+        // TODO: don't actually merge this with random isSet values
+        isSet: Math.round(Math.random()),
         name: name,
         value: ""
       };

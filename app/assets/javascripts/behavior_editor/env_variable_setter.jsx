@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
-    Input = require('./input');
+    Input = require('./input'),
+    ImmutableObjectUtils = require('../immutable_object_utils');
 
   return React.createClass({
     propTypes: {
@@ -18,20 +19,64 @@ define(function(require) {
       }
     },
 
+    onCancel: function() {
+      this.setState(this.getInitialState());
+      this.props.onCancelClick();
+    },
+
     onChangeVarValue: function(modifiedIndex, newValue) {
-      var newVars = this.state.vars.map(function(v, index) {
-        if (index === modifiedIndex) {
-          return {
-            name: v.name,
-            value: newValue
-          }
-        } else {
-          return v;
-        }
-      });
+      var vars = this.getVars();
+      var newVar = {
+        isSet: false,
+        name: vars[modifiedIndex].name,
+        value: newValue
+      };
       this.setState({
-        vars: newVars
+        vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, modifiedIndex)
       });
+    },
+
+    resetVar: function(index) {
+      var vars = this.getVars();
+      var newVar = {
+        isSet: false,
+        name: vars[index].name,
+        value: ''
+      };
+      this.setState({
+        vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, index)
+      }, function() {
+        this.refs['envVarValue' + index].focus();
+      });
+    },
+
+    getInputForVar: function(v, index) {
+      if (v.isSet) {
+        return (
+          <div className="position-relative">
+            <input
+              className="form-input form-input-right"
+              type="password"
+              disabled={true}
+              value="........"
+            />
+            <div className="position-absolute position-top-right mts mrm">
+              <button type="button" className="button-raw button-s"
+                onClick={this.resetVar.bind(this, index)}>Reset</button>
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <Input
+            ref={"envVarValue" + index}
+            className="form-input-right"
+            placeholder="Enter value"
+            value={v.value}
+            onChange={this.onChangeVarValue.bind(this, index)}
+          />
+        );
+      }
     },
 
     render: function() {
@@ -56,12 +101,7 @@ define(function(require) {
                     />
                   </div>
                   <div className="column column-one-quarter pln">
-                    <Input
-                      className="form-input-right"
-                      placeholder="Enter value"
-                      value={v.value}
-                      onChange={this.onChangeVarValue.bind(this, index)}
-                    />
+                    {this.getInputForVar(v, index)}
                   </div>
                 </div>
               );
@@ -71,7 +111,7 @@ define(function(require) {
             <div className="columns mtm">
               <div className="column column-one-half">
                 <button type="button" className="button-primary mrs">Save</button>
-                <button type="button" onClick={this.props.onCancelClick}>Cancel</button>
+                <button type="button" onClick={this.onCancel}>Cancel</button>
               </div>
             </div>
 

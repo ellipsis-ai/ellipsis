@@ -869,6 +869,11 @@ label {
   color: @gray-darkest;
 }
 
+.form-input[disabled] {
+  background-color: @form-bg-disabled;
+  color: @form-color-disabled;
+}
+
 .label-checkbox {
   cursor: pointer;
 }
@@ -1017,12 +1022,11 @@ label {
 
 .form-grouped-inputs {
   & > .form-input,
-  .columns > .column > .form-input,
+  .columns > .column .form-input,
   .columns > .column > .form-field-capped > .form-input-prefix,
   .columns > .column > .form-field-capped > .form-input,
   .columns > .column > .form-field-capped > .form-input-suffix {
     border-radius: 0;
-    border-bottom-color: @white;
   }
 
   & > .columns {
@@ -1040,7 +1044,7 @@ label {
   }
 
   .form-input:first-child,
-  .columns:first-child > .column > .form-input {
+  .columns:first-child > .column .form-input {
     border-top-left-radius: @border-radius;
     border-top-right-radius: @border-radius;
   }
@@ -1054,7 +1058,7 @@ label {
   }
 
   .form-input:last-child,
-  .columns:last-child > .column > .form-input {
+  .columns:last-child > .column .form-input {
     border-bottom-color: @border-color;
     border-bottom-left-radius: @border-radius;
     border-bottom-right-radius: @border-radius;
@@ -1073,7 +1077,7 @@ label {
   }
 
   .form-input:focus,
-  .columns > .column > .form-input:focus,
+  .columns > .column .form-input:focus,
   .columns > .column > .form-field-capped > .form-input:focus {
     border-bottom-color: @border-color-focus;
     position: relative;
