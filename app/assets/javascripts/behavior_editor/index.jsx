@@ -463,7 +463,7 @@ return React.createClass({
 
   onNotificationClick: function(notificationDetail) {
     if (notificationDetail && notificationDetail.kind === 'env_var_not_defined') {
-      this.showEnvVariableSetter();
+      this.showEnvVariableSetter(notificationDetail);
     }
   },
 
@@ -522,8 +522,10 @@ return React.createClass({
     this.setBehaviorProp('config', config);
   },
 
-  showEnvVariableSetter: function() {
-    this.toggleActivePanel('envVariableSetter', true);
+  showEnvVariableSetter: function(notificationDetail) {
+    this.toggleActivePanel('envVariableSetter', true, function() {
+      this.refs.envVariableSetterPanel.focusOnVarName(notificationDetail.environmentVariableName);
+    });
   },
 
   showVersions: function() {
@@ -544,11 +546,11 @@ return React.createClass({
     });
   },
 
-  toggleActivePanel: function(name, beModal) {
+  toggleActivePanel: function(name, beModal, optionalCallback) {
     var alreadyOpen = this.getActivePanel() === name;
     this.setState({
       activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
-    }, function() {
+    }, optionalCallback || function() {
       var activeModal = this.getActiveModalElement();
       if (activeModal) {
         this.focusOnPrimaryOrFirstPossibleElement(activeModal);
@@ -1157,6 +1159,7 @@ return React.createClass({
 
           <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
             <EnvVariableSetter
+              ref="envVariableSetterPanel"
               vars={this.getEnvVariables()}
               onCancelClick={this.cancelEnvVariableSetter}
             />

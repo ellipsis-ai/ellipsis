@@ -19,6 +19,17 @@ define(function(require) {
       }
     },
 
+    focusOnVarName: function(name) {
+      var numVars = this.getVars().length;
+      var varFound = false;
+      for (var i = 0; i < numVars && !varFound; i++) {
+        if (this.getVars()[i].name === name) {
+          this.refs['envVarValue' + i].focus();
+          varFound = true;
+        }
+      }
+    },
+
     onCancel: function() {
       this.setState(this.getInitialState());
       this.props.onCancelClick();
