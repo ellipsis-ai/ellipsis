@@ -163,7 +163,7 @@ object ScheduledMessageQueries {
         team,
         maybeChannelName,
         recurrence,
-        recurrence.initial,
+        recurrence.initialAfter(DateTime.now),
         DateTime.now
       ).save.map(Some(_))
     }.getOrElse(DBIO.successful(None))
