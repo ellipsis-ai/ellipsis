@@ -1,6 +1,8 @@
 package models.bots
 
+import java.util.Date
 import org.joda.time.{DateTime, LocalTime, MonthDay}
+import com.joestelmach.natty._
 
 sealed trait Recurrence {
   val frequency: Int
@@ -45,6 +47,24 @@ case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
 
 object Hourly {
   val recurrenceType = "hourly"
+
+  def maybeFromText(text: String): Option[Hourly] = {
+    val singleRegex = """(?i)every hour.*""".r
+    val nRegex = """(?i)every\s+(\d+)\s+hours?.*""".r
+    val maybeFrequency = text match {
+      case singleRegex() => Some(1)
+      case nRegex(frequency) => Some(frequency.toInt)
+      case _ => None
+    }
+    maybeFrequency.map { frequency =>
+      val minutesRegex = """.*at\s+(\d+)\s+minutes?.*""".r
+      val maybeMinuteOfHour = text match {
+        case minutesRegex(minutes) => Some(minutes.toInt)
+        case _ => None
+      }
+      Hourly(frequency, maybeMinuteOfHour.getOrElse(DateTime.now.getMinuteOfHour))
+    }
+  }
 }
 
 case class Daily(frequency: Int, timeOfDay: LocalTime) extends Recurrence {
@@ -78,6 +98,24 @@ case class Daily(frequency: Int, timeOfDay: LocalTime) extends Recurrence {
 
 object Daily {
   val recurrenceType = "daily"
+
+  def maybeFromText(text: String): Option[Daily] = {
+    val singleRegex = """(?i)every day.*""".r
+    val nRegex = """(?i)every\s+(\d+)\s+days?.*""".r
+    val maybeFrequency = text match {
+      case singleRegex() => Some(1)
+      case nRegex(frequency) => Some(frequency.toInt)
+      case _ => None
+    }
+    maybeFrequency.map { frequency =>
+      val timeRegex = """(?i).*at\s+(.*)""".r
+      val maybeTime = text match {
+        case timeRegex(time) => Recurrence.maybeTimeFrom(time)
+        case _ => None
+      }
+      Daily(frequency, maybeTime.getOrElse(Recurrence.currentAdjustedTime))
+    }
+  }
 }
 
 case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime) extends Recurrence {
@@ -116,6 +154,29 @@ case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime) extends 
 
 object Weekly {
   val recurrenceType = "weekly"
+
+  def maybeFromText(text: String): Option[Weekly] = {
+    val singleRegex = """(?i)every week.*""".r
+    val nRegex = """(?i)every\s+(\d+)\s+weeks?.*""".r
+    val maybeFrequency = text match {
+      case singleRegex() => Some(1)
+      case nRegex(frequency) => Some(frequency.toInt)
+      case _ => None
+    }
+    maybeFrequency.map { frequency =>
+      val dayRegex = """(?i).*on\s+(\S+).*""".r
+      val maybeDayOfWeek = text match {
+        case dayRegex(day) => Recurrence.maybeDayOfWeekFrom(day)
+        case _ => None
+      }
+      val timeRegex = """(?i).*at\s+(.*)""".r
+      val maybeTime = text match {
+        case timeRegex(time) => Recurrence.maybeTimeFrom(time)
+        case _ => None
+      }
+      Weekly(frequency, maybeDayOfWeek.getOrElse(DateTime.now.getDayOfWeek), maybeTime.getOrElse(Recurrence.currentAdjustedTime))
+    }
+  }
 }
 
 case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: LocalTime) extends Recurrence {
@@ -244,6 +305,30 @@ object Yearly {
 
 object Recurrence {
 
+  def currentAdjustedTime: LocalTime = DateTime.now.toLocalTime.withSecondOfMinute(0).withMillisOfSecond(0)
+
+  private def maybeDateFrom(text: String): Option[Date] = {
+    val parser = new Parser()
+    val groups = parser.parse(text)
+    if (groups.isEmpty || groups.get(0).getDates.isEmpty) {
+      None
+    } else {
+      Some(groups.get(0).getDates.get(0))
+    }
+  }
+
+  def maybeTimeFrom(text: String): Option[LocalTime] = {
+    maybeDateFrom(text).map { date =>
+      new LocalTime(date.getTime)
+    }
+  }
+
+  def maybeDayOfWeekFrom(text: String): Option[Int] = {
+    maybeDateFrom(text).map { date =>
+      new DateTime(date).getDayOfWeek
+    }
+  }
+
   private def buildFrom(
                  recurrenceType: String,
                  frequency: Int,
@@ -278,10 +363,12 @@ object Recurrence {
   }
 
   def maybeFromText(text: String): Option[Recurrence] = {
-    val regex = """(?i)every hour""".r
-    text match {
-      case regex() => Some(Hourly(1, DateTime.now.getMinuteOfHour))
-      case _ => None
+    Hourly.maybeFromText(text).orElse {
+      Daily.maybeFromText(text).orElse {
+        Weekly.maybeFromText(text).orElse {
+          None
+        }
+      }
     }
   }
 }

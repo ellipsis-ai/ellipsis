@@ -41,7 +41,8 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "javascript-debounce" % "1.0.0",
   "com.atlassian.commonmark" % "commonmark" % "0.3.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.3.0",
-  "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.3.0"
+  "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.3.0",
+  "com.joestelmach" % "natty" % "0.11"
 )
 
 javaOptions in Test += "-Dconfig.file=conf/test.conf"
