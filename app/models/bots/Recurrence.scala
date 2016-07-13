@@ -12,7 +12,7 @@ sealed trait Recurrence {
   val maybeNthDayOfWeek: Option[Int] = None
   val maybeMonth: Option[Int] = None
   def nextAfter(previous: DateTime): DateTime
-  def initialAfter(start: DateTime): DateTime = nextAfter(DateTime.now)
+  def initialAfter(start: DateTime): DateTime
 }
 case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
 
@@ -30,7 +30,7 @@ case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
     withAdjustments(previous.plusHours(hoursToAdd))
   }
 
-  override def initialAfter(start: DateTime): DateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (isLaterInHour(start)) {
       withAdjustments(start.plusHours(1))
     } else {
@@ -62,7 +62,7 @@ case class Daily(frequency: Int, timeOfDay: LocalTime) extends Recurrence {
     withAdjustments(previous.plusDays(daysToAdd))
   }
 
-  override def initialAfter(start: DateTime): DateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (isLaterInDay(start)) {
       withAdjustments(start.plusDays(1))
     } else {
@@ -99,7 +99,7 @@ case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime) extends 
     withAdjustments(previous.plusWeeks(weeksToAdd))
   }
 
-  override def initialAfter(start: DateTime): DateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (isLaterInWeek(start)) {
       withAdjustments(start.plusWeeks(1))
     } else {
@@ -137,7 +137,7 @@ case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: Local
     withAdjustments(previous.plusMonths(monthsToAdd))
   }
 
-  override def initialAfter(start: DateTime): DateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (isLaterInMonth(start)) {
       withAdjustments(start.plusMonths(1))
     } else {
@@ -176,7 +176,7 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeO
     targetInMonthMatching(previous.plusMonths(monthsToAdd))
   }
 
-  override def initialAfter(start: DateTime): DateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (targetInMonthMatching(start).isBefore(start)) {
       targetInMonthMatching(start.plusMonths(1))
     } else {
@@ -222,7 +222,7 @@ case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime) exte
     withAdjustments(previous.plusYears(yearsToAdd))
   }
 
-  override def initialAfter(start: DateTime): DateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (isLaterInYear(start)) {
       withAdjustments(start.plusYears(1))
     } else {
