@@ -1,4 +1,4 @@
-import models.bots.triggers._
+import models.bots._
 import org.scalatestplus.play.PlaySpec
 import org.joda.time._
 
@@ -10,7 +10,7 @@ class RecurrenceSpec extends PlaySpec {
 
     "recur every 2h on the 42nd minute" in  {
       val recurrence = Hourly(2, 42)
-      recurrence.nextAfter(DateTime.parse("2010-06-07T09:43")) mustBe DateTime.parse("2010-06-07T11:42")
+      recurrence.nextAfter(DateTime.parse("2010-06-07T09:42")) mustBe DateTime.parse("2010-06-07T11:42")
     }
 
     "recur later the same hour" in {
@@ -23,13 +23,28 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.nextAfter(DateTime.parse("2010-06-07T09:43")) mustBe DateTime.parse("2010-06-07T10:42")
     }
 
+    "have the right initial time when earlier in hour" in {
+      val recurrence = Hourly(2, 42)
+      recurrence.initialAfter(DateTime.parse("2010-06-07T09:41")) mustBe DateTime.parse("2010-06-07T09:42")
+    }
+
+    "have the right initial time when later in hour" in {
+      val recurrence = Hourly(2, 42)
+      recurrence.initialAfter(DateTime.parse("2010-06-07T09:43")) mustBe DateTime.parse("2010-06-07T10:42")
+    }
+
+    "have the right initial time when on same minute" in {
+      val recurrence = Hourly(2, 42)
+      recurrence.initialAfter(DateTime.parse("2010-06-07T09:42")) mustBe DateTime.parse("2010-06-07T09:42")
+    }
+
   }
 
   "Daily" should {
 
     "recur every day at noon" in  {
       val recurrence = Daily(1, LocalTime.parse("12:00:00"))
-      recurrence.nextAfter(DateTime.parse("2010-06-07T12:01")) mustBe DateTime.parse("2010-06-08T12:00")
+      recurrence.nextAfter(DateTime.parse("2010-06-07T12:00")) mustBe DateTime.parse("2010-06-08T12:00")
     }
 
     "recur later the same day" in  {
@@ -40,6 +55,21 @@ class RecurrenceSpec extends PlaySpec {
     "recur later the next day if already past the target time" in  {
       val recurrence = Daily(1, LocalTime.parse("12:00:00"))
       recurrence.nextAfter(DateTime.parse("2010-06-07T12:50")) mustBe DateTime.parse("2010-06-08T12:00")
+    }
+
+    "have the right initial time when earlier in the day" in {
+      val recurrence = Daily(2, LocalTime.parse("12:00:00"))
+      recurrence.initialAfter(DateTime.parse("2010-06-07T11:59")) mustBe DateTime.parse("2010-06-07T12:00")
+    }
+
+    "have the right initial time when later in the day" in {
+      val recurrence = Daily(2, LocalTime.parse("12:00:00"))
+      recurrence.initialAfter(DateTime.parse("2010-06-07T12:01")) mustBe DateTime.parse("2010-06-08T12:00")
+    }
+
+    "have the right initial time when at the same point in the day" in {
+      val recurrence = Daily(2, LocalTime.parse("12:00:00"))
+      recurrence.initialAfter(DateTime.parse("2010-06-07T12:00")) mustBe DateTime.parse("2010-06-07T12:00")
     }
 
   }
@@ -59,6 +89,21 @@ class RecurrenceSpec extends PlaySpec {
     "recur the following week if already past target day" in  {
       val recurrence = Weekly(1, 3, fivePM)
       recurrence.nextAfter(DateTime.parse("2010-06-10T12:01")) mustBe DateTime.parse("2010-06-16T17:00")
+    }
+
+    "have the right initial time when earlier in the week" in {
+      val recurrence = Weekly(2, 3, fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-06-09T16:59")) mustBe DateTime.parse("2010-06-09T17:00")
+    }
+
+    "have the right initial time when later in the week" in {
+      val recurrence = Weekly(2, 3, fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-06-09T17:01")) mustBe DateTime.parse("2010-06-16T17:00")
+    }
+
+    "have the right initial time when at the same point in the week" in {
+      val recurrence = Weekly(2, 3, fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-06-09T17:00")) mustBe DateTime.parse("2010-06-09T17:00")
     }
 
   }
@@ -83,6 +128,21 @@ class RecurrenceSpec extends PlaySpec {
     "recur next month if starting later in the month" in  {
       val recurrence = MonthlyByDayOfMonth(1, 6, fivePM)
       recurrence.nextAfter(DateTime.parse("2010-06-06T17:01")) mustBe DateTime.parse("2010-07-06T17:00")
+    }
+
+    "have the right initial time when earlier in the month" in {
+      val recurrence = MonthlyByDayOfMonth(1, 6, fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-06-06T16:59")) mustBe DateTime.parse("2010-06-06T17:00")
+    }
+
+    "have the right initial time when later in the month" in {
+      val recurrence = MonthlyByDayOfMonth(1, 6, fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-06-06T17:01")) mustBe DateTime.parse("2010-07-06T17:00")
+    }
+
+    "have the right initial time when at the same point in the month" in {
+      val recurrence = MonthlyByDayOfMonth(1, 6, fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-06-06T17:00")) mustBe DateTime.parse("2010-06-06T17:00")
     }
 
   }
@@ -119,6 +179,21 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.nextAfter(DateTime.parse("2010-06-07T12:01")) mustBe DateTime.parse("2010-06-07T17:00")
     }
 
+    "have the right initial time when earlier in the month" in {
+      val recurrence = MonthlyByNthDayOfWeek(1, 1, 1, fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-06-07T16:59")) mustBe DateTime.parse("2010-06-07T17:00")
+    }
+
+    "have the right initial time when later in the month" in {
+      val recurrence = MonthlyByNthDayOfWeek(1, 1, 1, fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-06-07T17:01")) mustBe DateTime.parse("2010-07-05T17:00")
+    }
+
+    "have the right initial time when at the same point in the month" in {
+      val recurrence = MonthlyByNthDayOfWeek(1, 1, 1, fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-06-07T17:00")) mustBe DateTime.parse("2010-06-07T17:00")
+    }
+
   }
 
   "Yearly" should {
@@ -141,6 +216,21 @@ class RecurrenceSpec extends PlaySpec {
     "recur the next year" in  {
       val recurrence = Yearly(1, new MonthDay(1, 14), fivePM)
       recurrence.nextAfter(DateTime.parse("2010-01-14T17:01")) mustBe DateTime.parse("2011-01-14T17:00")
+    }
+
+    "have the right initial time when earlier in the year" in {
+      val recurrence = Yearly(1, new MonthDay(1, 14), fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-01-14T16:59")) mustBe DateTime.parse("2010-01-14T17:00")
+    }
+
+    "have the right initial time when later in the year" in {
+      val recurrence = Yearly(1, new MonthDay(1, 14), fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-01-14T17:01")) mustBe DateTime.parse("2011-01-14T17:00")
+    }
+
+    "have the right initial time when at the same point in the year" in {
+      val recurrence = Yearly(1, new MonthDay(1, 14), fivePM)
+      recurrence.initialAfter(DateTime.parse("2010-01-14T17:00")) mustBe DateTime.parse("2010-01-14T17:00")
     }
 
   }

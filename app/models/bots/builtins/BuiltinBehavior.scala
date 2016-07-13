@@ -19,6 +19,7 @@ object BuiltinBehavior {
     val unlearnRegex = s"""^unlearn\\s+(\\S+)""".r
     val helpRegex = s"""^help\\s*(\\S*.*)$$""".r
     val rememberRegex = s"""^(remember|\\^)\\s*$$""".r
+    val scheduleRegex = s"""^schedule\\s+`(.*?)`\\s+(.*)\\s*$$""".r
 
     if (messageContext.includesBotMention) {
       messageContext.relevantMessageText match {
@@ -27,6 +28,7 @@ object BuiltinBehavior {
         case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, messageContext, lambdaService))
         case helpRegex(helpString) => Some(DisplayHelpBehavior(helpString, messageContext, lambdaService))
         case rememberRegex(cmd) => Some(RememberBehavior(messageContext, lambdaService))
+        case scheduleRegex(text, recurrence) => Some(ScheduleBehavior(text, recurrence, messageContext, lambdaService))
         case _ => None
       }
     } else {
