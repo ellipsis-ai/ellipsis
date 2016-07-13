@@ -19,6 +19,12 @@ define(function(require) {
       }
     },
 
+    hasChanges: function() {
+      return !this.getVars().every(function(v, index) {
+        return v.value === this.props.vars[index].value && v.isSet === this.props.vars[index].isSet;
+      }, this);
+    },
+
     focusOnVarName: function(name) {
       var numVars = this.getVars().length;
       var varFound = false;
@@ -121,7 +127,10 @@ define(function(require) {
 
             <div className="columns mtm">
               <div className="column column-one-half">
-                <button type="button" className="button-primary mrs">Save</button>
+                <button type="button"
+                  className="button-primary mrs"
+                  disabled={!this.hasChanges()}
+                >Save</button>
                 <button type="button" onClick={this.onCancel}>Cancel</button>
               </div>
             </div>
