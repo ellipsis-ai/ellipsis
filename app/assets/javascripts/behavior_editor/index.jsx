@@ -169,12 +169,15 @@ return React.createClass({
   getEnvVariables: function() {
     return this.state.envVariableNames.map(function(name) {
       return {
-        // TODO: don't actually merge this with random isSet values
-        isSet: Math.round(Math.random()),
+        // TODO: get isSet from the server instead of trying to compute it
+        isSet: !this.props.notifications.some(function(notification) {
+          return notification.kind === 'env_var_not_defined' &&
+            notification.environmentVariableName === name
+          }, this),
         name: name,
         value: ""
       };
-    });
+    }, this);
   },
 
   getFirstLineNumberForCode: function() {
