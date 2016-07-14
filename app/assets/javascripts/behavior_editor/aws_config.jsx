@@ -56,7 +56,7 @@ define(function(require) {
           </div>
 
           <div className="column column-shrink">
-            <button type="button" className="button-s display-ellipsis" onClick={this.props.onRemoveAWSConfig}>Remove AWS integration</button>
+            <button type="button" className="button-s display-ellipsis" onClick={this.props.onRemoveAWSConfig}>Remove AWS</button>
           </div>
 
         </div>
