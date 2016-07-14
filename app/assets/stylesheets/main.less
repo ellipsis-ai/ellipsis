@@ -1093,7 +1093,8 @@ label {
 @button-height: @s * 2 + @xl;
 @button-small-height: @xs * 2 + @l;
 
-button {
+button,
+select.form-select {
   font-size: @type-m;
   line-height: @xl;
   padding: (@s - @border-width + 1) (@l - @border-width) (@s - @border-width - 1);
@@ -1111,7 +1112,8 @@ button {
   vertical-align: bottom;
 }
 
-button.button-dropdown-trigger {
+button.button-dropdown-trigger,
+select.form-select {
   position: relative;
   z-index: 11;
   padding-right: 33px - @border-width;
@@ -1128,6 +1130,10 @@ button.button-dropdown-trigger {
     top: 11px - @border-width;
     right: 19px - @border-width;
   }
+}
+
+select.form-select {
+  background-color: @white;
 }
 
 button.button-dropdown-trigger-symbol {
@@ -1152,7 +1158,8 @@ button.button-warning {
   color: @pink-medium-text;
 }
 
-button.button-s {
+button.button-s,
+select.form-select-s {
   font-size: @type-s;
   line-height: @l;
   padding: (@xs - @border-width + 1) (@m - @border-width) (@xs - @border-width - 1);
@@ -1226,7 +1233,9 @@ button.button-dropdown-item-hover {
 }
 
 button.button-dropdown-trigger:focus,
-button.button-dropdown-trigger-menu-open {
+button.button-dropdown-trigger-menu-open,
+select.form-select:focus {
+  outline: none;
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
   padding-right: 33px - @border-width-thick;
   background-color: white;

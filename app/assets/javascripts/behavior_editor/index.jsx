@@ -2,13 +2,14 @@ define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
   Codemirror = require('../react-codemirror'),
+  AWSConfig = require('./aws_config'),
+  AWSHelp = require('./aws_help'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   Checklist = require('./checklist'),
   CodeEditor = require('./code_editor'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
-  AWSConfig = require('./aws_config'),
   ConfirmActionPanel = require('./confirm_action_panel'),
   DropdownMenu = require('./dropdown_menu'),
   HelpButton = require('./help_button'),
@@ -504,6 +505,10 @@ return React.createClass({
     });
   },
 
+  toggleAWSHelp: function() {
+    this.toggleActivePanel('helpForAWS');
+  },
+
   toggleBoilerplateHelp: function() {
     this.toggleActivePanel('helpForBoilerplateParameters');
   },
@@ -936,35 +941,41 @@ return React.createClass({
             </div>
 
             <div className="column column-three-quarters pll form-field-group">
-
-              <Collapsible revealWhen={!this.getAWSConfig()}>
-                <div className="pvm">
-                  <button type="button" className="button-s" onClick={this.onAddAWSConfig}>Use the AWS SDK</button>
+              <div className="border-top border-left border-right border-radius-top pvs">
+                <div className="ptxs phm pbm mbs type-s border-bottom">
+                  <Collapsible revealWhen={!this.getAWSConfig()}>
+                    <span className="mrs">Add integration:</span>
+                    <button type="button" className="button-s" onClick={this.onAddAWSConfig}>
+                      Amazon Web Services (AWS)
+                    </button>
+                  </Collapsible>
+                  <Collapsible revealWhen={!!this.getAWSConfig()}>
+                    <AWSConfig
+                      envVariableNames={this.props.envVariableNames}
+                      accessKeyName={this.getAWSConfigProperty('accessKeyName')}
+                      secretKeyName={this.getAWSConfigProperty('secretKeyName')}
+                      regionName={this.getAWSConfigProperty('regionName')}
+                      onChange={this.onAWSConfigChange}
+                      onRemoveAWSConfig={this.onRemoveAWSConfig}
+                      onToggleHelp={this.toggleAWSHelp}
+                      helpVisible={this.getActivePanel() === 'helpForAWS'}
+                    />
+                  </Collapsible>
                 </div>
-              </Collapsible>
-              <Collapsible revealWhen={!!this.getAWSConfig()}>
-                <AWSConfig
-                  envVariableNames={this.props.envVariableNames}
-                  accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                  secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                  regionName={this.getAWSConfigProperty('regionName')}
-                  onChange={this.onAWSConfigChange}
-                  onRemoveAWSConfig={this.onRemoveAWSConfig}
-                />
-              </Collapsible>
 
-              <CodeHeader
-                ref="codeHeader"
-                hasParams={this.hasParams()}
-                params={this.getBehaviorParams()}
-                onParamChange={this.updateParamAtIndexWithParam}
-                onParamDelete={this.deleteParamAtIndex}
-                onParamAdd={this.addParam}
-                onEnterKey={this.onParamEnterKey}
-                helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
-                onToggleHelp={this.toggleBoilerplateHelp}
-                builtInParams={this.getBuiltinParams()}
-              />
+                <CodeHeader
+                  ref="codeHeader"
+                  hasParams={this.hasParams()}
+                  params={this.getBehaviorParams()}
+                  onParamChange={this.updateParamAtIndexWithParam}
+                  onParamDelete={this.deleteParamAtIndex}
+                  onParamAdd={this.addParam}
+                  onEnterKey={this.onParamEnterKey}
+                  helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
+                  onToggleHelp={this.toggleBoilerplateHelp}
+                  builtInParams={this.getBuiltinParams()}
+                />
+              </div>
 
               <div className="position-relative pr-symbol border-right">
                 <CodeEditor
@@ -1088,6 +1099,10 @@ return React.createClass({
               expandEnvVariables={this.state.expandEnvVariables}
               onCollapseClick={this.toggleBoilerplateHelp}
             />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'helpForAWS'}>
+            <AWSHelp onCollapseClick={this.toggleAWSHelp} />
           </Collapsible>
 
           <Collapsible ref="versionHistory" revealWhen={this.getActivePanel() === 'versionHistory'}>

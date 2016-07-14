@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
-    EnvironmentVariableChooser = require('./environment_variable_chooser');
+    EnvironmentVariableChooser = require('./environment_variable_chooser'),
+    HelpButton = require('./help_button');
 
   return React.createClass({
 
@@ -17,12 +18,16 @@ define(function(require) {
 
       return (
 
-        <div className="columns pvl">
+        <div className="columns columns-elastic">
 
-          <div className="column column-three-quarters">
+          <div className="column column-expand">
+            <p>
+              <span className="mrs">Set your AWS access key and region.</span>
+              <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible} />
+            </p>
 
             <EnvironmentVariableChooser
-              label="Access&nbsp;Key"
+              label="Access key ID"
               property="accessKeyName"
               chosenName={this.props.accessKeyName}
               envVariableNames={this.props.envVariableNames}
@@ -30,7 +35,7 @@ define(function(require) {
               />
 
             <EnvironmentVariableChooser
-              label="Secret&nbsp;Key"
+              label="Secret access key"
               property="secretKeyName"
               chosenName={this.props.secretKeyName}
               envVariableNames={this.props.envVariableNames}
@@ -47,8 +52,8 @@ define(function(require) {
 
           </div>
 
-          <div className="column column-one-quarter pr-symbol align-r">
-            <button type="button" className="button-s" onClick={this.props.onRemoveAWSConfig}>Don't use AWS</button>
+          <div className="column column-shrink">
+            <button type="button" className="button-s display-ellipsis" onClick={this.props.onRemoveAWSConfig}>Remove AWS integration</button>
           </div>
 
         </div>
