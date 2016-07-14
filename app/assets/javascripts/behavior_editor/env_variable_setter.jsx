@@ -6,6 +6,8 @@ define(function(require) {
   return React.createClass({
     propTypes: {
       onCancelClick: React.PropTypes.func.isRequired,
+      onChangeVarName: React.PropTypes.func.isRequired,
+      onSave: React.PropTypes.func.isRequired,
       vars: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
     },
 
@@ -19,9 +21,17 @@ define(function(require) {
       }
     },
 
+    componentWillReceiveProps: function(newProps) {
+      if (newProps.vars.length !== this.state.vars.length) {
+        this.setState(this.getInitialState());
+      }
+    },
+
     hasChanges: function() {
       return !this.getVars().every(function(v, index) {
-        return v.value === this.props.vars[index].value && v.isSet === this.props.vars[index].isSet;
+        return this.props.vars[index] &&
+          v.value === this.props.vars[index].value &&
+          v.isSet === this.props.vars[index].isSet;
       }, this);
     },
 
@@ -36,26 +46,50 @@ define(function(require) {
       }
     },
 
+    focusOnVarIndex: function(index) {
+      this.refs['envVarName' + index].focus();
+    },
+
     onCancel: function() {
       this.setState(this.getInitialState());
       this.props.onCancelClick();
     },
 
-    onChangeVarValue: function(modifiedIndex, newValue) {
+    onChangeVarName: function(index, newName) {
+      var vars = this.getVars();
+      var safeVarName = newName.toUpperCase().replace(/\s/g, '_').replace(/^\d|[^A-Z0-9_]/g, '');
+      var newVar = {
+        isNamed: false,
+        isSet: false,
+        name: safeVarName,
+        value: vars[index].value
+      };
+      this.setState({
+        vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, index)
+      });
+    },
+
+    onChangeVarValue: function(index, newValue) {
       var vars = this.getVars();
       var newVar = {
+        isNamed: vars[index].isNamed,
         isSet: false,
-        name: vars[modifiedIndex].name,
+        name: vars[index].name,
         value: newValue
       };
       this.setState({
-        vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, modifiedIndex)
+        vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, index)
       });
+    },
+
+    onSave: function() {
+      this.props.onSave(this.state.vars);
     },
 
     resetVar: function(index) {
       var vars = this.getVars();
       var newVar = {
+        isNamed: vars[index].isNamed,
         isSet: false,
         name: vars[index].name,
         value: ''
@@ -67,7 +101,30 @@ define(function(require) {
       });
     },
 
-    getInputForVar: function(v, index) {
+    getNameInputForVar: function(v, index) {
+      if (v.isNamed) {
+        return (
+          <input type="text"
+            className="form-input form-input-left"
+            placeholder="ENVIRONMENT_VARIABLE_NAME"
+            value={v.name}
+            readOnly={true}
+          />
+        );
+      } else {
+        return (
+          <Input
+            ref={"envVarName" + index}
+            className="form-input-left"
+            placeholder="Enter name"
+            value={v.name}
+            onChange={this.onChangeVarName.bind(this, index)}
+          />
+        );
+      }
+    },
+
+    getValueInputForVar: function(v, index) {
       if (v.isSet) {
         return (
           <div className="position-relative">
@@ -110,15 +167,10 @@ define(function(require) {
               return (
                 <div className="columns" key={"envVar" + index}>
                   <div className="column column-one-quarter prn">
-                    <input type="text"
-                      className="form-input form-input-left"
-                      placeholder="ENVIRONMENT_VARIABLE_NAME"
-                      value={v.name}
-                      readOnly={true}
-                    />
+                    {this.getNameInputForVar(v, index)}
                   </div>
                   <div className="column column-one-quarter pln">
-                    {this.getInputForVar(v, index)}
+                    {this.getValueInputForVar(v, index)}
                   </div>
                 </div>
               );
@@ -130,6 +182,7 @@ define(function(require) {
                 <button type="button"
                   className="button-primary mrs"
                   disabled={!this.hasChanges()}
+                  onClick={this.onSave}
                 >Save</button>
                 <button type="button" onClick={this.onCancel}>Cancel</button>
               </div>

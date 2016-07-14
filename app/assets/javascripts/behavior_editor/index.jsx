@@ -170,8 +170,9 @@ return React.createClass({
   getEnvVariables: function() {
     return this.state.envVariableNames.map(function(name) {
       return {
+        isNamed: !!name,
         // TODO: get isSet from the server instead of trying to compute it
-        isSet: !this.props.notifications.some(function(notification) {
+        isSet: name && !this.props.notifications.some(function(notification) {
           return notification.kind === 'env_var_not_defined' &&
             notification.environmentVariableName === name
           }, this),
@@ -338,6 +339,10 @@ return React.createClass({
   },
 
   cancelEnvVariableSetter: function() {
+    var namesWithoutBlanks = this.state.envVariableNames.filter(function(name) { return !!name; });
+    this.setState({
+      envVariableNames: namesWithoutBlanks
+    });
     this.hideActivePanel();
   },
 
@@ -526,9 +531,19 @@ return React.createClass({
     this.setBehaviorProp('config', config);
   },
 
-  showEnvVariableSetter: function(notificationDetail) {
+  setEnvVariableNameAtIndex: function(name, index) {
+    this.setState({
+      envVariableNames: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.envVariableNames, name, index)
+    });
+  },
+
+  showEnvVariableSetter: function(detailOrIndex) {
     this.toggleActivePanel('envVariableSetter', true, function() {
-      this.refs.envVariableSetterPanel.focusOnVarName(notificationDetail.environmentVariableName);
+      if (detailOrIndex.environmentVariableName) {
+        this.refs.envVariableSetterPanel.focusOnVarName(detailOrIndex.environmentVariableName);
+      } else if (typeof(detailOrIndex) === 'number') {
+        this.refs.envVariableSetterPanel.focusOnVarIndex(detailOrIndex);
+      }
     });
   },
 
@@ -610,6 +625,13 @@ return React.createClass({
 
   updateCode: function(newCode) {
     this.setBehaviorProp('functionBody', newCode);
+  },
+
+  updateEnvVariableNames: function(envVars) {
+    this.hideActivePanel();
+    this.setState({
+      envVariableNames: envVars.map(function(v) { return v.name; })
+    });
   },
 
   updateParamAtIndexWithParam: function(index, newParam) {
@@ -798,14 +820,17 @@ return React.createClass({
   },
 
   onAWSAddNewEnvVariable: function(property) {
-    var newName = window.prompt('Enter a new environment variable name.');
-    if (!newName) {
-      return;
+    var desiredIndex = this.state.envVariableNames.length;
+    var futureCallback = function(newName) {
+      this.setAWSEnvVar(property, newName);
     }
     this.setState({
-      envVariableNames: this.state.envVariableNames.concat(newName)
+      envVariableNames: this.state.envVariableNames.concat([""])
     }, function() {
-      this.setAWSEnvVar(property, newName);
+      this.setState({
+        onNextNewEnvVarName: futureCallback.bind(this)
+      });
+      this.showEnvVariableSetter(this.state.envVariableNames.length - 1);
     });
   },
 
@@ -844,6 +869,25 @@ return React.createClass({
     window.document.addEventListener('focus', this.handleModalFocus, true);
   },
 
+  componentDidUpdate: function(prevProps, prevState) {
+    this.maybeNewEnvVarName(prevState.envVariableNames);
+  },
+
+  maybeNewEnvVarName: function(prevNames) {
+    if (!this.state.onNextNewEnvVarName) {
+      return;
+    }
+    var previouslyBlankNameIndex = prevNames.findIndex(function(name) {
+      return !name;
+    });
+    if (previouslyBlankNameIndex >= 0 && this.state.envVariableNames[previouslyBlankNameIndex]) {
+      this.state.onNextNewEnvVarName(this.state.envVariableNames[previouslyBlankNameIndex]);
+      this.setState({
+        onNextNewEnvVarName: null
+      });
+    }
+  },
+
   getInitialState: function() {
     var initialBehavior = {
       teamId: this.props.teamId,
@@ -868,7 +912,8 @@ return React.createClass({
       hasModifiedTemplate: !!this.props.responseTemplate,
       notifications: this.getInitialNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
-      versionsLoadStatus: null
+      versionsLoadStatus: null,
+      onNextNewEnvVarName: null
     };
   },
 
@@ -1193,6 +1238,8 @@ return React.createClass({
               ref="envVariableSetterPanel"
               vars={this.getEnvVariables()}
               onCancelClick={this.cancelEnvVariableSetter}
+              onChangeVarName={this.setEnvVariableNameAtIndex}
+              onSave={this.updateEnvVariableNames}
             />
           </Collapsible>
 
