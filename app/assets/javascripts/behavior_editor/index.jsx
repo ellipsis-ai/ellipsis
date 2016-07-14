@@ -740,6 +740,18 @@ return React.createClass({
     this.refs['trigger' + index].focus();
   },
 
+  onAWSAddNewEnvVariable: function(property) {
+    var newName = window.prompt('Enter a new environment variable name.');
+    if (!newName) {
+      return;
+    }
+    this.setState({
+      envVariableNames: this.state.envVariableNames.concat(newName)
+    }, function() {
+      this.setAWSEnvVar(property, newName);
+    });
+  },
+
   onAWSConfigChange: function(property, envVarName) {
     this.setAWSEnvVar(property, envVarName);
   },
@@ -951,10 +963,11 @@ return React.createClass({
                   </Collapsible>
                   <Collapsible revealWhen={!!this.getAWSConfig()}>
                     <AWSConfig
-                      envVariableNames={this.props.envVariableNames}
+                      envVariableNames={this.state.envVariableNames}
                       accessKeyName={this.getAWSConfigProperty('accessKeyName')}
                       secretKeyName={this.getAWSConfigProperty('secretKeyName')}
                       regionName={this.getAWSConfigProperty('regionName')}
+                      onAddNew={this.onAWSAddNewEnvVariable}
                       onChange={this.onAWSConfigChange}
                       onRemoveAWSConfig={this.onRemoveAWSConfig}
                       onToggleHelp={this.toggleAWSHelp}

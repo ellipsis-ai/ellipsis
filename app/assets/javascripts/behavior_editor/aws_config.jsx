@@ -31,6 +31,7 @@ define(function(require) {
               property="accessKeyName"
               chosenName={this.props.accessKeyName}
               envVariableNames={this.props.envVariableNames}
+              onAddNew={this.props.onAddNew}
               onChange={this.props.onChange}
               />
 
@@ -39,6 +40,7 @@ define(function(require) {
               property="secretKeyName"
               chosenName={this.props.secretKeyName}
               envVariableNames={this.props.envVariableNames}
+              onAddNew={this.props.onAddNew}
               onChange={this.props.onChange}
               />
 
@@ -47,6 +49,7 @@ define(function(require) {
               property="regionName"
               chosenName={this.props.regionName}
               envVariableNames={this.props.envVariableNames}
+              onAddNew={this.props.onAddNew}
               onChange={this.props.onChange}
               />
 
