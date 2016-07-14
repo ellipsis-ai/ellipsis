@@ -185,6 +185,9 @@ return React.createClass({
   },
 
   getInitialNotifications: function() {
+    if (!this.props.notifications) {
+      return [];
+    }
     var notifications = {};
     this.props.notifications.forEach(function(notification) {
       if (notifications[notification.kind]) {
