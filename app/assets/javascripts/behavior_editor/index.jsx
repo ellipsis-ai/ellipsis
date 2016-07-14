@@ -12,8 +12,10 @@ var React = require('react'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('./confirm_action_panel'),
   DropdownMenu = require('./dropdown_menu'),
+  EnvVariableSetter = require('./env_variable_setter'),
   HelpButton = require('./help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
+  Notification = require('../notification'),
   SectionHeading = require('./section_heading'),
   TriggerHelp = require('./trigger_help'),
   TriggerOptionsHelp = require('./trigger_options_help'),
@@ -57,6 +59,7 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
+    notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool
   },
 
@@ -164,8 +167,42 @@ return React.createClass({
     }
   },
 
+  getEnvVariables: function() {
+    return this.state.envVariableNames.map(function(name) {
+      return {
+        // TODO: get isSet from the server instead of trying to compute it
+        isSet: !this.props.notifications.some(function(notification) {
+          return notification.kind === 'env_var_not_defined' &&
+            notification.environmentVariableName === name
+          }, this),
+        name: name,
+        value: ""
+      };
+    }, this);
+  },
+
   getFirstLineNumberForCode: function() {
     return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
+  },
+
+  getInitialNotifications: function() {
+    if (!this.props.notifications) {
+      return [];
+    }
+    var notifications = {};
+    this.props.notifications.forEach(function(notification) {
+      if (notifications[notification.kind]) {
+        notifications[notification.kind].push(notification);
+      } else {
+        notifications[notification.kind] = [notification];
+      }
+    });
+    return Object.keys(notifications).map(function(key) {
+      return {
+        kind: key,
+        details: notifications[key]
+      };
+    });
   },
 
   getInitialTriggers: function() {
@@ -214,6 +251,10 @@ return React.createClass({
       isRegex: false,
       caseSensitive: false
     };
+  },
+
+  getNotifications: function() {
+    return this.state.notifications;
   },
 
   getPathTemplateHelp: function() {
@@ -294,6 +335,10 @@ return React.createClass({
 
   addTrigger: function() {
     this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), this.focusOnFirstBlankTrigger);
+  },
+
+  cancelEnvVariableSetter: function() {
+    this.hideActivePanel();
   },
 
   cancelVersionPanel: function() {
@@ -420,6 +465,12 @@ return React.createClass({
     }
   },
 
+  onNotificationClick: function(notificationDetail) {
+    if (notificationDetail && notificationDetail.kind === 'env_var_not_defined') {
+      this.showEnvVariableSetter(notificationDetail);
+    }
+  },
+
   onSaveClick: function() {
     this.setState({
       isSaving: true
@@ -475,6 +526,12 @@ return React.createClass({
     this.setBehaviorProp('config', config);
   },
 
+  showEnvVariableSetter: function(notificationDetail) {
+    this.toggleActivePanel('envVariableSetter', true, function() {
+      this.refs.envVariableSetterPanel.focusOnVarName(notificationDetail.environmentVariableName);
+    });
+  },
+
   showVersions: function() {
     if (!this.versionsMaybeLoaded()) {
       this.loadVersions();
@@ -493,11 +550,11 @@ return React.createClass({
     });
   },
 
-  toggleActivePanel: function(name, beModal) {
+  toggleActivePanel: function(name, beModal, optionalCallback) {
     var alreadyOpen = this.getActivePanel() === name;
     this.setState({
       activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
-    }, function() {
+    }, optionalCallback || function() {
       var activeModal = this.getActiveModalElement();
       if (activeModal) {
         this.focusOnPrimaryOrFirstPossibleElement(activeModal);
@@ -809,6 +866,7 @@ return React.createClass({
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate,
+      notifications: this.getInitialNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null
     };
@@ -838,8 +896,7 @@ return React.createClass({
              </form>
             */}
 
-            <div className="column column-shrink ptl align-r">
-            </div>
+            <div className="column column-shrink ptl position-relative"></div>
           </div>
         </div>
       </div>
@@ -1131,7 +1188,26 @@ return React.createClass({
             />
           </Collapsible>
 
+          <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
+            <EnvVariableSetter
+              ref="envVariableSetterPanel"
+              vars={this.getEnvVariables()}
+              onCancelClick={this.cancelEnvVariableSetter}
+            />
+          </Collapsible>
+
           <Collapsible revealWhen={!this.hasModalPanel()}>
+            {this.getNotifications().map(function(notification, index) {
+              return (
+                <Notification
+                  key={"notification" + index}
+                  details={notification.details}
+                  index={index}
+                  kind={notification.kind}
+                  onClick={this.onNotificationClick}
+                />
+              );
+            }, this)}
             <div className="container pvm">
               <div className="columns">
                 <div className="column column-one-half">
