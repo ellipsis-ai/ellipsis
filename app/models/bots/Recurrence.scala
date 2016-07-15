@@ -196,6 +196,11 @@ object Weekly {
 
 case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: LocalTime) extends Recurrence {
 
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
+    s"every $frequencyString on the ${Recurrence.ordinalFor(dayOfMonth)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
+  }
+
   def isEarlierInMonth(when: DateTime): Boolean = {
     when.getDayOfMonth < dayOfMonth || (when.getDayOfMonth == dayOfMonth && when.toLocalTime.isBefore(timeOfDay))
   }
@@ -346,6 +351,15 @@ object Yearly {
 
 object Recurrence {
 
+  def ordinalFor(i: Int): String = {
+    val suffixes = Array("th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th")
+    val suffix = i % 100 match {
+      case 11 | 12 | 13 => "th"
+      case _ => suffixes(i % 10)
+    }
+    s"$i$suffix"
+  }
+
   val timeFormatter = DateTimeFormat.forPattern("h:mma z")
 
   def currentAdjustedTime: LocalTime = DateTime.now.toLocalTime.withSecondOfMinute(0).withMillisOfSecond(0)
@@ -363,7 +377,7 @@ object Recurrence {
   def maybeTimeFrom(text: String): Option[LocalTime] = {
     val timeRegex = """(?i).*at\s+(.*)""".r
     text match {
-      case timeRegex(time) => maybeDateFrom(text).map { date =>
+      case timeRegex(time) => maybeDateFrom(time).map { date =>
         new LocalTime(date.getTime)
       }
       case _ => None
