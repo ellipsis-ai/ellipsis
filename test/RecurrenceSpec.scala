@@ -181,6 +181,14 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.initialAfter(DateTime.parse("2010-06-06T17:00")) mustBe DateTime.parse("2010-06-06T17:00")
     }
 
+    "be created with first day of every month" in {
+      Recurrence.maybeFromText("the first day of every month at 9am") mustBe Some(MonthlyByDayOfMonth(1, 1, LocalTime.parse("09:00")))
+    }
+
+    "be created with 15th day of every 3rd month" in {
+      Recurrence.maybeFromText("the 15th of every 3rd month at 5pm") mustBe Some(MonthlyByDayOfMonth(3, 15, fivePM))
+    }
+
   }
 
   "MonthlyByNthDayOfWeek" should {
