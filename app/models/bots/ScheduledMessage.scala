@@ -21,28 +21,37 @@ case class ScheduledMessage(
                             createdAt: DateTime
                             ) {
 
+  def followingSentAt: DateTime = recurrence.nextAfter(nextSentAt)
+
   def successResponse: String = {
     s"""OK, I will run `$text` ${recurrence.displayString.trim}.
        |
-       |$nextRunString
+       |$nextRunsString
      """.stripMargin
   }
 
-  val nextRunDateFormatter = DateTimeFormat.forPattern("M d, yyyy")
-  def nextRunDateString: String = {
-    if (nextSentAt.toLocalDate == DateTime.now.toLocalDate) {
-      "today"
-    } else if (nextSentAt.toLocalDate == DateTime.now.plusDays(1).toLocalDate) {
-      "tomorrow"
+  val nextRunDateFormatter = DateTimeFormat.forPattern("MMMM d, yyyy")
+  def nextRunDateStringFor(when: DateTime): String = {
+    val clarifier = if (when.toLocalDate == DateTime.now.toLocalDate) {
+      " (today)"
+    } else if (when.toLocalDate == DateTime.now.plusDays(1).toLocalDate) {
+      " (tomorrow)"
     } else {
-      nextSentAt.toString(nextRunDateFormatter)
+      ""
     }
+
+    when.toString(nextRunDateFormatter) ++ clarifier
   }
+  def nextRunTimeStringFor(when: DateTime): String = when.toString(Recurrence.timeFormatter)
 
-  def nextRunTimeString: String = nextSentAt.toString(Recurrence.timeFormatter)
+  def nextRunStringFor(when: DateTime): String = s"${nextRunDateStringFor(when)} at ${nextRunTimeStringFor(when)}"
 
-  def nextRunString: String = {
-    s"The next run will be $nextRunDateString at $nextRunTimeString"
+  def nextRunsString: String = {
+    s"""The next two runs will be:
+       | - ${nextRunStringFor(nextSentAt)}
+       | - ${nextRunStringFor(followingSentAt)}
+       |
+     """.stripMargin
   }
 
   def botProfile: DBIO[Option[SlackBotProfile]] = {

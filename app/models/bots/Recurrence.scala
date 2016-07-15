@@ -1,6 +1,8 @@
 package models.bots
 
-import java.util.Date
+import java.time.DayOfWeek
+import java.time.format.TextStyle
+import java.util.{Locale, Date}
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalTime, MonthDay}
 import com.joestelmach.natty._
@@ -129,6 +131,13 @@ object Daily {
 }
 
 case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime) extends Recurrence {
+
+  val dayOfWeekName = DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "week" } else { s"$frequency weeks" }
+    s"every $frequencyString on $dayOfWeekName at ${timeOfDay.toString(Recurrence.timeFormatter)}"
+  }
 
   def isEarlierInWeek(when: DateTime): Boolean = {
     when.getDayOfWeek < dayOfWeek || (when.getDayOfWeek == dayOfWeek && when.toLocalTime.isBefore(timeOfDay))
