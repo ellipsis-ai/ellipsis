@@ -2,6 +2,7 @@ package models.bots
 
 import models.{IDs, Team}
 import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
+import org.joda.time.format.DateTimeFormat
 import org.joda.time.{LocalTime, DateTime}
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import services.SlackService
@@ -19,6 +20,39 @@ case class ScheduledMessage(
                             nextSentAt: DateTime,
                             createdAt: DateTime
                             ) {
+
+  def followingSentAt: DateTime = recurrence.nextAfter(nextSentAt)
+
+  def successResponse: String = {
+    s"""OK, I will run `$text` ${recurrence.displayString.trim}.
+       |
+       |$nextRunsString
+     """.stripMargin
+  }
+
+  val nextRunDateFormatter = DateTimeFormat.forPattern("MMMM d, yyyy")
+  def nextRunDateStringFor(when: DateTime): String = {
+    val clarifier = if (when.toLocalDate == DateTime.now.toLocalDate) {
+      " (today)"
+    } else if (when.toLocalDate == DateTime.now.plusDays(1).toLocalDate) {
+      " (tomorrow)"
+    } else {
+      ""
+    }
+
+    when.toString(nextRunDateFormatter) ++ clarifier
+  }
+  def nextRunTimeStringFor(when: DateTime): String = when.toString(Recurrence.timeFormatter)
+
+  def nextRunStringFor(when: DateTime): String = s"${nextRunDateStringFor(when)} at ${nextRunTimeStringFor(when)}"
+
+  def nextRunsString: String = {
+    s"""The next two runs will be:
+       | - ${nextRunStringFor(nextSentAt)}
+       | - ${nextRunStringFor(followingSentAt)}
+       |
+     """.stripMargin
+  }
 
   def botProfile: DBIO[Option[SlackBotProfile]] = {
     SlackBotProfileQueries.allFor(team).map(_.headOption)
@@ -157,7 +191,7 @@ object ScheduledMessageQueries {
 
   def maybeCreateFor(text: String, recurrenceText: String, team: Team, maybeChannelName: Option[String]): DBIO[Option[ScheduledMessage]] = {
     Recurrence.maybeFromText(recurrenceText).map { recurrence =>
-      ScheduledMessage(
+      val newMessage = ScheduledMessage(
         IDs.next,
         text,
         team,
@@ -165,7 +199,8 @@ object ScheduledMessageQueries {
         recurrence,
         recurrence.initialAfter(DateTime.now),
         DateTime.now
-      ).save.map(Some(_))
+      )
+      newMessage.save.map(Some(_))
     }.getOrElse(DBIO.successful(None))
   }
 }

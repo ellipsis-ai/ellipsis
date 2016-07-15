@@ -1,6 +1,9 @@
 package models.bots
 
-import java.util.Date
+import java.time.DayOfWeek
+import java.time.format.TextStyle
+import java.util.{Locale, Date}
+import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalTime, MonthDay}
 import com.joestelmach.natty._
 
@@ -18,8 +21,14 @@ sealed trait Recurrence {
   def nextAfter(previous: DateTime): DateTime
   def initialAfter(start: DateTime): DateTime
   def withStandardAdjustments(when: DateTime): DateTime = when.withSecondOfMinute(0).withMillisOfSecond(0)
+  def displayString: String = ""
 }
 case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
+
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "hour" } else { s"$frequency hours" }
+    s"every $frequencyString at $minuteOfHour minutes"
+  }
 
   def isEarlierInHour(when: DateTime): Boolean = when.getMinuteOfHour < minuteOfHour
   def isLaterInHour(when: DateTime): Boolean = when.getMinuteOfHour > minuteOfHour
@@ -51,8 +60,8 @@ object Hourly {
   val recurrenceType = "hourly"
 
   def maybeFromText(text: String): Option[Hourly] = {
-    val singleRegex = """(?i)every hour.*""".r
-    val nRegex = """(?i)every\s+(\d+)\s+hours?.*""".r
+    val singleRegex = """(?i).*every hour.*""".r
+    val nRegex = """(?i).*every\s+(\d+)\s+hours?.*""".r
     val maybeFrequency = text match {
       case singleRegex() => Some(1)
       case nRegex(frequency) => Some(frequency.toInt)
@@ -70,6 +79,11 @@ object Hourly {
 }
 
 case class Daily(frequency: Int, timeOfDay: LocalTime) extends Recurrence {
+
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "day" } else { s"$frequency days" }
+    s"every $frequencyString at ${timeOfDay.toString(Recurrence.timeFormatter)}"
+  }
 
   def isEarlierInDay(when: DateTime): Boolean = when.toLocalTime.isBefore(timeOfDay)
   def isLaterInDay(when: DateTime): Boolean = when.toLocalTime.isAfter(timeOfDay)
@@ -117,6 +131,13 @@ object Daily {
 }
 
 case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime) extends Recurrence {
+
+  val dayOfWeekName = DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "week" } else { s"$frequency weeks" }
+    s"every $frequencyString on $dayOfWeekName at ${timeOfDay.toString(Recurrence.timeFormatter)}"
+  }
 
   def isEarlierInWeek(when: DateTime): Boolean = {
     when.getDayOfWeek < dayOfWeek || (when.getDayOfWeek == dayOfWeek && when.toLocalTime.isBefore(timeOfDay))
@@ -174,6 +195,11 @@ object Weekly {
 }
 
 case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: LocalTime) extends Recurrence {
+
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
+    s"every $frequencyString on the ${Recurrence.ordinalFor(dayOfMonth)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
+  }
 
   def isEarlierInMonth(when: DateTime): Boolean = {
     when.getDayOfMonth < dayOfMonth || (when.getDayOfMonth == dayOfMonth && when.toLocalTime.isBefore(timeOfDay))
@@ -325,6 +351,17 @@ object Yearly {
 
 object Recurrence {
 
+  def ordinalFor(i: Int): String = {
+    val suffixes = Array("th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th")
+    val suffix = i % 100 match {
+      case 11 | 12 | 13 => "th"
+      case _ => suffixes(i % 10)
+    }
+    s"$i$suffix"
+  }
+
+  val timeFormatter = DateTimeFormat.forPattern("h:mma z")
+
   def currentAdjustedTime: LocalTime = DateTime.now.toLocalTime.withSecondOfMinute(0).withMillisOfSecond(0)
 
   private def maybeDateFrom(text: String): Option[Date] = {
@@ -340,7 +377,7 @@ object Recurrence {
   def maybeTimeFrom(text: String): Option[LocalTime] = {
     val timeRegex = """(?i).*at\s+(.*)""".r
     text match {
-      case timeRegex(time) => maybeDateFrom(text).map { date =>
+      case timeRegex(time) => maybeDateFrom(time).map { date =>
         new LocalTime(date.getTime)
       }
       case _ => None
