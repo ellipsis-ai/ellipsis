@@ -1,6 +1,7 @@
 package models.bots
 
 import java.util.Date
+import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalTime, MonthDay}
 import com.joestelmach.natty._
 
@@ -18,8 +19,14 @@ sealed trait Recurrence {
   def nextAfter(previous: DateTime): DateTime
   def initialAfter(start: DateTime): DateTime
   def withStandardAdjustments(when: DateTime): DateTime = when.withSecondOfMinute(0).withMillisOfSecond(0)
+  def displayString: String = ""
 }
 case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
+
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "hour" } else { s"$frequency hours" }
+    s"every $frequencyString at $minuteOfHour minutes"
+  }
 
   def isEarlierInHour(when: DateTime): Boolean = when.getMinuteOfHour < minuteOfHour
   def isLaterInHour(when: DateTime): Boolean = when.getMinuteOfHour > minuteOfHour
@@ -51,8 +58,8 @@ object Hourly {
   val recurrenceType = "hourly"
 
   def maybeFromText(text: String): Option[Hourly] = {
-    val singleRegex = """(?i)every hour.*""".r
-    val nRegex = """(?i)every\s+(\d+)\s+hours?.*""".r
+    val singleRegex = """(?i).*every hour.*""".r
+    val nRegex = """(?i).*every\s+(\d+)\s+hours?.*""".r
     val maybeFrequency = text match {
       case singleRegex() => Some(1)
       case nRegex(frequency) => Some(frequency.toInt)
@@ -70,6 +77,11 @@ object Hourly {
 }
 
 case class Daily(frequency: Int, timeOfDay: LocalTime) extends Recurrence {
+
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "day" } else { s"$frequency days" }
+    s"every $frequencyString at ${timeOfDay.toString(Recurrence.timeFormatter)}"
+  }
 
   def isEarlierInDay(when: DateTime): Boolean = when.toLocalTime.isBefore(timeOfDay)
   def isLaterInDay(when: DateTime): Boolean = when.toLocalTime.isAfter(timeOfDay)
@@ -324,6 +336,8 @@ object Yearly {
 }
 
 object Recurrence {
+
+  val timeFormatter = DateTimeFormat.forPattern("h:mma z")
 
   def currentAdjustedTime: LocalTime = DateTime.now.toLocalTime.withSecondOfMinute(0).withMillisOfSecond(0)
 

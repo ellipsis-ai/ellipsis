@@ -2,6 +2,7 @@ package models.bots
 
 import models.{IDs, Team}
 import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
+import org.joda.time.format.DateTimeFormat
 import org.joda.time.{LocalTime, DateTime}
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import services.SlackService
@@ -19,6 +20,30 @@ case class ScheduledMessage(
                             nextSentAt: DateTime,
                             createdAt: DateTime
                             ) {
+
+  def successResponse: String = {
+    s"""OK, I will run `$text` ${recurrence.displayString.trim}.
+       |
+       |$nextRunString
+     """.stripMargin
+  }
+
+  val nextRunDateFormatter = DateTimeFormat.forPattern("M d, yyyy")
+  def nextRunDateString: String = {
+    if (nextSentAt.toLocalDate == DateTime.now.toLocalDate) {
+      "today"
+    } else if (nextSentAt.toLocalDate == DateTime.now.plusDays(1).toLocalDate) {
+      "tomorrow"
+    } else {
+      nextSentAt.toString(nextRunDateFormatter)
+    }
+  }
+
+  def nextRunTimeString: String = nextSentAt.toString(Recurrence.timeFormatter)
+
+  def nextRunString: String = {
+    s"The next run will be $nextRunDateString at $nextRunTimeString"
+  }
 
   def botProfile: DBIO[Option[SlackBotProfile]] = {
     SlackBotProfileQueries.allFor(team).map(_.headOption)
@@ -157,7 +182,7 @@ object ScheduledMessageQueries {
 
   def maybeCreateFor(text: String, recurrenceText: String, team: Team, maybeChannelName: Option[String]): DBIO[Option[ScheduledMessage]] = {
     Recurrence.maybeFromText(recurrenceText).map { recurrence =>
-      ScheduledMessage(
+      val newMessage = ScheduledMessage(
         IDs.next,
         text,
         team,
@@ -165,7 +190,8 @@ object ScheduledMessageQueries {
         recurrence,
         recurrence.initialAfter(DateTime.now),
         DateTime.now
-      ).save.map(Some(_))
+      )
+      newMessage.save.map(Some(_))
     }.getOrElse(DBIO.successful(None))
   }
 }
