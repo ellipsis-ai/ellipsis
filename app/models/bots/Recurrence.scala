@@ -133,11 +133,9 @@ object Daily {
 
 case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime) extends Recurrence {
 
-  val dayOfWeekName = DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.FULL, Locale.ENGLISH)
-
   override def displayString: String = {
     val frequencyString = if (frequency == 1) { "week" } else { s"$frequency weeks" }
-    s"every $frequencyString on $dayOfWeekName at ${timeOfDay.toString(Recurrence.timeFormatter)}"
+    s"every $frequencyString on ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
   }
 
   def isEarlierInWeek(when: DateTime): Boolean = {
@@ -250,6 +248,11 @@ object MonthlyByDayOfMonth {
 }
 
 case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeOfDay: LocalTime) extends Recurrence {
+
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
+    s"every $frequencyString on the ${Recurrence.ordinalStringFor(nth)} ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
+  }
 
   def targetInMonthMatching(when: DateTime): DateTime = {
     val firstOfTheMonth = when.withDayOfMonth(1)
@@ -391,6 +394,8 @@ object Recurrence {
   def ensureTimeFrom(text: String): LocalTime = {
     maybeTimeFrom(text).getOrElse(currentAdjustedTime)
   }
+
+  def dayOfWeekNameFor(dayOfWeek: Int): String = DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.FULL, Locale.ENGLISH)
 
   val daysOfWeekRegex = """(?i).*(monday|tuesday|wednesday|thursday|friday|saturday|sunday).*""".r
   def includesDayOfWeek(text: String): Boolean = {
