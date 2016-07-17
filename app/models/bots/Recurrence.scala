@@ -195,7 +195,7 @@ case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: Local
 
   override def displayString: String = {
     val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
-    s"every $frequencyString on the ${Recurrence.ordinalFor(dayOfMonth)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
+    s"every $frequencyString on the ${Recurrence.ordinalStringFor(dayOfMonth)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
   }
 
   def isEarlierInMonth(when: DateTime): Boolean = {
@@ -290,7 +290,6 @@ case class NthDayOfWeek(dayOfWeek: Int, n: Int)
 object MonthlyByNthDayOfWeek {
   val recurrenceType = "monthly_by_nth_day_of_week"
 
-  val nthDayOfWeekRegex = """(?i).*(1st|first|2nd|second|3rd|third|4th|fourth)\s+(\S+).*""".r
   private def maybeNthDayOfWeekFrom(text: String): Option[NthDayOfWeek] = {
     for {
       dayOfWeek <- Recurrence.maybeDayOfWeekFrom(text)
@@ -356,7 +355,7 @@ object Yearly {
 
 object Recurrence {
 
-  def ordinalFor(i: Int): String = {
+  def ordinalStringFor(i: Int): String = {
     val suffixes = Array("th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th")
     val suffix = i % 100 match {
       case 11 | 12 | 13 => "th"
