@@ -1,8 +1,9 @@
 package models.bots
 
+import java.text.{ParseException, SimpleDateFormat}
 import java.time.DayOfWeek
 import java.time.format.TextStyle
-import java.util.{Locale, Date}
+import java.util.{Calendar, Locale, Date}
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalTime, MonthDay}
 import com.joestelmach.natty._
@@ -183,11 +184,7 @@ object Weekly {
       case _ => None
     }
     maybeFrequency.map { frequency =>
-      val dayRegex = """(?i).*on\s+(\S+).*""".r
-      val maybeDayOfWeek = text match {
-        case dayRegex(day) => Recurrence.maybeDayOfWeekFrom(day)
-        case _ => None
-      }
+      val maybeDayOfWeek = Recurrence.maybeDayOfWeekFrom(text)
       val maybeTime = Recurrence.maybeTimeFrom(text)
       Weekly(frequency, maybeDayOfWeek.getOrElse(DateTime.now.getDayOfWeek), maybeTime.getOrElse(Recurrence.currentAdjustedTime))
     }
@@ -198,7 +195,7 @@ case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: Local
 
   override def displayString: String = {
     val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
-    s"every $frequencyString on the ${Recurrence.ordinalFor(dayOfMonth)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
+    s"every $frequencyString on the ${Recurrence.ordinalStringFor(dayOfMonth)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
   }
 
   def isEarlierInMonth(when: DateTime): Boolean = {
@@ -236,18 +233,8 @@ case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: Local
 object MonthlyByDayOfMonth {
   val recurrenceType = "monthly_by_day_of_month"
 
-  private def maybeFrequencyFrom(text: String): Option[Int] = {
-    val singleRegex = """(?i).*every month.*""".r
-    val nRegex = """(?i).*every\s+(\S+)\s+months?.*""".r
-    text match {
-      case singleRegex() => Some(1)
-      case nRegex(frequencyText) => Recurrence.maybeNumberFrom(frequencyText)
-      case _ => None
-    }
-  }
-
   private def maybeDayOfMonthFrom(text: String): Option[Int] = {
-    Recurrence.maybeNumberFrom(text)
+    Recurrence.maybeOrdinalFor(text, Some(" month"))
   }
 
   def maybeFromText(text: String): Option[MonthlyByDayOfMonth] = {
@@ -255,10 +242,9 @@ object MonthlyByDayOfMonth {
       return None
     }
 
-    maybeFrequencyFrom(text).map { frequency =>
+    Recurrence.maybeMonthlyFrequencyFrom(text).map { frequency =>
       val maybeDayOfMonth = maybeDayOfMonthFrom(text)
-      val maybeTime = Recurrence.maybeTimeFrom(text)
-      MonthlyByDayOfMonth(frequency, maybeDayOfMonth.getOrElse(DateTime.now.getDayOfMonth), maybeTime.getOrElse(Recurrence.currentAdjustedTime))
+      MonthlyByDayOfMonth(frequency, maybeDayOfMonth.getOrElse(DateTime.now.getDayOfMonth), Recurrence.ensureTimeFrom(text))
     }
   }
 }
@@ -299,8 +285,26 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeO
 
 }
 
+case class NthDayOfWeek(dayOfWeek: Int, n: Int)
+
 object MonthlyByNthDayOfWeek {
   val recurrenceType = "monthly_by_nth_day_of_week"
+
+  private def maybeNthDayOfWeekFrom(text: String): Option[NthDayOfWeek] = {
+    for {
+      dayOfWeek <- Recurrence.maybeDayOfWeekFrom(text)
+      ordinal <- Recurrence.maybeOrdinalFor(text, Some(" month"))
+    } yield NthDayOfWeek(dayOfWeek, ordinal)
+  }
+
+  def maybeFromText(text: String): Option[MonthlyByNthDayOfWeek] = {
+    for {
+      nthDayOfWeek <- maybeNthDayOfWeekFrom(text)
+      frequency <- Recurrence.maybeMonthlyFrequencyFrom(text)
+    } yield {
+      MonthlyByNthDayOfWeek(frequency, nthDayOfWeek.dayOfWeek, nthDayOfWeek.n, Recurrence.ensureTimeFrom(text))
+    }
+  }
 }
 
 case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime) extends Recurrence {
@@ -351,7 +355,7 @@ object Yearly {
 
 object Recurrence {
 
-  def ordinalFor(i: Int): String = {
+  def ordinalStringFor(i: Int): String = {
     val suffixes = Array("th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th")
     val suffix = i % 100 match {
       case 11 | 12 | 13 => "th"
@@ -384,37 +388,91 @@ object Recurrence {
     }
   }
 
-  def maybeDayOfWeekFrom(text: String): Option[Int] = {
-    maybeDateFrom(text).map { date =>
-      new DateTime(date).getDayOfWeek
+  def ensureTimeFrom(text: String): LocalTime = {
+    maybeTimeFrom(text).getOrElse(currentAdjustedTime)
+  }
+
+  val daysOfWeekRegex = """(?i).*(monday|tuesday|wednesday|thursday|friday|saturday|sunday).*""".r
+  def includesDayOfWeek(text: String): Boolean = {
+    daysOfWeekRegex.findFirstMatchIn(text).nonEmpty
+  }
+
+  def parseDayOfWeekFrom(dayOfWeekName: String): Option[Int] = {
+    try {
+      val dayFormat = new SimpleDateFormat("E", Locale.US)
+      val date = dayFormat.parse(dayOfWeekName)
+      val calendar = Calendar.getInstance()
+      calendar.setTime(date)
+      val javaDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+      val translatedToJoda = if (javaDayOfWeek == 1) { 7 } else { javaDayOfWeek - 1 }
+      Some(translatedToJoda)
+    } catch {
+      case e: ParseException => None
     }
   }
 
-
-  val numberWithDigitsRegex = """(?i)(\d+)(st|nd|rd|th)?""".r
-
-  private def ordinalRegexFor(ordinal: String): Regex = s"""(?i).*$ordinal.*""".r
-  val firstRegex = ordinalRegexFor("first")
-  val secondRegex = ordinalRegexFor("second")
-  val thirdRegex = ordinalRegexFor("third")
-  val fourthRegex = ordinalRegexFor("fourth")
-  val fifthRegex = ordinalRegexFor("fifth")
-  def maybeNumberFrom(text: String): Option[Int] = {
+  def maybeDayOfWeekFrom(text: String): Option[Int] = {
     text match {
-      case numberWithDigitsRegex(freq, _) => Some(freq.toInt)
-      case firstRegex() => Some(1)
-      case secondRegex() => Some(2)
-      case thirdRegex() => Some(3)
-      case fourthRegex() => Some(4)
-      case fifthRegex() => Some(5)
-      // TODO: more
+      case daysOfWeekRegex(day) => parseDayOfWeekFrom(day)
       case _ => None
     }
   }
 
-  val daysOfWeekRegex = """(?i)monday|tues(day)?|wed(nesday)?|thurs(day)?|fri(day)?|sat(urday)?|sun(day)?""".r
-  def includesDayOfWeek(text: String): Boolean = {
-    daysOfWeekRegex.findFirstMatchIn(text).nonEmpty
+  def maybeMonthlyFrequencyFrom(text: String): Option[Int] = {
+    val singleRegex = """(?i).*every month.*""".r
+    val nRegex = """(?i).*every\s+(\S+)\s+months?.*""".r
+    text match {
+      case singleRegex() => Some(1)
+      case nRegex(frequencyText) => Recurrence.maybeOrdinalFor(frequencyText, None)
+      case _ => None
+    }
+  }
+
+  val numberWithDigitsRegex = """(?i)(\d+)(st|nd|rd|th)?""".r
+
+  val ordinalMappings = Seq(
+    ("first|1st", 1),
+    ("second|2nd", 2),
+    ("third|3rd", 3),
+    ("fourth|4th", 4),
+    ("fifth|5th", 5),
+    ("sixth|6th", 6),
+    ("seventh|7th", 7),
+    ("eighth|8th", 8),
+    ("ninth|9th", 9),
+    ("tenth|10th", 10),
+    ("eleventh|11th", 11),
+    ("twelfth|12th", 12),
+    ("thirteenth|13th", 13),
+    ("fourteenth|14th", 14),
+    ("fifteenth|15th", 15),
+    ("sixteenth|16th", 16),
+    ("seventeeth|17th", 17),
+    ("eighteent|18th", 18),
+    ("nineteenth|19th", 19),
+    ("twentieth|20th", 20),
+    ("twentyfirst|21st", 21),
+    ("twentysecond|22nd", 22),
+    ("twentythird|23rd", 23),
+    ("twentyfourth|24th", 24),
+    ("twentyfifth|25th", 25),
+    ("twentysixth|26th", 26),
+    ("twentyseventh|27th", 27),
+    ("twentyeighth|28th", 28),
+    ("twentyninth|29th", 29),
+    ("thirtieth|30th", 30),
+    ("thirtyfirst|31st", 31)
+  ).reverse
+
+  private def ordinalRegexFor(ordinal: String, maybeExcludingNext: Option[String]): Regex = {
+    val excludingPattern = maybeExcludingNext.map(v => s"(?!$v)").getOrElse("")
+    s"""(?i).*$ordinal$excludingPattern.*""".r
+  }
+
+  def maybeOrdinalFor(text: String, maybeExcludingNext: Option[String]): Option[Int] = {
+    ordinalMappings.find { case(pattern, i) =>
+      ordinalRegexFor(pattern, maybeExcludingNext).findFirstMatchIn(text).nonEmpty
+    }.map { case(pattern, i) => i }
   }
 
   private def buildFrom(
@@ -455,7 +513,9 @@ object Recurrence {
       Daily.maybeFromText(text).orElse {
         Weekly.maybeFromText(text).orElse {
           MonthlyByDayOfMonth.maybeFromText(text).orElse {
-            None
+            MonthlyByNthDayOfWeek.maybeFromText(text).orElse {
+              None
+            }
           }
         }
       }
