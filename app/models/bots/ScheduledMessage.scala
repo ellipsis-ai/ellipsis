@@ -30,6 +30,13 @@ case class ScheduledMessage(
      """.stripMargin
   }
 
+  def listResponse: String = {
+    s"""`$text` ${recurrence.displayString.trim}
+       |
+       |$nextRunsString
+     """.stripMargin
+  }
+
   val nextRunDateFormatter = DateTimeFormat.forPattern("MMMM d, yyyy")
   def nextRunDateStringFor(when: DateTime): String = {
     val clarifier = if (when.toLocalDate == DateTime.now.toLocalDate) {
@@ -173,6 +180,17 @@ object ScheduledMessageQueries {
 
   def allToBeSent: DBIO[Seq[ScheduledMessage]] = {
     allToBeSentQuery(DateTime.now).result.map { r =>
+      r.map(tuple2ScheduledMessage)
+    }
+  }
+
+  def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
+    allWithTeam.filter { case(msg, team) => msg.teamId === teamId }
+  }
+  val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
+
+  def allForTeam(team: Team): DBIO[Seq[ScheduledMessage]] = {
+    allForTeamQuery(team.id).result.map { r =>
       r.map(tuple2ScheduledMessage)
     }
   }
