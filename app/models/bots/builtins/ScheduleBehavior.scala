@@ -29,7 +29,7 @@ case class ScheduleBehavior(
       }.getOrElse(DBIO.successful(None))
     } yield {
       val responseText = maybeScheduledMessage.map { scheduledMessage =>
-        s"OK, scheduled!"
+        scheduledMessage.successResponse
       }.getOrElse(s"Sorry, I don't know how to schedule `$recurrence`")
 
       messageContext.sendMessage(responseText)
