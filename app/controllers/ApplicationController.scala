@@ -419,6 +419,55 @@ class ApplicationController @Inject() (
     )
   }
 
+  case class EnvironmentVariablesInfo(teamId: String, dataJson: String)
+
+  private val submitEnvironmentVariablesForm = Form(
+    mapping(
+      "teamId" -> nonEmptyText,
+      "dataJson" -> nonEmptyText
+    )(EnvironmentVariablesInfo.apply)(EnvironmentVariablesInfo.unapply)
+  )
+
+  def submitEnvironmentVariables = SecuredAction.async { implicit request =>
+    val user = request.identity
+    submitEnvironmentVariablesForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val json = Json.parse(info.dataJson)
+        json.validate[EnvironmentVariablesData] match {
+          case JsSuccess(data, jsPath) => {
+            val action = (for {
+              maybeTeam <- Team.find(data.teamId, user)
+              maybeEnvironmentVariables <- maybeTeam.map { team =>
+                DBIO.sequence(data.variables.map { envVarData =>
+                  EnvironmentVariableQueries.ensureFor(envVarData.name, Some(envVarData.value), team)
+                }).map(Some(_))
+              }.getOrElse(DBIO.successful(None))
+            } yield {
+              maybeEnvironmentVariables.map { envVars =>
+                Ok(
+                  Json.toJson(
+                    EnvironmentVariablesData(
+                      data.teamId,
+                      envVars.map( ea => EnvironmentVariableData(ea.name, ea.value))
+                    )
+                  )
+                )
+              }.getOrElse {
+                NotFound(s"Team not found: ${data.teamId}")
+              }
+            }) transactionally
+
+            models.run(action)
+          }
+          case e: JsError => Future.successful(BadRequest("Malformatted data"))
+        }
+      }
+    )
+  }
+
   def regexValidationErrorsFor(pattern: String) = SecuredAction { implicit request =>
     val content = MessageTriggerQueries.maybeRegexValidationErrorFor(pattern).map { errMessage =>
       Array(errMessage)
