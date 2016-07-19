@@ -33,7 +33,7 @@
       <div class="container">
         <div class="columns">
           <div class="column column-one-half pts pbxs">
-            <a href='@routes.ApplicationController.index' class="link-green display-inline-block align-b" style="height: 36px">
+            <a href='@routes.ApplicationController.index()' class="link-green display-inline-block align-b" style="height: 36px">
               <svg role="img" aria-label="Ellipsis"
               version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
               viewBox="0 0 400 112" enable-background="new 0 0 400 112" xml:space="preserve" height="28px">
@@ -82,7 +82,8 @@
               </svg>
             </a>
 
-            <a class="link-blue-light display-inline-block align-button mhm" href='@routes.ApplicationController.index'>Behaviors</a>
+            <a class="link-blue-light display-inline-block align-button mhm"
+              href='@routes.ApplicationController.index()'>Behaviors</a>
           </div>
           @maybeUser.map { _ =>
             <div class="column column-one-half align-r pts pbxs">

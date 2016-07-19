@@ -1,8 +1,11 @@
 @(
   maybeUser: Option[models.accounts.User],
   team: Team,
-  installedBehaviors: Seq[json.InstalledBehaviorData]
+  behaviorVersions: Seq[json.BehaviorVersionData]
 )(implicit messages: Messages, r: RequestHeader)
+
+@import play.api.libs.json._
+@import json.Formatting._
 
 @main("Ellipsis behavior editor", maybeUser) {
 
@@ -11,6 +14,10 @@
 
     <div class="bg-white">
       <div class="container pvxxl">
+
+        <script>
+          var BehaviorListData = @Html(Json.toJson(behaviorVersions).toString);
+        </script>
 
         <p>
         The main way to use Ellipsis is through chat, but you can also modify Ellipsis here.
