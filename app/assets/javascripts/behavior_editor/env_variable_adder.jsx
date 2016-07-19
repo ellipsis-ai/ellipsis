@@ -38,7 +38,7 @@ define(function(require) {
     },
 
     onCancel: function() {
-      this.setState(this.getInitialState());
+      this.reset();
       this.props.onCancelClick();
     },
 
@@ -68,6 +68,11 @@ define(function(require) {
 
     onSave: function() {
       this.props.onSave(this.getNewVar());
+      this.reset();
+    },
+
+    reset: function() {
+      this.setState(this.getInitialState());
     },
 
     getNameInput: function() {
