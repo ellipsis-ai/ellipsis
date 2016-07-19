@@ -65,10 +65,24 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
           val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
           val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
           behaviorVersion.unformattedResultStringFor(result.getPayload, logResult, parametersWithValues)
+        }.recover {
+          case e: java.util.concurrent.ExecutionException => {
+            e.getMessage match {
+              case amazonServiceExceptionRegex() =>
+                """
+                  |The Amazon Web Service that Ellipsis relies upon is currently down.
+                  |
+                  |Try asking Ellipsis anything later to check on the status.
+                  |""".stripMargin
+              case _ => throw e
+            }
+          }
         }
       }
     }
   }
+
+  val amazonServiceExceptionRegex = """.*com\.amazonaws\.AmazonServiceException.*""".r
 
   val requireRegex = """.*require\(['"]\s*(\S+)\s*['"]\).*""".r
 
