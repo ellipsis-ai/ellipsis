@@ -28,7 +28,7 @@ define(function(require) {
       }
     },
 
-    hasChanges: function() {
+    hasNameAndValue: function() {
       return !this.getVars().every(function(v, index) {
         return this.props.vars[index] &&
           v.name === this.props.vars[index].name &&
@@ -183,7 +183,7 @@ define(function(require) {
               <div className="column column-one-half">
                 <button type="button"
                   className="button-primary mrs"
-                  disabled={!this.hasChanges()}
+                  disabled={!this.hasNameAndValue()}
                   onClick={this.onSave}
                 >Save</button>
                 <button type="button" onClick={this.onCancel}>Cancel</button>

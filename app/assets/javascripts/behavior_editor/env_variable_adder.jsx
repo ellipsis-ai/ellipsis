@@ -29,7 +29,7 @@ define(function(require) {
       return this.getNewVar().value;
     },
 
-    hasChanges: function() {
+    hasNameAndValue: function() {
       return this.getValue() && this.getValue().trim().length > 0 && this.getName() && this.getName().trim().length > 0;
     },
 
@@ -127,7 +127,7 @@ define(function(require) {
               <div className="column column-one-half">
                 <button type="button"
                         className="button-primary mrs"
-                        disabled={!this.hasChanges()}
+                        disabled={!this.hasNameAndValue()}
                         onClick={this.onSave}
                   >Save</button>
                 <button type="button" onClick={this.onCancel}>Cancel</button>
