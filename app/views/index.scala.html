@@ -15,27 +15,14 @@
     <div class="bg-white">
       <div class="container pvxxl">
 
+        <div id="behaviorListContainer"></div>
         <script>
-          var BehaviorListData = @Html(Json.toJson(behaviorVersions).toString);
+          var BehaviorListConfig = {
+            containerId: 'behaviorListContainer',
+            behaviorVersions: @Html(Json.toJson(behaviorVersions).toString)
+          };
         </script>
-
-        <p>
-        The main way to use Ellipsis is through chat, but you can also modify Ellipsis here.
-        </p>
-
-        <h3>Behaviors</h3>
-        <p>
-        A behavior is something that your bot does or says when prompted with the right words. You can
-        see what behaviors your bot knows, modify them, and program new ones.
-        </p>
-
-        <h3>Configuration</h3>
-
-        <p>
-        If you want to make any configuration data generally available for use in your behaviors,
-        you can add or modify it here. This is a good way to provide re-usable credentials so that
-        Ellipsis can integrate with other services to retrieve or modify data.
-        </p>
+        <script data-main='@routes.Assets.versioned("javascripts/behavior_list/loader.js")' src='@routes.Assets.versioned("lib/requirejs/require.min.js")'></script>
 
       </div>
     </div>
