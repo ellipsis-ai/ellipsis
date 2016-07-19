@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    Formatter = require('../formatter')
+    Formatter = require('../formatter');
 
   return React.createClass({
     propTypes: {
@@ -87,7 +87,7 @@ define(function(require) {
     getInitialState: function() {
       return {
         groupedVersions: this.getGroupedVersions()
-      }
+      };
     },
 
     getTableRowClasses: function(index) {

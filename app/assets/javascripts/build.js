@@ -52,7 +52,7 @@ requirejs.config({
     }, {
       name: 'behavior_list/loader',
       include: ['behavior_list/index'],
-      exclude: ['common]
+      exclude: ['common']
     }
   ]
 });

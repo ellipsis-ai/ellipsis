@@ -23,6 +23,6 @@ define(function() {
         hour: 'numeric',
         minute: 'numeric'
       });
-    },
+    }
   };
 });
