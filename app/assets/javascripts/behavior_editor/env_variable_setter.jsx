@@ -18,7 +18,7 @@ define(function(require) {
     getInitialState: function() {
       return {
         vars: this.props.vars
-      }
+      };
     },
 
     componentWillReceiveProps: function(newProps) {
@@ -100,7 +100,7 @@ define(function(require) {
     },
 
     getNameInputForVar: function(v, index) {
-      if (!!v.name) {
+      if (v.name) {
         return (
           <input type="text"
             className="form-input form-input-left"

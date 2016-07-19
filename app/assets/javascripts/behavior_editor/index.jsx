@@ -190,7 +190,7 @@ return React.createClass({
           kind: "env_var_not_defined",
           environmentVariableName: ea.name
         };
-      })
+      });
   },
 
   getInitialNotifications: function() {
@@ -662,7 +662,6 @@ return React.createClass({
         });
       }.bind(this)).catch(function() {
         // TODO: figure out what to do if there's a request error
-        alert("Save failed");
       });
   },
 
@@ -852,10 +851,9 @@ return React.createClass({
   },
 
   onAWSAddNewEnvVariable: function(property) {
-    var desiredIndex = this.state.envVariables.length;
     var futureCallback = function(newVar) {
       this.setAWSEnvVar(property, newVar.name);
-    }
+    };
     this.setState({
       envVariables: this.state.envVariables.concat({})
     }, function() {
@@ -916,7 +914,7 @@ return React.createClass({
       return;
     }
     var previouslyBlankIndex = prev.findIndex(function(ea) {
-      return Object.keys(ea).length == 0;
+      return Object.keys(ea).length === 0;
     });
     if (previouslyBlankIndex >= 0 && this.state.envVariables[previouslyBlankIndex]) {
       this.state.onNextNewEnvVar(this.state.envVariables[previouslyBlankIndex]);

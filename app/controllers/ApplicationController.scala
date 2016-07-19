@@ -118,9 +118,6 @@ class ApplicationController @Inject() (
       maybeEnvironmentVariables <- maybeBehaviorVersion.map { behaviorVersion =>
         EnvironmentVariableQueries.allFor(behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      environmentVariablesMissing <- maybeBehaviorVersion.map { behaviorVersion =>
-        behaviorVersion.missingEnvironmentVariablesIn(maybeEnvironmentVariables.getOrElse(Seq()))
-      }.getOrElse(DBIO.successful(Seq()))
     } yield {
         (for {
           data <- maybeVersionData
