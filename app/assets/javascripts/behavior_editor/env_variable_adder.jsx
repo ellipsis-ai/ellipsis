@@ -13,7 +13,7 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        newVar: {},
+        newVar: {}
       };
     },
 
