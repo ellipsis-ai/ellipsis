@@ -31,6 +31,12 @@ var React = require('react'),
   require('es6-promise');
   require('fetch');
 
+var AWSEnvVariableStrings = {
+  accessKeyName: "AWS Access Key",
+  secretKeyName: "AWS Secret Key",
+  regionName: "AWS Region"
+};
+
 return React.createClass({
   displayName: 'BehaviorEditor',
   mixins: [BehaviorEditorMixin],
@@ -176,6 +182,16 @@ return React.createClass({
     return this.state.envVariables.map(function(ea) {
       return ea.name;
     });
+  },
+
+  getEnvVariableAdderPromptFor: function(property) {
+    var adderString = AWSEnvVariableStrings[property];
+    if (adderString) {
+      return "Add a new environment variable to hold a value for the " + adderString;
+    } else {
+      return null;
+    }
+
   },
 
   getFirstLineNumberForCode: function() {
@@ -555,9 +571,11 @@ return React.createClass({
     });
   },
 
-  showEnvVariableAdder: function() {
+  showEnvVariableAdder: function(prompt) {
     this.toggleActivePanel('envVariableAdder', true, function() {
-      this.refs.envVariableAdderPanel.focusOnVarName();
+      var panel = this.refs.envVariableAdderPanel;
+      panel.focusOnVarName();
+      panel.setPrompt(prompt);
     }.bind(this));
   },
 
@@ -884,7 +902,7 @@ return React.createClass({
         this.setAWSEnvVar(property, newVar.name);
       }.bind(this)
     }, function() {
-      this.showEnvVariableAdder();
+      this.showEnvVariableAdder(this.getEnvVariableAdderPromptFor(property));
     });
   },
 

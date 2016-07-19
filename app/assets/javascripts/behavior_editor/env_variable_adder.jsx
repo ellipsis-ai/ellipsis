@@ -12,7 +12,8 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        newVar: {}
+        newVar: {},
+        prompt: "Add a new environment variable to hold secure information like access keys for other services that may be used by multiple behaviors."
       };
     },
 
@@ -34,6 +35,14 @@ define(function(require) {
 
     focusOnVarName: function() {
       this.refs['envVarName'].focus();
+    },
+
+    setPrompt: function(prompt) {
+      if (prompt) {
+        this.setState({
+          prompt: prompt
+        });
+      }
     },
 
     onCancel: function() {
@@ -96,8 +105,7 @@ define(function(require) {
         <div className="box-action">
           <div className="container phn">
             <p>
-              <span>Add a new environment variable to hold secure information like access keys for other services </span>
-              <span>that may be used by multiple behaviors.</span>
+              <span>{this.state.prompt}</span>
             </p>
 
             <div className="form-grouped-inputs">
