@@ -210,7 +210,7 @@ return React.createClass({
       });
   },
 
-  getInitialNotifications: function() {
+  buildNotifications: function() {
     var serverNotifications = this.props.notifications || [];
     var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications());
 
@@ -939,7 +939,7 @@ return React.createClass({
 
   resetNotifications: function() {
     this.setState({
-      notifications: this.getInitialNotifications()
+      notifications: this.buildNotifications()
     });
   },
 
@@ -972,7 +972,7 @@ return React.createClass({
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate,
-      notifications: this.getInitialNotifications(),
+      notifications: this.buildNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
