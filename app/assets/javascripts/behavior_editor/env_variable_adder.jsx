@@ -5,6 +5,7 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
+      prompt: React.PropTypes.string,
       index:  React.PropTypes.number.isRequired,
       onCancelClick: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired
@@ -13,7 +14,6 @@ define(function(require) {
     getInitialState: function() {
       return {
         newVar: {},
-        prompt: "Add a new environment variable to hold secure information like access keys for other services that may be used by multiple behaviors."
       };
     },
 
@@ -35,14 +35,6 @@ define(function(require) {
 
     focusOnVarName: function() {
       this.refs['envVarName'].focus();
-    },
-
-    setPrompt: function(prompt) {
-      if (prompt) {
-        this.setState({
-          prompt: prompt
-        });
-      }
     },
 
     onCancel: function() {
@@ -107,7 +99,7 @@ define(function(require) {
         <div className="box-action">
           <div className="container phn">
             <p>
-              <span>{this.state.prompt}</span>
+              <span>{this.props.prompt || "Add a new environment variable to hold secure information like access keys for other services"}</span>
             </p>
 
             <div className="form-grouped-inputs">

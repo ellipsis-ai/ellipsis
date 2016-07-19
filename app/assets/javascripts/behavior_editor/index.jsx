@@ -572,11 +572,14 @@ return React.createClass({
   },
 
   showEnvVariableAdder: function(prompt) {
-    this.toggleActivePanel('envVariableAdder', true, function() {
-      var panel = this.refs.envVariableAdderPanel;
-      panel.focusOnVarName();
-      panel.setPrompt(prompt);
-    }.bind(this));
+    this.setState({
+      envVariableAdderPrompt: prompt
+    }, function () {
+      this.toggleActivePanel('envVariableAdder', true, function () {
+        var panel = this.refs.envVariableAdderPanel;
+        panel.focusOnVarName();
+      }.bind(this));
+    });
   },
 
   showEnvVariableSetter: function(detailOrIndex) {
@@ -972,7 +975,8 @@ return React.createClass({
       notifications: this.getInitialNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null,
-      onNextNewEnvVar: null
+      onNextNewEnvVar: null,
+      envVariableAdderPrompt: null
     };
   },
 
@@ -1308,6 +1312,7 @@ return React.createClass({
               onCancelClick={this.cancelEnvVariableAdder}
               index={this.getEnvVariables().length}
               onSave={this.addEnvVar}
+              prompt={this.state.envVariableAdderPrompt}
               />
           </Collapsible>
 
