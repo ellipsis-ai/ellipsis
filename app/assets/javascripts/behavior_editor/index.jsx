@@ -199,7 +199,7 @@ return React.createClass({
   },
 
   buildEnvVarNotifications: function() {
-    var envVars = (!this.state ? this.props.envVariables : this.state.envVariables) || [];
+    var envVars = (this.state ? this.state.envVariables : this.props.envVariables) || [];
     return envVars.
       filter(function(ea) { return !ea.isAlreadySavedWithValue; }).
       map(function(ea) {
