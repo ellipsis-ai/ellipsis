@@ -65,13 +65,8 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <div className="bg-light">
-            <div className="container ptxxxl pbm">
-              <h2 className="type-weak mvn">Add behaviors to Ellipsis</h2>
-            </div>
-          </div>
           <div className="bg-white">
-            <div className="container">
+            <div className="container pbxxl">
               {this.getBehaviorGroups().map(function(group, index) {
                 return (
                   <Group

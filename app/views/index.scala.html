@@ -5,27 +5,30 @@
 @main("Ellipsis behavior editor", maybeUser) {
 
   <div id="content" class="content">
-    <div class="container ptxxxxl">
-      <h1>Welcome to Ellipsis</h1>
+    @views.html.behaviorTabs("view")
 
-      <p>
-      The main way to use Ellipsis is through chat, but you can also modify Ellipsis here.
-      </p>
+    <div class="bg-white">
+      <div class="container pvxxl">
 
-      <h3>Behaviors</h3>
-      <p>
-      A behavior is something that your bot does or says when prompted with the right words. You can
-      see what behaviors your bot knows, modify them, and program new ones.
-      </p>
+        <p>
+        The main way to use Ellipsis is through chat, but you can also modify Ellipsis here.
+        </p>
 
-      <h3>Configuration</h3>
+        <h3>Behaviors</h3>
+        <p>
+        A behavior is something that your bot does or says when prompted with the right words. You can
+        see what behaviors your bot knows, modify them, and program new ones.
+        </p>
 
-      <p>
-      If you want to make any configuration data generally available for use in your behaviors,
-      you can add or modify it here. This is a good way to provide re-usable credentials so that
-      Ellipsis can integrate with other services to retrieve or modify data.
-      </p>
+        <h3>Configuration</h3>
 
+        <p>
+        If you want to make any configuration data generally available for use in your behaviors,
+        you can add or modify it here. This is a good way to provide re-usable credentials so that
+        Ellipsis can integrate with other services to retrieve or modify data.
+        </p>
+
+      </div>
     </div>
   </div>
 }

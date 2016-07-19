@@ -1086,6 +1086,30 @@ label {
   }
 }
 
+/* Tabs */
+
+.tab {
+  display: inline-block;
+  color: @black;
+  border-radius: @border-radius @border-radius 0 0;
+  line-height: @xl;
+  padding: @s @l;
+  margin: 0 @s 0 0;
+}
+
+.tab, .tab:hover, .tab:visited, .tab:active {
+  color: @black;
+  text-decoration: none;
+}
+
+.tab:hover {
+  background-color: @almost-white;
+}
+
+.tab-active, .tab-active:hover {
+  background-color: @white;
+}
+
 /* Buttons */
 
 @button-height: @s * 2 + @xl;
