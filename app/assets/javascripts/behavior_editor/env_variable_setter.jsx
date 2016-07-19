@@ -30,11 +30,12 @@ define(function(require) {
 
     hasNameAndValue: function() {
       return !this.getVars().every(function(v, index) {
-        return this.props.vars[index] &&
-          v.name === this.props.vars[index].name &&
-          v.value === this.props.vars[index].value &&
-          v.isAlreadySavedWithName === this.props.vars[index].isAlreadySavedWithName &&
-          v.isAlreadySavedWithValue === this.props.vars[index].isAlreadySavedWithValue;
+        var theVar = this.props.vars[index];
+        return theVar &&
+          v.name === theVar.name &&
+          v.value === theVar.value &&
+          v.isAlreadySavedWithName === theVar.isAlreadySavedWithName &&
+          v.isAlreadySavedWithValue === theVar.isAlreadySavedWithValue;
       }, this);
     },
 
