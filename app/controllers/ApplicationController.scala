@@ -440,7 +440,7 @@ class ApplicationController @Inject() (
               maybeEnvironmentVariables <- maybeTeam.map { team =>
                 DBIO.sequence(data.variables.map { envVarData =>
                   EnvironmentVariableQueries.ensureFor(envVarData.name, envVarData.value, team)
-                }).map(Some(_))
+                }).map( vars => Some(vars.flatten) )
               }.getOrElse(DBIO.successful(None))
             } yield {
               maybeEnvironmentVariables.map { envVars =>

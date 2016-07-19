@@ -54,22 +54,24 @@ object EnvironmentVariableQueries {
     findQueryFor(name, team.id).result.map { r => r.headOption.map(tuple2EnvironmentVariable) }
   }
 
-  def ensureFor(name: String, maybeValue: Option[String], team: Team): DBIO[EnvironmentVariable] = {
-    val query = all.filter(_.name === name).filter(_.teamId === team.id)
-    query.result.flatMap { r =>
-      r.headOption.map { existing =>
-        maybeValue.map { value =>
+  def ensureFor(name: String, maybeValue: Option[String], team: Team): DBIO[Option[EnvironmentVariable]] = {
+    Option(name).filter(_.trim.nonEmpty).map { nonEmptyName =>
+      val query = all.filter(_.name === name).filter(_.teamId === team.id)
+      query.result.flatMap { r =>
+        r.headOption.map { existing =>
+          maybeValue.map { value =>
+            val raw = RawEnvironmentVariable(name, value, team.id, DateTime.now)
+            query.update(raw).map(_ => raw)
+          }.getOrElse(DBIO.successful(existing))
+        }.getOrElse {
+          val value = maybeValue.getOrElse("")
           val raw = RawEnvironmentVariable(name, value, team.id, DateTime.now)
-          query.update(raw).map(_ => raw)
-        }.getOrElse(DBIO.successful(existing))
-      }.getOrElse {
-        val value = maybeValue.getOrElse("")
-        val raw = RawEnvironmentVariable(name, value, team.id, DateTime.now)
-        (all += raw).map(_ => raw)
-      }.map { raw =>
-        EnvironmentVariable(raw.name, raw.value, team, raw.createdAt)
+          (all += raw).map(_ => raw)
+        }.map { raw =>
+          Some(EnvironmentVariable(raw.name, raw.value, team, raw.createdAt))
+        }
       }
-    }
+    }.getOrElse(DBIO.successful(None))
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = allWithTeam.filter(_._1.teamId === teamId)
