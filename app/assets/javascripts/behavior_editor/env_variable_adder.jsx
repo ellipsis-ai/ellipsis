@@ -30,7 +30,7 @@ define(function(require) {
     },
 
     hasChanges: function() {
-      return this.getValue() && this.getValue().trim().length > 0 && this.getName() && this.getName().trim().length > 0
+      return this.getValue() && this.getValue().trim().length > 0 && this.getName() && this.getName().trim().length > 0;
     },
 
     focusOnVarName: function() {
