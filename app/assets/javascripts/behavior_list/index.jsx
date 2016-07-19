@@ -64,8 +64,8 @@ define(function(require) {
 
     sortVersionsByFirstTrigger: function(versions) {
       return versions.sort(function(version1, version2) {
-        var t1 = this.getFirstTriggerTextFromVersion(version1);
-        var t2 = this.getFirstTriggerTextFromVersion(version2);
+        var t1 = this.getFirstTriggerTextFromVersion(version1).toLowerCase();
+        var t2 = this.getFirstTriggerTextFromVersion(version2).toLowerCase();
         if (t1 < t2) {
           return -1;
         } else if (t1 > t2) {
