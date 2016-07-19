@@ -31,7 +31,9 @@ define(function(require) {
     hasChanges: function() {
       return !this.getVars().every(function(v, index) {
         return this.props.vars[index] &&
+          v.name === this.props.vars[index].name &&
           v.value === this.props.vars[index].value &&
+          v.isAlreadySavedWithName === this.props.vars[index].isAlreadySavedWithName &&
           v.isAlreadySavedWithValue === this.props.vars[index].isAlreadySavedWithValue;
       }, this);
     },
@@ -59,6 +61,7 @@ define(function(require) {
     onChangeVarName: function(index, newName) {
       var vars = this.getVars();
       var newVar = {
+        isAlreadySavedWithName: vars[index].isAlreadySavedWithName,
         isAlreadySavedWithValue: false,
         name: formatEnvVarName(newName),
         value: vars[index].value
@@ -71,7 +74,7 @@ define(function(require) {
     onChangeVarValue: function(index, newValue) {
       var vars = this.getVars();
       var newVar = {
-        isNamed: vars[index].isNamed,
+        isAlreadySavedWithName: vars[index].isAlreadySavedWithName,
         isAlreadySavedWithValue: false,
         name: vars[index].name,
         value: newValue
@@ -88,6 +91,7 @@ define(function(require) {
     resetVar: function(index) {
       var vars = this.getVars();
       var newVar = {
+        isAlreadySavedWithName: vars[index].isAlreadySavedWithName,
         isAlreadySavedWithValue: false,
         name: vars[index].name,
         value: ''
@@ -100,7 +104,7 @@ define(function(require) {
     },
 
     getNameInputForVar: function(v, index) {
-      if (v.isAlreadySavedWithValue) {
+      if (v.isAlreadySavedWithName) {
         return (
           <input type="text"
             className="form-input form-input-left"
