@@ -1,7 +1,8 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  DropdownMenu = require('./dropdown_menu');
+  DropdownMenu = require('./dropdown_menu'),
+  Formatter = require('../formatter');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
@@ -28,17 +29,7 @@ return React.createClass({
     return this.getVersionNumberForIndex(versionIndex) + text;
   },
   getDateForVersion: function(version) {
-    var d = new Date(version.createdAt);
-    // N.B. Safari doesn't support toLocaleString options at present
-    return d.toLocaleString(void(0), {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      timeZoneName: 'short'
-    });
+    return Formatter.formatTimestampLong(version.createdAt);
   },
   getInitialState: function() {
     return {

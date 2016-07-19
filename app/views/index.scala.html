@@ -8,7 +8,9 @@
 @import json.Formatting._
 
 @main("Ellipsis behavior editor", maybeUser) {
-
+  @helper.javascriptRouter("jsRoutes")(
+    routes.javascript.ApplicationController.editBehavior
+  )
   <div id="content" class="content">
     @views.html.behaviorTabs("view", team)
 
