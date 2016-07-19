@@ -12,7 +12,9 @@ return React.createClass({
     onBlur: React.PropTypes.func,
     onChange: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func,
+    onFocus: React.PropTypes.func,
     placeholder: React.PropTypes.string,
+    type: React.PropTypes.string,
     value: React.PropTypes.string.isRequired
   },
 
@@ -23,6 +25,12 @@ return React.createClass({
   onBlur: function() {
     if (typeof(this.props.onBlur) == 'function') {
       this.props.onBlur(this.refs.input.value);
+    }
+  },
+
+  onFocus: function() {
+    if (typeof(this.props.onFocus) == 'function') {
+      this.props.onFocus(this.refs.input.value);
     }
   },
 
@@ -49,7 +57,8 @@ return React.createClass({
 
   render: function() {
     return (
-      <input type="text"
+      <input
+        type={this.props.type || "text"}
         className={"form-input " + (this.props.className || "")}
         ref="input"
         id={this.props.id}
@@ -58,6 +67,7 @@ return React.createClass({
         autoFocus={this.props.autoFocus}
         onChange={this.onChange}
         onBlur={this.onBlur}
+        onFocus={this.onFocus}
         onKeyPress={this.handleEnterKey}
       />
     );

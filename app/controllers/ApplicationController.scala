@@ -117,7 +117,7 @@ class ApplicationController @Inject() (
             Ok(views.html.edit(
               Some(user),
               Json.toJson(data).toString,
-              envVars.map(_.name),
+              Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
               justSaved = false,
               notificationsJson = Json.toJson(Array[String]()).toString
             ))
@@ -141,9 +141,6 @@ class ApplicationController @Inject() (
       maybeEnvironmentVariables <- maybeBehaviorVersion.map { behaviorVersion =>
         EnvironmentVariableQueries.allFor(behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      environmentVariablesMissing <- maybeBehaviorVersion.map { behaviorVersion =>
-        behaviorVersion.missingEnvironmentVariablesIn(maybeEnvironmentVariables.getOrElse(Seq()))
-      }.getOrElse(DBIO.successful(Seq()))
     } yield {
         (for {
           data <- maybeVersionData
@@ -152,9 +149,9 @@ class ApplicationController @Inject() (
           Ok(views.html.edit(
             Some(user),
             Json.toJson(data).toString,
-            envVars.map(_.name),
+            Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             maybeJustSaved.exists(identity),
-            notificationsJson = Json.toJson(environmentVariablesMissing.map(UINotification.environmentVariableNotDefined(_))).toString
+            notificationsJson = Json.toJson(Array[String]()).toString
           ))
         }).getOrElse {
           NotFound(views.html.notFound(Some(user), Some("Behavior not found"), Some("The behavior you are trying to access could not be found.")))
@@ -442,6 +439,55 @@ class ApplicationController @Inject() (
     )
   }
 
+  case class EnvironmentVariablesInfo(teamId: String, dataJson: String)
+
+  private val submitEnvironmentVariablesForm = Form(
+    mapping(
+      "teamId" -> nonEmptyText,
+      "dataJson" -> nonEmptyText
+    )(EnvironmentVariablesInfo.apply)(EnvironmentVariablesInfo.unapply)
+  )
+
+  def submitEnvironmentVariables = SecuredAction.async { implicit request =>
+    val user = request.identity
+    submitEnvironmentVariablesForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val json = Json.parse(info.dataJson)
+        json.validate[EnvironmentVariablesData] match {
+          case JsSuccess(data, jsPath) => {
+            val action = (for {
+              maybeTeam <- Team.find(data.teamId, user)
+              maybeEnvironmentVariables <- maybeTeam.map { team =>
+                DBIO.sequence(data.variables.map { envVarData =>
+                  EnvironmentVariableQueries.ensureFor(envVarData.name, envVarData.value, team)
+                }).map( vars => Some(vars.flatten) )
+              }.getOrElse(DBIO.successful(None))
+            } yield {
+              maybeEnvironmentVariables.map { envVars =>
+                Ok(
+                  Json.toJson(
+                    EnvironmentVariablesData(
+                      data.teamId,
+                      envVars.map( ea => EnvironmentVariableData.withoutValueFor(ea) )
+                    )
+                  )
+                )
+              }.getOrElse {
+                NotFound(s"Team not found: ${data.teamId}")
+              }
+            }) transactionally
+
+            models.run(action)
+          }
+          case e: JsError => Future.successful(BadRequest("Malformatted data"))
+        }
+      }
+    )
+  }
+
   def regexValidationErrorsFor(pattern: String) = SecuredAction { implicit request =>
     val content = MessageTriggerQueries.maybeRegexValidationErrorFor(pattern).map { errMessage =>
       Array(errMessage)
@@ -455,8 +501,8 @@ class ApplicationController @Inject() (
     Ok(
       JavaScriptReverseRouter("jsRoutes")(
         routes.javascript.ApplicationController.regexValidationErrorsFor,
-        routes.javascript.ApplicationController.versionInfoFor
-
+        routes.javascript.ApplicationController.versionInfoFor,
+        routes.javascript.ApplicationController.submitEnvironmentVariables
       )
     ).as("text/javascript")
   }

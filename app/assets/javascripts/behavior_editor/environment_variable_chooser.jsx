@@ -7,13 +7,18 @@ define(function(require) {
       property: React.PropTypes.string.isRequired,
       chosenName: React.PropTypes.string,
       envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+      onAddNew: React.PropTypes.func.isRequired,
       onChange: React.PropTypes.func.isRequired
     },
 
     onChange: function(event) {
       var property = this.props.property;
-      var chosen = event.target.value;
-      this.props.onChange(property, chosen);
+      var isAddNewSelected = event.target.selectedIndex === this.props.envVariableNames.length + 1;
+      if (isAddNewSelected) {
+        this.props.onAddNew(property);
+      } else {
+        this.props.onChange(property, event.target.value);
+      }
     },
 
     keyFor: function(envVarName) {
@@ -22,17 +27,17 @@ define(function(require) {
 
     render: function () {
       return (
-        <div className="columns">
-
+        <div className="columns mbxs">
           <div className="column column-one-quarter align-r">{this.props.label}</div>
-          <div className="column column-one-half">
-            <select name={this.props.property} value={this.props.chosenName || ""} onChange={this.onChange}>
-              <option value="" key={this.keyFor("none")}>-- Pick an environment variable --</option>
+          <div className="column column-three-quarters">
+            <select className="form-select form-select-s" name={this.props.property} value={this.props.chosenName || ""} onChange={this.onChange}>
+              <option value="" key={this.keyFor("none")}>Select environment variable…</option>
               {this.props.envVariableNames.map(function(envVarName) {
                 return (
                   <option value={envVarName} key={this.keyFor(envVarName)}>{envVarName}</option>
                 );
               }, this)}
+              <option value="" key="AWSNewEnvVarName">Add new…</option>
             </select>
           </div>
         </div>

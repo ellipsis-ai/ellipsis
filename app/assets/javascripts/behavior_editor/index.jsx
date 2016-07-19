@@ -2,17 +2,21 @@ define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
   Codemirror = require('../react-codemirror'),
+  AWSConfig = require('./aws_config'),
+  AWSHelp = require('./aws_help'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   Checklist = require('./checklist'),
   CodeEditor = require('./code_editor'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
-  AWSConfig = require('./aws_config'),
   ConfirmActionPanel = require('./confirm_action_panel'),
   DropdownMenu = require('./dropdown_menu'),
+  EnvVariableAdder = require('./env_variable_adder'),
+  EnvVariableSetter = require('./env_variable_setter'),
   HelpButton = require('./help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
+  Notification = require('../notification'),
   SectionHeading = require('./section_heading'),
   TriggerHelp = require('./trigger_help'),
   TriggerOptionsHelp = require('./trigger_options_help'),
@@ -26,6 +30,12 @@ var React = require('react'),
   require('codemirror/mode/markdown/markdown');
   require('es6-promise');
   require('fetch');
+
+var AWSEnvVariableStrings = {
+  accessKeyName: "AWS Access Key",
+  secretKeyName: "AWS Secret Key",
+  regionName: "AWS Region"
+};
 
 return React.createClass({
   displayName: 'BehaviorEditor',
@@ -55,7 +65,8 @@ return React.createClass({
     }),
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
-    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
+    envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
+    notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool
   },
 
@@ -131,7 +142,7 @@ return React.createClass({
   },
 
   getCodeAutocompletions: function() {
-    var envVars = this.state.envVariableNames.map(function(name) {
+    var envVars = this.getEnvVariableNames().map(function(name) {
       return 'ellipsis.env.' + name;
     });
 
@@ -163,8 +174,60 @@ return React.createClass({
     }
   },
 
+  getEnvVariables: function() {
+    return this.state.envVariables;
+  },
+
+  getEnvVariableNames: function() {
+    return this.state.envVariables.map(function(ea) {
+      return ea.name;
+    });
+  },
+
+  getEnvVariableAdderPromptFor: function(property) {
+    var adderString = AWSEnvVariableStrings[property];
+    if (adderString) {
+      return "Add a new environment variable to hold a value for the " + adderString;
+    } else {
+      return null;
+    }
+
+  },
+
   getFirstLineNumberForCode: function() {
     return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
+  },
+
+  buildEnvVarNotifications: function() {
+    var envVars = (this.state ? this.state.envVariables : this.props.envVariables) || [];
+    return envVars.
+      filter(function(ea) { return !ea.isAlreadySavedWithValue; }).
+      map(function(ea) {
+        return {
+          kind: "env_var_not_defined",
+          environmentVariableName: ea.name
+        };
+      });
+  },
+
+  buildNotifications: function() {
+    var serverNotifications = this.props.notifications || [];
+    var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications());
+
+    var notifications = {};
+    allNotifications.forEach(function(notification) {
+      if (notifications[notification.kind]) {
+        notifications[notification.kind].push(notification);
+      } else {
+        notifications[notification.kind] = [notification];
+      }
+    });
+    return Object.keys(notifications).map(function(key) {
+      return {
+        kind: key,
+        details: notifications[key]
+      };
+    });
   },
 
   getInitialTriggers: function() {
@@ -213,6 +276,10 @@ return React.createClass({
       isRegex: false,
       caseSensitive: false
     };
+  },
+
+  getNotifications: function() {
+    return this.state.notifications;
   },
 
   getPathTemplateHelp: function() {
@@ -293,6 +360,22 @@ return React.createClass({
 
   addTrigger: function() {
     this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), this.focusOnFirstBlankTrigger);
+  },
+
+  cancelEnvVariableAdder: function() {
+    var withoutBlanks = this.state.envVariables.filter(function(ea) { return !!ea.name; });
+    this.setState({
+      envVariables: withoutBlanks
+    });
+    this.hideActivePanel();
+  },
+
+  cancelEnvVariableSetter: function() {
+    var withoutBlanks = this.state.envVariables.filter(function(ea) { return !!ea.name; });
+    this.setState({
+      envVariables: withoutBlanks
+    });
+    this.hideActivePanel();
   },
 
   cancelVersionPanel: function() {
@@ -419,6 +502,12 @@ return React.createClass({
     }
   },
 
+  onNotificationClick: function(notificationDetail) {
+    if (notificationDetail && notificationDetail.kind === 'env_var_not_defined') {
+      this.showEnvVariableSetter(notificationDetail);
+    }
+  },
+
   onSaveClick: function() {
     this.setState({
       isSaving: true
@@ -474,6 +563,35 @@ return React.createClass({
     this.setBehaviorProp('config', config);
   },
 
+  setEnvVariableNameAtIndex: function(name, index) {
+    var prevEnvVarAtIndex = this.state.envVariables[index] || {};
+    var envVarAtIndex = Object.assign(prevEnvVarAtIndex, { name: name });
+    this.setState({
+      envVariables: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.envVariables, envVarAtIndex, index)
+    });
+  },
+
+  showEnvVariableAdder: function(prompt) {
+    this.setState({
+      envVariableAdderPrompt: prompt
+    }, function () {
+      this.toggleActivePanel('envVariableAdder', true, function () {
+        var panel = this.refs.envVariableAdderPanel;
+        panel.focusOnVarName();
+      }.bind(this));
+    });
+  },
+
+  showEnvVariableSetter: function(detailOrIndex) {
+    this.toggleActivePanel('envVariableSetter', true, function() {
+      if (detailOrIndex.environmentVariableName) {
+        this.refs.envVariableSetterPanel.focusOnVarName(detailOrIndex.environmentVariableName);
+      } else if (typeof(detailOrIndex) === 'number') {
+        this.refs.envVariableSetterPanel.focusOnVarIndex(detailOrIndex);
+      }
+    });
+  },
+
   showVersions: function() {
     if (!this.versionsMaybeLoaded()) {
       this.loadVersions();
@@ -492,16 +610,20 @@ return React.createClass({
     });
   },
 
-  toggleActivePanel: function(name, beModal) {
+  toggleActivePanel: function(name, beModal, optionalCallback) {
     var alreadyOpen = this.getActivePanel() === name;
     this.setState({
       activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
-    }, function() {
+    }, optionalCallback || function() {
       var activeModal = this.getActiveModalElement();
       if (activeModal) {
         this.focusOnPrimaryOrFirstPossibleElement(activeModal);
       }
     });
+  },
+
+  toggleAWSHelp: function() {
+    this.toggleActivePanel('helpForAWS');
   },
 
   toggleBoilerplateHelp: function() {
@@ -548,6 +670,48 @@ return React.createClass({
 
   updateCode: function(newCode) {
     this.setBehaviorProp('functionBody', newCode);
+  },
+
+  addEnvVar: function(envVar) {
+    var newEnvVars = this.getEnvVariables().concat(envVar);
+    var cb = function() {
+      if (this.state.onNextNewEnvVar) {
+        this.state.onNextNewEnvVar(envVar);
+      }
+    }.bind(this);
+    this.updateEnvVariables(newEnvVars, cb);
+  },
+
+  updateEnvVariables: function(envVars, cb) {
+    var url = jsRoutes.controllers.ApplicationController.submitEnvironmentVariables().url;
+    var data = {
+      teamId: this.props.teamId,
+      variables: envVars
+    };
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ teamId: this.props.teamId, dataJson: JSON.stringify(data) })
+    })
+      .then(function(response) {
+        return response.json();
+      }).then(function(json) {
+        this.hideActivePanel();
+        this.setState({
+          envVariables: json.variables
+        }, function() {
+          this.resetNotifications();
+          if (cb) {
+            cb();
+          }
+        });
+      }.bind(this)).catch(function() {
+        // TODO: figure out what to do if there's a request error
+      });
   },
 
   updateParamAtIndexWithParam: function(index, newParam) {
@@ -735,6 +899,16 @@ return React.createClass({
     this.refs['trigger' + index].focus();
   },
 
+  onAWSAddNewEnvVariable: function(property) {
+    this.setState({
+      onNextNewEnvVar: function(newVar) {
+        this.setAWSEnvVar(property, newVar.name);
+      }.bind(this)
+    }, function() {
+      this.showEnvVariableAdder(this.getEnvVariableAdderPromptFor(property));
+    });
+  },
+
   onAWSConfigChange: function(property, envVarName) {
     this.setAWSEnvVar(property, envVarName);
   },
@@ -763,7 +937,13 @@ return React.createClass({
     }
   },
 
-  /* Component API methods */
+  resetNotifications: function() {
+    this.setState({
+      notifications: this.buildNotifications()
+    });
+  },
+
+    /* Component API methods */
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
@@ -788,12 +968,15 @@ return React.createClass({
       expandEnvVariables: false,
       justSaved: this.props.justSaved,
       isSaving: false,
-      envVariableNames: this.props.envVariableNames || [],
+      envVariables: this.props.envVariables || [],
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate,
+      notifications: this.buildNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
-      versionsLoadStatus: null
+      versionsLoadStatus: null,
+      onNextNewEnvVar: null,
+      envVariableAdderPrompt: null
     };
   },
 
@@ -821,8 +1004,7 @@ return React.createClass({
              </form>
             */}
 
-            <div className="column column-shrink ptl align-r">
-            </div>
+            <div className="column column-shrink ptl position-relative"></div>
           </div>
         </div>
       </div>
@@ -936,35 +1118,42 @@ return React.createClass({
             </div>
 
             <div className="column column-three-quarters pll form-field-group">
-
-              <Collapsible revealWhen={!this.getAWSConfig()}>
-                <div className="pvm">
-                  <button type="button" className="button-s" onClick={this.onAddAWSConfig}>Use the AWS SDK</button>
+              <div className="border-top border-left border-right border-radius-top pvs">
+                <div className="ptxs phm pbm mbs type-s border-bottom">
+                  <Collapsible revealWhen={!this.getAWSConfig()}>
+                    <span className="mrs">Add integration:</span>
+                    <button type="button" className="button-s" onClick={this.onAddAWSConfig}>
+                      Amazon Web Services (AWS)
+                    </button>
+                  </Collapsible>
+                  <Collapsible revealWhen={!!this.getAWSConfig()}>
+                    <AWSConfig
+                      envVariableNames={this.getEnvVariableNames()}
+                      accessKeyName={this.getAWSConfigProperty('accessKeyName')}
+                      secretKeyName={this.getAWSConfigProperty('secretKeyName')}
+                      regionName={this.getAWSConfigProperty('regionName')}
+                      onAddNew={this.onAWSAddNewEnvVariable}
+                      onChange={this.onAWSConfigChange}
+                      onRemoveAWSConfig={this.onRemoveAWSConfig}
+                      onToggleHelp={this.toggleAWSHelp}
+                      helpVisible={this.getActivePanel() === 'helpForAWS'}
+                    />
+                  </Collapsible>
                 </div>
-              </Collapsible>
-              <Collapsible revealWhen={!!this.getAWSConfig()}>
-                <AWSConfig
-                  envVariableNames={this.props.envVariableNames}
-                  accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                  secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                  regionName={this.getAWSConfigProperty('regionName')}
-                  onChange={this.onAWSConfigChange}
-                  onRemoveAWSConfig={this.onRemoveAWSConfig}
-                />
-              </Collapsible>
 
-              <CodeHeader
-                ref="codeHeader"
-                hasParams={this.hasParams()}
-                params={this.getBehaviorParams()}
-                onParamChange={this.updateParamAtIndexWithParam}
-                onParamDelete={this.deleteParamAtIndex}
-                onParamAdd={this.addParam}
-                onEnterKey={this.onParamEnterKey}
-                helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
-                onToggleHelp={this.toggleBoilerplateHelp}
-                builtInParams={this.getBuiltinParams()}
-              />
+                <CodeHeader
+                  ref="codeHeader"
+                  hasParams={this.hasParams()}
+                  params={this.getBehaviorParams()}
+                  onParamChange={this.updateParamAtIndexWithParam}
+                  onParamDelete={this.deleteParamAtIndex}
+                  onParamAdd={this.addParam}
+                  onEnterKey={this.onParamEnterKey}
+                  helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
+                  onToggleHelp={this.toggleBoilerplateHelp}
+                  builtInParams={this.getBuiltinParams()}
+                />
+              </div>
 
               <div className="position-relative pr-symbol border-right">
                 <CodeEditor
@@ -1083,11 +1272,15 @@ return React.createClass({
 
           <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
             <BoilerplateParameterHelp
-              envVariableNames={this.state.envVariableNames}
+              envVariableNames={this.getEnvVariableNames()}
               onExpandToggle={this.toggleEnvVariableExpansion}
               expandEnvVariables={this.state.expandEnvVariables}
               onCollapseClick={this.toggleBoilerplateHelp}
             />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'helpForAWS'}>
+            <AWSHelp onCollapseClick={this.toggleAWSHelp} />
           </Collapsible>
 
           <Collapsible ref="versionHistory" revealWhen={this.getActivePanel() === 'versionHistory'}>
@@ -1103,7 +1296,38 @@ return React.createClass({
             />
           </Collapsible>
 
+          <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
+            <EnvVariableSetter
+              ref="envVariableSetterPanel"
+              vars={this.getEnvVariables()}
+              onCancelClick={this.cancelEnvVariableSetter}
+              onChangeVarName={this.setEnvVariableNameAtIndex}
+              onSave={this.updateEnvVariables}
+            />
+          </Collapsible>
+
+          <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>
+            <EnvVariableAdder
+              ref="envVariableAdderPanel"
+              onCancelClick={this.cancelEnvVariableAdder}
+              index={this.getEnvVariables().length}
+              onSave={this.addEnvVar}
+              prompt={this.state.envVariableAdderPrompt}
+              />
+          </Collapsible>
+
           <Collapsible revealWhen={!this.hasModalPanel()}>
+            {this.getNotifications().map(function(notification, index) {
+              return (
+                <Notification
+                  key={"notification" + index}
+                  details={notification.details}
+                  index={index}
+                  kind={notification.kind}
+                  onClick={this.onNotificationClick}
+                />
+              );
+            }, this)}
             <div className="container pvm">
               <div className="columns">
                 <div className="column column-one-half">

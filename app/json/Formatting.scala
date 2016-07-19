@@ -28,4 +28,10 @@ object Formatting {
   implicit val installedBehaviorReads = Json.reads[InstalledBehaviorData]
   implicit val installedBehaviorWrites = Json.writes[InstalledBehaviorData]
 
+  implicit val environmentVariableReads = Json.reads[EnvironmentVariableData]
+  implicit val environmentVariableWrites = Json.writes[EnvironmentVariableData]
+
+  implicit val environmentVariablesReads = Json.reads[EnvironmentVariablesData]
+  implicit val environmentVariablesWrites = Json.writes[EnvironmentVariablesData]
+
 }
