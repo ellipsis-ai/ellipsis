@@ -13,7 +13,8 @@ define(function(require) {
 
     onChange: function(event) {
       var property = this.props.property;
-      if (event.target.selectedIndex === this.props.envVariableNames.length + 1) {
+      var isAddNewSelected = event.target.selectedIndex === this.props.envVariableNames.length + 1;
+      if (isAddNewSelected) {
         this.props.onAddNew(property);
       } else {
         this.props.onChange(property, event.target.value);
