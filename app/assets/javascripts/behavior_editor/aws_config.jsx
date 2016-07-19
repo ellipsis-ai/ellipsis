@@ -11,7 +11,10 @@ define(function(require) {
       secretKeyName: React.PropTypes.string,
       regionName: React.PropTypes.string,
       onChange: React.PropTypes.func.isRequired,
-      onRemoveAWSConfig: React.PropTypes.func.isRequired
+      onRemoveAWSConfig: React.PropTypes.func.isRequired,
+      onToggleHelp: React.PropTypes.func.isRequired,
+      helpVisible: React.PropTypes.bool.isRequired,
+      onAddNew: React.PropTypes.func.isRequired
     },
 
     render: function () {

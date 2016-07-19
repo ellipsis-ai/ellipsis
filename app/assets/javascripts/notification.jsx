@@ -6,7 +6,8 @@ define(function(require) {
     propTypes: {
       details: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       kind: React.PropTypes.string.isRequired,
-      index: React.PropTypes.number.isRequired
+      index: React.PropTypes.number.isRequired,
+      onClick: React.PropTypes.func.isRequired
     },
 
     getButtonForEnvVar: function(envVarDetail) {
