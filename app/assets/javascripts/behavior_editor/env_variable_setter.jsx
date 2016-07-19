@@ -1,7 +1,8 @@
 define(function(require) {
   var React = require('react'),
     Input = require('./input'),
-    ImmutableObjectUtils = require('../immutable_object_utils');
+    ImmutableObjectUtils = require('../immutable_object_utils'),
+    formatEnvVarName = require('./env_var_name_formatter');
 
   return React.createClass({
     propTypes: {
@@ -57,10 +58,9 @@ define(function(require) {
 
     onChangeVarName: function(index, newName) {
       var vars = this.getVars();
-      var safeVarName = newName.toUpperCase().replace(/\s/g, '_').replace(/^\d|[^A-Z0-9_]/g, '');
       var newVar = {
         isAlreadySavedWithValue: false,
-        name: safeVarName,
+        name: formatEnvVarName(newName),
         value: vars[index].value
       };
       this.setState({
