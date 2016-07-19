@@ -100,7 +100,7 @@ define(function(require) {
     },
 
     getNameInputForVar: function(v, index) {
-      if (v.name) {
+      if (v.isAlreadySavedWithValue) {
         return (
           <input type="text"
             className="form-input form-input-left"
@@ -128,7 +128,7 @@ define(function(require) {
           <div className="position-relative">
             <input
               className="form-input form-input-right"
-              type="password"
+              type="text"
               disabled={true}
               value="........"
             />
