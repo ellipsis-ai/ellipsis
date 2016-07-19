@@ -11,7 +11,7 @@
 @xxxl: 48px;
 @xxxxl: 64px;
 
-@type-xs: 12px;
+@type-xs: 13px;
 @type-s: 15px;
 @type-m: 18px;
 @type-l: 28px;
@@ -60,8 +60,9 @@
 @orange-light: hsl(24, 100%, 67%);
 @orange-lighter: hsl(24, 100%, 77%);
 
-@yellow-light: hsl(45, 100%, 73%);
-@yellow-lighter: hsl(45, 100%, 90%);
+@yellow-medium: hsl(45, 70%, 48%);
+@yellow-light: hsl(45, 80%, 79%);
+@yellow-lighter: hsl(45, 100%, 92%);
 
 @border-color: @gray-light;
 @border-color-focus: @pink-medium;
@@ -320,6 +321,10 @@ So for example:
   background-color: @gray-light-translucent;
 }
 
+.bg-yellow {
+  background-color: @yellow-lighter;
+}
+
 /* Border utilities */
 
 .border {
@@ -420,6 +425,10 @@ So for example:
   border-color: @green-medium;
 }
 
+.border-yellow {
+  border-color: @yellow-light;
+}
+
 .border-radius {
   border-radius: @border-radius;
 }
@@ -475,6 +484,14 @@ So for example:
   padding: @xxl @l;
 }
 
+.box-warning {
+  .bg-yellow();
+  .border-top-thick();
+  .border-bottom-thick();
+  .border-yellow();
+  padding: @s;
+}
+
 /* Foreground type utilities */
 
 .type-bold {
@@ -486,7 +503,9 @@ So for example:
 }
 
 code .type-bold,
-code.type-bold {
+code.type-bold,
+.type-monospace.type-bold,
+.type-monospace .type-bold {
   font-weight: 700;
 }
 
@@ -538,6 +557,10 @@ code.type-bold {
 
 .type-green {
   color: @green-text;
+}
+
+.type-yellow {
+  color: @yellow-medium;
 }
 
 .type-white {
@@ -675,6 +698,9 @@ h6 {
   min-height: 1px;
   padding-right: @l;
   box-sizing: border-box;
+  &:first-child {
+    clear: left;
+  }
 }
 
 .column:last-child {
@@ -685,8 +711,16 @@ h6 {
   width: 25%;
 }
 
+.column-one-third {
+  width: 33.3333%;
+}
+
 .column-one-half {
   width: 50%;
+}
+
+.column-five-twelfths {
+  width: 41.6666%;
 }
 
 .column-three-quarters {
@@ -799,7 +833,7 @@ label {
 @form-input-height: @s * 2 + @xl;
 @form-input-height-large: @s * 2 + @xxl;
 @form-input-height-h2: @s * 2 + @xxxl;
-@form-bg-disabled: @gray-lightest;
+@form-bg-disabled: @gray-lightest-translucent;
 @form-color-disabled: @gray-medium;
 
 .form-field {
@@ -829,6 +863,11 @@ label {
 }
 
 .form-input[readonly] {
+  background-color: @almost-white;
+  color: @gray-darkest;
+}
+
+.form-input[disabled] {
   background-color: @form-bg-disabled;
   color: @form-color-disabled;
 }
@@ -929,6 +968,8 @@ label {
   border-color: @border-color-focus;
   border-width: @border-width-thick;
   padding: (@form-padding-vertical - @border-width-thick) (@form-padding-horizontal - @border-width-thick);
+  position: relative;
+  z-index: 1;
 }
 
 .CodeMirror-focused,
@@ -979,12 +1020,16 @@ label {
 
 .form-grouped-inputs {
   & > .form-input,
-  .columns > .column > .form-input,
+  .columns > .column .form-input,
   .columns > .column > .form-field-capped > .form-input-prefix,
   .columns > .column > .form-field-capped > .form-input,
   .columns > .column > .form-field-capped > .form-input-suffix {
     border-radius: 0;
-    border-bottom-color: @white;
+  }
+
+  & > .columns {
+    display: table;
+    width: 100%;
   }
 
   & > .form-input,
@@ -997,7 +1042,7 @@ label {
   }
 
   .form-input:first-child,
-  .columns:first-child > .column > .form-input {
+  .columns:first-child > .column .form-input {
     border-top-left-radius: @border-radius;
     border-top-right-radius: @border-radius;
   }
@@ -1011,7 +1056,7 @@ label {
   }
 
   .form-input:last-child,
-  .columns:last-child > .column > .form-input {
+  .columns:last-child > .column .form-input {
     border-bottom-color: @border-color;
     border-bottom-left-radius: @border-radius;
     border-bottom-right-radius: @border-radius;
@@ -1030,7 +1075,7 @@ label {
   }
 
   .form-input:focus,
-  .columns > .column > .form-input:focus,
+  .columns > .column .form-input:focus,
   .columns > .column > .form-field-capped > .form-input:focus {
     border-bottom-color: @border-color-focus;
     position: relative;
@@ -1086,12 +1131,30 @@ label {
   }
 }
 
+.form-input-left {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.form-input-middle {
+  border-radius: 0 !important;
+  margin-left: -1px;
+}
+
+.form-input-right {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  margin-left: -1px;
+}
+
+
 /* Buttons */
 
 @button-height: @s * 2 + @xl;
 @button-small-height: @xs * 2 + @l;
 
-button {
+button,
+select.form-select {
   font-size: @type-m;
   line-height: @xl;
   padding: (@s - @border-width + 1) (@l - @border-width) (@s - @border-width - 1);
@@ -1109,7 +1172,8 @@ button {
   vertical-align: bottom;
 }
 
-button.button-dropdown-trigger {
+button.button-dropdown-trigger,
+select.form-select {
   position: relative;
   z-index: 11;
   padding-right: 33px - @border-width;
@@ -1126,6 +1190,10 @@ button.button-dropdown-trigger {
     top: 11px - @border-width;
     right: 19px - @border-width;
   }
+}
+
+select.form-select {
+  background-color: @white;
 }
 
 button.button-dropdown-trigger-symbol {
@@ -1150,7 +1218,8 @@ button.button-warning {
   color: @pink-medium-text;
 }
 
-button.button-s {
+button.button-s,
+select.form-select-s {
   font-size: @type-s;
   line-height: @l;
   padding: (@xs - @border-width + 1) (@m - @border-width) (@xs - @border-width - 1);
@@ -1224,7 +1293,9 @@ button.button-dropdown-item-hover {
 }
 
 button.button-dropdown-trigger:focus,
-button.button-dropdown-trigger-menu-open {
+button.button-dropdown-trigger-menu-open,
+select.form-select:focus {
+  outline: none;
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
   padding-right: 33px - @border-width-thick;
   background-color: white;

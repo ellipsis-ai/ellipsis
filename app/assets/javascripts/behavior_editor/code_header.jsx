@@ -39,7 +39,7 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="border-top border-left border-right border-radius-top pvs">
+      <div>
 
         <div className={this.props.hasParams ? "" : "display-none"}>
           <div className="columns columns-elastic">

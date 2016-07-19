@@ -11,7 +11,6 @@ return React.createClass({
     children: React.PropTypes.node,
     inline: React.PropTypes.bool,
     onClick: React.PropTypes.func.isRequired,
-    showHelp: React.PropTypes.bool,
     toggled: React.PropTypes.bool
   },
   onClick: function() {
@@ -32,11 +31,6 @@ return React.createClass({
         >
           {this.props.toggled ? (<SVGXIcon label="Close" />) : (<SVGQuestionMark />)}
         </button>
-        <div className={"position-absolute " + this.visibleWhen(this.props.showHelp)}>
-          {React.Children.map(this.props.children, function(child) {
-            return child;
-          })}
-        </div>
       </span>
     );
   }
