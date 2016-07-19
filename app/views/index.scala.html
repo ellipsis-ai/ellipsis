@@ -1,11 +1,13 @@
 @(
-  maybeUser: Option[models.accounts.User]
-  )(implicit messages: Messages, r: RequestHeader)
+  maybeUser: Option[models.accounts.User],
+  team: Team,
+  installedBehaviors: Seq[json.InstalledBehaviorData]
+)(implicit messages: Messages, r: RequestHeader)
 
 @main("Ellipsis behavior editor", maybeUser) {
 
   <div id="content" class="content">
-    @views.html.behaviorTabs("view")
+    @views.html.behaviorTabs("view", team)
 
     <div class="bg-white">
       <div class="container pvxxl">

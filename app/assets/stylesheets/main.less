@@ -1115,7 +1115,8 @@ label {
 @button-height: @s * 2 + @xl;
 @button-small-height: @xs * 2 + @l;
 
-button {
+button,
+a.button {
   font-size: @type-m;
   line-height: @xl;
   padding: (@s - @border-width + 1) (@l - @border-width) (@s - @border-width - 1);
@@ -1131,6 +1132,14 @@ button {
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease;
   vertical-align: bottom;
+}
+
+a.button {
+  display: inline-block;
+}
+
+a.button:hover {
+  text-decoration: none;
 }
 
 button.button-dropdown-trigger {
@@ -1233,7 +1242,8 @@ button.button-dropdown-item {
   transition: none !important;
 }
 
-button:focus {
+button:focus,
+a.button:focus {
   outline: none;
   border-color: @blue-dark;
   border-width: @border-width-thick;

@@ -41,7 +41,25 @@ class ApplicationController @Inject() (
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
-  def index = SecuredAction { implicit request => Ok(views.html.index(Some(request.identity))) }
+  def index = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      maybeTeam <- user.maybeTeamFor(None)
+      installedBehaviors <- maybeTeam.map { team =>
+        BehaviorQueries.allForTeam(team).map { behaviors =>
+          behaviors.map { ea => InstalledBehaviorData(ea.id, ea.maybeImportedId) }
+        }
+      }.getOrElse(DBIO.successful(Seq()))
+    } yield {
+      maybeTeam.map { team =>
+        Ok(views.html.index(Some(user), team, installedBehaviors))
+      }
+    }.getOrElse {
+      NotFound(s"No accessible team")
+    }
+
+    models.run(action)
+  }
 
   def publishedBehaviors(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
