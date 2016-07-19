@@ -5,7 +5,7 @@ requirejs(['../common'], function() {
     var config = BehaviorEditorConfiguration;
     var additionalData = {
       csrfToken: config.csrfToken,
-      envVariableNames: config.envVariableNames,
+      envVariables: config.envVariables,
       justSaved: config.justSaved,
       notifications: config.notifications
     };

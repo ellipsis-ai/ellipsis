@@ -58,7 +58,7 @@ return React.createClass({
     }),
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
-    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
+    envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool
   },
@@ -135,7 +135,7 @@ return React.createClass({
   },
 
   getCodeAutocompletions: function() {
-    var envVars = this.state.envVariableNames.map(function(name) {
+    var envVars = this.getEnvVariableNames().map(function(name) {
       return 'ellipsis.env.' + name;
     });
 
@@ -168,30 +168,37 @@ return React.createClass({
   },
 
   getEnvVariables: function() {
-    return this.state.envVariableNames.map(function(name) {
-      return {
-        isNamed: !!name,
-        // TODO: get isSet from the server instead of trying to compute it
-        isSet: name && !this.props.notifications.some(function(notification) {
-          return notification.kind === 'env_var_not_defined' &&
-            notification.environmentVariableName === name
-          }, this),
-        name: name,
-        value: ""
-      };
-    }, this);
+    return this.state.envVariables;
+  },
+
+  getEnvVariableNames: function() {
+    return this.state.envVariables.map(function(ea) {
+      return ea.name;
+    });
   },
 
   getFirstLineNumberForCode: function() {
     return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
   },
 
+  buildEnvVarNotifications: function() {
+    var envVars = (!this.state ? this.props.envVariables : this.state.envVariables) || [];
+    return envVars.
+      filter(function(ea) { return !ea.isAlreadySavedWithValue; }).
+      map(function(ea) {
+        return {
+          kind: "env_var_not_defined",
+          environmentVariableName: ea.name
+        };
+      })
+  },
+
   getInitialNotifications: function() {
-    if (!this.props.notifications) {
-      return [];
-    }
+    var serverNotifications = this.props.notifications || [];
+    var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications());
+
     var notifications = {};
-    this.props.notifications.forEach(function(notification) {
+    allNotifications.forEach(function(notification) {
       if (notifications[notification.kind]) {
         notifications[notification.kind].push(notification);
       } else {
@@ -339,9 +346,9 @@ return React.createClass({
   },
 
   cancelEnvVariableSetter: function() {
-    var namesWithoutBlanks = this.state.envVariableNames.filter(function(name) { return !!name; });
+    var withoutBlanks = this.state.envVariables.filter(function(ea) { return !!ea.name; });
     this.setState({
-      envVariableNames: namesWithoutBlanks
+      envVariables: withoutBlanks
     });
     this.hideActivePanel();
   },
@@ -532,8 +539,10 @@ return React.createClass({
   },
 
   setEnvVariableNameAtIndex: function(name, index) {
+    var prevEnvVarAtIndex = this.state.envVariables[index] || {};
+    var envVarAtIndex = Object.assign(prevEnvVarAtIndex, { name: name });
     this.setState({
-      envVariableNames: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.envVariableNames, name, index)
+      envVariables: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.envVariables, envVarAtIndex, index)
     });
   },
 
@@ -627,11 +636,34 @@ return React.createClass({
     this.setBehaviorProp('functionBody', newCode);
   },
 
-  updateEnvVariableNames: function(envVars) {
-    this.hideActivePanel();
-    this.setState({
-      envVariableNames: envVars.map(function(v) { return v.name; })
-    });
+  updateEnvVariables: function(envVars) {
+    var url = jsRoutes.controllers.ApplicationController.submitEnvironmentVariables().url;
+    var data = {
+      teamId: this.props.teamId,
+      variables: envVars
+    };
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ teamId: this.props.teamId, dataJson: JSON.stringify(data) })
+    })
+      .then(function(response) {
+        return response.json();
+      }).then(function(json) {
+        this.hideActivePanel();
+        this.setState({
+          envVariables: json.variables
+        }, function() {
+          this.resetNotifications();
+        });
+      }.bind(this)).catch(function() {
+        // TODO: figure out what to do if there's a request error
+        alert("Save failed");
+      });
   },
 
   updateParamAtIndexWithParam: function(index, newParam) {
@@ -820,17 +852,17 @@ return React.createClass({
   },
 
   onAWSAddNewEnvVariable: function(property) {
-    var desiredIndex = this.state.envVariableNames.length;
-    var futureCallback = function(newName) {
-      this.setAWSEnvVar(property, newName);
+    var desiredIndex = this.state.envVariables.length;
+    var futureCallback = function(newVar) {
+      this.setAWSEnvVar(property, newVar.name);
     }
     this.setState({
-      envVariableNames: this.state.envVariableNames.concat([""])
+      envVariables: this.state.envVariables.concat({})
     }, function() {
       this.setState({
-        onNextNewEnvVarName: futureCallback.bind(this)
+        onNextNewEnvVar: futureCallback.bind(this)
       });
-      this.showEnvVariableSetter(this.state.envVariableNames.length - 1);
+      this.showEnvVariableSetter(this.state.envVariables.length - 1);
     });
   },
 
@@ -862,7 +894,13 @@ return React.createClass({
     }
   },
 
-  /* Component API methods */
+  resetNotifications: function() {
+    this.setState({
+      notifications: this.getInitialNotifications()
+    });
+  },
+
+    /* Component API methods */
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
@@ -870,20 +908,20 @@ return React.createClass({
   },
 
   componentDidUpdate: function(prevProps, prevState) {
-    this.maybeNewEnvVarName(prevState.envVariableNames);
+    this.maybeNewEnvVar(prevState.envVariables);
   },
 
-  maybeNewEnvVarName: function(prevNames) {
-    if (!this.state.onNextNewEnvVarName) {
+  maybeNewEnvVar: function(prev) {
+    if (!this.state.onNextNewEnvVar) {
       return;
     }
-    var previouslyBlankNameIndex = prevNames.findIndex(function(name) {
-      return !name;
+    var previouslyBlankIndex = prev.findIndex(function(ea) {
+      return Object.keys(ea).length == 0;
     });
-    if (previouslyBlankNameIndex >= 0 && this.state.envVariableNames[previouslyBlankNameIndex]) {
-      this.state.onNextNewEnvVarName(this.state.envVariableNames[previouslyBlankNameIndex]);
+    if (previouslyBlankIndex >= 0 && this.state.envVariables[previouslyBlankIndex]) {
+      this.state.onNextNewEnvVar(this.state.envVariables[previouslyBlankIndex]);
       this.setState({
-        onNextNewEnvVarName: null
+        onNextNewEnvVar: null
       });
     }
   },
@@ -906,14 +944,14 @@ return React.createClass({
       expandEnvVariables: false,
       justSaved: this.props.justSaved,
       isSaving: false,
-      envVariableNames: this.props.envVariableNames || [],
+      envVariables: this.props.envVariables || [],
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate,
       notifications: this.getInitialNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null,
-      onNextNewEnvVarName: null
+      onNextNewEnvVar: null
     };
   },
 
@@ -1065,7 +1103,7 @@ return React.createClass({
                   </Collapsible>
                   <Collapsible revealWhen={!!this.getAWSConfig()}>
                     <AWSConfig
-                      envVariableNames={this.state.envVariableNames}
+                      envVariableNames={this.getEnvVariableNames()}
                       accessKeyName={this.getAWSConfigProperty('accessKeyName')}
                       secretKeyName={this.getAWSConfigProperty('secretKeyName')}
                       regionName={this.getAWSConfigProperty('regionName')}
@@ -1209,7 +1247,7 @@ return React.createClass({
 
           <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
             <BoilerplateParameterHelp
-              envVariableNames={this.state.envVariableNames}
+              envVariableNames={this.getEnvVariableNames()}
               onExpandToggle={this.toggleEnvVariableExpansion}
               expandEnvVariables={this.state.expandEnvVariables}
               onCollapseClick={this.toggleBoilerplateHelp}
@@ -1239,7 +1277,7 @@ return React.createClass({
               vars={this.getEnvVariables()}
               onCancelClick={this.cancelEnvVariableSetter}
               onChangeVarName={this.setEnvVariableNameAtIndex}
-              onSave={this.updateEnvVariableNames}
+              onSave={this.updateEnvVariables}
             />
           </Collapsible>
 

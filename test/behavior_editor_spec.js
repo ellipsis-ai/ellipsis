@@ -21,7 +21,7 @@ describe('BehaviorEditor', () => {
     config: {},
     csrfToken: "2",
     justSaved: false,
-    envVariableNames: ["HOT_DOG"],
+    envVariables: [ { name: "HOT_DOG" } ],
     notifications: [],
     shouldRevealCodeEditor: true
   };

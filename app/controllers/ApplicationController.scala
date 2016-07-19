@@ -94,7 +94,7 @@ class ApplicationController @Inject() (
             Ok(views.html.edit(
               Some(user),
               Json.toJson(data).toString,
-              envVars.map(_.name),
+              Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
               justSaved = false,
               notificationsJson = Json.toJson(Array[String]()).toString
             ))
@@ -129,9 +129,9 @@ class ApplicationController @Inject() (
           Ok(views.html.edit(
             Some(user),
             Json.toJson(data).toString,
-            envVars.map(_.name),
+            Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             maybeJustSaved.exists(identity),
-            notificationsJson = Json.toJson(environmentVariablesMissing.map(UINotification.environmentVariableNotDefined(_))).toString
+            notificationsJson = Json.toJson(Array[String]()).toString
           ))
         }).getOrElse {
           NotFound(views.html.notFound(Some(user), Some("Behavior not found"), Some("The behavior you are trying to access could not be found.")))
@@ -442,7 +442,7 @@ class ApplicationController @Inject() (
               maybeTeam <- Team.find(data.teamId, user)
               maybeEnvironmentVariables <- maybeTeam.map { team =>
                 DBIO.sequence(data.variables.map { envVarData =>
-                  EnvironmentVariableQueries.ensureFor(envVarData.name, Some(envVarData.value), team)
+                  EnvironmentVariableQueries.ensureFor(envVarData.name, envVarData.value, team)
                 }).map(Some(_))
               }.getOrElse(DBIO.successful(None))
             } yield {
@@ -451,7 +451,7 @@ class ApplicationController @Inject() (
                   Json.toJson(
                     EnvironmentVariablesData(
                       data.teamId,
-                      envVars.map( ea => EnvironmentVariableData(ea.name, ea.value))
+                      envVars.map( ea => EnvironmentVariableData.withoutValueFor(ea) )
                     )
                   )
                 )
@@ -481,8 +481,8 @@ class ApplicationController @Inject() (
     Ok(
       JavaScriptReverseRouter("jsRoutes")(
         routes.javascript.ApplicationController.regexValidationErrorsFor,
-        routes.javascript.ApplicationController.versionInfoFor
-
+        routes.javascript.ApplicationController.versionInfoFor,
+        routes.javascript.ApplicationController.submitEnvironmentVariables
       )
     ).as("text/javascript")
   }

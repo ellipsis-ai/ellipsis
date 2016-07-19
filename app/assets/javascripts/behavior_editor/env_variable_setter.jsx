@@ -31,7 +31,7 @@ define(function(require) {
       return !this.getVars().every(function(v, index) {
         return this.props.vars[index] &&
           v.value === this.props.vars[index].value &&
-          v.isSet === this.props.vars[index].isSet;
+          v.isAlreadySavedWithValue === this.props.vars[index].isAlreadySavedWithValue;
       }, this);
     },
 
@@ -59,8 +59,7 @@ define(function(require) {
       var vars = this.getVars();
       var safeVarName = newName.toUpperCase().replace(/\s/g, '_').replace(/^\d|[^A-Z0-9_]/g, '');
       var newVar = {
-        isNamed: false,
-        isSet: false,
+        isAlreadySavedWithValue: false,
         name: safeVarName,
         value: vars[index].value
       };
@@ -73,7 +72,7 @@ define(function(require) {
       var vars = this.getVars();
       var newVar = {
         isNamed: vars[index].isNamed,
-        isSet: false,
+        isAlreadySavedWithValue: false,
         name: vars[index].name,
         value: newValue
       };
@@ -89,8 +88,7 @@ define(function(require) {
     resetVar: function(index) {
       var vars = this.getVars();
       var newVar = {
-        isNamed: vars[index].isNamed,
-        isSet: false,
+        isAlreadySavedWithValue: false,
         name: vars[index].name,
         value: ''
       };
@@ -102,7 +100,7 @@ define(function(require) {
     },
 
     getNameInputForVar: function(v, index) {
-      if (v.isNamed) {
+      if (!!v.name) {
         return (
           <input type="text"
             className="form-input form-input-left"
@@ -125,7 +123,7 @@ define(function(require) {
     },
 
     getValueInputForVar: function(v, index) {
-      if (v.isSet) {
+      if (v.isAlreadySavedWithValue) {
         return (
           <div className="position-relative">
             <input
@@ -146,7 +144,7 @@ define(function(require) {
             ref={"envVarValue" + index}
             className="form-input-right"
             placeholder="Enter value"
-            value={v.value}
+            value={v.value || ""}
             onChange={this.onChangeVarValue.bind(this, index)}
           />
         );
