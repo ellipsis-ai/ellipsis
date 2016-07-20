@@ -16,7 +16,7 @@ describe('BehaviorList', () => {
     "triggers": [{
       "text": "B",
       "requiresMention": false,
-      "isRegex": false,
+      "isRegex": true,
       "caseSensitive": false
     }, {
       "text": "C",
@@ -42,7 +42,7 @@ describe('BehaviorList', () => {
     "triggers": [{
       "text": "A",
       "requiresMention": true,
-      "isRegex": false,
+      "isRegex": true,
       "caseSensitive": false
     }],
     "config": {
@@ -88,17 +88,23 @@ describe('BehaviorList', () => {
     });
   });
 
-  describe('getFirstTriggerTextFromVersion', () => {
-    it('returns the first trigger’s text when available', () => {
+  describe('getDisplayTriggerFromVersion', () => {
+    it('returns the first non-regex trigger when available', () => {
       const list = createBehaviorList(config);
-      const text = list.getFirstTriggerTextFromVersion(behaviorVersionTask1);
-      expect(text).toBe(behaviorVersionTask1.triggers[0].text);
+      const result = list.getDisplayTriggerFromVersion(behaviorVersionTask1);
+      expect(result.index).toBe(1);
     });
 
     it('returns an empty string when there’s no first trigger', () => {
       const list = createBehaviorList(config);
-      const text = list.getFirstTriggerTextFromVersion(behaviorVersionKnowledge1);
-      expect(text).toBe("");
+      const result = list.getDisplayTriggerFromVersion(behaviorVersionKnowledge1);
+      expect(result.text).toBe("");
+    });
+
+    it('returns the first trigger when they’re all regex', () => {
+      const list = createBehaviorList(config);
+      const result = list.getDisplayTriggerFromVersion(behaviorVersionTask2);
+      expect(result.index).toBe(0);
     });
   });
 
