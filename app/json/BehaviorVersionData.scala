@@ -18,6 +18,7 @@ case class BehaviorVersionData(
                                 params: Seq[BehaviorParameterData],
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
+                                importedId: Option[String],
                                 createdAt: Option[DateTime]
                                 ) {
   val awsConfig: Option[AWSConfigData] = config.aws
@@ -40,6 +41,7 @@ object BehaviorVersionData {
       Json.parse(params).validate[Seq[BehaviorParameterData]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
       Json.parse(config).validate[BehaviorConfig].get,
+      importedId = None,
       createdAt = None
     )
   }
@@ -81,6 +83,7 @@ object BehaviorVersionData {
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
           BehaviorConfig(maybePublishedId, maybeAWSConfigData),
+          behavior.maybeImportedId,
           Some(behaviorVersion.createdAt)
         )
       }

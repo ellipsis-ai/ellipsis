@@ -112,6 +112,7 @@ class ApplicationController @Inject() (
               Seq(),
               Seq(),
               BehaviorConfig(None, None),
+              None,
               None
             )
             Ok(views.html.edit(
@@ -275,6 +276,7 @@ class ApplicationController @Inject() (
                 }
               }.getOrElse(Seq()),
               BehaviorConfig(None, maybeAwsConfigData),
+              behavior.maybeImportedId,
               Some(version.createdAt)
             )
           }

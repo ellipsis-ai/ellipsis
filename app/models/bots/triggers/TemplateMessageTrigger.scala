@@ -1,7 +1,5 @@
 package models.bots.triggers
 
-import java.util.regex.Matcher
-
 import models.bots._
 import scala.util.matching.Regex
 
@@ -21,7 +19,7 @@ case class TemplateMessageTrigger(
 
   def regex: Regex = {
     var pattern = template
-    pattern = Matcher.quoteReplacement(pattern)
+    pattern = TemplateMessageTriggerUtils.escapeRegexCharactersIn(pattern)
     pattern = """\{.*?\}""".r.replaceAllIn(pattern, """(\\S+)""")
     pattern = """\s+""".r.replaceAllIn(pattern, """\\s+""")
     pattern = "^" ++ pattern
@@ -41,4 +39,14 @@ case class TemplateMessageTrigger(
     }
   }
 
+}
+
+object TemplateMessageTriggerUtils {
+
+  // need to deal with \\ first
+  val specialCharacters = Seq("\\", "$", "?", "-", "[", "]")
+
+  def escapeRegexCharactersIn(text: String): String = {
+    specialCharacters.foldLeft(text)((str, char) => str.replace(char, s"\\$char"))
+  }
 }
