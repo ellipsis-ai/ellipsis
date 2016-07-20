@@ -60,9 +60,46 @@ class ApplicationController @Inject() (
       }.getOrElse(Seq())).map(_.flatten)
     } yield {
       maybeTeam.map { team =>
-        Ok(views.html.index(Some(user), team, versionData))
+        if (versionData.isEmpty) {
+          Redirect(routes.ApplicationController.intro(maybeTeamId))
+        } else {
+          Ok(views.html.index(Some(user), team, versionData))
+        }
       }.getOrElse(NotFound(s"No accessible team"))
     }
+
+    models.run(action)
+  }
+
+  case class PublishedBehaviorInfo(published: Seq[BehaviorCategory], installedBehaviors: Seq[InstalledBehaviorData])
+
+  private def withPublishedBehaviorInfoFor(team: Team): DBIO[PublishedBehaviorInfo] = {
+    BehaviorQueries.allForTeam(team).map { behaviors =>
+      behaviors.map { ea => InstalledBehaviorData(ea.id, ea.maybeImportedId)}
+    }.map { installedBehaviors =>
+      val githubService = GithubService(team, ws, configuration, cache)
+      val data = githubService.publishedBehaviorCategories
+      PublishedBehaviorInfo(githubService.publishedBehaviorCategories, installedBehaviors)
+    }
+  }
+
+  def intro(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      maybeTeam <- user.maybeTeamFor(maybeTeamId)
+      maybePublishedBehaviorInfo <- maybeTeam.map { team =>
+        withPublishedBehaviorInfoFor(team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+    } yield {
+        (for {
+          team <- maybeTeam
+          data <- maybePublishedBehaviorInfo
+        } yield {
+            Ok(views.html.publishedBehaviors(Some(user), team, data.published, data.installedBehaviors))
+          }).getOrElse {
+          NotFound(s"No accessible team")
+        }
+      }
 
     models.run(action)
   }
@@ -71,21 +108,16 @@ class ApplicationController @Inject() (
     val user = request.identity
     val action = for {
       maybeTeam <- user.maybeTeamFor(maybeTeamId)
-      maybeGithubService <- DBIO.successful(maybeTeam.map { team =>
-        GithubService(team, ws, configuration, cache)
-      })
-      installedBehaviors <- maybeTeam.map { team =>
-        BehaviorQueries.allForTeam(team).map { behaviors =>
-          behaviors.map { ea => InstalledBehaviorData(ea.id, ea.maybeImportedId)}
-        }
-      }.getOrElse(DBIO.successful(Seq()))
+      maybePublishedBehaviorInfo <- maybeTeam.map { team =>
+        withPublishedBehaviorInfoFor(team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
     } yield {
-        val data = maybeGithubService.map { service =>
-         service.publishedBehaviorCategories
-        }.getOrElse(Seq())
-        maybeTeam.map { team =>
-          Ok(views.html.publishedBehaviors(Some(user), team, data, installedBehaviors))
-        }.getOrElse {
+        (for {
+          team <- maybeTeam
+          data <- maybePublishedBehaviorInfo
+        } yield {
+          Ok(views.html.publishedBehaviors(Some(user), team, data.published, data.installedBehaviors))
+        }).getOrElse {
           NotFound(s"No accessible team")
         }
       }
