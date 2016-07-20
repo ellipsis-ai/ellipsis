@@ -4,6 +4,7 @@
 
 # An example controller showing a sample home page
 GET         /                                         @controllers.ApplicationController.index(teamId: Option[String] ?= None)
+GET         /intro                                    @controllers.ApplicationController.intro(teamId: Option[String] ?= None)
 GET         /published_behaviors                      @controllers.ApplicationController.publishedBehaviors(teamId: Option[String] ?= None)
 GET         /new_behavior                             @controllers.ApplicationController.newBehavior(teamId: Option[String] ?= None)
 GET         /edit_behavior/:id                        @controllers.ApplicationController.editBehavior(id: String, justSaved: Option[Boolean] ?= None)
