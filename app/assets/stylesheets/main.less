@@ -139,13 +139,23 @@ ul {
 
 /* Links */
 
-a:link, a:visited {
+a:link, a:visited, .link {
   color: @blue-medium-text;
   text-decoration: none;
+  cursor: pointer;
 }
 
-a:hover {
+a:hover, .link:hover, .link-block:hover .link {
   text-decoration: underline;
+}
+
+a.link-block {
+  color: inherit;
+  display: block;
+}
+
+a.link-block:hover {
+  text-decoration: none;
 }
 
 .link-green,

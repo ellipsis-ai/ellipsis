@@ -18,7 +18,7 @@ define(function(require) {
         (<span className="type-monospace">{firstTriggerText}</span>) :
         (<span className="type-italic">(New behavior)</span>);
       return (
-        <a href={jsRoutes.controllers.ApplicationController.editBehavior(version.behaviorId).url}>{text}</a>
+        <span className="link">{text}</span>
       );
     },
 
@@ -40,8 +40,11 @@ define(function(require) {
     getTriggersFromVersion: function(version) {
       return (
         <div>
-          {this.getFirstTriggerFromVersion(version)}
-          {this.getOtherTriggersFromVersion(version)}
+          <a href={jsRoutes.controllers.ApplicationController.editBehavior(version.behaviorId).url}
+            className="link-block">
+            {this.getFirstTriggerFromVersion(version)}
+            {this.getOtherTriggersFromVersion(version)}
+          </a>
         </div>
       );
     },
