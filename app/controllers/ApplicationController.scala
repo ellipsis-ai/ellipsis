@@ -136,7 +136,7 @@ class ApplicationController @Inject() (
           team <- maybeTeam
           envVars <- maybeEnvironmentVariables
         } yield {
-            val data = BehaviorVersionData(
+            val data = BehaviorVersionData.buildFor(
               team.id,
               None,
               "",
@@ -292,7 +292,7 @@ class ApplicationController @Inject() (
                 AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
               }
             }
-            BehaviorVersionData(
+            BehaviorVersionData.buildFor(
               version.team.id,
               Some(behavior.id),
               version.functionBody,
