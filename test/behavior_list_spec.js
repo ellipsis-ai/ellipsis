@@ -1,7 +1,6 @@
 jest.unmock('../app/assets/javascripts/behavior_list/index');
 
 import React from 'react';
-import ReactDOM from 'react-dom';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorList = require('../app/assets/javascripts/behavior_list/index');
 
