@@ -177,6 +177,13 @@ ${MAGENTA}Uploading ${GREEN}$BUNDLE${MAGENTA} to S3...${PLAIN}";
     --source-bundle S3Bucket=$BUCKET,S3Key=$S3_KEY \
     --process;
 
+    if [ $? -eq 1 ];
+    then
+      osascript -e 'display notification "Build successfully uploaded" with title "Build $BUNDLE" sound name "Sosumi"'
+    else
+      osascript -e 'display notification "Build failed to upload" with title "Build $BUNDLE" sound name "Basso"'
+    fi
+
   fi
 
 fi
