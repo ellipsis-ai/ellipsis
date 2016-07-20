@@ -1,7 +1,6 @@
 jest.unmock('../app/assets/javascripts/behavior_editor/dropdown_menu');
 
 import React from 'react';
-import ReactDOM from 'react-dom';
 import TestUtils from 'react-addons-test-utils';
 const DropdownMenu = require('../app/assets/javascripts/behavior_editor/dropdown_menu');
 
@@ -17,7 +16,7 @@ describe('DropdownMenu', () => {
   };
 
   const defaultItemConfig = {
-    onClick: function() {},
+    onClick: function() { return; },
     label: "item label"
   };
 
@@ -70,7 +69,6 @@ describe('DropdownMenu', () => {
     it('fires the item’s onclick handler and re-hides the menu', () => {
       itemConfig.onClick = jest.fn();
       const dropdown = createDropdown(config, itemConfig);
-      const item = dropdown.refs.menuItem0;
       const itemButton = TestUtils.findRenderedDOMComponentWithClass(dropdown, 'button-dropdown-item');
       dropdown.onItemMouseUp = jest.fn();
       expect(toggled).toBe(false);
