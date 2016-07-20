@@ -20,6 +20,7 @@
     "fetch": "^1.1.0",
     "javascript-debounce": "^1.0.0",
     "jest-cli": "^12.1.1",
+    "moment": "^2.14.1",
     "react": "^15.1.0",
     "react-addons-test-utils": "^15.1.0",
     "react-dom": "^15.1.0"

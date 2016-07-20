@@ -123,8 +123,8 @@ define(function(require) {
           <td className={"type-s" + this.getTableRowClasses(index)}>
             {this.getTriggersFromVersion(version)}
           </td>
-          <td className={"type-s align-r" + this.getTableRowClasses(index)}>
-            {Formatter.formatTimestampShort(version.createdAt)}
+          <td className={"plm type-s display-ellipsis align-r" + this.getTableRowClasses(index)}>
+            {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}
           </td>
         </tr>
       );
