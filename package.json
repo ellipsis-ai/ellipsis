@@ -52,7 +52,8 @@
       "<rootDir>/node_modules/codemirror/",
       "<rootDir>/node_modules/react/",
       "<rootDir>/node_modules/react-dom/",
-      "<rootDir>/node_modules/react-addons-test-utils/"
+      "<rootDir>/node_modules/react-addons-test-utils/",
+      "<rootDir>/app/assets/javascripts/immutable_object_utils"
     ],
     "testDirectoryName": "test",
     "testPathIgnorePatterns": [
