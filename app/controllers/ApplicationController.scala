@@ -52,14 +52,14 @@ class ApplicationController @Inject() (
       }.getOrElse {
         DBIO.successful(None)
       }
-      maybeVersionData <- DBIO.sequence(maybeBehaviors.map { behaviors =>
+      versionData <- DBIO.sequence(maybeBehaviors.map { behaviors =>
         behaviors.map { behavior =>
           BehaviorVersionData.maybeFor(behavior.id, user)
         }
-      }.getOrElse(Seq()))
+      }.getOrElse(Seq())).map(_.flatten)
     } yield {
       maybeTeam.map { team =>
-        Ok(views.html.index(Some(user), team, maybeVersionData.flatten))
+        Ok(views.html.index(Some(user), team, versionData))
       }.getOrElse(NotFound(s"No accessible team"))
     }
 
