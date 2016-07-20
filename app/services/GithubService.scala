@@ -3,13 +3,15 @@ package services
 import json._
 import models.Team
 import play.api.Configuration
+import play.api.cache.CacheApi
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class GithubService(team: Team, ws: WSClient, config: Configuration) {
+case class GithubService(team: Team, ws: WSClient, config: Configuration, cache: CacheApi) {
 
   val repoCredentials: (String, String) = ("access_token", config.getString("github.repoAccessToken").get)
 
@@ -143,9 +145,17 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration) {
     } yield categoryData
   }
 
+  def publishedBehaviorCategories: Seq[BehaviorCategory] = {
+    cache.getOrElse[Seq[BehaviorCategory]](GithubService.PUBLISHED_BEHAVIORS_KEY, 30.minutes) {
+      Await.result(fetchPublishedBehaviorCategories, 5.seconds)
+    }
+  }
+
 }
 
 object GithubService {
 
   val API_URL = "https://api.github.com"
+
+  val PUBLISHED_BEHAVIORS_KEY = "github_published_behaviors"
 }

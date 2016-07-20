@@ -23,6 +23,7 @@ libraryDependencies ++= Seq(
   evolutions,
   jdbc,
   filters,
+  cache,
   "com.zaxxer" % "HikariCP" % "2.4.1",
   "com.github.tototoshi" %% "slick-joda-mapper" % "2.0.0",
   "org.scalatestplus" % "play_2.11" % "1.4.0" % Test,

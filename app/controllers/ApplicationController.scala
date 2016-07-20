@@ -13,8 +13,8 @@ import models.bots.triggers.MessageTriggerQueries
 import models._
 import models.accounts.User
 import models.bots._
-import models.UINotificationFormatting._
 import play.api.Configuration
+import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -38,6 +38,7 @@ class ApplicationController @Inject() (
                                         val lambdaService: AWSLambdaService,
                                         val testReportBuilder: BehaviorTestReportBuilder,
                                         val ws: WSClient,
+                                        val cache: CacheApi,
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
@@ -71,17 +72,17 @@ class ApplicationController @Inject() (
     val action = for {
       maybeTeam <- user.maybeTeamFor(maybeTeamId)
       maybeGithubService <- DBIO.successful(maybeTeam.map { team =>
-        GithubService(team, ws, configuration)
+        GithubService(team, ws, configuration, cache)
       })
       installedBehaviors <- maybeTeam.map { team =>
         BehaviorQueries.allForTeam(team).map { behaviors =>
           behaviors.map { ea => InstalledBehaviorData(ea.id, ea.maybeImportedId)}
         }
       }.getOrElse(DBIO.successful(Seq()))
-      data <- maybeGithubService.map { service =>
-        DBIO.from(service.fetchPublishedBehaviorCategories)
-      }.getOrElse(DBIO.successful(Seq()))
     } yield {
+        val data = maybeGithubService.map { service =>
+         service.publishedBehaviorCategories
+        }.getOrElse(Seq())
         maybeTeam.map { team =>
           Ok(views.html.publishedBehaviors(Some(user), team, data, installedBehaviors))
         }.getOrElse {
