@@ -19,6 +19,7 @@ case class BehaviorVersionData(
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
                                 importedId: Option[String],
+                                knownEnvVarsUsed: Seq[String],
                                 createdAt: Option[DateTime]
                                 ) {
   val awsConfig: Option[AWSConfigData] = config.aws
@@ -32,8 +33,31 @@ object BehaviorVersionData {
     }.getOrElse("")
   }
 
-  def fromStrings(teamId: String, function: String, response: String, params: String, triggers: String, config: String): BehaviorVersionData = {
+  def buildFor(teamId: String,
+            behaviorId: Option[String],
+            functionBody: String,
+            responseTemplate: String,
+            params: Seq[BehaviorParameterData],
+            triggers: Seq[BehaviorTriggerData],
+            config: BehaviorConfig,
+            importedId: Option[String],
+            createdAt: Option[DateTime]): BehaviorVersionData = {
     BehaviorVersionData(
+    teamId,
+    behaviorId,
+    functionBody,
+    responseTemplate,
+    params,
+    triggers,
+    config,
+    importedId,
+    config.knownEnvVarsUsed,
+    createdAt
+    )
+  }
+
+  def fromStrings(teamId: String, function: String, response: String, params: String, triggers: String, config: String): BehaviorVersionData = {
+    BehaviorVersionData.buildFor(
       teamId,
       None,
       extractFunctionBodyFrom(function),
@@ -71,7 +95,7 @@ object BehaviorVersionData {
         val maybeAWSConfigData = maybeAWSConfig.map { config =>
           AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
         }
-        BehaviorVersionData(
+        BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           Some(behavior.id),
           behaviorVersion.functionBody,

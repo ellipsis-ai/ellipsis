@@ -63,6 +63,7 @@ return React.createClass({
         regionName: React.PropTypes.string
       })
     }),
+    knownEnvVarsUsed: React.PropTypes.arrayOf(React.PropTypes.string),
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
@@ -201,6 +202,7 @@ return React.createClass({
   buildEnvVarNotifications: function() {
     var envVars = (this.state ? this.state.envVariables : this.props.envVariables) || [];
     return envVars.
+      filter(function(ea) { return this.props.knownEnvVarsUsed.includes(ea.name); }.bind(this)).
       filter(function(ea) { return !ea.isAlreadySavedWithValue; }).
       map(function(ea) {
         return {
