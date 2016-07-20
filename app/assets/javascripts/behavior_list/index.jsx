@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
-    Formatter = require('../formatter');
+    Formatter = require('../formatter'),
+    SVGInstalled = require('../svg/installed');
 
   return React.createClass({
     propTypes: {
@@ -47,6 +48,16 @@ define(function(require) {
           </a>
         </div>
       );
+    },
+
+    getImportedStatusFromVersion: function(version) {
+      if (version.importedId) {
+        return (
+          <span title="Installed from ellipsis.ai" className="mtxs display-inline-block" style={{ height: 18 }}>
+            <SVGInstalled />
+          </span>
+        );
+      }
     },
 
     getGroupedVersions: function() {
@@ -106,7 +117,8 @@ define(function(require) {
     getVersionRow: function(version, index) {
       return (
         <tr key={"version" + index}>
-          <td className={this.getTableRowClasses(index)}>
+          <td width="1" className={"prm" + this.getTableRowClasses(index)}>
+            {this.getImportedStatusFromVersion(version)}
           </td>
           <td className={"type-s" + this.getTableRowClasses(index)}>
             {this.getTriggersFromVersion(version)}
