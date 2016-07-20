@@ -1,5 +1,7 @@
 #!/bin/sh
 
+VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
+
 hold_on_to_your_butts() {
   printf "\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;138m0\e[38;5;145m0\e[38;5;52m1\e[0m \e[0m \e[38;5;53m0\e[38;5;139m1\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;225m0\e[38;5;181m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;24m0\e[0m \e[0m \e[38;5;17m0\e[38;5;17m1\e[38;5;17m1\e[0m
 \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m0\e[38;5;225m1\e[38;5;96m0\e[38;5;139m0\e[38;5;182m1\e[38;5;188m1\e[38;5;145m1\e[38;5;96m0\e[38;5;139m0\e[38;5;188m0\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m1\e[38;5;224m0\e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;24m1\e[38;5;61m1\e[38;5;18m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
@@ -122,7 +124,6 @@ echo application.version=\"`git rev-parse --short HEAD`\" >conf/version.conf
 activator docker:stage
 cp deploy/Docker* target/docker/
 pushd target/docker > /dev/null
-VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
 BUNDLE=$VERSION_LABEL.zip
 BUNDLE_PATH=~/Desktop/$BUNDLE
 zip -r $BUNDLE_PATH .
@@ -177,13 +178,8 @@ ${MAGENTA}Uploading ${GREEN}$BUNDLE${MAGENTA} to S3...${PLAIN}";
     --source-bundle S3Bucket=$BUCKET,S3Key=$S3_KEY \
     --process;
 
-    if [ $? -eq 1 ];
-    then
-      osascript -e 'display notification "Build successfully uploaded" with title "Build $BUNDLE" sound name "Sosumi"'
-    else
-      osascript -e 'display notification "Build failed to upload" with title "Build $BUNDLE" sound name "Basso"'
-    fi
-
   fi
 
 fi
+
+osascript -e "display notification \"The build script has ended.\" with title \"Build $VERSION_LABEL\" sound name \"Sosumi\""
