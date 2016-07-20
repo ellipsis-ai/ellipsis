@@ -129,14 +129,14 @@ define(function(require) {
     getVersionRow: function(version, index) {
       return (
         <tr key={"version" + index}>
-          <td width="1" className={"prm" + this.getTableRowClasses(index)}>
-            {this.getImportedStatusFromVersion(version)}
-          </td>
           <td className={"type-s" + this.getTableRowClasses(index)}>
             {this.getTriggersFromVersion(version)}
           </td>
           <td className={"plm type-s display-ellipsis align-r" + this.getTableRowClasses(index)}>
             {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}
+          </td>
+          <td width="1" className={"plm" + this.getTableRowClasses(index)}>
+            {this.getImportedStatusFromVersion(version)}
           </td>
         </tr>
       );
@@ -148,7 +148,7 @@ define(function(require) {
         return (
           <tbody>
             <tr>
-              <th className="ptl type-l pbs" colSpan="2">What Ellipsis can do</th>
+              <th className="ptl type-l pbs">What Ellipsis can do</th>
               <th className="type-label align-r pbs">Last modified</th>
             </tr>
             {this.getTasks().map(this.getVersionRow, this)}
@@ -163,7 +163,7 @@ define(function(require) {
         return (
           <tbody>
             <tr>
-              <th className="ptxxl type-l pbs" colSpan="2">What Ellipsis knows</th>
+              <th className="ptxxl type-l pbs">What Ellipsis knows</th>
               <th className="type-label align-r pbs">Last modified</th>
             </tr>
             {this.getKnowledge().map(this.getVersionRow, this)}
