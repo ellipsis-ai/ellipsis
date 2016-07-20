@@ -115,29 +115,52 @@ define(function(require) {
       );
     },
 
-    render: function() {
-      return (
-        <table>
-          <thead>
+    getTaskRows: function() {
+      var tasks = this.getTasks();
+      if (tasks.length > 0) {
+        return (
+          <tbody>
             <tr>
               <th className="ptl type-l pbs" colSpan="2">What Ellipsis can do</th>
               <th className="type-label align-r pbs">Last modified</th>
             </tr>
-          </thead>
-          <tbody>
             {this.getTasks().map(this.getVersionRow, this)}
           </tbody>
-          <thead>
+        );
+      }
+    },
+
+    getKnowledgeRows: function() {
+      var knowledge = this.getKnowledge();
+      if (knowledge.length > 0) {
+        return (
+          <tbody>
             <tr>
               <th className="ptxxl type-l pbs" colSpan="2">What Ellipsis knows</th>
               <th className="type-label align-r pbs">Last modified</th>
             </tr>
-          </thead>
-          <tbody>
             {this.getKnowledge().map(this.getVersionRow, this)}
           </tbody>
-        </table>
-      );
+        );
+      }
+    },
+
+    render: function() {
+      if (this.props.behaviorVersions.length > 0) {
+        return (
+          <table>
+            {this.getTaskRows()}
+            {this.getKnowledgeRows()}
+          </table>
+        );
+      } else {
+        return (
+          <p className="type-l pvxl">
+          Ellipsis doesn’t know any behaviors yet. Try installing some of the ones
+          published by Ellipsis, or create a new one yourself.
+          </p>
+        );
+      }
     }
   });
 });
