@@ -1,28 +1,28 @@
-define(function() {
+define(function(require) {
+  var moment = require('moment');
+  var ONE_WEEK_IN_MS = 1000 * 60 * 60 * 24 * 7;
+
   return {
     formatTimestampLong: function(timestamp) {
-      var d = new Date(timestamp);
-      // N.B. Safari doesn't support toLocaleString options at present
-      return d.toLocaleString(void(0), {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric',
-        timeZoneName: 'short'
-      });
+      return moment(timestamp).format('ll, LTS');
+    },
+
+    formatTimestampRelative: function(timestamp) {
+      return moment(timestamp).fromNow();
+    },
+
+    formatTimestampRelativeIfRecent: function(timestamp) {
+      var then = timestamp;
+      var now = Date.now();
+      if (now - then < ONE_WEEK_IN_MS) {
+        return this.formatTimestampRelative(timestamp);
+      } else {
+        return this.formatTimestampShort(timestamp);
+      }
     },
 
     formatTimestampShort: function(timestamp) {
-      var d = new Date(timestamp);
-      return d.toLocaleString(void(0), {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric'
-      });
+      return moment(timestamp).format('ll, LT');
     }
   };
 });

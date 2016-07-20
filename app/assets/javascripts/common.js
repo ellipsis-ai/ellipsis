@@ -23,6 +23,10 @@ requirejs.config({
       location: '../lib/javascript-debounce/dist',
       main: 'javascript-debounce'
     }, {
+      name: 'moment',
+      location: '../lib/moment',
+      main: 'moment'
+    }, {
       name: 'react',
       location: '../lib/react',
       main: 'react'
@@ -31,5 +35,10 @@ requirejs.config({
       location: '../lib/react',
       main: 'react-dom'
     }
-  ]
+  ],
+  config: {
+    moment: {
+      noGlobal: true
+    }
+  }
 });

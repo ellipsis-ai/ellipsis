@@ -29,7 +29,7 @@ return React.createClass({
     return this.getVersionNumberForIndex(versionIndex) + text;
   },
   getDateForVersion: function(version) {
-    return Formatter.formatTimestampLong(version.createdAt);
+    return Formatter.formatTimestampRelativeIfRecent(version.createdAt);
   },
   getInitialState: function() {
     return {

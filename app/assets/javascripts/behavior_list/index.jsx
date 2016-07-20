@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     Formatter = require('../formatter'),
+    ImmutableObjectUtils = require('../immutable_object_utils'),
     SVGInstalled = require('../svg/installed');
 
   return React.createClass({
@@ -8,23 +9,32 @@ define(function(require) {
       behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
     },
 
-    getFirstTriggerTextFromVersion: function(version) {
-      var firstTrigger = version.triggers[0];
-      return firstTrigger && firstTrigger.text ? firstTrigger.text : "";
+    getDisplayTriggerFromVersion: function(version) {
+      var firstTriggerIndex = version.triggers.findIndex(function(trigger) {
+        return !!trigger.text && !trigger.isRegex;
+      });
+      if (firstTriggerIndex === -1) {
+        firstTriggerIndex = 0;
+      }
+      var firstTrigger = version.triggers[firstTriggerIndex];
+      var text = firstTrigger && firstTrigger.text ? firstTrigger.text : "";
+      return {
+        index: firstTriggerIndex,
+        text: text
+      };
     },
 
-    getFirstTriggerFromVersion: function(version) {
-      var firstTriggerText = this.getFirstTriggerTextFromVersion(version);
-      var text = firstTriggerText ?
-        (<span className="type-monospace">{firstTriggerText}</span>) :
+    getFirstLabelFromText: function(triggerText) {
+      var text = triggerText ?
+        (<span className="type-monospace">{triggerText}</span>) :
         (<span className="type-italic">(New behavior)</span>);
       return (
         <span className="link">{text}</span>
       );
     },
 
-    getOtherTriggersFromVersion: function(version) {
-      return version.triggers.slice(1).map(function(trigger, index) {
+    getOtherTriggerLabelsFromTriggers: function(triggers) {
+      return triggers.map(function(trigger, index) {
         if (trigger.text) {
           return (
             <span className="type-monospace" key={"trigger" + (index + 1)}>
@@ -39,12 +49,14 @@ define(function(require) {
     },
 
     getTriggersFromVersion: function(version) {
+      var firstTrigger = this.getDisplayTriggerFromVersion(version);
+      var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTrigger.index);
       return (
         <div>
           <a href={jsRoutes.controllers.ApplicationController.editBehavior(version.behaviorId).url}
             className="link-block">
-            {this.getFirstTriggerFromVersion(version)}
-            {this.getOtherTriggersFromVersion(version)}
+            {this.getFirstLabelFromText(firstTrigger.text)}
+            {this.getOtherTriggerLabelsFromTriggers(otherTriggers)}
           </a>
         </div>
       );
@@ -78,8 +90,8 @@ define(function(require) {
 
     sortVersionsByFirstTrigger: function(versions) {
       return versions.sort(function(version1, version2) {
-        var t1 = this.getFirstTriggerTextFromVersion(version1).toLowerCase();
-        var t2 = this.getFirstTriggerTextFromVersion(version2).toLowerCase();
+        var t1 = this.getDisplayTriggerFromVersion(version1).text.toLowerCase();
+        var t2 = this.getDisplayTriggerFromVersion(version2).text.toLowerCase();
         if (t1 < t2) {
           return -1;
         } else if (t1 > t2) {
@@ -123,8 +135,8 @@ define(function(require) {
           <td className={"type-s" + this.getTableRowClasses(index)}>
             {this.getTriggersFromVersion(version)}
           </td>
-          <td className={"type-s align-r" + this.getTableRowClasses(index)}>
-            {Formatter.formatTimestampShort(version.createdAt)}
+          <td className={"plm type-s display-ellipsis align-r" + this.getTableRowClasses(index)}>
+            {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}
           </td>
         </tr>
       );
