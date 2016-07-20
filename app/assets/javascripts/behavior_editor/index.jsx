@@ -526,7 +526,8 @@ return React.createClass({
         responseTemplate: version.responseTemplate,
         params: version.params,
         triggers: version.triggers,
-        config: version.config
+        config: version.config,
+        knownEnvVarsUsed: version.knownEnvVarsUsed
       },
       revealCodeEditor: !!version.functionBody,
       justSaved: false
@@ -960,7 +961,8 @@ return React.createClass({
       responseTemplate: this.props.responseTemplate,
       params: this.props.params,
       triggers: this.getInitialTriggers(),
-      config: this.props.config
+      config: this.props.config,
+      knownEnvVarsUsed: this.props.knownEnvVarsUsed
     };
     return {
       behavior: initialBehavior,

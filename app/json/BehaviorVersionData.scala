@@ -3,7 +3,7 @@ package json
 import models.accounts.User
 import models.bots.config.AWSConfigQueries
 import models.bots.triggers.MessageTriggerQueries
-import models.bots.{BehaviorParameterQueries, BehaviorQueries}
+import models.bots.{BehaviorVersionQueries, BehaviorParameterQueries, BehaviorQueries}
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import slick.dbio.DBIO
@@ -42,6 +42,9 @@ object BehaviorVersionData {
             config: BehaviorConfig,
             importedId: Option[String],
             createdAt: Option[DateTime]): BehaviorVersionData = {
+
+    val knownEnvVarsUsed = config.knownEnvVarsUsed ++ BehaviorVersionQueries.environmentVariablesUsedInCode(functionBody)
+
     BehaviorVersionData(
     teamId,
     behaviorId,
@@ -51,7 +54,7 @@ object BehaviorVersionData {
     triggers,
     config,
     importedId,
-    config.knownEnvVarsUsed,
+    knownEnvVarsUsed,
     createdAt
     )
   }

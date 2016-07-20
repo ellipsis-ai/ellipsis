@@ -37,13 +37,6 @@ case class BehaviorVersion(
 
   val team: Team = behavior.team
 
-  private def environmentVariablesUsedInCode: Seq[String] = {
-    // regex quite incomplete, but we're just trying to provide some guidance
-    """(?s)ellipsis\.env\.([$A-Za-z_][0-9A-Za-z_$]*)""".r.findAllMatchIn(functionBody).flatMap { m =>
-      m.subgroups.headOption
-    }.toSeq
-  }
-
   private def environmentVariablesUsedInConfig: DBIO[Seq[String]] = {
     AWSConfigQueries.maybeFor(this).map { maybeAwsConfig =>
       maybeAwsConfig.map { awsConfig =>
@@ -52,14 +45,14 @@ case class BehaviorVersion(
     }
   }
 
-  def environmentVariablesUsed: DBIO[Seq[String]] = {
+  def knownEnvironmentVariablesUsed: DBIO[Seq[String]] = {
     environmentVariablesUsedInConfig.map { inConfig =>
-      inConfig ++ environmentVariablesUsedInCode
+      inConfig ++ BehaviorVersionQueries.environmentVariablesUsedInCode(functionBody)
     }
   }
 
   def missingEnvironmentVariablesIn(environmentVariables: Seq[EnvironmentVariable]): DBIO[Seq[String]] = {
-    environmentVariablesUsed.map{ used =>
+    knownEnvironmentVariablesUsed.map{ used =>
       used diff environmentVariables.filter(_.value.trim.nonEmpty).map(_.name)
     }
   }
@@ -376,6 +369,13 @@ object BehaviorVersionQueries {
       b <- behaviorVersion.copy(maybeFunctionBody = Some(functionBody)).save
       params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin.map(ea => (ea, None)))
     } yield params) transactionally
+  }
+
+  def environmentVariablesUsedInCode(functionBody: String): Seq[String] = {
+    // regex quite incomplete, but we're just trying to provide some guidance
+    """(?s)ellipsis\.env\.([$A-Za-z_][0-9A-Za-z_$]*)""".r.findAllMatchIn(functionBody).flatMap { m =>
+      m.subgroups.headOption
+    }.toSeq
   }
 
 }
