@@ -1,31 +1,32 @@
 @(
-  maybeUser: Option[models.accounts.User]
-  )(implicit messages: Messages, r: RequestHeader)
+  maybeUser: Option[models.accounts.User],
+  team: Team,
+  behaviorVersions: Seq[json.BehaviorVersionData]
+)(implicit messages: Messages, r: RequestHeader)
+
+@import play.api.libs.json._
+@import json.Formatting._
 
 @main("Ellipsis behavior editor", maybeUser) {
-
+  @helper.javascriptRouter("jsRoutes")(
+    routes.javascript.ApplicationController.editBehavior
+  )
   <div id="content" class="content">
-    <div class="container ptxxxxl">
-      <h1>Welcome to Ellipsis</h1>
+    @views.html.behaviorTabs("view", team)
 
-      <p>
-      The main way to use Ellipsis is through chat, but you can also modify Ellipsis here.
-      </p>
+    <div class="bg-white">
+      <div class="container pvxxl">
 
-      <h3>Behaviors</h3>
-      <p>
-      A behavior is something that your bot does or says when prompted with the right words. You can
-      see what behaviors your bot knows, modify them, and program new ones.
-      </p>
+        <div id="behaviorListContainer"></div>
+        <script>
+          var BehaviorListConfig = {
+            containerId: 'behaviorListContainer',
+            behaviorVersions: @Html(Json.toJson(behaviorVersions).toString)
+          };
+        </script>
+        <script data-main='@routes.Assets.versioned("javascripts/behavior_list/loader.js")' src='@routes.Assets.versioned("lib/requirejs/require.min.js")'></script>
 
-      <h3>Configuration</h3>
-
-      <p>
-      If you want to make any configuration data generally available for use in your behaviors,
-      you can add or modify it here. This is a good way to provide re-usable credentials so that
-      Ellipsis can integrate with other services to retrieve or modify data.
-      </p>
-
+      </div>
     </div>
   </div>
 }

@@ -58,7 +58,7 @@ class SocialAuthController @Inject() (
   private def validatedRedirectUri(uri: String)(implicit r: RequestHeader): String = {
     val parsed = new URI(uri)
     if (parsed.isAbsolute && parsed.getHost != r.host.split(":").head) {
-      routes.ApplicationController.index.toString
+      routes.ApplicationController.index().toString
     } else {
       uri
     }
@@ -82,7 +82,7 @@ class SocialAuthController @Inject() (
         Left(Redirect(routes.SlackController.add()))
       }
       case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
-        Left(Redirect(routes.ApplicationController.index))
+        Left(Redirect(routes.ApplicationController.index()))
       }
     }
     authenticateResult.flatMap {
@@ -107,7 +107,7 @@ class SocialAuthController @Inject() (
           result <- Future.successful {
             maybeRedirect.map { redirect =>
               Redirect(validatedRedirectUri(redirect))
-            }.getOrElse(Redirect(routes.ApplicationController.index))
+            }.getOrElse(Redirect(routes.ApplicationController.index()))
           }
           authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
         } yield {
@@ -135,7 +135,7 @@ class SocialAuthController @Inject() (
         Left(Redirect(routes.SlackController.signIn(maybeRedirect)))
       }
       case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
-        Left(Redirect(routes.ApplicationController.index))
+        Left(Redirect(routes.ApplicationController.index()))
       }
     }
     authenticateResult.flatMap {
@@ -156,7 +156,7 @@ class SocialAuthController @Inject() (
           result <- Future.successful {
             maybeRedirect.map { redirect =>
               Redirect(validatedRedirectUri(redirect))
-            }.getOrElse(Redirect(routes.ApplicationController.index))
+            }.getOrElse(Redirect(routes.ApplicationController.index()))
           }
           authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
         } yield {
@@ -167,7 +167,7 @@ class SocialAuthController @Inject() (
   }
 
   def signOut = SecuredAction.async { implicit request =>
-    val redirect = request.request.headers.get("referer").getOrElse(routes.ApplicationController.index.toString)
+    val redirect = request.request.headers.get("referer").getOrElse(routes.ApplicationController.index().toString)
     env.authenticatorService.discard(request.authenticator, Redirect(redirect))
   }
 

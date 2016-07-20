@@ -31,7 +31,7 @@ class SlackController @Inject() (
         val redirectUrl = routes.SocialAuthController.installForSlack().absoluteURL(secure=true)
         Ok(views.html.addToSlack(request.identity, scopes, clientId, redirectUrl))
       }
-    maybeResult.getOrElse(Redirect(routes.ApplicationController.index))
+    maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
   }
 
   def signIn(maybeRedirectUrl: Option[String]) = UserAwareAction { implicit request =>
@@ -42,7 +42,7 @@ class SlackController @Inject() (
         val redirectUrl = routes.SocialAuthController.authenticateSlack(maybeRedirectUrl.map(UriEncoding.encodePathSegment(_, "utf-8"))).absoluteURL(secure=true)
         Ok(views.html.signInWithSlack(request.identity, scopes, clientId, redirectUrl))
       }
-    maybeResult.getOrElse(Redirect(routes.ApplicationController.index))
+    maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
   }
 
 

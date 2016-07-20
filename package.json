@@ -29,6 +29,13 @@
     "test": "jest"
   },
   "jest": {
+    "globals": {
+      "jsRoutes": {
+        "controllers": {
+          "ApplicationController": {}
+        }
+      }
+    },
     "moduleFileExtensions": [
       "js",
       "jsx",

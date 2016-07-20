@@ -139,13 +139,23 @@ ul {
 
 /* Links */
 
-a:link, a:visited {
+a:link, a:visited, .link {
   color: @blue-medium-text;
   text-decoration: none;
+  cursor: pointer;
 }
 
-a:hover {
+a:hover, .link:hover, .link-block:hover .link {
   text-decoration: underline;
+}
+
+a.link-block {
+  color: inherit;
+  display: block;
+}
+
+a.link-block:hover {
+  text-decoration: none;
 }
 
 .link-green,
@@ -674,6 +684,26 @@ h6 {
   text-transform: uppercase;
 }
 
+/* Tables */
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  text-align: left;
+  padding: @xs 0;
+}
+
+td {
+  vertical-align: top;
+}
+
+th {
+  vertical-align: bottom;
+}
+
 /* Columns */
 
 .columns:after {
@@ -1147,6 +1177,29 @@ label {
   margin-left: -1px;
 }
 
+/* Tabs */
+
+.tab {
+  display: inline-block;
+  color: @black;
+  border-radius: @border-radius @border-radius 0 0;
+  line-height: @xl;
+  padding: @s @l;
+  margin: 0 @s 0 0;
+}
+
+.tab, .tab:hover, .tab:visited, .tab:active {
+  color: @black;
+  text-decoration: none;
+}
+
+.tab:hover {
+  background-color: @almost-white;
+}
+
+.tab-active, .tab-active:hover {
+  background-color: @white;
+}
 
 /* Buttons */
 
@@ -1154,6 +1207,7 @@ label {
 @button-small-height: @xs * 2 + @l;
 
 button,
+a.button,
 select.form-select {
   font-size: @type-m;
   line-height: @xl;
@@ -1170,6 +1224,14 @@ select.form-select {
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease;
   vertical-align: bottom;
+}
+
+a.button {
+  display: inline-block;
+}
+
+a.button:hover {
+  text-decoration: none;
 }
 
 button.button-dropdown-trigger,
@@ -1278,7 +1340,8 @@ button.button-dropdown-item {
   transition: none !important;
 }
 
-button:focus {
+button:focus,
+a.button:focus {
   outline: none;
   border-color: @blue-dark;
   border-width: @border-width-thick;

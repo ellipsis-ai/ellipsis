@@ -25,8 +25,8 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="pvxl">
-          <h3 className="border-bottom pbm">
+        <div className="ptxl">
+          <h3 className="border-bottom mtm pbm">
             <span>{this.props.name}</span>
             <span className="type-m type-regular type-weak"> &nbsp; – &nbsp; {this.props.description}</span>
           </h3>

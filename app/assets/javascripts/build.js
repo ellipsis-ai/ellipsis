@@ -49,6 +49,10 @@ requirejs.config({
       name: 'behavior_importer/loader',
       include: ['behavior_importer/index'],
       exclude: ['common']
+    }, {
+      name: 'behavior_list/loader',
+      include: ['behavior_list/index'],
+      exclude: ['common']
     }
   ]
 });
