@@ -65,23 +65,19 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <div className="bg-white">
-            <div className="container pbxxl">
-              {this.getBehaviorGroups().map(function(group, index) {
-                return (
-                  <Group
-                    key={"group" + index}
-                    csrfToken={this.props.csrfToken}
-                    name={group.name}
-                    description={group.description}
-                    behaviors={group.behaviorVersions}
-                    checkImported={this.behaviorIsImported}
-                    onBehaviorImport={this.onBehaviorImport}
-                  />
-                );
-              }, this)}
-            </div>
-          </div>
+          {this.getBehaviorGroups().map(function(group, index) {
+            return (
+              <Group
+                key={"group" + index}
+                csrfToken={this.props.csrfToken}
+                name={group.name}
+                description={group.description}
+                behaviors={group.behaviorVersions}
+                checkImported={this.behaviorIsImported}
+                onBehaviorImport={this.onBehaviorImport}
+              />
+            );
+          }, this)}
         </div>
       );
     }

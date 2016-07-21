@@ -172,8 +172,7 @@ a.link-block:hover {
 .link-blue-light:link,
 .link-blue-light:visited {
   color: @blue-lighter;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
+  .light-antialiasing();
 }
 
 .link-blue-light:hover {
@@ -299,6 +298,18 @@ So for example:
   background-color: @blue-darkest;
 }
 
+.bg-blue-medium {
+  background-color: @blue-medium-alt;
+}
+
+.bg-blue-lighter {
+  background-color: @blue-lighter;
+}
+
+.bg-blue-lightest {
+  background-color: @blue-lightest;
+}
+
 .bg-lightest {
   background-color: @almost-white;
 }
@@ -317,14 +328,6 @@ So for example:
 
 .bg-green {
   background-color: @green-lightest;
-}
-
-.bg-blue-lighter {
-  background-color: @blue-lighter;
-}
-
-.bg-blue-lightest {
-  background-color: @blue-lightest;
 }
 
 .bg-scrim {
@@ -427,6 +430,10 @@ So for example:
   border-color: @blue-light;
 }
 
+.border-blue-medium {
+  border-color: @blue-medium;
+}
+
 .border-pink {
   border-color: @pink-medium;
 }
@@ -503,6 +510,11 @@ So for example:
 }
 
 /* Foreground type utilities */
+
+.light-antialiasing() {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+}
 
 .type-bold {
   font-weight: 600;
@@ -584,6 +596,10 @@ code.type-bold,
 
 .type-strikethrough {
   text-decoration: line-through;
+}
+
+.type-l.type-white {
+  .light-antialiasing();
 }
 
 code {
@@ -1458,8 +1474,7 @@ button.button-primary,
 button.button-error {
   font-weight: 600;
   color: @white;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
+  .light-antialiasing();
 }
 
 button.button-primary {
