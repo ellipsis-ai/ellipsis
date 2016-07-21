@@ -21,6 +21,7 @@ object BuiltinBehavior {
     val rememberRegex = s"""^(remember|\\^)\\s*$$""".r
     val scheduledRegex = s"""^scheduled$$""".r
     val scheduleRegex = s"""^schedule\\s+`(.*?)`\\s+(.*)\\s*$$""".r
+    val resetBehaviorsRegex = """reset behaviors really really really""".r
 
     if (messageContext.includesBotMention) {
       messageContext.relevantMessageText match {
@@ -31,6 +32,7 @@ object BuiltinBehavior {
         case rememberRegex(cmd) => Some(RememberBehavior(messageContext, lambdaService))
         case scheduledRegex() => Some(ListScheduledBehavior(messageContext, lambdaService))
         case scheduleRegex(text, recurrence) => Some(ScheduleBehavior(text, recurrence, messageContext, lambdaService))
+        case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(messageContext, lambdaService))
         case _ => None
       }
     } else {
