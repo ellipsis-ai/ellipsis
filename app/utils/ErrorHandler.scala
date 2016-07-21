@@ -38,12 +38,13 @@ class ErrorHandler @Inject() (
   override def onNotFound(request: RequestHeader, message: String): Future[Result] = {
     implicit val r = request
     implicit val m = messagesApi.preferred(request)
+    val maybeNonEmptyMessage = Option(message).filter(_.trim.nonEmpty)
     Future.successful(
       NotFound(
         views.html.notFound(
           None,
           Some("Not found"),
-          Some(message)
+          maybeNonEmptyMessage
         )
       )
     )
