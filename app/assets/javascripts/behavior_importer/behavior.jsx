@@ -15,6 +15,23 @@ define(function(require) {
       onBehaviorImport: React.PropTypes.func.isRequired
     },
 
+    getGithubLink: function() {
+      if (this.getLocalBehaviorId()) {
+        return null;
+      } else {
+        return (
+          <a
+            className="mhm fade-in"
+            href={this.getGithubUrl()}
+            >View on Github</a>
+        );
+      }
+    },
+
+    getGithubUrl: function() {
+      return this.props.behaviorData.githubUrl;
+    },
+
     getInitialState: function() {
       return {
         importing: false
@@ -131,6 +148,7 @@ define(function(require) {
 
                 );
               }, this)}
+              {this.getGithubLink()}
               {this.getLocalBehaviorEditLink()}
               {this.behaviorAlreadyImported() ? /* TODO: update/re-install buttons */
                 "" : ""}

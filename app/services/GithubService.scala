@@ -56,6 +56,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
   }
 
   case class BehaviorCode(
+                           githubUrl: String,
                            configUrl: String,
                            functionUrl: String,
                            responseUrl: String,
@@ -76,7 +77,8 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
         response,
         params,
         triggers,
-        config
+        config,
+        Some(githubUrl)
       )
     }
 
@@ -88,7 +90,11 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     }
   }
 
-  private def fetchBehaviorDataFor(behaviorUrl: String): Future[Option[BehaviorVersionData]] = {
+  private def githubUrlForBehaviorPath(categoryPath: String, behaviorPath: String): String = {
+    s"${GithubService.WEB_URL}/${GithubService.USER_NAME}/${GithubService.REPO_NAME}/tree/master/published/$categoryPath/$behaviorPath"
+  }
+
+  private def fetchBehaviorDataFor(behaviorUrl: String, behaviorPath: String, categoryPath: String): Future[Option[BehaviorVersionData]] = {
     withTreeFor(behaviorUrl).flatMap { maybeTree =>
       (for {
         tree <- maybeTree
@@ -98,7 +104,8 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
         triggersUrl <- urlForTreeFileNamed("triggers.json", tree)
         paramsUrl <- urlForTreeFileNamed("params.json", tree)
       } yield {
-          BehaviorCode(configUrl, functionUrl, responseUrl, triggersUrl, paramsUrl).fetchData.map(Some(_))
+          val githubUrl = githubUrlForBehaviorPath(categoryPath, behaviorPath)
+          BehaviorCode(githubUrl, configUrl, functionUrl, responseUrl, triggersUrl, paramsUrl).fetchData.map(Some(_))
         }).getOrElse(Future.successful(None))
     }
   }
@@ -111,7 +118,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
       } yield {
           (for {
             readme <- fetchTextFor(readmeUrl)
-            behaviors <- fetchBehaviorsFor(categoryUrl)
+            behaviors <- fetchBehaviorsFor(categoryUrl, categoryPath)
           } yield {
             BehaviorCategory(categoryPath, readme, behaviors)
           }).map(Some(_))
@@ -119,11 +126,14 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     }
   }
 
-  def fetchBehaviorsFor(categoryUrl: String): Future[Seq[BehaviorVersionData]] = {
+  def fetchBehaviorsFor(categoryUrl: String, categoryPath: String): Future[Seq[BehaviorVersionData]] = {
     for {
       behaviorUrls <- fetchTreeUrlsFor(categoryUrl)
+      behaviorPaths <- fetchPathsFor(categoryUrl)
       behaviorData <- {
-        val eventualBehaviorData = behaviorUrls.map(fetchBehaviorDataFor)
+        val eventualBehaviorData = behaviorUrls.zip(behaviorPaths).map { case (url, path) =>
+          fetchBehaviorDataFor(url, path, categoryPath)
+        }
         Future.sequence(eventualBehaviorData).map(_.flatten)
       }
     } yield behaviorData
@@ -156,6 +166,9 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
 object GithubService {
 
   val API_URL = "https://api.github.com"
+  val WEB_URL = "https://github.com"
+  val USER_NAME = "ellipsis-ai"
+  val REPO_NAME = "behaviors"
 
   val PUBLISHED_BEHAVIORS_KEY = "github_published_behaviors"
 }
