@@ -7,9 +7,9 @@ import controllers.routes
 import play.api.http.DefaultHttpErrorHandler
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.Results._
-import play.api.mvc.{ Result, RequestHeader }
+import play.api.mvc.{RequestHeader, Result}
 import play.api.routing.Router
-import play.api.{ OptionalSourceMapper, Configuration }
+import play.api.{Configuration, OptionalSourceMapper, UsefulException}
 
 import scala.concurrent.Future
 
@@ -43,11 +43,36 @@ class ErrorHandler @Inject() (
       NotFound(
         views.html.notFound(
           None,
-          Some("Not found"),
+          None,
           maybeNonEmptyMessage
         )
       )
     )
   }
 
+  override def onProdServerError(request: RequestHeader, exception: UsefulException): Future[Result] = {
+    implicit val r = request
+    implicit val messages = messagesApi.preferred(request)
+    Future.successful(
+      InternalServerError(
+        views.html.serverError(
+          Some(exception.id)
+        )
+      )
+    )
+  }
+
+  /* Uncomment to test the custom error handler locally
+  override def onDevServerError(request: RequestHeader, exception: UsefulException): Future[Result] = {
+    implicit val r = request
+    implicit val messages = messagesApi.preferred(request)
+    Future.successful(
+      InternalServerError(
+        views.html.serverError(
+          Some(exception.id)
+        )
+      )
+    )
+  }
+  */
 }
