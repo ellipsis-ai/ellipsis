@@ -88,6 +88,13 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
       invocationParams mustBe Map("param0" -> "0.0.1", "param1" -> "ellipsis-12345")
     }
 
+    "build a multi-token invocation parameter" in {
+      val trigger = triggerFor("Where is {city}?")
+      val params = Seq(BehaviorParameter(IDs.next, "city", 1, trigger.behaviorVersion, None, None))
+      val invocationParams = trigger.invocationParamsFor("Where is San Francisco?", params)
+      invocationParams mustBe Map("param0" -> "San Francisco")
+    }
+
   }
 
 }

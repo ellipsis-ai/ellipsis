@@ -20,7 +20,7 @@ case class TemplateMessageTrigger(
   def regex: Regex = {
     var pattern = template
     pattern = TemplateMessageTriggerUtils.escapeRegexCharactersIn(pattern)
-    pattern = """\{.*?\}""".r.replaceAllIn(pattern, """(\\S+)""")
+    pattern = """\{.*?\}""".r.replaceAllIn(pattern, """(.+)""")
     pattern = """\s+""".r.replaceAllIn(pattern, """\\s+""")
     pattern = "^" ++ pattern
     if (!isCaseSensitive) {
