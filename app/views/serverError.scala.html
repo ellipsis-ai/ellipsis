@@ -1,0 +1,30 @@
+@(
+  maybeErrorTitle: Option[String],
+  maybeErrorMessage: Option[String],
+  maybeErrorId: Option[String]
+)(implicit messages: Messages, r: RequestHeader)
+
+@main("Error", None) {
+
+<div id="content" class="content">
+  <div class="container ptxxxxl">
+    <h1>An error occurred</h1>
+
+    <div class="columns">
+      <div class="column column-three-quarters">
+        <p>
+          An error occurred while loading this page.
+        </p>
+
+        <pre>
+@maybeErrorTitle.getOrElse("")
+@maybeErrorMessage.getOrElse("")
+
+Exception ID @maybeErrorId.getOrElse("unknown")
+        </pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+}
