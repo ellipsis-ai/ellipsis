@@ -7,20 +7,39 @@
 @main(maybeHeading.getOrElse("Page not found"), maybeUser) {
 
 <div id="content" class="content">
-  <div class="container ptxxxxl">
-    <h1>@maybeHeading.getOrElse("Page not found")</h1>
-
-    <div class="columns">
-      <div class="column column-three-quarters">
-        <p>
-          @maybeErrorMessage.getOrElse("The page you are trying to access could not be found.")
-          It may have been removed,
-          or you may not have access to it. You may want to try signing in with a different
-          team if you have more than one account.
-        </p>
+  <div class="bg-pink border-emphasis-bottom border-pink">
+    <div class="container ptxxxxl pbl">
+      <h1 class="type-white">
+        <span class="display-inline-block align-m">
+          <svg width="59px" height="59px" viewBox="0 0 59 59" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+              <g id="Desktop" transform="translate(-51.000000, -183.000000)">
+                <g id="exllipsis" transform="translate(51.000000, 183.000000)">
+                  <path d="M17.1205357,0 C7.69107143,0 0,7.48035714 0,16.6991071 L0,54.7857143 L0,59 L4.21428571,59 L42.40625,59 C51.5723214,59 59,51.3616071 59,41.9848214 L59,29.3419643 L59,16.6991071 C59,7.32232143 51.7303571,0 42.40625,0 L17.1205357,0 Z M42.40625,4.21428571 C49.4125,4.21428571 54.7857143,9.69285714 54.7857143,16.6991071 L54.7857143,29.3419643 L54.7857143,41.9848214 C54.7857143,48.9910714 49.4125,54.7857143 42.40625,54.7857143 L4.21428571,54.7857143 L4.21428571,16.6991071 C4.21428571,9.69285714 10.1142857,4.21428571 17.1205357,4.21428571 L42.40625,4.21428571 Z" id="Combined-Shape" fill="#F65688"></path>
+                  <g id="Group-2" transform="translate(14.593750, 14.593750)"></g>
+                  <path d="M26.536,35.68 L31.384,35.68 C30.712,29.488 38.2,27.328 38.2,21.232 C38.2,16 34.504,13.264 29.32,13.264 C25.816,13.264 22.984,14.992 20.92,17.44 L23.992,20.272 C25.384,18.736 26.968,17.776 28.936,17.776 C31.384,17.776 32.824,19.312 32.824,21.616 C32.824,25.936 25.528,28.672 26.536,35.68 L26.536,35.68 Z M25.764,42.832 C25.764,44.7914631 27.157396,46.2284027 28.9862282,46.2284027 C30.8150604,46.2284027 32.252,44.7914631 32.252,42.832 C32.252,40.8725369 30.8150604,39.4355973 28.9862282,39.4355973 C27.157396,39.4355973 25.764,40.8725369 25.764,42.832 L25.764,42.832 Z" id="?" fill="#F65688"></path>
+                </g>
+              </g>
+            </g>
+          </svg>
+        </span>
+        <span class="mls">@maybeHeading.getOrElse("Page not found")</span>
+      </h1>
+    </div>
+  </div>
+  <div class="bg-white border-bottom pvxxxl">
+    <div class="container">
+      <div class="columns">
+        <div class="column column-three-quarters">
+          <p>
+            @maybeErrorMessage.getOrElse("The page you are trying to access could not be found.")
+            It may have been removed,
+            or you may not have access to it. You may want to try signing in with a different
+            team if you have more than one account.
+          </p>
+        </div>
       </div>
     </div>
-
   </div>
 </div>
 }

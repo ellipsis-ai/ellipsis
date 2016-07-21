@@ -1,30 +1,43 @@
 @(
-  maybeErrorTitle: Option[String],
-  maybeErrorMessage: Option[String],
   maybeErrorId: Option[String]
 )(implicit messages: Messages, r: RequestHeader)
 
 @main("Error", None) {
 
 <div id="content" class="content">
-  <div class="container ptxxxxl">
-    <h1>An error occurred</h1>
-
-    <div class="columns">
-      <div class="column column-three-quarters">
-        <p>
-          An error occurred while loading this page.
-        </p>
-
-        <pre>
-@maybeErrorTitle.getOrElse("")
-@maybeErrorMessage.getOrElse("")
-
-Exception ID @maybeErrorId.getOrElse("unknown")
-        </pre>
-      </div>
+  <div class="bg-pink border-emphasis-bottom border-pink">
+    <div class="container ptxxxxl pbl">
+      <h1 class="type-white">
+        <span class="display-inline-block align-m">
+          <svg width="59px" height="59px" viewBox="0 0 59 59" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+              <g id="Desktop" transform="translate(-51.000000, -183.000000)">
+                <g id="exllipsis" transform="translate(51.000000, 183.000000)">
+                  <path d="M17.1205357,0 C7.69107143,0 0,7.48035714 0,16.6991071 L0,54.7857143 L0,59 L4.21428571,59 L42.40625,59 C51.5723214,59 59,51.3616071 59,41.9848214 L59,29.3419643 L59,16.6991071 C59,7.32232143 51.7303571,0 42.40625,0 L17.1205357,0 Z M42.40625,4.21428571 C49.4125,4.21428571 54.7857143,9.69285714 54.7857143,16.6991071 L54.7857143,29.3419643 L54.7857143,41.9848214 C54.7857143,48.9910714 49.4125,54.7857143 42.40625,54.7857143 L4.21428571,54.7857143 L4.21428571,16.6991071 C4.21428571,9.69285714 10.1142857,4.21428571 17.1205357,4.21428571 L42.40625,4.21428571 Z" id="Combined-Shape" fill="#F65688"></path>
+                  <g id="Group-2" transform="translate(14.593750, 14.593750)"></g>
+                  <path d="M30.576,23.992 C32.124,24.244 33.024,24.712 33.888,25.72 C34.752,26.692 35.112,27.628 35.184,29.14 L35.976,29.14 C36.048,27.772 36.228,27.124 36.768,26.224 C37.596,24.82 39.036,24.028 40.656,24.028 C42.096,24.028 43.392,24.676 44.364,25.828 C45.12,26.764 45.444,27.556 45.696,29.14 L46.524,29.14 C46.452,27.88 46.344,27.196 46.092,26.224 C45.192,22.768 42.888,19.744 39.54,17.692 C36.804,16 34.68,15.388 30.468,15.064 L30.432,12.688 L29.604,12.688 L29.568,15.064 C26.904,15.28 25.572,15.496 24.132,16 C20.856,17.116 18.156,19.024 16.248,21.544 C14.484,23.848 13.728,25.936 13.476,29.14 L14.304,29.14 C14.52,27.7 14.772,27.016 15.384,26.152 C16.356,24.784 17.76,24.028 19.344,24.028 C20.856,24.028 22.188,24.712 23.052,25.936 C23.7,26.872 23.952,27.664 24.024,29.14 L24.816,29.14 C24.924,27.556 25.32,26.62 26.22,25.612 C27.156,24.64 28.056,24.208 29.64,23.992 L29.64,42.28 C29.64,43.936 28.596,45.088 27.12,45.088 C26.328,45.088 25.608,44.728 25.14,44.044 C24.708,43.468 24.564,42.928 24.528,41.92 L23.52,41.956 C23.556,43.072 23.736,43.612 24.132,44.296 C24.78,45.376 25.86,45.988 27.084,45.988 C29.136,45.988 30.576,44.476 30.576,42.316 L30.576,23.992 Z" id="☂" fill="#F65688"></path>
+                </g>
+              </g>
+            </g>
+          </svg>
+        </span>
+        <span class="mls">An error occurred</span>
+      </h1>
     </div>
+  </div>
+  <div class="bg-white border-bottom pvxxxl">
+    <div class="container">
+      <div class="columns">
+        <div class="column column-three-quarters">
+          <p>
+            Something went wrong while trying to load this page. Please try again later.
+          </p>
 
+          <p><code class="type-weak">Error ID @maybeErrorId.getOrElse("unknown")</code></p>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
 }

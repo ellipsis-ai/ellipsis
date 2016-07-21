@@ -56,12 +56,23 @@ class ErrorHandler @Inject() (
     Future.successful(
       InternalServerError(
         views.html.serverError(
-          Some(exception.title),
-          Some(exception.description),
           Some(exception.id)
         )
       )
     )
   }
 
+  /* Uncomment to test the custom error handler locally
+  override def onDevServerError(request: RequestHeader, exception: UsefulException): Future[Result] = {
+    implicit val r = request
+    implicit val messages = messagesApi.preferred(request)
+    Future.successful(
+      InternalServerError(
+        views.html.serverError(
+          Some(exception.id)
+        )
+      )
+    )
+  }
+  */
 }
