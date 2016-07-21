@@ -19,6 +19,7 @@ case class BehaviorVersionData(
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
                                 importedId: Option[String],
+                                githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
                                 createdAt: Option[DateTime]
                                 ) {
@@ -41,6 +42,7 @@ object BehaviorVersionData {
             triggers: Seq[BehaviorTriggerData],
             config: BehaviorConfig,
             importedId: Option[String],
+            githubUrl: Option[String],
             createdAt: Option[DateTime]): BehaviorVersionData = {
 
     val knownEnvVarsUsed = config.knownEnvVarsUsed ++ BehaviorVersionQueries.environmentVariablesUsedInCode(functionBody)
@@ -54,12 +56,21 @@ object BehaviorVersionData {
     triggers,
     config,
     importedId,
+    githubUrl,
     knownEnvVarsUsed,
     createdAt
     )
   }
 
-  def fromStrings(teamId: String, function: String, response: String, params: String, triggers: String, config: String): BehaviorVersionData = {
+  def fromStrings(
+                   teamId: String,
+                   function: String,
+                   response: String,
+                   params: String,
+                   triggers: String,
+                   config: String,
+                   maybeGithubUrl: Option[String]
+                   ): BehaviorVersionData = {
     BehaviorVersionData.buildFor(
       teamId,
       None,
@@ -69,6 +80,7 @@ object BehaviorVersionData {
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
       Json.parse(config).validate[BehaviorConfig].get,
       importedId = None,
+      maybeGithubUrl,
       createdAt = None
     )
   }
@@ -111,6 +123,7 @@ object BehaviorVersionData {
           ),
           BehaviorConfig(maybePublishedId, maybeAWSConfigData),
           behavior.maybeImportedId,
+          githubUrl = None,
           Some(behaviorVersion.createdAt)
         )
       }

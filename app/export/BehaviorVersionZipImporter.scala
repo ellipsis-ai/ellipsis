@@ -42,7 +42,8 @@ case class BehaviorVersionZipImporter(team: Team, lambdaService: AWSLambdaServic
         strings.getOrElse("response.md", ""),
         strings.getOrElse("params.json", ""),
         strings.getOrElse("triggers.json", ""),
-        strings.getOrElse("config.json", "")
+        strings.getOrElse("config.json", ""),
+        maybeGithubUrl = None
       )
 
     BehaviorVersionImporter(team, lambdaService, data).run
