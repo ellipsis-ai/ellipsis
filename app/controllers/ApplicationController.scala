@@ -94,7 +94,7 @@ class ApplicationController @Inject() (
           team <- maybeTeam
           data <- maybePublishedBehaviorInfo
         } yield {
-            Ok(views.html.publishedBehaviors(Some(user), team, data.published, data.installedBehaviors))
+            Ok(views.html.intro(Some(user), team, data.published, data.installedBehaviors))
           }).getOrElse {
           NotFound(s"No accessible team")
         }

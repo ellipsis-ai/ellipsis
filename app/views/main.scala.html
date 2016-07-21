@@ -1,9 +1,17 @@
 @(
-    title: String,
-    maybeUser: Option[models.accounts.User]
-    )(content: Html)(implicit messages: Messages, r: RequestHeader)
+  title: String,
+  maybeUser: Option[models.accounts.User],
+  pageId: String = ""
+  )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
+@navBorderColorForPage = @{
+  if (pageId == "intro") {
+    "border-blue-medium"
+  } else {
+    "border-pink"
+  }
+}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -29,7 +37,7 @@
     <link rel="icon" href="/assets/images/favicon-16x16.png" sizes="16x16">
   </head>
   <body class="bg-lightest">
-    <header class="bg-blue-dark border-emphasis-bottom border-pink type-white">
+    <header class='@("bg-blue-dark border-emphasis-bottom type-white " + navBorderColorForPage)'>
       <div class="container">
         <div class="columns">
           <div class="column column-one-half pts pbxs">
