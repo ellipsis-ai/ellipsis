@@ -20,6 +20,14 @@ trait MessageContext extends Context {
     s"[teach me something new]($newBehaviorLink)"
   }
 
+  def installLinkFor(lambdaService: AWSLambdaService): String = {
+    val installLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.ApplicationController.installBehaviors(Some(teamId))
+      s"$baseUrl$path"
+    }.get
+    s"[install new behaviors]($installLink)"
+  }
+
   def sendIDontKnowHowToRespondMessageFor(lambdaService: AWSLambdaService)(implicit ec: ExecutionContext): Unit = {
     sendMessage(s"""
                    |I don't know how to respond to `$fullMessageText`
