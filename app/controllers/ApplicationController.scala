@@ -103,7 +103,7 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  def publishedBehaviors(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def installBehaviors(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       maybeTeam <- user.maybeTeamFor(maybeTeamId)
