@@ -55,7 +55,7 @@ case class DisplayHelpBehavior(helpString: String, messageContext: MessageContex
           |
           |$knowledgeString
           |
-          |You can also ${messageContext.teachMeLinkFor(lambdaService)}.
+          |You can also ${messageContext.installLinkFor(lambdaService)} or ${messageContext.teachMeLinkFor(lambdaService)} yourself.
           |""".stripMargin
       messageContext.sendMessage(text)
     }
