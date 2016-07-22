@@ -55,7 +55,7 @@ case class DisplayHelpBehavior(helpString: String, messageContext: MessageContex
           |
           |$knowledgeString
           |
-          |To teach me something new, just type `@ellipsis: learn`
+          |You can also ${messageContext.teachMeLinkFor(lambdaService)}.
           |""".stripMargin
       messageContext.sendMessage(text)
     }
