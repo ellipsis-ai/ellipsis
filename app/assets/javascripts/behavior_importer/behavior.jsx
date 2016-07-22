@@ -22,6 +22,7 @@ define(function(require) {
         return (
           <a
             className="mhm fade-in"
+            target="_blank"
             href={this.getGithubUrl()}
             >View on Github</a>
         );
