@@ -1,5 +1,7 @@
 @import url(../lib/codemirror/addon/hint/show-hint.css);
 
+@mobile-max-width: 480px;
+
 /* Measurements */
 @xxs: 2px;
 @xs: 4px;
@@ -11,12 +13,21 @@
 @xxxl: 48px;
 @xxxxl: 64px;
 
-@type-xs: 13px;
-@type-s: 15px;
-@type-m: 18px;
-@type-l: 28px;
-@type-xl: 43px;
-@type-xxl: 59px;
+@type-desktop-m: 18px;
+@type-mobile-m: 16px;
+
+@type-xxs: unit(10/18, rem);
+@type-xs: unit(13/18, rem);
+@type-s: unit(15/18, rem);
+@type-m: unit(18/18, rem);
+@type-l: unit(28/18, rem);
+@type-xl: unit(43/18, rem);
+@type-xxl: unit(59/18, rem);
+
+@line-height-xs: unit(16/18, rem);
+@line-height-s: unit(24/18, rem);
+@line-height-m: unit(24/18, rem);
+@line-height-l: unit(32/18, rem);
 
 @border-width: 1px;
 @border-width-thick: 2px;
@@ -68,14 +79,23 @@
 @border-color-focus: @pink-medium;
 @border-color-dropdown: @gray-medium;
 
+html {
+  font-size: @type-desktop-m;
+  line-height: @line-height-m;
+}
+
+@media (max-width: @mobile-max-width) {
+  html {
+    font-size: @type-mobile-m;
+  }
+}
+
 body, input, select, textarea, button {
   font-family: 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
 }
 
 body {
   margin: 0;
-  font-size: @type-m;
-  line-height: @xl;
   background-color: @white;
   color: @black;
 }
@@ -545,22 +565,22 @@ code.type-bold,
 
 .type-l {
   font-size: @type-l !important;
-  line-height: @xxl;
+  line-height: @line-height-l;
 }
 
 .type-m {
   font-size: @type-m !important;
-  line-height: @xl;
+  line-height: @line-height-m;
 }
 
 .type-s {
   font-size: @type-s !important;
-  line-height: @xl;
+  line-height: @line-height-s;
 }
 
 .type-xs {
   font-size: @type-xs !important;
-  line-height: @l;
+  line-height: @line-height-xs;
 }
 
 .type-italic {
@@ -615,7 +635,7 @@ code.type-bold,
 }
 
 code {
-  white-space: pre;
+  .type-monospace();
 }
 
 .type-wrap {
@@ -797,6 +817,14 @@ th {
 
 .column-shrink {
   width: 1px;
+}
+
+@media (max-width: 480px) {
+  .column {
+    float: none;
+    width: 100%;
+    padding-right: 0;
+  }
 }
 
 /* Hard widths */
@@ -1253,6 +1281,8 @@ select.form-select {
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease;
   vertical-align: bottom;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  touch-action: manipulation;
 }
 
 a.button {
@@ -1273,8 +1303,8 @@ select.form-select {
   min-width: @dropdown-menu-width;
   text-align: left;
   &::before {
-    font-size: 10px;
-    line-height: 10px;
+    font-size: @type-xxs;
+    line-height: @type-xxs;
     content: '▲\A▼';
     width: 0;
     position: absolute;
@@ -1328,6 +1358,7 @@ button.button-shrink {
   min-width: 0;
   padding-left: (@s - @border-width);
   padding-right: (@s - @border-width);
+  white-space: nowrap;
 }
 
 button.button-symbol {
