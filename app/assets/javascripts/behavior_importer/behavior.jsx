@@ -22,6 +22,7 @@ define(function(require) {
         return (
           <a
             className="mhm fade-in"
+            target="_blank"
             href={this.getGithubUrl()}
             >View on Github</a>
         );
@@ -65,19 +66,19 @@ define(function(require) {
     getInstallButton: function() {
       if (this.isImporting()) {
         return (
-          <button type="button" className="button-raw button-s">
+          <button title="Installing, please wait…" type="button" className="button-raw button-s">
             <SVGInstalling />
           </button>
         );
       } else if (this.behaviorAlreadyImported()) {
         return (
-          <button type="button" className="button-raw button-s" onClick={this.importBehavior}>
+          <button title="Already installed" type="button" className="button-raw button-s" onClick={this.importBehavior}>
             <SVGInstalled />
           </button>
         );
       } else {
         return (
-          <button type="button" className="button-raw button-s" onClick={this.importBehavior}>
+          <button title="Install this behavior" type="button" className="button-raw button-s" onClick={this.importBehavior}>
             <SVGInstall />
           </button>
         );
