@@ -128,9 +128,13 @@ class SocialAuthController @Inject() (
     val isHttps = configuration.getBoolean("application.https").getOrElse(true)
     val provider = slackProvider.withSettings { settings =>
       val url = routes.SocialAuthController.authenticateSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
-      val authorizationParams = maybeTeamId.map { teamId =>
-        settings.authorizationParams + ("team" -> teamId)
-      }.getOrElse(settings.authorizationParams)
+      var authorizationParams = settings.authorizationParams
+      maybeTeamId.foreach { teamId =>
+        authorizationParams = authorizationParams + ("team" -> teamId)
+      }
+      configuration.getString("silhouette.slack.signInScope").foreach { signInScope =>
+        authorizationParams = authorizationParams + ("scope" -> signInScope)
+      }
       settings.copy(redirectURL = url, authorizationParams = authorizationParams)
     }
     val authenticateResult = provider.authenticate() recover {
