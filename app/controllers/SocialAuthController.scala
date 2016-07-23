@@ -90,19 +90,22 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
-          maybeBotProfile <- slackProvider.maybeBotProfileFor(authInfo, models)
+          botProfile <- slackProvider.maybeBotProfileFor(authInfo, models).map { maybeBotProfile =>
+            maybeBotProfile.get // Blow up if we can't get a bot profile
+          }
           maybeSlackTeamId <- Future.successful(Some(maybeTeamId.getOrElse(profile.teamId)))
           savedProfile <- models.run(SlackProfileQueries.save(profile))
-          maybeSavedBotProfile <- maybeBotProfile.map { botProfile =>
-            models.run(SlackBotProfileQueries.save(botProfile))
-          }.getOrElse(Future.successful(None))
           savedAuthInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
-          maybeExistingLinkedAccount <- models.run(LinkedAccount.find(profile.loginInfo))
-          linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
-            request.identity.map(Future.successful).getOrElse(models.run(User.empty.save)).flatMap { user =>
-              models.run(LinkedAccount(user, profile.loginInfo, DateTime.now).save)
+          linkedAccount <- models.run(LinkedAccount.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
+            maybeExisting.map(DBIO.successful).getOrElse {
+              val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
+                userService.createFor(botProfile.teamId)
+              })
+              eventualUser.flatMap { user =>
+                LinkedAccount(user, profile.loginInfo, DateTime.now).save
+              }
             }
-          }
+          })
           user <- Future.successful(linkedAccount.user)
           result <- Future.successful {
             maybeRedirect.map { redirect =>
@@ -143,15 +146,23 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
+          teamId <- models.run(SlackBotProfileQueries.allForSlackTeamId(profile.teamId).map { botProfiles =>
+            botProfiles.head.teamId // Blow up if no bot profile
+          })
           savedProfile <- models.run(SlackProfileQueries.save(profile))
           loginInfo <- Future.successful(profile.loginInfo)
           savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
-          maybeExistingLinkedAccount <- models.run(LinkedAccount.find(loginInfo))
-          linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
-            request.identity.map(Future.successful).getOrElse(models.run(User.empty.save)).flatMap { user =>
-              models.run(LinkedAccount(user, loginInfo, DateTime.now).save)
+          maybeExistingLinkedAccount <- models.run(LinkedAccount.find(profile.loginInfo, teamId))
+          linkedAccount <- models.run(
+            maybeExistingLinkedAccount.map(DBIO.successful).getOrElse {
+              val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
+                userService.createFor(teamId)
+              })
+              eventualUser.flatMap { user =>
+                LinkedAccount(user, profile.loginInfo, DateTime.now).save
+              }
             }
-          }
+          )
           user <- Future.successful(linkedAccount.user)
           result <- Future.successful {
             maybeRedirect.map { redirect =>

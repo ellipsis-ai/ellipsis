@@ -7,32 +7,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class User(
                  id: String,
+                 teamId: String,
                  maybeEmail: Option[String]
                  ) extends Identity {
 
-  def canAccess(team: Team): DBIO[Boolean] = {
-    for {
-      linkedAccounts <- LinkedAccount.allFor(this)
-      canAccesses <- DBIO.sequence(linkedAccounts.map(_.canAccess(team)))
-    } yield {
-      canAccesses.contains(true)
+  def canAccess(team: Team): Boolean = team.id == teamId
+
+  def maybeTeamFor(maybeTeamId: Option[String]): DBIO[Option[Team]] = {
+    if (maybeTeamId.isDefined && maybeTeamId.get != teamId) {
+      DBIO.successful(None)
+    } else {
+      Team.find(this.teamId)
     }
-  }
-
-  def accessibleTeams: DBIO[Seq[Team]] = {
-    for {
-      linkedAccounts <- LinkedAccount.allFor(this)
-      teams <- DBIO.sequence(linkedAccounts.map(_.teams)).map(_.flatten)
-    } yield teams.distinct
-  }
-
-  // TODO: deal with users associated with multiple teams
-  def maybeFirstTeam: DBIO[Option[Team]] = accessibleTeams.map(_.headOption)
-
-  def maybeTeamFor(maybeTeamId: Option[String]) = {
-    maybeTeamId.map { teamId =>
-      Team.find(teamId, this)
-    }.getOrElse(maybeFirstTeam)
   }
 
   def loginInfo: LoginInfo = LoginInfo(User.EPHEMERAL_USER_ID, id)
@@ -43,10 +29,11 @@ case class User(
 class UsersTable(tag: Tag) extends Table[User](tag, "users") {
 
   def id = column[String]("id", O.PrimaryKey)
+  def teamId = column[String]("team_id")
   def maybeEmail = column[Option[String]]("email")
 
   def * =
-    (id, maybeEmail) <> ((User.apply _).tupled, User.unapply _)
+    (id, teamId, maybeEmail) <> ((User.apply _).tupled, User.unapply _)
 }
 
 object User {
@@ -54,8 +41,8 @@ object User {
 
   val all = TableQuery[UsersTable]
 
-  def empty: User = User(IDs.next, None)
-
+  def createOnTeamWithId(teamId: String): User = User(IDs.next, teamId, None)
+  def createOnTeam(team: Team): User = createOnTeamWithId(team.id)
 
   def uncompiledIsEmailTakenQuery(email: Rep[String]) = {
     all.filter(_.maybeEmail === email).exists
@@ -79,12 +66,6 @@ object User {
   val findByEmailQuery = Compiled(uncompiledFindByEmailQuery _)
 
   def findByEmail(email: String): DBIO[Option[User]] = findByEmailQuery(email).result.headOption
-
-  def findBySlackUserId(slackUserId: String): DBIO[Option[User]] = {
-    LinkedAccount.find(LoginInfo(SlackProvider.ID, slackUserId)).map { maybeLinkedAccount =>
-      maybeLinkedAccount.map(_.user)
-    }
-  }
 
   def delete(user: User): DBIO[Option[User]] = {
     findQueryFor(user.id).delete.map{ _ => Some(user) }

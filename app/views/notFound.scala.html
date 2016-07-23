@@ -1,7 +1,8 @@
 @(
   maybeUser: Option[models.accounts.User],
   maybeHeading: Option[String],
-  maybeErrorMessage: Option[String]
+  maybeErrorMessage: Option[String],
+  maybeSignInLink: Option[Call] = None
 )(implicit messages: Messages, r: RequestHeader)
 
 @main(maybeHeading.getOrElse("Page not found"), maybeUser) {
@@ -34,8 +35,9 @@
           <p>
             @maybeErrorMessage.getOrElse("The page you are trying to access could not be found.")
             It may have been removed,
-            or you may not have access to it. You may want to try signing in with a different
-            team if you have more than one account.
+            or you may not have access to it. @maybeSignInLink.map { link =>
+              You may want to try <a href="@link">signing in with a different team</a> if you have more than one account.
+            }
           </p>
         </div>
       </div>

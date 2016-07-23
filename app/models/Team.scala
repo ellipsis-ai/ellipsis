@@ -36,16 +36,9 @@ object Team {
   }
 
   def find(id: String, user: User): DBIO[Option[Team]] = {
-    for {
-      maybeTeam <- find(id)
-      canAccess <- maybeTeam.map { team =>
-        user.canAccess(team)
-      }.getOrElse {
-        DBIO.successful(false)
-      }
-    } yield {
+    find(id).map { maybeTeam =>
       maybeTeam.flatMap { team =>
-        if (canAccess) {
+        if (user.canAccess(team)) {
           Some(team)
         } else {
           None
