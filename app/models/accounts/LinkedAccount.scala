@@ -56,15 +56,16 @@ object LinkedAccount {
   val all = TableQuery[LinkedAccountsTable]
   val joined = all.join(User.all).on(_.userId === _.id)
 
-  def uncompiledFindQuery(providerId: Rep[String], providerKey: Rep[String]) = {
+  def uncompiledFindQuery(providerId: Rep[String], providerKey: Rep[String], teamId: Rep[String]) = {
     joined.
       filter { case(linked, user) => linked.providerId === providerId }.
-      filter { case(linked, user) => linked.providerKey === providerKey }
+      filter { case(linked, user) => linked.providerKey === providerKey }.
+      filter { case(linked, user) => user.teamId === teamId }
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def find(loginInfo: LoginInfo): DBIO[Option[LinkedAccount]] = {
-    findQuery(loginInfo.providerID, loginInfo.providerKey).
+  def find(loginInfo: LoginInfo, teamId: String): DBIO[Option[LinkedAccount]] = {
+    findQuery(loginInfo.providerID, loginInfo.providerKey, teamId).
       result.
       map { result =>
       result.headOption.map(tuple2LinkedAccount)
@@ -73,14 +74,12 @@ object LinkedAccount {
 
   def save(link: LinkedAccount): DBIO[LinkedAccount] = {
     val query = all.filter(_.providerId === link.loginInfo.providerID).filter(_.providerKey === link.loginInfo.providerKey)
-    query.result.headOption.flatMap { maybeLink =>
-      maybeLink match {
-        case Some(_) => {
-          query.
-            update(link.raw)
-        }
-        case None => all += link.raw
+    query.result.headOption.flatMap {
+      case Some(_) => {
+        query.
+          update(link.raw)
       }
+      case None => all += link.raw
     }.map { _ => link }
   }
 

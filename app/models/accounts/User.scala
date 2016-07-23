@@ -14,10 +14,10 @@ case class User(
   def canAccess(team: Team): Boolean = team.id == teamId
 
   def maybeTeamFor(maybeTeamId: Option[String]): DBIO[Option[Team]] = {
-    if (maybeTeamId.contains(teamId)) {
-      Team.find(teamId, this)
-    } else {
+    if (maybeTeamId.isDefined && maybeTeamId.get != teamId) {
       DBIO.successful(None)
+    } else {
+      Team.find(this.teamId)
     }
   }
 
@@ -66,12 +66,6 @@ object User {
   val findByEmailQuery = Compiled(uncompiledFindByEmailQuery _)
 
   def findByEmail(email: String): DBIO[Option[User]] = findByEmailQuery(email).result.headOption
-
-  def findBySlackUserId(slackUserId: String): DBIO[Option[User]] = {
-    LinkedAccount.find(LoginInfo(SlackProvider.ID, slackUserId)).map { maybeLinkedAccount =>
-      maybeLinkedAccount.map(_.user)
-    }
-  }
 
   def delete(user: User): DBIO[Option[User]] = {
     findQueryFor(user.id).delete.map{ _ => Some(user) }
