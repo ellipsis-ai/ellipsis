@@ -53,14 +53,20 @@ object SlackBotProfileQueries {
     allForSlackTeamQuery(slackTeamId).result
   }
 
-  def ensure(userId: String, slackTeamId: String, token: String): DBIO[SlackBotProfile] = {
+  def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): DBIO[SlackBotProfile] = {
     val query = findQuery(userId)
     query.result.headOption.flatMap {
       case Some(existing) => {
         val profile = SlackBotProfile(userId, existing.teamId, slackTeamId, token)
-        query.update(profile).map { _ => profile }
+        for {
+          maybeTeam <- Team.find(existing.teamId)
+          _ <- query.update(profile)
+          _ <- maybeTeam.map { team =>
+            team.setInitialName(slackTeamName)
+          }.getOrElse(DBIO.successful(Unit))
+        } yield profile
       }
-      case None => Team.create.flatMap { team =>
+      case None => Team.create(slackTeamName).flatMap { team =>
         val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token)
         (all += newProfile).map { _ => newProfile }
       }

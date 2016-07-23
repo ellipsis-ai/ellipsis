@@ -73,12 +73,18 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
         find { case(k, v) => k == "team_id" }.
         map { case(k, v) => v }
     }
+    val maybeSlackTeamName = authInfo.params.flatMap { params =>
+      params.
+        find { case(k, v) => k == "team_name" }.
+        map { case(k, v) => v }
+    }
     val maybeAction = for {
       botJson <- maybeBotJson
       userId <- (botJson \ "bot_user_id").asOpt[String]
       token <- (botJson \ "bot_access_token").asOpt[String]
       slackTeamId <- maybeSlackTeamId
-    } yield SlackBotProfileQueries.ensure(userId, slackTeamId, token)
+      slackTeamName <- maybeSlackTeamName
+    } yield SlackBotProfileQueries.ensure(userId, slackTeamId, slackTeamName, token)
 
     maybeAction.map { action =>
       models.run(action).map(Some(_))

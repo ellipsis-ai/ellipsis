@@ -9,7 +9,7 @@
 @import play.api.libs.json._
 @import json.Formatting._
 
-@main("Published behaviors", maybeUser) {
+@main("Published behaviors", maybeUser, Some(team)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.ApplicationController.doImportBehavior,
     routes.javascript.ApplicationController.editBehavior

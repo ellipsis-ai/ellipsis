@@ -9,7 +9,7 @@
 @import play.api.libs.json._
 @import json.Formatting._
 
-@main("Welcome to Ellipsis", maybeUser, "intro") {
+@main("Welcome to Ellipsis", maybeUser, Some(team), "intro") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.ApplicationController.doImportBehavior,
     routes.javascript.ApplicationController.editBehavior
