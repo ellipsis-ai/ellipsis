@@ -78,18 +78,15 @@ object BehaviorQueries {
   }
 
   def find(id: String, user: User): DBIO[Option[Behavior]] = {
-    for {
-      maybeBehavior <- findWithoutAccessCheck(id)
-      maybeAccessibleBehavior <- maybeBehavior.map { behavior =>
-        user.canAccess(behavior.team).map { canAccess =>
-          if (canAccess) {
-            Some(behavior)
-          } else {
-            None
-          }
+    findWithoutAccessCheck(id).map { maybeBehavior =>
+      maybeBehavior.flatMap { behavior =>
+        if (user.canAccess(behavior.team)) {
+          Some(behavior)
+        } else {
+          None
         }
-      }.getOrElse(DBIO.successful(None))
-    } yield maybeAccessibleBehavior
+      }
+    }
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {

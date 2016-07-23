@@ -38,7 +38,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[CacheLayer].to[PlayCacheLayer]
     bind[EventBus].toInstance(EventBus())
-    bind[UserDAO].to[UserDAOImpl]
   }
 
   /**

@@ -278,21 +278,6 @@ object BehaviorVersionQueries {
     findQuery(id).result.map(_.headOption.map(tuple2BehaviorVersion))
   }
 
-  def find(id: String, user: User): DBIO[Option[BehaviorVersion]] = {
-    for {
-      maybeBehaviorVersion <- findWithoutAccessCheck(id)
-      maybeAccessibleBehaviorVersion <- maybeBehaviorVersion.map { behaviorVersion =>
-        user.canAccess(behaviorVersion.team).map { canAccess =>
-          if (canAccess) {
-            Some(behaviorVersion)
-          } else {
-            None
-          }
-        }
-      }.getOrElse(DBIO.successful(None))
-    } yield maybeAccessibleBehaviorVersion
-  }
-
   def createFor(behavior: Behavior): DBIO[BehaviorVersion] = {
     val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, DateTime.now)
 
