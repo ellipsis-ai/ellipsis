@@ -162,6 +162,7 @@ class ApplicationController @Inject() (
             )
             Ok(views.html.edit(
               Some(user),
+              Some(team),
               Json.toJson(data).toString,
               Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
               justSaved = false,
@@ -193,6 +194,7 @@ class ApplicationController @Inject() (
         } yield {
           Ok(views.html.edit(
             Some(user),
+            maybeBehavior.map(_.team),
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             maybeJustSaved.exists(identity),

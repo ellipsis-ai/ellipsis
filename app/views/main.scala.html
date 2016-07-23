@@ -1,6 +1,7 @@
 @(
   title: String,
   maybeUser: Option[models.accounts.User],
+  maybeTeam: Option[models.Team],
   pageId: String = ""
   )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
@@ -98,7 +99,7 @@
               <form action='@routes.SocialAuthController.signOut()' method="POST">
                 @CSRF.formField
                 <span class="link-blue-light">
-                  <button type="submit" class="button-subtle button-shrink">Sign out</button>
+                  <button type="submit" class="button-subtle button-shrink">@maybeTeam.flatMap(_.maybeNonEmptyName.map(name => s"Sign out of $name")).getOrElse("Sign out")</button>
                 </span>
               </form>
             </div>

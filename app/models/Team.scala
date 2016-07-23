@@ -11,6 +11,16 @@ case class Team(
 
   def save: DBIO[Team] = Team.save(this)
 
+  def maybeNonEmptyName: Option[String] = Option(name).filter(_.trim.nonEmpty)
+
+  def setInitialName(initialName: String): DBIO[Team] = {
+    if (maybeNonEmptyName.isEmpty) {
+      this.copy(name = initialName).save
+    } else {
+      DBIO.successful(this)
+    }
+  }
+
 }
 
 class TeamsTable(tag: Tag) extends Table[Team](tag, "teams") {
@@ -62,7 +72,7 @@ object Team {
     } yield maybeTeam
   }
 
-  def create: DBIO[Team] = Team(IDs.next, "").save
+  def create(name: String): DBIO[Team] = Team(IDs.next, name).save
 
   def save(team: Team): DBIO[Team] = {
     val query = findQueryFor(team.id)
