@@ -1,6 +1,6 @@
 package controllers
 
-import java.net.URI
+import java.net.{URLEncoder, URI}
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -153,30 +153,38 @@ class SocialAuthController @Inject() (
           teamId <- models.run(SlackBotProfileQueries.allForSlackTeamId(profile.teamId).map { botProfiles =>
             botProfiles.head.teamId // Blow up if no bot profile
           })
-          savedProfile <- models.run(SlackProfileQueries.save(profile))
-          loginInfo <- Future.successful(profile.loginInfo)
-          savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
-          maybeExistingLinkedAccount <- models.run(LinkedAccount.find(profile.loginInfo, teamId))
-          linkedAccount <- models.run(
-            maybeExistingLinkedAccount.map(DBIO.successful).getOrElse {
-              val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
-                userService.createFor(teamId)
-              })
-              eventualUser.flatMap { user =>
-                LinkedAccount(user, profile.loginInfo, DateTime.now).save
-              }
+          result <- if (maybeTeamId.exists(t => t != teamId)) {
+            Future.successful {
+              val redir = s"/oauth/authorize?client_id=${provider.settings.clientID}&redirect_url=${provider.settings.redirectURL}&scope=${provider.settings.authorizationParams.get("scope").get}"
+              val url = s"https://slack.com/signin?redir=${URLEncoder.encode(redir, "UTF-8")}"
+              Redirect(url)
             }
-          )
-          user <- Future.successful(linkedAccount.user)
-          result <- Future.successful {
-            maybeRedirect.map { redirect =>
-              Redirect(validatedRedirectUri(redirect))
-            }.getOrElse(Redirect(routes.ApplicationController.index()))
+          } else {
+            for {
+              savedProfile <- models.run(SlackProfileQueries.save(profile))
+              loginInfo <- Future.successful(profile.loginInfo)
+              savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
+              maybeExistingLinkedAccount <- models.run(LinkedAccount.find(profile.loginInfo, teamId))
+              linkedAccount <- models.run(
+                maybeExistingLinkedAccount.map(DBIO.successful).getOrElse {
+                  val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
+                    userService.createFor(teamId)
+                  })
+                  eventualUser.flatMap { user =>
+                    LinkedAccount(user, profile.loginInfo, DateTime.now).save
+                  }
+                }
+              )
+              user <- Future.successful(linkedAccount.user)
+              result <- Future.successful {
+                maybeRedirect.map { redirect =>
+                  Redirect(validatedRedirectUri(redirect))
+                }.getOrElse(Redirect(routes.ApplicationController.index()))
+              }
+              authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
+            } yield authenticatedResult
           }
-          authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
-        } yield {
-          authenticatedResult
-        }
+        } yield result
       }
     }
   }
