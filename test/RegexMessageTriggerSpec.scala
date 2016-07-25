@@ -9,7 +9,7 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
     val team = Team(IDs.next, "Team!")
     val versionId = IDs.next
     val behavior = Behavior(IDs.next, team, Some(versionId), None, DateTime.now)
-    val behaviorVersion = BehaviorVersion(versionId, behavior, None, None, None, None, DateTime.now)
+    val behaviorVersion = BehaviorVersion(versionId, behavior, None, None, None, None, None, DateTime.now)
     RegexMessageTrigger(IDs.next, behaviorVersion, pattern, requiresBotMention, isCaseSensitive)
   }
 

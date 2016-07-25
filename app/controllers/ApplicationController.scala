@@ -242,7 +242,7 @@ class ApplicationController @Inject() (
                 }.getOrElse(DBIO.successful(None))
               }
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-                BehaviorVersionQueries.createFor(behavior, lambdaService, data).map(Some(_))
+                BehaviorVersionQueries.createFor(behavior, Some(user), lambdaService, data).map(Some(_))
               }.getOrElse(DBIO.successful(None))
             } yield {
                 maybeBehavior.map { behavior =>
@@ -427,7 +427,7 @@ class ApplicationController @Inject() (
           val action = for {
             maybeTeam <- Team.find(info.teamId, request.identity)
             maybeImporter <- DBIO.successful(maybeTeam.map { team =>
-              BehaviorVersionZipImporter(team, lambdaService, zipFile.ref.file)
+              BehaviorVersionZipImporter(team, request.identity, lambdaService, zipFile.ref.file)
             })
             maybeBehaviorVersion <- maybeImporter.map { importer =>
               importer.run.map(Some(_))
@@ -469,7 +469,7 @@ class ApplicationController @Inject() (
             val action = for {
               maybeTeam <- Team.find(data.teamId, user)
               maybeImporter <- DBIO.successful(maybeTeam.map { team =>
-                BehaviorVersionImporter(team, lambdaService, data)
+                BehaviorVersionImporter(team, user, lambdaService, data)
               })
               maybeBehaviorVersion <- maybeImporter.map { importer =>
                 importer.run.map(Some(_))

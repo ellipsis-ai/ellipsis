@@ -1,5 +1,6 @@
 package models.bots
 
+import models.accounts.User
 import models.{IDs, Team}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -51,9 +52,9 @@ class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag,
 object BehaviorParameterQueries {
 
   val all = TableQuery[BehaviorParametersTable]
-  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1.id)
+  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
 
-  type TupleType = (RawBehaviorParameter, (RawBehaviorVersion, (RawBehavior, Team)))
+  type TupleType = (RawBehaviorParameter, ((RawBehaviorVersion, Option[User]), (RawBehavior, Team)))
 
   def tuple2Parameter(tuple: TupleType): BehaviorParameter = {
     val raw = tuple._1
@@ -62,7 +63,7 @@ object BehaviorParameterQueries {
 
   def uncompiledAllForQuery(behaviorVersionId: Rep[String]) = {
     allWithBehaviorVersion.
-      filter { case(param, (behaviorVersion, team)) => behaviorVersion.id === behaviorVersionId}.
+      filter { case(param, ((behaviorVersion, user), team)) => behaviorVersion.id === behaviorVersionId}.
       sortBy { case(param, _) => param.rank.asc }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
