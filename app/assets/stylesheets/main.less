@@ -251,6 +251,32 @@ So for example:
   .mr@{size-name} {
     margin-right: @size !important;
   }
+
+  @media (max-width: @mobile-max-width) {
+    .mobile-ma@{size-name} {
+      margin: @size !important;
+    }
+    .mobile-mv@{size-name} {
+      margin-top: @size !important;
+      margin-bottom: @size !important;
+    }
+    .mobile-mh@{size-name} {
+      margin-left: @size !important;
+      margin-right: @size !important;
+    }
+    .mobile-mt@{size-name} {
+      margin-top: @size !important;
+    }
+    .mobile-mb@{size-name} {
+      margin-bottom: @size !important;
+    }
+    .mobile-ml@{size-name} {
+      margin-left: @size !important;
+    }
+    .mobile-mr@{size-name} {
+      margin-right: @size !important;
+    }
+  }
 }
 
 .generate-margin(@xxxxl, xxxxl);
@@ -286,6 +312,31 @@ So for example:
   }
   .pr@{size-name} {
     padding-right: @size !important;
+  }
+  @media (max-width: @mobile-max-width) {
+    .mobile-pa@{size-name} {
+      padding: @size !important;
+    }
+    .mobile-pv@{size-name} {
+      padding-top: @size !important;
+      padding-bottom: @size !important;
+    }
+    .mobile-ph@{size-name} {
+      padding-left: @size !important;
+      padding-right: @size !important;
+    }
+    .mobile-pt@{size-name} {
+      padding-top: @size !important;
+    }
+    .mobile-pb@{size-name} {
+      padding-bottom: @size !important;
+    }
+    .mobile-pl@{size-name} {
+      padding-left: @size !important;
+    }
+    .mobile-pr@{size-name} {
+      padding-right: @size !important;
+    }
   }
 }
 
@@ -782,7 +833,12 @@ th {
   }
 }
 
-.column:last-child {
+.column-right {
+  float: right;
+}
+
+.column:last-child,
+.column-right:first-child {
   padding-right: 0;
 }
 
@@ -1235,6 +1291,15 @@ label {
 }
 
 /* Tabs */
+
+.tabs {
+  white-space: nowrap;
+  overflow-x: auto;
+  margin-left: -@l;
+  margin-right: -@l;
+  padding-left: @l;
+  padding-right: @l;
+}
 
 .tab {
   display: inline-block;
@@ -1834,6 +1899,8 @@ button.button-activated {
   left: 0;
   right: 0;
   bottom: 0;
+  max-height: 100%;
+  overflow: auto;
 }
 
 .position-z-above {
