@@ -123,53 +123,55 @@ return React.createClass({
     return (
       <div className="box-action">
         <div className="container phn">
-          <div className="columns"><div className="column column-one-half">
-          <button type="button" disabled={this.oldestVersionSelected()}
-            className="button-symbol mrs"
-            onClick={this.selectOldestVersion}
-            title="Initial version"
-          >|◄</button>
-          <button type="button" disabled={this.oldestVersionSelected()}
-            className="button-symbol mrs"
-            onClick={this.incrementSelectedIndex}
-            title="Previous version"
-          >◄</button>
-          <div className="display-inline-block position-relative">
-            <DropdownMenu
-              openWhen={this.props.openMenuWhen}
-              label={this.getVersionText(this.getSelectedVersionIndex())}
-              labelClassName="button-dropdown-trigger-menu-above button-dropdown-trigger-wide mrs"
-              menuClassName="popup-dropdown-menu-above popup-dropdown-menu-wide"
-              onDownArrow={this.incrementSelectedIndex}
-              onUpArrow={this.decrementSelectedIndex}
-              toggle={this.props.menuToggle}
-            >
-              {this.getVersionsMenu()}
-            </DropdownMenu>
+          <div className="columns">
+            <div className="column">
+              <button type="button" disabled={this.oldestVersionSelected()}
+                className="button-symbol mrs mbs"
+                onClick={this.selectOldestVersion}
+                title="Initial version"
+              >|◄</button>
+              <button type="button" disabled={this.oldestVersionSelected()}
+                className="button-symbol mrs mbs"
+                onClick={this.incrementSelectedIndex}
+                title="Previous version"
+              >◄</button>
+              <div className="display-inline-block position-relative mbs">
+                <DropdownMenu
+                  openWhen={this.props.openMenuWhen}
+                  label={this.getVersionText(this.getSelectedVersionIndex())}
+                  labelClassName="button-dropdown-trigger-menu-above button-dropdown-trigger-wide mrs"
+                  menuClassName="popup-dropdown-menu-above popup-dropdown-menu-wide"
+                  onDownArrow={this.incrementSelectedIndex}
+                  onUpArrow={this.decrementSelectedIndex}
+                  toggle={this.props.menuToggle}
+                >
+                  {this.getVersionsMenu()}
+                </DropdownMenu>
+              </div>
+              <button type="button" disabled={this.newestVersionSelected()}
+                className="button-symbol mrs mbs"
+                onClick={this.decrementSelectedIndex}
+                title="Next version"
+              >►</button>
+              <button type="button" disabled={this.newestVersionSelected()}
+                className="button-symbol mrs mbs"
+                onClick={this.selectNewestVersion}
+                title="Current version"
+              >►|</button>
+            </div>
+            <div className="column column-right align-r mobile-column-full mobile-align-l">
+              <button type="button" disabled={this.currentVersionSelected()}
+                className={"mrs mbs " + (this.state.isRestoring ? "button-activated" : "")}
+                onClick={this.restore}
+              >
+                <span className="button-labels">
+                  <span className="button-normal-label">Restore</span>
+                  <span className="button-activated-label">Restoring…</span>
+                </span>
+              </button>
+              <button className="button-primary mbs" type="button" onClick={this.cancel}>Cancel</button>
+            </div>
           </div>
-          <button type="button" disabled={this.newestVersionSelected()}
-            className="button-symbol mrs"
-            onClick={this.decrementSelectedIndex}
-            title="Next version"
-          >►</button>
-          <button type="button" disabled={this.newestVersionSelected()}
-            className="button-symbol mrs"
-            onClick={this.selectNewestVersion}
-            title="Current version"
-          >►|</button>
-          </div><div className="column column-one-half align-r">
-
-          <button type="button" disabled={this.currentVersionSelected()}
-            className={"mrs " + (this.state.isRestoring ? "button-activated" : "")}
-            onClick={this.restore}
-          >
-            <span className="button-labels">
-              <span className="button-normal-label">Restore</span>
-              <span className="button-activated-label">Restoring…</span>
-            </span>
-          </button>
-          <button className="button-primary" type="button" onClick={this.cancel}>Cancel</button>
-          </div></div>
         </div>
       </div>
     );

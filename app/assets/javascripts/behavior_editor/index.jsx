@@ -991,13 +991,10 @@ return React.createClass({
 
       <div className="bg-light">
         <div className="container pbm">
-          <div className="columns columns-elastic">
-            <div className="column column-expand">
-              <h3 className="mbn type-weak">
-                <span>Edit behavior</span>
-                <span className="type-italic">{this.getBehaviorStatusText()}</span>
-              </h3>
-            </div>
+          <h3 className="mvn ptxxl type-weak display-ellipsis">
+            <span>Edit behavior</span>
+            <span className="type-italic">{this.getBehaviorStatusText()}</span>
+          </h3>
 
             {/*
              <form ref="testBehaviorForm" action="/test_behavior_version" method="POST">
@@ -1007,9 +1004,6 @@ return React.createClass({
                <input type="submit" />
              </form>
             */}
-
-            <div className="column column-shrink ptl position-relative"></div>
-          </div>
         </div>
       </div>
 
@@ -1026,7 +1020,7 @@ return React.createClass({
         <div className="container ptxl pbm">
 
           <div className="columns">
-            <div className="column column-one-quarter form-field-group mts">
+            <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
               <SectionHeading>When someone says</SectionHeading>
 
               <Checklist disabledWhen={this.isExistingBehavior()}>
@@ -1045,7 +1039,7 @@ return React.createClass({
               </Checklist>
 
             </div>
-            <div className="column column-three-quarters pll form-field-group">
+            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
               <div className="mbm">
               {this.getBehaviorTriggers().map(function(trigger, index) {
                 return (
@@ -1069,7 +1063,7 @@ return React.createClass({
                 );
               }, this)}
               </div>
-              <div className="pr-symbol align-r">
+              <div className="prsymbol mobile-prn align-r mobile-align-l">
                 <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
               </div>
             </div>
@@ -1080,15 +1074,15 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
-            <div className="box-help border form-field-group">
-            <div className="columns columns-elastic">
+            <div className="box-help border mbxxl">
+            <div className="columns columns-elastic mobile-columns-float">
               <div className="column column-expand">
                 <p className="mbn">
                   <span>You can run code to determine a result, with additional input from the user if needed, </span>
                   <span>or provide a simple response below.</span>
                 </p>
               </div>
-              <div className="column column-shrink align-m">
+              <div className="column column-shrink align-m mobile-mtm">
                 <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
                   Add code
                 </button>
@@ -1099,7 +1093,7 @@ return React.createClass({
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
           <div className="columns">
-            <div className="column column-one-quarter form-field-group">
+            <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
 
               <SectionHeading>Ellipsis will do</SectionHeading>
 
@@ -1121,7 +1115,7 @@ return React.createClass({
 
             </div>
 
-            <div className="column column-three-quarters pll form-field-group">
+            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
               <div className="border-top border-left border-right border-radius-top pvs">
                 <div className="ptxs phm pbm mbs type-s border-bottom">
                   <Collapsible revealWhen={!this.getAWSConfig()}>
@@ -1159,7 +1153,7 @@ return React.createClass({
                 />
               </div>
 
-              <div className="position-relative pr-symbol border-right">
+              <div className="position-relative prsymbol border-right">
                 <CodeEditor
                   value={this.getBehaviorFunctionBody()}
                   onChange={this.updateCode}
@@ -1199,7 +1193,7 @@ return React.createClass({
 
           <div className="columns">
 
-            <div className="column column-one-quarter mbxl type-s">
+            <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s">
 
               <SectionHeading>{this.getResponseHeader()}</SectionHeading>
 
@@ -1216,7 +1210,7 @@ return React.createClass({
               {this.getTemplateDataHelp()}
             </div>
 
-            <div className="column column-three-quarters pll mbxl">
+            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
               <div className="position-relative CodeMirror-container-no-gutter">
                 <Codemirror value={this.getBehaviorTemplate()}
                   onChange={this.updateTemplate}
@@ -1332,22 +1326,9 @@ return React.createClass({
                 />
               );
             }, this)}
-            <div className="container pvm">
+            <div className="container ptm">
               <div className="columns">
-                <div className="column column-one-half">
-                  <button type="submit"
-                    className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
-                    disabled={!this.isModified()}
-                    onClick={this.onSaveClick}
-                  >
-                    <span className="button-labels">
-                      <span className="button-normal-label">Save changes</span>
-                      <span className="button-activated-label">Saving…</span>
-                    </span>
-                  </button>
-                  <button type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>Undo changes</button>
-                </div>
-                <div className="column column-one-half align-r">
+                <div className="column column-right align-r pbm">
                   <DropdownMenu
                     openWhen={this.getActiveDropdown() === 'manageBehavior'}
                     label="Manage behavior"
@@ -1359,6 +1340,19 @@ return React.createClass({
                     <DropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
                     <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
                   </DropdownMenu>
+                </div>
+                <div className="column">
+                  <button type="submit"
+                    className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
+                    disabled={!this.isModified()}
+                    onClick={this.onSaveClick}
+                  >
+                    <span className="button-labels">
+                      <span className="button-normal-label">Save changes</span>
+                      <span className="button-activated-label">Saving…</span>
+                    </span>
+                  </button>
+                  <button className="mbm" type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>Undo changes</button>
                 </div>
               </div>
             </div>

@@ -13,14 +13,14 @@
 <div class="bg-light">
   <div class="container">
     <div class="columns ptl">
-      <div class="column column-one-half mtl">
+      <div class="column column-right align-r">
+        <a href='@routes.ApplicationController.newBehavior()' class="button">Teach Ellipsis something new</a>
+      </div>
+      <div class="column mtl">
         <div class="tabs">
           <a class='@tabClassFor("view")' href="@routes.ApplicationController.index()">View your behaviors</a>
           <a class='@tabClassFor("install")' href="@routes.ApplicationController.installBehaviors()">Install behaviors</a>
         </div>
-      </div>
-      <div class="column column-one-half align-r">
-        <a href='@routes.ApplicationController.newBehavior()' class="button">Teach Ellipsis something new</a>
       </div>
     </div>
   </div>

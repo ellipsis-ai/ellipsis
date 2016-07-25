@@ -21,47 +21,51 @@ define(function(require) {
 
       return (
 
-        <div className="columns columns-elastic">
+        <div>
+          <div className="columns">
 
-          <div className="column column-expand">
-            <p>
-              <span className="mrs">Set your AWS access key and region.</span>
-              <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible} />
-            </p>
+            <div className="column column-right mbs">
+              <button type="button" className="button-s display-ellipsis" onClick={this.props.onRemoveAWSConfig}>Remove AWS</button>
+            </div>
 
-            <EnvironmentVariableChooser
-              label="Access key ID"
-              property="accessKeyName"
-              chosenName={this.props.accessKeyName}
-              envVariableNames={this.props.envVariableNames}
-              onAddNew={this.props.onAddNew}
-              onChange={this.props.onChange}
-              />
-
-            <EnvironmentVariableChooser
-              label="Secret access key"
-              property="secretKeyName"
-              chosenName={this.props.secretKeyName}
-              envVariableNames={this.props.envVariableNames}
-              onAddNew={this.props.onAddNew}
-              onChange={this.props.onChange}
-              />
-
-            <EnvironmentVariableChooser
-              label="Region"
-              property="regionName"
-              chosenName={this.props.regionName}
-              envVariableNames={this.props.envVariableNames}
-              onAddNew={this.props.onAddNew}
-              onChange={this.props.onChange}
-              />
-
+            <div className="column">
+              <p>
+                <span className="mrs">Set your AWS access key and region.</span>
+                <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible} />
+              </p>
+            </div>
           </div>
 
-          <div className="column column-shrink">
-            <button type="button" className="button-s display-ellipsis" onClick={this.props.onRemoveAWSConfig}>Remove AWS</button>
-          </div>
+          <div className="columns columns-elastic mobile-columns-float">
+            <div className="column-group">
+              <EnvironmentVariableChooser
+                label="Access key ID"
+                property="accessKeyName"
+                chosenName={this.props.accessKeyName}
+                envVariableNames={this.props.envVariableNames}
+                onAddNew={this.props.onAddNew}
+                onChange={this.props.onChange}
+                />
 
+              <EnvironmentVariableChooser
+                label="Secret access key"
+                property="secretKeyName"
+                chosenName={this.props.secretKeyName}
+                envVariableNames={this.props.envVariableNames}
+                onAddNew={this.props.onAddNew}
+                onChange={this.props.onChange}
+                />
+
+              <EnvironmentVariableChooser
+                label="Region"
+                property="regionName"
+                chosenName={this.props.regionName}
+                envVariableNames={this.props.envVariableNames}
+                onAddNew={this.props.onAddNew}
+                onChange={this.props.onChange}
+                />
+            </div>
+          </div>
         </div>
       );
     }

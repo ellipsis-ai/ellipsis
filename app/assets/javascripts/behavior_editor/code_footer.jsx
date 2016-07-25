@@ -21,7 +21,7 @@ return React.createClass({
               <div className="column column-expand">
                 <code className="type-weak type-s">{"}"}</code>
               </div>
-              <div className="column column-shrink pr-symbol align-r">
+              <div className="column column-shrink prsymbol align-r">
                 <button type="button" className="button-s" onClick={this.props.onCodeDelete}>Remove code</button>
               </div>
             </div>

@@ -1,5 +1,7 @@
 @import url(../lib/codemirror/addon/hint/show-hint.css);
 
+@mobile-max-width: 767px;
+
 /* Measurements */
 @xxs: 2px;
 @xs: 4px;
@@ -11,12 +13,21 @@
 @xxxl: 48px;
 @xxxxl: 64px;
 
-@type-xs: 13px;
-@type-s: 15px;
-@type-m: 18px;
-@type-l: 28px;
-@type-xl: 43px;
-@type-xxl: 59px;
+@type-desktop-m: 18px;
+@type-mobile-m: 16px;
+
+@type-xxs: unit(10/18, rem);
+@type-xs: unit(13/18, rem);
+@type-s: unit(15/18, rem);
+@type-m: unit(18/18, rem);
+@type-l: unit(28/18, rem);
+@type-xl: unit(43/18, rem);
+@type-xxl: unit(59/18, rem);
+
+@line-height-xs: unit(16/18, rem);
+@line-height-s: unit(24/18, rem);
+@line-height-m: unit(24/18, rem);
+@line-height-l: unit(32/18, rem);
 
 @border-width: 1px;
 @border-width-thick: 2px;
@@ -68,14 +79,23 @@
 @border-color-focus: @pink-medium;
 @border-color-dropdown: @gray-medium;
 
+html {
+  font-size: @type-desktop-m;
+  line-height: @line-height-m;
+}
+
+@media (max-width: @mobile-max-width) {
+  html {
+    font-size: @type-mobile-m;
+  }
+}
+
 body, input, select, textarea, button {
   font-family: 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
 }
 
 body {
   margin: 0;
-  font-size: @type-m;
-  line-height: @xl;
   background-color: @white;
   color: @black;
 }
@@ -207,81 +227,88 @@ So for example:
 
 */
 
-.generate-margin(@size, @size-name) {
-  .ma@{size-name} {
+@sizes: xxxxl @xxxxl, xxxl @xxxl, xxl @xxl, xl @xl, l @l, symbol 40px, m @m, s @s, xs @xs, n 0;
+
+.generate-all-sided(@prefix, @iterator: 1) when (@iterator <= length(@sizes)) {
+  @size-name: extract(extract(@sizes, @iterator), 1);
+  @size: extract(extract(@sizes, @iterator), 2);
+  .@{prefix}ma@{size-name} {
     margin: @size !important;
   }
-  .mv@{size-name} {
-    margin-top: @size !important;
-    margin-bottom: @size !important;
-  }
-  .mh@{size-name} {
-    margin-left: @size !important;
-    margin-right: @size !important;
-  }
-  .mt@{size-name} {
-    margin-top: @size !important;
-  }
-  .mb@{size-name} {
-    margin-bottom: @size !important;
-  }
-  .ml@{size-name} {
-    margin-left: @size !important;
-  }
-  .mr@{size-name} {
-    margin-right: @size !important;
-  }
-}
-
-.generate-margin(@xxxxl, xxxxl);
-.generate-margin(@xxxl, xxxl);
-.generate-margin(@xxl, xxl);
-.generate-margin(@xl, xl);
-.generate-margin(@l, l);
-.generate-margin(@m, m);
-.generate-margin(@s, s);
-.generate-margin(@xs, xs);
-.generate-margin(0, n);
-
-.generate-padding(@size, @size-name) {
-  .pa@{size-name} {
+  .@{prefix}pa@{size-name} {
     padding: @size !important;
   }
-  .pv@{size-name} {
-    padding-top: @size !important;
-    padding-bottom: @size !important;
-  }
-  .ph@{size-name} {
-    padding-left: @size !important;
-    padding-right: @size !important;
-  }
-  .pt@{size-name} {
-    padding-top: @size !important;
-  }
-  .pb@{size-name} {
-    padding-bottom: @size !important;
-  }
-  .pl@{size-name} {
-    padding-left: @size !important;
-  }
-  .pr@{size-name} {
-    padding-right: @size !important;
-  }
+  .generate-all-sided(@prefix, (@iterator + 1));
 }
 
-.generate-padding(@xxxxl, xxxxl);
-.generate-padding(@xxxl, xxxl);
-.generate-padding(@xxl, xxl);
-.generate-padding(@xl, xl);
-.generate-padding(@l, l);
-.generate-padding(@m, m);
-.generate-padding(@s, s);
-.generate-padding(@xs, xs);
-.generate-padding(0, n);
+.generate-two-sided(@prefix, @iterator: 1) when (@iterator <= length(@sizes)) {
+  @size-name: extract(extract(@sizes, @iterator), 1);
+  @size: extract(extract(@sizes, @iterator), 2);
+  .@{prefix}mv@{size-name} {
+    margin-top: @size !important;
+    margin-bottom: @size !important;
+  }
+  .@{prefix}mh@{size-name} {
+    margin-left: @size !important;
+    margin-right: @size !important;
+  }
+  .@{prefix}pv@{size-name} {
+    padding-top: @size !important;
+    padding-bottom: @size !important;
+  }
+  .@{prefix}ph@{size-name} {
+    padding-left: @size !important;
+    padding-right: @size !important;
+  }
+  .generate-two-sided(@prefix, (@iterator + 1));
+}
 
-.pr-symbol {
-/* Special-case of reserving space for a symbol button */
-  padding-right: 40px !important;
+.generate-one-sided(@prefix, @iterator: 1) when (@iterator <= length(@sizes)) {
+  @size-name: extract(extract(@sizes, @iterator), 1);
+  @size: extract(extract(@sizes, @iterator), 2);
+  .@{prefix}mt@{size-name} {
+    margin-top: @size !important;
+  }
+  .@{prefix}mb@{size-name} {
+    margin-bottom: @size !important;
+  }
+  .@{prefix}ml@{size-name} {
+    margin-left: @size !important;
+  }
+  .@{prefix}mr@{size-name} {
+    margin-right: @size !important;
+  }
+  .@{prefix}pt@{size-name} {
+    padding-top: @size !important;
+  }
+  .@{prefix}pb@{size-name} {
+    padding-bottom: @size !important;
+  }
+  .@{prefix}pl@{size-name} {
+    padding-left: @size !important;
+  }
+  .@{prefix}pr@{size-name} {
+    padding-right: @size !important;
+  }
+  .generate-one-sided(@prefix, (@iterator + 1));
+}
+
+.generate-all-sided(e(""));
+
+@media (max-width: @mobile-max-width) {
+  .generate-all-sided(mobile-);
+}
+
+.generate-two-sided(e(""));
+
+@media (max-width: @mobile-max-width) {
+  .generate-two-sided(mobile-);
+}
+
+.generate-one-sided(e(""));
+
+@media (max-width: @mobile-max-width) {
+  .generate-one-sided(mobile-);
 }
 
 /* Background utilities */
@@ -484,6 +511,15 @@ So for example:
   border-top: @border-width-thick solid @pink-medium;
 }
 
+@media (max-width: @mobile-max-width) {
+  .mobile-border-top {
+    border-top: @border-width solid @border-color;
+  }
+  .mobile-border-none {
+    border: none;
+  }
+}
+
 /* Boxes combined background and border */
 
 .box-help {
@@ -499,7 +535,7 @@ So for example:
   .bg-blue-lightest();
   .border();
   .border-dotted();
-  .paxs();
+  padding: @xs;
   .type-monospace();
   .type-xs();
   .type-weak();
@@ -545,22 +581,22 @@ code.type-bold,
 
 .type-l {
   font-size: @type-l !important;
-  line-height: @xxl;
+  line-height: @line-height-l;
 }
 
 .type-m {
   font-size: @type-m !important;
-  line-height: @xl;
+  line-height: @line-height-m;
 }
 
 .type-s {
   font-size: @type-s !important;
-  line-height: @xl;
+  line-height: @line-height-s;
 }
 
 .type-xs {
   font-size: @type-xs !important;
-  line-height: @l;
+  line-height: @line-height-xs;
 }
 
 .type-italic {
@@ -615,11 +651,15 @@ code.type-bold,
 }
 
 code {
-  white-space: pre;
+  .type-monospace();
 }
 
 .type-wrap {
   white-space: normal;
+}
+
+.type-wrap-words {
+  word-break: break-all;
 }
 
 pre {
@@ -628,12 +668,30 @@ pre {
 
 /* Alignment utilities */
 
+.align-l {
+  text-align: left;
+}
+
 .align-c {
   text-align: center;
 }
 
 .align-r {
   text-align: right;
+}
+
+@media (max-width: @mobile-max-width) {
+  .mobile-align-l {
+    text-align: left;
+  }
+
+  .mobile-align-c {
+    text-align: center;
+  }
+
+  .mobile-align-r {
+    text-align: right;
+  }
 }
 
 .align-t {
@@ -738,7 +796,7 @@ th {
 .columns:after {
   content: ' ';
   display: table;
-  clear: left;
+  clear: both;
 }
 
 .columns-elastic {
@@ -746,7 +804,16 @@ th {
   width: 100%;
 }
 
-.columns-elastic > .column {
+.columns-elastic .column-group {
+  display: table-row-group;
+}
+
+.columns-elastic .column-row {
+  display: table-row;
+}
+
+.columns-elastic > .column,
+.columns-elastic > .column-group > .column-row > .column {
   display: table-cell;
   vertical-align: top;
   float: none;
@@ -762,7 +829,12 @@ th {
   }
 }
 
-.column:last-child {
+.column-right {
+  float: right;
+}
+
+.column:last-child,
+.column-right:first-child {
   padding-right: 0;
 }
 
@@ -791,6 +863,33 @@ th {
   padding-right: 0;
 }
 
+@media (max-width: @mobile-max-width) {
+  .mobile-column-one-quarter {
+    width: 25%;
+  }
+
+  .mobile-column-one-third {
+    width: 33.3333%;
+  }
+
+  .mobile-column-one-half {
+    width: 50%;
+  }
+
+  .mobile-column-five-twelfths {
+    width: 41.6666%;
+  }
+
+  .mobile-column-three-quarters {
+    width: 75%;
+  }
+
+  .mobile-column-full {
+    width: 100%;
+    padding-right: 0;
+  }
+}
+
 .column-expand {
   width: 100%;
 }
@@ -798,6 +897,28 @@ th {
 .column-shrink {
   width: 1px;
 }
+
+@media (max-width: @mobile-max-width) {
+  .mobile-columns-float {
+    display: block;
+  }
+
+  .mobile-columns-float > .column,
+  .mobile-columns-float > .column-group > .column-row > .column {
+    display: block;
+    float: left;
+  }
+
+  .mobile-columns-float > .column-shrink,
+  .mobile-columns-float > .column-group > .column-row > .column-shrink {
+    width: auto;
+  }
+
+  .mobile-columns-float > .column-group > .column-row > .mobile-column-full {
+    width: 100%;
+  }
+}
+
 
 /* Hard widths */
 
@@ -872,10 +993,6 @@ hr.form-border {
 
 form {
   margin: 0;
-}
-
-.form-field-group {
-  .mbxxl();
 }
 
 input, select, textarea, .form-field {
@@ -1208,6 +1325,15 @@ label {
 
 /* Tabs */
 
+.tabs {
+  white-space: nowrap;
+  overflow-x: auto;
+  margin-left: -@l;
+  margin-right: -@l;
+  padding-left: @l;
+  padding-right: @l;
+}
+
 .tab {
   display: inline-block;
   color: @black;
@@ -1253,6 +1379,8 @@ select.form-select {
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease;
   vertical-align: bottom;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  touch-action: manipulation;
 }
 
 a.button {
@@ -1273,8 +1401,8 @@ select.form-select {
   min-width: @dropdown-menu-width;
   text-align: left;
   &::before {
-    font-size: 10px;
-    line-height: 10px;
+    font-size: @type-xxs;
+    line-height: @type-xxs;
     content: '▲\A▼';
     width: 0;
     position: absolute;
@@ -1328,6 +1456,7 @@ button.button-shrink {
   min-width: 0;
   padding-left: (@s - @border-width);
   padding-right: (@s - @border-width);
+  white-space: nowrap;
 }
 
 button.button-symbol {
@@ -1649,6 +1778,12 @@ button.button-activated {
   display: none !important;
 }
 
+@media (max-width: @mobile-max-width) {
+  .mobile-display-none {
+    display: none !important;
+  }
+}
+
 .display-inline {
   display: inline;
 }
@@ -1803,6 +1938,7 @@ button.button-activated {
   left: 0;
   right: 0;
   bottom: 0;
+  max-height: 100%;
 }
 
 .position-z-above {
@@ -1829,7 +1965,7 @@ button.button-activated {
 
 .content {
   .bg-lightest();
-  .pbxxl();
+  padding-bottom: @xxl;
 }
 
 /* CodeMirror extension styles */
@@ -1875,7 +2011,7 @@ button.button-activated {
   .box-help();
   .popup-shadow();
   .type-s();
-  .pan();
+  padding: 0;
   overflow: hidden;
   position: fixed;
   white-space: pre;
@@ -1888,12 +2024,10 @@ button.button-activated {
 
 .CodeMirror-lint-message-error {
   border-left: @xs solid @pink-medium;
-  .pvxs();
-  .phs();
+  padding: @xs @s;
 }
 
 .CodeMirror-lint-message-warning {
   border-left: @xs solid @yellow-light;
-  .pvxs();
-  .phs();
+  padding: @xs @s;
 }

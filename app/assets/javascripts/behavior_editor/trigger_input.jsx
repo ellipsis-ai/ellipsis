@@ -125,60 +125,64 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="columns columns-elastic mbs">
-        <div className={"column column-shrink prn " + (this.props.requiresMention ? "" : "display-none")}>
-          <div className={
-            "type-weak type-s form-input form-input-borderless prxs " +
-            (this.props.className || "")
-          }>
-            <label htmlFor={this.props.id}>@ellipsis:</label>
-          </div>
-        </div>
-        <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-          <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.className || "")}>
-            <label htmlFor={this.props.id}>/</label>
-          </div>
-        </div>
-        <div className="column column-expand prn position-relative">
-          <Input
-            className={
-              " form-input-borderless " +
-              (this.props.isRegex ? " type-monospace " : "") +
-              (this.props.className || "")
-            }
-            id={this.props.id}
-            ref="input"
-            value={this.props.value}
-            placeholder="Add a trigger phrase"
-            onChange={this.onChange.bind(this, 'text')}
-            onBlur={this.onBlur}
-            onEnterKey={this.props.onEnterKey}
-          />
-          {this.state.regexError ? (
-            <div className="position-absolute position-top-right mts mrxs fade-in">
-              <button type="button"
-                className="button-error button-s button-shrink"
-                ref="errorButton"
-                onClick={this.toggleError}
-              >
-                <span>{this.state.showError ? "▾" : "▸" }</span>
-                <span> Error</span>
-              </button>
-            </div>
-          ) : ""}
-          <Collapsible revealWhen={this.state.showError} className="popup display-limit-width">
-            <div className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
-              <div className="position-absolute position-top-right ptxs prxs">
-                <HelpButton onClick={this.toggleError} toggled={true} inline={true} />
+      <div className="columns columns-elastic mobile-columns-float mbs mobile-mbxl">
+        <div className="column column-expand">
+          <div className="columns columns-elastic">
+            <div className={"column column-shrink prn " + (this.props.requiresMention ? "" : "display-none")}>
+              <div className={
+                "type-weak type-s form-input form-input-borderless prxs " +
+                (this.props.className || "")
+              }>
+                <label htmlFor={this.props.id}>@ellipsis:</label>
               </div>
-              <div><b>This regex trigger cannot be used because of a format error:</b></div>
-              <pre>{this.state.regexError || "\n\n\n"}</pre>
             </div>
-          </Collapsible>
-        </div>
-        <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-          <div className={"type-disabled type-monospace form-input form-input-borderless prs " + (this.props.className || "")}>
-            <label htmlFor={this.props.id}>/</label>
+            <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
+              <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.className || "")}>
+                <label htmlFor={this.props.id}>/</label>
+              </div>
+            </div>
+            <div className="column column-expand prn position-relative">
+              <Input
+                className={
+                  " form-input-borderless " +
+                  (this.props.isRegex ? " type-monospace " : "") +
+                  (this.props.className || "")
+                }
+                id={this.props.id}
+                ref="input"
+                value={this.props.value}
+                placeholder="Add a trigger phrase"
+                onChange={this.onChange.bind(this, 'text')}
+                onBlur={this.onBlur}
+                onEnterKey={this.props.onEnterKey}
+              />
+              {this.state.regexError ? (
+                <div className="position-absolute position-top-right mts mrxs fade-in">
+                  <button type="button"
+                    className="button-error button-s button-shrink"
+                    ref="errorButton"
+                    onClick={this.toggleError}
+                  >
+                    <span>{this.state.showError ? "▾" : "▸" }</span>
+                    <span> Error</span>
+                  </button>
+                </div>
+              ) : ""}
+              <Collapsible revealWhen={this.state.showError} className="popup display-limit-width">
+                <div className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
+                  <div className="position-absolute position-top-right ptxs prxs">
+                    <HelpButton onClick={this.toggleError} toggled={true} inline={true} />
+                  </div>
+                  <div><b>This regex trigger cannot be used because of a format error:</b></div>
+                  <pre>{this.state.regexError || "\n\n\n"}</pre>
+                </div>
+              </Collapsible>
+            </div>
+            <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
+              <div className={"type-disabled type-monospace form-input form-input-borderless prs " + (this.props.className || "")}>
+                <label htmlFor={this.props.id}>/</label>
+              </div>
+            </div>
           </div>
         </div>
         <div className="column column-shrink prn position-relative">
