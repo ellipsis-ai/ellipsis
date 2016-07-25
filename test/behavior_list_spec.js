@@ -80,14 +80,6 @@ describe('BehaviorList', () => {
     config = Object.assign(config, defaultConfig);
   });
 
-  describe('render', () => {
-    it('renders a table', () => {
-      const list = createBehaviorList(config);
-      const output = list.render();
-      expect(output.type).toBe('table');
-    });
-  });
-
   describe('getDisplayTriggerFromVersion', () => {
     it('returns the first non-regex trigger when available', () => {
       const list = createBehaviorList(config);
