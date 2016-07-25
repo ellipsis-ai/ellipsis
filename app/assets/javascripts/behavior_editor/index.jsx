@@ -1332,22 +1332,9 @@ return React.createClass({
                 />
               );
             }, this)}
-            <div className="container pvm">
+            <div className="container ptm">
               <div className="columns">
-                <div className="column column-one-half">
-                  <button type="submit"
-                    className={"button-primary mrs " + (this.state.isSaving ? "button-activated" : "")}
-                    disabled={!this.isModified()}
-                    onClick={this.onSaveClick}
-                  >
-                    <span className="button-labels">
-                      <span className="button-normal-label">Save changes</span>
-                      <span className="button-activated-label">Saving…</span>
-                    </span>
-                  </button>
-                  <button type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>Undo changes</button>
-                </div>
-                <div className="column column-one-half align-r">
+                <div className="column column-right align-r pbm">
                   <DropdownMenu
                     openWhen={this.getActiveDropdown() === 'manageBehavior'}
                     label="Manage behavior"
@@ -1359,6 +1346,19 @@ return React.createClass({
                     <DropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
                     <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
                   </DropdownMenu>
+                </div>
+                <div className="column">
+                  <button type="submit"
+                    className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
+                    disabled={!this.isModified()}
+                    onClick={this.onSaveClick}
+                  >
+                    <span className="button-labels">
+                      <span className="button-normal-label">Save changes</span>
+                      <span className="button-activated-label">Saving…</span>
+                    </span>
+                  </button>
+                  <button className="mbm" type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>Undo changes</button>
                 </div>
               </div>
             </div>

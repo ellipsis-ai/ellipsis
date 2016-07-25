@@ -80,8 +80,8 @@ return React.createClass({
             <span className="button-symbol-placeholder"></span>
           </div>
           <div className="column">
-            <div className="columns">
-              <div className="column plxxxl prn align-r position-relative">
+            <div className="columns columns-elastic">
+              <div className="column column-shrink plxxxl prn align-r position-relative">
                 <code className="type-disabled type-s position-absolute position-top-right prxs">{this.boilerplateLineNumber()}</code>
               </div>
               <div className="column plxs">
