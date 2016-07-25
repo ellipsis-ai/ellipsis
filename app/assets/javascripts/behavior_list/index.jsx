@@ -128,17 +128,17 @@ define(function(require) {
 
     getVersionRow: function(version, index) {
       return (
-        <tr key={"version" + index}>
-          <td className={"type-s" + this.getTableRowClasses(index)}>
+        <div className="column-row" key={"version" + index}>
+          <div className={"column column-expand type-s type-wrap-words mobile-border-top mobile-pts mobile-pbn" + this.getTableRowClasses(index)}>
             {this.getTriggersFromVersion(version)}
-          </td>
-          <td className={"plm type-s display-ellipsis align-r" + this.getTableRowClasses(index)}>
+          </div>
+          <div className={"column column-shrink type-s display-ellipsis align-r prxs mobile-border-none mobile-ptn mobile-pbxs" + this.getTableRowClasses(index)}>
             {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}
-          </td>
-          <td width="1" className={"plm" + this.getTableRowClasses(index)}>
+          </div>
+          <div className={"column column-shrink mobile-border-none mobile-ptn mobile-pbxs" + this.getTableRowClasses(index)}>
             {this.getImportedStatusFromVersion(version)}
-          </td>
-        </tr>
+          </div>
+        </div>
       );
     },
 
@@ -146,13 +146,13 @@ define(function(require) {
       var tasks = this.getTasks();
       if (tasks.length > 0) {
         return (
-          <tbody>
-            <tr>
-              <th className="ptl type-l pbs">What Ellipsis can do</th>
-              <th className="type-label align-r pbs">Last modified</th>
-            </tr>
+          <div className="column-group">
+            <div className="column-row type-bold">
+              <div className="column column-expand ptl type-l pbs">What Ellipsis can do</div>
+              <div className="column column-shrink type-label align-r pbs align-b">Last modified</div>
+            </div>
             {this.getTasks().map(this.getVersionRow, this)}
-          </tbody>
+          </div>
         );
       }
     },
@@ -161,13 +161,13 @@ define(function(require) {
       var knowledge = this.getKnowledge();
       if (knowledge.length > 0) {
         return (
-          <tbody>
-            <tr>
-              <th className="ptxxl type-l pbs">What Ellipsis knows</th>
-              <th className="type-label align-r pbs">Last modified</th>
-            </tr>
+          <div className="column-group">
+            <div className="column-row">
+              <div className="column column-expand ptxxl type-l pbs">What Ellipsis knows</div>
+              <div className="column column-shrink type-label align-r pbs align-b">Last modified</div>
+            </div>
             {this.getKnowledge().map(this.getVersionRow, this)}
-          </tbody>
+          </div>
         );
       }
     },
@@ -175,10 +175,10 @@ define(function(require) {
     render: function() {
       if (this.props.behaviorVersions.length > 0) {
         return (
-          <table>
+          <div className="columns columns-elastic mobile-columns-float">
             {this.getTaskRows()}
             {this.getKnowledgeRows()}
-          </table>
+          </div>
         );
       } else {
         return (

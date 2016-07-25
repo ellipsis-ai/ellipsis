@@ -511,6 +511,15 @@ So for example:
   border-top: @border-width-thick solid @pink-medium;
 }
 
+@media (max-width: @mobile-max-width) {
+  .mobile-border-top {
+    border-top: @border-width solid @border-color;
+  }
+  .mobile-border-none {
+    border: none;
+  }
+}
+
 /* Boxes combined background and border */
 
 .box-help {
@@ -647,6 +656,10 @@ code {
 
 .type-wrap {
   white-space: normal;
+}
+
+.type-wrap-words {
+  word-break: break-all;
 }
 
 pre {
@@ -791,7 +804,16 @@ th {
   width: 100%;
 }
 
-.columns-elastic > .column {
+.columns-elastic .column-group {
+  display: table-row-group;
+}
+
+.columns-elastic .column-row {
+  display: table-row;
+}
+
+.columns-elastic > .column,
+.columns-elastic > .column-group > .column-row > .column {
   display: table-cell;
   vertical-align: top;
   float: none;
@@ -881,12 +903,14 @@ th {
     display: block;
   }
 
-  .mobile-columns-float > .column {
+  .mobile-columns-float > .column,
+  .mobile-columns-float > .column-group > .column-row > .column {
     display: block;
     float: left;
   }
 
-  .mobile-columns-float > .column-shrink {
+  .mobile-columns-float > .column-shrink,
+  .mobile-columns-float > .column-group > .column-row > .column-shrink {
     width: auto;
   }
 }
