@@ -2,6 +2,7 @@ package models.bots.conversations
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.Team
+import models.accounts.User
 import models.bots._
 import models.bots.triggers.{MessageTrigger, RawMessageTrigger, MessageTriggerQueries}
 import org.joda.time.DateTime
@@ -65,7 +66,7 @@ object ConversationQueries {
   def all = TableQuery[ConversationsTable]
   def allWithTrigger = all.join(MessageTriggerQueries.allWithBehaviorVersion).on(_.triggerId === _._1.id)
 
-  type TupleType = (RawConversation, (RawMessageTrigger, (RawBehaviorVersion, (RawBehavior, Team))))
+  type TupleType = (RawConversation, (RawMessageTrigger, ((RawBehaviorVersion, Option[User]), (RawBehavior, Team))))
 
   def tuple2Conversation(tuple: TupleType): Conversation = {
     val raw = tuple._1

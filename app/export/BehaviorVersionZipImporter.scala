@@ -5,11 +5,12 @@ import java.util.zip.{ZipEntry, ZipInputStream}
 
 import json.BehaviorVersionData
 import models.Team
+import models.accounts.User
 import models.bots.BehaviorVersion
 import services.AWSLambdaService
 import slick.dbio.DBIO
 
-case class BehaviorVersionZipImporter(team: Team, lambdaService: AWSLambdaService, zipFile: File) {
+case class BehaviorVersionZipImporter(team: Team, user: User, lambdaService: AWSLambdaService, zipFile: File) {
 
   private def readDataFrom(zipInputStream: ZipInputStream): String = {
     val buffer = new Array[Byte](1024)
@@ -46,7 +47,7 @@ case class BehaviorVersionZipImporter(team: Team, lambdaService: AWSLambdaServic
         maybeGithubUrl = None
       )
 
-    BehaviorVersionImporter(team, lambdaService, data).run
+    BehaviorVersionImporter(team, user, lambdaService, data).run
   }
 
 }

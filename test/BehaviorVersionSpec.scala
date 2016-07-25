@@ -1,5 +1,5 @@
-import models.bots.triggers.MessageTriggerQueries
-import models.bots.{BehaviorParameterQueries, Behavior, BehaviorVersionQueries, BehaviorQueries}
+import models.accounts.User
+import models.bots.{Behavior, BehaviorVersionQueries, BehaviorQueries}
 import models.{Team, IDs}
 import org.scalatestplus.play.PlaySpec
 import slick.driver.PostgresDriver.api.{Database => PostgresDatabase}
@@ -16,10 +16,11 @@ class BehaviorVersionSpec extends PlaySpec with DBMixin {
     "should load the current version" in {
       withDatabase { db =>
         val team = runNow(db, Team(IDs.next, "").save)
+        val user = runNow(db, User(IDs.next, team.id, None).save)
         val behavior = runNow(db, BehaviorQueries.createFor(team, None))
-        val firstVersion = runNow(db, BehaviorVersionQueries.createFor(behavior))
+        val firstVersion = runNow(db, BehaviorVersionQueries.createFor(behavior, Some(user)))
         reloadBehavior(db, behavior).maybeCurrentVersionId mustBe Some(firstVersion.id)
-        val secondVersion = runNow(db, BehaviorVersionQueries.createFor(behavior))
+        val secondVersion = runNow(db, BehaviorVersionQueries.createFor(behavior, Some(user)))
         reloadBehavior(db, behavior).maybeCurrentVersionId mustBe Some(secondVersion.id)
       }
     }

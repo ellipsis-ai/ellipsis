@@ -1,6 +1,7 @@
 package models.accounts
 
 import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
+import models.bots.{SlackMessageContext, MessageContext}
 import models.{Team, IDs}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -66,6 +67,15 @@ object User {
   val findByEmailQuery = Compiled(uncompiledFindByEmailQuery _)
 
   def findByEmail(email: String): DBIO[Option[User]] = findByEmailQuery(email).result.headOption
+
+  def findFromMessageContext(context: MessageContext, team: Team): DBIO[Option[User]] = {
+    context match {
+      case mc: SlackMessageContext => LinkedAccount.find(LoginInfo(mc.name, mc.userIdForContext), team.id).map { maybeLinked =>
+        maybeLinked.map(_.user)
+      }
+      case _ => DBIO.successful(None)
+    }
+  }
 
   def delete(user: User): DBIO[Option[User]] = {
     findQueryFor(user.id).delete.map{ _ => Some(user) }

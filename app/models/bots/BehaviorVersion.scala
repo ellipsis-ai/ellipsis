@@ -32,6 +32,7 @@ case class BehaviorVersion(
                      maybeShortName: Option[String],
                      maybeFunctionBody: Option[String],
                      maybeResponseTemplate: Option[String],
+                     maybeAuthor: Option[User],
                      createdAt: DateTime
                      ) {
 
@@ -134,10 +135,6 @@ case class BehaviorVersion(
     BehaviorVersionQueries.delete(this).map(_ => Unit)
   }
 
-  def learnCode(code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
-    BehaviorVersionQueries.learnCodeFor(this, code, lambdaService)
-  }
-
   private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
 
   private def processedResultFor(result: JsValue): String = {
@@ -208,7 +205,7 @@ case class BehaviorVersion(
   def save: DBIO[BehaviorVersion] = BehaviorVersionQueries.save(this)
 
   def toRaw: RawBehaviorVersion = {
-    RawBehaviorVersion(id, behavior.id, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt)
+    RawBehaviorVersion(id, behavior.id, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, maybeAuthor.map(_.id), createdAt)
   }
 
 }
@@ -220,6 +217,7 @@ case class RawBehaviorVersion(
                         maybeShortName: Option[String],
                         maybeFunctionBody: Option[String],
                         maybeResponseTemplate: Option[String],
+                        maybeAuthorId: Option[String],
                         createdAt: DateTime
                         )
 
@@ -231,20 +229,22 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def maybeShortName = column[Option[String]]("short_name")
   def maybeFunctionBody = column[Option[String]]("code")
   def maybeResponseTemplate = column[Option[String]]("response_template")
+  def maybeAuthorId = column[Option[String]]("author_id")
   def createdAt = column[DateTime]("created_at")
 
   def * =
-    (id, behaviorId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, createdAt) <>
+    (id, behaviorId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, maybeAuthorId, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
 object BehaviorVersionQueries {
 
   def all = TableQuery[BehaviorVersionsTable]
-  def allWithBehavior = all.join(BehaviorQueries.allWithTeam).on(_.behaviorId === _._1.id)
+  def allWithUser = all.joinLeft(User.all).on(_.maybeAuthorId === _.id)
+  def allWithBehavior = allWithUser.join(BehaviorQueries.allWithTeam).on(_._1.behaviorId === _._1.id)
 
-  def tuple2BehaviorVersion(tuple: (RawBehaviorVersion, (RawBehavior, Team))): BehaviorVersion = {
-    val raw = tuple._1
+  def tuple2BehaviorVersion(tuple: ((RawBehaviorVersion, Option[User]), (RawBehavior, Team))): BehaviorVersion = {
+    val raw = tuple._1._1
     BehaviorVersion(
       raw.id,
       BehaviorQueries.tuple2Behavior(tuple._2),
@@ -252,14 +252,15 @@ object BehaviorVersionQueries {
       raw.maybeShortName,
       raw.maybeFunctionBody,
       raw.maybeResponseTemplate,
+      tuple._1._2,
       raw.createdAt
     )
   }
 
   def uncompiledAllForQuery(behaviorId: Rep[String]) = {
     allWithBehavior.
-      filter { case(version, _) => version.behaviorId === behaviorId }.
-      sortBy { case(version, _) => version.createdAt.desc }
+      filter { case((version, _), _) => version.behaviorId === behaviorId }.
+      sortBy { case((version, _), _) => version.createdAt.desc }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
@@ -270,7 +271,7 @@ object BehaviorVersionQueries {
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
-    allWithBehavior.filter { case(version, _) => version.id === id }
+    allWithBehavior.filter { case((version, _), _) => version.id === id }
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
@@ -278,17 +279,17 @@ object BehaviorVersionQueries {
     findQuery(id).result.map(_.headOption.map(tuple2BehaviorVersion))
   }
 
-  def createFor(behavior: Behavior): DBIO[BehaviorVersion] = {
-    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, DateTime.now)
+  def createFor(behavior: Behavior, maybeUser: Option[User]): DBIO[BehaviorVersion] = {
+    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, maybeUser.map(_.id), DateTime.now)
 
     (all += raw).map { _ =>
-      BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.createdAt)
+      BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, maybeUser, raw.createdAt)
     }
   }
 
-  def createFor(behavior: Behavior, lambdaService: AWSLambdaService, data: BehaviorVersionData): DBIO[BehaviorVersion] = {
+  def createFor(behavior: Behavior, maybeUser: Option[User], lambdaService: AWSLambdaService, data: BehaviorVersionData): DBIO[BehaviorVersion] = {
     (for {
-      behaviorVersion <- createFor(behavior)
+      behaviorVersion <- createFor(behavior, maybeUser)
       _ <-
         for {
           updated <- behaviorVersion.copy(
@@ -341,20 +342,6 @@ object BehaviorVersionQueries {
   def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == ON_SUCCESS_PARAM || ea == ON_ERROR_PARAM || ea == CONTEXT_PARAM)
 
   val functionBodyRegex = """(?s)^\s*function\s*\([^\)]*\)\s*\{(.*)\}$""".r
-
-  def learnCodeFor(behaviorVersion: BehaviorVersion, code: String, lambdaService: AWSLambdaService): DBIO[Seq[BehaviorParameter]] = {
-    val actualParams = paramsIn(code)
-    val paramsWithoutBuiltin = withoutBuiltin(actualParams)
-    val functionBody = functionBodyRegex.findFirstMatchIn(code).flatMap { m =>
-      m.subgroups.headOption
-    }.getOrElse("")
-    (for {
-      maybeAWSConfig <- AWSConfigQueries.maybeFor(behaviorVersion)
-      _ <- DBIO.from(lambdaService.deployFunctionFor(behaviorVersion, functionBody, paramsWithoutBuiltin, maybeAWSConfig))
-      b <- behaviorVersion.copy(maybeFunctionBody = Some(functionBody)).save
-      params <- BehaviorParameterQueries.ensureFor(b, paramsWithoutBuiltin.map(ea => (ea, None)))
-    } yield params) transactionally
-  }
 
   def environmentVariablesUsedInCode(functionBody: String): Seq[String] = {
     // regex quite incomplete, but we're just trying to provide some guidance
