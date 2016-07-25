@@ -796,7 +796,7 @@ th {
 .columns:after {
   content: ' ';
   display: table;
-  clear: left;
+  clear: both;
 }
 
 .columns-elastic {
@@ -912,6 +912,10 @@ th {
   .mobile-columns-float > .column-shrink,
   .mobile-columns-float > .column-group > .column-row > .column-shrink {
     width: auto;
+  }
+
+  .mobile-columns-float > .column-group > .column-row > .mobile-column-full {
+    width: 100%;
   }
 }
 

@@ -36,7 +36,7 @@ define(function(require) {
             </div>
           </div>
 
-          <div className="columns columns-elastic">
+          <div className="columns columns-elastic mobile-columns-float">
             <div className="column-group">
               <EnvironmentVariableChooser
                 label="Access key ID"

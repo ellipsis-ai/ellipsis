@@ -28,8 +28,8 @@ define(function(require) {
     render: function () {
       return (
         <div className="column-row">
-          <div className="column column-shrink align-r display-ellipsis type-label pbxs prs align-m">{this.props.label}</div>
-          <div className="column pbxs">
+          <div className="column column-shrink align-r mobile-align-l mobile-column-full display-ellipsis type-label pbxs prs align-m">{this.props.label}</div>
+          <div className="column pbxs mobile-pbm">
             <select className="form-select form-select-s" name={this.props.property} value={this.props.chosenName || ""} onChange={this.onChange}>
               <option value="" key={this.keyFor("none")}>Select environment variable…</option>
               {this.props.envVariableNames.map(function(envVarName) {

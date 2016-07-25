@@ -169,10 +169,10 @@ define(function(require) {
             {this.getVars().map(function(v, index) {
               return (
                 <div className="columns" key={"envVar" + index}>
-                  <div className="column column-one-quarter prn">
+                  <div className="column column-one-quarter mobile-column-one-half prn">
                     {this.getNameInputForVar(v, index)}
                   </div>
-                  <div className="column column-one-quarter pln">
+                  <div className="column column-one-quarter mobile-column-one-half pln">
                     {this.getValueInputForVar(v, index)}
                   </div>
                 </div>
@@ -183,7 +183,7 @@ define(function(require) {
             <div className="columns mtm">
               <div className="column column-one-half">
                 <button type="button"
-                  className="button-primary mrs"
+                  className="button-primary mrs mbs"
                   disabled={!this.hasNameAndValue()}
                   onClick={this.onSave}
                 >Save</button>

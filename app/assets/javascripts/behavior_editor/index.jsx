@@ -991,13 +991,10 @@ return React.createClass({
 
       <div className="bg-light">
         <div className="container pbm">
-          <div className="columns columns-elastic">
-            <div className="column column-expand">
-              <h3 className="mbn type-weak">
-                <span>Edit behavior</span>
-                <span className="type-italic">{this.getBehaviorStatusText()}</span>
-              </h3>
-            </div>
+          <h3 className="mvn ptxxl type-weak display-ellipsis">
+            <span>Edit behavior</span>
+            <span className="type-italic">{this.getBehaviorStatusText()}</span>
+          </h3>
 
             {/*
              <form ref="testBehaviorForm" action="/test_behavior_version" method="POST">
@@ -1007,9 +1004,6 @@ return React.createClass({
                <input type="submit" />
              </form>
             */}
-
-            <div className="column column-shrink ptl position-relative"></div>
-          </div>
         </div>
       </div>
 

@@ -17,10 +17,10 @@ return React.createClass({
             {React.Children.map(this.props.children, function(child) { return child; })}
           </div>
           <div className="mtl">
-            <button type="button" className="mrs" onClick={this.props.onConfirmClick}>
+            <button type="button" className="mrs mbs" onClick={this.props.onConfirmClick}>
               {this.props.confirmText || "OK"}
             </button>
-            <button type="button" className="button-primary" onClick={this.props.onCancelClick}>
+            <button type="button" className="button-primary mbs" onClick={this.props.onCancelClick}>
               {this.props.cancelText || "Cancel"}
             </button>
           </div>
