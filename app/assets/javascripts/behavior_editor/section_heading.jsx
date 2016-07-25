@@ -11,7 +11,7 @@ return React.createClass({
         <span className="position-relative position-z-above bg-lightest prl">
           {React.Children.map(this.props.children, function(child) { return child; })}
         </span>
-        <div className="arrow-right"></div>
+        <div className="arrow-right mobile-display-none"></div>
       </h4>
     );
   }

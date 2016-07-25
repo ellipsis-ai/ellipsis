@@ -1,6 +1,6 @@
 @import url(../lib/codemirror/addon/hint/show-hint.css);
 
-@mobile-max-width: 480px;
+@mobile-max-width: 767px;
 
 /* Measurements */
 @xxs: 2px;
@@ -227,132 +227,88 @@ So for example:
 
 */
 
-.generate-margin(@size, @size-name) {
-  .ma@{size-name} {
+@sizes: xxxxl @xxxxl, xxxl @xxxl, xxl @xxl, xl @xl, l @l, symbol 40px, m @m, s @s, xs @xs, n 0;
+
+.generate-all-sided(@prefix, @iterator: 1) when (@iterator <= length(@sizes)) {
+  @size-name: extract(extract(@sizes, @iterator), 1);
+  @size: extract(extract(@sizes, @iterator), 2);
+  .@{prefix}ma@{size-name} {
     margin: @size !important;
   }
-  .mv@{size-name} {
-    margin-top: @size !important;
-    margin-bottom: @size !important;
-  }
-  .mh@{size-name} {
-    margin-left: @size !important;
-    margin-right: @size !important;
-  }
-  .mt@{size-name} {
-    margin-top: @size !important;
-  }
-  .mb@{size-name} {
-    margin-bottom: @size !important;
-  }
-  .ml@{size-name} {
-    margin-left: @size !important;
-  }
-  .mr@{size-name} {
-    margin-right: @size !important;
-  }
-
-  @media (max-width: @mobile-max-width) {
-    .mobile-ma@{size-name} {
-      margin: @size !important;
-    }
-    .mobile-mv@{size-name} {
-      margin-top: @size !important;
-      margin-bottom: @size !important;
-    }
-    .mobile-mh@{size-name} {
-      margin-left: @size !important;
-      margin-right: @size !important;
-    }
-    .mobile-mt@{size-name} {
-      margin-top: @size !important;
-    }
-    .mobile-mb@{size-name} {
-      margin-bottom: @size !important;
-    }
-    .mobile-ml@{size-name} {
-      margin-left: @size !important;
-    }
-    .mobile-mr@{size-name} {
-      margin-right: @size !important;
-    }
-  }
-}
-
-.generate-margin(@xxxxl, xxxxl);
-.generate-margin(@xxxl, xxxl);
-.generate-margin(@xxl, xxl);
-.generate-margin(@xl, xl);
-.generate-margin(@l, l);
-.generate-margin(@m, m);
-.generate-margin(@s, s);
-.generate-margin(@xs, xs);
-.generate-margin(0, n);
-
-.generate-padding(@size, @size-name) {
-  .pa@{size-name} {
+  .@{prefix}pa@{size-name} {
     padding: @size !important;
   }
-  .pv@{size-name} {
-    padding-top: @size !important;
-    padding-bottom: @size !important;
-  }
-  .ph@{size-name} {
-    padding-left: @size !important;
-    padding-right: @size !important;
-  }
-  .pt@{size-name} {
-    padding-top: @size !important;
-  }
-  .pb@{size-name} {
-    padding-bottom: @size !important;
-  }
-  .pl@{size-name} {
-    padding-left: @size !important;
-  }
-  .pr@{size-name} {
-    padding-right: @size !important;
-  }
-  @media (max-width: @mobile-max-width) {
-    .mobile-pa@{size-name} {
-      padding: @size !important;
-    }
-    .mobile-pv@{size-name} {
-      padding-top: @size !important;
-      padding-bottom: @size !important;
-    }
-    .mobile-ph@{size-name} {
-      padding-left: @size !important;
-      padding-right: @size !important;
-    }
-    .mobile-pt@{size-name} {
-      padding-top: @size !important;
-    }
-    .mobile-pb@{size-name} {
-      padding-bottom: @size !important;
-    }
-    .mobile-pl@{size-name} {
-      padding-left: @size !important;
-    }
-    .mobile-pr@{size-name} {
-      padding-right: @size !important;
-    }
-  }
+  .generate-all-sided(@prefix, (@iterator + 1));
 }
 
-.generate-padding(@xxxxl, xxxxl);
-.generate-padding(@xxxl, xxxl);
-.generate-padding(@xxl, xxl);
-.generate-padding(@xl, xl);
-.generate-padding(@l, l);
-.generate-padding(@m, m);
-.generate-padding(@s, s);
-.generate-padding(@xs, xs);
-.generate-padding(0, n);
+.generate-two-sided(@prefix, @iterator: 1) when (@iterator <= length(@sizes)) {
+  @size-name: extract(extract(@sizes, @iterator), 1);
+  @size: extract(extract(@sizes, @iterator), 2);
+  .@{prefix}mv@{size-name} {
+    margin-top: @size !important;
+    margin-bottom: @size !important;
+  }
+  .@{prefix}mh@{size-name} {
+    margin-left: @size !important;
+    margin-right: @size !important;
+  }
+  .@{prefix}pv@{size-name} {
+    padding-top: @size !important;
+    padding-bottom: @size !important;
+  }
+  .@{prefix}ph@{size-name} {
+    padding-left: @size !important;
+    padding-right: @size !important;
+  }
+  .generate-two-sided(@prefix, (@iterator + 1));
+}
 
-.pr-symbol {
-/* Special-case of reserving space for a symbol button */
-  padding-right: 40px !important;
+.generate-one-sided(@prefix, @iterator: 1) when (@iterator <= length(@sizes)) {
+  @size-name: extract(extract(@sizes, @iterator), 1);
+  @size: extract(extract(@sizes, @iterator), 2);
+  .@{prefix}mt@{size-name} {
+    margin-top: @size !important;
+  }
+  .@{prefix}mb@{size-name} {
+    margin-bottom: @size !important;
+  }
+  .@{prefix}ml@{size-name} {
+    margin-left: @size !important;
+  }
+  .@{prefix}mr@{size-name} {
+    margin-right: @size !important;
+  }
+  .@{prefix}pt@{size-name} {
+    padding-top: @size !important;
+  }
+  .@{prefix}pb@{size-name} {
+    padding-bottom: @size !important;
+  }
+  .@{prefix}pl@{size-name} {
+    padding-left: @size !important;
+  }
+  .@{prefix}pr@{size-name} {
+    padding-right: @size !important;
+  }
+  .generate-one-sided(@prefix, (@iterator + 1));
+}
+
+.generate-all-sided(e(""));
+
+@media (max-width: @mobile-max-width) {
+  .generate-all-sided(mobile-);
+}
+
+.generate-two-sided(e(""));
+
+@media (max-width: @mobile-max-width) {
+  .generate-two-sided(mobile-);
+}
+
+.generate-one-sided(e(""));
+
+@media (max-width: @mobile-max-width) {
+  .generate-one-sided(mobile-);
 }
 
 /* Background utilities */
@@ -570,7 +526,7 @@ So for example:
   .bg-blue-lightest();
   .border();
   .border-dotted();
-  .paxs();
+  padding: @xs;
   .type-monospace();
   .type-xs();
   .type-weak();
@@ -699,12 +655,30 @@ pre {
 
 /* Alignment utilities */
 
+.align-l {
+  text-align: left;
+}
+
 .align-c {
   text-align: center;
 }
 
 .align-r {
   text-align: right;
+}
+
+@media (max-width: @mobile-max-width) {
+  .mobile-align-l {
+    text-align: left;
+  }
+
+  .mobile-align-c {
+    text-align: center;
+  }
+
+  .mobile-align-r {
+    text-align: right;
+  }
 }
 
 .align-t {
@@ -867,6 +841,33 @@ th {
   padding-right: 0;
 }
 
+@media (max-width: @mobile-max-width) {
+  .mobile-column-one-quarter {
+    width: 25%;
+  }
+
+  .mobile-column-one-third {
+    width: 33.3333%;
+  }
+
+  .mobile-column-one-half {
+    width: 50%;
+  }
+
+  .mobile-column-five-twelfths {
+    width: 41.6666%;
+  }
+
+  .mobile-column-three-quarters {
+    width: 75%;
+  }
+
+  .mobile-column-full {
+    width: 100%;
+    padding-right: 0;
+  }
+}
+
 .column-expand {
   width: 100%;
 }
@@ -875,13 +876,21 @@ th {
   width: 1px;
 }
 
-@media (max-width: 480px) {
-  .column {
-    float: none;
-    width: 100%;
-    padding-right: 0;
+@media (max-width: @mobile-max-width) {
+  .mobile-columns-float {
+    display: block;
+  }
+
+  .mobile-columns-float > .column {
+    display: block;
+    float: left;
+  }
+
+  .mobile-columns-float > .column-shrink {
+    width: auto;
   }
 }
+
 
 /* Hard widths */
 
@@ -956,10 +965,6 @@ hr.form-border {
 
 form {
   margin: 0;
-}
-
-.form-field-group {
-  .mbxxl();
 }
 
 input, select, textarea, .form-field {
@@ -1745,6 +1750,12 @@ button.button-activated {
   display: none !important;
 }
 
+@media (max-width: @mobile-max-width) {
+  .mobile-display-none {
+    display: none !important;
+  }
+}
+
 .display-inline {
   display: inline;
 }
@@ -1900,7 +1911,6 @@ button.button-activated {
   right: 0;
   bottom: 0;
   max-height: 100%;
-  overflow: auto;
 }
 
 .position-z-above {
@@ -1927,7 +1937,7 @@ button.button-activated {
 
 .content {
   .bg-lightest();
-  .pbxxl();
+  padding-bottom: @xxl;
 }
 
 /* CodeMirror extension styles */
@@ -1973,7 +1983,7 @@ button.button-activated {
   .box-help();
   .popup-shadow();
   .type-s();
-  .pan();
+  padding: 0;
   overflow: hidden;
   position: fixed;
   white-space: pre;
@@ -1986,12 +1996,10 @@ button.button-activated {
 
 .CodeMirror-lint-message-error {
   border-left: @xs solid @pink-medium;
-  .pvxs();
-  .phs();
+  padding: @xs @s;
 }
 
 .CodeMirror-lint-message-warning {
   border-left: @xs solid @yellow-light;
-  .pvxs();
-  .phs();
+  padding: @xs @s;
 }

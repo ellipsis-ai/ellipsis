@@ -74,21 +74,21 @@ return React.createClass({
           );
         }, this)}
 
-        <div className="columns columns-elastic">
-          <div className="column column-expand">
-            <div className="columns columns-elastic">
-              <div className="column column-shrink plxxxl prn align-r position-relative">
+        <div className="columns">
+          <div className="column column-right prsymbol align-r mobile-align-l mbs">
+            <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add parameter</button>
+            <span className="button-symbol-placeholder"></span>
+          </div>
+          <div className="column">
+            <div className="columns">
+              <div className="column plxxxl prn align-r position-relative">
                 <code className="type-disabled type-s position-absolute position-top-right prxs">{this.boilerplateLineNumber()}</code>
               </div>
-              <div className="column column-expand plxs">
+              <div className="column plxs">
                 <code className="type-weak type-s">{this.boilerplateLine()}</code>
                 <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible} />
               </div>
             </div>
-          </div>
-          <div className="column column-shrink pr-symbol align-r">
-            <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add parameter</button>
-            <span className="button-symbol-placeholder"></span>
           </div>
         </div>
 

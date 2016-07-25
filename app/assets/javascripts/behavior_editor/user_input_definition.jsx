@@ -37,7 +37,7 @@ return React.createClass({
   render: function() {
     return (
       <div className="columns mbs">
-        <div className="column column-one-quarter">
+        <div className="column column-one-quarter mobile-column-full mobile-prsymbol">
           <div className="columns columns-elastic">
             <div className="column column-expand prs">
               <Input
@@ -53,7 +53,7 @@ return React.createClass({
             </div>
           </div>
         </div>
-        <div className="column column-three-quarters">
+        <div className="column column-three-quarters mobile-column-full mobile-mts">
           <div className="columns columns-elastic">
             <div className="column column-expand prn">
               <div className="form-field-capped">
