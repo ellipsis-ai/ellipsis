@@ -1,5 +1,6 @@
 package json
 
+import models.Team
 import models.accounts.User
 import models.bots.config.AWSConfigQueries
 import models.bots.triggers.MessageTriggerQueries
@@ -24,6 +25,10 @@ case class BehaviorVersionData(
                                 createdAt: Option[DateTime]
                                 ) {
   val awsConfig: Option[AWSConfigData] = config.aws
+
+  def copyForTeam(team: Team): BehaviorVersionData = {
+    copy(teamId = team.id)
+  }
 }
 
 object BehaviorVersionData {
