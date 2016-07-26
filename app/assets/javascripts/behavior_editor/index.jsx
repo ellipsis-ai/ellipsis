@@ -1116,7 +1116,7 @@ return React.createClass({
             </div>
 
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
-              <div className="border-top border-left border-right border-radius-top pvs">
+              <div className="border-top border-left border-right border-radius-top pts">
                 <div className="ptxs phm pbm mbs type-s border-bottom">
                   <Collapsible revealWhen={!this.getAWSConfig()}>
                     <span className="mrs">Add integration:</span>
@@ -1153,7 +1153,7 @@ return React.createClass({
                 />
               </div>
 
-              <div className="position-relative prsymbol border-right">
+              <div className="position-relative">
                 <CodeEditor
                   value={this.getBehaviorFunctionBody()}
                   onChange={this.updateCode}
@@ -1361,7 +1361,7 @@ return React.createClass({
         </footer>
 
       </form>
-      <form ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
+      <form className="pbxxxl" ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
         <CsrfTokenHiddenInput value={this.props.csrfToken} />
         <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
       </form>
