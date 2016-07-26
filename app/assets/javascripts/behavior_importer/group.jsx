@@ -25,11 +25,11 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="ptxl">
-          <h3 className="border-bottom mtm pbm">
-            <span>{this.props.name}</span>
-            <span className="type-m type-regular type-weak"> &nbsp; – &nbsp; {this.props.description}</span>
-          </h3>
+        <div className="ptxl mobile-pts">
+          <h4 className="border-bottom mtm pbm">
+            <span className="type-l">{this.props.name}</span>
+            <span className="type-regular type-weak"> &nbsp; – &nbsp; {this.props.description}</span>
+          </h4>
           {this.getBehaviors().map(function(behavior, index) {
             return (
               <Behavior

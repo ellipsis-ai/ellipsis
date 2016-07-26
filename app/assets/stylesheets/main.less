@@ -294,20 +294,12 @@ So for example:
 }
 
 .generate-all-sided(e(""));
-
-@media (max-width: @mobile-max-width) {
-  .generate-all-sided(mobile-);
-}
-
 .generate-two-sided(e(""));
-
-@media (max-width: @mobile-max-width) {
-  .generate-two-sided(mobile-);
-}
-
 .generate-one-sided(e(""));
 
 @media (max-width: @mobile-max-width) {
+  .generate-all-sided(mobile-);
+  .generate-two-sided(mobile-);
   .generate-one-sided(mobile-);
 }
 
@@ -659,7 +651,7 @@ code {
 }
 
 .type-wrap-words {
-  word-break: break-all;
+  word-wrap: break-word;
 }
 
 pre {
