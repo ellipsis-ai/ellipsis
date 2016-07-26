@@ -1384,6 +1384,12 @@ select.form-select {
   touch-action: manipulation;
 }
 
+@media (max-width: @mobile-max-width) {
+  button, a.button, select.form-select {
+    min-width: 0;
+  }
+}
+
 a.button {
   display: inline-block;
 }
@@ -1399,8 +1405,9 @@ select.form-select {
   padding-right: 33px - @border-width;
   border-color: @border-color-dropdown;
   color: @black;
-  min-width: @dropdown-menu-width;
+  min-width: 0;
   text-align: left;
+  white-space: nowrap;
   &::before {
     font-size: @type-xxs;
     line-height: @type-xxs;
@@ -1409,6 +1416,7 @@ select.form-select {
     position: absolute;
     top: 11px - @border-width;
     right: 19px - @border-width;
+    white-space: normal;
   }
 }
 
@@ -1786,6 +1794,12 @@ button.button-activated {
 
 .display-none {
   display: none !important;
+}
+
+@media (min-width: (@mobile-max-width + 1)) {
+  .mobile-display-only {
+    display: none !important;
+  }
 }
 
 @media (max-width: @mobile-max-width) {
