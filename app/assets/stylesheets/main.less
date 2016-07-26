@@ -1545,10 +1545,19 @@ button.button-dropdown-trigger-menu-above.button-dropdown-trigger-menu-open {
   border-bottom-width: @border-width-thick !important;
 }
 
-button.button-dropdown-trigger-symbol:focus,
-button.button-dropdown-trigger-symbol.button-dropdown-trigger-menu-open {
+button.button-dropdown-trigger-symbol:focus {
+  padding-top: (@s - @border-width-thick);
   padding-left: 0;
   padding-right: 0;
+  padding-bottom: (@s - @border-width-thick - 2);
+}
+
+button.button-dropdown-trigger-symbol.button-dropdown-trigger-menu-open {
+  width: @dropdown-menu-width;
+  padding-top: (@s - @border-width-thick);
+  padding-right: (@s - @border-width-thick);
+  padding-bottom: (@s - @border-width-thick);
+  text-align: right;
 }
 
 button.button-warning:focus {
