@@ -136,7 +136,7 @@
                 <div class="position-relative type-black">
                   <ul class="type-s popup popup-dropdown-menu popup-dropdown-menu-right fade-in" id="main-user-menu" style="display: none">
                     @maybeTeam.flatMap(_.maybeNonEmptyName.map(name => {
-                      s"<li class='type-disabled align-l phl pvs display-ellipsis'>Signed into $name</li>"
+                      <li class='type-disabled align-l phl pvs display-ellipsis'>Signed into {name}</li>
                     })).getOrElse("")
                     <li><button type="submit" class="button-dropdown-item">Sign out</button></li>
                   </ul>
