@@ -294,20 +294,12 @@ So for example:
 }
 
 .generate-all-sided(e(""));
-
-@media (max-width: @mobile-max-width) {
-  .generate-all-sided(mobile-);
-}
-
 .generate-two-sided(e(""));
-
-@media (max-width: @mobile-max-width) {
-  .generate-two-sided(mobile-);
-}
-
 .generate-one-sided(e(""));
 
 @media (max-width: @mobile-max-width) {
+  .generate-all-sided(mobile-);
+  .generate-two-sided(mobile-);
   .generate-one-sided(mobile-);
 }
 
@@ -659,7 +651,7 @@ code {
 }
 
 .type-wrap-words {
-  word-break: break-all;
+  word-wrap: break-word;
 }
 
 pre {
@@ -910,7 +902,8 @@ th {
   }
 
   .mobile-columns-float > .column-shrink,
-  .mobile-columns-float > .column-group > .column-row > .column-shrink {
+  .mobile-columns-float > .column-group > .column-row > .column-shrink,
+  .mobile-column-auto {
     width: auto;
   }
 
@@ -1383,6 +1376,12 @@ select.form-select {
   touch-action: manipulation;
 }
 
+@media (max-width: @mobile-max-width) {
+  button, a.button, select.form-select {
+    min-width: 0;
+  }
+}
+
 a.button {
   display: inline-block;
 }
@@ -1398,8 +1397,9 @@ select.form-select {
   padding-right: 33px - @border-width;
   border-color: @border-color-dropdown;
   color: @black;
-  min-width: @dropdown-menu-width;
+  min-width: 0;
   text-align: left;
+  white-space: nowrap;
   &::before {
     font-size: @type-xxs;
     line-height: @type-xxs;
@@ -1408,6 +1408,7 @@ select.form-select {
     position: absolute;
     top: 11px - @border-width;
     right: 19px - @border-width;
+    white-space: normal;
   }
 }
 
@@ -1544,10 +1545,19 @@ button.button-dropdown-trigger-menu-above.button-dropdown-trigger-menu-open {
   border-bottom-width: @border-width-thick !important;
 }
 
-button.button-dropdown-trigger-symbol:focus,
-button.button-dropdown-trigger-symbol.button-dropdown-trigger-menu-open {
+button.button-dropdown-trigger-symbol:focus {
+  padding-top: (@s - @border-width-thick);
   padding-left: 0;
   padding-right: 0;
+  padding-bottom: (@s - @border-width-thick - 2);
+}
+
+button.button-dropdown-trigger-symbol.button-dropdown-trigger-menu-open {
+  width: @dropdown-menu-width;
+  padding-top: (@s - @border-width-thick);
+  padding-right: (@s - @border-width-thick);
+  padding-bottom: (@s - @border-width-thick);
+  text-align: right;
 }
 
 button.button-warning:focus {
@@ -1778,6 +1788,12 @@ button.button-activated {
   display: none !important;
 }
 
+@media (min-width: (@mobile-max-width + 1)) {
+  .mobile-display-only {
+    display: none !important;
+  }
+}
+
 @media (max-width: @mobile-max-width) {
   .mobile-display-none {
     display: none !important;
@@ -1961,6 +1977,18 @@ button.button-activated {
   z-index: 1000;
 }
 
+@media (max-width: @mobile-max-width) {
+  .mobile-position-fixed {
+    position: fixed;
+  }
+
+  .mobile-position-fixed-full {
+    .position-fixed-bottom;
+    .position-z-front;
+    box-sizing: border-box;
+    overflow: auto;
+  }
+}
 /* Normal content style */
 
 .content {

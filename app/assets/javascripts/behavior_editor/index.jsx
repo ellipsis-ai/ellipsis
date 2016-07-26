@@ -199,6 +199,15 @@ return React.createClass({
     return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
   },
 
+  getManageDropdownLabel: function() {
+    return (
+      <span>
+        <span className="mobile-display-none">Manage behavior</span>
+        <span className="mobile-display-only">Manage</span>
+      </span>
+    );
+  },
+
   buildEnvVarNotifications: function() {
     var envVars = (this.state ? this.state.envVariables : this.props.envVariables) || [];
     return envVars.
@@ -1017,7 +1026,7 @@ return React.createClass({
         />
 
         {/* Start of container */}
-        <div className="container ptxl pbm">
+        <div className="container ptxl pbxxxl">
 
           <div className="columns">
             <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
@@ -1116,7 +1125,7 @@ return React.createClass({
             </div>
 
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
-              <div className="border-top border-left border-right border-radius-top pvs">
+              <div className="border-top border-left border-right border-radius-top pts">
                 <div className="ptxs phm pbm mbs type-s border-bottom">
                   <Collapsible revealWhen={!this.getAWSConfig()}>
                     <span className="mrs">Add integration:</span>
@@ -1153,7 +1162,7 @@ return React.createClass({
                 />
               </div>
 
-              <div className="position-relative prsymbol border-right">
+              <div className="position-relative">
                 <CodeEditor
                   value={this.getBehaviorFunctionBody()}
                   onChange={this.updateCode}
@@ -1327,11 +1336,30 @@ return React.createClass({
               );
             }, this)}
             <div className="container ptm">
-              <div className="columns">
-                <div className="column column-right align-r pbm">
+              <div className="columns columns-elastic mobile-columns-float">
+                <div className="column column-expand mobile-column-auto">
+                  <button type="submit"
+                    className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
+                    disabled={!this.isModified()}
+                    onClick={this.onSaveClick}
+                  >
+                    <span className="button-labels">
+                      <span className="button-normal-label">
+                        <span className="mobile-display-none">Save changes</span>
+                        <span className="mobile-display-only">Save</span>
+                      </span>
+                      <span className="button-activated-label">Saving…</span>
+                    </span>
+                  </button>
+                  <button className="mbm" type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>
+                    <span className="mobile-display-none">Undo changes</span>
+                    <span className="mobile-display-only">Undo</span>
+                  </button>
+                </div>
+                <div className="column column-shrink align-r pbm">
                   <DropdownMenu
                     openWhen={this.getActiveDropdown() === 'manageBehavior'}
-                    label="Manage behavior"
+                    label={this.getManageDropdownLabel()}
                     labelClassName="button-dropdown-trigger-menu-above"
                     menuClassName="popup-dropdown-menu-right popup-dropdown-menu-above"
                     toggle={this.toggleManageBehaviorMenu}
@@ -1341,19 +1369,6 @@ return React.createClass({
                     <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
                   </DropdownMenu>
                 </div>
-                <div className="column">
-                  <button type="submit"
-                    className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
-                    disabled={!this.isModified()}
-                    onClick={this.onSaveClick}
-                  >
-                    <span className="button-labels">
-                      <span className="button-normal-label">Save changes</span>
-                      <span className="button-activated-label">Saving…</span>
-                    </span>
-                  </button>
-                  <button className="mbm" type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>Undo changes</button>
-                </div>
               </div>
             </div>
           </Collapsible>
@@ -1361,7 +1376,7 @@ return React.createClass({
         </footer>
 
       </form>
-      <form ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
+      <form className="pbxxxl" ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
         <CsrfTokenHiddenInput value={this.props.csrfToken} />
         <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
       </form>

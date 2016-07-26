@@ -75,12 +75,12 @@ return React.createClass({
         }, this)}
 
         <div className="columns">
-          <div className="column column-right prsymbol align-r mobile-align-l mbs">
+          <div className="column column-right align-r prxs mobile-align-l mbs">
             <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add parameter</button>
-            <span className="button-symbol-placeholder"></span>
+            <span className="button-symbol-placeholder" />
           </div>
           <div className="column">
-            <div className="columns columns-elastic">
+            <div className="columns columns-elastic pbs">
               <div className="column column-shrink plxxxl prn align-r position-relative">
                 <code className="type-disabled type-s position-absolute position-top-right prxs">{this.boilerplateLineNumber()}</code>
               </div>
@@ -93,7 +93,7 @@ return React.createClass({
         </div>
 
         <div className={this.props.hasParams ? "" : "display-none"}>
-          <div className="columns columns-elastic">
+          <div className="columns columns-elastic pbs">
             <div className="column column-shrink plxxxl prn align-r position-relative">
               <code className="type-disabled type-s position-absolute position-top-right prxs">{(this.boilerplateLineNumber() + 1)}</code>
             </div>

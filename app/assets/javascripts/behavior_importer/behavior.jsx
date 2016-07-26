@@ -141,7 +141,7 @@ define(function(require) {
                       (!this.isFirstTriggerIndex(index) ? "type-weak" : "")
                     }
                   >
-                    <span>{trigger.text}</span>
+                    <span className="type-wrap-words">{trigger.text}</span>
                     <span className="type-disabled">
                       {this.isLastTriggerIndex(index) ? "" : " · "}
                     </span>

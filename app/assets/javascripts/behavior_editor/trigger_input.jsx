@@ -126,7 +126,7 @@ return React.createClass({
   render: function() {
     return (
       <div className="columns columns-elastic mobile-columns-float mbs mobile-mbxl">
-        <div className="column column-expand">
+        <div className="column column-expand prn">
           <div className="columns columns-elastic">
             <div className={"column column-shrink prn " + (this.props.requiresMention ? "" : "display-none")}>
               <div className={
