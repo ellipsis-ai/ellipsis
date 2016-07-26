@@ -120,15 +120,13 @@ define(function(require) {
 
             </div>
 
-            <div className="columns mtm">
-              <div className="column column-one-half">
-                <button type="button"
-                        className="button-primary mrs mbs"
-                        disabled={!this.hasNameAndValue()}
-                        onClick={this.onSave}
-                  >Save</button>
-                <button type="button" onClick={this.onCancel}>Cancel</button>
-              </div>
+            <div className="mtm">
+              <button type="button"
+                      className="button-primary mrs mbs"
+                      disabled={!this.hasNameAndValue()}
+                      onClick={this.onSave}
+                >Save</button>
+              <button className="mbs" type="button" onClick={this.onCancel}>Cancel</button>
             </div>
 
           </div>
