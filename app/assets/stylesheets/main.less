@@ -1520,6 +1520,7 @@ select.form-select:focus {
   outline: none;
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
   padding-right: 33px - @border-width-thick;
+  color: @black;
   background-color: white;
   border-width: @border-width-thick;
   border-color: @border-color-dropdown;
@@ -1529,7 +1530,8 @@ select.form-select:focus {
   }
 }
 
-button.button-dropdown-trigger-menu-open {
+button.button-dropdown-trigger-menu-open,
+button.button-dropdown-trigger-menu-open:focus {
   color: @gray-medium;
   border-color: @border-color;
   border-radius: @border-radius @border-radius 0 0;
@@ -1545,19 +1547,10 @@ button.button-dropdown-trigger-menu-above.button-dropdown-trigger-menu-open {
   border-bottom-width: @border-width-thick !important;
 }
 
-button.button-dropdown-trigger-symbol:focus {
-  padding-top: (@s - @border-width-thick);
+button.button-dropdown-trigger-symbol:focus,
+button.button-dropdown-trigger-symbol.button-dropdown-trigger-menu-open {
   padding-left: 0;
   padding-right: 0;
-  padding-bottom: (@s - @border-width-thick - 2);
-}
-
-button.button-dropdown-trigger-symbol.button-dropdown-trigger-menu-open {
-  width: @dropdown-menu-width;
-  padding-top: (@s - @border-width-thick);
-  padding-right: (@s - @border-width-thick);
-  padding-bottom: (@s - @border-width-thick);
-  text-align: right;
 }
 
 button.button-warning:focus {
@@ -1570,6 +1563,10 @@ button.button-s:focus {
 
 button.button-subtle:focus {
   border-color: currentColor !important;
+}
+
+button.button-dropdown-trigger-menu-open:focus {
+  border-color: @border-color !important;
 }
 
 button.button-shrink:focus,
@@ -1714,18 +1711,19 @@ button.button-activated {
 }
 
 .popup-shadow {
-  box-shadow: 0 2px 20px @black-translucent;
+  box-shadow: 0 1px 10px @black-translucent;
 }
 
 /* Dropdown menu */
 
 .popup-dropdown-menu {
   background-color: @white;
-  border: @border-width-thick solid @border-color-dropdown;
+  border: @border-width-thick solid @border-color;
   border-radius: 0 0 @border-radius @border-radius;
   .popup-shadow();
   width: @dropdown-menu-width;
   box-sizing: border-box;
+  top: -2px;
   left: 0;
   margin: 0;
   padding: 0;
@@ -1754,7 +1752,8 @@ button.button-activated {
 }
 
 .popup-dropdown-menu-above {
-  bottom: 40px;
+  top: auto;
+  bottom: 38px;
   border-radius: @border-radius @border-radius 0 0;
   li {
     &:first-child > button {
