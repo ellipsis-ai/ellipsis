@@ -1327,21 +1327,8 @@ return React.createClass({
               );
             }, this)}
             <div className="container ptm">
-              <div className="columns">
-                <div className="column column-right align-r pbm">
-                  <DropdownMenu
-                    openWhen={this.getActiveDropdown() === 'manageBehavior'}
-                    label="Manage behavior"
-                    labelClassName="button-dropdown-trigger-menu-above"
-                    menuClassName="popup-dropdown-menu-right popup-dropdown-menu-above"
-                    toggle={this.toggleManageBehaviorMenu}
-                  >
-                    <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
-                    <DropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
-                    <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
-                  </DropdownMenu>
-                </div>
-                <div className="column">
+              <div className="columns columns-elastic mobile-columns-float">
+                <div className="column column-expand mobile-column-auto">
                   <button type="submit"
                     className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
                     disabled={!this.isModified()}
@@ -1353,6 +1340,19 @@ return React.createClass({
                     </span>
                   </button>
                   <button className="mbm" type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>Undo changes</button>
+                </div>
+                <div className="column column-shrink align-r pbm">
+                  <DropdownMenu
+                    openWhen={this.getActiveDropdown() === 'manageBehavior'}
+                    label="Manage behavior"
+                    labelClassName="button-dropdown-trigger-menu-above"
+                    menuClassName="popup-dropdown-menu-right popup-dropdown-menu-above"
+                    toggle={this.toggleManageBehaviorMenu}
+                  >
+                    <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
+                    <DropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
+                    <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
+                  </DropdownMenu>
                 </div>
               </div>
             </div>
