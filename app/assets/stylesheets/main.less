@@ -1962,6 +1962,18 @@ button.button-activated {
   z-index: 1000;
 }
 
+@media (max-width: @mobile-max-width) {
+  .mobile-position-fixed {
+    position: fixed;
+  }
+
+  .mobile-position-fixed-full {
+    .position-fixed-bottom;
+    .position-z-front;
+    box-sizing: border-box;
+    overflow: auto;
+  }
+}
 /* Normal content style */
 
 .content {
