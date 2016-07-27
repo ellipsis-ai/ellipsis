@@ -3,6 +3,7 @@ package models.bots
 import models.Team
 import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
 import models.bots.triggers.{MessageTrigger, MessageTriggerQueries}
+import org.joda.time.DateTime
 import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -24,8 +25,19 @@ case class BehaviorResponse(
   }
 
   def runCode(service: AWSLambdaService): Future[Unit] = {
-    behaviorVersion.unformattedResultFor(parametersWithValues, service).map { result =>
-      event.context.sendMessage(result)
+    val startTime = DateTime.now
+    behaviorVersion.resultFor(parametersWithValues, service).flatMap { result =>
+      val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
+      result.sendIn(event.context)
+      service.models.run(
+        InvocationLogEntryQueries.createFor(
+          behaviorVersion,
+          result,
+          event.context.name,
+          Some(event.context.userIdForContext),
+          runtimeInMilliseconds
+        ).map(_ => Unit)
+      )
     }
   }
 
