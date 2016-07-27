@@ -157,7 +157,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
 
   def publishedBehaviorCategories: Seq[BehaviorCategory] = {
     cache.getOrElse[Seq[BehaviorCategory]](GithubService.PUBLISHED_BEHAVIORS_KEY, 30.minutes) {
-      Await.result(fetchPublishedBehaviorCategories, 5.seconds)
+      Await.result(fetchPublishedBehaviorCategories, 20.seconds)
     }.map(_.copyForTeam(team))
   }
 
