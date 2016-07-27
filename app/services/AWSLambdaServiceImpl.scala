@@ -8,7 +8,7 @@ import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
 import models.bots.config.AWSConfig
 import models.{EnvironmentVariable, Models, InvocationToken}
-import models.bots.{ParameterWithValue, BehaviorVersion}
+import models.bots._
 import play.api.Configuration
 import play.api.libs.json._
 import sun.misc.BASE64Decoder
@@ -37,12 +37,12 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     """.stripMargin
   }
 
-  def invoke(behaviorVersion: BehaviorVersion, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[String] = {
+  def invoke(behaviorVersion: BehaviorVersion, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[BehaviorResult] = {
     models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables)).flatMap { missingEnvVars =>
       if (missingEnvVars.nonEmpty) {
-        Future.successful(missingEnvVarsMessageFor(missingEnvVars))
+        Future.successful(MissingEnvVarsResult(missingEnvVars))
       } else if (behaviorVersion.functionBody.isEmpty) {
-        Future.successful(behaviorVersion.unformattedSuccessResultStringFor(JsNull, parametersWithValues))
+        Future.successful(SuccessResult(JsNull, parametersWithValues, None, AWSLambdaLogResult.empty))
       } else {
         val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
         val payloadJson = JsObject(
@@ -64,16 +64,11 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
         JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
           val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
           val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
-          behaviorVersion.unformattedResultStringFor(result.getPayload, logResult, parametersWithValues)
+          behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues)
         }.recover {
           case e: java.util.concurrent.ExecutionException => {
             e.getMessage match {
-              case amazonServiceExceptionRegex() =>
-                """
-                  |The Amazon Web Service that Ellipsis relies upon is currently down.
-                  |
-                  |Try asking Ellipsis anything later to check on the status.
-                  |""".stripMargin
+              case amazonServiceExceptionRegex() => new AWSDownResult()
               case _ => throw e
             }
           }

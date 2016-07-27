@@ -54,4 +54,6 @@ object AWSLambdaLogResult {
     AWSLambdaLogResult(text, userDefinedLogStatements, maybeErrorContent)
   }
 
+  def empty: AWSLambdaLogResult = fromText("", isInDevelopmentMode = true)
+
 }

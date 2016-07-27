@@ -6,12 +6,11 @@ import com.github.tototoshi.slick.PostgresJodaSupport._
 import json.BehaviorVersionData
 import models.accounts.User
 import models.bots.config.{AWSConfig, AWSConfigQueries}
-import models.bots.templates.TemplateApplier
 import models.bots.triggers.MessageTriggerQueries
 import models.{EnvironmentVariable, EnvironmentVariableQueries, IDs, Team}
 import org.commonmark.node.{Image, AbstractVisitor}
 import org.joda.time.DateTime
-import play.api.libs.json.{JsString, JsDefined, Json, JsValue}
+import play.api.libs.json.{Json, JsValue}
 import play.api.{Configuration, Play}
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, AWSLambdaService}
@@ -123,7 +122,7 @@ case class BehaviorVersion(
 
   def functionName: String = id
 
-  def unformattedResultFor(parametersWithValues: Seq[ParameterWithValue], service: AWSLambdaService): Future[String] = {
+  def resultFor(parametersWithValues: Seq[ParameterWithValue], service: AWSLambdaService): Future[BehaviorResult] = {
     for {
       envVars <- service.models.run(EnvironmentVariableQueries.allFor(team))
       result <- service.invoke(this, parametersWithValues, envVars)
@@ -133,41 +132,6 @@ case class BehaviorVersion(
   def unlearn(lambdaService: AWSLambdaService): DBIO[Unit] = {
     lambdaService.deleteFunction(id)
     BehaviorVersionQueries.delete(this).map(_ => Unit)
-  }
-
-  private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
-
-  private def processedResultFor(result: JsValue): String = {
-    dropEnclosingDoubleQuotes(result.as[String])
-  }
-
-  def unformattedSuccessResultStringFor(result: JsValue, parametersWithValues: Seq[ParameterWithValue]): String = {
-    val inputs = parametersWithValues.map { ea => (ea.parameter.name, JsString(ea.value)) }
-    TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply
-  }
-
-  private def handledErrorResultStringFor(json: JsValue): String = {
-    val prompt = s"$ON_ERROR_PARAM triggered"
-    val maybeDetail = (json \ "errorMessage").toOption.map(processedResultFor)
-    Array(Some(prompt), maybeDetail).flatten.mkString(": ")
-  }
-
-  private def unhandledErrorResultStringFor(logResult: AWSLambdaLogResult): String = {
-    val prompt = s"\nWe hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
-    Array(Some(prompt), logResult.maybeTranslated).flatten.mkString(":\n\n")
-  }
-
-  private def noCallbackTriggeredResultString: String = {
-    s"It looks like neither callback was triggered — you need to make sure that `$ON_SUCCESS_PARAM` is called to end every successful invocation and `$ON_ERROR_PARAM` is called to end every unsuccessful one"
-  }
-
-  private def syntaxErrorResultStringFor(json: JsValue, logResult: AWSLambdaLogResult): String = {
-    s"""
-       |There's a syntax error in your function:
-       |
-       |${(json \ "errorMessage").asOpt[String].getOrElse("")}
-       |${logResult.maybeTranslated.getOrElse("")}
-     """.stripMargin
   }
 
   private def isUnhandledError(json: JsValue): Boolean = {
@@ -182,24 +146,23 @@ case class BehaviorVersion(
     }.isDefined
   }
 
-  def unformattedResultStringFor(payload: ByteBuffer, logResult: AWSLambdaLogResult, parametersWithValues: Seq[ParameterWithValue]): String = {
+  def resultFor(payload: ByteBuffer, logResult: AWSLambdaLogResult, parametersWithValues: Seq[ParameterWithValue]): BehaviorResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
-    val mainResultString = (json \ "result").toOption.map { successResult =>
-      unformattedSuccessResultStringFor(successResult, parametersWithValues)
+    (json \ "result").toOption.map { successResult =>
+      SuccessResult(successResult, parametersWithValues, maybeResponseTemplate, logResult)
     }.getOrElse {
       if (isUnhandledError(json)) {
-        unhandledErrorResultStringFor(logResult)
+        UnhandledErrorResult(logResult)
       } else if (json.toString == "null") {
-        noCallbackTriggeredResultString
+        new NoCallbackTriggeredResult()
       } else if (isSyntaxError(json)) {
-        syntaxErrorResultStringFor(json, logResult)
+        SyntaxErrorResult(json, logResult)
       } else {
-          handledErrorResultStringFor(json)
+        HandledErrorResult(json, logResult)
       }
     }
-    logResult.userDefinedLogStatements ++ mainResultString
   }
 
   def save: DBIO[BehaviorVersion] = BehaviorVersionQueries.save(this)
