@@ -50,12 +50,19 @@ case class DisplayHelpBehavior(helpString: String, messageContext: MessageContex
       skillsString <- helpStringFor(skills, "Here's what I can do", matchString)
       knowledgeString <- helpStringFor(knowledge, "Here's what I know", matchString)
     } yield {
+      val endingString = if (behaviorVersions.isEmpty) {
+        s"""I'm just getting started here and can't wait to learn.
+           |
+           |You can ${messageContext.installLinkFor(lambdaService)} or ${messageContext.teachMeLinkFor(lambdaService)} yourself.""".stripMargin
+      } else {
+        s"You can also ${messageContext.installLinkFor(lambdaService)} or ${messageContext.teachMeLinkFor(lambdaService)} yourself."
+      }
       val text = s"""
           |$skillsString
           |
           |$knowledgeString
           |
-          |You can also ${messageContext.installLinkFor(lambdaService)} or ${messageContext.teachMeLinkFor(lambdaService)} yourself.
+          |$endingString
           |""".stripMargin
       messageContext.sendMessage(text)
     }
