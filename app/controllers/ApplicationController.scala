@@ -20,7 +20,7 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
-import play.api.mvc.{RequestHeader, Action}
+import play.api.mvc.{Result, AnyContent, RequestHeader, Action}
 import play.api.routing.JavaScriptReverseRouter
 import services.{GithubService, AWSLambdaService}
 import slick.dbio.DBIO
@@ -90,8 +90,12 @@ class ApplicationController @Inject() (
     )
   }
 
-  private def reAuthFor(request: RequestHeader, maybeTeamId: Option[String]) = {
-    Redirect(reAuthLinkFor(request, maybeTeamId))
+  private def withAuthDiscarded(request: SecuredRequest[AnyContent], result: Result)(implicit r: RequestHeader) = {
+    DBIO.from(env.authenticatorService.discard(request.authenticator, result))
+  }
+
+  private def reAuthFor(request: SecuredRequest[AnyContent], maybeTeamId: Option[String])(implicit r: RequestHeader) = {
+    withAuthDiscarded(request, Redirect(reAuthLinkFor(request, maybeTeamId)))
   }
 
   def intro(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
@@ -101,16 +105,13 @@ class ApplicationController @Inject() (
       maybePublishedBehaviorInfo <- maybeTeam.map { team =>
         withPublishedBehaviorInfoFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-    } yield {
-        (for {
-          team <- maybeTeam
-          data <- maybePublishedBehaviorInfo
-        } yield {
-            Ok(views.html.intro(Some(user), team, data.published, data.installedBehaviors))
-          }).getOrElse {
-          reAuthFor(request, maybeTeamId)
-        }
+      result <- (for {
+        team <- maybeTeam
+        data <- maybePublishedBehaviorInfo
+      } yield DBIO.successful(Ok(views.html.intro(Some(user), team, data.published, data.installedBehaviors)))).getOrElse {
+        reAuthFor(request, maybeTeamId)
       }
+    } yield result
 
     models.run(action)
   }
@@ -122,16 +123,13 @@ class ApplicationController @Inject() (
       maybePublishedBehaviorInfo <- maybeTeam.map { team =>
         withPublishedBehaviorInfoFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-    } yield {
-        (for {
-          team <- maybeTeam
-          data <- maybePublishedBehaviorInfo
-        } yield {
-          Ok(views.html.publishedBehaviors(Some(user), team, data.published, data.installedBehaviors))
-        }).getOrElse {
-          reAuthFor(request, maybeTeamId)
-        }
+      result <- (for {
+        team <- maybeTeam
+        data <- maybePublishedBehaviorInfo
+      } yield DBIO.successful(Ok(views.html.publishedBehaviors(Some(user), team, data.published, data.installedBehaviors)))).getOrElse {
+        reAuthFor(request, maybeTeamId)
       }
+    } yield result
 
     models.run(action)
   }
@@ -143,35 +141,34 @@ class ApplicationController @Inject() (
       maybeEnvironmentVariables <- maybeTeam.map { team =>
         EnvironmentVariableQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-    } yield {
-        (for {
-          team <- maybeTeam
-          envVars <- maybeEnvironmentVariables
-        } yield {
-            val data = BehaviorVersionData.buildFor(
-              team.id,
-              None,
-              "",
-              "",
-              Seq(),
-              Seq(),
-              BehaviorConfig(None, None),
-              None,
-              None,
-              None
-            )
-            Ok(views.html.edit(
-              Some(user),
-              Some(team),
-              Json.toJson(data).toString,
-              Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
-              justSaved = false,
-              notificationsJson = Json.toJson(Array[String]()).toString
-            ))
-          }).getOrElse {
-          reAuthFor(request, maybeTeamId)
-        }
+      result <- (for {
+        team <- maybeTeam
+        envVars <- maybeEnvironmentVariables
+      } yield {
+          val data = BehaviorVersionData.buildFor(
+            team.id,
+            None,
+            "",
+            "",
+            Seq(),
+            Seq(),
+            BehaviorConfig(None, None),
+            None,
+            None,
+            None
+          )
+          DBIO.successful(Ok(views.html.edit(
+            Some(user),
+            Some(team),
+            Json.toJson(data).toString,
+            Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
+            justSaved = false,
+            notificationsJson = Json.toJson(Array[String]()).toString
+          )))
+        }).getOrElse {
+        reAuthFor(request, maybeTeamId)
       }
+    } yield result
 
     models.run(action)
   }
@@ -187,29 +184,29 @@ class ApplicationController @Inject() (
       maybeEnvironmentVariables <- maybeBehaviorVersion.map { behaviorVersion =>
         EnvironmentVariableQueries.allFor(behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-    } yield {
-        (for {
-          data <- maybeVersionData
-          envVars <- maybeEnvironmentVariables
-        } yield {
-          Ok(views.html.edit(
+      result <- (for {
+        data <- maybeVersionData
+        envVars <- maybeEnvironmentVariables
+      } yield {
+          DBIO.successful(Ok(views.html.edit(
             Some(user),
             maybeBehavior.map(_.team),
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             maybeJustSaved.exists(identity),
             notificationsJson = Json.toJson(Array[String]()).toString
-          ))
+          )))
         }).getOrElse {
-          NotFound(
-            views.html.notFound(
-              Some(user),
-              Some("Behavior not found"),
-              Some("The behavior you are trying to access could not be found."),
-              Some(reAuthLinkFor(request, None))
-            ))
-        }
-    }
+        val response = NotFound(
+          views.html.notFound(
+            Some(user),
+            Some("Behavior not found"),
+            Some("The behavior you are trying to access could not be found."),
+            Some(reAuthLinkFor(request, None))
+          ))
+        withAuthDiscarded(request, response)
+      }
+    } yield result
 
     models.run(action)
   }
