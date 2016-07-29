@@ -1326,6 +1326,8 @@ label {
   margin-right: -@l;
   padding-left: @l;
   padding-right: @l;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .tab {
@@ -1335,6 +1337,21 @@ label {
   line-height: @xl;
   padding: @s @l;
   margin: 0 @s 0 0;
+}
+
+@media (max-width: @mobile-max-width) {
+  .tabs {
+    margin-left: -@s;
+    margin-right: -@s;
+    padding-left: @s;
+    padding-right: @s;
+    .type-s();
+  }
+
+  .tab {
+    padding: @xs @m;
+    margin-right: @xs;
+  }
 }
 
 .tab, .tab:hover, .tab:visited, .tab:active {
@@ -1426,6 +1443,13 @@ button.button-dropdown-trigger-symbol {
   padding-left: 0;
   border-width: 0;
   .type-weak();
+  &::before {
+    content: none;
+  }
+}
+
+button.button-dropdown-trigger-no-icon {
+  padding-right: (@l - @border-width);
   &::before {
     content: none;
   }
@@ -1553,6 +1577,11 @@ button.button-dropdown-trigger-symbol:focus,
 button.button-dropdown-trigger-symbol.button-dropdown-trigger-menu-open {
   padding-left: 0;
   padding-right: 0;
+}
+
+button.button-dropdown-trigger-no-icon:focus,
+button.button-dropdown-trigger-no-icon.button-dropdown-trigger-menu-open {
+  padding-right: (@l - @border-width-thick);
 }
 
 button.button-warning:focus {
