@@ -122,7 +122,7 @@
                 @CSRF.formField
                 <span class="link-blue-light">
                   <button class="button-subtle button-dropdown-trigger button-dropdown-trigger-no-icon mobile-phs" type="button" id="main-user-menu-button">
-                    <span class="display-inline-block">
+                    <span class="display-inline-block align-t">
                       <svg width="26px" height="24px" viewBox="0 0 26 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                         <title>User</title>
                         <defs>
@@ -155,7 +155,7 @@
                       </svg>
                     </span>
                     @maybeTeam.flatMap(_.maybeNonEmptyName.map(name => {
-                      <span class="type-label display-inline-block align-m mobile-display-none">{name}</span>
+                      <span class="type-label display-inline-block align-t ptxs mlxs mobile-display-none">{name}</span>
                     })).getOrElse("")
                   </button>
                 </span>
