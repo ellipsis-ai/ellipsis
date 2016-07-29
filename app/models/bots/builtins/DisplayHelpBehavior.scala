@@ -15,9 +15,30 @@ case class DisplayHelpBehavior(helpString: String, messageContext: MessageContex
     }).map(_.flatten).map { triggersForBehaviorVersions =>
       val grouped = triggersForBehaviorVersions.groupBy(_.behaviorVersion)
       val behaviorStrings = grouped.map { case(behavior, triggers) =>
-        val triggersString = triggers.map { ea =>
-          s"`${ea.pattern}`"
-        }.mkString(" or ")
+        val nonRegexTriggers = triggers.filter({ ea => !ea.shouldTreatAsRegex })
+        val namedTriggers =
+          if (nonRegexTriggers.isEmpty)
+            s"`${triggers.head.pattern}`"
+          else
+            nonRegexTriggers.map { ea =>
+              s"`${ea.pattern}`"
+            }.mkString(" or ")
+
+        val regexTriggerCount =
+          if (nonRegexTriggers.isEmpty)
+            triggers.tail.count({ ea => ea.shouldTreatAsRegex })
+          else
+            triggers.count({ ea => ea.shouldTreatAsRegex })
+
+        val regexTriggerString =
+          if (regexTriggerCount == 1)
+            s" (also matches another pattern)"
+          else if (regexTriggerCount > 1)
+            s" (also matches $regexTriggerCount other patterns)"
+          else
+            s""
+
+        val triggersString = namedTriggers + regexTriggerString
         val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
           s"[Details]($link)"
         }.getOrElse("")

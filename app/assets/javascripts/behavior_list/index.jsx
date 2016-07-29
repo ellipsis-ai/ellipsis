@@ -57,7 +57,9 @@ define(function(require) {
         return !!trigger.isRegex;
       }).length;
 
-      var text = regexTriggerCount === 1 ? "1 other pattern match" : regexTriggerCount + " other pattern matches";
+      var text = regexTriggerCount === 1 ?
+          "also matches another pattern" :
+          "also matches " + regexTriggerCount + " other patterns";
 
       if (regexTriggerCount > 0) {
         return (
