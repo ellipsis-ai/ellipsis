@@ -1431,6 +1431,13 @@ button.button-dropdown-trigger-symbol {
   }
 }
 
+button.button-dropdown-trigger-no-icon {
+  padding-right: (@l - @border-width);
+  &::before {
+    content: none;
+  }
+}
+
 button.button-dropdown-trigger-wide {
   width: @dropdown-menu-width * 3/2;
 }
@@ -1553,6 +1560,11 @@ button.button-dropdown-trigger-symbol:focus,
 button.button-dropdown-trigger-symbol.button-dropdown-trigger-menu-open {
   padding-left: 0;
   padding-right: 0;
+}
+
+button.button-dropdown-trigger-no-icon:focus,
+button.button-dropdown-trigger-no-icon.button-dropdown-trigger-menu-open {
+  padding-right: (@l - @border-width-thick);
 }
 
 button.button-warning:focus {
