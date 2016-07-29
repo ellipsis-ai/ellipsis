@@ -18,16 +18,9 @@ define(function(require) {
       }
       var firstTrigger = version.triggers[firstTriggerIndex];
       var text = firstTrigger && firstTrigger.text ? firstTrigger.text : "";
-      var label;
-      if (!text) {
-        label = (
-          <span className="link type-italic">(New behavior)</span>
-        );
-      } else {
-        label = (
-          <span className="link type-monospace">{firstTrigger.text}</span>
-        );
-      }
+      var label = text ?
+        (<span className="link type-monospace">{firstTrigger.text}</span>) :
+        (<span className="link type-italic">(New behavior)</span>);
       return {
         index: firstTriggerIndex,
         label: label,
