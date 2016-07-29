@@ -19,7 +19,7 @@ class SlackBotProfileActor @Inject() (val models: Models, val slackService: Slac
 
   val tick = context.system.scheduler.schedule(Duration.Zero, 10 seconds, self, "tick")
 
-  var lastLoaded: DateTime = DateTime.now
+  var nextCutoff: DateTime = DateTime.now
 
   override def postStop() = {
     tick.cancel()
@@ -27,8 +27,9 @@ class SlackBotProfileActor @Inject() (val models: Models, val slackService: Slac
 
   def receive = {
     case "tick" => {
-      val action = SlackBotProfileQueries.allSince(lastLoaded).map { profiles =>
-        lastLoaded = DateTime.now
+      val cutoff = nextCutoff
+      nextCutoff = DateTime.now.minusSeconds(1)
+      val action = SlackBotProfileQueries.allSince(cutoff).map { profiles =>
         profiles.map { profile =>
           slackService.startFor(profile)
         }
