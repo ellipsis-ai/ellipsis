@@ -1,19 +1,22 @@
 package models.accounts
 
 import models._
+import com.github.tototoshi.slick.PostgresJodaSupport._
+import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-case class SlackBotProfile(userId: String, teamId: String, slackTeamId: String, token: String)
+case class SlackBotProfile(userId: String, teamId: String, slackTeamId: String, token: String, createdAt: DateTime)
 
 class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_bot_profiles") {
   def userId = column[String]("user_id", O.PrimaryKey)
   def teamId = column[String]("team_id")
   def slackTeamId = column[String]("slack_team_id")
   def token = column[String]("token")
+  def createdAt = column[DateTime]("created_at")
 
-  def * = (userId, teamId, slackTeamId, token) <> ((SlackBotProfile.apply _).tupled, SlackBotProfile.unapply _)
+  def * = (userId, teamId, slackTeamId, token, createdAt) <> ((SlackBotProfile.apply _).tupled, SlackBotProfile.unapply _)
 
 }
 
@@ -53,11 +56,20 @@ object SlackBotProfileQueries {
     allForSlackTeamQuery(slackTeamId).result
   }
 
+  def uncompiledAllSinceQuery(when: Rep[DateTime]) = {
+    all.filter(_.createdAt >= when)
+  }
+  val allSinceQuery = Compiled(uncompiledAllSinceQuery _)
+
+  def allSince(when: DateTime): DBIO[Seq[SlackBotProfile]] = {
+    allSinceQuery(when).result
+  }
+
   def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): DBIO[SlackBotProfile] = {
     val query = findQuery(userId)
     query.result.headOption.flatMap {
       case Some(existing) => {
-        val profile = SlackBotProfile(userId, existing.teamId, slackTeamId, token)
+        val profile = SlackBotProfile(userId, existing.teamId, slackTeamId, token, existing.createdAt)
         for {
           maybeTeam <- Team.find(existing.teamId)
           _ <- query.update(profile)
@@ -67,7 +79,7 @@ object SlackBotProfileQueries {
         } yield profile
       }
       case None => Team.create(slackTeamName).flatMap { team =>
-        val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token)
+        val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, DateTime.now)
         (all += newProfile).map { _ => newProfile }
       }
     }
