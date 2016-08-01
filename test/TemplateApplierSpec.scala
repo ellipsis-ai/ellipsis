@@ -45,7 +45,7 @@ class TemplateApplierSpec extends PlaySpec {
     "apply for missing property" in {
       val json = Json.toJson(Map("foo" -> 2))
       val applier = TemplateApplier(Some("{successResult.bar}"), JsDefined(json))
-      applier.apply mustBe "<successResult.bar not found>"
+      applier.apply mustBe "**successResult.bar not found**"
     }
 
     "apply inputs too" in {
@@ -59,7 +59,7 @@ class TemplateApplierSpec extends PlaySpec {
       val resultJson = Json.toJson(Map("total" -> "3"))
       val inputs = Seq(("userInput1", JsString("1")), ("userInput2", JsString("2")))
       val applier = TemplateApplier(Some("{userInput1} + {madeUp} = {successResult.total}"), JsDefined(resultJson), inputs)
-      applier.apply mustBe "1 + <madeUp not found> = 3"
+      applier.apply mustBe "1 + **madeUp not found** = 3"
     }
 
     "apply for iteration over a list" in {
@@ -130,6 +130,28 @@ class TemplateApplierSpec extends PlaySpec {
         "\n\n1. third and a\n\n1. third and b\n\n1. third and c"
 
       applier.apply.trim mustBe expected
+    }
+
+    "handle missing iteration list" in {
+      val result = Json.toJson(Map( "numbers" -> Array("first", "second", "third") ))
+      val applier = TemplateApplier(Some(
+        """{for item in successResult.letters}
+          |1. {item}
+          |{endfor}
+        """.stripMargin), JsDefined(result))
+      applier.apply.trim mustBe "**successResult.letters not found**"
+    }
+
+    "handle missing nested iteration list" in {
+      val result = Json.parse("""{ "lists": [ { "first": [] } ] }""")
+      val applier = TemplateApplier(Some(
+        """{for list in successResult.lists}
+          |{for item in list.second}
+          |1. {item}
+          |{endfor}
+          |{endfor}
+        """.stripMargin), JsDefined(result))
+      applier.apply.trim mustBe "**list.second not found**"
     }
 
   }
