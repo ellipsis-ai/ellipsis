@@ -44,7 +44,7 @@ case class MarkdownRenderer(
   def lookUp(substitution: Substitution): JsLookupResult = environment.lookUp(substitution)
 
   def notFound(name: String): String = {
-    s"<$name not found>"
+    s"**$name not found**"
   }
 
   private def printJsValue(value: JsValue): String = {
@@ -81,7 +81,7 @@ case class MarkdownRenderer(
               pop
             }
           }
-          case _ => stringBuilder.append(s"<${iteration.list.dotString} is not a list>")
+          case _ => stringBuilder.append(s"**${iteration.list.dotString} is not a list**")
         }
       }
     }
