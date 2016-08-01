@@ -354,6 +354,21 @@ case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime) exte
 
 object Yearly {
   val recurrenceType = "yearly"
+
+  def maybeFromText(text: String): Option[Yearly] = {
+
+    val singleRegex = """(?i).*every year.*""".r
+    val nRegex = """(?i).*every\s+(\S+)\s+years?.*""".r
+    val maybeYearlyFrequency = text match {
+      case singleRegex() => Some(1)
+      case nRegex(frequencyText) => Recurrence.maybeOrdinalFor(frequencyText, None)
+      case _ => None
+    }
+
+    maybeYearlyFrequency.map { frequency =>
+      Yearly(frequency, Recurrence.ensureMonthDayFrom(text), Recurrence.ensureTimeFrom(text))
+    }
+  }
 }
 
 object Recurrence {
@@ -370,6 +385,10 @@ object Recurrence {
   val timeFormatter = DateTimeFormat.forPattern("h:mma z")
 
   def currentAdjustedTime: LocalTime = DateTime.now.toLocalTime.withSecondOfMinute(0).withMillisOfSecond(0)
+  def currentMonthDay: MonthDay = {
+    val now = DateTime.now
+    new MonthDay(now.getMonthOfYear, now.getDayOfMonth)
+  }
 
   private def maybeDateFrom(text: String): Option[Date] = {
     val parser = new Parser()
@@ -379,6 +398,24 @@ object Recurrence {
     } else {
       Some(groups.get(0).getDates.get(0))
     }
+  }
+
+  def maybeMonthDayFrom(text: String): Option[MonthDay] = {
+    val monthDayRegex = """(?i).*on\s+(.*?)(at.*)?$""".r
+    text match {
+      case monthDayRegex(monthDay, _) => maybeDateFrom(monthDay).map { date =>
+        val calendar = Calendar.getInstance()
+        calendar.setTime(date)
+        val javaMonth = calendar.get(Calendar.MONTH)
+        val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
+        new MonthDay(javaMonth + 1, dayOfMonth)
+      }
+      case _ => None
+    }
+  }
+
+  def ensureMonthDayFrom(text: String): MonthDay = {
+    maybeMonthDayFrom(text).getOrElse(currentMonthDay)
   }
 
   def maybeTimeFrom(text: String): Option[LocalTime] = {
@@ -519,7 +556,9 @@ object Recurrence {
         Weekly.maybeFromText(text).orElse {
           MonthlyByDayOfMonth.maybeFromText(text).orElse {
             MonthlyByNthDayOfWeek.maybeFromText(text).orElse {
-              None
+              Yearly.maybeFromText(text).orElse {
+                None
+              }
             }
           }
         }

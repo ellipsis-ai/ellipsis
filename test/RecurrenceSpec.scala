@@ -285,6 +285,15 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.initialAfter(DateTime.parse("2010-01-14T17:00")) mustBe DateTime.parse("2010-01-14T17:00")
     }
 
+    "be created for the 14th of January every year" in {
+      Recurrence.maybeFromText("every year on January 14 at 5pm") mustBe Some(Yearly(1, new MonthDay(1, 14), fivePM))
+    }
+
+    "be created for every second January 14th with no time specified" in {
+      val time = Recurrence.currentAdjustedTime
+      Recurrence.maybeFromText("every 2nd year on January 14") mustBe Some(Yearly(2, new MonthDay(1, 14), time))
+    }
+
   }
 
 
