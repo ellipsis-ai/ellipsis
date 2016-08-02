@@ -27,12 +27,7 @@ case class SlackMessageFormatter(client: SlackRtmClient) {
     val builder = StringBuilder.newBuilder
     val slack = new SlackRenderer(builder)
     commonmarkNodeFor(text).accept(slack)
-    val fullString = builder.toString
-    if (fullString.length > 5000) {
-      fullString.substring(0, 4960) ++ "...\n\n(truncated to 5000 characters)"
-    } else {
-      fullString
-    }
+    builder.mkString
   }
 
 }
