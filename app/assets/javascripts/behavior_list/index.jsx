@@ -18,26 +18,23 @@ define(function(require) {
       }
       var firstTrigger = version.triggers[firstTriggerIndex];
       var text = firstTrigger && firstTrigger.text ? firstTrigger.text : "";
+      var label = text ?
+        (<span className="link type-monospace">{firstTrigger.text}</span>) :
+        (<span className="link type-italic">(New behavior)</span>);
       return {
         index: firstTriggerIndex,
+        label: label,
         text: text
       };
     },
 
-    getFirstLabelFromText: function(triggerText) {
-      var text = triggerText ?
-        (<span className="type-monospace">{triggerText}</span>) :
-        (<span className="type-italic">(New behavior)</span>);
-      return (
-        <span className="link">{text}</span>
-      );
-    },
-
-    getOtherTriggerLabelsFromTriggers: function(triggers) {
-      return triggers.map(function(trigger, index) {
+    getNonRegexTriggerLabelsFromTriggers: function(triggers) {
+      return triggers.filter(function (trigger) {
+        return !trigger.isRegex;
+      }).map(function (trigger, index) {
         if (trigger.text) {
           return (
-            <span className="type-monospace" key={"trigger" + (index + 1)}>
+            <span className="type-monospace" key={"regularTrigger" + index}>
               <span className="type-disabled"> · </span>
               <span className="type-weak">{trigger.text}</span>
             </span>
@@ -48,6 +45,27 @@ define(function(require) {
       }, this);
     },
 
+    getRegexTriggerLabelFromTriggers: function(triggers) {
+      var regexTriggerCount = triggers.filter(function(trigger) {
+        return !!trigger.isRegex;
+      }).length;
+
+      var text = regexTriggerCount === 1 ?
+          "also matches another pattern" :
+          "also matches " + regexTriggerCount + " other patterns";
+
+      if (regexTriggerCount > 0) {
+        return (
+          <span>
+            <span className="type-monospace type-disabled"> · </span>
+            <span className="type-weak type-italic">{text}</span>
+          </span>
+        );
+      } else {
+        return null;
+      }
+    },
+
     getTriggersFromVersion: function(version) {
       var firstTrigger = this.getDisplayTriggerFromVersion(version);
       var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTrigger.index);
@@ -55,8 +73,9 @@ define(function(require) {
         <div>
           <a href={jsRoutes.controllers.ApplicationController.editBehavior(version.behaviorId).url}
             className="link-block">
-            {this.getFirstLabelFromText(firstTrigger.text)}
-            {this.getOtherTriggerLabelsFromTriggers(otherTriggers)}
+            {firstTrigger.label}
+            {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
+            {this.getRegexTriggerLabelFromTriggers(otherTriggers)}
           </a>
         </div>
       );
