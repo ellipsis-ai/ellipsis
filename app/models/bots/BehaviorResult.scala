@@ -65,9 +65,8 @@ case class HandledErrorResult(json: JsValue, logResult: AWSLambdaLogResult) exte
   }
 
   def text: String = {
-    val prompt = s"$ON_ERROR_PARAM triggered"
     val maybeDetail = (json \ "errorMessage").toOption.map(processedResultFor)
-    Array(Some(prompt), maybeDetail).flatten.mkString(": ")
+    maybeDetail.getOrElse(s"$ON_ERROR_PARAM triggered")
   }
 }
 
