@@ -25,6 +25,11 @@ object AWSLambdaLogResult {
       nonErrorContent = m.subgroups.head
       maybeErrorContent = m.subgroups.tail.headOption.map(s => s"\t$s")
     }
+    val onErrorRegex = """(?s)(.*)[^\n]*\{\s*"errorMessage":"([^"]*).*""".r
+    onErrorRegex.findFirstMatchIn(nonErrorContent).foreach { m =>
+      nonErrorContent = m.subgroups.head
+      val maybeOnErrorContent = m.subgroups.tail
+    }
     (maybeErrorContent, nonErrorContent)
   }
 
