@@ -26,7 +26,7 @@ case class BehaviorResponse(
 
   def runCode(service: AWSLambdaService): Future[Unit] = {
     val startTime = DateTime.now
-    behaviorVersion.resultFor(parametersWithValues, service).flatMap { result =>
+    behaviorVersion.resultFor(parametersWithValues, event, service).flatMap { result =>
       val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
       result.sendIn(event.context)
       service.models.run(

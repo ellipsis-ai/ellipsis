@@ -1,5 +1,6 @@
 package models.bots
 
+import com.mohiva.play.silhouette.api.LoginInfo
 import models.bots.conversations.Conversation
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
@@ -43,5 +44,7 @@ trait MessageContext extends Context {
   def userIdForContext: String
   val teamId: String
   val isResponseExpected: Boolean
+
+  def userInfo: DBIO[UserInfo] = UserInfo.forLoginInfo(LoginInfo(name, userIdForContext), teamId)
 
 }

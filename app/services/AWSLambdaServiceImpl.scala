@@ -37,7 +37,28 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
     """.stripMargin
   }
 
-  def invoke(behaviorVersion: BehaviorVersion, parametersWithValues: Seq[ParameterWithValue], environmentVariables: Seq[EnvironmentVariable]): Future[BehaviorResult] = {
+  private def contextParamDataFor(
+                                   behaviorVersion: BehaviorVersion,
+                                   environmentVariables: Seq[EnvironmentVariable],
+                                   userInfo: UserInfo
+                                   ) = {
+    val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
+    Seq(CONTEXT_PARAM -> JsObject(Seq(
+      API_BASE_URL_KEY -> JsString(apiBaseUrl),
+      TOKEN_KEY -> JsString(token.id),
+      ENV_KEY -> JsObject(environmentVariables.map { ea =>
+        ea.name -> JsString(ea.value)
+      }),
+      USER_INFO_KEY -> userInfo.toJson
+    )))
+  }
+
+  def invoke(
+              behaviorVersion: BehaviorVersion,
+              parametersWithValues: Seq[ParameterWithValue],
+              environmentVariables: Seq[EnvironmentVariable],
+              event: MessageEvent
+              ): Future[BehaviorResult] = {
     models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables)).flatMap { missingEnvVars =>
       if (missingEnvVars.nonEmpty) {
         Future.successful(MissingEnvVarsResult(missingEnvVars))
@@ -45,15 +66,10 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
         Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, AWSLambdaLogResult.empty))
       } else {
         val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
+        val userInfo = models.runNow(event.context.userInfo)
         val payloadJson = JsObject(
           parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
-            Seq(CONTEXT_PARAM -> JsObject(Seq(
-              API_BASE_URL_KEY -> JsString(apiBaseUrl),
-              TOKEN_KEY -> JsString(token.id),
-              ENV_KEY -> JsObject(environmentVariables.map { ea =>
-                ea.name -> JsString(ea.value)
-              })
-            )))
+            contextParamDataFor(behaviorVersion, environmentVariables, userInfo)
         )
         val invokeRequest =
           new InvokeRequest().
