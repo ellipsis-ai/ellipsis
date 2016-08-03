@@ -122,10 +122,10 @@ case class BehaviorVersion(
 
   def functionName: String = id
 
-  def resultFor(parametersWithValues: Seq[ParameterWithValue], service: AWSLambdaService): Future[BehaviorResult] = {
+  def resultFor(parametersWithValues: Seq[ParameterWithValue], event: MessageEvent, service: AWSLambdaService): Future[BehaviorResult] = {
     for {
       envVars <- service.models.run(EnvironmentVariableQueries.allFor(team))
-      result <- service.invoke(this, parametersWithValues, envVars)
+      result <- service.invoke(this, parametersWithValues, envVars, event)
     } yield result
   }
 
