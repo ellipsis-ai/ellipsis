@@ -26,6 +26,8 @@ POST        /sign_out                                 @controllers.SocialAuthCon
 GET         /add_to_slack                             @controllers.SlackController.add
 GET         /sign_in_with_slack                       @controllers.SlackController.signIn(redirect: Option[String] ?= None)
 
+GET         /link_oauth2/:authName/:teamId            @controllers.SocialAuthController.linkCustomOAuth2Service(authName: String, teamId: String, redirect: Option[String] ?= None)
+
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp
 

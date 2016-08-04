@@ -5,13 +5,12 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
-import com.mohiva.play.silhouette.api.util.Clock
+import com.mohiva.play.silhouette.api.util.{HTTPLayer, Clock}
 import models.accounts._
 import org.joda.time.DateTime
 import play.api.Configuration
 import services.UserService
 import com.mohiva.play.silhouette.api._
-import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
@@ -31,6 +30,7 @@ class SocialAuthController @Inject() (
                                        val configuration: Configuration,
                                        val clock: Clock,
                                        val models: Models,
+                                       httpLayer: HTTPLayer,
                                        slackProvider: SlackProvider,
                                        userService: UserService,
                                        authInfoRepository: AuthInfoRepository,
@@ -69,7 +69,6 @@ class SocialAuthController @Inject() (
                          maybeTeamId: Option[String],
                          maybeChannelId: Option[String]
                          ) = UserAwareAction.async { implicit request =>
-    val isHttps = configuration.getBoolean("application.https").getOrElse(true)
     val provider = slackProvider.withSettings { settings =>
       val url = routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       val authorizationParams = maybeTeamId.map { teamId =>
@@ -125,7 +124,6 @@ class SocialAuthController @Inject() (
                          maybeTeamId: Option[String],
                          maybeChannelId: Option[String]
                          ) = UserAwareAction.async { implicit request =>
-    val isHttps = configuration.getBoolean("application.https").getOrElse(true)
     val provider = slackProvider.withSettings { settings =>
       val url = routes.SocialAuthController.authenticateSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       var authorizationParams = settings.authorizationParams
@@ -187,6 +185,66 @@ class SocialAuthController @Inject() (
         } yield result
       }
     }
+  }
+
+  def linkCustomOAuth2Service(
+                authName: String,
+                teamId: String,
+                maybeRedirect: Option[String]
+                 ) = SecuredAction.async { implicit request =>
+    val url = routes.SocialAuthController.linkCustomOAuth2Service(authName, teamId, maybeRedirect).absoluteURL(secure = true)
+    val action = for {
+      maybeTeam <- Team.find(teamId, request.identity)
+      maybeAuthConfig <- maybeTeam.map { team =>
+        CustomOAuth2ConfigurationQueries.find(authName, team)
+      }.getOrElse(DBIO.successful(None))
+      maybeProvider <- DBIO.successful(maybeAuthConfig.map { authConfig =>
+        new CustomProvider(authConfig, httpLayer).withSettings { settings =>
+          var authorizationParams = settings.authorizationParams
+          authConfig.maybeScope.foreach { scope =>
+            authorizationParams = authorizationParams + ("scope" -> scope)
+          }
+          settings.copy(redirectURL = url, authorizationParams = authorizationParams)
+        }
+      })
+      maybeAuthenticateResult <- maybeProvider.map { provider =>
+        DBIO.from(provider.authenticate() recover {
+          case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
+            Left(Redirect(url))
+          }
+          case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
+            Left(Redirect(routes.ApplicationController.index()))
+          }
+        }).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+      result <- maybeAuthenticateResult.map { authenticateResult =>
+        authenticateResult match {
+          case Left(result) => DBIO.successful(result)
+          case Right(authInfo) =>
+            for {
+              profile <- DBIO.from(maybeProvider.get.retrieveProfile(authInfo))
+              result <- for {
+                loginInfo <- DBIO.successful(profile.loginInfo)
+                savedAuthInfo <- DBIO.from(authInfoRepository.save(loginInfo, authInfo))
+                maybeExistingLinkedAccount <- LinkedAccount.find(profile.loginInfo, teamId)
+                linkedAccount <- maybeExistingLinkedAccount.map(DBIO.successful).getOrElse {
+                  LinkedAccount(request.identity, profile.loginInfo, DateTime.now).save
+                }
+                user <- DBIO.successful(linkedAccount.user)
+                result <- DBIO.successful {
+                  maybeRedirect.map { redirect =>
+                    Redirect(validatedRedirectUri(redirect))
+                  }.getOrElse(Redirect(routes.ApplicationController.index()))
+                }
+              } yield result
+            } yield result
+        }
+      }.getOrElse {
+        DBIO.successful(NotFound(""))
+      }
+    } yield result
+
+    models.run(action)
   }
 
   def signOut = SecuredAction.async { implicit request =>
