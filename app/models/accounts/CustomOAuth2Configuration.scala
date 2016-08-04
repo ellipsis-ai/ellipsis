@@ -63,6 +63,27 @@ object CustomOAuth2ConfigurationQueries {
     findQuery(name, team.id).result.map(_.headOption)
   }
 
+  def ensureFor(
+                 name: String,
+                 authorizationUrl: String,
+                 accessTokenUrl: String,
+                 getProfileUrl: String,
+                 getProfileJsonPath: String,
+                 clientId: String,
+                 clientSecret: String,
+                 maybeScope: Option[String],
+                 teamId: String
+                 ): DBIO[CustomOAuth2Configuration] = {
+    val query = findQuery(name, teamId)
+    val config = CustomOAuth2Configuration(name, authorizationUrl, accessTokenUrl, getProfileUrl, getProfileJsonPath, clientId, clientSecret, maybeScope, teamId)
+    query.result.headOption.flatMap {
+      case Some(existing) => {
+        query.update(config)
+      }
+      case None => all += config
+    }.map(_ => config)
+  }
+
   def newForTodoist(clientId: String, clientSecret: String, teamId: String) = {
     val name = "todoist"
     CustomOAuth2Configuration(

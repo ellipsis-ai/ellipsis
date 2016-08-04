@@ -1,0 +1,49 @@
+@(
+  maybeUser: Option[models.accounts.User],
+  team: models.Team,
+  maybeConfig: Option[models.accounts.CustomOAuth2Configuration]
+  )(implicit messages: Messages, r: RequestHeader)
+
+@import helper._
+
+@main("Import a behavior", maybeUser, Some(team)) {
+
+  <div id="content" class="content">
+    <div class="container ptxxxxl">
+      <h1>Add a new OAuth2 configuration:</h1>
+
+      <form action="@routes.ApplicationController.saveCustomOAuth2Configuration()" method="POST" enctype="multipart/form-data">
+        @CSRF.formField
+        <input type="hidden" name="teamId" value="@team.id"/>
+        <div class="form-field">
+          <span class="label">Name of the external system:</span><input type="text" name="name" value="@maybeConfig.map(_.name)"/>
+        </div>
+        <div class="form-field">
+          <span class="label">Authorization URL:</span><input type="text" name="authorizationUrl" value="@maybeConfig.map(_.authorizationUrl)"/>
+        </div>
+        <div class="form-field">
+          <span class="label">Access token URL:</span><input type="text" name="accessTokenUrl" value="@maybeConfig.map(_.accessTokenUrl)"/>
+        </div>
+        <div class="form-field">
+          <span class="label">URL to fetch info about logged-in user:</span><input type="text" name="getProfileUrl" value="@maybeConfig.map(_.getProfileUrl)"/>
+        </div>
+        <div class="form-field">
+          <span class="label">Path of user ID in JSON response:</span><input type="text" name="getProfileJsonPath" value="@maybeConfig.map(_.getProfileJsonPath)"/>
+        </div>
+        <div class="form-field">
+          <span class="label">Client ID of your application:</span><input type="text" name="clientId" value="@maybeConfig.map(_.clientId)"/>
+        </div>
+        <div class="form-field">
+          <span class="label">Client secret of your application:</span><input type="text" name="clientSecret" value="@maybeConfig.map(_.clientSecret)"/>
+        </div>
+        <div class="form-field">
+          <span class="label">Scope of the access you want to request:</span><input type="text" name="scope" value="@maybeConfig.flatMap(_.maybeScope)"/>
+        </div>
+        <div class="actions">
+          <input type="submit" value="Save"/>
+        </div>
+      </form>
+
+    </div>
+  </div>
+}

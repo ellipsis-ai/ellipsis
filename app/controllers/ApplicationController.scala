@@ -11,7 +11,7 @@ import json.Formatting._
 import models.bots.config.AWSConfigQueries
 import models.bots.triggers.MessageTriggerQueries
 import models._
-import models.accounts.User
+import models.accounts.{CustomOAuth2ConfigurationQueries, User}
 import models.bots._
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -547,6 +547,89 @@ class ApplicationController @Inject() (
       Array()
     }
     Ok(Json.toJson(Array(content)))
+  }
+
+  def editCustomOAuth2Configuration(maybeName: Option[String], maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      maybeTeam <- user.maybeTeamFor(maybeTeamId)
+      maybeConfig <- maybeTeam.flatMap { team =>
+        maybeName.map { name =>
+          CustomOAuth2ConfigurationQueries.find(name, team)
+        }
+      }.getOrElse(DBIO.successful(None))
+    } yield {
+      maybeTeam.map { team =>
+        Ok(views.html.customOAuth2Configuration(Some(user), team, maybeConfig))
+      }.getOrElse {
+        NotFound(s"No accessible team")
+      }
+    }
+
+    models.run(action)
+  }
+
+  case class CustomOAuth2ConfigurationInfo(
+                                            name: String,
+                                            authorizationUrl: String,
+                                            accessTokenUrl: String,
+                                            getProfileUrl: String,
+                                            getProfileJsonPath: String,
+                                            clientId: String,
+                                            clientSecret: String,
+                                            maybeScope: Option[String],
+                                            teamId: String
+                                            )
+
+
+
+  private val saveCustomOAuth2ConfigurationForm = Form(
+    mapping(
+      "name" -> nonEmptyText,
+      "authorizationUrl" -> nonEmptyText,
+      "accessTokenUrl" -> nonEmptyText,
+      "getProfileUrl" -> nonEmptyText,
+      "getProfileJsonPath" -> nonEmptyText,
+      "clientId" -> nonEmptyText,
+      "clientSecret" -> nonEmptyText,
+      "scope" -> optional(text),
+      "teamId" -> nonEmptyText
+    )(CustomOAuth2ConfigurationInfo.apply)(CustomOAuth2ConfigurationInfo.unapply)
+  )
+
+  def saveCustomOAuth2Configuration = SecuredAction.async { implicit request =>
+    val user = request.identity
+    saveCustomOAuth2ConfigurationForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val action = (for {
+          maybeTeam <- Team.find(info.teamId, user)
+          maybeConfig <- maybeTeam.map { team =>
+            CustomOAuth2ConfigurationQueries.ensureFor(
+              info.name,
+              info.authorizationUrl,
+              info.accessTokenUrl,
+              info.getProfileUrl,
+              info.getProfileJsonPath,
+              info.clientId,
+              info.clientSecret,
+              info.maybeScope,
+              info.teamId
+            ).map(Some(_))
+          }.getOrElse(DBIO.successful(None))
+        } yield {
+            maybeConfig.map { config =>
+              Redirect(routes.ApplicationController.editCustomOAuth2Configuration(Some(config.name), Some(config.teamId)))
+            }.getOrElse {
+              NotFound(s"Team not found: ${info.teamId}")
+            }
+          }) transactionally
+
+        models.run(action)
+      }
+    )
   }
 
   def javascriptRoutes = Action { implicit request =>
