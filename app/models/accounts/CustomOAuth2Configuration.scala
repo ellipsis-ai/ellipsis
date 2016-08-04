@@ -77,4 +77,20 @@ object CustomOAuth2ConfigurationQueries {
       teamId
     )
   }
+
+  def newForGithub(clientId: String, clientSecret: String, teamId: String) = {
+    val name = "github"
+    CustomOAuth2Configuration(
+      name,
+      "https://github.com/login/oauth/authorize",
+      "https://github.com/login/oauth/access_token",
+      "https://api.github.com/user?access_token=%s",
+      "id",
+      clientId,
+      clientSecret,
+      Some("repo"),
+      teamId
+    )
+  }
+
 }
