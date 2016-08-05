@@ -604,7 +604,7 @@ class ApplicationController @Inject() (
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       info => {
-        val action = (for {
+        val action = for {
           maybeTeam <- Team.find(info.teamId, user)
           maybeConfig <- maybeTeam.map { team =>
             CustomOAuth2ConfigurationQueries.ensureFor(
@@ -625,7 +625,7 @@ class ApplicationController @Inject() (
             }.getOrElse {
               NotFound(s"Team not found: ${info.teamId}")
             }
-          }) transactionally
+          }
 
         models.run(action)
       }
