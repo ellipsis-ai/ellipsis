@@ -394,6 +394,10 @@ return React.createClass({
     this.showVersionIndex(0);
   },
 
+  cloneBehavior: function() {
+    this.refs.cloneBehaviorForm.submit();
+  },
+
   confirmDeleteBehavior: function() {
     this.toggleActivePanel('confirmDeleteBehavior', true);
   },
@@ -1372,6 +1376,7 @@ return React.createClass({
                   >
                     <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
                     <DropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
+                    <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this behavior" />
                     <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
                   </DropdownMenu>
                 </div>
@@ -1383,6 +1388,11 @@ return React.createClass({
 
       </form>
       <form className="pbxxxl" ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
+        <CsrfTokenHiddenInput value={this.props.csrfToken} />
+        <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+      </form>
+
+      <form className="pbxxxl" ref="cloneBehaviorForm" action="/clone_behavior" method="POST">
         <CsrfTokenHiddenInput value={this.props.csrfToken} />
         <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
       </form>

@@ -390,6 +390,40 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
+  private val cloneBehaviorForm = Form(
+    "behaviorId" -> nonEmptyText
+  )
+
+  def cloneBehavior = SecuredAction.async { implicit request =>
+    cloneBehaviorForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      behaviorId => {
+        val user = request.identity
+        val action = for {
+          maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user)
+          maybeTeam <- maybeVersionData.map { data =>
+            Team.find(data.teamId, user)
+          }.getOrElse(DBIO.successful(None))
+          maybeImporter <- DBIO.successful(for {
+            team <- maybeTeam
+            data <- maybeVersionData
+          } yield BehaviorVersionImporter(team, user, lambdaService, data))
+          maybeCloned <- maybeImporter.map { importer =>
+            importer.run.map(Some(_))
+          }.getOrElse(DBIO.successful(None))
+        } yield maybeCloned.map { cloned =>
+            Redirect(routes.ApplicationController.editBehavior(cloned.behavior.id))
+          }.getOrElse {
+            NotFound("")
+          }
+
+        models.run(action)
+      }
+    )
+  }
+
   def importBehaviorZip(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = user.maybeTeamFor(maybeTeamId).map { maybeTeam =>
