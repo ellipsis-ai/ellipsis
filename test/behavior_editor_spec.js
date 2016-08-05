@@ -113,6 +113,25 @@ describe('BehaviorEditor', () => {
       editor.hasModifiedTemplate.mockReturnValue(true);
       expect(editor.getBehaviorTemplate()).toEqual('');
     });
+
+    it('submits default template when that\'s all there is', () => {
+      editorConfig.responseTemplate = '';
+      let editor = createEditor(editorConfig);
+      editor.getDefaultBehaviorTemplate = jest.fn();
+      editor.getDefaultBehaviorTemplate.mockReturnValue('default');
+      editor.refs.behaviorForm.submit = jest.fn();
+      editor.setBehaviorProp = jest.fn((key, value, callback) => callback());
+      const event = {
+        preventDefault: jest.fn()
+      };
+      editor.onSaveClick(event);
+      expect(event.preventDefault.mock.calls.length).toBe(1);
+      expect(editor.setBehaviorProp.mock.calls.length).toBe(1);
+      expect(editor.setBehaviorProp.mock.calls[0][0]).toBe('responseTemplate');
+      expect(editor.setBehaviorProp.mock.calls[0][1]).toBe('default');
+      expect(editor.refs.behaviorForm.submit.mock.calls.length).toBe(1);
+
+    });
   });
 
   describe('onParamEnterKey', () => {
