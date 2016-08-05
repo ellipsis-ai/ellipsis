@@ -520,7 +520,7 @@ return React.createClass({
   },
 
   onSaveClick: function(event) {
-    if (this.getBehaviorTemplate() == this.getDefaultBehaviorTemplate()) {
+    if (this.getBehaviorTemplate() === this.getDefaultBehaviorTemplate()) {
       event.preventDefault();
       this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), function() {
         this.refs.behaviorForm.submit();
