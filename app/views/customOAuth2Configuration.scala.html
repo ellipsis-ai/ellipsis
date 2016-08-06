@@ -1,7 +1,8 @@
 @(
   maybeUser: Option[models.accounts.User],
   team: models.Team,
-  maybeConfig: Option[models.accounts.CustomOAuth2Configuration]
+  maybeConfig: Option[models.accounts.CustomOAuth2Configuration],
+  maybeTemplate: Option[models.accounts.CustomOAuth2ConfigurationTemplate]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
@@ -15,32 +16,19 @@
       <form action="@routes.ApplicationController.saveCustomOAuth2Configuration()" method="POST" enctype="multipart/form-data">
         @CSRF.formField
         <input type="hidden" name="teamId" value="@team.id"/>
-        <div class="form-field">
-          <span class="label">Name of the external system:</span><input type="text" name="name" value="@maybeConfig.map(_.name)"/>
-        </div>
-        <div class="form-field">
-          <span class="label">Authorization URL:</span><input type="text" name="authorizationUrl" value="@maybeConfig.map(_.authorizationUrl)"/>
-        </div>
-        <div class="form-field">
-          <span class="label">Access token URL:</span><input type="text" name="accessTokenUrl" value="@maybeConfig.map(_.accessTokenUrl)"/>
-        </div>
-        <div class="form-field">
-          <span class="label">URL to fetch info about logged-in user:</span><input type="text" name="getProfileUrl" value="@maybeConfig.map(_.getProfileUrl)"/>
-        </div>
-        <div class="form-field">
-          <span class="label">Path of user ID in JSON response:</span><input type="text" name="getProfileJsonPath" value="@maybeConfig.map(_.getProfileJsonPath)"/>
-        </div>
-        <div class="form-field">
-          <span class="label">Client ID of your application:</span><input type="text" name="clientId" value="@maybeConfig.map(_.clientId)"/>
-        </div>
-        <div class="form-field">
-          <span class="label">Client secret of your application:</span><input type="text" name="clientSecret" value="@maybeConfig.map(_.clientSecret)"/>
-        </div>
-        <div class="form-field">
-          <span class="label">Scope of the access you want to request:</span><input type="text" name="scope" value="@maybeConfig.flatMap(_.maybeScope)"/>
-        </div>
-        <div class="actions">
-          <input type="submit" value="Save"/>
+        @customOAuth2ConfigurationField("Name of the external system", "name", maybeConfig.map(_.name).orElse(maybeTemplate.map(_.name)))
+        @customOAuth2ConfigurationField("Authorization URL", "authorizationUrl", maybeConfig.map(_.authorizationUrl).orElse(maybeTemplate.map(_.authorizationUrl)))
+        @customOAuth2ConfigurationField("Access token URL", "accessTokenUrl", maybeConfig.map(_.accessTokenUrl).orElse(maybeTemplate.map(_.accessTokenUrl)))
+        @customOAuth2ConfigurationField("URL to fetch info about logged-in user", "getProfileUrl", maybeConfig.map(_.getProfileUrl).orElse(maybeTemplate.map(_.getProfileUrl)))
+        @customOAuth2ConfigurationField("Path of user ID in JSON response", "getProfileJsonPath", maybeConfig.map(_.getProfileJsonPath).orElse(maybeTemplate.map(_.getProfileJsonPath)))
+        @customOAuth2ConfigurationField("Client ID of your application", "clientId", maybeConfig.map(_.clientId))
+        @customOAuth2ConfigurationField("Client secret of your application", "clientSecret", maybeConfig.map(_.clientSecret))
+        @customOAuth2ConfigurationField("Scope of the access you want to request", "scope", maybeConfig.flatMap(_.maybeScope))
+        <div class="columns">
+          <div class="column column-one-third align-r">&nbsp;</div>
+          <div class="column column-one-half">
+            <input type="submit" value="Save"/>
+          </div>
         </div>
       </form>
 

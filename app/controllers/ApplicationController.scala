@@ -11,7 +11,7 @@ import json.Formatting._
 import models.bots.config.AWSConfigQueries
 import models.bots.triggers.MessageTriggerQueries
 import models._
-import models.accounts.{CustomOAuth2ConfigurationQueries, User}
+import models.accounts.{CustomOAuth2ConfigurationTemplate, CustomOAuth2ConfigurationQueries, User}
 import models.bots._
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -549,7 +549,7 @@ class ApplicationController @Inject() (
     Ok(Json.toJson(Array(content)))
   }
 
-  def editCustomOAuth2Configuration(maybeName: Option[String], maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def editCustomOAuth2Configuration(maybeName: Option[String], maybeTeamId: Option[String], maybeTemplateName: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       maybeTeam <- user.maybeTeamFor(maybeTeamId)
@@ -559,8 +559,13 @@ class ApplicationController @Inject() (
         }
       }.getOrElse(DBIO.successful(None))
     } yield {
+      val maybeTemplate = if (maybeConfig.isDefined) {
+        None
+      } else {
+        CustomOAuth2ConfigurationTemplate.maybeFor(maybeTemplateName)
+      }
       maybeTeam.map { team =>
-        Ok(views.html.customOAuth2Configuration(Some(user), team, maybeConfig))
+        Ok(views.html.customOAuth2Configuration(Some(user), team, maybeConfig, maybeTemplate))
       }.getOrElse {
         NotFound(s"No accessible team")
       }

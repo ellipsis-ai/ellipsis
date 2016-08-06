@@ -84,34 +84,4 @@ object CustomOAuth2ConfigurationQueries {
     }.map(_ => config)
   }
 
-  def newForTodoist(clientId: String, clientSecret: String, teamId: String) = {
-    val name = "todoist"
-    CustomOAuth2Configuration(
-      name,
-      "https://todoist.com/oauth/authorize",
-      "https://todoist.com/oauth/access_token",
-      """https://todoist.com/API/v7/sync?token=%s&resource_types=["user"]&sync_token="*"""",
-      "user.id",
-      clientId,
-      clientSecret,
-      Some("data:read_write"),
-      teamId
-    )
-  }
-
-  def newForGithub(clientId: String, clientSecret: String, teamId: String) = {
-    val name = "github"
-    CustomOAuth2Configuration(
-      name,
-      "https://github.com/login/oauth/authorize",
-      "https://github.com/login/oauth/access_token",
-      "https://api.github.com/user?access_token=%s",
-      "id",
-      clientId,
-      clientSecret,
-      Some("repo"),
-      teamId
-    )
-  }
-
 }
