@@ -14,6 +14,7 @@ POST        /import_behavior_zip                      @controllers.ApplicationCo
 POST        /import_behavior                          @controllers.ApplicationController.doImportBehavior
 POST        /save_behavior                            @controllers.ApplicationController.saveBehavior
 POST        /delete_behavior                          @controllers.ApplicationController.deleteBehavior
+POST        /clone_behavior                           @controllers.ApplicationController.cloneBehavior
 GET         /regex_validation_errors/:pattern         @controllers.ApplicationController.regexValidationErrorsFor(pattern: String)
 GET         /version_info/:behaviorId                 @controllers.ApplicationController.versionInfoFor(behaviorId: String)
 POST        /test_behavior_version                    @controllers.ApplicationController.testBehaviorVersion
