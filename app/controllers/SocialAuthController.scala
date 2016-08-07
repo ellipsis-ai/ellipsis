@@ -199,7 +199,7 @@ class SocialAuthController @Inject() (
         CustomOAuth2ConfigurationQueries.find(authName, team)
       }.getOrElse(DBIO.successful(None))
       maybeProvider <- DBIO.successful(maybeAuthConfig.map { authConfig =>
-        new CustomProvider(authConfig, httpLayer).withSettings { settings =>
+        new CustomOAuth2Provider(authConfig, httpLayer).withSettings { settings =>
           var authorizationParams = settings.authorizationParams
           authConfig.maybeScope.foreach { scope =>
             authorizationParams = authorizationParams + ("scope" -> scope)

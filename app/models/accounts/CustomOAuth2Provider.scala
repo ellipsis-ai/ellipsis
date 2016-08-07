@@ -7,7 +7,7 @@ import play.api.libs.json.JsValue
 
 import scala.concurrent.Future
 
-class CustomProvider(
+class CustomOAuth2Provider(
                      val configuration: CustomOAuth2Configuration,
                      val httpLayer: HTTPLayer
                      ) extends OAuth2Provider {
@@ -15,7 +15,7 @@ class CustomProvider(
   val settings: OAuth2Settings = configuration.oAuth2Settings
   val stateProvider: OAuth2StateProvider = new DummyStateProvider
 
-  override type Self = CustomProvider
+  override type Self = CustomOAuth2Provider
   override type Content = JsValue
   type Profile = CustomProfile
 
@@ -25,7 +25,7 @@ class CustomProvider(
 
   override protected val headers: Seq[(String, String)] = Seq(("Accept", "application/json"))
 
-  override def withSettings(f: (Settings) => Settings) = new CustomProvider(configuration, httpLayer)
+  override def withSettings(f: (Settings) => Settings) = new CustomOAuth2Provider(configuration, httpLayer)
 
   protected def urls: Map[String, String] = Map("getProfile" -> configuration.getProfileUrl)
 
