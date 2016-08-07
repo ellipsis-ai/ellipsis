@@ -5,13 +5,26 @@ import org.commonmark.node._
 
 class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   override def visit(blockQuote: BlockQuote) {
-    var node: Node = blockQuote.getFirstChild
+    var node = blockQuote.getFirstChild
     while (node != null) {
-      val next: Node = node.getNext
-      stringBuilder.append("\r> ")
-      node.accept(this)
-      stringBuilder.append("\r")
-      node = next
+      node match {
+        case p: Paragraph => {
+          var child = p.getFirstChild
+          while (child != null) {
+            child match {
+              case t: Text => stringBuilder.append("\r> ")
+              case _ =>
+            }
+            child.accept(this)
+            child = child.getNext
+          }
+        }
+        case _ => {
+          stringBuilder.append("\r> ")
+          node.accept(this)
+        }
+      }
+      node = node.getNext
     }
   }
 
@@ -48,18 +61,18 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
     visitChildren(hardLineBreak)
   }
 
-  override def visit(header: Header) {
-    visitChildren(header)
+  override def visit(heading: Heading) {
+    visitChildren(heading)
     stringBuilder.append("\r\r")
   }
 
-  override def visit(horizontalRule: HorizontalRule) {
-    visitChildren(horizontalRule)
+  override def visit(thematicBreak: ThematicBreak) {
+    visitChildren(thematicBreak)
   }
 
-  override def visit(htmlTag: HtmlTag) {
-    stringBuilder.append(htmlTag.getLiteral)
-    visitChildren(htmlTag)
+  override def visit(html: HtmlInline) {
+    stringBuilder.append(html.getLiteral)
+    visitChildren(html)
   }
 
   override def visit(htmlBlock: HtmlBlock) {
