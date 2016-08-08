@@ -24,6 +24,7 @@
           </div>
         </div>
 
+        @customOAuth2ConfigurationField("Name of this configuration", "name", Some(config.name))
         @customOAuth2ConfigurationField("Client ID of your application", "clientId", Some(config.clientId))
         @customOAuth2ConfigurationField("Client secret of your application", "clientSecret", Some(config.clientSecret))
         @customOAuth2ConfigurationField("Scope of the access you want to request", "scope", config.maybeScope)

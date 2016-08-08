@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class CustomOAuth2Configuration(
                                       id: String,
+                                      name: String,
                                       template: CustomOAuth2ConfigurationTemplate,
                                       clientId: String,
                                       clientSecret: String,
@@ -14,7 +15,6 @@ case class CustomOAuth2Configuration(
                                       teamId: String
                                         ) {
 
-  val name = template.name
   val getProfileUrl = template.getProfileUrl
   val getProfileJsonPath = template.getProfileJsonPath
   val authorizationUrl = template.authorizationUrl
@@ -24,7 +24,7 @@ case class CustomOAuth2Configuration(
     getProfileJsonPath.split("\\.")
   }
 
-  val redirectUrl: String = s"/link_oauth2/$name/$teamId"
+  val redirectUrl: String = s"/link_oauth2/$id/$teamId"
 
   val oAuth2Settings: OAuth2Settings = OAuth2Settings(
     Some(authorizationUrl),
@@ -37,6 +37,7 @@ case class CustomOAuth2Configuration(
 
   def toRaw = RawCustomOAuth2Configuration(
     id,
+    name,
     template.id,
     clientId,
     clientSecret,
@@ -47,6 +48,7 @@ case class CustomOAuth2Configuration(
 
 case class RawCustomOAuth2Configuration(
                                          id: String,
+                                         name: String,
                                          templateId: String,
                                          clientId: String,
                                          clientSecret: String,
@@ -56,13 +58,14 @@ case class RawCustomOAuth2Configuration(
 
 class CustomOAuth2ConfigurationsTable(tag: Tag) extends Table[RawCustomOAuth2Configuration](tag, "custom_oauth2_configurations") {
   def id = column[String]("id")
+  def name = column[String]("name")
   def templateId = column[String]("template_id")
   def clientId = column[String]("client_id")
   def clientSecret = column[String]("client_secret")
   def maybeScope = column[Option[String]]("scope")
   def teamId = column[String]("team_id")
 
-  def * = (id, templateId, clientId, clientSecret, maybeScope, teamId) <>
+  def * = (id, name, templateId, clientId, clientSecret, maybeScope, teamId) <>
     ((RawCustomOAuth2Configuration.apply _).tupled, RawCustomOAuth2Configuration.unapply _)
 
 }
@@ -77,7 +80,7 @@ object CustomOAuth2ConfigurationQueries {
 
   def tuple2Config(tuple: TupleType): CustomOAuth2Configuration = {
     val raw = tuple._1
-    CustomOAuth2Configuration(raw.id, tuple._2, raw.clientId, raw.clientSecret, raw.maybeScope, raw.teamId)
+    CustomOAuth2Configuration(raw.id, raw.name, tuple._2, raw.clientId, raw.clientSecret, raw.maybeScope, raw.teamId)
   }
 
   def uncompiledFindQuery(id: Rep[String], teamId: Rep[String]) = {
@@ -92,12 +95,13 @@ object CustomOAuth2ConfigurationQueries {
 
   def createFor(
                  template: CustomOAuth2ConfigurationTemplate,
+                 name: String,
                  clientId: String,
                  clientSecret: String,
                  maybeScope: Option[String],
                  teamId: String
                  ): DBIO[CustomOAuth2Configuration] = {
-    val raw = RawCustomOAuth2Configuration(IDs.next, template.id, clientId, clientSecret, maybeScope, teamId)
+    val raw = RawCustomOAuth2Configuration(IDs.next, name, template.id, clientId, clientSecret, maybeScope, teamId)
     (all += raw).map { _ =>
       tuple2Config((raw, template))
     }

@@ -1,24 +1,18 @@
 package models.bots
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.{LinkedAccount, User, OAuth2Token}
+import models.accounts._
 import slick.dbio.DBIO
 import play.api.libs.json._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class LinkedInfo(loginInfo: LoginInfo, maybeOAuth2Token: Option[OAuth2Token]) {
+case class LinkedInfo(externalSystem: String, accessToken: String) {
 
   def toJson: JsObject = {
-    var parts = Seq(
-      "externalSystem" -> JsString(loginInfo.providerID),
-      "userId" -> JsString(loginInfo.providerKey)
-    )
-    maybeOAuth2Token.foreach { oauth2Token =>
-      parts = parts ++ Seq(
-        "oauthToken" -> JsString(oauth2Token.accessToken)
-      )
-    }
-    JsObject(parts)
+    JsObject(Seq(
+      "externalSystem" -> JsString(externalSystem),
+      "oauthToken" -> JsString(accessToken)
+    ))
   }
 
 }
@@ -42,14 +36,11 @@ object UserInfo {
     for {
       maybeLinkedAccount <- LinkedAccount.find(loginInfo, teamId)
       maybeUser <- DBIO.successful(maybeLinkedAccount.map(_.user))
-      allLinkedAccounts <- maybeUser.map { user =>
-        LinkedAccount.allFor(user)
+      linkedTokens <- maybeUser.map { user =>
+        LinkedOAuth2TokenQueries.allForUser(user)
       }.getOrElse(DBIO.successful(Seq()))
-      links <- DBIO.sequence(allLinkedAccounts.map { linkedAccount =>
-        val loginInfo = linkedAccount.loginInfo
-        OAuth2Token.findByLoginInfo(loginInfo).map { maybeOAuth2Token =>
-          LinkedInfo(loginInfo, maybeOAuth2Token)
-        }
+      links <- DBIO.successful(linkedTokens.map { ea =>
+        LinkedInfo(ea.config.name, ea.accessToken)
       })
     } yield {
       UserInfo(maybeUser, links)

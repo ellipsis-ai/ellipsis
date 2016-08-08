@@ -628,6 +628,7 @@ class ApplicationController @Inject() (
 
   case class CustomOAuth2ConfigurationInfo(
                                             maybeId: Option[String],
+                                            name: String,
                                             templateId: String,
                                             clientId: String,
                                             clientSecret: String,
@@ -640,6 +641,7 @@ class ApplicationController @Inject() (
   private val saveCustomOAuth2ConfigurationForm = Form(
     mapping(
       "id" -> optional(nonEmptyText),
+      "name" -> nonEmptyText,
       "templateId" -> nonEmptyText,
       "clientId" -> nonEmptyText,
       "clientSecret" -> nonEmptyText,
@@ -664,10 +666,10 @@ class ApplicationController @Inject() (
           } yield {
               info.maybeId.map { configId =>
                 CustomOAuth2ConfigurationQueries.find(configId, team).flatMap { existing =>
-                  CustomOAuth2ConfigurationQueries.update(CustomOAuth2Configuration(configId, template, info.clientId, info.clientSecret, info.maybeScope, info.teamId))
+                  CustomOAuth2ConfigurationQueries.update(CustomOAuth2Configuration(configId, info.name, template, info.clientId, info.clientSecret, info.maybeScope, info.teamId))
                 }
               }.getOrElse {
-                CustomOAuth2ConfigurationQueries.createFor(template, info.clientId, info.clientSecret, info.maybeScope, team.id)
+                CustomOAuth2ConfigurationQueries.createFor(template, info.name, info.clientId, info.clientSecret, info.maybeScope, team.id)
               }.map(Some(_))
             }).getOrElse(DBIO.successful(None))
 

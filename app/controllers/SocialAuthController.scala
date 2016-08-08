@@ -193,8 +193,9 @@ class SocialAuthController @Inject() (
                 maybeRedirect: Option[String]
                  ) = SecuredAction.async { implicit request =>
     val url = routes.SocialAuthController.linkCustomOAuth2Service(configId, teamId, maybeRedirect).absoluteURL(secure = true)
+    val user = request.identity
     val action = for {
-      maybeTeam <- Team.find(teamId, request.identity)
+      maybeTeam <- Team.find(teamId, user)
       maybeAuthConfig <- maybeTeam.map { team =>
         CustomOAuth2ConfigurationQueries.find(configId, team)
       }.getOrElse(DBIO.successful(None))
@@ -222,22 +223,12 @@ class SocialAuthController @Inject() (
           case Left(result) => DBIO.successful(result)
           case Right(authInfo) =>
             for {
-              profile <- DBIO.from(maybeProvider.get.retrieveProfile(authInfo))
-              result <- for {
-                loginInfo <- DBIO.successful(profile.loginInfo)
-                savedAuthInfo <- DBIO.from(authInfoRepository.save(loginInfo, authInfo))
-                maybeExistingLinkedAccount <- LinkedAccount.find(profile.loginInfo, teamId)
-                linkedAccount <- maybeExistingLinkedAccount.map(DBIO.successful).getOrElse {
-                  LinkedAccount(request.identity, profile.loginInfo, DateTime.now).save
-                }
-                user <- DBIO.successful(linkedAccount.user)
-                result <- DBIO.successful {
-                  maybeRedirect.map { redirect =>
-                    Redirect(validatedRedirectUri(redirect))
-                  }.getOrElse(Redirect(routes.ApplicationController.index()))
-                }
-              } yield result
-            } yield result
+              maybeLinkedToken <- maybeAuthConfig.map { config =>
+                LinkedOAuth2Token(authInfo, user, config).save
+              }.getOrElse(DBIO.successful(None))
+            } yield maybeRedirect.map { redirect =>
+              Redirect(validatedRedirectUri(redirect))
+            }.getOrElse(Redirect(routes.ApplicationController.index()))
         }
       }.getOrElse {
         DBIO.successful(NotFound(""))
