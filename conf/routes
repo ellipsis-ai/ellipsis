@@ -19,8 +19,12 @@ GET         /regex_validation_errors/:pattern         @controllers.ApplicationCo
 GET         /version_info/:behaviorId                 @controllers.ApplicationController.versionInfoFor(behaviorId: String)
 POST        /test_behavior_version                    @controllers.ApplicationController.testBehaviorVersion
 POST        /submit_environment_variables             @controllers.ApplicationController.submitEnvironmentVariables
-GET         /edit_oauth2_config                       @controllers.ApplicationController.editCustomOAuth2Configuration(name: Option[String] ?= None, teamId: Option[String] ?= None, template: Option[String] ?= None)
+GET         /new_oauth2_config                        @controllers.ApplicationController.newCustomOAuth2Configuration(teamId: Option[String] ?= None)
+GET         /edit_oauth2_config/:id                   @controllers.ApplicationController.editCustomOAuth2Configuration(id: String, teamId: Option[String] ?= None)
 POST        /save_oauth2_config                       @controllers.ApplicationController.saveCustomOAuth2Configuration
+GET         /new_oauth2_config_template               @controllers.ApplicationController.newCustomOAuth2ConfigurationTemplate(teamId: Option[String] ?= None)
+GET         /edit_oauth2_config_template/:id          @controllers.ApplicationController.editCustomOAuth2ConfigurationTemplate(id: String, teamId: Option[String] ?= None)
+POST        /save_oauth2_config_template              @controllers.ApplicationController.saveCustomOAuth2ConfigurationTemplate
 
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
@@ -29,7 +33,7 @@ POST        /sign_out                                 @controllers.SocialAuthCon
 GET         /add_to_slack                             @controllers.SlackController.add
 GET         /sign_in_with_slack                       @controllers.SlackController.signIn(redirect: Option[String] ?= None)
 
-GET         /link_oauth2/:authName/:teamId            @controllers.SocialAuthController.linkCustomOAuth2Service(authName: String, teamId: String, redirect: Option[String] ?= None)
+GET         /link_oauth2/:configId/:teamId            @controllers.SocialAuthController.linkCustomOAuth2Service(configId: String, teamId: String, redirect: Option[String] ?= None)
 
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp

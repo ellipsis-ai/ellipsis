@@ -1,21 +1,24 @@
 package models.accounts
 
 import com.mohiva.play.silhouette.impl.providers.OAuth2Settings
-import models.Team
+import models.{IDs, Team}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class CustomOAuth2Configuration(
-                              name: String,
-                              authorizationUrl: String,
-                              accessTokenUrl: String,
-                              getProfileUrl: String,
-                              getProfileJsonPath: String,
-                              clientId: String,
-                              clientSecret: String,
-                              maybeScope: Option[String],
-                              teamId: String
-                                ) {
+                                      id: String,
+                                      template: CustomOAuth2ConfigurationTemplate,
+                                      clientId: String,
+                                      clientSecret: String,
+                                      maybeScope: Option[String],
+                                      teamId: String
+                                        ) {
+
+  val name = template.name
+  val getProfileUrl = template.getProfileUrl
+  val getProfileJsonPath = template.getProfileJsonPath
+  val authorizationUrl = template.authorizationUrl
+  val accessTokenUrl = template.accessTokenUrl
 
   def getProfilePathElements: Seq[String] = {
     getProfileJsonPath.split("\\.")
@@ -31,21 +34,36 @@ case class CustomOAuth2Configuration(
     clientSecret,
     maybeScope
   )
+
+  def toRaw = RawCustomOAuth2Configuration(
+    id,
+    template.id,
+    clientId,
+    clientSecret,
+    maybeScope,
+    teamId
+  )
 }
 
-class CustomOAuth2ConfigurationsTable(tag: Tag) extends Table[CustomOAuth2Configuration](tag, "custom_oauth2_configurations") {
-  def name = column[String]("name")
-  def authorizationUrl = column[String]("authorization_url")
-  def accessTokenUrl = column[String]("access_token_url")
-  def getProfileUrl = column[String]("get_profile_url")
-  def getProfileJsonPath = column[String]("get_profile_json_path")
+case class RawCustomOAuth2Configuration(
+                                         id: String,
+                                         templateId: String,
+                                         clientId: String,
+                                         clientSecret: String,
+                                         maybeScope: Option[String],
+                                         teamId: String
+                                         )
+
+class CustomOAuth2ConfigurationsTable(tag: Tag) extends Table[RawCustomOAuth2Configuration](tag, "custom_oauth2_configurations") {
+  def id = column[String]("id")
+  def templateId = column[String]("template_id")
   def clientId = column[String]("client_id")
   def clientSecret = column[String]("client_secret")
   def maybeScope = column[Option[String]]("scope")
   def teamId = column[String]("team_id")
 
-  def * = (name, authorizationUrl, accessTokenUrl, getProfileUrl, getProfileJsonPath, clientId, clientSecret, maybeScope, teamId) <>
-    ((CustomOAuth2Configuration.apply _).tupled, CustomOAuth2Configuration.unapply _)
+  def * = (id, templateId, clientId, clientSecret, maybeScope, teamId) <>
+    ((RawCustomOAuth2Configuration.apply _).tupled, RawCustomOAuth2Configuration.unapply _)
 
 }
 
@@ -53,35 +71,40 @@ class CustomOAuth2ConfigurationsTable(tag: Tag) extends Table[CustomOAuth2Config
 object CustomOAuth2ConfigurationQueries {
 
   val all = TableQuery[CustomOAuth2ConfigurationsTable]
+  val allWithTemplate = all.join(CustomOAuth2ConfigurationTemplateQueries.all).on(_.templateId === _.id)
 
-  def uncompiledFindQuery(name: Rep[String], teamId: Rep[String]) = {
-    all.filter(_.name === name).filter(_.teamId === teamId)
+  type TupleType = (RawCustomOAuth2Configuration, CustomOAuth2ConfigurationTemplate)
+
+  def tuple2Config(tuple: TupleType): CustomOAuth2Configuration = {
+    val raw = tuple._1
+    CustomOAuth2Configuration(raw.id, tuple._2, raw.clientId, raw.clientSecret, raw.maybeScope, raw.teamId)
+  }
+
+  def uncompiledFindQuery(id: Rep[String], teamId: Rep[String]) = {
+    allWithTemplate.
+      filter { case(config, template) => config.id === id && config.teamId === teamId}
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def find(name: String, team: Team): DBIO[Option[CustomOAuth2Configuration]] = {
-    findQuery(name, team.id).result.map(_.headOption)
+  def find(id: String, team: Team): DBIO[Option[CustomOAuth2Configuration]] = {
+    findQuery(id, team.id).result.map(_.headOption.map(tuple2Config))
   }
 
-  def ensureFor(
-                 name: String,
-                 authorizationUrl: String,
-                 accessTokenUrl: String,
-                 getProfileUrl: String,
-                 getProfileJsonPath: String,
+  def createFor(
+                 template: CustomOAuth2ConfigurationTemplate,
                  clientId: String,
                  clientSecret: String,
                  maybeScope: Option[String],
                  teamId: String
                  ): DBIO[CustomOAuth2Configuration] = {
-    val query = findQuery(name, teamId)
-    val config = CustomOAuth2Configuration(name, authorizationUrl, accessTokenUrl, getProfileUrl, getProfileJsonPath, clientId, clientSecret, maybeScope, teamId)
-    query.result.headOption.flatMap {
-      case Some(existing) => {
-        query.update(config)
-      }
-      case None => all += config
-    }.map(_ => config)
+    val raw = RawCustomOAuth2Configuration(IDs.next, template.id, clientId, clientSecret, maybeScope, teamId)
+    (all += raw).map { _ =>
+      tuple2Config((raw, template))
+    }
+  }
+
+  def update(config: CustomOAuth2Configuration): DBIO[CustomOAuth2Configuration] = {
+    all.filter(_.id === config.id).update(config.toRaw).map( _ => config )
   }
 
 }

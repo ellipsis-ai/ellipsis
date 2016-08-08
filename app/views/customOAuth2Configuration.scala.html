@@ -1,29 +1,32 @@
 @(
   maybeUser: Option[models.accounts.User],
-  team: models.Team,
-  maybeConfig: Option[models.accounts.CustomOAuth2Configuration],
-  maybeTemplate: Option[models.accounts.CustomOAuth2ConfigurationTemplate]
+  config: models.accounts.CustomOAuth2Configuration,
+  team: models.Team
   )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
 
-@main("Import a behavior", maybeUser, Some(team)) {
+@main("Configure API access", maybeUser, Some(team)) {
 
   <div id="content" class="content">
     <div class="container ptxxxxl">
       <h1>Add a new OAuth2 configuration:</h1>
 
-      <form action="@routes.ApplicationController.saveCustomOAuth2Configuration()" method="POST" enctype="multipart/form-data">
+      <form action="@routes.ApplicationController.saveCustomOAuth2Configuration()" method="POST">
         @CSRF.formField
         <input type="hidden" name="teamId" value="@team.id"/>
-        @customOAuth2ConfigurationField("Name of the external system", "name", maybeConfig.map(_.name).orElse(maybeTemplate.map(_.name)))
-        @customOAuth2ConfigurationField("Authorization URL", "authorizationUrl", maybeConfig.map(_.authorizationUrl).orElse(maybeTemplate.map(_.authorizationUrl)))
-        @customOAuth2ConfigurationField("Access token URL", "accessTokenUrl", maybeConfig.map(_.accessTokenUrl).orElse(maybeTemplate.map(_.accessTokenUrl)))
-        @customOAuth2ConfigurationField("URL to fetch info about logged-in user", "getProfileUrl", maybeConfig.map(_.getProfileUrl).orElse(maybeTemplate.map(_.getProfileUrl)))
-        @customOAuth2ConfigurationField("Path of user ID in JSON response", "getProfileJsonPath", maybeConfig.map(_.getProfileJsonPath).orElse(maybeTemplate.map(_.getProfileJsonPath)))
-        @customOAuth2ConfigurationField("Client ID of your application", "clientId", maybeConfig.map(_.clientId))
-        @customOAuth2ConfigurationField("Client secret of your application", "clientSecret", maybeConfig.map(_.clientSecret))
-        @customOAuth2ConfigurationField("Scope of the access you want to request", "scope", maybeConfig.flatMap(_.maybeScope))
+        <input type="hidden" name="templateId" value="@config.template.id"/>
+
+        <div class="columns">
+          <div class="column column-one-third align-r">Configure for API access on:</div>
+          <div class="column column-one-half">
+            @config.template.name
+          </div>
+        </div>
+
+        @customOAuth2ConfigurationField("Client ID of your application", "clientId", Some(config.clientId))
+        @customOAuth2ConfigurationField("Client secret of your application", "clientSecret", Some(config.clientSecret))
+        @customOAuth2ConfigurationField("Scope of the access you want to request", "scope", config.maybeScope)
         <div class="columns">
           <div class="column column-one-third align-r">&nbsp;</div>
           <div class="column column-one-half">
@@ -31,6 +34,16 @@
           </div>
         </div>
       </form>
+
+      <p>Set the redirect URL in your @config.template.name API settings to:</p>
+      <p>
+        <input
+          type="text"
+          readonly="readonly"
+          size="100"
+          value="@routes.SocialAuthController.linkCustomOAuth2Service(config.id, config.teamId, None).absoluteURL(secure = true)"
+        />
+      </p>
 
     </div>
   </div>

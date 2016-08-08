@@ -188,15 +188,15 @@ class SocialAuthController @Inject() (
   }
 
   def linkCustomOAuth2Service(
-                authName: String,
+                configId: String,
                 teamId: String,
                 maybeRedirect: Option[String]
                  ) = SecuredAction.async { implicit request =>
-    val url = routes.SocialAuthController.linkCustomOAuth2Service(authName, teamId, maybeRedirect).absoluteURL(secure = true)
+    val url = routes.SocialAuthController.linkCustomOAuth2Service(configId, teamId, maybeRedirect).absoluteURL(secure = true)
     val action = for {
       maybeTeam <- Team.find(teamId, request.identity)
       maybeAuthConfig <- maybeTeam.map { team =>
-        CustomOAuth2ConfigurationQueries.find(authName, team)
+        CustomOAuth2ConfigurationQueries.find(configId, team)
       }.getOrElse(DBIO.successful(None))
       maybeProvider <- DBIO.successful(maybeAuthConfig.map { authConfig =>
         new CustomOAuth2Provider(authConfig, httpLayer).withSettings { settings =>
