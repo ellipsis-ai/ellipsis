@@ -14,18 +14,12 @@ case class CustomOAuth2Configuration(
                                       teamId: String
                                         ) {
 
-  val getProfileUrl = template.getProfileUrl
-  val getProfileJsonPath = template.getProfileJsonPath
   val authorizationUrl = template.authorizationUrl
   val accessTokenUrl = template.accessTokenUrl
   val scopeString = maybeScope.getOrElse("")
 
   def authorizationUrlFor(state: String, redirectUrl: String): String = {
     s"$authorizationUrl?client_id=$clientId&redirect_uri=$redirectUrl&scope=$scopeString&state=$state"
-  }
-
-  def getProfilePathElements: Seq[String] = {
-    getProfileJsonPath.split("\\.")
   }
 
   def toRaw = RawCustomOAuth2Configuration(

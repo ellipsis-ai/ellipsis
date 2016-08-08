@@ -18,13 +18,11 @@
           <input type="hidden" name="teamId" value="@team.id"/>
         }
         @maybeTemplate.map { template =>
-          <input type="hidden" name="templateId" value="@template.id"/>
+          <input type="hidden" name="id" value="@template.id"/>
         }
         @customOAuth2ConfigurationField("Name of the external system", "name", maybeTemplate.map(_.name))
         @customOAuth2ConfigurationField("Authorization URL", "authorizationUrl", maybeTemplate.map(_.authorizationUrl))
         @customOAuth2ConfigurationField("Access token URL", "accessTokenUrl", maybeTemplate.map(_.accessTokenUrl))
-        @customOAuth2ConfigurationField("URL to fetch info about logged-in user", "getProfileUrl", maybeTemplate.map(_.getProfileUrl))
-        @customOAuth2ConfigurationField("Path of user ID in JSON response", "getProfileJsonPath", maybeTemplate.map(_.getProfileJsonPath))
 
         <div class="columns">
           <div class="column column-one-third align-r">&nbsp;</div>

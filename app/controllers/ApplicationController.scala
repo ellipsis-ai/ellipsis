@@ -720,8 +720,6 @@ class ApplicationController @Inject() (
                                             name: String,
                                             authorizationUrl: String,
                                             accessTokenUrl: String,
-                                            getProfileUrl: String,
-                                            getProfileJsonPath: String,
                                             maybeTeamId: Option[String]
                                             )
 
@@ -732,8 +730,6 @@ class ApplicationController @Inject() (
       "name" -> nonEmptyText,
       "authorizationUrl" -> nonEmptyText,
       "accessTokenUrl" -> nonEmptyText,
-      "getProfileUrl" -> nonEmptyText,
-      "getProfileJsonPath" -> nonEmptyText,
       "teamId" -> optional(nonEmptyText)
     )(CustomOAuth2ConfigurationTemplateInfo.apply)(CustomOAuth2ConfigurationTemplateInfo.unapply)
   )
@@ -753,17 +749,13 @@ class ApplicationController @Inject() (
             existing.copy(
               name = info.name,
               authorizationUrl = info.authorizationUrl,
-              accessTokenUrl = info.accessTokenUrl,
-              getProfileUrl = info.getProfileUrl,
-              getProfileJsonPath = info.getProfileJsonPath)
+              accessTokenUrl = info.accessTokenUrl)
           }.getOrElse {
             CustomOAuth2ConfigurationTemplate(
               IDs.next,
               info.name,
               info.authorizationUrl,
               info.accessTokenUrl,
-              info.getProfileUrl,
-              info.getProfileJsonPath,
               None
             )
           })

@@ -9,8 +9,6 @@ case class CustomOAuth2ConfigurationTemplate(
                                               name: String,
                                               authorizationUrl: String,
                                               accessTokenUrl: String,
-                                              getProfileUrl: String,
-                                              getProfileJsonPath: String,
                                               maybeTeamId: Option[String]
                                               ) {
 
@@ -21,11 +19,9 @@ class CustomOAuth2ConfigurationTemplatesTable(tag: Tag) extends Table[CustomOAut
   def name = column[String]("name")
   def authorizationUrl = column[String]("authorization_url")
   def accessTokenUrl = column[String]("access_token_url")
-  def getProfileUrl = column[String]("get_profile_url")
-  def getProfileJsonPath = column[String]("get_profile_json_path")
   def maybeTeamId = column[Option[String]]("team_id")
 
-  def * = (id, name, authorizationUrl, accessTokenUrl, getProfileUrl, getProfileJsonPath, maybeTeamId) <>
+  def * = (id, name, authorizationUrl, accessTokenUrl, maybeTeamId) <>
     ((CustomOAuth2ConfigurationTemplate.apply _).tupled, CustomOAuth2ConfigurationTemplate.unapply _)
 
 }
@@ -59,11 +55,9 @@ object CustomOAuth2ConfigurationTemplateQueries {
   def createFor(
                  name: String,
                  authorizationUrl: String,
-                 accessTokenUrl: String,
-                 getProfileUrl: String,
-                 getProfileJsonPath: String
+                 accessTokenUrl: String
                  ): DBIO[CustomOAuth2ConfigurationTemplate] = {
-    val template = CustomOAuth2ConfigurationTemplate(IDs.next, name, authorizationUrl, accessTokenUrl, getProfileUrl, getProfileJsonPath, None)
+    val template = CustomOAuth2ConfigurationTemplate(IDs.next, name, authorizationUrl, accessTokenUrl, None)
     (all += template).map(_ => template)
   }
 

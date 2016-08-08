@@ -26,7 +26,7 @@ class APIAccessController @Inject() (
   extends Silhouette[User, CookieAuthenticator] {
 
   def getToken(code: String, authConfig: CustomOAuth2Configuration, user: User): DBIO[Option[LinkedOAuth2Token]] = {
-    val tokenResponse = ws.url("https://github.com/login/oauth/access_token").
+    val tokenResponse = ws.url(authConfig.accessTokenUrl).
       withQueryString("client_id" -> authConfig.clientId,
         "client_secret" -> authConfig.clientSecret,
         "code" -> code).
