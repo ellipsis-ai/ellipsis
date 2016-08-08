@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.{IDs, Team, Models}
 import models.accounts.{CustomOAuth2ConfigurationQueries, LinkedOAuth2Token, CustomOAuth2Configuration, User}
+import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.http.{MimeTypes, HeaderNames}
 import play.api.i18n.MessagesApi
@@ -25,20 +26,21 @@ class APIAccessController @Inject() (
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
-  def getToken(code: String, authConfig: CustomOAuth2Configuration, user: User): DBIO[Option[LinkedOAuth2Token]] = {
-    val tokenResponse = ws.url(authConfig.accessTokenUrl).
-      withQueryString("client_id" -> authConfig.clientId,
-        "client_secret" -> authConfig.clientSecret,
-        "code" -> code).
-      withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-      post(Results.EmptyContent())
+  def getToken(code: String, authConfig: CustomOAuth2Configuration, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {
+    val tokenResponse =
+      authConfig.accessTokenRequestFor(code, redirectUrl, ws).
+        withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+        post(Results.EmptyContent())
 
     DBIO.from(tokenResponse).flatMap { response =>
       val json = response.json
       (json \ "access_token").asOpt[String].map { accessToken =>
         val maybeTokenType = (json \ "token_type").asOpt[String]
         val maybeScopeGranted = (json \ "scope").asOpt[String]
-        LinkedOAuth2Token(accessToken, maybeTokenType, None, None, maybeScopeGranted, user.id, authConfig).save.map(Some(_))
+        val maybeExpirationTime = (json \ "expires_in").asOpt[Int].map { seconds =>
+          DateTime.now.plusSeconds(seconds)
+        }
+        LinkedOAuth2Token(accessToken, maybeTokenType, maybeExpirationTime, None, maybeScopeGranted, user.id, authConfig).save.map(Some(_))
       }.getOrElse(DBIO.successful(None))
 
     }
@@ -58,7 +60,8 @@ class APIAccessController @Inject() (
         oauthState <- request.session.get("oauth-state")
       } yield {
           if (state == oauthState) {
-            getToken(code, authConfig, user).map { maybeLinkedToken =>
+            val redirect = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id).absoluteURL(secure=true)
+            getToken(code, authConfig, user, redirect).map { maybeLinkedToken =>
               maybeLinkedToken.
                 map { _ => Redirect(routes.ApplicationController.index()) }.
                 getOrElse(BadRequest("boom"))
@@ -70,7 +73,7 @@ class APIAccessController @Inject() (
         maybeAuthConfig.map { authConfig =>
           val state = IDs.next
           val redirect = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id).absoluteURL(secure=true)
-          DBIO.successful(Redirect(authConfig.authorizationUrlFor(state, redirect)).withSession("oauth-state" -> state))
+          DBIO.successful(Redirect(authConfig.authorizationRequestFor(state, redirect, ws).uri.toString).withSession("oauth-state" -> state))
         }.getOrElse(DBIO.successful(NotFound("Bad team/config")))
       }
     } yield result

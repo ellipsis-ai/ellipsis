@@ -1,6 +1,7 @@
 package models.accounts
 
-import models.{IDs, Team}
+import models.IDs
+import play.api.libs.ws.{WSRequest, WSClient}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -18,8 +19,23 @@ case class CustomOAuth2Configuration(
   val accessTokenUrl = template.accessTokenUrl
   val scopeString = maybeScope.getOrElse("")
 
-  def authorizationUrlFor(state: String, redirectUrl: String): String = {
-    s"$authorizationUrl?client_id=$clientId&redirect_uri=$redirectUrl&scope=$scopeString&state=$state"
+  def authorizationRequestFor(state: String, redirectUrl: String, ws: WSClient): WSRequest = {
+    ws.url(authorizationUrl).withQueryString(
+      "client_id" -> clientId,
+      "redirect_uri" -> redirectUrl,
+      "scope" -> scopeString,
+      "state" -> state,
+      "response_type" -> "code"
+    )
+  }
+
+  def accessTokenRequestFor(code: String, redirectUrl: String, ws: WSClient): WSRequest = {
+    ws.url(accessTokenUrl).withQueryString(
+      "client_id" -> clientId,
+      "client_secret" -> clientSecret,
+      "code" -> code,
+      "grant_type" -> "authorization_code",
+      "redirect_uri" -> redirectUrl)
   }
 
   def toRaw = RawCustomOAuth2Configuration(
