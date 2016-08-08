@@ -30,7 +30,6 @@ class SocialAuthController @Inject() (
                                        val configuration: Configuration,
                                        val clock: Clock,
                                        val models: Models,
-                                       httpLayer: HTTPLayer,
                                        slackProvider: SlackProvider,
                                        userService: UserService,
                                        authInfoRepository: AuthInfoRepository,
@@ -185,57 +184,6 @@ class SocialAuthController @Inject() (
         } yield result
       }
     }
-  }
-
-  def linkCustomOAuth2Service(
-                configId: String,
-                teamId: String,
-                maybeRedirect: Option[String]
-                 ) = SecuredAction.async { implicit request =>
-    val url = routes.SocialAuthController.linkCustomOAuth2Service(configId, teamId, maybeRedirect).absoluteURL(secure = true)
-    val user = request.identity
-    val action = for {
-      maybeTeam <- Team.find(teamId, user)
-      maybeAuthConfig <- maybeTeam.map { team =>
-        CustomOAuth2ConfigurationQueries.find(configId, team)
-      }.getOrElse(DBIO.successful(None))
-      maybeProvider <- DBIO.successful(maybeAuthConfig.map { authConfig =>
-        new CustomOAuth2Provider(authConfig, httpLayer).withSettings { settings =>
-          var authorizationParams = settings.authorizationParams
-          authConfig.maybeScope.foreach { scope =>
-            authorizationParams = authorizationParams + ("scope" -> scope)
-          }
-          settings.copy(redirectURL = url, authorizationParams = authorizationParams)
-        }
-      })
-      maybeAuthenticateResult <- maybeProvider.map { provider =>
-        DBIO.from(provider.authenticate() recover {
-          case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
-            Left(Redirect(url))
-          }
-          case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
-            Left(Redirect(routes.ApplicationController.index()))
-          }
-        }).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-      result <- maybeAuthenticateResult.map { authenticateResult =>
-        authenticateResult match {
-          case Left(result) => DBIO.successful(result)
-          case Right(authInfo) =>
-            for {
-              maybeLinkedToken <- maybeAuthConfig.map { config =>
-                LinkedOAuth2Token(authInfo, user, config).save
-              }.getOrElse(DBIO.successful(None))
-            } yield maybeRedirect.map { redirect =>
-              Redirect(validatedRedirectUri(redirect))
-            }.getOrElse(Redirect(routes.ApplicationController.index()))
-        }
-      }.getOrElse {
-        DBIO.successful(NotFound(""))
-      }
-    } yield result
-
-    models.run(action)
   }
 
   def signOut = SecuredAction.async { implicit request =>

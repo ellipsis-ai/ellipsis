@@ -12,6 +12,7 @@ case class LinkedOAuth2Token(
                               maybeTokenType: Option[String],
                               maybeExpirationTime: Option[DateTime],
                               maybeRefreshToken: Option[String],
+                              maybeScopeGranted: Option[String],
                               userId: String,
                               config: CustomOAuth2Configuration
                               ) {
@@ -40,20 +41,11 @@ case class LinkedOAuth2Token(
     maybeTokenType,
     maybeExpirationTime,
     maybeRefreshToken,
+    maybeScopeGranted,
     userId,
     config.id
   )
 
-}
-
-object LinkedOAuth2Token {
-
-  def apply(info: OAuth2Info, user: User, config: CustomOAuth2Configuration): LinkedOAuth2Token = {
-    val maybeExpirationTime = info.expiresIn.map { seconds =>
-      DateTime.now.plusSeconds(seconds)
-    }
-    LinkedOAuth2Token(info.accessToken, info.tokenType, maybeExpirationTime, info.refreshToken, user.id, config)
-  }
 }
 
 case class RawLinkedOAuth2Token(
@@ -61,6 +53,7 @@ case class RawLinkedOAuth2Token(
                                  maybeTokenType: Option[String],
                                  maybeExpirationTime: Option[DateTime],
                                  maybeRefreshToken: Option[String],
+                                 maybeScopeGranted: Option[String],
                                  userId: String,
                                  configId: String
                                  )
@@ -70,10 +63,11 @@ class LinkedOAuth2TokensTable(tag: Tag) extends Table[RawLinkedOAuth2Token](tag,
   def maybeTokenType = column[Option[String]]("token_type")
   def maybeExpirationTime = column[Option[DateTime]]("expiration_time")
   def maybeRefreshToken = column[Option[String]]("refresh_token")
+  def maybeScopeGranted = column[Option[String]]("scope_granted")
   def userId = column[String]("user_id")
   def configId = column[String]("config_id")
 
-  def * = (accessToken, maybeTokenType, maybeExpirationTime, maybeRefreshToken, userId, configId) <>
+  def * = (accessToken, maybeTokenType, maybeExpirationTime, maybeRefreshToken, maybeScopeGranted, userId, configId) <>
     ((RawLinkedOAuth2Token.apply _).tupled, RawLinkedOAuth2Token.unapply _)
 }
 
@@ -91,6 +85,7 @@ object LinkedOAuth2TokenQueries {
       raw.maybeTokenType,
       raw.maybeExpirationTime,
       raw.maybeRefreshToken,
+      raw.maybeScopeGranted,
       raw.userId,
       CustomOAuth2ConfigurationQueries.tuple2Config(tuple._2)
     )

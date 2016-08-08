@@ -1,6 +1,5 @@
 package models.accounts
 
-import com.mohiva.play.silhouette.impl.providers.OAuth2Settings
 import models.{IDs, Team}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,21 +18,15 @@ case class CustomOAuth2Configuration(
   val getProfileJsonPath = template.getProfileJsonPath
   val authorizationUrl = template.authorizationUrl
   val accessTokenUrl = template.accessTokenUrl
+  val scopeString = maybeScope.getOrElse("")
+
+  def authorizationUrlFor(state: String, redirectUrl: String): String = {
+    s"$authorizationUrl?client_id=$clientId&redirect_uri=$redirectUrl&scope=$scopeString&state=$state"
+  }
 
   def getProfilePathElements: Seq[String] = {
     getProfileJsonPath.split("\\.")
   }
-
-  val redirectUrl: String = s"/link_oauth2/$id/$teamId"
-
-  val oAuth2Settings: OAuth2Settings = OAuth2Settings(
-    Some(authorizationUrl),
-    accessTokenUrl,
-    redirectUrl,
-    clientId,
-    clientSecret,
-    maybeScope
-  )
 
   def toRaw = RawCustomOAuth2Configuration(
     id,
@@ -83,14 +76,14 @@ object CustomOAuth2ConfigurationQueries {
     CustomOAuth2Configuration(raw.id, raw.name, tuple._2, raw.clientId, raw.clientSecret, raw.maybeScope, raw.teamId)
   }
 
-  def uncompiledFindQuery(id: Rep[String], teamId: Rep[String]) = {
+  def uncompiledFindQuery(id: Rep[String]) = {
     allWithTemplate.
-      filter { case(config, template) => config.id === id && config.teamId === teamId}
+      filter { case(config, template) => config.id === id }
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def find(id: String, team: Team): DBIO[Option[CustomOAuth2Configuration]] = {
-    findQuery(id, team.id).result.map(_.headOption.map(tuple2Config))
+  def find(id: String): DBIO[Option[CustomOAuth2Configuration]] = {
+    findQuery(id).result.map(_.headOption.map(tuple2Config))
   }
 
   def createFor(

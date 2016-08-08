@@ -604,7 +604,7 @@ class ApplicationController @Inject() (
     val action = for {
       maybeTeam <- user.maybeTeamFor(maybeTeamId)
       maybeConfig <- maybeTeam.map { team =>
-        CustomOAuth2ConfigurationQueries.find(id, team)
+        CustomOAuth2ConfigurationQueries.find(id)
       }.getOrElse(DBIO.successful(None))
     } yield {
         (for {
@@ -665,7 +665,7 @@ class ApplicationController @Inject() (
             team <- maybeTeam
           } yield {
               info.maybeId.map { configId =>
-                CustomOAuth2ConfigurationQueries.find(configId, team).flatMap { existing =>
+                CustomOAuth2ConfigurationQueries.find(configId).flatMap { existing =>
                   CustomOAuth2ConfigurationQueries.update(CustomOAuth2Configuration(configId, info.name, template, info.clientId, info.clientSecret, info.maybeScope, info.teamId))
                 }
               }.getOrElse {
