@@ -1,0 +1,12 @@
+@(
+  label: String,
+  inputName: String,
+  maybeValue: Option[String]
+  )
+
+<div class="columns">
+  <div class="column column-one-third align-r">@label:</div>
+  <div class="column column-one-half">
+    <input type="text" name="@inputName" value="@maybeValue" size="60"/>
+  </div>
+</div>

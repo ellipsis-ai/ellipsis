@@ -11,6 +11,7 @@ import models.{EnvironmentVariable, Models, InvocationToken}
 import models.bots._
 import play.api.Configuration
 import play.api.libs.json._
+import play.api.libs.ws.WSClient
 import sun.misc.BASE64Decoder
 import utils.JavaFutureWrapper
 import scala.concurrent.Future
@@ -19,7 +20,11 @@ import sys.process._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val models: Models) extends AWSLambdaService {
+class AWSLambdaServiceImpl @Inject() (
+                                       val configuration: Configuration,
+                                       val models: Models,
+                                       ws: WSClient
+                                       ) extends AWSLambdaService {
 
   import AWSLambdaConstants._
 
@@ -66,7 +71,7 @@ class AWSLambdaServiceImpl @Inject() (val configuration: Configuration, val mode
         Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, AWSLambdaLogResult.empty))
       } else {
         val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
-        val userInfo = models.runNow(event.context.userInfo)
+        val userInfo = models.runNow(event.context.userInfo(ws))
         val payloadJson = JsObject(
           parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
             contextParamDataFor(behaviorVersion, environmentVariables, userInfo)

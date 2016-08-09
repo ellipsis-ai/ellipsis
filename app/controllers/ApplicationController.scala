@@ -11,7 +11,7 @@ import json.Formatting._
 import models.bots.config.AWSConfigQueries
 import models.bots.triggers.MessageTriggerQueries
 import models._
-import models.accounts.User
+import models.accounts._
 import models.bots._
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -581,6 +581,191 @@ class ApplicationController @Inject() (
       Array()
     }
     Ok(Json.toJson(Array(content)))
+  }
+
+  def newCustomOAuth2Configuration(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      maybeTeam <- user.maybeTeamFor(maybeTeamId)
+      templates <- CustomOAuth2ConfigurationTemplateQueries.allFor(maybeTeam)
+    } yield {
+      maybeTeam.map { team =>
+        Ok(views.html.newCustomOAuth2Configuration(Some(user), team, templates))
+      }.getOrElse {
+        NotFound("Team not accessible")
+      }
+    }
+
+    models.run(action)
+  }
+
+  def editCustomOAuth2Configuration(id: String, maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      maybeTeam <- user.maybeTeamFor(maybeTeamId)
+      maybeConfig <- maybeTeam.map { team =>
+        CustomOAuth2ConfigurationQueries.find(id)
+      }.getOrElse(DBIO.successful(None))
+    } yield {
+        (for {
+          team <- maybeTeam
+          config <- maybeConfig
+        } yield {
+          Ok(views.html.customOAuth2Configuration(Some(user), config, team))
+        }).getOrElse {
+        NotFound(
+          views.html.notFound(
+            Some(user),
+            Some("OAuth2 config not found"),
+            Some("The OAuth2 config you are trying to access could not be found."),
+            Some(reAuthLinkFor(request, None))
+          ))
+      }
+    }
+
+    models.run(action)
+  }
+
+  case class CustomOAuth2ConfigurationInfo(
+                                            maybeId: Option[String],
+                                            name: String,
+                                            templateId: String,
+                                            clientId: String,
+                                            clientSecret: String,
+                                            maybeScope: Option[String],
+                                            teamId: String
+                                            )
+
+
+
+  private val saveCustomOAuth2ConfigurationForm = Form(
+    mapping(
+      "id" -> optional(nonEmptyText),
+      "name" -> nonEmptyText,
+      "templateId" -> nonEmptyText,
+      "clientId" -> nonEmptyText,
+      "clientSecret" -> nonEmptyText,
+      "scope" -> optional(nonEmptyText),
+      "teamId" -> nonEmptyText
+    )(CustomOAuth2ConfigurationInfo.apply)(CustomOAuth2ConfigurationInfo.unapply)
+  )
+
+  def saveCustomOAuth2Configuration = SecuredAction.async { implicit request =>
+    val user = request.identity
+    saveCustomOAuth2ConfigurationForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val action = for {
+          maybeTeam <- Team.find(info.teamId, user)
+          maybeTemplate <- CustomOAuth2ConfigurationTemplateQueries.find(info.templateId)
+          maybeConfig <- (for {
+            template <- maybeTemplate
+            team <- maybeTeam
+          } yield {
+              info.maybeId.map { configId =>
+                CustomOAuth2ConfigurationQueries.find(configId).flatMap { existing =>
+                  CustomOAuth2ConfigurationQueries.update(CustomOAuth2Configuration(configId, info.name, template, info.clientId, info.clientSecret, info.maybeScope, info.teamId))
+                }
+              }.getOrElse {
+                CustomOAuth2ConfigurationQueries.createFor(template, info.name, info.clientId, info.clientSecret, info.maybeScope, team.id)
+              }.map(Some(_))
+            }).getOrElse(DBIO.successful(None))
+
+        } yield {
+            maybeConfig.map { config =>
+              Redirect(routes.ApplicationController.editCustomOAuth2Configuration(config.id, Some(config.teamId)))
+            }.getOrElse {
+              NotFound(s"Team not found: ${info.teamId}")
+            }
+          }
+
+        models.run(action)
+      }
+    )
+  }
+
+  def newCustomOAuth2ConfigurationTemplate(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = user.maybeTeamFor(maybeTeamId).map { maybeTeam =>
+      maybeTeam.map { team =>
+        Ok(views.html.customOAuth2ConfigurationTemplate(Some(user), None, Some(team)))
+      }.getOrElse {
+        NotFound("Team not accessible")
+      }
+    }
+
+    models.run(action)
+  }
+
+  def editCustomOAuth2ConfigurationTemplate(templateId: String, maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      maybeTeam <- user.maybeTeamFor(maybeTeamId)
+      maybeTemplate <- CustomOAuth2ConfigurationTemplateQueries.find(templateId)
+    } yield {
+        maybeTeam.map { team =>
+          Ok(views.html.customOAuth2ConfigurationTemplate(Some(user), maybeTemplate, Some(team)))
+        }.getOrElse {
+          NotFound("Team not accessible")
+        }
+      }
+
+    models.run(action)
+  }
+
+  case class CustomOAuth2ConfigurationTemplateInfo(
+                                            maybeId: Option[String],
+                                            name: String,
+                                            authorizationUrl: String,
+                                            accessTokenUrl: String,
+                                            maybeTeamId: Option[String]
+                                            )
+
+
+  private val saveCustomOAuth2ConfigurationTemplateForm = Form(
+    mapping(
+      "id" -> optional(nonEmptyText),
+      "name" -> nonEmptyText,
+      "authorizationUrl" -> nonEmptyText,
+      "accessTokenUrl" -> nonEmptyText,
+      "teamId" -> optional(nonEmptyText)
+    )(CustomOAuth2ConfigurationTemplateInfo.apply)(CustomOAuth2ConfigurationTemplateInfo.unapply)
+  )
+
+  def saveCustomOAuth2ConfigurationTemplate = SecuredAction.async { implicit request =>
+    val user = request.identity
+    saveCustomOAuth2ConfigurationTemplateForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val action = for {
+          maybeExistingTemplate <- info.maybeId.map { id =>
+            CustomOAuth2ConfigurationTemplateQueries.find(id)
+          }.getOrElse(DBIO.successful(None))
+          template <- CustomOAuth2ConfigurationTemplateQueries.save(maybeExistingTemplate.map { existing =>
+            existing.copy(
+              name = info.name,
+              authorizationUrl = info.authorizationUrl,
+              accessTokenUrl = info.accessTokenUrl)
+          }.getOrElse {
+            CustomOAuth2ConfigurationTemplate(
+              IDs.next,
+              info.name,
+              info.authorizationUrl,
+              info.accessTokenUrl,
+              None
+            )
+          })
+        } yield {
+            Redirect(routes.ApplicationController.editCustomOAuth2ConfigurationTemplate(template.id, None))
+          }
+
+        models.run(action)
+      }
+    )
   }
 
   def javascriptRoutes = Action { implicit request =>

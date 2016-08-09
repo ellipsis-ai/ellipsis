@@ -11,14 +11,13 @@ import org.joda.time.DateTime
 import play.api.Configuration
 import services.UserService
 import com.mohiva.play.silhouette.api._
-import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
 import models._
-import play.api.i18n.{ MessagesApi, Messages }
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{RequestHeader, Result, Action}
+import play.api.mvc.{RequestHeader, Result}
 import slick.driver.PostgresDriver.api._
 
 
@@ -69,7 +68,6 @@ class SocialAuthController @Inject() (
                          maybeTeamId: Option[String],
                          maybeChannelId: Option[String]
                          ) = UserAwareAction.async { implicit request =>
-    val isHttps = configuration.getBoolean("application.https").getOrElse(true)
     val provider = slackProvider.withSettings { settings =>
       val url = routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       val authorizationParams = maybeTeamId.map { teamId =>
@@ -125,7 +123,6 @@ class SocialAuthController @Inject() (
                          maybeTeamId: Option[String],
                          maybeChannelId: Option[String]
                          ) = UserAwareAction.async { implicit request =>
-    val isHttps = configuration.getBoolean("application.https").getOrElse(true)
     val provider = slackProvider.withSettings { settings =>
       val url = routes.SocialAuthController.authenticateSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       var authorizationParams = settings.authorizationParams

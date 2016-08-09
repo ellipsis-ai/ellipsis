@@ -1,0 +1,37 @@
+@(
+  maybeUser: Option[models.accounts.User],
+  maybeTemplate: Option[models.accounts.CustomOAuth2ConfigurationTemplate],
+  maybeTeam: Option[models.Team]
+  )(implicit messages: Messages, r: RequestHeader)
+
+@import helper._
+
+@main("Configure API access template", maybeUser, maybeTeam) {
+
+  <div id="content" class="content">
+    <div class="container ptxxxxl">
+      <h1>OAuth2 configuration template:</h1>
+
+      <form action="@routes.ApplicationController.saveCustomOAuth2ConfigurationTemplate()" method="POST">
+        @CSRF.formField
+        @maybeTeam.map { team =>
+          <input type="hidden" name="teamId" value="@team.id"/>
+        }
+        @maybeTemplate.map { template =>
+          <input type="hidden" name="id" value="@template.id"/>
+        }
+        @customOAuth2ConfigurationField("Name of the external system", "name", maybeTemplate.map(_.name))
+        @customOAuth2ConfigurationField("Authorization URL", "authorizationUrl", maybeTemplate.map(_.authorizationUrl))
+        @customOAuth2ConfigurationField("Access token URL", "accessTokenUrl", maybeTemplate.map(_.accessTokenUrl))
+
+        <div class="columns">
+          <div class="column column-one-third align-r">&nbsp;</div>
+          <div class="column column-one-half">
+            <input type="submit" value="Save"/>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+}
