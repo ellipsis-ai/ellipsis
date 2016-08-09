@@ -15,6 +15,7 @@ object BuiltinBehavior {
 
   def maybeFrom(messageContext: MessageContext, lambdaService: AWSLambdaService): Option[BuiltinBehavior] = {
     val setEnvironmentVariableRegex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
+    val unsetEnvironmentVariableRegex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
     val startLearnConversationRegex = s"""(?i)^learn\\s*$$""".r
     val unlearnRegex = s"""(?i)^unlearn\\s+(\\S+)""".r
     val helpRegex = s"""(?i)^help\\s*(\\S*.*)$$""".r
@@ -26,6 +27,7 @@ object BuiltinBehavior {
     if (messageContext.includesBotMention) {
       messageContext.relevantMessageText match {
         case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, messageContext, lambdaService))
+        case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, messageContext, lambdaService))
         case startLearnConversationRegex() => Some(LearnBehavior(messageContext, lambdaService))
         case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, messageContext, lambdaService))
         case helpRegex(helpString) => Some(DisplayHelpBehavior(helpString, messageContext, lambdaService))
