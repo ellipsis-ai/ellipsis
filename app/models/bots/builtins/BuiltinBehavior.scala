@@ -14,14 +14,14 @@ trait BuiltinBehavior {
 object BuiltinBehavior {
 
   def maybeFrom(messageContext: MessageContext, lambdaService: AWSLambdaService): Option[BuiltinBehavior] = {
-    val setEnvironmentVariableRegex = s"""(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
-    val startLearnConversationRegex = s"""^learn\\s*$$""".r
-    val unlearnRegex = s"""^unlearn\\s+(\\S+)""".r
-    val helpRegex = s"""^help\\s*(\\S*.*)$$""".r
-    val rememberRegex = s"""^(remember|\\^)\\s*$$""".r
-    val scheduledRegex = s"""^scheduled$$""".r
-    val scheduleRegex = s"""^schedule\\s+`(.*?)`\\s+(.*)\\s*$$""".r
-    val resetBehaviorsRegex = """reset behaviors really really really""".r
+    val setEnvironmentVariableRegex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
+    val startLearnConversationRegex = s"""(?i)^learn\\s*$$""".r
+    val unlearnRegex = s"""(?i)^unlearn\\s+(\\S+)""".r
+    val helpRegex = s"""(?i)^help\\s*(\\S*.*)$$""".r
+    val rememberRegex = s"""(?i)^(remember|\\^)\\s*$$""".r
+    val scheduledRegex = s"""(?i)^scheduled$$""".r
+    val scheduleRegex = s"""(?i)^schedule\\s+`(.*?)`\\s+(.*)\\s*$$""".r
+    val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
 
     if (messageContext.includesBotMention) {
       messageContext.relevantMessageText match {
