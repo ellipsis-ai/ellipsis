@@ -2,6 +2,7 @@ package models.bots
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.bots.conversations.Conversation
+import play.api.libs.ws.WSClient
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext
@@ -45,6 +46,6 @@ trait MessageContext extends Context {
   val teamId: String
   val isResponseExpected: Boolean
 
-  def userInfo: DBIO[UserInfo] = UserInfo.forLoginInfo(LoginInfo(name, userIdForContext), teamId)
+  def userInfo(ws: WSClient): DBIO[UserInfo] = UserInfo.forLoginInfo(LoginInfo(name, userIdForContext), teamId, ws)
 
 }

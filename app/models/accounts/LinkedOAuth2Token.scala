@@ -3,6 +3,10 @@ package models.accounts
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import org.joda.time.{DateTime, Seconds}
+import play.api.http.{MimeTypes, HeaderNames}
+import play.api.libs.ws.WSClient
+import play.api.mvc.Results
+import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,6 +35,41 @@ case class LinkedOAuth2Token(
       Seconds.secondsBetween(now, expirationTime).getSeconds
     } else {
       0
+    }
+  }
+
+  def isExpired: Boolean = maybeExpirationTime.exists(_.isBeforeNow)
+
+  def refreshIfNecessary(ws: WSClient): DBIO[LinkedOAuth2Token] = {
+    val eventualMaybeNewInstance = if (isExpired) {
+      maybeRefreshToken.map { token =>
+        val tokenResponse = config.refreshTokenRequestFor(token, ws).
+          withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+          post(Results.EmptyContent())
+
+        DBIO.from(tokenResponse).flatMap { response =>
+          val json = response.json
+          (json \ "access_token").asOpt[String].map { accessToken =>
+            val maybeTokenType = (json \ "token_type").asOpt[String]
+            val maybeScopeGranted = (json \ "scope").asOpt[String]
+            val maybeExpirationTime = (json \ "expires_in").asOpt[Int].map { seconds =>
+              DateTime.now.plusSeconds(seconds)
+            }
+            copy(
+              accessToken = accessToken,
+              maybeScopeGranted = maybeScopeGranted,
+              maybeExpirationTime = maybeExpirationTime,
+              maybeTokenType = maybeTokenType
+            ).save.map(Some(_))
+          }.getOrElse(DBIO.successful(None))
+        }
+      }.getOrElse(DBIO.successful(None))
+    } else {
+      DBIO.successful(None)
+    }
+
+    eventualMaybeNewInstance.map { maybeNewInstance =>
+      maybeNewInstance.getOrElse(this)
     }
   }
 
@@ -96,9 +135,9 @@ object LinkedOAuth2TokenQueries {
   }
   val allForUserIdQuery = Compiled(uncompiledAllForUserIdQuery _)
 
-  def allForUser(user: User): DBIO[Seq[LinkedOAuth2Token]] = {
-    allForUserIdQuery(user.id).result.map { r =>
-      r.map(tuple2Token)
+  def allForUser(user: User, ws: WSClient): DBIO[Seq[LinkedOAuth2Token]] = {
+    allForUserIdQuery(user.id).result.flatMap { r =>
+      DBIO.sequence(r.map(tuple2Token).map(_.refreshIfNecessary(ws)))
     }
   }
 

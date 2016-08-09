@@ -73,8 +73,9 @@ class APIAccessController @Inject() (
         }).getOrElse {
         maybeAuthConfig.map { authConfig =>
           val state = IDs.next
-          val redirect = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id).absoluteURL(secure=true)
-          DBIO.successful(Redirect(authConfig.authorizationRequestFor(state, redirect, ws).uri.toString).withSession("oauth-state" -> state))
+          val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id).absoluteURL(secure=true)
+          val redirect = authConfig.authorizationRequestFor(state, redirectParam, ws).uri.toString
+          DBIO.successful(Redirect(redirect).withSession("oauth-state" -> state))
         }.getOrElse(DBIO.successful(NotFound("Bad team/config")))
       }
     } yield result

@@ -2,6 +2,7 @@ package models.bots
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts._
+import play.api.libs.ws.WSClient
 import slick.dbio.DBIO
 import play.api.libs.json._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -32,12 +33,12 @@ case class UserInfo(maybeUser: Option[User], links: Seq[LinkedInfo]) {
 
 object UserInfo {
 
-  def forLoginInfo(loginInfo: LoginInfo, teamId: String): DBIO[UserInfo] = {
+  def forLoginInfo(loginInfo: LoginInfo, teamId: String, ws: WSClient): DBIO[UserInfo] = {
     for {
       maybeLinkedAccount <- LinkedAccount.find(loginInfo, teamId)
       maybeUser <- DBIO.successful(maybeLinkedAccount.map(_.user))
       linkedTokens <- maybeUser.map { user =>
-        LinkedOAuth2TokenQueries.allForUser(user)
+        LinkedOAuth2TokenQueries.allForUser(user, ws)
       }.getOrElse(DBIO.successful(Seq()))
       links <- DBIO.successful(linkedTokens.map { ea =>
         LinkedInfo(ea.config.name, ea.accessToken)

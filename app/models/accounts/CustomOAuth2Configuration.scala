@@ -39,6 +39,15 @@ case class CustomOAuth2Configuration(
       "redirect_uri" -> redirectUrl)
   }
 
+  def refreshTokenRequestFor(refreshToken: String, ws: WSClient): WSRequest = {
+    ws.url(accessTokenUrl).withQueryString(
+      "refresh_token" -> refreshToken,
+      "client_id" -> clientId,
+      "client_secret" -> clientSecret,
+      "grant_type" -> "refresh_token"
+    )
+  }
+
   def toRaw = RawCustomOAuth2Configuration(
     id,
     name,
