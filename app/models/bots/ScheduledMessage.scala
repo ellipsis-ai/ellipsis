@@ -221,4 +221,13 @@ object ScheduledMessageQueries {
       newMessage.save.map(Some(_))
     }.getOrElse(DBIO.successful(None))
   }
+
+  def uncompiledRawFindQuery(text: Rep[String], teamId: Rep[String]) = {
+    all.filter(_.text === text).filter(_.teamId === teamId)
+  }
+  val rawFindQueryFor = Compiled(uncompiledRawFindQuery _)
+
+  def deleteFor(text: String, team: Team): DBIO[Boolean] = {
+    rawFindQueryFor(text, team.id).delete.map { r => r > 0 }
+  }
 }
