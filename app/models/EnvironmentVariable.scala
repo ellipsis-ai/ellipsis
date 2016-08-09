@@ -50,13 +50,18 @@ object EnvironmentVariableQueries {
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
+  def uncompiledRawFindQueryFor(name: Rep[String], teamId: Rep[String]) = {
+    all.filter(_.name === name).filter(_.teamId === teamId)
+  }
+  val rawFindQueryFor = Compiled(uncompiledRawFindQueryFor _)
+
   def find(name: String, team: Team): DBIO[Option[EnvironmentVariable]] = {
     findQueryFor(name, team.id).result.map { r => r.headOption.map(tuple2EnvironmentVariable) }
   }
 
   def ensureFor(name: String, maybeValue: Option[String], team: Team): DBIO[Option[EnvironmentVariable]] = {
     Option(name).filter(_.trim.nonEmpty).map { nonEmptyName =>
-      val query = all.filter(_.name === name).filter(_.teamId === team.id)
+      val query = rawFindQueryFor(name, team.id)
       query.result.flatMap { r =>
         r.headOption.map { existing =>
           maybeValue.map { value =>
@@ -72,6 +77,10 @@ object EnvironmentVariableQueries {
         }
       }
     }.getOrElse(DBIO.successful(None))
+  }
+
+  def deleteFor(name: String, team: Team): DBIO[Boolean] = {
+    rawFindQueryFor(name, team.id).delete.map( result => result > 0)
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = allWithTeam.filter(_._1.teamId === teamId)
