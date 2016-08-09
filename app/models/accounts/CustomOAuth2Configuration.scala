@@ -25,6 +25,7 @@ case class CustomOAuth2Configuration(
       "redirect_uri" -> redirectUrl,
       "scope" -> scopeString,
       "state" -> state,
+      "access_type" -> "offline",
       "response_type" -> "code"
     )
   }

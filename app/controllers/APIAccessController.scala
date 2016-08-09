@@ -40,7 +40,8 @@ class APIAccessController @Inject() (
         val maybeExpirationTime = (json \ "expires_in").asOpt[Int].map { seconds =>
           DateTime.now.plusSeconds(seconds)
         }
-        LinkedOAuth2Token(accessToken, maybeTokenType, maybeExpirationTime, None, maybeScopeGranted, user.id, authConfig).save.map(Some(_))
+        val maybeRefreshToken = (json \ "refresh_token").asOpt[String]
+        LinkedOAuth2Token(accessToken, maybeTokenType, maybeExpirationTime, maybeRefreshToken, maybeScopeGranted, user.id, authConfig).save.map(Some(_))
       }.getOrElse(DBIO.successful(None))
 
     }
