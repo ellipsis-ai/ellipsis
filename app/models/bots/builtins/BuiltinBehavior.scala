@@ -14,7 +14,7 @@ trait BuiltinBehavior {
 object BuiltinBehavior {
 
   def maybeFrom(messageContext: MessageContext, lambdaService: AWSLambdaService): Option[BuiltinBehavior] = {
-    val setEnvironmentVariableRegex = s"""^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
+    val setEnvironmentVariableRegex = s"""(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
     val startLearnConversationRegex = s"""^learn\\s*$$""".r
     val unlearnRegex = s"""^unlearn\\s+(\\S+)""".r
     val helpRegex = s"""^help\\s*(\\S*.*)$$""".r
