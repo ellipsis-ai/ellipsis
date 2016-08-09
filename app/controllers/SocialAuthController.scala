@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
-import com.mohiva.play.silhouette.api.util.{HTTPLayer, Clock}
+import com.mohiva.play.silhouette.api.util.Clock
 import models.accounts._
 import org.joda.time.DateTime
 import play.api.Configuration
@@ -15,9 +15,9 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
 import models._
-import play.api.i18n.{ MessagesApi, Messages }
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{RequestHeader, Result, Action}
+import play.api.mvc.{RequestHeader, Result}
 import slick.driver.PostgresDriver.api._
 
 
