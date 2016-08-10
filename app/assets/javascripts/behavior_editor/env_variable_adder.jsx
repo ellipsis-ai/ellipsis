@@ -68,11 +68,26 @@ define(function(require) {
 
     onSave: function() {
       this.props.onSave(this.getNewVar());
-      this.reset();
     },
 
     reset: function() {
       this.setState(this.getInitialState());
+    },
+
+    getPrompt: function() {
+      if (this.props.prompt) {
+        return (
+          <p>{this.props.prompt}</p>
+        );
+      } else {
+        return (
+          <div>
+            <h4>Add a new environment variable</h4>
+            <p className="type-weak type-s">Environment variables can hold secure information like access keys for other
+              services.</p>
+          </div>
+        );
+      }
     },
 
     getNameInput: function() {
@@ -103,9 +118,7 @@ define(function(require) {
       return (
         <div className="box-action">
           <div className="container phn">
-            <p>
-              <span>{this.props.prompt || "Add a new environment variable to hold secure information like access keys for other services"}</span>
-            </p>
+            {this.getPrompt()}
 
             <div className="form-grouped-inputs">
 

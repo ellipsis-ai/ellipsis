@@ -723,6 +723,7 @@ return React.createClass({
         return response.json();
       }).then(function(json) {
         this.hideActivePanel();
+        this.refs.envVariableAdderPanel.reset();
         this.setState({
           envVariables: json.variables
         }, function() {
@@ -919,6 +920,10 @@ return React.createClass({
 
   focusOnTriggerIndex: function(index) {
     this.refs['trigger' + index].focus();
+  },
+
+  onAddNewEnvVariable: function() {
+    this.showEnvVariableAdder();
   },
 
   onAWSAddNewEnvVariable: function(property) {
@@ -1290,8 +1295,9 @@ return React.createClass({
           <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
             <BoilerplateParameterHelp
               envVariableNames={this.getEnvVariableNames()}
-              onExpandToggle={this.toggleEnvVariableExpansion}
               expandEnvVariables={this.state.expandEnvVariables}
+              onAddNew={this.onAddNewEnvVariable}
+              onExpandToggle={this.toggleEnvVariableExpansion}
               onCollapseClick={this.toggleBoilerplateHelp}
             />
           </Collapsible>

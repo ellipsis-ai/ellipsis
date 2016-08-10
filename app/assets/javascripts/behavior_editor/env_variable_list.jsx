@@ -23,13 +23,6 @@ return React.createClass({
   render: function() {
     return (
       <div>
-        <h5>
-          <span
-            className="display-inline-block"
-            style={{ width: '0.8em' }}
-          >{this.props.expandEnvVariables ? "▾" : "▸"}</span>
-          <span> Current environment variables</span>
-        </h5>
 
         <div className="phs pvxs bg-blue-lightest type-weak border border-blue">
           <div
