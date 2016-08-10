@@ -1,7 +1,7 @@
 @(
   maybeUser: Option[models.accounts.User],
   team: models.Team,
-  templates: Seq[models.accounts.CustomOAuth2ConfigurationTemplate]
+  apis: Seq[models.accounts.OAuth2Api]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
@@ -12,25 +12,25 @@
     <div class="container ptxxxxl">
       <h1>Add a new OAuth2 configuration:</h1>
 
-      <form action="@routes.ApplicationController.saveCustomOAuth2Configuration()" method="POST">
+      <form action="@routes.ApplicationController.saveOAuth2Application()" method="POST">
         @CSRF.formField
         <input type="hidden" name="teamId" value="@team.id"/>
 
         <div class="columns">
           <div class="column column-one-third align-r">Configure for API access to:</div>
           <div class="column column-one-half">
-            <select name="templateId">
-            @templates.map { ea =>
+            <select name="apiId">
+            @apis.map { ea =>
               <option value="@ea.id">@ea.name</option>
             }
             </select>
           </div>
         </div>
 
-        @customOAuth2ConfigurationField("Name of this configuration", "name", None)
-        @customOAuth2ConfigurationField("Client ID of your application", "clientId", None)
-        @customOAuth2ConfigurationField("Client secret of your application", "clientSecret", None)
-        @customOAuth2ConfigurationField("Scope of the access you want to request", "scope", None)
+        @oAuth2Field("Name of this configuration", "name", None)
+        @oAuth2Field("Client ID of your application", "clientId", None)
+        @oAuth2Field("Client secret of your application", "clientSecret", None)
+        @oAuth2Field("Scope of the access you want to request", "scope", None)
         <div class="columns">
           <div class="column column-one-third align-r">&nbsp;</div>
           <div class="column column-one-half">
