@@ -18,7 +18,7 @@ case class LinkedOAuth2Token(
                               maybeRefreshToken: Option[String],
                               maybeScopeGranted: Option[String],
                               userId: String,
-                              config: CustomOAuth2Configuration
+                              config: OAuth2Application
                               ) {
 
   val maybeScope: Option[String] = config.maybeScope
@@ -113,9 +113,9 @@ class LinkedOAuth2TokensTable(tag: Tag) extends Table[RawLinkedOAuth2Token](tag,
 object LinkedOAuth2TokenQueries {
 
   val all = TableQuery[LinkedOAuth2TokensTable]
-  val allWithConfig = all.join(CustomOAuth2ConfigurationQueries.allWithTemplate).on(_.configId === _._1.id)
+  val allWithConfig = all.join(OAuth2ApplicationQueries.allWithApi).on(_.configId === _._1.id)
 
-  type TupleType = (RawLinkedOAuth2Token, CustomOAuth2ConfigurationQueries.TupleType)
+  type TupleType = (RawLinkedOAuth2Token, OAuth2ApplicationQueries.TupleType)
 
   def tuple2Token(tuple: TupleType): LinkedOAuth2Token = {
     val raw = tuple._1
@@ -126,7 +126,7 @@ object LinkedOAuth2TokenQueries {
       raw.maybeRefreshToken,
       raw.maybeScopeGranted,
       raw.userId,
-      CustomOAuth2ConfigurationQueries.tuple2Config(tuple._2)
+      OAuth2ApplicationQueries.tuple2Config(tuple._2)
     )
   }
 

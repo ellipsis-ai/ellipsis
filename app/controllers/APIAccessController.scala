@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.{Silhouette, Environment}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.{IDs, Team, Models}
-import models.accounts.{CustomOAuth2ConfigurationQueries, LinkedOAuth2Token, CustomOAuth2Configuration, User}
+import models.accounts.{OAuth2ApplicationQueries, LinkedOAuth2Token, OAuth2Application, User}
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.http.{MimeTypes, HeaderNames}
@@ -26,7 +26,7 @@ class APIAccessController @Inject() (
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
-  def getToken(code: String, authConfig: CustomOAuth2Configuration, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {
+  def getToken(code: String, authConfig: OAuth2Application, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {
     val tokenResponse =
       authConfig.accessTokenRequestFor(code, redirectUrl, ws).
         withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
@@ -50,7 +50,7 @@ class APIAccessController @Inject() (
   def linkCustomOAuth2Service(configId: String, codeOpt: Option[String] = None, stateOpt: Option[String] = None) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeAuthConfig <- CustomOAuth2ConfigurationQueries.find(configId)
+      maybeAuthConfig <- OAuth2ApplicationQueries.find(configId)
       maybeTeam <- maybeAuthConfig.map { config =>
         Team.find(config.teamId, user)
       }.getOrElse(DBIO.successful(None))

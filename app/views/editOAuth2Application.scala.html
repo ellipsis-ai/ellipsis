@@ -1,6 +1,6 @@
 @(
   maybeUser: Option[models.accounts.User],
-  config: models.accounts.CustomOAuth2Configuration,
+  config: models.accounts.OAuth2Application,
   team: models.Team
   )(implicit messages: Messages, r: RequestHeader)
 
@@ -12,22 +12,22 @@
     <div class="container ptxxxxl">
       <h1>Add a new OAuth2 configuration:</h1>
 
-      <form action="@routes.ApplicationController.saveCustomOAuth2Configuration()" method="POST">
+      <form action="@routes.ApplicationController.saveOAuth2Application()" method="POST">
         @CSRF.formField
         <input type="hidden" name="teamId" value="@team.id"/>
-        <input type="hidden" name="templateId" value="@config.template.id"/>
+        <input type="hidden" name="apiId" value="@config.api.id"/>
 
         <div class="columns">
           <div class="column column-one-third align-r">Configure for API access on:</div>
           <div class="column column-one-half">
-            @config.template.name
+            @config.api.name
           </div>
         </div>
 
-        @customOAuth2ConfigurationField("Name of this configuration", "name", Some(config.name))
-        @customOAuth2ConfigurationField("Client ID of your application", "clientId", Some(config.clientId))
-        @customOAuth2ConfigurationField("Client secret of your application", "clientSecret", Some(config.clientSecret))
-        @customOAuth2ConfigurationField("Scope of the access you want to request", "scope", config.maybeScope)
+        @oAuth2Field("Name of this configuration", "name", Some(config.name))
+        @oAuth2Field("Client ID of your application", "clientId", Some(config.clientId))
+        @oAuth2Field("Client secret of your application", "clientSecret", Some(config.clientSecret))
+        @oAuth2Field("Scope of the access you want to request", "scope", config.maybeScope)
         <div class="columns">
           <div class="column column-one-third align-r">&nbsp;</div>
           <div class="column column-one-half">
@@ -36,7 +36,7 @@
         </div>
       </form>
 
-      <p>Set the redirect URL in your @config.template.name API settings to:</p>
+      <p>Set the redirect URL in your @config.api.name API settings to:</p>
       <p>
         <input
           type="text"
