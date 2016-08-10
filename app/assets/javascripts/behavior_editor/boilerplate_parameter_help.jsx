@@ -10,6 +10,7 @@ return React.createClass({
   propTypes: {
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
     expandEnvVariables: React.PropTypes.bool.isRequired,
+    onAddNew: React.PropTypes.func.isRequired,
     onCollapseClick: React.PropTypes.func.isRequired,
     onExpandToggle: React.PropTypes.func.isRequired
   },
@@ -52,11 +53,24 @@ return React.createClass({
           </li>
         </ul>
 
-        <button type="button"
-          ref="button"
-          className="button-none pan mbxs display-limit-width"
-          onClick={this.onExpandToggle}
-        >
+        <div className="mbs">
+          <button type="button"
+            ref="button"
+            className="button-none pan display-limit-width"
+            onClick={this.onExpandToggle}
+          >
+            <h5 className="display-inline-block">
+              <span
+                className="display-inline-block"
+                style={{ width: '0.8em' }}
+              >{this.props.expandEnvVariables ? "▾" : "▸"}</span>
+              <span> Current environment variables</span>
+            </h5>
+            <span className="link mls">
+              {this.props.expandEnvVariables ? "Collapse" : "Expand"}
+            </span>
+          </button>
+
           {
             this.props.envVariableNames.length > 0 ? (
               <EnvVariableList
@@ -67,7 +81,16 @@ return React.createClass({
               <NoEnvVariables />
             )
           }
-        </button>
+        </div>
+
+        <div className="mbxs">
+          <button type="button"
+            className="button-s"
+            onClick={this.props.onAddNew}
+          >
+            New environment variable
+          </button>
+        </div>
       </HelpPanel>
     );
   }
