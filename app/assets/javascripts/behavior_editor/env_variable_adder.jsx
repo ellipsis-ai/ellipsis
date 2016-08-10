@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     Input = require('./input'),
+    Textarea = require('./textarea'),
     formatEnvVarName = require('./env_var_name_formatter');
 
   return React.createClass({
@@ -104,7 +105,7 @@ define(function(require) {
 
     getValueInput: function() {
       return (
-        <Input
+        <Textarea
           ref={"envVarValue"}
           className="form-input-right"
           placeholder="Enter value"

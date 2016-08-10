@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react'),
     Input = require('./input'),
     ImmutableObjectUtils = require('../immutable_object_utils'),
+    Textarea = require('./textarea'),
     formatEnvVarName = require('./env_var_name_formatter');
 
   return React.createClass({
@@ -145,7 +146,7 @@ define(function(require) {
         );
       } else {
         return (
-          <Input
+          <Textarea
             ref={"envVarValue" + index}
             className="form-input-right"
             placeholder="Enter value"
