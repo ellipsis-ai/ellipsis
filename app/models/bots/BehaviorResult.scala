@@ -1,6 +1,8 @@
 package models.bots
 
+import models.accounts.OAuth2Application
 import models.bots.templates.TemplateApplier
+import play.api.Configuration
 import play.api.libs.json.{JsDefined, JsString, JsValue}
 import services.AWSLambdaConstants._
 import services.AWSLambdaLogResult
@@ -8,7 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown = Value
+  val Success, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing = Value
 }
 
 sealed trait BehaviorResult {
@@ -122,4 +124,24 @@ class AWSDownResult extends BehaviorResult {
       |""".stripMargin
   }
 
+}
+
+case class OAuth2TokenMissing(oAuth2Application: OAuth2Application, configuration: Configuration) extends BehaviorResult {
+
+  val resultType = ResultType.OAuth2TokenMissing
+
+  def maybeAuthLink: Option[String] = {
+    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id)
+      s"$baseUrl$path"
+    }
+  }
+
+  def text: String = {
+    s"""
+       |To use this behavior, you need to authenticate with ${oAuth2Application.name}:
+       |
+       |${maybeAuthLink.getOrElse("")}
+    """.stripMargin
+  }
 }
