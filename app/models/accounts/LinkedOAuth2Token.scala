@@ -97,7 +97,7 @@ case class RawLinkedOAuth2Token(
                                  configId: String
                                  )
 
-class LinkedOAuth2TokensTable(tag: Tag) extends Table[RawLinkedOAuth2Token](tag, "linked_oauth_2_tokens") {
+class LinkedOAuth2TokensTable(tag: Tag) extends Table[RawLinkedOAuth2Token](tag, "linked_oauth2_tokens") {
   def accessToken = column[String]("access_token")
   def maybeTokenType = column[Option[String]]("token_type")
   def maybeExpirationTime = column[Option[DateTime]]("expiration_time")
