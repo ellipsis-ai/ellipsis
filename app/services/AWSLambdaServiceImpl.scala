@@ -6,7 +6,7 @@ import java.nio.file.{Files, Paths}
 import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
-import models.bots.config.{RequiredOAuth2Application, AWSConfig}
+import models.bots.config.{RequiredOAuth2ApplicationQueries, RequiredOAuth2Application, AWSConfig}
 import models.{EnvironmentVariable, Models, InvocationToken}
 import models.bots._
 import play.api.Configuration
@@ -31,17 +31,6 @@ class AWSLambdaServiceImpl @Inject() (
   val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
-  def missingEnvVarsMessageFor(envVars: Seq[String]) = {
-    s"""
-      |To use this behavior, you need the following environment variables defined:
-      |${envVars.map( ea => s"\n- $ea").mkString("")}
-      |
-      |You can define an environment variable by typing something like:
-      |
-      |`@ellipsis: set env ENV_VAR_NAME value`
-    """.stripMargin
-  }
-
   private def contextParamDataFor(
                                    behaviorVersion: BehaviorVersion,
                                    environmentVariables: Seq[EnvironmentVariable],
@@ -64,38 +53,49 @@ class AWSLambdaServiceImpl @Inject() (
               environmentVariables: Seq[EnvironmentVariable],
               event: MessageEvent
               ): Future[BehaviorResult] = {
-    models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables)).flatMap { missingEnvVars =>
-      if (missingEnvVars.nonEmpty) {
+    for {
+      missingEnvVars <- models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables))
+      requiredOAuth2Applications <- models.run(RequiredOAuth2ApplicationQueries.allFor(behaviorVersion))
+      result <- if (missingEnvVars.nonEmpty) {
         Future.successful(MissingEnvVarsResult(missingEnvVars))
       } else if (behaviorVersion.functionBody.isEmpty) {
         Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, AWSLambdaLogResult.empty))
       } else {
-        val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
-        val userInfo = models.runNow(event.context.userInfo(ws))
-        val payloadJson = JsObject(
-          parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
-            contextParamDataFor(behaviorVersion, environmentVariables, userInfo)
-        )
-        val invokeRequest =
-          new InvokeRequest().
-            withLogType(LogType.Tail).
-            withFunctionName(behaviorVersion.functionName).
-            withInvocationType(InvocationType.RequestResponse).
-            withPayload(payloadJson.toString())
-        JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
-          val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
-          val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
-          behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues)
-        }.recover {
-          case e: java.util.concurrent.ExecutionException => {
-            e.getMessage match {
-              case amazonServiceExceptionRegex() => new AWSDownResult()
-              case _ => throw e
+        for {
+          token <- models.run(InvocationToken.createFor(behaviorVersion.team))
+          userInfo <- models.run(event.context.userInfo(ws))
+          missingOAuth2Applications <- Future.successful(requiredOAuth2Applications.filter { ea =>
+            !userInfo.links.exists(_.externalSystem == ea.application.name)
+          })
+          result <- missingOAuth2Applications.headOption.map { firstMissingOAuth2App =>
+            Future.successful(OAuth2TokenMissing(firstMissingOAuth2App.application, configuration))
+          }.getOrElse {
+            val payloadJson = JsObject(
+              parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
+                contextParamDataFor(behaviorVersion, environmentVariables, userInfo)
+            )
+            val invokeRequest =
+              new InvokeRequest().
+                withLogType(LogType.Tail).
+                withFunctionName(behaviorVersion.functionName).
+                withInvocationType(InvocationType.RequestResponse).
+                withPayload(payloadJson.toString())
+            JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
+              val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
+              val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
+              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues)
+            }.recover {
+              case e: java.util.concurrent.ExecutionException => {
+                e.getMessage match {
+                  case amazonServiceExceptionRegex() => new AWSDownResult()
+                  case _ => throw e
+                }
+              }
             }
           }
-        }
+        } yield result
       }
-    }
+    } yield result
   }
 
   val amazonServiceExceptionRegex = """.*com\.amazonaws\.AmazonServiceException.*""".r
