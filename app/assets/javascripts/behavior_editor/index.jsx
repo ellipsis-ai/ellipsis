@@ -689,6 +689,14 @@ return React.createClass({
     this.toggleActiveDropdown('apiSelectorDropdown');
   },
 
+  toggleAWSConfig: function() {
+    if (this.getAWSConfig()) {
+      this.onRemoveAWSConfig();
+    } else {
+      this.setConfigProperty('aws', {});
+    }
+  },
+
   toggleAWSHelp: function() {
     this.toggleActivePanel('helpForAWS');
   },
@@ -721,6 +729,14 @@ return React.createClass({
 
   toggleManageBehaviorMenu: function() {
     this.toggleActiveDropdown('manageBehavior');
+  },
+
+  toggleOAuth2Application: function(app) {
+    if (this.isRequiredOAuth2Application(app)) {
+      this.onRemoveOAuth2Application(app);
+    } else {
+      this.onAddOAuth2Application(app);
+    }
   },
 
   toggleTriggerHelp: function() {
@@ -985,23 +1001,16 @@ return React.createClass({
     this.setAWSEnvVar(property, envVarName);
   },
 
-  toggleAWSConfig: function() {
-    if (this.getAWSConfig()) {
-      this.onRemoveAWSConfig();
-    } else {
-      this.setConfigProperty('aws', {});
-    }
+  onAddOAuth2Application: function(appToAdd) {
+    var existing = this.getRequiredOAuth2Applications();
+    this.setConfigProperty('requiredOAuth2Applications', existing.concat([appToAdd]));
   },
 
-  onAddOAuth2Application: function(index) {
+  onRemoveOAuth2Application: function(appToRemove) {
     var existing = this.getRequiredOAuth2Applications();
-    var added = this.getAllOAuth2Applications()[index];
-    this.setConfigProperty('requiredOAuth2Applications', existing.concat([added]));
-  },
-
-  onRemoveOAuth2Application: function(index) {
-    var existing = this.getRequiredOAuth2Applications();
-    this.setConfigProperty('requiredOAuth2Applications', existing.filter(function(ea, i) { return i !== index; }));
+    this.setConfigProperty('requiredOAuth2Applications', existing.filter(function(app) {
+      return app.applicationId !== appToRemove.applicationId;
+    }));
   },
 
   onRemoveAWSConfig: function() {
@@ -1219,7 +1228,7 @@ return React.createClass({
                           <DropdownMenu.Item
                             key={"oauth2-app-" + index}
                             checkedWhen={this.isRequiredOAuth2Application(app)}
-                            onClick={this.isRequiredOAuth2Application(app) ? this.onRemoveOAuth2Application.bind(this, index) : this.onAddOAuth2Application.bind(this, index)}
+                            onClick={this.toggleOAuth2Application.bind(this, app)}
                             label={this.getAPISelectorLabelForApp(app)}
                           />
                         );
