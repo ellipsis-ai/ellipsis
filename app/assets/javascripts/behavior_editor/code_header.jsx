@@ -41,10 +41,10 @@ return React.createClass({
     var apiParamString = this.props.apiParams.join(", ");
     if (this.props.hasParams) {
       return (
-        <div className="display-inline-block plm prs">
-          <div>{systemParamString}</div>
-          <div className="type-black blink-twice">{apiParamString} </div>
-        </div>
+        <span className="plm">
+          <span>{systemParamString} </span>
+          <span className="type-black blink-twice">{apiParamString} </span>
+        </span>
       );
     } else {
       return (

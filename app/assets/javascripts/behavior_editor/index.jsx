@@ -261,9 +261,9 @@ return React.createClass({
     var numUserParams = this.getBehaviorParams().length;
     var apiParams = 0;
     if (this.getAWSConfig() || this.getRequiredOAuth2Applications().length > 0) {
-      apiParams = 1;
+      apiParams = 2;
     }
-    return this.hasUserParameters() ? numUserParams + apiParams + 4 : 2;
+    return this.hasUserParameters() ? numUserParams + 4 : 2 + apiParams;
   },
 
   getManageDropdownLabel: function() {
