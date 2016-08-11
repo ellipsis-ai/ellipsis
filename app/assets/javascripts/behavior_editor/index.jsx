@@ -113,6 +113,18 @@ return React.createClass({
     return requiredIds.indexOf(app.applicationId) >= 0;
   },
 
+  getAPISelectorDropdownLabel: function() {
+    var activeAPICount = this.getRequiredOAuth2Applications().length;
+    if (this.getAWSConfig()) {
+      activeAPICount++;
+    }
+    if (activeAPICount > 0) {
+      return "Third-party APIs (" + activeAPICount + " active)";
+    } else {
+      return "Add third-party APIs";
+    }
+  },
+
   getAPISelectorLabelForApp: function(app) {
     if (app.displayName.match(/github/i)) {
       return (
@@ -1214,7 +1226,7 @@ return React.createClass({
                   <div className="phm mbm">
                     <DropdownMenu
                       openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
-                      label="Use third-party APIs"
+                      label={this.getAPISelectorDropdownLabel()}
                       labelClassName="button-s"
                       toggle={this.toggleAPISelectorMenu}
                     >
