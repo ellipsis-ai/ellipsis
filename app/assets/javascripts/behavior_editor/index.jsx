@@ -182,6 +182,9 @@ return React.createClass({
     if (this.getAWSConfig() !== undefined) {
       params = params.concat(["AWS"]);
     }
+    if (this.getRequiredOAuth2Applications().length > 0) {
+      params = params.concat(["accessTokens"]);
+    }
     return params;
   },
 

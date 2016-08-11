@@ -124,7 +124,7 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private def accessTokenCodeFor(app: RequiredOAuth2Application): String = {
-    s"""{ "${app.application.name}": ellipsis.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken }"""
+    s""""${app.application.name}": ${s"event.$CONTEXT_PARAM"}.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken"""
   }
 
   private def accessTokensCodeFor(requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {
@@ -132,9 +132,9 @@ class AWSLambdaServiceImpl @Inject() (
       ""
     } else {
       s"""
-         |var accessTokens = [
+         |var accessTokens = {
          |  ${requiredOAuth2Applications.map(accessTokenCodeFor).mkString(",\n")}
-         |];
+         |};
        """.stripMargin
     }
   }

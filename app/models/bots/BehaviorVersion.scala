@@ -109,7 +109,7 @@ case class BehaviorVersion(
     } else {
       s"""\n${params.map(ea => ea ++ ",").mkString("\n")}\n"""
     }
-    val definitionBuiltinParamsString = (HANDLER_PARAMS ++ Array(CONTEXT_PARAM) ++ awsParams).mkString(", ")
+    val definitionBuiltinParamsString = (HANDLER_PARAMS ++ Array(CONTEXT_PARAM) ++ awsParams ++ accessTokenParams).mkString(", ")
     val possibleEndOfParamsNewline = if (params.isEmpty) { "" } else { "\n" }
     s"""function($definitionUserParamsString$definitionBuiltinParamsString$possibleEndOfParamsNewline) {
       |  $functionBody
