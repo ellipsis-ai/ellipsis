@@ -101,11 +101,11 @@ return React.createClass({
   },
 
   getAllOAuth2Applications: function() {
-    return this.props.oauth2Applications;
+    return this.props.oauth2Applications || [];
   },
 
   getRequiredOAuth2Applications: function() {
-    return this.getBehaviorConfig()['requiredOAuth2Applications'];
+    return this.getBehaviorConfig()['requiredOAuth2Applications'] || [];
   },
 
   isRequiredOAuth2Application: function(app) {
