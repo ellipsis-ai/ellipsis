@@ -204,8 +204,12 @@ return React.createClass({
     return (<SVGSettingsIcon label="Editor settings" />);
   },
 
-  getBuiltinParams: function() {
-    var params = ["onSuccess", "onError", "ellipsis"];
+  getSystemParams: function() {
+    return ["onSuccess", "onError", "ellipsis"];
+  },
+
+  getAPIParams: function() {
+    var params = [];
     if (this.getAWSConfig() !== undefined) {
       params = params.concat(["AWS"]);
     }
@@ -217,7 +221,7 @@ return React.createClass({
 
   getCodeFunctionParams: function() {
     var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
-    return userParams.concat(this.getBuiltinParams());
+    return userParams.concat(this.getSystemParams(), this.getAPIParams());
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -249,7 +253,12 @@ return React.createClass({
   },
 
   getFirstLineNumberForCode: function() {
-    return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
+    var numUserParams = this.getBehaviorParams().length;
+    var apiParams = 0;
+    if (this.getAWSConfig() || this.getRequiredOAuth2Applications().length > 0) {
+      apiParams = 1;
+    }
+    return this.hasUserParameters() ? numUserParams + apiParams + 4 : 2;
   },
 
   getManageDropdownLabel: function() {
@@ -397,7 +406,7 @@ return React.createClass({
       <div checkedWhen={this.templateIncludesParam()}>
         User-supplied parameters:<br />
         <div className="box-code-example">
-        You said {this.hasParams() && this.getBehaviorParams()[0].name ?
+        You said {this.hasUserParameters() && this.getBehaviorParams()[0].name ?
           "{" + this.getBehaviorParams()[0].name + "}" :
           "{exampleParamName}"}
         </div>
@@ -863,7 +872,7 @@ return React.createClass({
   },
 
   hasParams: function() {
-    return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
+    return this.hasUserParameters() || !!this.getAWSConfig() || this.getRequiredOAuth2Applications().length > 0;
   },
 
   hasPrimaryTrigger: function() {
@@ -872,8 +881,7 @@ return React.createClass({
   },
 
   hasUserParameters: function() {
-    // TODO: when we have user parameters that aren't part of code, include those
-    return this.hasParams();
+    return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
 
   isExistingBehavior: function() {
@@ -1212,7 +1220,7 @@ return React.createClass({
                   <span>to include in the response below.</span>
                 </span>
 
-                <span checkedWhen={this.hasParams()} hiddenWhen={this.isExistingBehavior() && this.hasParams()}>
+                <span checkedWhen={this.hasUserParameters()} hiddenWhen={this.isExistingBehavior() && this.hasUserParameters()}>
                   <span>If you need more information from the user, add one or more parameters </span>
                   <span>to your function.</span>
                 </span>
@@ -1275,7 +1283,8 @@ return React.createClass({
                   onEnterKey={this.onParamEnterKey}
                   helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
                   onToggleHelp={this.toggleBoilerplateHelp}
-                  builtInParams={this.getBuiltinParams()}
+                  systemParams={this.getSystemParams()}
+                  apiParams={this.getAPIParams()}
                 />
               </div>
 

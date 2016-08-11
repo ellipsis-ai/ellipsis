@@ -15,7 +15,8 @@ return React.createClass({
     onParamDelete: React.PropTypes.func.isRequired,
     onToggleHelp: React.PropTypes.func.isRequired,
     params: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-    builtInParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+    systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    apiParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
   },
   onChange: function(index, data) {
     this.props.onParamChange(index, data);
@@ -33,9 +34,28 @@ return React.createClass({
     return this.props.hasParams ? this.props.params.length + 2 : 1;
   },
   boilerplateLine: function() {
-    return this.props.hasParams ?
-      (<span className="pll">{this.props.builtInParams.join(", ") + " "}</span>) :
-      "function(" + this.props.builtInParams.join(", ") + ") { ";
+    var systemParamString = this.props.systemParams.join(", ");
+    if (this.props.apiParams.length > 0) {
+      systemParamString += ", ";
+    }
+    var apiParamString = this.props.apiParams.join(", ");
+    if (this.props.hasParams) {
+      return (
+        <div className="display-inline-block plm prs">
+          <div>{systemParamString}</div>
+          <div className="type-black blink-twice">{apiParamString} </div>
+        </div>
+      );
+    } else {
+      return (
+        <span>
+          <span>function(</span>
+          <span>{systemParamString}</span>
+          <span className="type-black blink-twice">{apiParamString}</span>
+          <span>{") { "}</span>
+        </span>
+      );
+    }
   },
   render: function() {
     return (
@@ -80,7 +100,7 @@ return React.createClass({
             <span className="button-symbol-placeholder" />
           </div>
           <div className="column">
-            <div className="columns columns-elastic pbs">
+            <div className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">
                 <code className="type-disabled type-s position-absolute position-top-right prxs">{this.boilerplateLineNumber()}</code>
               </div>
