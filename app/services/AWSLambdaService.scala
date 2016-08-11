@@ -1,7 +1,7 @@
 package services
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
-import models.bots.config.AWSConfig
+import models.bots.config.{RequiredOAuth2Application, AWSConfig}
 import models.{EnvironmentVariable, Models}
 import models.bots.{MessageEvent, BehaviorResult, ParameterWithValue, BehaviorVersion}
 import play.api.Configuration
@@ -23,6 +23,12 @@ trait AWSLambdaService extends AWSService {
               ): Future[BehaviorResult]
 
   def deleteFunction(functionName: String): Unit
-  def deployFunctionFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String], maybeAWSConfig: Option[AWSConfig]): Future[Unit]
+  def deployFunctionFor(
+                         behaviorVersion: BehaviorVersion,
+                         functionBody: String,
+                         params: Array[String],
+                         maybeAWSConfig: Option[AWSConfig],
+                         requiredOAuth2Applications: Seq[RequiredOAuth2Application]
+                         ): Future[Unit]
 
 }

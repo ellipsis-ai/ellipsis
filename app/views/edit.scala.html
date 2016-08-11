@@ -3,6 +3,7 @@
   maybeTeam: Option[models.Team],
   json: String,
   envVariablesJson: String,
+  oauth2ApplicationsJson: String,
   justSaved: Boolean,
   notificationsJson: String
     )(implicit messages: Messages, r: RequestHeader)
@@ -27,6 +28,7 @@
           csrfToken: "@CSRF.getToken(r).map(_.value)",
           justSaved: @justSaved,
           envVariables: @Html(envVariablesJson),
+          oauth2Applications: @Html(oauth2ApplicationsJson),
           notifications: @Html(notificationsJson)
         };
       </script>
