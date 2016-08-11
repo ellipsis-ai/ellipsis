@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import export.{BehaviorVersionImporter, BehaviorVersionZipImporter, BehaviorVersionExporter}
 import json._
 import json.Formatting._
-import models.bots.config.AWSConfigQueries
+import models.bots.config.{RequiredOAuth2ApplicationQueries, AWSConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
 import models._
 import models.accounts._
@@ -141,9 +141,13 @@ class ApplicationController @Inject() (
       maybeEnvironmentVariables <- maybeTeam.map { team =>
         EnvironmentVariableQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
+      maybeOAuth2Applications <- maybeTeam.map { team =>
+        OAuth2ApplicationQueries.allFor(team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
       result <- (for {
         team <- maybeTeam
         envVars <- maybeEnvironmentVariables
+        oauth2Applications <- maybeOAuth2Applications
       } yield {
           val data = BehaviorVersionData.buildFor(
             team.id,
@@ -152,7 +156,7 @@ class ApplicationController @Inject() (
             "",
             Seq(),
             Seq(),
-            BehaviorConfig(None, None),
+            BehaviorConfig(None, None, Seq()),
             None,
             None,
             None
@@ -162,6 +166,7 @@ class ApplicationController @Inject() (
             Some(team),
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
+            Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
             justSaved = false,
             notificationsJson = Json.toJson(Array[String]()).toString
           )))
@@ -184,15 +189,20 @@ class ApplicationController @Inject() (
       maybeEnvironmentVariables <- maybeBehaviorVersion.map { behaviorVersion =>
         EnvironmentVariableQueries.allFor(behaviorVersion.team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
+      maybeOAuth2Applications <- maybeBehaviorVersion.map { behaviorVersion =>
+        OAuth2ApplicationQueries.allFor(behaviorVersion.team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
       result <- (for {
         data <- maybeVersionData
         envVars <- maybeEnvironmentVariables
+        oauth2Applications <- maybeOAuth2Applications
       } yield {
           DBIO.successful(Ok(views.html.edit(
             Some(user),
             maybeBehavior.map(_.team),
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
+            Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
             maybeJustSaved.exists(identity),
             notificationsJson = Json.toJson(Array[String]()).toString
           )))
@@ -301,6 +311,11 @@ class ApplicationController @Inject() (
           (version, config)
         }
       }).map(_.toMap)
+      requiredOAuth2ApplicationsByVersion <- DBIO.sequence(versions.map { version =>
+        RequiredOAuth2ApplicationQueries.allFor(version).map { apps =>
+          (version, apps)
+        }
+      }).map(_.toMap)
     } yield {
         maybeBehavior.map { behavior =>
           val versionsData = versions.map { version =>
@@ -309,6 +324,9 @@ class ApplicationController @Inject() (
                 AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
               }
             }
+            val requiredOAuth2ApplicationsData = requiredOAuth2ApplicationsByVersion.get(version).map { apps =>
+              apps.map(ea => OAuth2ApplicationData.from(ea.application))
+            }.getOrElse(Seq())
             BehaviorVersionData.buildFor(
               version.team.id,
               Some(behavior.id),
@@ -324,7 +342,7 @@ class ApplicationController @Inject() (
                   BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
                 }
               }.getOrElse(Seq()),
-              BehaviorConfig(None, maybeAwsConfigData),
+              BehaviorConfig(None, maybeAwsConfigData, requiredOAuth2ApplicationsData),
               behavior.maybeImportedId,
               None,
               Some(version.createdAt)

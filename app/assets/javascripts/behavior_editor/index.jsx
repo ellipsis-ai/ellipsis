@@ -61,12 +61,22 @@ return React.createClass({
         accessKeyName: React.PropTypes.string,
         secretKeyName: React.PropTypes.string,
         regionName: React.PropTypes.string
-      })
+      }),
+      requiredOAuth2Applications: React.PropTypes.arrayOf(
+        React.PropTypes.shape({
+          applicationId: React.PropTypes.string,
+          displayName: React.PropTypes.string
+        })
+      )
     }),
     knownEnvVarsUsed: React.PropTypes.arrayOf(React.PropTypes.string),
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
+    oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
+        applicationId: React.PropTypes.string,
+        displayName: React.PropTypes.string
+    })),
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool
   },
@@ -88,6 +98,19 @@ return React.createClass({
 
   getActivePanel: function() {
     return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
+  },
+
+  getAllOAuth2Applications: function() {
+    return this.props.oauth2Applications;
+  },
+
+  getRequiredOAuth2Applications: function() {
+    return this.getBehaviorConfig()['requiredOAuth2Applications'];
+  },
+
+  isRequiredOAuth2Application: function(app) {
+    var requiredIds = this.getRequiredOAuth2Applications().map((ea) => ea.applicationId);
+    return requiredIds.indexOf(app.applicationId) >= 0;
   },
 
   getAWSConfig: function() {
@@ -158,6 +181,9 @@ return React.createClass({
     var params = ["onSuccess", "onError", "ellipsis"];
     if (this.getAWSConfig() !== undefined) {
       params = params.concat(["AWS"]);
+    }
+    if (this.getRequiredOAuth2Applications().length > 0) {
+      params = params.concat(["accessTokens"]);
     }
     return params;
   },
@@ -944,6 +970,17 @@ return React.createClass({
     this.setConfigProperty('aws', {});
   },
 
+  onAddOAuth2Application: function(index) {
+    var existing = this.getRequiredOAuth2Applications();
+    var added = this.getAllOAuth2Applications()[index];
+    this.setConfigProperty('requiredOAuth2Applications', existing.concat([added]));
+  },
+
+  onRemoveOAuth2Application: function(index) {
+    var existing = this.getRequiredOAuth2Applications();
+    this.setConfigProperty('requiredOAuth2Applications', existing.filter((ea, i) => i != index));
+  },
+
   onRemoveAWSConfig: function() {
     this.setConfigProperty('aws', undefined);
   },
@@ -1147,6 +1184,19 @@ return React.createClass({
                     <button type="button" className="button-s" onClick={this.onAddAWSConfig}>
                       Amazon Web Services (AWS)
                     </button>
+
+                    {this.getAllOAuth2Applications().map(function(app, index) {
+                      if (this.isRequiredOAuth2Application(app)) {
+                        return (
+                          <a className="phm" key={"oauth2-app-" + index} onClick={this.onRemoveOAuth2Application.bind(this, index)}>{app.displayName} ✓</a>
+                        );
+                      } else {
+                        return (
+                          <a className="phm" key={"oauth2-app-" + index} onClick={this.onAddOAuth2Application.bind(this, index)}>{app.displayName}</a>
+                        );
+                      }
+                    }.bind(this))}
+
                   </Collapsible>
                   <Collapsible revealWhen={!!this.getAWSConfig()}>
                     <AWSConfig
