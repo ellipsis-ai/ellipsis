@@ -109,8 +109,23 @@ return React.createClass({
   },
 
   isRequiredOAuth2Application: function(app) {
-    var requiredIds = this.getRequiredOAuth2Applications().map((ea) => ea.applicationId);
+    var requiredIds = this.getRequiredOAuth2Applications().map(function(ea) { return ea.applicationId; });
     return requiredIds.indexOf(app.applicationId) >= 0;
+  },
+
+  getAPISelectorLabelForApp: function(app) {
+    if (app.displayName.match(/github/i)) {
+      return (
+        <span>
+          <img className="align-m mrs" src="/assets/images/logos/GitHub-Mark-64px.png" height="24" />
+          <span>{app.displayName}</span>
+        </span>
+      );
+    } else {
+      return (
+        <span>{app.displayName}</span>
+      );
+    }
   },
 
   getAWSConfig: function() {
@@ -986,7 +1001,7 @@ return React.createClass({
 
   onRemoveOAuth2Application: function(index) {
     var existing = this.getRequiredOAuth2Applications();
-    this.setConfigProperty('requiredOAuth2Applications', existing.filter((ea, i) => i != index));
+    this.setConfigProperty('requiredOAuth2Applications', existing.filter(function(ea, i) { return i !== index; }));
   },
 
   onRemoveAWSConfig: function() {
@@ -1196,7 +1211,7 @@ return React.createClass({
                     >
                       <DropdownMenu.Item
                         onClick={this.toggleAWSConfig}
-                        checkedWhen={this.getAWSConfig()}
+                        checkedWhen={!!this.getAWSConfig()}
                         label={(<img src="/assets/images/logos/aws_logo_web_300px.png" height="32" />)}
                       />
                       {this.getAllOAuth2Applications().map(function(app, index) {
@@ -1205,7 +1220,7 @@ return React.createClass({
                             key={"oauth2-app-" + index}
                             checkedWhen={this.isRequiredOAuth2Application(app)}
                             onClick={this.isRequiredOAuth2Application(app) ? this.onRemoveOAuth2Application.bind(this, index) : this.onAddOAuth2Application.bind(this, index)}
-                            label={app.displayName}
+                            label={this.getAPISelectorLabelForApp(app)}
                           />
                         );
                       }.bind(this))}

@@ -1519,6 +1519,8 @@ button.button-subtle {
 button.button-dropdown-item {
   font-size: @type-s;
   line-height: @l;
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
   border-color: transparent !important;
   color: inherit;
   text-align: left;
@@ -1538,6 +1540,8 @@ a.button:focus {
 button.button-dropdown-item:focus,
 button.button-dropdown-item:hover,
 button.button-dropdown-item-hover {
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
   background-color: @blue-medium;
   color: white;
 }
