@@ -644,6 +644,10 @@ return React.createClass({
     });
   },
 
+  toggleAPISelectorMenu: function() {
+    this.toggleActiveDropdown('apiSelectorDropdown');
+  },
+
   toggleAWSHelp: function() {
     this.toggleActivePanel('helpForAWS');
   },
@@ -940,8 +944,12 @@ return React.createClass({
     this.setAWSEnvVar(property, envVarName);
   },
 
-  onAddAWSConfig: function() {
-    this.setConfigProperty('aws', {});
+  toggleAWSConfig: function() {
+    if (this.getAWSConfig()) {
+      this.onRemoveAWSConfig();
+    } else {
+      this.setConfigProperty('aws', {});
+    }
   },
 
   onRemoveAWSConfig: function() {
@@ -1141,25 +1149,36 @@ return React.createClass({
 
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
               <div className="border-top border-left border-right border-radius-top pts">
-                <div className="ptxs phm pbm mbs type-s border-bottom">
-                  <Collapsible revealWhen={!this.getAWSConfig()}>
-                    <span className="mrs">Add integration:</span>
-                    <button type="button" className="button-s" onClick={this.onAddAWSConfig}>
-                      Amazon Web Services (AWS)
-                    </button>
-                  </Collapsible>
-                  <Collapsible revealWhen={!!this.getAWSConfig()}>
-                    <AWSConfig
-                      envVariableNames={this.getEnvVariableNames()}
-                      accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                      secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                      regionName={this.getAWSConfigProperty('regionName')}
-                      onAddNew={this.onAWSAddNewEnvVariable}
-                      onChange={this.onAWSConfigChange}
-                      onRemoveAWSConfig={this.onRemoveAWSConfig}
-                      onToggleHelp={this.toggleAWSHelp}
-                      helpVisible={this.getActivePanel() === 'helpForAWS'}
-                    />
+                <div className="ptxs type-s">
+                  <div className="phm mbm">
+                    <DropdownMenu
+                      openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
+                      label="Use third-party APIs"
+                      labelClassName="button-s"
+                      toggle={this.toggleAPISelectorMenu}
+                    >
+                      <DropdownMenu.Item
+                        onClick={this.toggleAWSConfig}
+                        checkedWhen={this.getAWSConfig()}
+                        label={(<img src="/assets/images/logos/aws_logo_web_300px.png" height="32" />)}
+                      />
+                    </DropdownMenu>
+                  </div>
+
+                  <Collapsible revealWhen={this.getAWSConfig()}>
+                    <div className="phm pbs mbs border-bottom">
+                      <AWSConfig
+                        envVariableNames={this.getEnvVariableNames()}
+                        accessKeyName={this.getAWSConfigProperty('accessKeyName')}
+                        secretKeyName={this.getAWSConfigProperty('secretKeyName')}
+                        regionName={this.getAWSConfigProperty('regionName')}
+                        onAddNew={this.onAWSAddNewEnvVariable}
+                        onChange={this.onAWSConfigChange}
+                        onRemoveAWSConfig={this.onRemoveAWSConfig}
+                        onToggleHelp={this.toggleAWSHelp}
+                        helpVisible={this.getActivePanel() === 'helpForAWS'}
+                      />
+                    </div>
                   </Collapsible>
                 </div>
 
