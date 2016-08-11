@@ -126,7 +126,7 @@ object LinkedOAuth2TokenQueries {
       raw.maybeRefreshToken,
       raw.maybeScopeGranted,
       raw.userId,
-      OAuth2ApplicationQueries.tuple2Config(tuple._2)
+      OAuth2ApplicationQueries.tuple2Application(tuple._2)
     )
   }
 

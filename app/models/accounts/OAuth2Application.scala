@@ -1,6 +1,6 @@
 package models.accounts
 
-import models.IDs
+import models.{Team, IDs}
 import play.api.libs.ws.{WSRequest, WSClient}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -91,7 +91,7 @@ object OAuth2ApplicationQueries {
 
   type TupleType = (RawOAuth2Application, OAuth2Api)
 
-  def tuple2Config(tuple: TupleType): OAuth2Application = {
+  def tuple2Application(tuple: TupleType): OAuth2Application = {
     val raw = tuple._1
     OAuth2Application(raw.id, raw.name, tuple._2, raw.clientId, raw.clientSecret, raw.maybeScope, raw.teamId)
   }
@@ -103,7 +103,18 @@ object OAuth2ApplicationQueries {
   val findQuery = Compiled(uncompiledFindQuery _)
 
   def find(id: String): DBIO[Option[OAuth2Application]] = {
-    findQuery(id).result.map(_.headOption.map(tuple2Config))
+    findQuery(id).result.map(_.headOption.map(tuple2Application))
+  }
+
+  def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
+    allWithApi.filter { case(app, api) => app.teamId === teamId }
+  }
+  val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
+
+  def allFor(team: Team): DBIO[Seq[OAuth2Application]] = {
+    allForTeamQuery(team.id).result.map { r =>
+      r.map(tuple2Application)
+    }
   }
 
   def createFor(
@@ -116,7 +127,7 @@ object OAuth2ApplicationQueries {
                  ): DBIO[OAuth2Application] = {
     val raw = RawOAuth2Application(IDs.next, name, api.id, clientId, clientSecret, maybeScope, teamId)
     (all += raw).map { _ =>
-      tuple2Config((raw, api))
+      tuple2Application((raw, api))
     }
   }
 

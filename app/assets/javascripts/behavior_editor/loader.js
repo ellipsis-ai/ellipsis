@@ -6,6 +6,7 @@ requirejs(['../common'], function() {
     var additionalData = {
       csrfToken: config.csrfToken,
       envVariables: config.envVariables,
+      oauth2Applications: config.oauth2Applications,
       justSaved: config.justSaved,
       notifications: config.notifications
     };

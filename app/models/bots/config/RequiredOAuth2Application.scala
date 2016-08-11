@@ -1,5 +1,7 @@
 package models.bots.config
 
+import json.OAuth2ApplicationData
+import models.IDs
 import models.accounts.{OAuth2ApplicationQueries, OAuth2Application}
 import models.bots.BehaviorVersion
 import slick.driver.PostgresDriver.api._
@@ -37,7 +39,7 @@ object RequiredOAuth2ApplicationQueries {
 
   def tuple2RequiredApp(tuple: TupleType): RequiredOAuth2Application = {
     val raw = tuple._1
-    RequiredOAuth2Application(raw.id, raw.behaviorVersionId, OAuth2ApplicationQueries.tuple2Config(tuple._2))
+    RequiredOAuth2Application(raw.id, raw.behaviorVersionId, OAuth2ApplicationQueries.tuple2Application(tuple._2))
   }
 
   def uncompiledAllForQuery(behaviorVersionId: Rep[String]) = allWithApplication.filter(_._1.behaviorVersionId === behaviorVersionId)
@@ -45,5 +47,15 @@ object RequiredOAuth2ApplicationQueries {
 
   def allFor(behaviorVersion: BehaviorVersion): DBIO[Seq[RequiredOAuth2Application]] = {
     allForQuery(behaviorVersion.id).result.map(r => r.map(tuple2RequiredApp))
+  }
+
+  def maybeCreateFor(data: OAuth2ApplicationData, behaviorVersion: BehaviorVersion): DBIO[Option[RequiredOAuth2Application]] = {
+    OAuth2ApplicationQueries.find(data.applicationId).flatMap { maybeApp =>
+      maybeApp.map { app =>
+        val raw = RawRequiredOAuth2Application(IDs.next, behaviorVersion.id, app.id)
+        (all += raw).map(_ => RequiredOAuth2Application(raw.id, raw.behaviorVersionId, app)).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+    }
+
   }
 }

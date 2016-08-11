@@ -2,7 +2,7 @@ package json
 
 import models.Team
 import models.accounts.User
-import models.bots.config.AWSConfigQueries
+import models.bots.config.{RequiredOAuth2ApplicationQueries, AWSConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
 import models.bots.{BehaviorVersionQueries, BehaviorParameterQueries, BehaviorQueries}
 import org.joda.time.DateTime
@@ -105,12 +105,16 @@ object BehaviorVersionData {
       maybeAWSConfig <- maybeBehaviorVersion.map { behaviorVersion =>
         AWSConfigQueries.maybeFor(behaviorVersion)
       }.getOrElse(DBIO.successful(None))
+      maybeRequiredOAuth2Applications <- maybeBehaviorVersion.map { behaviorVersion =>
+        RequiredOAuth2ApplicationQueries.allFor(behaviorVersion).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
     } yield {
       for {
         behavior <- maybeBehavior
         behaviorVersion <- maybeBehaviorVersion
         params <- maybeParameters
         triggers <- maybeTriggers
+        requiredOAuth2Applications <- maybeRequiredOAuth2Applications
       } yield {
         val maybeAWSConfigData = maybeAWSConfig.map { config =>
           AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
@@ -126,7 +130,7 @@ object BehaviorVersionData {
           triggers.map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
-          BehaviorConfig(maybePublishedId, maybeAWSConfigData),
+          BehaviorConfig(maybePublishedId, maybeAWSConfigData, requiredOAuth2Applications.map(ea => OAuth2ApplicationData.from(ea.application))),
           behavior.maybeImportedId,
           githubUrl = None,
           Some(behaviorVersion.createdAt)

@@ -6,7 +6,7 @@ import java.nio.file.{Files, Paths}
 import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
-import models.bots.config.AWSConfig
+import models.bots.config.{RequiredOAuth2Application, AWSConfig}
 import models.{EnvironmentVariable, Models, InvocationToken}
 import models.bots._
 import play.api.Configuration
@@ -123,19 +123,37 @@ class AWSLambdaServiceImpl @Inject() (
     }.getOrElse("")
   }
 
-  private def nodeCodeFor(functionBody: String, params: Array[String], behaviorVersion: BehaviorVersion, maybeAwsConfig: Option[AWSConfig]): String = {
+  private def accessTokenCodeFor(app: RequiredOAuth2Application): String = {
+    s"""{ "${app.application.name}": ellipsis.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken }"""
+  }
+
+  private def accessTokensCodeFor(requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {
+    if (requiredOAuth2Applications.isEmpty) {
+      ""
+    } else {
+      s"""
+         |var accessTokens = [
+         |  ${requiredOAuth2Applications.map(accessTokenCodeFor).mkString(",\n")}
+         |];
+       """.stripMargin
+    }
+  }
+
+  private def nodeCodeFor(functionBody: String, params: Array[String], behaviorVersion: BehaviorVersion, maybeAwsConfig: Option[AWSConfig], requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val awsParams = behaviorVersion.awsParamsFor(maybeAwsConfig)
-    val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM") ++ awsParams).mkString(", ")
+    val accessTokenParams = behaviorVersion.accessTokenParamsFor(requiredOAuth2Applications)
+    val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM") ++ awsParams ++ accessTokenParams).mkString(", ")
 
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = ${behaviorVersion.functionWithParams(params, awsParams)};
+    s"""exports.handler = function(event, context, callback) { var fn = ${behaviorVersion.functionWithParams(params, awsParams, accessTokenParams)};
       |   var $ON_SUCCESS_PARAM = function(result) {
       |     callback(null, { "result": result === undefined ? null : result });
       |   };
       |   var $ON_ERROR_PARAM = function(err) { callback(err); };
       |   ${awsCodeFor(maybeAwsConfig)}
+      |   ${accessTokensCodeFor(requiredOAuth2Applications)}
       |   fn($invocationParamsString);
       |}
     """.stripMargin
@@ -144,13 +162,19 @@ class AWSLambdaServiceImpl @Inject() (
   private def dirNameFor(functionName: String) = s"/tmp/$functionName"
   private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
-  private def createZipWithModulesFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String], maybeAWSConfig: Option[AWSConfig]): Unit = {
+  private def createZipWithModulesFor(
+                                       behaviorVersion: BehaviorVersion,
+                                       functionBody: String,
+                                       params: Array[String],
+                                       maybeAWSConfig: Option[AWSConfig],
+                                       requiredOAuth2Applications: Seq[RequiredOAuth2Application]
+                                       ): Unit = {
     val dirName = dirNameFor(behaviorVersion.functionName)
     val path = Path(dirName)
     path.createDirectory()
 
     val writer = new PrintWriter(new File(s"$dirName/index.js"))
-    writer.write(nodeCodeFor(functionBody, params, behaviorVersion, maybeAWSConfig))
+    writer.write(nodeCodeFor(functionBody, params, behaviorVersion, maybeAWSConfig, requiredOAuth2Applications))
     writer.close()
 
     requiredModulesIn(functionBody).foreach { moduleName =>
@@ -161,8 +185,14 @@ class AWSLambdaServiceImpl @Inject() (
     Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(behaviorVersion.functionName)} *")).!
   }
 
-  private def getZipFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String], maybeAWSConfig: Option[AWSConfig]): ByteBuffer = {
-    createZipWithModulesFor(behaviorVersion, functionBody, params, maybeAWSConfig)
+  private def getZipFor(
+                         behaviorVersion: BehaviorVersion,
+                         functionBody: String,
+                         params: Array[String],
+                         maybeAWSConfig: Option[AWSConfig],
+                         requiredOAuth2Applications: Seq[RequiredOAuth2Application]
+                         ): ByteBuffer = {
+    createZipWithModulesFor(behaviorVersion, functionBody, params, maybeAWSConfig, requiredOAuth2Applications)
     val path = Paths.get(zipFileNameFor(behaviorVersion.functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -177,7 +207,13 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  def deployFunctionFor(behaviorVersion: BehaviorVersion, functionBody: String, params: Array[String], maybeAWSConfig: Option[AWSConfig]): Future[Unit] = {
+  def deployFunctionFor(
+                         behaviorVersion: BehaviorVersion,
+                         functionBody: String,
+                         params: Array[String],
+                         maybeAWSConfig: Option[AWSConfig],
+                         requiredOAuth2Applications: Seq[RequiredOAuth2Application]
+                         ): Future[Unit] = {
     val functionName = behaviorVersion.functionName
 
     // blocks
@@ -188,7 +224,7 @@ class AWSLambdaServiceImpl @Inject() (
     } else {
       val functionCode =
         new FunctionCode().
-          withZipFile(getZipFor(behaviorVersion, functionBody, params, maybeAWSConfig))
+          withZipFile(getZipFor(behaviorVersion, functionBody, params, maybeAWSConfig, requiredOAuth2Applications))
       val createFunctionRequest =
         new CreateFunctionRequest().
           withFunctionName(functionName).

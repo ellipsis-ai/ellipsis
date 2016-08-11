@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import json.BehaviorVersionData
 import models.accounts.User
-import models.bots.config.{AWSConfig, AWSConfigQueries}
+import models.bots.config.{RequiredOAuth2Application, RequiredOAuth2ApplicationQueries, AWSConfig, AWSConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
 import models.{EnvironmentVariable, EnvironmentVariableQueries, IDs, Team}
 import org.commonmark.node.{Image, AbstractVisitor}
@@ -95,7 +95,15 @@ case class BehaviorVersion(
     maybeAWSConfig.map(_ => Array("AWS")).getOrElse(Array())
   }
 
-  def functionWithParams(params: Array[String], awsParams: Array[String]): String = {
+  def accessTokenParamsFor(requiredOAuth2Applications: Seq[RequiredOAuth2Application]): Array[String] = {
+    if (requiredOAuth2Applications.isEmpty) {
+      Array()
+    } else {
+      Array("accessTokens")
+    }
+  }
+
+  def functionWithParams(params: Array[String], awsParams: Array[String], accessTokenParams: Array[String]): String = {
     val definitionUserParamsString = if (params.isEmpty) {
       ""
     } else {
@@ -110,11 +118,13 @@ case class BehaviorVersion(
 
   def maybeFunction: DBIO[Option[String]] = {
     maybeFunctionBody.map { functionBody =>
-      BehaviorParameterQueries.allFor(this).flatMap { params =>
-        AWSConfigQueries.maybeFor(this).map { maybeAWSConfig =>
-          functionWithParams(params.map(_.name).toArray, awsParamsFor(maybeAWSConfig))
-        }
-      }.map(Some(_))
+      (for {
+        params <- BehaviorParameterQueries.allFor(this)
+        maybeAWSConfig <- AWSConfigQueries.maybeFor(this)
+        requiredOAuth2Applications <- RequiredOAuth2ApplicationQueries.allFor(this)
+      } yield {
+        functionWithParams(params.map(_.name).toArray, awsParamsFor(maybeAWSConfig), accessTokenParamsFor(requiredOAuth2Applications))
+      }).map(Some(_))
     }.getOrElse(DBIO.successful(None))
   }
 
@@ -262,7 +272,16 @@ object BehaviorVersionQueries {
           maybeAWSConfig <- data.awsConfig.map { c =>
             AWSConfigQueries.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
           }.getOrElse(DBIO.successful(None))
-          _ <- DBIO.from(lambdaService.deployFunctionFor(updated, data.functionBody, BehaviorVersionQueries.withoutBuiltin(data.params.map(_.name).toArray), maybeAWSConfig))
+          requiredOAuth2Applications <- DBIO.sequence(data.config.requiredOAuth2Applications.map { appData =>
+            RequiredOAuth2ApplicationQueries.maybeCreateFor(appData, updated)
+          }).map(_.flatten)
+          _ <- DBIO.from(lambdaService.deployFunctionFor(
+            updated,
+            data.functionBody,
+            BehaviorVersionQueries.withoutBuiltin(data.params.map(_.name).toArray),
+            maybeAWSConfig,
+            requiredOAuth2Applications
+          ))
           _ <- BehaviorParameterQueries.ensureFor(updated, data.params.map(ea => (ea.name, Some(ea.question))))
           _ <- DBIO.sequence(
             data.triggers.
