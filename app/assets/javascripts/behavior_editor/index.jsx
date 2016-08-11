@@ -119,7 +119,12 @@ return React.createClass({
       activeAPICount++;
     }
     if (activeAPICount > 0) {
-      return "Third-party APIs (" + activeAPICount + " active)";
+      return (
+        <span>
+          <span>Third-party APIs </span>
+          <span className="type-bold">({activeAPICount} active)</span>
+        </span>
+      );
     } else {
       return "Add third-party APIs";
     }
