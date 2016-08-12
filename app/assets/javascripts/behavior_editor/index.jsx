@@ -259,11 +259,7 @@ return React.createClass({
 
   getFirstLineNumberForCode: function() {
     var numUserParams = this.getBehaviorParams().length;
-    var apiParams = 0;
-    if (this.getAWSConfig() || this.getRequiredOAuth2Applications().length > 0) {
-      apiParams = 2;
-    }
-    return this.hasUserParameters() ? numUserParams + 4 : 2 + apiParams;
+    return this.hasUserParameters() ? numUserParams + 4 : 2;
   },
 
   getManageDropdownLabel: function() {
@@ -876,7 +872,7 @@ return React.createClass({
     return this.getBehaviorTriggers().length > 1;
   },
 
-  hasParams: function() {
+  shouldExpandParams: function() {
     return this.hasUserParameters() || !!this.getAWSConfig() || this.getRequiredOAuth2Applications().length > 0;
   },
 
@@ -1280,7 +1276,7 @@ return React.createClass({
 
                 <CodeHeader
                   ref="codeHeader"
-                  hasParams={this.hasParams()}
+                  shouldExpandParams={this.hasUserParameters()}
                   params={this.getBehaviorParams()}
                   onParamChange={this.updateParamAtIndexWithParam}
                   onParamDelete={this.deleteParamAtIndex}

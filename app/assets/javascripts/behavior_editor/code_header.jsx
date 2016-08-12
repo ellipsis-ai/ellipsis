@@ -7,7 +7,7 @@ var React = require('react'),
 return React.createClass({
   mixins: [BehaviorEditorMixin],
   propTypes: {
-    hasParams: React.PropTypes.bool,
+    shouldExpandParams: React.PropTypes.bool,
     helpVisible: React.PropTypes.bool,
     onEnterKey: React.PropTypes.func.isRequired,
     onParamAdd: React.PropTypes.func.isRequired,
@@ -31,7 +31,7 @@ return React.createClass({
     this.refs['param' + index].focus();
   },
   boilerplateLineNumber: function() {
-    return this.props.hasParams ? this.props.params.length + 2 : 1;
+    return this.props.shouldExpandParams ? this.props.params.length + 2 : 1;
   },
   boilerplateLine: function() {
     var systemParamString = this.props.systemParams.join(", ");
@@ -39,7 +39,7 @@ return React.createClass({
       systemParamString += ", ";
     }
     var apiParamString = this.props.apiParams.join(", ");
-    if (this.props.hasParams) {
+    if (this.props.shouldExpandParams) {
       return (
         <span className="plm">
           <span>{systemParamString} </span>
@@ -61,7 +61,7 @@ return React.createClass({
     return (
       <div>
 
-        <div className={this.props.hasParams ? "" : "display-none"}>
+        <div className={this.props.shouldExpandParams ? "" : "display-none"}>
           <div className="columns columns-elastic">
             <div className="column column-shrink plxxxl prn align-r position-relative">
               <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>
@@ -112,7 +112,7 @@ return React.createClass({
           </div>
         </div>
 
-        <div className={this.props.hasParams ? "" : "display-none"}>
+        <div className={this.props.shouldExpandParams ? "" : "display-none"}>
           <div className="columns columns-elastic pbs">
             <div className="column column-shrink plxxxl prn align-r position-relative">
               <code className="type-disabled type-s position-absolute position-top-right prxs">{(this.boilerplateLineNumber() + 1)}</code>
