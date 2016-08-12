@@ -119,6 +119,9 @@ object BehaviorVersionData {
         val maybeAWSConfigData = maybeAWSConfig.map { config =>
           AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
         }
+        val maybeOAuth2ApplicationData = maybeRequiredOAuth2Applications.map { requiredOAuth2Applications =>
+          requiredOAuth2Applications.map(ea => OAuth2ApplicationData.from(ea.application))
+        }
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           Some(behavior.id),
@@ -130,7 +133,7 @@ object BehaviorVersionData {
           triggers.map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
-          BehaviorConfig(maybePublishedId, maybeAWSConfigData, requiredOAuth2Applications.map(ea => OAuth2ApplicationData.from(ea.application))),
+          BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeOAuth2ApplicationData),
           behavior.maybeImportedId,
           githubUrl = None,
           Some(behaviorVersion.createdAt)
