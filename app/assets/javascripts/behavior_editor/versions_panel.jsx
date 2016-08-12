@@ -128,33 +128,33 @@ return React.createClass({
         <div className="container phn">
           <div className="columns">
             <div className="column">
-              <button type="button" disabled={this.oldestVersionSelected()}
-                className="button-symbol mrs mbs"
-                onClick={this.selectOldestVersion}
-                title="Initial version"
-              >|◄</button>
-              <button type="button" disabled={this.oldestVersionSelected()}
-                className="button-symbol mrs mbs"
-                onClick={this.incrementSelectedIndex}
-                title="Previous version"
-              >◄</button>
-              <select
-                className="form-select mrs mbs"
-                onChange={this.onSelectVersion}
-                value={this.getSelectedVersionIndex()}
-              >
-                {this.getVersionsMenu()}
-              </select>
-              <button type="button" disabled={this.newestVersionSelected()}
-                className="button-symbol mrs mbs"
-                onClick={this.decrementSelectedIndex}
-                title="Next version"
-              >►</button>
-              <button type="button" disabled={this.newestVersionSelected()}
-                className="button-symbol mrs mbs"
-                onClick={this.selectNewestVersion}
-                title="Current version"
-              >►|</button>
+              <div>
+                <button type="button" disabled={this.oldestVersionSelected()}
+                  className="mrs mbs"
+                  onClick={this.selectOldestVersion}
+                >|◄ Initial</button>
+                <button type="button" disabled={this.oldestVersionSelected()}
+                  className="mrs mbs"
+                  onClick={this.incrementSelectedIndex}
+                >◄ Previous</button>
+                <button type="button" disabled={this.newestVersionSelected()}
+                  className="mrs mbs"
+                  onClick={this.decrementSelectedIndex}
+                >Next ►</button>
+                <button type="button" disabled={this.newestVersionSelected()}
+                  className="mrs mbs"
+                  onClick={this.selectNewestVersion}
+                >Current ►|</button>
+              </div>
+              <div>
+                <select
+                  className="form-select width-30 mrs mbs"
+                  onChange={this.onSelectVersion}
+                  value={this.getSelectedVersionIndex()}
+                >
+                  {this.getVersionsMenu()}
+                </select>
+              </div>
             </div>
             <div className="column column-right align-r mobile-column-full mobile-align-l">
               <button type="button" disabled={this.currentVersionSelected()}
