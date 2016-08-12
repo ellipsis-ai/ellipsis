@@ -39,7 +39,7 @@ return React.createClass({
       <div className="columns mbs">
         <div className="column column-one-quarter mobile-column-full mobile-prsymbol">
           <div className="columns columns-elastic">
-            <div className="column column-expand prs">
+            <div className="column column-expand prn">
               <Input
                 ref="name"
                 className="form-input-borderless type-monospace type-s"
@@ -55,22 +55,22 @@ return React.createClass({
         </div>
         <div className="column column-three-quarters mobile-column-full mobile-mts">
           <div className="columns columns-elastic">
+            <div className="column column-shrink prxs align-m type-monospace type-disabled display-ellipsis">
+              <label htmlFor={"question" + this.props.id}
+                title="Write a question for @ellipsis to ask the user to provide this parameter."
+              >{"// Q: "}</label>
+            </div>
             <div className="column column-expand prn">
-              <div className="form-field-capped">
-                <label className="form-input-prefix type-weak"
-                  htmlFor={"question" + this.props.id}
-                  title="Write a question for @ellipsis to ask the user to provide this parameter."
-                >Q:</label>
-                <Input
-                  id={"question" + this.props.id}
-                  ref="question"
-                  placeholder="Write a question to ask the user for this parameter"
-                  autoFocus={this.props.shouldGrabFocus}
-                  value={this.props.question}
-                  onChange={this.onQuestionChange}
-                  onEnterKey={this.props.onEnterKey}
-                />
-              </div>
+              <Input
+                id={"question" + this.props.id}
+                ref="question"
+                placeholder="Write a question to ask the user for this parameter"
+                autoFocus={this.props.shouldGrabFocus}
+                value={this.props.question}
+                onChange={this.onQuestionChange}
+                onEnterKey={this.props.onEnterKey}
+                className="form-input-borderless type-italic"
+              />
             </div>
             <div className="column column-shrink">
               <DeleteButton
