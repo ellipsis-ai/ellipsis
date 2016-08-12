@@ -2,6 +2,7 @@ define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
   Codemirror = require('../react-codemirror'),
+  APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
@@ -106,43 +107,6 @@ return React.createClass({
 
   getRequiredOAuth2Applications: function() {
     return this.getBehaviorConfig()['requiredOAuth2Applications'] || [];
-  },
-
-  isRequiredOAuth2Application: function(app) {
-    var requiredIds = this.getRequiredOAuth2Applications().map(function(ea) { return ea.applicationId; });
-    return requiredIds.indexOf(app.applicationId) >= 0;
-  },
-
-  getAPISelectorDropdownLabel: function() {
-    var activeAPICount = this.getRequiredOAuth2Applications().length;
-    if (this.getAWSConfig()) {
-      activeAPICount++;
-    }
-    if (activeAPICount > 0) {
-      return (
-        <span>
-          <span>Third-party APIs </span>
-          <span className="type-bold">({activeAPICount} active)</span>
-        </span>
-      );
-    } else {
-      return "Add third-party APIs";
-    }
-  },
-
-  getAPISelectorLabelForApp: function(app) {
-    if (app.displayName.match(/github/i)) {
-      return (
-        <span>
-          <img className="align-m mrs" src="/assets/images/logos/GitHub-Mark-64px.png" height="24" />
-          <span>{app.displayName}</span>
-        </span>
-      );
-    } else {
-      return (
-        <span>{app.displayName}</span>
-      );
-    }
   },
 
   getAWSConfig: function() {
@@ -753,14 +717,6 @@ return React.createClass({
     this.toggleActiveDropdown('manageBehavior');
   },
 
-  toggleOAuth2Application: function(app) {
-    if (this.isRequiredOAuth2Application(app)) {
-      this.onRemoveOAuth2Application(app);
-    } else {
-      this.onAddOAuth2Application(app);
-    }
-  },
-
   toggleTriggerHelp: function() {
     this.toggleActivePanel('helpForTriggerParameters');
   },
@@ -1233,31 +1189,19 @@ return React.createClass({
               <div className="border-top border-left border-right border-radius-top pts">
                 <div className="ptxs type-s">
                   <div className="phm mbm">
-                    <DropdownMenu
+                    <APISelectorMenu
                       openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
-                      label={this.getAPISelectorDropdownLabel()}
-                      labelClassName="button-s"
+                      onAWSClick={this.toggleAWSConfig}
+                      awsCheckedWhen={!!this.getAWSConfig()}
                       toggle={this.toggleAPISelectorMenu}
-                    >
-                      <DropdownMenu.Item
-                        onClick={this.toggleAWSConfig}
-                        checkedWhen={!!this.getAWSConfig()}
-                        label={(<img src="/assets/images/logos/aws_logo_web_300px.png" height="32" />)}
+                      allOAuth2Applications={this.getAllOAuth2Applications()}
+                      requiredOAuth2Applications={this.getRequiredOAuth2Applications()}
+                      onAddOAuth2Application={this.onAddOAuth2Application}
+                      onRemoveOAuth2Application={this.onRemoveOAuth2Application}
                       />
-                      {this.getAllOAuth2Applications().map(function(app, index) {
-                        return (
-                          <DropdownMenu.Item
-                            key={"oauth2-app-" + index}
-                            checkedWhen={this.isRequiredOAuth2Application(app)}
-                            onClick={this.toggleOAuth2Application.bind(this, app)}
-                            label={this.getAPISelectorLabelForApp(app)}
-                          />
-                        );
-                      }.bind(this))}
-                    </DropdownMenu>
                   </div>
 
-                  <Collapsible revealWhen={this.getAWSConfig()}>
+                  <Collapsible revealWhen={!!this.getAWSConfig()}>
                     <div className="phm pbs mbs border-bottom">
                       <AWSConfig
                         envVariableNames={this.getEnvVariableNames()}
