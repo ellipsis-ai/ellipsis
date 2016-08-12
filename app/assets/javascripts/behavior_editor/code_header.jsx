@@ -14,7 +14,7 @@ return React.createClass({
     onParamChange: React.PropTypes.func.isRequired,
     onParamDelete: React.PropTypes.func.isRequired,
     onToggleHelp: React.PropTypes.func.isRequired,
-    params: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+    userParams: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
     systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     apiParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
   },
@@ -31,7 +31,7 @@ return React.createClass({
     this.refs['param' + index].focus();
   },
   boilerplateLineNumber: function() {
-    return this.props.shouldExpandParams ? this.props.params.length + 2 : 1;
+    return this.props.shouldExpandParams ? this.props.userParams.length + 2 : 1;
   },
   boilerplateLine: function() {
     var systemParamString = this.props.systemParams.join(", ");
@@ -43,7 +43,7 @@ return React.createClass({
       return (
         <span className="plm">
           <span>{systemParamString} </span>
-          <span className="type-black blink-twice">{apiParamString} </span>
+          <span className="type-black">{apiParamString} </span>
         </span>
       );
     } else {
@@ -51,7 +51,7 @@ return React.createClass({
         <span>
           <span>function(</span>
           <span>{systemParamString}</span>
-          <span className="type-black blink-twice">{apiParamString}</span>
+          <span className="type-black">{apiParamString}</span>
           <span>{") { "}</span>
         </span>
       );
@@ -72,7 +72,7 @@ return React.createClass({
           </div>
         </div>
 
-        {this.props.params.map(function(param, paramIndex) {
+        {this.props.userParams.map(function(param, paramIndex) {
           return (
             <div key={'paramContainer' + paramIndex} className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">

@@ -1277,13 +1277,13 @@ return React.createClass({
                 <CodeHeader
                   ref="codeHeader"
                   shouldExpandParams={this.hasUserParameters()}
-                  params={this.getBehaviorParams()}
                   onParamChange={this.updateParamAtIndexWithParam}
                   onParamDelete={this.deleteParamAtIndex}
                   onParamAdd={this.addParam}
                   onEnterKey={this.onParamEnterKey}
                   helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
                   onToggleHelp={this.toggleBoilerplateHelp}
+                  userParams={this.getBehaviorParams()}
                   systemParams={this.getSystemParams()}
                   apiParams={this.getAPIParams()}
                 />
