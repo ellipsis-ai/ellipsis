@@ -22,6 +22,13 @@ describe('BehaviorEditor', () => {
     csrfToken: "2",
     justSaved: false,
     envVariables: [ { name: "HOT_DOG" } ],
+    oAuth2Applications: [{
+      applicationId: "567890",
+      displayName: "My awesome oauth app"
+    }, {
+      applicationId: "098765",
+      displayName: "My other awesome oauth app"
+    }],
     notifications: [],
     shouldRevealCodeEditor: true
   };

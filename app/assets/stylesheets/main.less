@@ -16,6 +16,7 @@
 @type-desktop-m: 18px;
 @type-mobile-m: 16px;
 
+@type-xxxs: unit(8/18, rem);
 @type-xxs: unit(10/18, rem);
 @type-xs: unit(13/18, rem);
 @type-s: unit(15/18, rem);
@@ -1405,7 +1406,6 @@ a.button:hover {
 button.button-dropdown-trigger,
 select.form-select {
   position: relative;
-  z-index: 11;
   padding-right: 33px - @border-width;
   border-color: @border-color-dropdown;
   color: @black;
@@ -1421,6 +1421,15 @@ select.form-select {
     top: 11px - @border-width;
     right: 19px - @border-width;
     white-space: normal;
+  }
+}
+
+button.button-dropdown-trigger.button-s {
+  padding-right: 28px - @border-width;
+  &::before {
+    top: 4px;
+    font-size: @type-xxxs;
+    line-height: @type-xxxs;
   }
 }
 
@@ -1510,6 +1519,8 @@ button.button-subtle {
 button.button-dropdown-item {
   font-size: @type-s;
   line-height: @l;
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
   border-color: transparent !important;
   color: inherit;
   text-align: left;
@@ -1529,6 +1540,8 @@ a.button:focus {
 button.button-dropdown-item:focus,
 button.button-dropdown-item:hover,
 button.button-dropdown-item-hover {
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
   background-color: @blue-medium;
   color: white;
 }
@@ -1536,6 +1549,7 @@ button.button-dropdown-item-hover {
 button.button-dropdown-trigger:focus,
 button.button-dropdown-trigger-menu-open,
 select.form-select:focus {
+  z-index: 11;
   outline: none;
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
   padding-right: 33px - @border-width-thick;
@@ -1549,6 +1563,17 @@ select.form-select:focus {
   }
 }
 
+button.button-dropdown-trigger.button-s:focus,
+button.button-dropdown-trigger-menu-open.button-s {
+  padding-top: (@xs - @border-width-thick + 1);
+  padding-left: (@m - @border-width-thick);
+  padding-right: 28px - @border-width-thick;
+  padding-bottom: (@xs - @border-width-thick - 1);
+  &::before {
+    top: 4px - @border-width;
+  }
+}
+
 button.button-dropdown-trigger-menu-open,
 button.button-dropdown-trigger-menu-open:focus {
   color: @gray-medium;
@@ -1557,6 +1582,13 @@ button.button-dropdown-trigger-menu-open:focus {
   border-bottom-width: 0 !important;
   &::before {
     top: 11px - @border-width;
+  }
+}
+
+button.button-dropdown-trigger-menu-open.button-s,
+button.button-dropdown-trigger-menu-open.button-s:focus {
+  &::before {
+    top: 4px;
   }
 }
 

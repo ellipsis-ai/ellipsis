@@ -2,6 +2,7 @@ define(function(require) {
 var React = require('react'),
   ReactDOM = require('react-dom'),
   Codemirror = require('../react-codemirror'),
+  APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
@@ -101,16 +102,11 @@ return React.createClass({
   },
 
   getAllOAuth2Applications: function() {
-    return this.props.oauth2Applications;
+    return this.props.oauth2Applications || [];
   },
 
   getRequiredOAuth2Applications: function() {
-    return this.getBehaviorConfig()['requiredOAuth2Applications'];
-  },
-
-  isRequiredOAuth2Application: function(app) {
-    var requiredIds = this.getRequiredOAuth2Applications().map((ea) => ea.applicationId);
-    return requiredIds.indexOf(app.applicationId) >= 0;
+    return this.getBehaviorConfig()['requiredOAuth2Applications'] || [];
   },
 
   getAWSConfig: function() {
@@ -177,8 +173,12 @@ return React.createClass({
     return (<SVGSettingsIcon label="Editor settings" />);
   },
 
-  getBuiltinParams: function() {
-    var params = ["onSuccess", "onError", "ellipsis"];
+  getSystemParams: function() {
+    return ["onSuccess", "onError", "ellipsis"];
+  },
+
+  getAPIParams: function() {
+    var params = [];
     if (this.getAWSConfig() !== undefined) {
       params = params.concat(["AWS"]);
     }
@@ -190,7 +190,7 @@ return React.createClass({
 
   getCodeFunctionParams: function() {
     var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
-    return userParams.concat(this.getBuiltinParams());
+    return userParams.concat(this.getSystemParams(), this.getAPIParams());
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -222,7 +222,8 @@ return React.createClass({
   },
 
   getFirstLineNumberForCode: function() {
-    return this.hasParams() ? this.getBehaviorParams().length + 4 : 2;
+    var numUserParams = this.getBehaviorParams().length;
+    return this.hasUserParameters() ? numUserParams + 4 : 2;
   },
 
   getManageDropdownLabel: function() {
@@ -370,7 +371,7 @@ return React.createClass({
       <div checkedWhen={this.templateIncludesParam()}>
         User-supplied parameters:<br />
         <div className="box-code-example">
-        You said {this.hasParams() && this.getBehaviorParams()[0].name ?
+        You said {this.hasUserParameters() && this.getBehaviorParams()[0].name ?
           "{" + this.getBehaviorParams()[0].name + "}" :
           "{exampleParamName}"}
         </div>
@@ -670,6 +671,18 @@ return React.createClass({
     });
   },
 
+  toggleAPISelectorMenu: function() {
+    this.toggleActiveDropdown('apiSelectorDropdown');
+  },
+
+  toggleAWSConfig: function() {
+    if (this.getAWSConfig()) {
+      this.onRemoveAWSConfig();
+    } else {
+      this.setConfigProperty('aws', {});
+    }
+  },
+
   toggleAWSHelp: function() {
     this.toggleActivePanel('helpForAWS');
   },
@@ -815,18 +828,13 @@ return React.createClass({
     return this.getBehaviorTriggers().length > 1;
   },
 
-  hasParams: function() {
-    return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
-  },
-
   hasPrimaryTrigger: function() {
     var triggers = this.getBehaviorTriggers();
     return triggers.length > 0 && triggers[0];
   },
 
   hasUserParameters: function() {
-    // TODO: when we have user parameters that aren't part of code, include those
-    return this.hasParams();
+    return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
 
   isExistingBehavior: function() {
@@ -966,19 +974,16 @@ return React.createClass({
     this.setAWSEnvVar(property, envVarName);
   },
 
-  onAddAWSConfig: function() {
-    this.setConfigProperty('aws', {});
+  onAddOAuth2Application: function(appToAdd) {
+    var existing = this.getRequiredOAuth2Applications();
+    this.setConfigProperty('requiredOAuth2Applications', existing.concat([appToAdd]));
   },
 
-  onAddOAuth2Application: function(index) {
+  onRemoveOAuth2Application: function(appToRemove) {
     var existing = this.getRequiredOAuth2Applications();
-    var added = this.getAllOAuth2Applications()[index];
-    this.setConfigProperty('requiredOAuth2Applications', existing.concat([added]));
-  },
-
-  onRemoveOAuth2Application: function(index) {
-    var existing = this.getRequiredOAuth2Applications();
-    this.setConfigProperty('requiredOAuth2Applications', existing.filter((ea, i) => i != index));
+    this.setConfigProperty('requiredOAuth2Applications', existing.filter(function(app) {
+      return app.applicationId !== appToRemove.applicationId;
+    }));
   },
 
   onRemoveAWSConfig: function() {
@@ -1168,7 +1173,7 @@ return React.createClass({
                   <span>to include in the response below.</span>
                 </span>
 
-                <span checkedWhen={this.hasParams()} hiddenWhen={this.isExistingBehavior() && this.hasParams()}>
+                <span checkedWhen={this.hasUserParameters()} hiddenWhen={this.isExistingBehavior() && this.hasUserParameters()}>
                   <span>If you need more information from the user, add one or more parameters </span>
                   <span>to your function.</span>
                 </span>
@@ -1178,52 +1183,49 @@ return React.createClass({
 
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
               <div className="border-top border-left border-right border-radius-top pts">
-                <div className="ptxs phm pbm mbs type-s border-bottom">
-                  <Collapsible revealWhen={!this.getAWSConfig()}>
-                    <span className="mrs">Add integration:</span>
-                    <button type="button" className="button-s" onClick={this.onAddAWSConfig}>
-                      Amazon Web Services (AWS)
-                    </button>
+                <div className="ptxs type-s">
+                  <div className="phm mbm">
+                    <APISelectorMenu
+                      openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
+                      onAWSClick={this.toggleAWSConfig}
+                      awsCheckedWhen={!!this.getAWSConfig()}
+                      toggle={this.toggleAPISelectorMenu}
+                      allOAuth2Applications={this.getAllOAuth2Applications()}
+                      requiredOAuth2Applications={this.getRequiredOAuth2Applications()}
+                      onAddOAuth2Application={this.onAddOAuth2Application}
+                      onRemoveOAuth2Application={this.onRemoveOAuth2Application}
+                      />
+                  </div>
 
-                    {this.getAllOAuth2Applications().map(function(app, index) {
-                      if (this.isRequiredOAuth2Application(app)) {
-                        return (
-                          <a className="phm" key={"oauth2-app-" + index} onClick={this.onRemoveOAuth2Application.bind(this, index)}>{app.displayName} ✓</a>
-                        );
-                      } else {
-                        return (
-                          <a className="phm" key={"oauth2-app-" + index} onClick={this.onAddOAuth2Application.bind(this, index)}>{app.displayName}</a>
-                        );
-                      }
-                    }.bind(this))}
-
-                  </Collapsible>
                   <Collapsible revealWhen={!!this.getAWSConfig()}>
-                    <AWSConfig
-                      envVariableNames={this.getEnvVariableNames()}
-                      accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                      secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                      regionName={this.getAWSConfigProperty('regionName')}
-                      onAddNew={this.onAWSAddNewEnvVariable}
-                      onChange={this.onAWSConfigChange}
-                      onRemoveAWSConfig={this.onRemoveAWSConfig}
-                      onToggleHelp={this.toggleAWSHelp}
-                      helpVisible={this.getActivePanel() === 'helpForAWS'}
-                    />
+                    <div className="phm pbs mbs border-bottom">
+                      <AWSConfig
+                        envVariableNames={this.getEnvVariableNames()}
+                        accessKeyName={this.getAWSConfigProperty('accessKeyName')}
+                        secretKeyName={this.getAWSConfigProperty('secretKeyName')}
+                        regionName={this.getAWSConfigProperty('regionName')}
+                        onAddNew={this.onAWSAddNewEnvVariable}
+                        onChange={this.onAWSConfigChange}
+                        onRemoveAWSConfig={this.onRemoveAWSConfig}
+                        onToggleHelp={this.toggleAWSHelp}
+                        helpVisible={this.getActivePanel() === 'helpForAWS'}
+                      />
+                    </div>
                   </Collapsible>
                 </div>
 
                 <CodeHeader
                   ref="codeHeader"
-                  hasParams={this.hasParams()}
-                  params={this.getBehaviorParams()}
+                  shouldExpandParams={this.hasUserParameters()}
                   onParamChange={this.updateParamAtIndexWithParam}
                   onParamDelete={this.deleteParamAtIndex}
                   onParamAdd={this.addParam}
                   onEnterKey={this.onParamEnterKey}
                   helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
                   onToggleHelp={this.toggleBoilerplateHelp}
-                  builtInParams={this.getBuiltinParams()}
+                  userParams={this.getBehaviorParams()}
+                  systemParams={this.getSystemParams()}
+                  apiParams={this.getAPIParams()}
                 />
               </div>
 

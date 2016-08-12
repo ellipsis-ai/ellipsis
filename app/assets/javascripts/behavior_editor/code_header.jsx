@@ -7,15 +7,16 @@ var React = require('react'),
 return React.createClass({
   mixins: [BehaviorEditorMixin],
   propTypes: {
-    hasParams: React.PropTypes.bool,
+    shouldExpandParams: React.PropTypes.bool,
     helpVisible: React.PropTypes.bool,
     onEnterKey: React.PropTypes.func.isRequired,
     onParamAdd: React.PropTypes.func.isRequired,
     onParamChange: React.PropTypes.func.isRequired,
     onParamDelete: React.PropTypes.func.isRequired,
     onToggleHelp: React.PropTypes.func.isRequired,
-    params: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-    builtInParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+    userParams: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+    systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    apiParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
   },
   onChange: function(index, data) {
     this.props.onParamChange(index, data);
@@ -30,18 +31,37 @@ return React.createClass({
     this.refs['param' + index].focus();
   },
   boilerplateLineNumber: function() {
-    return this.props.hasParams ? this.props.params.length + 2 : 1;
+    return this.props.shouldExpandParams ? this.props.userParams.length + 2 : 1;
   },
   boilerplateLine: function() {
-    return this.props.hasParams ?
-      (<span className="pll">{this.props.builtInParams.join(", ") + " "}</span>) :
-      "function(" + this.props.builtInParams.join(", ") + ") { ";
+    var systemParamString = this.props.systemParams.join(", ");
+    if (this.props.apiParams.length > 0) {
+      systemParamString += ", ";
+    }
+    var apiParamString = this.props.apiParams.join(", ");
+    if (this.props.shouldExpandParams) {
+      return (
+        <span className="plm">
+          <span>{systemParamString} </span>
+          <span className="type-black">{apiParamString} </span>
+        </span>
+      );
+    } else {
+      return (
+        <span>
+          <span>function(</span>
+          <span>{systemParamString}</span>
+          <span className="type-black">{apiParamString}</span>
+          <span>{") { "}</span>
+        </span>
+      );
+    }
   },
   render: function() {
     return (
       <div>
 
-        <div className={this.props.hasParams ? "" : "display-none"}>
+        <div className={this.props.shouldExpandParams ? "" : "display-none"}>
           <div className="columns columns-elastic">
             <div className="column column-shrink plxxxl prn align-r position-relative">
               <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>
@@ -52,7 +72,7 @@ return React.createClass({
           </div>
         </div>
 
-        {this.props.params.map(function(param, paramIndex) {
+        {this.props.userParams.map(function(param, paramIndex) {
           return (
             <div key={'paramContainer' + paramIndex} className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">
@@ -80,7 +100,7 @@ return React.createClass({
             <span className="button-symbol-placeholder" />
           </div>
           <div className="column">
-            <div className="columns columns-elastic pbs">
+            <div className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">
                 <code className="type-disabled type-s position-absolute position-top-right prxs">{this.boilerplateLineNumber()}</code>
               </div>
@@ -92,7 +112,7 @@ return React.createClass({
           </div>
         </div>
 
-        <div className={this.props.hasParams ? "" : "display-none"}>
+        <div className={this.props.shouldExpandParams ? "" : "display-none"}>
           <div className="columns columns-elastic pbs">
             <div className="column column-shrink plxxxl prn align-r position-relative">
               <code className="type-disabled type-s position-absolute position-top-right prxs">{(this.boilerplateLineNumber() + 1)}</code>

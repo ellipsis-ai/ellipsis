@@ -168,10 +168,10 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
         onMouseLeave={this.onMouseLeave}
       >
         {typeof(this.props.checkedWhen) !== 'undefined' ?
-          (<span className={"mrxs " + this.visibleWhen(this.props.checkedWhen)}>✓</span>) :
+          (<span className={"mrxs display-inline-block align-m " + this.visibleWhen(this.props.checkedWhen)}>✓</span>) :
           null
         }
-        <span className={this.props.checkedWhen ? "type-bold" : ""}>{this.props.label}</span>
+        <span className={"display-inline-block align-m " + (this.props.checkedWhen ? "type-bold" : "")}>{this.props.label}</span>
       </button>
     );
   }
