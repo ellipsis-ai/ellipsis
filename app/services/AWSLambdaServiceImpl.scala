@@ -124,7 +124,7 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private def accessTokenCodeFor(app: RequiredOAuth2Application): String = {
-    s"""var ${app.application.parameterName} = ${s"event.$CONTEXT_PARAM"}.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken;"""
+    s"""var ${app.application.parameterName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken;"""
   }
 
   private def accessTokensCodeFor(requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {
