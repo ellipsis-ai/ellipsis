@@ -124,19 +124,11 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private def accessTokenCodeFor(app: RequiredOAuth2Application): String = {
-    s""""${app.application.name}": ${s"event.$CONTEXT_PARAM"}.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken"""
+    s"""var ${app.application.parameterName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken;"""
   }
 
   private def accessTokensCodeFor(requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {
-    if (requiredOAuth2Applications.isEmpty) {
-      ""
-    } else {
-      s"""
-         |var accessTokens = {
-         |  ${requiredOAuth2Applications.map(accessTokenCodeFor).mkString(",\n")}
-         |};
-       """.stripMargin
-    }
+    requiredOAuth2Applications.map(accessTokenCodeFor).mkString("\n")
   }
 
   private def nodeCodeFor(functionBody: String, params: Array[String], behaviorVersion: BehaviorVersion, maybeAwsConfig: Option[AWSConfig], requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {

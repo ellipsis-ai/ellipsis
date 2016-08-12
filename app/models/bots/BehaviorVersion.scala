@@ -96,11 +96,7 @@ case class BehaviorVersion(
   }
 
   def accessTokenParamsFor(requiredOAuth2Applications: Seq[RequiredOAuth2Application]): Array[String] = {
-    if (requiredOAuth2Applications.isEmpty) {
-      Array()
-    } else {
-      Array("accessTokens")
-    }
+    requiredOAuth2Applications.map(_.application.parameterName).toArray
   }
 
   def functionWithParams(params: Array[String], awsParams: Array[String], accessTokenParams: Array[String]): String = {

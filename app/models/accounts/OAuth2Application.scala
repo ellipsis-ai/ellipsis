@@ -1,6 +1,7 @@
 package models.accounts
 
 import models.{Team, IDs}
+import org.apache.commons.lang.WordUtils
 import play.api.libs.ws.{WSRequest, WSClient}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -47,6 +48,8 @@ case class OAuth2Application(
       "grant_type" -> "refresh_token"
     )
   }
+
+  def parameterName: String = WordUtils.capitalize(name).replaceAll("\\s", "").toLowerCase ++ "Token"
 
   def toRaw = RawOAuth2Application(
     id,
