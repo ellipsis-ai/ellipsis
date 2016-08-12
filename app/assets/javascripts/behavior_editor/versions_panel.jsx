@@ -1,7 +1,6 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  DropdownMenu = require('./dropdown_menu'),
   Formatter = require('../formatter');
 
 return React.createClass({
@@ -53,23 +52,21 @@ return React.createClass({
           return null;
         } else {
           return (
-            <DropdownMenu.Item
+            <option
               key={"version" + index}
-              onClick={this.selectVersionIndex.bind(this, index)}
-              checkedWhen={this.getSelectedVersionIndex() === index}
-              label={this.getVersionText(index)}
-            />
+              value={index}
+            >{this.getVersionText(index)}</option>
           );
         }
       }, this);
     } else {
       return (
-        <DropdownMenu.Item label="Loading…" />
+        <option value="">Loading…</option>
       );
     }
   },
   getVersionNumberForIndex: function(index) {
-    return (this.props.versions.length - index) + '. ';
+    return 'v' + (this.props.versions.length - index) + '. ';
   },
   cancel: function() {
     this.props.onCancelClick();
@@ -93,6 +90,12 @@ return React.createClass({
     var selectedIndex = this.getSelectedVersionIndex();
     if (selectedIndex + 1 < this.props.versions.length) {
       this.selectVersionIndex(selectedIndex + 1);
+    }
+  },
+  onSelectVersion: function(event) {
+    var newIndex = parseInt(event.target.value, 10);
+    if (!isNaN(newIndex)) {
+      this.selectVersionIndex(newIndex);
     }
   },
   selectNewestVersion: function() {
@@ -135,19 +138,13 @@ return React.createClass({
                 onClick={this.incrementSelectedIndex}
                 title="Previous version"
               >◄</button>
-              <div className="display-inline-block position-relative mbs">
-                <DropdownMenu
-                  openWhen={this.props.openMenuWhen}
-                  label={this.getVersionText(this.getSelectedVersionIndex())}
-                  labelClassName="button-dropdown-trigger-menu-above button-dropdown-trigger-wide mrs"
-                  menuClassName="popup-dropdown-menu-above popup-dropdown-menu-wide"
-                  onDownArrow={this.incrementSelectedIndex}
-                  onUpArrow={this.decrementSelectedIndex}
-                  toggle={this.props.menuToggle}
-                >
-                  {this.getVersionsMenu()}
-                </DropdownMenu>
-              </div>
+              <select
+                className="form-select mrs mbs"
+                onChange={this.onSelectVersion}
+                value={this.getSelectedVersionIndex()}
+              >
+                {this.getVersionsMenu()}
+              </select>
               <button type="button" disabled={this.newestVersionSelected()}
                 className="button-symbol mrs mbs"
                 onClick={this.decrementSelectedIndex}
