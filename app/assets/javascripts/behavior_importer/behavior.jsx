@@ -66,13 +66,13 @@ define(function(require) {
     getInstallButton: function() {
       if (this.isImporting()) {
         return (
-          <button title="Installing, please wait…" type="button" className="button-raw button-s">
+          <button title="Installing, please wait…" type="button" className="button-raw button-s" disabled="disabled">
             <SVGInstalling />
           </button>
         );
       } else if (this.behaviorAlreadyImported()) {
         return (
-          <button title="Already installed" type="button" className="button-raw button-s" onClick={this.importBehavior}>
+          <button title="Already installed" type="button" className="button-raw button-s" disabled="disabled">
             <SVGInstalled />
           </button>
         );
