@@ -72,7 +72,7 @@ define(function(require) {
         );
       } else if (this.behaviorAlreadyImported()) {
         return (
-          <button title="Already installed" type="button" className="button-raw button-s" onClick={this.importBehavior}>
+          <button title="Already installed" type="button" className="button-raw button-s">
             <SVGInstalled />
           </button>
         );
