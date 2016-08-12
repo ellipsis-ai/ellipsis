@@ -1,7 +1,6 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  DropdownMenu = require('./dropdown_menu'),
   Formatter = require('../formatter');
 
 return React.createClass({
@@ -53,23 +52,21 @@ return React.createClass({
           return null;
         } else {
           return (
-            <DropdownMenu.Item
+            <option
               key={"version" + index}
-              onClick={this.selectVersionIndex.bind(this, index)}
-              checkedWhen={this.getSelectedVersionIndex() === index}
-              label={this.getVersionText(index)}
-            />
+              value={index}
+            >{this.getVersionText(index)}</option>
           );
         }
       }, this);
     } else {
       return (
-        <DropdownMenu.Item label="Loading…" />
+        <option value="">Loading…</option>
       );
     }
   },
   getVersionNumberForIndex: function(index) {
-    return (this.props.versions.length - index) + '. ';
+    return 'v' + (this.props.versions.length - index) + '. ';
   },
   cancel: function() {
     this.props.onCancelClick();
@@ -93,6 +90,12 @@ return React.createClass({
     var selectedIndex = this.getSelectedVersionIndex();
     if (selectedIndex + 1 < this.props.versions.length) {
       this.selectVersionIndex(selectedIndex + 1);
+    }
+  },
+  onSelectVersion: function(event) {
+    var newIndex = parseInt(event.target.value, 10);
+    if (!isNaN(newIndex)) {
+      this.selectVersionIndex(newIndex);
     }
   },
   selectNewestVersion: function() {
@@ -125,39 +128,33 @@ return React.createClass({
         <div className="container phn">
           <div className="columns">
             <div className="column">
-              <button type="button" disabled={this.oldestVersionSelected()}
-                className="button-symbol mrs mbs"
-                onClick={this.selectOldestVersion}
-                title="Initial version"
-              >|◄</button>
-              <button type="button" disabled={this.oldestVersionSelected()}
-                className="button-symbol mrs mbs"
-                onClick={this.incrementSelectedIndex}
-                title="Previous version"
-              >◄</button>
-              <div className="display-inline-block position-relative mbs">
-                <DropdownMenu
-                  openWhen={this.props.openMenuWhen}
-                  label={this.getVersionText(this.getSelectedVersionIndex())}
-                  labelClassName="button-dropdown-trigger-menu-above button-dropdown-trigger-wide mrs"
-                  menuClassName="popup-dropdown-menu-above popup-dropdown-menu-wide"
-                  onDownArrow={this.incrementSelectedIndex}
-                  onUpArrow={this.decrementSelectedIndex}
-                  toggle={this.props.menuToggle}
+              <div>
+                <button type="button" disabled={this.oldestVersionSelected()}
+                  className="mrs mbs"
+                  onClick={this.selectOldestVersion}
+                >|◄ Initial</button>
+                <button type="button" disabled={this.oldestVersionSelected()}
+                  className="mrs mbs"
+                  onClick={this.incrementSelectedIndex}
+                >◄ Previous</button>
+                <button type="button" disabled={this.newestVersionSelected()}
+                  className="mrs mbs"
+                  onClick={this.decrementSelectedIndex}
+                >Next ►</button>
+                <button type="button" disabled={this.newestVersionSelected()}
+                  className="mrs mbs"
+                  onClick={this.selectNewestVersion}
+                >Current ►|</button>
+              </div>
+              <div>
+                <select
+                  className="form-select width-30 mrs mbs"
+                  onChange={this.onSelectVersion}
+                  value={this.getSelectedVersionIndex()}
                 >
                   {this.getVersionsMenu()}
-                </DropdownMenu>
+                </select>
               </div>
-              <button type="button" disabled={this.newestVersionSelected()}
-                className="button-symbol mrs mbs"
-                onClick={this.decrementSelectedIndex}
-                title="Next version"
-              >►</button>
-              <button type="button" disabled={this.newestVersionSelected()}
-                className="button-symbol mrs mbs"
-                onClick={this.selectNewestVersion}
-                title="Current version"
-              >►|</button>
             </div>
             <div className="column column-right align-r mobile-column-full mobile-align-l">
               <button type="button" disabled={this.currentVersionSelected()}
