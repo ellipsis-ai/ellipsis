@@ -156,7 +156,7 @@ class ApplicationController @Inject() (
             "",
             Seq(),
             Seq(),
-            BehaviorConfig(None, None, Seq()),
+            BehaviorConfig(None, None, None),
             None,
             None,
             None
@@ -324,9 +324,9 @@ class ApplicationController @Inject() (
                 AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
               }
             }
-            val requiredOAuth2ApplicationsData = requiredOAuth2ApplicationsByVersion.get(version).map { apps =>
+            val maybeRequiredOAuth2ApplicationsData = requiredOAuth2ApplicationsByVersion.get(version).map { apps =>
               apps.map(ea => OAuth2ApplicationData.from(ea.application))
-            }.getOrElse(Seq())
+            }
             BehaviorVersionData.buildFor(
               version.team.id,
               Some(behavior.id),
@@ -342,7 +342,7 @@ class ApplicationController @Inject() (
                   BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
                 }
               }.getOrElse(Seq()),
-              BehaviorConfig(None, maybeAwsConfigData, requiredOAuth2ApplicationsData),
+              BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApplicationsData),
               behavior.maybeImportedId,
               None,
               Some(version.createdAt)
