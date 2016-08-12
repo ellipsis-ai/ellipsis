@@ -268,7 +268,7 @@ object BehaviorVersionQueries {
           maybeAWSConfig <- data.awsConfig.map { c =>
             AWSConfigQueries.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
           }.getOrElse(DBIO.successful(None))
-          requiredOAuth2Applications <- DBIO.sequence(data.config.requiredOAuth2Applications.map { appData =>
+          requiredOAuth2Applications <- DBIO.sequence(data.config.requiredOAuth2Applications.getOrElse(Seq()).map { appData =>
             RequiredOAuth2ApplicationQueries.maybeCreateFor(appData, updated)
           }).map(_.flatten)
           _ <- DBIO.from(lambdaService.deployFunctionFor(
