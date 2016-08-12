@@ -183,7 +183,7 @@ return React.createClass({
     if (this.getAWSConfig() !== undefined) {
       params = params.concat(["AWS"]);
     }
-    params = params.concat(this.getRequiredOAuth2Applications().map((ea) => ea.parameterName));
+    params = params.concat(this.getRequiredOAuth2Applications().map(function(ea) { return ea.parameterName; }));
     return params;
   },
 
