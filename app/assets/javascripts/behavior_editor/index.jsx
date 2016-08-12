@@ -66,7 +66,8 @@ return React.createClass({
       requiredOAuth2Applications: React.PropTypes.arrayOf(
         React.PropTypes.shape({
           applicationId: React.PropTypes.string,
-          displayName: React.PropTypes.string
+          displayName: React.PropTypes.string,
+          parameterName: React.PropTypes.string
         })
       )
     }),
@@ -182,9 +183,7 @@ return React.createClass({
     if (this.getAWSConfig() !== undefined) {
       params = params.concat(["AWS"]);
     }
-    if (this.getRequiredOAuth2Applications().length > 0) {
-      params = params.concat(["accessTokens"]);
-    }
+    params = params.concat(this.getRequiredOAuth2Applications().map((ea) => ea.parameterName));
     return params;
   },
 
