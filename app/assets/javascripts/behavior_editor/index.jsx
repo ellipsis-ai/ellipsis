@@ -828,10 +828,6 @@ return React.createClass({
     return this.getBehaviorTriggers().length > 1;
   },
 
-  shouldExpandParams: function() {
-    return this.hasUserParameters() || !!this.getAWSConfig() || this.getRequiredOAuth2Applications().length > 0;
-  },
-
   hasPrimaryTrigger: function() {
     var triggers = this.getBehaviorTriggers();
     return triggers.length > 0 && triggers[0];
