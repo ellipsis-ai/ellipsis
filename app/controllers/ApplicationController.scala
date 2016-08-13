@@ -39,8 +39,8 @@ class ApplicationController @Inject() (
                                         val testReportBuilder: BehaviorTestReportBuilder,
                                         val ws: WSClient,
                                         val cache: CacheApi,
-                                        socialProviderRegistry: SocialProviderRegistry)
-  extends Silhouette[User, CookieAuthenticator] {
+                                        val socialProviderRegistry: SocialProviderRegistry)
+  extends ReAuthable {
 
   def index(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
@@ -80,22 +80,6 @@ class ApplicationController @Inject() (
       val githubService = GithubService(team, ws, configuration, cache)
       PublishedBehaviorInfo(githubService.publishedBehaviorCategories, installedBehaviors)
     }
-  }
-
-  private def reAuthLinkFor(request: RequestHeader, maybeTeamId: Option[String]) = {
-    routes.SocialAuthController.authenticateSlack(
-      Some(request.uri),
-      maybeTeamId,
-      None
-    )
-  }
-
-  private def withAuthDiscarded(request: SecuredRequest[AnyContent], result: Result)(implicit r: RequestHeader) = {
-    DBIO.from(env.authenticatorService.discard(request.authenticator, result))
-  }
-
-  private def reAuthFor(request: SecuredRequest[AnyContent], maybeTeamId: Option[String])(implicit r: RequestHeader) = {
-    withAuthDiscarded(request, Redirect(reAuthLinkFor(request, maybeTeamId)))
   }
 
   def intro(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>

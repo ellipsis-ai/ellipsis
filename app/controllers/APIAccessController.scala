@@ -27,8 +27,8 @@ class APIAccessController @Inject() (
                                         val ws: WSClient,
                                         val cache: CacheApi,
                                         val eventHandler: EventHandler,
-                                        socialProviderRegistry: SocialProviderRegistry)
-  extends Silhouette[User, CookieAuthenticator] {
+                                        val socialProviderRegistry: SocialProviderRegistry)
+  extends ReAuthable {
 
   private def getToken(code: String, authConfig: OAuth2Application, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {
     val tokenResponse =
@@ -60,21 +60,22 @@ class APIAccessController @Inject() (
     val user = request.identity
     val action = for {
       maybeAuthConfig <- OAuth2ApplicationQueries.find(configId)
-      maybeTeam <- maybeAuthConfig.map { config =>
-        Team.find(config.teamId, user)
-      }.getOrElse(DBIO.successful(None))
-      result <- (for {
-        authConfig <- maybeAuthConfig
-        code <- codeOpt
-        state <- stateOpt
-        oauthState <- request.session.get("oauth-state")
-      } yield {
-          if (state == oauthState) {
-            val redirect = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id, None, None, maybeInvocationId).absoluteURL(secure=true)
-            getToken(code, authConfig, user, redirect).map { maybeLinkedToken =>
-              maybeLinkedToken.
-                map { _ =>
-                request.session.get("invocation-id").flatMap { invocationId =>
+      isLoggedInToCorrectTeam <- maybeAuthConfig.map { config =>
+        Team.find(config.teamId, user).map(_.isDefined)
+      }.getOrElse(DBIO.successful(false))
+      result <- if (isLoggedInToCorrectTeam) {
+        (for {
+          authConfig <- maybeAuthConfig
+          code <- codeOpt
+          state <- stateOpt
+          oauthState <- request.session.get("oauth-state")
+        } yield {
+            if (state == oauthState) {
+              val redirect = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id, None, None, maybeInvocationId).absoluteURL(secure=true)
+              getToken(code, authConfig, user, redirect).map { maybeLinkedToken =>
+                maybeLinkedToken.
+                  map { _ =>
+                  request.session.get("invocation-id").flatMap { invocationId =>
                     cache.get[MessageEvent](invocationId).map { event =>
                       eventHandler.handle(event)
                       Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.context.name}."))
@@ -83,19 +84,22 @@ class APIAccessController @Inject() (
                     Redirect(routes.APIAccessController.authenticated(s"You are now authenticated and can try again."))
                   }
                 }.
-                getOrElse(BadRequest("boom"))
+                  getOrElse(BadRequest("boom"))
+              }
+            } else {
+              DBIO.successful(BadRequest("Invalid state"))
             }
-          } else {
-            DBIO.successful(BadRequest("Invalid state"))
-          }
-        }).getOrElse {
-        maybeAuthConfig.map { authConfig =>
-          val state = IDs.next
-          val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id, None, None, None).absoluteURL(secure=true)
-          val redirect = authConfig.authorizationRequestFor(state, redirectParam, ws).uri.toString
-          val sessionState = Seq(Some("oauth-state" -> state), maybeInvocationId.map(id => "invocation-id" -> id)).flatten
-          DBIO.successful(Redirect(redirect).withSession(sessionState: _*))
-        }.getOrElse(DBIO.successful(NotFound("Bad team/config")))
+          }).getOrElse {
+          maybeAuthConfig.map { authConfig =>
+            val state = IDs.next
+            val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id, None, None, None).absoluteURL(secure=true)
+            val redirect = authConfig.authorizationRequestFor(state, redirectParam, ws).uri.toString
+            val sessionState = Seq(Some("oauth-state" -> state), maybeInvocationId.map(id => "invocation-id" -> id)).flatten
+            DBIO.successful(Redirect(redirect).withSession(sessionState: _*))
+          }.getOrElse(DBIO.successful(NotFound("Bad team/config")))
+        }
+      } else {
+        reAuthFor(request, maybeAuthConfig.map(_.teamId))
       }
     } yield result
 
