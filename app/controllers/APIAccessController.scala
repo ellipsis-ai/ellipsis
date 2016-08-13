@@ -5,10 +5,12 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{Silhouette, Environment}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import models.bots.{MessageEvent, EventHandler}
 import models.{IDs, Team, Models}
 import models.accounts.{OAuth2ApplicationQueries, LinkedOAuth2Token, OAuth2Application, User}
 import org.joda.time.DateTime
 import play.api.Configuration
+import play.api.cache.CacheApi
 import play.api.http.{MimeTypes, HeaderNames}
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
@@ -23,10 +25,12 @@ class APIAccessController @Inject() (
                                         val configuration: Configuration,
                                         val models: Models,
                                         val ws: WSClient,
+                                        val cache: CacheApi,
+                                        val eventHandler: EventHandler,
                                         socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
-  def getToken(code: String, authConfig: OAuth2Application, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {
+  private def getToken(code: String, authConfig: OAuth2Application, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {
     val tokenResponse =
       authConfig.accessTokenRequestFor(code, redirectUrl, ws).
         withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
@@ -47,7 +51,12 @@ class APIAccessController @Inject() (
     }
   }
 
-  def linkCustomOAuth2Service(configId: String, codeOpt: Option[String] = None, stateOpt: Option[String] = None) = SecuredAction.async { implicit request =>
+  def linkCustomOAuth2Service(
+                               configId: String,
+                               codeOpt: Option[String],
+                               stateOpt: Option[String],
+                               maybeInvocationId: Option[String]
+                               ) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       maybeAuthConfig <- OAuth2ApplicationQueries.find(configId)
@@ -61,10 +70,19 @@ class APIAccessController @Inject() (
         oauthState <- request.session.get("oauth-state")
       } yield {
           if (state == oauthState) {
-            val redirect = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id).absoluteURL(secure=true)
+            val redirect = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id, None, None, maybeInvocationId).absoluteURL(secure=true)
             getToken(code, authConfig, user, redirect).map { maybeLinkedToken =>
               maybeLinkedToken.
-                map { _ => Redirect(routes.ApplicationController.index()) }.
+                map { _ =>
+                request.session.get("invocation-id").flatMap { invocationId =>
+                    cache.get[MessageEvent](invocationId).map { event =>
+                      eventHandler.handle(event)
+                      Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.context.name}."))
+                    }
+                  }.getOrElse {
+                    Redirect(routes.APIAccessController.authenticated(s"You are now authenticated and can try again."))
+                  }
+                }.
                 getOrElse(BadRequest("boom"))
             }
           } else {
@@ -73,14 +91,19 @@ class APIAccessController @Inject() (
         }).getOrElse {
         maybeAuthConfig.map { authConfig =>
           val state = IDs.next
-          val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id).absoluteURL(secure=true)
+          val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id, None, None, None).absoluteURL(secure=true)
           val redirect = authConfig.authorizationRequestFor(state, redirectParam, ws).uri.toString
-          DBIO.successful(Redirect(redirect).withSession("oauth-state" -> state))
+          val sessionState = Seq(Some("oauth-state" -> state), maybeInvocationId.map(id => "invocation-id" -> id)).flatten
+          DBIO.successful(Redirect(redirect).withSession(sessionState: _*))
         }.getOrElse(DBIO.successful(NotFound("Bad team/config")))
       }
     } yield result
 
     models.run(action)
+  }
+
+  def authenticated(message: String) = SecuredAction { implicit request =>
+    Ok(views.html.authenticated(message))
   }
 
 

@@ -33,7 +33,8 @@ POST        /sign_out                                 @controllers.SocialAuthCon
 GET         /add_to_slack                             @controllers.SlackController.add
 GET         /sign_in_with_slack                       @controllers.SlackController.signIn(redirect: Option[String] ?= None)
 
-GET         /link_oauth2/:configId                    @controllers.APIAccessController.linkCustomOAuth2Service(configId: String, code: Option[String] ?= None, state: Option[String] ?= None)
+GET         /link_oauth2/:configId                    @controllers.APIAccessController.linkCustomOAuth2Service(configId: String, code: Option[String], state: Option[String], invocationId: Option[String])
+GET         /authenticated/:message                   @controllers.APIAccessController.authenticated(message: String)
 
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp

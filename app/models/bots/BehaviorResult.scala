@@ -1,12 +1,16 @@
 package models.bots
 
+import models.IDs
 import models.accounts.OAuth2Application
 import models.bots.templates.TemplateApplier
 import play.api.Configuration
+import play.api.cache.CacheApi
 import play.api.libs.json.{JsDefined, JsString, JsValue}
 import services.AWSLambdaConstants._
 import services.AWSLambdaLogResult
 import scala.concurrent.ExecutionContext.Implicits.global
+
+import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
@@ -126,22 +130,30 @@ class AWSDownResult extends BehaviorResult {
 
 }
 
-case class OAuth2TokenMissing(oAuth2Application: OAuth2Application, configuration: Configuration) extends BehaviorResult {
+case class OAuth2TokenMissing(
+                               oAuth2Application: OAuth2Application,
+                               event: MessageEvent,
+                               cache: CacheApi,
+                               configuration: Configuration
+                               ) extends BehaviorResult {
+
+  val key = IDs.next
 
   val resultType = ResultType.OAuth2TokenMissing
 
-  def maybeAuthLink: Option[String] = {
+  def authLink: String = {
     configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id)
+      val path = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key))
       s"$baseUrl$path"
-    }
+    }.getOrElse("")
   }
 
   def text: String = {
-    s"""
-       |To use this behavior, you need to authenticate with ${oAuth2Application.name}:
-       |
-       |${maybeAuthLink.getOrElse("")}
-    """.stripMargin
+    s"To use this behavior, you need to [authenticate with ${oAuth2Application.name}]($authLink)"
+  }
+
+  override def sendIn(context: MessageContext): Unit = {
+    cache.set(key, event, 5.minutes)
+    super.sendIn(context)
   }
 }
