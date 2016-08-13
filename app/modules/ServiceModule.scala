@@ -4,6 +4,7 @@ import com.google.inject.{Provides, AbstractModule}
 import models.Models
 import models.bots.{BehaviorTestReportBuilder, EventHandler}
 import play.api.Configuration
+import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import services._
@@ -19,8 +20,8 @@ class ServiceModule extends AbstractModule with ScalaModule {
   }
 
   @Provides
-  def provideAWSLambdaService(configuration: Configuration, models: Models, ws: WSClient): AWSLambdaService = {
-    new AWSLambdaServiceImpl(configuration, models, ws)
+  def provideAWSLambdaService(configuration: Configuration, models: Models, ws: WSClient, cache: CacheApi): AWSLambdaService = {
+    new AWSLambdaServiceImpl(configuration, models, ws, cache)
   }
 
   @Provides

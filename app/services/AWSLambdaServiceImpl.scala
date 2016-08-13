@@ -10,6 +10,7 @@ import models.bots.config.{RequiredOAuth2ApplicationQueries, RequiredOAuth2Appli
 import models.{EnvironmentVariable, Models, InvocationToken}
 import models.bots._
 import play.api.Configuration
+import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import sun.misc.BASE64Decoder
@@ -23,7 +24,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class AWSLambdaServiceImpl @Inject() (
                                        val configuration: Configuration,
                                        val models: Models,
-                                       ws: WSClient
+                                       val ws: WSClient,
+                                       val cache: CacheApi
                                        ) extends AWSLambdaService {
 
   import AWSLambdaConstants._
@@ -68,7 +70,7 @@ class AWSLambdaServiceImpl @Inject() (
             !userInfo.links.exists(_.externalSystem == ea.application.name)
           })
           result <- missingOAuth2Applications.headOption.map { firstMissingOAuth2App =>
-            Future.successful(OAuth2TokenMissing(firstMissingOAuth2App.application, configuration))
+            Future.successful(OAuth2TokenMissing(firstMissingOAuth2App.application, event, cache, configuration))
           }.getOrElse {
             val payloadJson = JsObject(
               parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
