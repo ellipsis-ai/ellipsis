@@ -6,7 +6,7 @@ return React.createClass({
     return (
       <svg aria-label="Install" height="100%" viewBox="0 0 40 24">
         <title>Install</title>
-        <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Symbols" stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
           <g id="install">
             <g id="Group-3" transform="translate(2.500000, -2.170000)">
               <path d="M9,10.6934663 L9,18.6934663 L0,25.6934663 L28.5000539,25.6934663 C28.5000539,25.6934663 35.0000005,24.6934663 35.0000005,17.6934663 L35.0000005,10.6934663 C35.0000005,3.6934663 28.5000539,2.6934663 28.5000539,2.6934663 L18,2.6934663" id="Path-4" stroke="currentColor" stroke-linecap="square"></path>

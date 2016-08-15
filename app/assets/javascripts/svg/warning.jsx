@@ -12,7 +12,7 @@ return React.createClass({
     return (
       <svg role="img" aria-label={this.label()} height="100%" viewBox="0 0 22 24">
         <title>{this.label()}</title>
-        <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Page-1" stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
           <g id="warning">
             <path d="M11,22 C16.5228475,22 21,17.5228475 21,12 C21,6.4771525 16.5228475,2 11,2 C5.4771525,2 1,6.4771525 1,12 C1,17.5228475 5.4771525,22 11,22 Z" id="Combined-Shape" fill="currentColor"></path>
             <polygon id="!" fill="#FFFFFF" points="10.0433789 13.6816402 11.9633789 13.6816402 12.38 8.26 12.48 5.6 9.52 5.6 9.62 8.26"></polygon>
