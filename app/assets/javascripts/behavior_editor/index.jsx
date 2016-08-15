@@ -829,7 +829,7 @@ return React.createClass({
 
   hasPrimaryTrigger: function() {
     var triggers = this.getBehaviorTriggers();
-    return !!(triggers.length > 0 && triggers[0]);
+    return !!(triggers.length > 0 && triggers[0].text);
   },
 
   hasUserParameters: function() {
