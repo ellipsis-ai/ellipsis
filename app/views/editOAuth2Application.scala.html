@@ -1,6 +1,6 @@
 @(
   maybeUser: Option[models.accounts.User],
-  config: models.accounts.OAuth2Application,
+  application: models.accounts.OAuth2Application,
   team: models.Team
   )(implicit messages: Messages, r: RequestHeader)
 
@@ -14,20 +14,21 @@
 
       <form action="@routes.ApplicationController.saveOAuth2Application()" method="POST">
         @CSRF.formField
+        <input type="hidden" name="id" value="@application.id"/>
         <input type="hidden" name="teamId" value="@team.id"/>
-        <input type="hidden" name="apiId" value="@config.api.id"/>
+        <input type="hidden" name="apiId" value="@application.api.id"/>
 
         <div class="columns">
           <div class="column column-one-third align-r">Configure for API access on:</div>
           <div class="column column-one-half">
-            @config.api.name
+            @application.api.name
           </div>
         </div>
 
-        @oAuth2Field("Name of this configuration", "name", Some(config.name))
-        @oAuth2Field("Client ID of your application", "clientId", Some(config.clientId))
-        @oAuth2Field("Client secret of your application", "clientSecret", Some(config.clientSecret))
-        @oAuth2Field("Scope of the access you want to request", "scope", config.maybeScope)
+        @oAuth2Field("Name of this configuration", "name", Some(application.name))
+        @oAuth2Field("Client ID of your application", "clientId", Some(application.clientId))
+        @oAuth2Field("Client secret of your application", "clientSecret", Some(application.clientSecret))
+        @oAuth2Field("Scope of the access you want to request", "scope", application.maybeScope)
         <div class="columns">
           <div class="column column-one-third align-r">&nbsp;</div>
           <div class="column column-one-half">
@@ -36,13 +37,13 @@
         </div>
       </form>
 
-      <p>Set the redirect URL in your @config.api.name API settings to:</p>
+      <p>Set the redirect URL in your @application.api.name API settings to:</p>
       <p>
         <input
           type="text"
           readonly="readonly"
           size="100"
-          value="@routes.APIAccessController.linkCustomOAuth2Service(config.id, None, None, None).absoluteURL(secure = true)"
+          value="@routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None).absoluteURL(secure = true)"
         />
       </p>
 
