@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing = Value
+  val Success, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing = Value
 }
 
 sealed trait BehaviorResult {
@@ -47,6 +47,14 @@ case class SuccessResult(
     val inputs = parametersWithValues.map { ea => (ea.parameter.name, JsString(ea.value)) }
     TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply
   }
+}
+
+case class NoResponseResult(logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {
+
+  val resultType = ResultType.NoResponse
+
+  def text: String = ""
+
 }
 
 case class UnhandledErrorResult(logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {

@@ -1,6 +1,7 @@
 package services
 
 object AWSLambdaConstants {
+  val NO_RESPONSE_KEY = "noResponse"
   val ON_SUCCESS_PARAM = "onSuccess"
   val ON_ERROR_PARAM = "onError"
   val CONTEXT_PARAM = "ellipsis"
