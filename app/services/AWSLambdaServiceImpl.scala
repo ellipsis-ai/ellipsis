@@ -114,12 +114,11 @@ class AWSLambdaServiceImpl @Inject() (
     maybeAwsConfig.map { awsConfig =>
       s"""
          |var AWS = require('aws-sdk');
-         |var ellipsis = event.ellipsis;
          |
          |AWS.config.update({
-         |  ${awsConfig.maybeAccessKeyName.map(n => s"accessKeyId: ellipsis.env.$n,").getOrElse("")}
-         |  ${awsConfig.maybeSecretKeyName.map(n => s"secretAccessKey: ellipsis.env.$n,").getOrElse("")}
-         |  ${awsConfig.maybeRegionName.map(n => s"region:  ellipsis.env.$n").getOrElse("")}
+         |  ${awsConfig.maybeAccessKeyName.map(n => s"accessKeyId: $CONTEXT_PARAM.env.$n,").getOrElse("")}
+         |  ${awsConfig.maybeSecretKeyName.map(n => s"secretAccessKey: $CONTEXT_PARAM.env.$n,").getOrElse("")}
+         |  ${awsConfig.maybeRegionName.map(n => s"region: $CONTEXT_PARAM.env.$n").getOrElse("")}
          | });
        """.stripMargin
     }.getOrElse("")
@@ -142,6 +141,10 @@ class AWSLambdaServiceImpl @Inject() (
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
     s"""exports.handler = function(event, context, callback) { var fn = ${behaviorVersion.functionWithParams(params, awsParams, accessTokenParams)};
+      |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
+      |   $CONTEXT_PARAM.noResponse = function() {
+      |     callback(null, { $NO_RESPONSE_KEY: true });
+      |   };
       |   var $ON_SUCCESS_PARAM = function(result) {
       |     callback(null, { "result": result === undefined ? null : result });
       |   };

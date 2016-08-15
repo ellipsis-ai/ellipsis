@@ -159,14 +159,18 @@ case class BehaviorVersion(
     (json \ "result").toOption.map { successResult =>
       SuccessResult(successResult, parametersWithValues, maybeResponseTemplate, logResult)
     }.getOrElse {
-      if (isUnhandledError(json)) {
-        UnhandledErrorResult(logResult)
-      } else if (json.toString == "null") {
-        new NoCallbackTriggeredResult()
-      } else if (isSyntaxError(json)) {
-        SyntaxErrorResult(json, logResult)
+      if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
+        NoResponseResult(logResult)
       } else {
-        HandledErrorResult(json, logResult)
+        if (isUnhandledError(json)) {
+          UnhandledErrorResult(logResult)
+        } else if (json.toString == "null") {
+          new NoCallbackTriggeredResult()
+        } else if (isSyntaxError(json)) {
+          SyntaxErrorResult(json, logResult)
+        } else {
+          HandledErrorResult(json, logResult)
+        }
       }
     }
   }
