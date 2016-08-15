@@ -1,0 +1,60 @@
+@import (reference) "measurements";
+@import (reference) "colors";
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 @m 0;
+  font-weight: normal;
+}
+
+.h1 {
+  font-family: 'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+  font-size: @type-xxl;
+  font-weight: 300;
+  line-height: @xxxxl;
+}
+
+h1 {
+  .h1();
+  margin-top: @xxxxl;
+  color: @blue-faded-dark;
+}
+
+.h2 {
+  font-size: @type-xl;
+  line-height: @xxxl;
+}
+
+h2 {
+  .h2();
+  margin-top: @xxl;
+}
+
+h3 {
+  margin-top: @xl;
+  font-size: @type-l;
+  line-height: @xxl;
+  font-weight: 600;
+}
+
+h4 {
+  font-size: @type-m;
+  line-height: @xl;
+  font-weight: 600;
+}
+
+h5 {
+  font-size: @type-s;
+  line-height: @xl;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-bottom: 0;
+}
+
+h6 {
+  font-size: @type-xs;
+  line-height: @l;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}

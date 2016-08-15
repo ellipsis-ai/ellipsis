@@ -1,0 +1,65 @@
+@import (reference) "colors";
+
+.bg-black {
+  background-color: @black;
+}
+
+.bg-dark-translucent {
+  background-color: @black-translucent;
+}
+
+.bg-blue-dark {
+  background-color: @blue-darkest;
+}
+
+.bg-blue-medium {
+  background-color: @blue-medium-alt;
+}
+
+.bg-blue-lighter {
+  background-color: @blue-lighter;
+}
+
+.bg-blue-lightest {
+  background-color: @blue-lightest;
+}
+
+.bg-lightest {
+  background-color: @almost-white;
+}
+
+.bg-light {
+  background-color: @gray-lightest
+}
+
+.bg-light-translucent {
+  background-color: @gray-lightest-translucent;
+}
+
+.bg-white {
+  background-color: @white;
+}
+
+.bg-green {
+  background-color: @green-lightest;
+}
+
+.bg-scrim {
+  background-color: @gray-light-translucent;
+}
+
+.bg-yellow {
+  background-color: @yellow-lighter;
+}
+
+.bg-pink {
+  background-color: @pink-dark;
+}
+
+@bg_logo_url: url(/assets/images/bg_logo.png);
+.bg-large-logo {
+  background-image: @bg_logo_url, @bg_logo_url, @bg_logo_url, @bg_logo_url;
+  background-size: 800px 500px;
+  background-repeat: repeat;
+  background-position: -50px -110px, 210px -50px, 390px -5px, -220px -70px;
+}

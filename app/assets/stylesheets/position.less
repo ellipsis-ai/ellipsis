@@ -1,0 +1,68 @@
+@import (reference) "measurements";
+
+.position-absolute {
+  position: absolute;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.position-top-left {
+  top: 0;
+  left: 0;
+}
+
+.position-top-right {
+  top: 0;
+  right: 0;
+}
+
+.position-fixed-full {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.position-fixed-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 100%;
+}
+
+.position-z-above {
+  z-index: 1;
+}
+
+.position-z-popup {
+  z-index: 10;
+}
+
+.position-z-popup-trigger {
+  z-index: 11;
+}
+
+.position-z-almost-front {
+  z-index: 999;
+}
+
+.position-z-front {
+  z-index: 1000;
+}
+
+@media (max-width: @mobile-max-width) {
+  .mobile-position-fixed {
+    position: fixed;
+  }
+
+  .mobile-position-fixed-full {
+    .position-fixed-bottom;
+    .position-z-front;
+    box-sizing: border-box;
+    overflow: auto;
+  }
+}

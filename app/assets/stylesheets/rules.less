@@ -1,0 +1,45 @@
+@import (reference) "measurements";
+@import (reference) "colors";
+
+hr {
+  width: 100%;
+  height: @border-width-thick;
+  border: none;
+  background-color: @pink-medium;
+  border-radius: @xs;
+  margin: @xxl 0;
+}
+
+hr.form-border {
+  height: @xxs;
+  background-color: @border-color;
+  border-radius: 0;
+}
+
+@arrow-width: 2px;
+
+.arrow-right {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: (@arrow-width * 4);
+  height: 0;
+  border-color: inherit;
+  border-width: @arrow-width 0 0 0;
+  border-style: solid;
+
+  &::after {
+    content: ' ';
+    position: absolute;
+    top: -(@arrow-width * 3 + (@arrow-width/2));
+    right: -(@arrow-width * 4);
+    width: 0;
+    height: 0;
+    border-width: (@arrow-width * 3) 0 (@arrow-width * 3) (@arrow-width * 4);
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+    border-left-color: inherit;
+    border-right-color: inherit;
+    border-style: solid;
+  }
+}

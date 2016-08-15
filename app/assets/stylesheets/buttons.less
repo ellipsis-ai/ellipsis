@@ -1,0 +1,382 @@
+@import (reference) "measurements";
+@import (reference) "colors";
+@import (reference) "type";
+
+@button-height: @s * 2 + @xl;
+@button-small-height: @xs * 2 + @l;
+
+button,
+a.button,
+select.form-select {
+  font-size: @type-m;
+  line-height: @xl;
+  padding: (@s - @border-width + 1) (@l - @border-width) (@s - @border-width - 1);
+  height: @button-height;
+  box-sizing: border-box;
+  border-radius: @border-radius;
+  border-width: @border-width;
+  border-style: solid;
+  border-color: @blue-medium;
+  background-color: transparent;
+  color: @blue-medium-text;
+  min-width: @s * 20;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  vertical-align: bottom;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  touch-action: manipulation;
+  margin: 0;
+}
+
+@media (max-width: @mobile-max-width) {
+  button, a.button, select.form-select {
+    min-width: 0;
+  }
+}
+
+a.button {
+  display: inline-block;
+}
+
+a.button:hover {
+  text-decoration: none;
+}
+
+@dropdown-trigger-right-padding: 32px;
+@dropdown-trigger-small-right-padding: 28px;
+
+button.button-dropdown-trigger,
+select.form-select {
+  position: relative;
+  padding-right: @dropdown-trigger-right-padding - @border-width;
+  border-color: @border-color-dropdown;
+  color: @black;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+  &::before {
+    font-size: 0.55em;
+    line-height: 1.06em;
+    content: '▲\A▼';
+    width: 0;
+    position: absolute;
+    right: 0;
+    padding-right: 2em;
+    white-space: normal;
+  }
+}
+
+button.button-dropdown-trigger.button-s {
+  padding-right: @dropdown-trigger-small-right-padding - @border-width;
+}
+
+select.form-select {
+  background-color: @white;
+}
+
+button.button-dropdown-trigger-symbol {
+  min-width: 0;
+  width: 40px;
+  text-align: center;
+  padding-right: 0;
+  padding-left: 0;
+  border-width: 0;
+  .type-weak();
+  &::before {
+    content: none;
+  }
+}
+
+button.button-dropdown-trigger-no-icon {
+  padding-right: (@l - @border-width);
+  &::before {
+    content: none;
+  }
+}
+
+button.button-dropdown-trigger-wide {
+  width: @dropdown-menu-width * 3/2;
+}
+
+button.button-warning {
+  border-color: @pink-medium;
+  color: @pink-medium-text;
+}
+
+button.button-s,
+select.form-select-s {
+  font-size: @type-s;
+  line-height: @l;
+  padding: (@xs - @border-width + 1) (@m - @border-width) (@xs - @border-width - 1);
+  height: @button-small-height;
+  border-radius: @border-radius-small;
+}
+
+button[disabled] {
+  border-color: @gray-light !important;
+  color: @gray-medium !important;
+  cursor: default !important;
+}
+
+button.button-shrink {
+  min-width: 0;
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
+  white-space: nowrap;
+}
+
+button.button-symbol {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
+  text-align: center !important;
+}
+
+button.button-raw {
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+button.button-s.button-symbol {
+  width: 24px;
+  min-width: 24px;
+  max-width: 24px;
+  padding-left: (@xs - @border-width);
+  padding-right: (@xs - @border-width);
+}
+
+button.button-subtle {
+  border-color: transparent;
+  color: inherit;
+}
+
+button.button-dropdown-item {
+  font-size: @type-s;
+  line-height: @l;
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
+  border-color: transparent !important;
+  color: inherit;
+  text-align: left;
+  height: auto;
+  min-height: 32px;
+  transition: none !important;
+}
+
+button:focus,
+a.button:focus {
+  outline: none;
+  border-color: @blue-dark;
+  border-width: @border-width-thick;
+  padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
+}
+
+button.button-dropdown-item:focus,
+button.button-dropdown-item:hover,
+button.button-dropdown-item-hover {
+  padding-left: (@s - @border-width);
+  padding-right: (@s - @border-width);
+  background-color: @blue-medium;
+  color: white;
+}
+
+button.button-dropdown-trigger:focus,
+button.button-dropdown-trigger-menu-open,
+select.form-select:focus {
+  z-index: 11;
+  outline: none;
+  padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
+  padding-right: @dropdown-trigger-right-padding - @border-width-thick;
+  color: @black;
+  background-color: white;
+  border-width: @border-width-thick;
+  border-color: @border-color-dropdown;
+  &::before {
+    right: @border-width - @border-width-thick;
+  }
+}
+
+button.button-dropdown-trigger.button-s:focus,
+button.button-dropdown-trigger-menu-open.button-s {
+  padding-top: (@xs - @border-width-thick + 1);
+  padding-left: (@m - @border-width-thick);
+  padding-right: @dropdown-trigger-small-right-padding - @border-width-thick;
+  padding-bottom: (@xs - @border-width-thick - 1);
+}
+
+button.button-dropdown-trigger-menu-open,
+button.button-dropdown-trigger-menu-open:focus {
+  color: @gray-medium;
+  border-color: @border-color;
+  border-radius: @border-radius @border-radius 0 0;
+  border-bottom-width: 0 !important;
+}
+
+button.button-dropdown-trigger-menu-above.button-dropdown-trigger-menu-open {
+  border-radius: 0 0 @border-radius @border-radius;
+  border-top-width: 0 !important;
+  border-bottom-width: @border-width-thick !important;
+}
+
+button.button-dropdown-trigger-symbol:focus,
+button.button-dropdown-trigger-symbol.button-dropdown-trigger-menu-open {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+button.button-dropdown-trigger-no-icon:focus,
+button.button-dropdown-trigger-no-icon.button-dropdown-trigger-menu-open {
+  padding-right: (@l - @border-width-thick);
+}
+
+button.button-warning:focus {
+  border-color: @pink-dark;
+}
+
+button.button-s:focus {
+  padding: (@xs - @border-width-thick + 1) (@m - @border-width-thick) (@xs - @border-width-thick - 1);
+}
+
+button.button-subtle:focus {
+  border-color: currentColor !important;
+}
+
+button.button-dropdown-trigger-menu-open:focus {
+  border-color: @border-color !important;
+}
+
+button.button-shrink:focus,
+button.button-symbol:focus {
+  padding-left: (@s - @border-width-thick) !important;
+  padding-right: (@s - @border-width-thick) !important;
+}
+
+button.button-s.button-symbol:focus {
+  padding-left: (@xs - @border-width-thick) !important;
+  padding-right: (@xs - @border-width-thick) !important;
+}
+
+button.button-raw:focus {
+  padding: 0;
+  color: @blue-medium-alt;
+}
+
+button:active {
+  background-color: @black-translucent;
+  border-color: @blue-dark;
+}
+
+button.button-warning:active {
+  border-color: @pink-dark;
+}
+
+button.button-subtle:active {
+  border-color: @blue-dark !important;
+}
+
+button.button-raw:active {
+  border: none;
+  background-color: transparent;
+  color: @blue-dark;
+}
+
+button.button-none,
+button.button-none:focus,
+button.button-none:active {
+  background-color: transparent;
+  border-width: 0;
+  padding: 0;
+  min-width: 0;
+  color: inherit;
+  height: auto;
+  font-size: inherit;
+  line-height: inherit;
+  text-align: inherit;
+}
+
+button.button-primary,
+button.button-error {
+  font-weight: 600;
+  color: @white;
+  .light-antialiasing();
+}
+
+button.button-primary {
+  background-color: @blue-medium;
+  border-color: @blue-medium;
+}
+
+button.button-primary:focus {
+  background-color: @blue-medium;
+  border-color: @blue-dark;
+}
+
+button.button-primary:active {
+  background-color: @blue-dark;
+  border-color: @blue-dark;
+  color: @white;
+}
+
+button.button-error {
+  background-color: @pink-medium;
+  border-color: @pink-medium;
+}
+
+button.button-error:focus {
+  background-color: @pink-medium;
+  border-color: @pink-dark;
+}
+
+button.button-error:active {
+  background-color: @pink-dark;
+  border-color: @pink-dark;
+  color: @white;
+}
+
+button.button-help-toggled {
+  background-color: @blue-lighter;
+}
+
+button.button-help-toggled:focus {
+  background-color: @blue-lighter;
+}
+
+button.button-help-toggled:active {
+  background-color: @blue-dark;
+  color: @white;
+}
+
+button.button-primary[disabled],
+button.button-error[disabled],
+button.button-help-toggled[disabled] {
+  background-color: @gray-light !important;
+  border-color: @gray-light !important;
+  color: @white !important;
+}
+
+.button-labels {
+  display: block;
+  position: relative;
+}
+
+.button-activated-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  display: none;
+}
+
+/* Note this technique requires the activated label to be shorter than the normal label */
+button.button-activated {
+  .button-activated-label {
+    display: block;
+  }
+  .button-normal-label {
+    visibility: hidden;
+  }
+}

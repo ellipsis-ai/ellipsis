@@ -1,0 +1,39 @@
+@import (reference) "measurements";
+
+.display-none {
+  display: none !important;
+}
+
+@media (min-width: (@mobile-max-width + 1)) {
+  .mobile-display-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: @mobile-max-width) {
+  .mobile-display-none {
+    display: none !important;
+  }
+}
+
+.display-inline {
+  display: inline;
+}
+
+.display-inline-block {
+  display: inline-block;
+}
+
+.display-ellipsis {
+  display: block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.display-limit-width {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
