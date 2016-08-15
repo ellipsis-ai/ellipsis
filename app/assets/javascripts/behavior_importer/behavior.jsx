@@ -4,7 +4,7 @@ define(function(require) {
     SVGInstalled = require('../svg/installed'),
     SVGInstalling = require('../svg/installing');
     require('es6-promise');
-    require('fetch');
+    require('whatwg-fetch');
 
   return React.createClass({
     propTypes: {
