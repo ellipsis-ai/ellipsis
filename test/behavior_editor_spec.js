@@ -247,4 +247,32 @@ describe('BehaviorEditor', () => {
     });
   });
 
+  describe('hasPrimaryTrigger', () => {
+    it('returns false when the first trigger is missing', () => {
+      editorConfig.triggers = [];
+      const editor = createEditor(editorConfig);
+      expect(editor.hasPrimaryTrigger()).toBe(false);
+    });
+    it('returns false when the first trigger is empty', () => {
+      editorConfig.triggers = [{
+        text: "",
+        requiresMention: false,
+        isRegex: false,
+        caseSensitive: false
+      }];
+      const editor = createEditor(editorConfig);
+      expect(editor.hasPrimaryTrigger()).toBe(false);
+    });
+    it('returns true when the first trigger has text', () => {
+      editorConfig.triggers = [{
+        text: "sudo make me a sandwich",
+        requiresMention: false,
+        isRegex: false,
+        caseSensitive: false
+      }];
+      const editor = createEditor(editorConfig);
+      expect(editor.hasPrimaryTrigger()).toBe(true);
+    });
+  });
+
 });
