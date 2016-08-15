@@ -20,7 +20,7 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
-import play.api.mvc.{Result, AnyContent, RequestHeader, Action}
+import play.api.mvc.Action
 import play.api.routing.JavaScriptReverseRouter
 import services.{GithubService, AWSLambdaService}
 import slick.dbio.DBIO
@@ -165,6 +165,7 @@ class ApplicationController @Inject() (
   def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
+      maybeSignedInTeam <- Team.find(user.teamId)
       maybeVersionData <- BehaviorVersionData.maybeFor(id, user)
       maybeBehavior <- BehaviorQueries.find(id, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
@@ -194,6 +195,7 @@ class ApplicationController @Inject() (
         val response = NotFound(
           views.html.notFound(
             Some(user),
+            maybeSignedInTeam,
             Some("Behavior not found"),
             Some("The behavior you are trying to access could not be found."),
             Some(reAuthLinkFor(request, None))
@@ -224,6 +226,7 @@ class ApplicationController @Inject() (
         json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
             val action = (for {
+              maybeSignedInTeam <- Team.find(user.teamId)
               maybeTeam <- Team.find(data.teamId, user)
               maybeBehavior <- data.behaviorId.map { behaviorId =>
                 BehaviorQueries.find(behaviorId, user)
@@ -239,7 +242,7 @@ class ApplicationController @Inject() (
                 maybeBehavior.map { behavior =>
                   Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
                 }.getOrElse {
-                  NotFound(views.html.notFound(Some(user), Some("Behavior not found"), Some("The behavior you were trying to save could not be found.")))
+                  NotFound(views.html.notFound(Some(user), maybeSignedInTeam, Some("Behavior not found"), Some("The behavior you were trying to save could not be found.")))
                 }
               }) transactionally
 
@@ -604,6 +607,7 @@ class ApplicationController @Inject() (
   def editOAuth2Application(id: String, maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
+      maybeSignedInTeam <- Team.find(user.teamId)
       maybeTeam <- user.maybeTeamFor(maybeTeamId)
       maybeConfig <- maybeTeam.map { team =>
         OAuth2ApplicationQueries.find(id)
@@ -618,6 +622,7 @@ class ApplicationController @Inject() (
         NotFound(
           views.html.notFound(
             Some(user),
+            maybeSignedInTeam,
             Some("OAuth2 config not found"),
             Some("The OAuth2 config you are trying to access could not be found."),
             Some(reAuthLinkFor(request, None))
