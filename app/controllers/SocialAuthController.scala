@@ -54,9 +54,17 @@ class SocialAuthController @Inject() (
     }
   }
 
+  private def isValidRouteForRedirect(uri: URI): Boolean = {
+    uri.getPath != new URI(routes.SocialAuthController.signOut().url).getPath
+  }
+
+  private def isForAnotherHost(uri: URI)(implicit r: RequestHeader): Boolean = {
+    uri.isAbsolute && uri.getHost != r.host.split(":").head
+  }
+
   private def validatedRedirectUri(uri: String)(implicit r: RequestHeader): String = {
     val parsed = new URI(uri)
-    if (parsed.isAbsolute && parsed.getHost != r.host.split(":").head) {
+    if (isForAnotherHost(parsed) || !isValidRouteForRedirect(parsed)) {
       routes.ApplicationController.index().toString
     } else {
       uri
