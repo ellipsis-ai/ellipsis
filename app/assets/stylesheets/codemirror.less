@@ -1,0 +1,205 @@
+@import (reference) "measurements";
+@import (reference) "colors";
+@import (reference) "type";
+@import (reference) "boxes";
+@import (reference) "popups";
+
+/* CodeMirror basic styles */
+
+.CodeMirror {
+  .type-monospace();
+  font-size: @type-s;
+  line-height: @xl;
+  height: auto;
+  padding: 0 !important;
+  border-width: 0 @border-width;
+  border-style: solid;
+  border-color: @border-color;
+}
+
+/* Use pseudo-elements to draw top/bottom borders so they're positioned correctly */
+.CodeMirror::before,
+.CodeMirror::after {
+  content: ' ';
+  height: 0;
+  position: absolute;
+  right: 0;
+  left: @xxxl;
+  border-width: @border-width 0 0 0;
+  border-style: solid;
+  border-color: @border-color;
+  z-index: 1;
+}
+
+.CodeMirror-container-no-gutter {
+  .CodeMirror {
+    border-left-width: 0;
+  }
+  .CodeMirror::before,
+  .CodeMirror::after {
+    left: 0;
+  }
+}
+
+.CodeMirror, .CodeMirror-gutters {
+  background-color: @almost-white;
+}
+
+.CodeMirror-gutters {
+  border-right-color: @border-color;
+}
+
+.CodeMirror-empty-gutter {
+  width: @xxxl;
+}
+
+.CodeMirror-linenumbers {
+  @jsHintWidth: 16px;
+  width: @xxxl - @jsHintWidth;
+}
+
+.CodeMirror-no-gutter {
+  width: 0;
+}
+
+.CodeMirror-linenumber {
+  .type-disabled();
+  padding-right: @xs + 1;
+}
+
+.CodeMirror-scroll {
+  background-color: @white;
+  min-height: @xxxxl;
+}
+
+.CodeMirror::before {
+  top: 0;
+}
+
+.CodeMirror::after {
+  bottom: 0;
+}
+
+.CodeMirror-scroll::-webkit-scrollbar {
+  width: 15px;
+}
+
+.CodeMirror-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.CodeMirror-focused,
+.CodeMirror-focused .CodeMirror-gutters {
+  border-right-color: @border-color-focus;
+  border-right-width: @border-width-thick;
+}
+
+.CodeMirror-focused .CodeMirror-sizer {
+  border-color: @border-color-focus;
+  border-width: @border-width-thick 0;
+}
+
+.CodeMirror-focused::before,
+.CodeMirror-focused::after {
+  border-width: @border-width-thick 0 0 0;
+  border-color: @border-color-focus;
+}
+
+/* CodeMirror extension styles */
+
+.CodeMirror-hints {
+  position: absolute;
+  .position-z-popup;
+  overflow: hidden;
+  list-style: none;
+
+  margin: 0;
+  padding: 0;
+
+  .popup-shadow();
+
+  border: @border-width solid @border-color;
+
+  background: @white;
+
+  max-height: 25em;
+  overflow-y: auto;
+
+  .type-monospace();
+}
+
+.CodeMirror-hint {
+  margin: 0;
+  padding: 0 @s;
+  max-width: 19em;
+  overflow: hidden;
+  white-space: pre;
+  color: @black;
+  cursor: pointer;
+}
+
+li.CodeMirror-hint-active {
+  background-color: @blue-medium;
+  color: @white;
+}
+
+.CodeMirror-lint-markers {
+  width: 16px;
+}
+
+.CodeMirror-lint-marker-error,
+.CodeMirror-lint-marker-warning {
+  cursor: pointer;
+  display: inline-block;
+  width: 16px;
+  height: @xl;
+  position: relative;
+}
+
+.CodeMirror-lint-marker-warning {
+  background-color: @yellow-light;
+}
+
+.CodeMirror-lint-marker-error {
+  background-color: @pink-medium;
+}
+
+.CodeMirror-lint-marker-error:before,
+.CodeMirror-lint-marker-warning:before {
+  content: "·";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  .type-s();
+  .type-weak();
+}
+
+.CodeMirror-lint-marker-error:before {
+  color: @white;
+}
+
+.CodeMirror-lint-tooltip {
+  .box-help();
+  .popup-shadow();
+  .type-s();
+  padding: 0;
+  overflow: hidden;
+  position: fixed;
+  white-space: pre-wrap;
+  z-index: 100;
+  max-width: 600px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.CodeMirror-lint-message-error {
+  border-left: @xs solid @pink-medium;
+  padding: @xs @s;
+}
+
+.CodeMirror-lint-message-warning {
+  border-left: @xs solid @yellow-light;
+  padding: @xs @s;
+}

@@ -1,0 +1,103 @@
+@import (reference) "measurements";
+/*
+
+Margin and padding utilities
+
+A set of margin and padding utilities exists for each measurement from xxxxl to xs.
+
+1. The first character denotes margin or padding
+  - 'm': margin
+  - 'p': padding
+2. The second character denotes the sides to apply the style
+  - 'a': all sides
+  - 'v': vertical (top and bottom)
+  - 'h': horizontal (sides)
+  - 't': top
+  - 'b': bottom
+  - 'l': left
+  - 'r': right
+3. The rest of the characters specify the amount
+  - 'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxxl', 'xxxxl'
+
+So for example:
+- '.mas' applies small margin to all sides
+- '.pbl' applies large padding to the bottom
+- '.pvxs' applies extra-small padding to the top and bottom
+
+*/
+
+@sizes: xxxxl @xxxxl, xxxl @xxxl, xxl @xxl, xl @xl, l @l, symbol 40px, m @m, s @s, xs @xs, n 0;
+
+.generate-all-sided(@prefix, @iterator: 1) when (@iterator <= length(@sizes)) {
+  @size-name: extract(extract(@sizes, @iterator), 1);
+  @size: extract(extract(@sizes, @iterator), 2);
+  .@{prefix}ma@{size-name} {
+    margin: @size !important;
+  }
+  .@{prefix}pa@{size-name} {
+    padding: @size !important;
+  }
+  .generate-all-sided(@prefix, (@iterator + 1));
+}
+
+.generate-two-sided(@prefix, @iterator: 1) when (@iterator <= length(@sizes)) {
+  @size-name: extract(extract(@sizes, @iterator), 1);
+  @size: extract(extract(@sizes, @iterator), 2);
+  .@{prefix}mv@{size-name} {
+    margin-top: @size !important;
+    margin-bottom: @size !important;
+  }
+  .@{prefix}mh@{size-name} {
+    margin-left: @size !important;
+    margin-right: @size !important;
+  }
+  .@{prefix}pv@{size-name} {
+    padding-top: @size !important;
+    padding-bottom: @size !important;
+  }
+  .@{prefix}ph@{size-name} {
+    padding-left: @size !important;
+    padding-right: @size !important;
+  }
+  .generate-two-sided(@prefix, (@iterator + 1));
+}
+
+.generate-one-sided(@prefix, @iterator: 1) when (@iterator <= length(@sizes)) {
+  @size-name: extract(extract(@sizes, @iterator), 1);
+  @size: extract(extract(@sizes, @iterator), 2);
+  .@{prefix}mt@{size-name} {
+    margin-top: @size !important;
+  }
+  .@{prefix}mb@{size-name} {
+    margin-bottom: @size !important;
+  }
+  .@{prefix}ml@{size-name} {
+    margin-left: @size !important;
+  }
+  .@{prefix}mr@{size-name} {
+    margin-right: @size !important;
+  }
+  .@{prefix}pt@{size-name} {
+    padding-top: @size !important;
+  }
+  .@{prefix}pb@{size-name} {
+    padding-bottom: @size !important;
+  }
+  .@{prefix}pl@{size-name} {
+    padding-left: @size !important;
+  }
+  .@{prefix}pr@{size-name} {
+    padding-right: @size !important;
+  }
+  .generate-one-sided(@prefix, (@iterator + 1));
+}
+
+.generate-all-sided(e(""));
+.generate-two-sided(e(""));
+.generate-one-sided(e(""));
+
+@media (max-width: @mobile-max-width) {
+  .generate-all-sided(mobile-);
+  .generate-two-sided(mobile-);
+  .generate-one-sided(mobile-);
+}

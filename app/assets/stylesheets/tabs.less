@@ -1,0 +1,43 @@
+@import (reference) "measurements";
+@import (reference) "colors";
+@import (reference) "type";
+
+.tabs {
+  white-space: nowrap;
+  overflow-x: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.tab {
+  display: inline-block;
+  color: @black;
+  border-radius: @border-radius @border-radius 0 0;
+  line-height: @xl;
+  padding: @s @l;
+  margin: 0 @s 0 0;
+}
+
+@media (max-width: @mobile-max-width) {
+  .tabs {
+    .type-s();
+  }
+
+  .tab {
+    padding: @xs @m;
+    margin-right: @xs;
+  }
+}
+
+.tab, .tab:hover, .tab:visited, .tab:active {
+  color: @black;
+  text-decoration: none;
+}
+
+.tab:hover {
+  background-color: @almost-white;
+}
+
+.tab-active, .tab-active:hover {
+  background-color: @white;
+}

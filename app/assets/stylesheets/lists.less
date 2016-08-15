@@ -1,0 +1,48 @@
+@import (reference) "colors";
+@import (reference) "measurements";
+@import (reference) "type";
+
+ul {
+  padding-left: 1.5em;
+  margin: 0 0 @m 0;
+}
+
+.list-space-s > li {
+  margin-bottom: @s;
+}
+
+.checklist > li {
+  transition: color 0.2s ease;
+  list-style-type: circle;
+}
+
+.checklist .checklist > li {
+  list-style-type: none;
+  position: relative;
+  &::before {
+    content: '▹';
+    position: absolute;
+    left: -1.25em;
+  }
+}
+
+.checklist > .checklist-checked {
+  list-style-type: none;
+  position: relative;
+  color: @green-text;
+  text-decoration: line-through;
+  &::before {
+    content: '✓' !important;
+    position: absolute;
+    left: -1.25em;
+    color: @green-text;
+  }
+}
+
+.checklist.type-weak > .checklist-checked {
+  .type-weak();
+  list-style-type: circle;
+  &::before {
+    content: none !important;
+  }
+}
