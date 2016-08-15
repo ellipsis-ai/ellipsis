@@ -1,0 +1,113 @@
+@import (reference) "measurements";
+@import (reference) "colors";
+
+p {
+  margin: 0 0 @m 0;
+}
+
+.light-antialiasing() {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+}
+
+.type-bold {
+  font-weight: 600;
+}
+
+.type-regular {
+  font-weight: 400;
+}
+
+code .type-bold,
+code.type-bold,
+.type-monospace.type-bold,
+.type-monospace .type-bold {
+  font-weight: 700;
+}
+
+.type-l {
+  font-size: @type-l !important;
+  line-height: @line-height-l;
+}
+
+.type-m {
+  font-size: @type-m !important;
+  line-height: @line-height-m;
+}
+
+.type-s {
+  font-size: @type-s !important;
+  line-height: @line-height-s;
+}
+
+.type-xs {
+  font-size: @type-xs !important;
+  line-height: @line-height-xs;
+}
+
+.type-italic {
+  font-style: italic;
+}
+
+.type-label {
+  .type-xs();
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.type-black {
+  color: @black;
+}
+
+.type-weak {
+  color: @gray-dark;
+}
+
+.type-disabled {
+  color: @gray-medium;
+}
+
+.type-pink {
+  color: @pink-medium;
+}
+
+.type-green {
+  color: @green-text;
+}
+
+.type-yellow {
+  color: @yellow-medium;
+}
+
+.type-white {
+  color: @white;
+}
+
+.type-monospace {
+  font-family: 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+code, pre {
+  .type-monospace();
+}
+
+.type-strikethrough {
+  text-decoration: line-through;
+}
+
+.type-l.type-white {
+  .light-antialiasing();
+}
+
+.type-wrap {
+  white-space: normal;
+}
+
+.type-wrap-words {
+  word-wrap: break-word;
+}
+
+pre {
+  margin: 0;
+}

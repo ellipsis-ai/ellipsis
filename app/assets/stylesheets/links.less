@@ -1,0 +1,44 @@
+@import (reference) "colors";
+@import (reference) "measurements";
+@import (reference) "type";
+
+a:link, a:visited, .link {
+  color: @blue-medium-text;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a:hover, .link:hover, .link-block:hover .link {
+  text-decoration: underline;
+}
+
+a.link-block {
+  color: inherit;
+  display: block;
+}
+
+a.link-block:hover {
+  text-decoration: none;
+}
+
+.link-green,
+.link-green:link,
+.link-green:visited {
+  color: @green-light;
+}
+
+.link-green:hover {
+  color: @blue-medium-alt;
+}
+
+.link-blue-light,
+.link-blue-light:link,
+.link-blue-light:visited {
+  color: @blue-lighter;
+  .light-antialiasing();
+}
+
+.link-blue-light:hover {
+  color: @blue-medium-alt;
+  text-decoration: none;
+}

@@ -1,0 +1,41 @@
+@import (reference) "colors";
+@import (reference) "bg";
+@import (reference) "borders";
+@import (reference) "type";
+@import (reference) "position";
+
+.box-help {
+  .bg-blue-lighter();
+  .border-top();
+  .border-bottom();
+  .border-blue();
+  .position-relative();
+  padding: @l;
+}
+
+.box-code-example {
+  .bg-blue-lightest();
+  .border();
+  .border-dotted();
+  padding: @xs;
+  .type-monospace();
+  .type-xs();
+  .type-weak();
+  .type-wrap-words();
+}
+
+.box-action {
+  .bg-white();
+  .border-emphasis-top();
+  .border-pink();
+  .position-relative();
+  padding: @xxl @l;
+}
+
+.box-warning {
+  .bg-yellow();
+  .border-top-thick();
+  .border-bottom-thick();
+  .border-yellow();
+  padding: @s;
+}
