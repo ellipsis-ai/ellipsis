@@ -157,7 +157,7 @@ return React.createClass({
                 onEnterKey={this.props.onEnterKey}
               />
               {this.state.regexError ? (
-                <div className="position-absolute position-top-right mts mrxs fade-in">
+                <div className="position-absolute position-z-above position-top-right mts mrxs fade-in">
                   <button type="button"
                     className="button-error button-s button-shrink"
                     ref="errorButton"
