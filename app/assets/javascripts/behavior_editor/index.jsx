@@ -277,14 +277,14 @@ return React.createClass({
 
   getIterationTemplateHelp: function() {
     return (
-      <div checkedWhen={this.templateIncludesIteration()}>
+      <Checklist.Item checkedWhen={this.templateIncludesIteration()}>
         Iterating through a list:<br />
         <div className="box-code-example">
           {"{for item in successResult.items}"}<br />
           &nbsp;* {"{item}"}<br />
           {"{endfor}"}
         </div>
-      </div>
+      </Checklist.Item>
     );
   },
 
@@ -321,12 +321,12 @@ return React.createClass({
 
   getPathTemplateHelp: function() {
     return (
-      <span checkedWhen={this.templateIncludesPath()}>
+      <Checklist.Item checkedWhen={this.templateIncludesPath()}>
         Properties of the result:<br />
         <div className="box-code-example">
           Name: {"{successResult.user.name}"}
         </div>
-      </span>
+      </Checklist.Item>
     );
   },
 
@@ -336,12 +336,12 @@ return React.createClass({
 
   getSuccessResultTemplateHelp: function() {
     return (
-      <div checkedWhen={this.templateIncludesSuccessResult()}>
+      <Checklist.Item checkedWhen={this.templateIncludesSuccessResult()}>
         The result provided to <code>onSuccess</code>:<br />
         <div className="box-code-example">
           The answer is {"{successResult}"}
         </div>
-      </div>
+      </Checklist.Item>
     );
   },
 
@@ -367,14 +367,14 @@ return React.createClass({
 
   getUserParamTemplateHelp: function() {
     return (
-      <div checkedWhen={this.templateIncludesParam()}>
+      <Checklist.Item checkedWhen={this.templateIncludesParam()}>
         User-supplied parameters:<br />
         <div className="box-code-example">
         You said {this.hasUserParameters() && this.getBehaviorParams()[0].name ?
           "{" + this.getBehaviorParams()[0].name + "}" :
           "{exampleParamName}"}
         </div>
-      </div>
+      </Checklist.Item>
     );
   },
 
@@ -808,11 +808,11 @@ return React.createClass({
   hasCalledOnSuccess: function() {
     var code = this.getBehaviorFunctionBody();
     var success = code && code.match(/\bonSuccess\([\s\S]+?\)/);
-    return success;
+    return !!success;
   },
 
   hasCode: function() {
-    return this.getBehaviorFunctionBody().match(/\S/);
+    return !!this.getBehaviorFunctionBody().match(/\S/);
   },
 
   hasModalPanel: function() {
@@ -829,7 +829,7 @@ return React.createClass({
 
   hasPrimaryTrigger: function() {
     var triggers = this.getBehaviorTriggers();
-    return triggers.length > 0 && triggers[0];
+    return !!(triggers.length > 0 && triggers[0]);
   },
 
   hasUserParameters: function() {
@@ -857,7 +857,7 @@ return React.createClass({
 
   templateIncludesIteration: function() {
     var template = this.getBehaviorTemplate();
-    return template && template.match(/\{endfor\}/);
+    return !!(template && template.match(/\{endfor\}/));
   },
 
   templateUsesMarkdown: function() {
@@ -878,22 +878,22 @@ return React.createClass({
       '^\\s*[-\\*]\\s*[-\\*]\\s*[-\\*]' /* Horizontal rule */
     ];
     var matchRegExp = new RegExp( '(' + matches.join( ')|(' ) + ')' );
-    return template && template.match(matchRegExp);
+    return !!(template && template.match(matchRegExp));
   },
 
   templateIncludesParam: function() {
     var template = this.getBehaviorTemplate();
-    return template && template.match(/\{\S+?\}/);
+    return !!(template && template.match(/\{\S+?\}/));
   },
 
   templateIncludesPath: function() {
     var template = this.getBehaviorTemplate();
-    return template && template.match(/\{(\S+\.\S+)+?\}/);
+    return !!(template && template.match(/\{(\S+\.\S+)+?\}/));
   },
 
   templateIncludesSuccessResult: function() {
     var template = this.getBehaviorTemplate();
-    return template && template.match(/\{successResult.*?\}/);
+    return !!(template && template.match(/\{successResult.*?\}/));
   },
 
   triggersUseParams: function() {
@@ -1089,18 +1089,18 @@ return React.createClass({
               <SectionHeading>When someone says</SectionHeading>
 
               <Checklist disabledWhen={this.isExistingBehavior()}>
-                <span checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.isExistingBehavior()}>
+                <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.isExistingBehavior()}>
                   Write a question or phrase people should use to trigger a response.
-                </span>
-                <span checkedWhen={this.hasMultipleTriggers()} hiddenWhen={this.isExistingBehavior() && this.hasMultipleTriggers()}>
+                </Checklist.Item>
+                <Checklist.Item checkedWhen={this.hasMultipleTriggers()} hiddenWhen={this.isExistingBehavior() && this.hasMultipleTriggers()}>
                   You can add multiple triggers.
-                </span>
-                <span checkedWhen={this.triggersUseParams()}>
+                </Checklist.Item>
+                <Checklist.Item checkedWhen={this.triggersUseParams()}>
                   <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
                   <span className="pls">
                     <HelpButton onClick={this.toggleTriggerHelp} toggled={this.getActivePanel() === 'helpForTriggerParameters'} />
                   </span>
-                </span>
+                </Checklist.Item>
               </Checklist>
 
             </div>
@@ -1163,19 +1163,19 @@ return React.createClass({
               <SectionHeading>Ellipsis will do</SectionHeading>
 
               <Checklist disabledWhen={this.isExistingBehavior()}>
-                <span checkedWhen={this.hasCode()} hiddenWhen={this.isExistingBehavior()}>
+                <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.isExistingBehavior()}>
                   Write a node.js function to determine a result.
-                </span>
+                </Checklist.Item>
 
-                <span checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.isExistingBehavior()}>
+                <Checklist.Item checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.isExistingBehavior()}>
                   <span>Call <code>onSuccess</code> with a string, object, or array </span>
                   <span>to include in the response below.</span>
-                </span>
+                </Checklist.Item>
 
-                <span checkedWhen={this.hasUserParameters()} hiddenWhen={this.isExistingBehavior() && this.hasUserParameters()}>
+                <Checklist.Item checkedWhen={this.hasUserParameters()} hiddenWhen={this.isExistingBehavior() && this.hasUserParameters()}>
                   <span>If you need more information from the user, add one or more parameters </span>
                   <span>to your function.</span>
-                </span>
+                </Checklist.Item>
               </Checklist>
 
             </div>
@@ -1273,12 +1273,12 @@ return React.createClass({
               <SectionHeading>{this.getResponseHeader()}</SectionHeading>
 
               <Checklist disabledWhen={this.isExistingBehavior()}>
-                <span checkedWhen={this.templateUsesMarkdown()}>
+                <Checklist.Item checkedWhen={this.templateUsesMarkdown()}>
                   <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
                   <span>to format the response, add links, etc.</span>
-                </span>
+                </Checklist.Item>
                 {this.state.revealCodeEditor ? "" : (
-                  <span>Add code above if you want to collect user input before returning a response.</span>
+                  <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
                 )}
               </Checklist>
 
