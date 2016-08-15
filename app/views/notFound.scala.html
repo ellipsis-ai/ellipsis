@@ -1,5 +1,6 @@
 @(
   maybeUser: Option[models.accounts.User],
+  maybeTeam: Option[models.Team],
   maybeHeading: Option[String],
   maybeErrorMessage: Option[String],
   maybeSignInLink: Option[Call] = None
@@ -34,9 +35,13 @@
         <div class="column column-three-quarters">
           <p>
             @maybeErrorMessage.getOrElse("The page you are trying to access could not be found.")
+          </p>
+          <p>
             It may have been removed,
-            or you may not have access to it. @maybeSignInLink.map { link =>
-              You may want to try <a href="@link">signing in with a different team</a> if you have more than one account.
+            or you may not have access to it @maybeTeam.map { team =>
+              while signed into this team (<b>@team.name</b>)
+            } @maybeSignInLink.map { link =>
+              . You may want to try <a href="@link">signing in with a different team</a> if you have more than one account.
             }
           </p>
         </div>
