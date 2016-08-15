@@ -30,7 +30,7 @@ var React = require('react'),
   ImmutableObjectUtils = require('../immutable_object_utils');
   require('codemirror/mode/markdown/markdown');
   require('es6-promise');
-  require('fetch');
+  require('whatwg-fetch');
 
 var AWSEnvVariableStrings = {
   accessKeyName: "AWS Access Key",

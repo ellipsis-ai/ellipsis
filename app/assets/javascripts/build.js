@@ -15,7 +15,7 @@ requirejs.config({
       location: '../lib/es6-promise',
       main: 'es6-promise.min'
     }, {
-      name: 'fetch',
+      name: 'whatwg-fetch',
       location: '../lib/fetch',
       main: 'fetch'
     }, {

@@ -8,7 +8,7 @@ var React = require('react'),
   Input = require('./input'),
   Collapsible = require('../collapsible');
   require('es6-promise');
-  require('fetch');
+  require('whatwg-fetch');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],

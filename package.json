@@ -14,16 +14,16 @@
     "babel-polyfill": "^6.9.1",
     "babel-preset-es2015": "*",
     "babel-preset-react": "*",
-    "codemirror": "^5.15.2",
+    "codemirror": "5.15.2",
     "eslint": "^2.13.1",
     "eslint-plugin-react": "^5.2.2",
-    "fetch": "^1.1.0",
-    "javascript-debounce": "^1.0.0",
+    "javascript-debounce": "1.0.0",
     "jest-cli": "^12.1.1",
-    "moment": "^2.14.1",
-    "react": "^15.1.0",
-    "react-addons-test-utils": "^15.1.0",
-    "react-dom": "^15.1.0"
+    "moment": "2.14.1",
+    "react": "15.3.0",
+    "react-addons-test-utils": "15.3.0",
+    "react-dom": "15.3.0",
+    "whatwg-fetch": "1.0.0"
   },
   "scripts": {
     "lint": "scripts/run_eslint",
