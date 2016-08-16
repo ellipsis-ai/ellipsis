@@ -350,7 +350,7 @@ return React.createClass({
       return (
         <div>
           <span>You can include data in your response.<br /></span>
-          <Checklist className="mtxs" disabledWhen={this.isExistingBehavior()}>
+          <Checklist className="mtxs" disabledWhen={this.isFinishedBehavior()}>
             {this.getUserParamTemplateHelp()}
             {this.getSuccessResultTemplateHelp()}
             {this.getPathTemplateHelp()}
@@ -852,7 +852,11 @@ return React.createClass({
   },
 
   isExistingBehavior: function() {
-    return !!(this.props.functionBody || this.props.responseTemplate);
+    return !!this.props.behaviorId;
+  },
+
+  isFinishedBehavior: function() {
+    return this.isExistingBehavior() && !!(this.props.functionBody || this.props.responseTemplate);
   },
 
   isModified: function() {
@@ -1103,11 +1107,11 @@ return React.createClass({
             <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
               <SectionHeading>When someone says</SectionHeading>
 
-              <Checklist disabledWhen={this.isExistingBehavior()}>
-                <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.isExistingBehavior()}>
+              <Checklist disabledWhen={this.isFinishedBehavior()}>
+                <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.isFinishedBehavior()}>
                   Write a question or phrase people should use to trigger a response.
                 </Checklist.Item>
-                <Checklist.Item checkedWhen={this.hasMultipleTriggers()} hiddenWhen={this.isExistingBehavior() && this.hasMultipleTriggers()}>
+                <Checklist.Item checkedWhen={this.hasMultipleTriggers()} hiddenWhen={this.isFinishedBehavior() && this.hasMultipleTriggers()}>
                   You can add multiple triggers.
                 </Checklist.Item>
                 <Checklist.Item checkedWhen={this.triggersUseParams()}>
@@ -1177,31 +1181,31 @@ return React.createClass({
 
               <SectionHeading>Ellipsis will do</SectionHeading>
 
-              <Checklist disabledWhen={this.isExistingBehavior()}>
-                <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.isExistingBehavior()}>
+              <Checklist disabledWhen={this.isFinishedBehavior()}>
+                <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.isFinishedBehavior()}>
                   <span>Write a node.js function. You can <code>require()</code> any </span>
                   <span><a href="https://www.npmjs.com/" target="_blank">NPM package</a>.</span>
                 </Checklist.Item>
 
-                <Checklist.Item checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.isExistingBehavior()}>
+                <Checklist.Item checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.isFinishedBehavior()}>
                   <span>End the function by calling </span>
                   <code className="type-bold">ellipsis.success(<span className="type-regular">…</span>)</code>
                   <span> with text or data to include in the response. </span>
                   <button type="button" className="button-raw link button-s" onClick={this.toggleBoilerplateHelp}>Examples</button>
                 </Checklist.Item>
 
-                <Checklist.Item checkedWhen={this.hasCalledOnError()} hiddenWhen={this.isExistingBehavior()}>
+                <Checklist.Item checkedWhen={this.hasCalledOnError()} hiddenWhen={this.isFinishedBehavior()}>
                   <span>To end with an error message, call </span>
                   <code className="type-bold">ellipsis.error(<span className="type-regular">…</span>)</code>
                   <span> with a string. </span>
                   <button type="button" className="button-raw link button-s" onClick={this.toggleBoilerplateHelp}>Example</button>
                 </Checklist.Item>
 
-                <Checklist.Item checkedWhen={this.hasCalledNoResponse()} hiddenWhen={this.isExistingBehavior()}>
+                <Checklist.Item checkedWhen={this.hasCalledNoResponse()} hiddenWhen={this.isFinishedBehavior()}>
                   <span>To end with no response, call <code className="type-bold">ellipsis.noResponse()</code>.</span>
                 </Checklist.Item>
 
-                <Checklist.Item hiddenWhen={!this.isExistingBehavior()}>
+                <Checklist.Item hiddenWhen={!this.isFinishedBehavior()}>
                   <span>Call <code>ellipsis.success(…)</code>, <code>ellipsis.error(…)</code> and/or <code>ellipsis.noResponse()</code> </span>
                   <span>to end your function. </span>
                   <span className="pls">
@@ -1209,12 +1213,12 @@ return React.createClass({
                   </span>
                 </Checklist.Item>
 
-                <Checklist.Item checkedWhen={this.hasUserParameters()} hiddenWhen={this.isExistingBehavior() && this.hasUserParameters()}>
+                <Checklist.Item checkedWhen={this.hasUserParameters()} hiddenWhen={this.isFinishedBehavior() && this.hasUserParameters()}>
                   <span>If you need more information from the user, add one or more parameters </span>
                   <span>to your function.</span>
                 </Checklist.Item>
 
-                <Checklist.Item hiddenWhen={!this.isExistingBehavior() || this.hasCalledRequire()}>
+                <Checklist.Item hiddenWhen={!this.isFinishedBehavior() || this.hasCalledRequire()}>
                   <span>Use <code>require(…)</code> to load any NPM package.</span>
                 </Checklist.Item>
 
@@ -1314,7 +1318,7 @@ return React.createClass({
 
               <SectionHeading>{this.getResponseHeader()}</SectionHeading>
 
-              <Checklist disabledWhen={this.isExistingBehavior()}>
+              <Checklist disabledWhen={this.isFinishedBehavior()}>
                 <Checklist.Item checkedWhen={this.templateUsesMarkdown()}>
                   <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
                   <span>to format the response, add links, etc.</span>
@@ -1466,18 +1470,20 @@ return React.createClass({
                   </button>
                 </div>
                 <div className="column column-shrink align-r pbm">
-                  <DropdownMenu
-                    openWhen={this.getActiveDropdown() === 'manageBehavior'}
-                    label={this.getManageDropdownLabel()}
-                    labelClassName="button-dropdown-trigger-menu-above"
-                    menuClassName="popup-dropdown-menu-right popup-dropdown-menu-above"
-                    toggle={this.toggleManageBehaviorMenu}
-                  >
-                    <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
-                    <DropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
-                    <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this behavior" />
-                    <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
-                  </DropdownMenu>
+                  {this.isExistingBehavior() ? (
+                    <DropdownMenu
+                      openWhen={this.getActiveDropdown() === 'manageBehavior'}
+                      label={this.getManageDropdownLabel()}
+                      labelClassName="button-dropdown-trigger-menu-above"
+                      menuClassName="popup-dropdown-menu-right popup-dropdown-menu-above"
+                      toggle={this.toggleManageBehaviorMenu}
+                    >
+                      <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
+                      <DropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
+                      <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this behavior" />
+                      <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
+                    </DropdownMenu>
+                  ) : null}
                 </div>
               </div>
             </div>
