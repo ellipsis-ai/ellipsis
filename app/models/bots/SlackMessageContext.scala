@@ -43,7 +43,10 @@ case class SlackMessageContext(
 
   def sendMessage(unformattedText: String)(implicit ec: ExecutionContext): Unit = {
     val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
-    client.apiClient.postChatMessage(message.channel, formattedText, asUser = Some(true))
+    // The Slack API considers sending an empty message to be an error rather than a no-op
+    if (formattedText.nonEmpty) {
+      client.apiClient.postChatMessage(message.channel, formattedText, asUser = Some(true))
+    }
   }
 
   override def recentMessages: DBIO[Seq[String]] = {
