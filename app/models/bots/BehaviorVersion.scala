@@ -142,6 +142,8 @@ case class BehaviorVersion(
     } yield Unit
   }
 
+  def isCurrentVersion: Boolean = behavior.maybeCurrentVersionId.contains(id)
+
   private def isUnhandledError(json: JsValue): Boolean = {
     (json \ "errorMessage").toOption.flatMap { m =>
       "Process exited before completing request".r.findFirstIn(m.toString)
@@ -240,6 +242,12 @@ object BehaviorVersionQueries {
       tuple._1._2,
       raw.createdAt
     )
+  }
+
+  def allOfThem: DBIO[Seq[BehaviorVersion]] = {
+    allWithBehavior.result.map { r =>
+      r.map(tuple2BehaviorVersion)
+    }
   }
 
   def uncompiledCurrentWithFunctionQuery() = {

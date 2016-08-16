@@ -51,4 +51,21 @@ class AdminController @Inject() (
     models.run(action)
   }
 
+  def fixUpAllVersions = SecuredAction.async { implicit request =>
+    val action = for {
+      versions <- BehaviorVersionQueries.allOfThem
+      _ <- DBIO.sequence(versions.map { v =>
+        v.copyWithNewFormat.save.flatMap { v =>
+          if (v.isCurrentVersion) {
+            v.redeploy(lambdaService)
+          } else {
+            DBIO.successful(Unit)
+          }
+        }
+      })
+    } yield Redirect(routes.AdminController.lambdaFunctions())
+
+    models.run(action)
+  }
+
 }
