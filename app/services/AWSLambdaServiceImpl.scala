@@ -135,10 +135,7 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private def accessTokenCodeFor(app: RequiredOAuth2Application): String = {
-    val paramName = app.application.parameterName
-    s"""var $paramName = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken;
-       |$CONTEXT_PARAM.accessTokens.${app.application.keyName} = $paramName;
-     """.stripMargin
+    s"""$CONTEXT_PARAM.accessTokens.${app.application.keyName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken;"""
   }
 
   private def accessTokensCodeFor(requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {
@@ -147,23 +144,19 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def nodeCodeFor(functionBody: String, params: Array[String], behaviorVersion: BehaviorVersion, maybeAwsConfig: Option[AWSConfig], requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
-    val awsParams = behaviorVersion.awsParamsFor(maybeAwsConfig)
-    val accessTokenParams = behaviorVersion.accessTokenParamsFor(requiredOAuth2Applications)
-    val invocationParamsString = (paramsFromEvent ++ HANDLER_PARAMS ++ Array(s"event.$CONTEXT_PARAM") ++ awsParams ++ accessTokenParams).mkString(", ")
+    val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
 
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = ${behaviorVersion.functionWithParams(params, awsParams, accessTokenParams)};
+    s"""exports.handler = function(event, context, callback) { var fn = ${behaviorVersion.functionWithParams(params)};
       |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
       |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = function() {
       |     callback(null, { $NO_RESPONSE_KEY: true });
       |   };
-      |   var $ON_SUCCESS_PARAM = function(result) {
+      |   $CONTEXT_PARAM.success = function(result) {
       |     callback(null, { "result": result === undefined ? null : result });
       |   };
-      |   $CONTEXT_PARAM.success = $ON_SUCCESS_PARAM;
-      |   var $ON_ERROR_PARAM = function(err) { callback(err); };
-      |   $CONTEXT_PARAM.error = $ON_ERROR_PARAM;
+      |   $CONTEXT_PARAM.error = function(err) { callback(err); };
       |   ${awsCodeFor(maybeAwsConfig)}
       |   $CONTEXT_PARAM.accessTokens = {};
       |   ${accessTokensCodeFor(requiredOAuth2Applications)}

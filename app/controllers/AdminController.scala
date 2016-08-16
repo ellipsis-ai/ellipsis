@@ -40,9 +40,29 @@ class AdminController @Inject() (
   def redeploy(versionId: String) = SecuredAction.async { implicit request =>
     val action = for {
       maybeBehaviorVersion <- BehaviorVersionQueries.findWithoutAccessCheck(versionId)
-      _ <- maybeBehaviorVersion.map { version =>
+      maybeWithNewFormat <- maybeBehaviorVersion.map { version =>
+        version.copyWithNewFormat.save.map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+      _ <- maybeWithNewFormat.map { version =>
         version.redeploy(lambdaService)
       }.getOrElse(DBIO.successful(Unit))
+    } yield Redirect(routes.AdminController.lambdaFunctions())
+
+    models.run(action)
+  }
+
+  def fixUpAllVersions = SecuredAction.async { implicit request =>
+    val action = for {
+      versions <- BehaviorVersionQueries.allOfThem
+      _ <- DBIO.sequence(versions.map { v =>
+        v.copyWithNewFormat.save.flatMap { v =>
+          if (v.isCurrentVersion) {
+            v.redeploy(lambdaService)
+          } else {
+            DBIO.successful(Unit)
+          }
+        }
+      })
     } yield Redirect(routes.AdminController.lambdaFunctions())
 
     models.run(action)

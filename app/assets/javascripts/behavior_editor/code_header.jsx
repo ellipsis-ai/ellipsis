@@ -16,7 +16,6 @@ return React.createClass({
     onToggleHelp: React.PropTypes.func.isRequired,
     userParams: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
     systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-    apiParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
   },
   onChange: function(index, data) {
     this.props.onParamChange(index, data);
@@ -35,15 +34,10 @@ return React.createClass({
   },
   boilerplateLine: function() {
     var systemParamString = this.props.systemParams.join(", ");
-    if (this.props.apiParams.length > 0) {
-      systemParamString += ", ";
-    }
-    var apiParamString = this.props.apiParams.join(", ");
     if (this.props.shouldExpandParams) {
       return (
         <span className="plm">
           <span>{systemParamString} </span>
-          <span className="type-black">{apiParamString} </span>
         </span>
       );
     } else {
@@ -51,7 +45,6 @@ return React.createClass({
         <span>
           <span>function(</span>
           <span>{systemParamString}</span>
-          <span className="type-black">{apiParamString}</span>
           <span>{") { "}</span>
         </span>
       );

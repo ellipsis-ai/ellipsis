@@ -85,15 +85,14 @@ case class BehaviorVersion(
     requiredOAuth2Applications.map(_.application.parameterName).toArray
   }
 
-  def functionWithParams(params: Array[String], awsParams: Array[String], accessTokenParams: Array[String]): String = {
+  def functionWithParams(params: Array[String]): String = {
     val definitionUserParamsString = if (params.isEmpty) {
       ""
     } else {
       s"""\n${params.map(ea => ea ++ ",").mkString("\n")}\n"""
     }
-    val definitionBuiltinParamsString = (HANDLER_PARAMS ++ Array(CONTEXT_PARAM) ++ awsParams ++ accessTokenParams).mkString(", ")
     val possibleEndOfParamsNewline = if (params.isEmpty) { "" } else { "\n" }
-    s"""function($definitionUserParamsString$definitionBuiltinParamsString$possibleEndOfParamsNewline) {
+    s"""function($definitionUserParamsString$CONTEXT_PARAM$possibleEndOfParamsNewline) {
       |  $functionBody
       |}""".stripMargin
   }
@@ -105,7 +104,7 @@ case class BehaviorVersion(
         maybeAWSConfig <- AWSConfigQueries.maybeFor(this)
         requiredOAuth2Applications <- RequiredOAuth2ApplicationQueries.allFor(this)
       } yield {
-        functionWithParams(params.map(_.name).toArray, awsParamsFor(maybeAWSConfig), accessTokenParamsFor(requiredOAuth2Applications))
+        functionWithParams(params.map(_.name).toArray)
       }).map(Some(_))
     }.getOrElse(DBIO.successful(None))
   }
@@ -143,6 +142,8 @@ case class BehaviorVersion(
     } yield Unit
   }
 
+  def isCurrentVersion: Boolean = behavior.maybeCurrentVersionId.contains(id)
+
   private def isUnhandledError(json: JsValue): Boolean = {
     (json \ "errorMessage").toOption.flatMap { m =>
       "Process exited before completing request".r.findFirstIn(m.toString)
@@ -176,6 +177,16 @@ case class BehaviorVersion(
         }
       }
     }
+  }
+
+  def copyWithNewFormat: BehaviorVersion = {
+    val maybeNewFunctionBody = maybeFunctionBody.map { body =>
+      body.
+        replaceAll("onSuccess", "ellipsis.success").
+        replaceAll("onError", "ellipsis.error").
+        replaceAll("new AWS", "new ellipsis.AWS")
+    }
+    this.copy(maybeFunctionBody = maybeNewFunctionBody)
   }
 
   def save: DBIO[BehaviorVersion] = BehaviorVersionQueries.save(this)
@@ -231,6 +242,12 @@ object BehaviorVersionQueries {
       tuple._1._2,
       raw.createdAt
     )
+  }
+
+  def allOfThem: DBIO[Seq[BehaviorVersion]] = {
+    allWithBehavior.result.map { r =>
+      r.map(tuple2BehaviorVersion)
+    }
   }
 
   def uncompiledCurrentWithFunctionQuery() = {
