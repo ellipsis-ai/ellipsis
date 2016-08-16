@@ -1,0 +1,26 @@
+@(
+  missingFunctions: Seq[String],
+  currentFunctions: Seq[String],
+  obsoleteFunctions: Seq[String]
+  )
+
+<p>@missingFunctions.length missing functions:</p>
+<ul>
+  @missingFunctions.map { fn =>
+    <li>@fn</li>
+  }
+</ul>
+
+<p>@currentFunctions.length current functions:</p>
+<ul>
+  @currentFunctions.map { fn =>
+    <li>@fn</li>
+  }
+</ul>
+
+<p>@obsoleteFunctions.length obsolete functions:</p>
+<ul>
+  @obsoleteFunctions.map { fn =>
+    <li>@fn</li>
+  }
+</ul>

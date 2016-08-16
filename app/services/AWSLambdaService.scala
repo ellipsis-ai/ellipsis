@@ -15,6 +15,8 @@ trait AWSLambdaService extends AWSService {
 
   val client: AWSLambdaAsyncClient
 
+  def listFunctionNames: Future[Seq[String]]
+
   def invoke(
               behaviorVersion: BehaviorVersion,
               parametersWithValues: Seq[ParameterWithValue],

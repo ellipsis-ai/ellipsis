@@ -71,6 +71,12 @@ object BehaviorQueries {
     )
   }
 
+  def allCurrentVersionIds: DBIO[Seq[String]] = {
+    all.result.map { r =>
+      r.flatMap(_.maybeCurrentVersionId)
+    }
+  }
+
   def uncompiledFindQuery(id: Rep[String]) = {
     allWithTeam.filter { case(behavior, team) => behavior.id === id }
   }
