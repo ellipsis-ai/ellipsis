@@ -17,7 +17,8 @@ object ScheduledMessageActor {
 
 class ScheduledMessageActor @Inject() (val models: Models, val slackService: SlackService) extends Actor {
 
-  val tick = context.system.scheduler.schedule(Duration.Zero, 1 minute, self, "tick")
+  // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
+  val tick = context.system.scheduler.schedule(1 minute, 1 minute, self, "tick")
 
   override def postStop() = {
     tick.cancel()

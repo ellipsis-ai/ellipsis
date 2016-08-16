@@ -55,6 +55,10 @@ case class NoResponseResult(logResult: AWSLambdaLogResult) extends BehaviorResul
 
   def text: String = ""
 
+  override def sendIn(context: MessageContext): Unit = {
+    // do nothing
+  }
+
 }
 
 case class UnhandledErrorResult(logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {
