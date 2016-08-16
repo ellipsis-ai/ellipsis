@@ -24,7 +24,6 @@ class AdminController @Inject() (
   extends ReAuthable {
 
   def lambdaFunctions() = SecuredAction.async { implicit request =>
-    val user = request.identity
     val action = for {
       allFunctionNames <- DBIO.from(lambdaService.listFunctionNames)
       currentVersionIdsWithFunction <- BehaviorVersionQueries.currentIdsWithFunction
@@ -34,6 +33,17 @@ class AdminController @Inject() (
         val obsolete = allFunctionNames.diff(currentVersionIdsWithFunction)
         Ok(views.html.admin.listLambdaFunctions(missing, current, obsolete))
       }
+
+    models.run(action)
+  }
+
+  def redeploy(versionId: String) = SecuredAction.async { implicit request =>
+    val action = for {
+      maybeBehaviorVersion <- BehaviorVersionQueries.findWithoutAccessCheck(versionId)
+      _ <- maybeBehaviorVersion.map { version =>
+        version.redeploy(lambdaService)
+      }.getOrElse(DBIO.successful(Unit))
+    } yield Redirect(routes.AdminController.lambdaFunctions())
 
     models.run(action)
   }

@@ -2,7 +2,9 @@
   missingFunctions: Seq[String],
   currentFunctions: Seq[String],
   obsoleteFunctions: Seq[String]
-  )
+  )(implicit r: RequestHeader)
+
+@import helper._
 
 <p>@missingFunctions.length missing functions:</p>
 <ul>
@@ -14,7 +16,13 @@
 <p>@currentFunctions.length current functions:</p>
 <ul>
   @currentFunctions.map { fn =>
-    <li>@fn</li>
+    <li>
+      @fn
+      <form action="@routes.AdminController.redeploy(fn)" method="POST">
+        @CSRF.formField
+        <input type="submit" value="Redeploy"/>
+      </form>
+    </li>
   }
 </ul>
 
