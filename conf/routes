@@ -37,6 +37,7 @@ GET         /link_oauth2/:configId                    @controllers.APIAccessCont
 GET         /authenticated/:message                   @controllers.APIAccessController.authenticated(message: String)
 
 GET         /admin/lambda_functions                   @controllers.AdminController.lambdaFunctions()
+POST        /admin/redeploy/:versionId                @controllers.AdminController.redeploy(versionId: String)
 
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp

@@ -126,6 +126,23 @@ case class BehaviorVersion(
     BehaviorVersionQueries.delete(this).map(_ => Unit)
   }
 
+  def redeploy(lambdaService: AWSLambdaService): DBIO[Unit] = {
+    for {
+      params <- BehaviorParameterQueries.allFor(this)
+      maybeAWSConfig <- AWSConfigQueries.maybeFor(this)
+      requiredOAuth2Applications <- RequiredOAuth2ApplicationQueries.allFor(this)
+      _ <- DBIO.from(
+        lambdaService.deployFunctionFor(
+          this,
+          functionBody,
+          params.map(_.name).toArray,
+          maybeAWSConfig,
+          requiredOAuth2Applications
+        )
+      )
+    } yield Unit
+  }
+
   private def isUnhandledError(json: JsValue): Boolean = {
     (json \ "errorMessage").toOption.flatMap { m =>
       "Process exited before completing request".r.findFirstIn(m.toString)
