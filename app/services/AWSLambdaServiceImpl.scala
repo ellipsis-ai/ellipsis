@@ -15,6 +15,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import sun.misc.BASE64Decoder
 import utils.JavaFutureWrapper
+import scala.collection.JavaConversions.asScalaBuffer
 import scala.concurrent.Future
 import scala.reflect.io.Path
 import sys.process._
@@ -32,6 +33,13 @@ class AWSLambdaServiceImpl @Inject() (
 
   val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
+
+  def listFunctionNames: Future[Seq[String]] = {
+    val listRequest = new ListFunctionsRequest()
+    JavaFutureWrapper.wrap(client.listFunctionsAsync(listRequest)).map { result =>
+      result.getFunctions.toSeq.map(_.getFunctionName)
+    }
+  }
 
   private def contextParamDataFor(
                                    behaviorVersion: BehaviorVersion,

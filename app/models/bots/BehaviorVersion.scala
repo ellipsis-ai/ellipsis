@@ -230,6 +230,18 @@ object BehaviorVersionQueries {
     )
   }
 
+  def uncompiledCurrentWithFunctionQuery() = {
+    allWithBehavior.
+      filter { case((version, _), (behavior, team)) => behavior.maybeCurrentVersionId === version.id}.
+      filter { case((version, _), _) => version.maybeFunctionBody.map(_.trim.length > 0).getOrElse(false) }.
+      map { case((version, _), _) => version.id }
+  }
+  val currentWithFunctionQuery = Compiled(uncompiledCurrentWithFunctionQuery)
+
+  def currentIdsWithFunction: DBIO[Seq[String]] = {
+    uncompiledCurrentWithFunctionQuery.result
+  }
+
   def uncompiledAllForQuery(behaviorId: Rep[String]) = {
     allWithBehavior.
       filter { case((version, _), _) => version.behaviorId === behaviorId }.
