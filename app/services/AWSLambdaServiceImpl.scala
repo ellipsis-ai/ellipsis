@@ -137,7 +137,7 @@ class AWSLambdaServiceImpl @Inject() (
   private def accessTokenCodeFor(app: RequiredOAuth2Application): String = {
     val paramName = app.application.parameterName
     s"""var $paramName = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken;
-       |$CONTEXT_PARAM.$paramName = $paramName;
+       |$CONTEXT_PARAM.accessTokens.${app.application.keyName} = $paramName;
      """.stripMargin
   }
 
@@ -161,10 +161,11 @@ class AWSLambdaServiceImpl @Inject() (
       |   var $ON_SUCCESS_PARAM = function(result) {
       |     callback(null, { "result": result === undefined ? null : result });
       |   };
-      |   $CONTEXT_PARAM.$ON_SUCCESS_PARAM = $ON_SUCCESS_PARAM;
+      |   $CONTEXT_PARAM.success = $ON_SUCCESS_PARAM;
       |   var $ON_ERROR_PARAM = function(err) { callback(err); };
-      |   $CONTEXT_PARAM.$ON_ERROR_PARAM = $ON_ERROR_PARAM;
+      |   $CONTEXT_PARAM.error = $ON_ERROR_PARAM;
       |   ${awsCodeFor(maybeAwsConfig)}
+      |   $CONTEXT_PARAM.accessTokens = {};
       |   ${accessTokensCodeFor(requiredOAuth2Applications)}
       |   fn($invocationParamsString);
       |}
