@@ -128,12 +128,17 @@ class AWSLambdaServiceImpl @Inject() (
          |  ${awsConfig.maybeSecretKeyName.map(n => s"secretAccessKey: $CONTEXT_PARAM.env.$n,").getOrElse("")}
          |  ${awsConfig.maybeRegionName.map(n => s"region: $CONTEXT_PARAM.env.$n").getOrElse("")}
          | });
+         |
+         | $CONTEXT_PARAM.AWS = AWS;
        """.stripMargin
     }.getOrElse("")
   }
 
   private def accessTokenCodeFor(app: RequiredOAuth2Application): String = {
-    s"""var ${app.application.parameterName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken;"""
+    val paramName = app.application.parameterName
+    s"""var $paramName = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken;
+       |$CONTEXT_PARAM.$paramName = $paramName;
+     """.stripMargin
   }
 
   private def accessTokensCodeFor(requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {
@@ -150,13 +155,15 @@ class AWSLambdaServiceImpl @Inject() (
     // Be careful changing either this or the UI line numbers
     s"""exports.handler = function(event, context, callback) { var fn = ${behaviorVersion.functionWithParams(params, awsParams, accessTokenParams)};
       |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-      |   $CONTEXT_PARAM.noResponse = function() {
+      |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = function() {
       |     callback(null, { $NO_RESPONSE_KEY: true });
       |   };
       |   var $ON_SUCCESS_PARAM = function(result) {
       |     callback(null, { "result": result === undefined ? null : result });
       |   };
+      |   $CONTEXT_PARAM.$ON_SUCCESS_PARAM = $ON_SUCCESS_PARAM;
       |   var $ON_ERROR_PARAM = function(err) { callback(err); };
+      |   $CONTEXT_PARAM.$ON_ERROR_PARAM = $ON_ERROR_PARAM;
       |   ${awsCodeFor(maybeAwsConfig)}
       |   ${accessTokensCodeFor(requiredOAuth2Applications)}
       |   fn($invocationParamsString);
