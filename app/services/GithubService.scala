@@ -14,6 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class GithubService(team: Team, ws: WSClient, config: Configuration, cache: CacheApi) {
 
   val repoCredentials: (String, String) = ("access_token", config.getString("github.repoAccessToken").get)
+  val cacheTimeout: Duration = config.getInt("github.cacheTimeoutSeconds").get.seconds
 
   private def withTreeFor(url: String): Future[Option[Seq[JsValue]]] = {
     ws.url(url).withQueryString(repoCredentials).get().map { response =>
@@ -156,7 +157,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
   }
 
   def publishedBehaviorCategories: Seq[BehaviorCategory] = {
-    cache.getOrElse[Seq[BehaviorCategory]](GithubService.PUBLISHED_BEHAVIORS_KEY, 30.minutes) {
+    cache.getOrElse[Seq[BehaviorCategory]](GithubService.PUBLISHED_BEHAVIORS_KEY, cacheTimeout) {
       Await.result(fetchPublishedBehaviorCategories, 20.seconds)
     }.map(_.copyForTeam(team))
   }
