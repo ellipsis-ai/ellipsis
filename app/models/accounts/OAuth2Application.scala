@@ -49,7 +49,8 @@ case class OAuth2Application(
     )
   }
 
-  def parameterName: String = WordUtils.capitalize(name).replaceAll("\\s", "").toLowerCase ++ "Token"
+  def keyName: String = WordUtils.capitalize(name).replaceAll("\\s", "").toLowerCase
+  def parameterName: String = keyName ++ "Token"
 
   def toRaw = RawOAuth2Application(
     id,
