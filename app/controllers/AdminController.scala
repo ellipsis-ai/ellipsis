@@ -40,7 +40,10 @@ class AdminController @Inject() (
   def redeploy(versionId: String) = SecuredAction.async { implicit request =>
     val action = for {
       maybeBehaviorVersion <- BehaviorVersionQueries.findWithoutAccessCheck(versionId)
-      _ <- maybeBehaviorVersion.map { version =>
+      maybeWithNewFormat <- maybeBehaviorVersion.map { version =>
+        version.copyWithNewFormat.save.map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+      _ <- maybeWithNewFormat.map { version =>
         version.redeploy(lambdaService)
       }.getOrElse(DBIO.successful(Unit))
     } yield Redirect(routes.AdminController.lambdaFunctions())

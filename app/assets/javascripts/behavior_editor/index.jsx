@@ -175,21 +175,12 @@ return React.createClass({
   },
 
   getSystemParams: function() {
-    return ["onSuccess", "onError", "ellipsis"];
-  },
-
-  getAPIParams: function() {
-    var params = [];
-    if (this.getAWSConfig() !== undefined) {
-      params = params.concat(["AWS"]);
-    }
-    params = params.concat(this.getRequiredOAuth2Applications().map(function(ea) { return ea.parameterName; }));
-    return params;
+    return ["ellipsis"];
   },
 
   getCodeFunctionParams: function() {
     var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
-    return userParams.concat(this.getSystemParams(), this.getAPIParams());
+    return userParams.concat(this.getSystemParams());
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -1224,7 +1215,6 @@ return React.createClass({
                   onToggleHelp={this.toggleBoilerplateHelp}
                   userParams={this.getBehaviorParams()}
                   systemParams={this.getSystemParams()}
-                  apiParams={this.getAPIParams()}
                 />
               </div>
 
