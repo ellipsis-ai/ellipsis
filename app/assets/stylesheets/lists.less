@@ -11,6 +11,10 @@ ul {
   margin-bottom: @s;
 }
 
+.list-space-l > li {
+  margin-bottom: @l;
+}
+
 .checklist > li {
   transition: color 0.2s ease;
   list-style-type: circle;
@@ -30,6 +34,13 @@ ul {
   list-style-type: none;
   position: relative;
   color: @green-text;
+  a:link, a:visited, .link {
+    color: @green-text;
+    text-decoration: underline;
+  }
+  .box-code-example {
+    opacity: 0.5;
+  }
   &::before {
     content: '✓' !important;
     position: absolute;
