@@ -175,7 +175,7 @@ return React.createClass({
   },
 
   getSystemParams: function() {
-    return ["onSuccess", "onError", "ellipsis"];
+    return ["ellipsis"];
   },
 
   getAPIParams: function() {
