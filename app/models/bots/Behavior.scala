@@ -23,8 +23,11 @@ case class Behavior(
   }
 
   def unlearn(lambdaService: AWSLambdaService): DBIO[Unit] = {
-    lambdaService.deleteFunction(id)
-    BehaviorQueries.delete(this).map(_ => Unit)
+    for {
+      versions <- BehaviorVersionQueries.allFor(this)
+      _ <- DBIO.successful(versions.map(v => v.unlearn(lambdaService)))
+      _ <- BehaviorQueries.delete(this)
+    } yield Unit
   }
 
   def toRaw: RawBehavior = {
