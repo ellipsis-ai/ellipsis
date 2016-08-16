@@ -60,20 +60,6 @@ case class BehaviorVersion(
   // TODO: make this real
   def isInDevelopmentMode: Boolean = true
 
-  def restore: DBIO[BehaviorVersion] = {
-    (for {
-      newVersion <- this.copy(id = IDs.next, createdAt = DateTime.now).save
-      currentTriggers <- MessageTriggerQueries.allFor(this)
-      newTriggers <- DBIO.sequence(currentTriggers.map { t =>
-        MessageTriggerQueries.createFor(newVersion, t.pattern, t.requiresBotMention, t.shouldTreatAsRegex, t.isCaseSensitive)
-      })
-      currentParams <- BehaviorParameterQueries.allFor(this)
-      newParams <- DBIO.sequence(currentParams.map { p =>
-        BehaviorParameterQueries.createFor(p.name, p.maybeQuestion, p.rank, newVersion)
-      })
-    } yield newVersion) transactionally
-  }
-
   def isSkill: Boolean = {
     maybeFunctionBody.map { body =>
       Option(body).filter(_.trim.nonEmpty).isDefined
