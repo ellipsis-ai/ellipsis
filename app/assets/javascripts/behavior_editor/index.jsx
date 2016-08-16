@@ -821,6 +821,11 @@ return React.createClass({
       /\bellipsis\.success\([\s\S]*?\)/.test(code);
   },
 
+  hasCalledRequire: function() {
+    var code = this.getBehaviorFunctionBody();
+    return /\brequire\(\s*\S.+?\)/.test(code);
+  },
+
   hasCode: function() {
     return /\S/.test(this.getBehaviorFunctionBody());
   },
@@ -1196,10 +1201,23 @@ return React.createClass({
                   <span>To end with no response, call <code className="type-bold">ellipsis.noResponse()</code>.</span>
                 </Checklist.Item>
 
+                <Checklist.Item hiddenWhen={!this.isExistingBehavior()}>
+                  <span>Call <code>ellipsis.success(…)</code>, <code>ellipsis.error(…)</code> and/or <code>ellipsis.noResponse()</code> </span>
+                  <span>to end your function. </span>
+                  <span className="pls">
+                    <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.getActivePanel() === 'helpForBoilerplateParameters'} />
+                  </span>
+                </Checklist.Item>
+
                 <Checklist.Item checkedWhen={this.hasUserParameters()} hiddenWhen={this.isExistingBehavior() && this.hasUserParameters()}>
                   <span>If you need more information from the user, add one or more parameters </span>
                   <span>to your function.</span>
                 </Checklist.Item>
+
+                <Checklist.Item hiddenWhen={!this.isExistingBehavior() || this.hasCalledRequire()}>
+                  <span>Use <code>require(…)</code> to load any NPM package.</span>
+                </Checklist.Item>
+
               </Checklist>
 
             </div>

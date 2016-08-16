@@ -343,4 +343,22 @@ describe('BehaviorEditor', () => {
       expect(editor.hasCalledNoResponse()).toBe(false);
     });
   });
+
+  describe('hasCalledRequire', () => {
+    it('returns true when the code calls require with something', () => {
+      editorConfig.functionBody = 'var Intl = require("intl");\nIntl.NumberFormat().format();';
+      const editor = createEditor(editorConfig);
+      expect(editor.hasCalledRequire()).toBe(true);
+    });
+    it('returns false when the code calls require with nothing', () => {
+      editorConfig.functionBody = 'var Intl = require();\nIntl.NumberFormat().format();';
+      const editor = createEditor(editorConfig);
+      expect(editor.hasCalledRequire()).toBe(false);
+    });
+    it('returns false when the code doesn’t call require', () => {
+      editorConfig.functionBody = 'var f = "b";';
+      const editor = createEditor(editorConfig);
+      expect(editor.hasCalledRequire()).toBe(false);
+    });
+  });
 });
