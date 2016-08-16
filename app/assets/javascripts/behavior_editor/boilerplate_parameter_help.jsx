@@ -21,34 +21,54 @@ return React.createClass({
   render: function() {
     return (
       <HelpPanel
-        heading="Function parameters"
+        heading="Available functions and properties"
         onCollapseClick={this.props.onCollapseClick}
       >
         <p>
-          <span>The function will automatically receive three parameters from Ellipsis:</span>
+          <span>The function will automatically receive the <code className="type-bold">ellipsis</code> object, which contains </span>
+          <span>important methods and properties.</span>
         </p>
 
-        <ul>
-          <li className="mbs">
+        <ul className="list-space-l">
+          <li>
             <div>
-              <span>Call the <code className="type-bold">onSuccess</code> function to send a response to the user.</span>
-              <span> e.g. </span>
-              <code className="type-weak">{'onSuccess("It worked!");'}</code>
+              <span>Call <code className="type-bold">ellipsis.success</code> to end the function and include text </span>
+              <span>or data for the response. You can pass a string, an object, or an array to use in the response.</span>
+
+              <div className="box-code-example mvs">
+                {'ellipsis.success("The answer is: " + answer);'}
+              </div>
+              <div className="box-code-example mvs">
+                {"ellipsis.success({ firstName: 'Abraham', lastName: 'Lincoln' });"}
+              </div>
+              <div className="box-code-example mvs">
+                {"ellipsis.success(['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Neptune', 'Uranus']);"}
+              </div>
             </div>
           </li>
 
-          <li className="mbs">
+          <li>
             <div>
-              <span>Call the <code className="type-bold">onError</code> function to send an error message, e.g. </span>
-              <code className="type-weak">onError("Something went wrong.");</code>
+              <span>Call <code className="type-bold">ellipsis.error</code> to end the function with an </span>
+              <span>error message instead of the normal response. You must specify a string.</span>
+
+              <div className="box-code-example mvs">
+                {'ellipsis.error("There was a problem with your request.");'}
+              </div>
             </div>
           </li>
 
-          <li className="mbs">
+          <li>
             <div>
-              <span>Use the <code className="type-bold">ellipsis</code> object when required by library </span>
-              <span>methods. It also contains any pre-configured environment variables </span>
-              <span>in its <code className="type-bold">env</code> property.</span>
+              <span>Call <code className="type-bold">ellipsis.noResponse()</code> to end the function without </span>
+              <span>sending any response.</span>
+            </div>
+          </li>
+
+          <li>
+            <div>
+              <span>The <code className="type-bold">ellipsis.env</code> property contains any pre-configured environment </span>
+              <span>variables.</span>
             </div>
           </li>
         </ul>

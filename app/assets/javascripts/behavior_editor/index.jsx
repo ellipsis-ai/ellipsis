@@ -328,7 +328,7 @@ return React.createClass({
   getSuccessResultTemplateHelp: function() {
     return (
       <Checklist.Item checkedWhen={this.templateIncludesSuccessResult()}>
-        The result provided to <code>onSuccess</code>:<br />
+        The result provided to <code>ellipsis.success</code>:<br />
         <div className="box-code-example">
           The answer is {"{successResult}"}
         </div>
@@ -796,14 +796,29 @@ return React.createClass({
 
   /* Booleans */
 
+  hasCalledOnError: function() {
+    var code = this.getBehaviorFunctionBody();
+    return /\bonError\(\s*\S.+?\)/.test(code) ||
+      /\bellipsis\.error\(\s*\S.+?\)/.test(code);
+  },
+
+  hasCalledNoResponse: function() {
+    return /\bellipsis\.noResponse\(\)/.test(this.getBehaviorFunctionBody());
+  },
+
   hasCalledOnSuccess: function() {
     var code = this.getBehaviorFunctionBody();
-    var success = code && code.match(/\bonSuccess\([\s\S]+?\)/);
-    return !!success;
+    return /\bonSuccess\([\s\S]*?\)/.test(code) ||
+      /\bellipsis\.success\([\s\S]*?\)/.test(code);
+  },
+
+  hasCalledRequire: function() {
+    var code = this.getBehaviorFunctionBody();
+    return /\brequire\(\s*\S.+?\)/.test(code);
   },
 
   hasCode: function() {
-    return !!this.getBehaviorFunctionBody().match(/\S/);
+    return /\S/.test(this.getBehaviorFunctionBody());
   },
 
   hasModalPanel: function() {
@@ -1155,18 +1170,45 @@ return React.createClass({
 
               <Checklist disabledWhen={this.isExistingBehavior()}>
                 <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.isExistingBehavior()}>
-                  Write a node.js function to determine a result.
+                  <span>Write a node.js function. You can <code>require()</code> any </span>
+                  <span><a href="https://www.npmjs.com/" target="_blank">NPM package</a>.</span>
                 </Checklist.Item>
 
                 <Checklist.Item checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.isExistingBehavior()}>
-                  <span>Call <code>onSuccess</code> with a string, object, or array </span>
-                  <span>to include in the response below.</span>
+                  <span>End the function by calling </span>
+                  <code className="type-bold">ellipsis.success(<span className="type-regular">…</span>)</code>
+                  <span> with text or data to include in the response. </span>
+                  <button type="button" className="button-raw link button-s" onClick={this.toggleBoilerplateHelp}>Examples</button>
+                </Checklist.Item>
+
+                <Checklist.Item checkedWhen={this.hasCalledOnError()} hiddenWhen={this.isExistingBehavior()}>
+                  <span>To end with an error message, call </span>
+                  <code className="type-bold">ellipsis.error(<span className="type-regular">…</span>)</code>
+                  <span> with a string. </span>
+                  <button type="button" className="button-raw link button-s" onClick={this.toggleBoilerplateHelp}>Example</button>
+                </Checklist.Item>
+
+                <Checklist.Item checkedWhen={this.hasCalledNoResponse()} hiddenWhen={this.isExistingBehavior()}>
+                  <span>To end with no response, call <code className="type-bold">ellipsis.noResponse()</code>.</span>
+                </Checklist.Item>
+
+                <Checklist.Item hiddenWhen={!this.isExistingBehavior()}>
+                  <span>Call <code>ellipsis.success(…)</code>, <code>ellipsis.error(…)</code> and/or <code>ellipsis.noResponse()</code> </span>
+                  <span>to end your function. </span>
+                  <span className="pls">
+                    <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.getActivePanel() === 'helpForBoilerplateParameters'} />
+                  </span>
                 </Checklist.Item>
 
                 <Checklist.Item checkedWhen={this.hasUserParameters()} hiddenWhen={this.isExistingBehavior() && this.hasUserParameters()}>
                   <span>If you need more information from the user, add one or more parameters </span>
                   <span>to your function.</span>
                 </Checklist.Item>
+
+                <Checklist.Item hiddenWhen={!this.isExistingBehavior() || this.hasCalledRequire()}>
+                  <span>Use <code>require(…)</code> to load any NPM package.</span>
+                </Checklist.Item>
+
               </Checklist>
 
             </div>
