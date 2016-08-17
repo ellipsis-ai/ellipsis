@@ -25,19 +25,10 @@ case class LinkedAccount(user: User, loginInfo: LoginInfo, createdAt: DateTime) 
 
   def maybeSlackTeamId: DBIO[Option[String]] = maybeSlackProfile.map(_.map(_.teamId))
 
-  def teams: DBIO[Seq[Team]] = {
-    for {
-      maybeId <- maybeSlackTeamId
-      botProfiles <- maybeId.map { slackTeamId =>
-        SlackBotProfileQueries.allForSlackTeamId(slackTeamId)
-      }.getOrElse(DBIO.successful(Seq()))
-      teams <- DBIO.sequence(botProfiles.map { profile =>
-        Team.find(profile.teamId)
-      }).map(_.flatten)
-    } yield teams
+  def isAdmin: DBIO[Boolean] = maybeSlackTeamId.map { maybeId =>
+    maybeId.contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
   }
 
-  def canAccess(team: Team): DBIO[Boolean] = teams.map(_.contains(team))
 }
 
 case class RawLinkedAccount(userId: String, loginInfo: LoginInfo, createdAt: DateTime)
@@ -100,11 +91,19 @@ object LinkedAccount {
     }
   }
 
-  def allFor(providerId: String): DBIO[Seq[LinkedAccount]] = {
+  def uncompiledForSlackForQuery(userId: Rep[String]) = {
     joined.
-      filter { case(rawLinked, _) => rawLinked.providerId === providerId }.
-      result.
-      map { result => result.map(tuple2LinkedAccount) }
+      filter { case(la, u) => la.providerId === SlackProvider.ID }.
+      filter { case(la, u) => u.id === userId }
   }
+  val forSlackForQuery = Compiled(uncompiledForSlackForQuery _)
+
+  def maybeForSlackFor(user: User): DBIO[Option[LinkedAccount]] = {
+    forSlackForQuery(user.id).result.map { r =>
+      r.headOption.map(tuple2LinkedAccount)
+    }
+  }
+
+  val ELLIPSIS_SLACK_TEAM_ID = "T0LP53H0A"
 
 }
