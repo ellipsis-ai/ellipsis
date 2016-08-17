@@ -171,7 +171,7 @@ return React.createClass({
       return 'ellipsis.env.' + name;
     });
 
-    var aws = this.getAWSConfig() ? ['AWS'] : [];
+    var aws = this.getAWSConfig() ? ['ellipsis.AWS'] : [];
 
     return this.getCodeFunctionParams().concat(apiTokens, aws, envVars);
   },
