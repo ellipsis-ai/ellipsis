@@ -81,10 +81,6 @@ case class BehaviorVersion(
     maybeAWSConfig.map(_ => Array("AWS")).getOrElse(Array())
   }
 
-  def accessTokenParamsFor(requiredOAuth2Applications: Seq[RequiredOAuth2Application]): Array[String] = {
-    requiredOAuth2Applications.map(_.application.parameterName).toArray
-  }
-
   def functionWithParams(params: Array[String]): String = {
     val definitionUserParamsString = if (params.isEmpty) {
       ""
