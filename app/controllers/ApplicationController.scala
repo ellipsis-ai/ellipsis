@@ -167,15 +167,11 @@ class ApplicationController @Inject() (
     val action = for {
       maybeSignedInTeam <- Team.find(user.teamId)
       maybeVersionData <- BehaviorVersionData.maybeFor(id, user)
-      maybeBehavior <- BehaviorQueries.find(id, user)
-      maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        behavior.maybeCurrentVersion
+      maybeEnvironmentVariables <- maybeSignedInTeam.map { team =>
+        EnvironmentVariableQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      maybeEnvironmentVariables <- maybeBehaviorVersion.map { behaviorVersion =>
-        EnvironmentVariableQueries.allFor(behaviorVersion.team).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-      maybeOAuth2Applications <- maybeBehaviorVersion.map { behaviorVersion =>
-        OAuth2ApplicationQueries.allFor(behaviorVersion.team).map(Some(_))
+      maybeOAuth2Applications <- maybeSignedInTeam.map { team =>
+        OAuth2ApplicationQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       result <- (for {
         data <- maybeVersionData
@@ -184,7 +180,7 @@ class ApplicationController @Inject() (
       } yield {
           DBIO.successful(Ok(views.html.edit(
             Some(user),
-            maybeBehavior.map(_.team),
+            maybeSignedInTeam,
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
@@ -242,7 +238,15 @@ class ApplicationController @Inject() (
                 maybeBehavior.map { behavior =>
                   Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
                 }.getOrElse {
-                  NotFound(views.html.notFound(Some(user), maybeSignedInTeam, Some("Behavior not found"), Some("The behavior you were trying to save could not be found.")))
+                  NotFound(
+                    views.html.notFound(
+                      Some(user),
+                      maybeSignedInTeam,
+                      Some("Behavior not found"),
+                      Some("The behavior you were trying to save could not be found."
+                      )
+                    )
+                  )
                 }
               }) transactionally
 
