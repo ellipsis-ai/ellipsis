@@ -6,20 +6,47 @@ import models.{Team, IDs}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
+case class UserTeamAccess(user: User, loggedInTeam: Team, maybeTargetTeam: Option[Team], isAdminAccess: Boolean) {
+
+  val maybeAdminAccessToTeam: Option[Team] = {
+    if (isAdminAccess) {
+      maybeTargetTeam
+    } else {
+      None
+    }
+  }
+
+  val maybeAdminAccessToTeamId = maybeAdminAccessToTeam.map(_.id)
+
+  val canAccessTargetTeam: Boolean = maybeTargetTeam.isDefined
+
+}
+
 case class User(
                  id: String,
                  teamId: String,
                  maybeEmail: Option[String]
                  ) extends Identity {
 
-  def canAccess(team: Team): Boolean = team.id == teamId
+  def canAccess(team: Team): DBIO[Boolean] = teamAccessFor(Some(team.id)).map { teamAccess =>
+    teamAccess.canAccessTargetTeam
+  }
 
-  def maybeTeamFor(maybeTeamId: Option[String]): DBIO[Option[Team]] = {
-    if (maybeTeamId.isDefined && maybeTeamId.get != teamId) {
-      DBIO.successful(None)
-    } else {
-      Team.find(this.teamId)
-    }
+  def teamAccessFor(maybeTargetTeamId: Option[String]): DBIO[UserTeamAccess] = {
+    for {
+      loggedInTeam <- Team.find(teamId).map(_.get)
+      maybeSlackLinkedAccount <- LinkedAccount.maybeForSlackFor(this)
+      isAdmin <- maybeSlackLinkedAccount.map(_.isAdmin).getOrElse(DBIO.successful(false))
+      maybeTeam <- maybeTargetTeamId.map { targetTeamId =>
+        if (targetTeamId != teamId && !isAdmin) {
+          DBIO.successful(None)
+        } else {
+          Team.find(targetTeamId)
+        }
+      }.getOrElse {
+        Team.find(teamId)
+      }
+    } yield UserTeamAccess(this, loggedInTeam, maybeTeam, maybeTeam.exists(t => t.id != this.teamId))
   }
 
   def loginInfo: LoginInfo = LoginInfo(User.EPHEMERAL_USER_ID, id)

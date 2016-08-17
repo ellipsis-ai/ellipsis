@@ -1,6 +1,5 @@
 @(
-  maybeUser: Option[models.accounts.User],
-  maybeTeam: Option[models.Team],
+  teamAccess: models.accounts.UserTeamAccess,
   json: String,
   envVariablesJson: String,
   oauth2ApplicationsJson: String,
@@ -9,9 +8,8 @@
     )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
-@import play.api.libs.json._
 
-@main("Ellipsis behavior editor", maybeUser, maybeTeam) {
+@main("Ellipsis behavior editor", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.ApplicationController.regexValidationErrorsFor,
     routes.javascript.ApplicationController.versionInfoFor,

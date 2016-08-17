@@ -1,12 +1,11 @@
 @(
-  maybeUser: Option[models.accounts.User],
-  maybeApi: Option[models.accounts.OAuth2Api],
-  maybeTeam: Option[models.Team]
+  teamAccess: models.accounts.UserTeamAccess,
+  maybeApi: Option[models.accounts.OAuth2Api]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
 
-@main("Configure an external API", maybeUser, maybeTeam) {
+@main("Configure an external API", Some(teamAccess)) {
 
   <div id="content" class="content">
     <div class="container ptxxxxl">
@@ -14,7 +13,7 @@
 
       <form action="@routes.ApplicationController.saveOAuth2Api()" method="POST">
         @CSRF.formField
-        @maybeTeam.map { team =>
+        @teamAccess.maybeTargetTeam.map { team =>
           <input type="hidden" name="teamId" value="@team.id"/>
         }
         @maybeApi.map { api =>

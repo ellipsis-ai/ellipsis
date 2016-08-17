@@ -45,8 +45,8 @@ class ApplicationController @Inject() (
   def index(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeTeam <- user.maybeTeamFor(maybeTeamId)
-      maybeBehaviors <- maybeTeam.map { team =>
+      teamAccess <- user.teamAccessFor(maybeTeamId)
+      maybeBehaviors <- teamAccess.maybeTargetTeam.map { team =>
         BehaviorQueries.allForTeam(team).map { behaviors =>
           Some(behaviors)
         }
@@ -58,15 +58,16 @@ class ApplicationController @Inject() (
           BehaviorVersionData.maybeFor(behavior.id, user)
         }
       }.getOrElse(Seq())).map(_.flatten)
-    } yield {
-      maybeTeam.map { team =>
-        if (versionData.isEmpty) {
+      result <- teamAccess.maybeTargetTeam.map { team =>
+        DBIO.successful(if (versionData.isEmpty) {
           Redirect(routes.ApplicationController.intro(maybeTeamId))
         } else {
-          Ok(views.html.index(Some(user), team, versionData))
-        }
-      }.getOrElse(NotFound(s"No accessible team"))
-    }
+          Ok(views.html.index(teamAccess, versionData))
+        })
+      }.getOrElse {
+        reAuthFor(request, maybeTeamId)
+      }
+    } yield result
 
     models.run(action)
   }
@@ -85,14 +86,24 @@ class ApplicationController @Inject() (
   def intro(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeTeam <- user.maybeTeamFor(maybeTeamId)
-      maybePublishedBehaviorInfo <- maybeTeam.map { team =>
+      teamAccess <- user.teamAccessFor(maybeTeamId)
+      maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
         withPublishedBehaviorInfoFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       result <- (for {
-        team <- maybeTeam
+        team <- teamAccess.maybeTargetTeam
         data <- maybePublishedBehaviorInfo
-      } yield DBIO.successful(Ok(views.html.intro(Some(user), team, data.published, data.installedBehaviors)))).getOrElse {
+      } yield {
+          DBIO.successful(
+            Ok(
+              views.html.intro(
+                teamAccess,
+                data.published,
+                data.installedBehaviors
+              )
+            )
+          )
+        }).getOrElse {
         reAuthFor(request, maybeTeamId)
       }
     } yield result
@@ -103,14 +114,24 @@ class ApplicationController @Inject() (
   def installBehaviors(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeTeam <- user.maybeTeamFor(maybeTeamId)
-      maybePublishedBehaviorInfo <- maybeTeam.map { team =>
+      teamAccess <- user.teamAccessFor(maybeTeamId)
+      maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
         withPublishedBehaviorInfoFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       result <- (for {
-        team <- maybeTeam
+        team <- teamAccess.maybeTargetTeam
         data <- maybePublishedBehaviorInfo
-      } yield DBIO.successful(Ok(views.html.publishedBehaviors(Some(user), team, data.published, data.installedBehaviors)))).getOrElse {
+      } yield {
+          DBIO.successful(
+            Ok(
+              views.html.publishedBehaviors(
+                teamAccess,
+                data.published,
+                data.installedBehaviors
+              )
+            )
+          )
+        }).getOrElse {
         reAuthFor(request, maybeTeamId)
       }
     } yield result
@@ -121,15 +142,15 @@ class ApplicationController @Inject() (
   def newBehavior(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeTeam <- user.maybeTeamFor(maybeTeamId)
-      maybeEnvironmentVariables <- maybeTeam.map { team =>
+      teamAccess <- user.teamAccessFor(maybeTeamId)
+      maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
         EnvironmentVariableQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      maybeOAuth2Applications <- maybeTeam.map { team =>
+      maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       result <- (for {
-        team <- maybeTeam
+        team <- teamAccess.maybeTargetTeam
         envVars <- maybeEnvironmentVariables
         oauth2Applications <- maybeOAuth2Applications
       } yield {
@@ -146,8 +167,7 @@ class ApplicationController @Inject() (
             None
           )
           DBIO.successful(Ok(views.html.edit(
-            Some(user),
-            Some(team),
+            teamAccess,
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
@@ -165,22 +185,17 @@ class ApplicationController @Inject() (
   def editBehavior(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeSignedInTeam <- Team.find(user.teamId)
       maybeVersionData <- BehaviorVersionData.maybeFor(id, user)
-      maybeEnvironmentVariables <- maybeSignedInTeam.map { team =>
-        EnvironmentVariableQueries.allFor(team).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-      maybeOAuth2Applications <- maybeSignedInTeam.map { team =>
-        OAuth2ApplicationQueries.allFor(team).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
+      teamAccess <- user.teamAccessFor(maybeVersionData.map(_.teamId))
+      maybeEnvironmentVariables <- EnvironmentVariableQueries.allFor(teamAccess.loggedInTeam).map(Some(_))
+      maybeOAuth2Applications <- OAuth2ApplicationQueries.allFor(teamAccess.loggedInTeam).map(Some(_))
       result <- (for {
         data <- maybeVersionData
         envVars <- maybeEnvironmentVariables
         oauth2Applications <- maybeOAuth2Applications
       } yield {
           DBIO.successful(Ok(views.html.edit(
-            Some(user),
-            maybeSignedInTeam,
+            teamAccess,
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
@@ -190,8 +205,7 @@ class ApplicationController @Inject() (
         }).getOrElse {
         val response = NotFound(
           views.html.notFound(
-            Some(user),
-            maybeSignedInTeam,
+            Some(teamAccess),
             Some("Behavior not found"),
             Some("The behavior you are trying to access could not be found."),
             Some(reAuthLinkFor(request, None))
@@ -222,12 +236,11 @@ class ApplicationController @Inject() (
         json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
             val action = (for {
-              maybeSignedInTeam <- Team.find(user.teamId)
-              maybeTeam <- Team.find(data.teamId, user)
+              teamAccess <- user.teamAccessFor(Some(data.teamId))
               maybeBehavior <- data.behaviorId.map { behaviorId =>
                 BehaviorQueries.find(behaviorId, user)
               }.getOrElse {
-                maybeTeam.map { team =>
+                teamAccess.maybeTargetTeam.map { team =>
                   BehaviorQueries.createFor(team, None).map(Some(_))
                 }.getOrElse(DBIO.successful(None))
               }
@@ -240,8 +253,7 @@ class ApplicationController @Inject() (
                 }.getOrElse {
                   NotFound(
                     views.html.notFound(
-                      Some(user),
-                      maybeSignedInTeam,
+                      Some(teamAccess),
                       Some("Behavior not found"),
                       Some("The behavior you were trying to save could not be found."
                       )
@@ -435,9 +447,9 @@ class ApplicationController @Inject() (
 
   def importBehaviorZip(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = user.maybeTeamFor(maybeTeamId).map { maybeTeam =>
-      maybeTeam.map { team =>
-        Ok(views.html.importBehaviorZip(Some(user), team))
+    val action = user.teamAccessFor(maybeTeamId).map { teamAccess =>
+      teamAccess.maybeTargetTeam.map { team =>
+        Ok(views.html.importBehaviorZip(teamAccess))
       }.getOrElse {
         NotFound(s"No accessible team")
       }
@@ -595,11 +607,11 @@ class ApplicationController @Inject() (
   def newOAuth2Application(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeTeam <- user.maybeTeamFor(maybeTeamId)
-      apis <- OAuth2ApiQueries.allFor(maybeTeam)
+      teamAccess <- user.teamAccessFor(maybeTeamId)
+      apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
     } yield {
-      maybeTeam.map { team =>
-        Ok(views.html.newOAuth2Application(Some(user), team, apis))
+      teamAccess.maybeTargetTeam.map { team =>
+        Ok(views.html.newOAuth2Application(teamAccess, apis))
       }.getOrElse {
         NotFound("Team not accessible")
       }
@@ -611,22 +623,20 @@ class ApplicationController @Inject() (
   def editOAuth2Application(id: String, maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeSignedInTeam <- Team.find(user.teamId)
-      maybeTeam <- user.maybeTeamFor(maybeTeamId)
-      maybeConfig <- maybeTeam.map { team =>
+      teamAccess <- user.teamAccessFor(maybeTeamId)
+      maybeConfig <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.find(id)
       }.getOrElse(DBIO.successful(None))
     } yield {
         (for {
-          team <- maybeTeam
+          team <- teamAccess.maybeTargetTeam
           config <- maybeConfig
         } yield {
-          Ok(views.html.editOAuth2Application(Some(user), config, team))
+          Ok(views.html.editOAuth2Application(teamAccess, config))
         }).getOrElse {
         NotFound(
           views.html.notFound(
-            Some(user),
-            maybeSignedInTeam,
+            Some(teamAccess),
             Some("OAuth2 config not found"),
             Some("The OAuth2 config you are trying to access could not be found."),
             Some(reAuthLinkFor(request, None))
@@ -697,9 +707,9 @@ class ApplicationController @Inject() (
 
   def newOAuth2Api(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = user.maybeTeamFor(maybeTeamId).map { maybeTeam =>
-      maybeTeam.map { team =>
-        Ok(views.html.oAuth2Api(Some(user), None, Some(team)))
+    val action = user.teamAccessFor(maybeTeamId).map { teamAccess =>
+      teamAccess.maybeTargetTeam.map { _ =>
+        Ok(views.html.oAuth2Api(teamAccess, None))
       }.getOrElse {
         NotFound("Team not accessible")
       }
@@ -711,11 +721,11 @@ class ApplicationController @Inject() (
   def editOAuth2Api(apiId: String, maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeTeam <- user.maybeTeamFor(maybeTeamId)
+      teamAccess <- user.teamAccessFor(maybeTeamId)
       maybeApi <- OAuth2ApiQueries.find(apiId)
     } yield {
-        maybeTeam.map { team =>
-          Ok(views.html.oAuth2Api(Some(user), maybeApi, Some(team)))
+        teamAccess.maybeTargetTeam.map { team =>
+          Ok(views.html.oAuth2Api(teamAccess, maybeApi))
         }.getOrElse {
           NotFound("Team not accessible")
         }

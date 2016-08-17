@@ -1,7 +1,6 @@
 @(
   title: String,
-  maybeUser: Option[models.accounts.User],
-  maybeTeam: Option[models.Team],
+  maybeTeamAccess: Option[models.accounts.UserTeamAccess],
   pageId: String = ""
   )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
@@ -43,7 +42,7 @@
       <div class="container">
         <div class="columns columns-elastic">
           <div class="column column-expand pts pbxs">
-            <a href='@routes.ApplicationController.index()' class="link-green display-inline-block align-b" style="height: 36px">
+            <a href='@routes.ApplicationController.index(maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))' class="link-green display-inline-block align-b" style="height: 36px">
               <span class="mobile-display-none">
                 <svg role="img" aria-label="Ellipsis"
                 version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
@@ -114,9 +113,9 @@
             </a>
 
             <a class="link-blue-light display-inline-block align-button mhm"
-              href='@routes.ApplicationController.index()'>Behaviors</a>
+              href='@routes.ApplicationController.index(maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>Behaviors</a>
           </div>
-          @maybeUser.map { _ =>
+          @maybeTeamAccess.map { teamAccess =>
             <div class="column column-shrink align-r pts pbxs">
               <form action='@routes.SocialAuthController.signOut()' method="POST" id="main-user-menu-container">
                 @CSRF.formField
@@ -154,16 +153,20 @@
                         </g>
                       </svg>
                     </span>
-                    @maybeTeam.flatMap(_.maybeNonEmptyName.map(name => {
-                      <span class="type-label display-inline-block align-t ptxs mlxs mobile-display-none">{name}</span>
-                    })).getOrElse("")
+                    @teamAccess.maybeAdminAccessToTeam.map { team =>
+                      <span class="type-label type-pink display-inline-block align-t ptxs mlxs mobile-display-none">Admin access to @team.name!!</span>
+                    }.getOrElse {
+                      @teamAccess.maybeTargetTeam.flatMap(_.maybeNonEmptyName.map(name => {
+                          <span class="type-label display-inline-block align-t ptxs mlxs mobile-display-none">{name}</span>
+                      })).getOrElse("")
+                    }
                   </button>
                 </span>
                 <div class="position-relative type-black">
                   <ul class="type-s popup popup-dropdown-menu popup-dropdown-menu-right fade-in" id="main-user-menu" style="display: none">
-                    @maybeTeam.flatMap(_.maybeNonEmptyName.map(name => {
+                    @teamAccess.loggedInTeam.maybeNonEmptyName.map(name => {
                       <li class='type-disabled align-l phl pvs display-ellipsis'>Signed into {name}</li>
-                    })).getOrElse("")
+                    }).getOrElse("")
                     <li><button type="submit" class="button-dropdown-item">Sign out</button></li>
                   </ul>
                 </div>

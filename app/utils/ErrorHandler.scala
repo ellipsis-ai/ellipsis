@@ -44,7 +44,6 @@ class ErrorHandler @Inject() (
         views.html.notFound(
           None,
           None,
-          None,
           maybeNonEmptyMessage
         )
       )

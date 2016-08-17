@@ -46,15 +46,16 @@ object Team {
   }
 
   def find(id: String, user: User): DBIO[Option[Team]] = {
-    find(id).map { maybeTeam =>
-      maybeTeam.flatMap { team =>
-        if (user.canAccess(team)) {
-          Some(team)
-        } else {
-          None
-        }
+    for {
+      maybeTeam <- find(id)
+      canAccess <- maybeTeam.map { team =>
+        user.canAccess(team)
+      }.getOrElse(DBIO.successful(false))
+    } yield if (canAccess) {
+        maybeTeam
+      } else {
+        None
       }
-    }
   }
 
   def findForToken(tokenId: String): DBIO[Option[Team]] = {

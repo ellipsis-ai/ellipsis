@@ -87,13 +87,16 @@ object BehaviorQueries {
   }
 
   def find(id: String, user: User): DBIO[Option[Behavior]] = {
-    findWithoutAccessCheck(id).map { maybeBehavior =>
-      maybeBehavior.flatMap { behavior =>
-        if (user.canAccess(behavior.team)) {
-          Some(behavior)
-        } else {
-          None
-        }
+    for {
+      maybeBehavior <- findWithoutAccessCheck(id)
+      canAccess <- maybeBehavior.map { behavior =>
+        user.canAccess(behavior.team)
+      }.getOrElse(DBIO.successful(false))
+    } yield {
+      if (canAccess) {
+        maybeBehavior
+      } else {
+        None
       }
     }
   }
