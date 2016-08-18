@@ -187,8 +187,12 @@ class ApplicationController @Inject() (
     val action = for {
       maybeVersionData <- BehaviorVersionData.maybeFor(id, user)
       teamAccess <- user.teamAccessFor(maybeVersionData.map(_.teamId))
-      maybeEnvironmentVariables <- EnvironmentVariableQueries.allFor(teamAccess.loggedInTeam).map(Some(_))
-      maybeOAuth2Applications <- OAuth2ApplicationQueries.allFor(teamAccess.loggedInTeam).map(Some(_))
+      maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
+        EnvironmentVariableQueries.allFor(team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+      maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
+        OAuth2ApplicationQueries.allFor(team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
       result <- (for {
         data <- maybeVersionData
         envVars <- maybeEnvironmentVariables
