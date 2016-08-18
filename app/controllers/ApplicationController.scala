@@ -624,21 +624,21 @@ class ApplicationController @Inject() (
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
-      maybeConfig <- teamAccess.maybeTargetTeam.map { team =>
+      maybeApplication <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.find(id)
       }.getOrElse(DBIO.successful(None))
     } yield {
         (for {
           team <- teamAccess.maybeTargetTeam
-          config <- maybeConfig
+          application <- maybeApplication
         } yield {
-          Ok(views.html.editOAuth2Application(teamAccess, config))
+          Ok(views.html.editOAuth2Application(teamAccess, application))
         }).getOrElse {
         NotFound(
           views.html.notFound(
             Some(teamAccess),
-            Some("OAuth2 config not found"),
-            Some("The OAuth2 config you are trying to access could not be found."),
+            Some("OAuth2 application not found"),
+            Some("The OAuth2 application you are trying to access could not be found."),
             Some(reAuthLinkFor(request, None))
           ))
       }
@@ -679,13 +679,13 @@ class ApplicationController @Inject() (
         val action = for {
           maybeTeam <- Team.find(info.teamId, user)
           maybeApi <- OAuth2ApiQueries.find(info.apiId)
-          maybeConfig <- (for {
+          maybeApplication <- (for {
             api <- maybeApi
             team <- maybeTeam
           } yield {
-              info.maybeId.map { configId =>
-                OAuth2ApplicationQueries.find(configId).flatMap { existing =>
-                  OAuth2ApplicationQueries.update(OAuth2Application(configId, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId))
+              info.maybeId.map { applicationId =>
+                OAuth2ApplicationQueries.find(applicationId).flatMap { existing =>
+                  OAuth2ApplicationQueries.update(OAuth2Application(applicationId, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId))
                 }
               }.getOrElse {
                 OAuth2ApplicationQueries.createFor(api, info.name, info.clientId, info.clientSecret, info.maybeScope, team.id)
@@ -693,8 +693,8 @@ class ApplicationController @Inject() (
             }).getOrElse(DBIO.successful(None))
 
         } yield {
-            maybeConfig.map { config =>
-              Redirect(routes.ApplicationController.editOAuth2Application(config.id, Some(config.teamId)))
+            maybeApplication.map { application =>
+              Redirect(routes.ApplicationController.editOAuth2Application(application.id, Some(application.teamId)))
             }.getOrElse {
               NotFound(s"Team not found: ${info.teamId}")
             }

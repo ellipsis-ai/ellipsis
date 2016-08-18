@@ -104,7 +104,7 @@ object OAuth2ApplicationQueries {
 
   def uncompiledFindQuery(id: Rep[String]) = {
     allWithApi.
-      filter { case(config, api) => config.id === id }
+      filter { case(app, api) => app.id === id }
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
@@ -137,8 +137,8 @@ object OAuth2ApplicationQueries {
     }
   }
 
-  def update(config: OAuth2Application): DBIO[OAuth2Application] = {
-    all.filter(_.id === config.id).update(config.toRaw).map( _ => config )
+  def update(application: OAuth2Application): DBIO[OAuth2Application] = {
+    all.filter(_.id === application.id).update(application.toRaw).map( _ => application )
   }
 
 }

@@ -41,7 +41,7 @@ object UserInfo {
         LinkedOAuth2TokenQueries.allForUser(user, ws)
       }.getOrElse(DBIO.successful(Seq()))
       links <- DBIO.successful(linkedTokens.map { ea =>
-        LinkedInfo(ea.config.name, ea.accessToken)
+        LinkedInfo(ea.application.name, ea.accessToken)
       })
     } yield {
       UserInfo(maybeUser, links)
