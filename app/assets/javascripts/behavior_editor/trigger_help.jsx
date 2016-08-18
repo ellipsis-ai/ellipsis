@@ -24,15 +24,22 @@ return React.createClass({
           <span>(as parameters for code) or to repeat back in the response.</span>
         </p>
 
-        <p>
-          <span>Add a parameter, e.g. <code className="type-bold">{"{name}"}</code> or <code className="type-bold">{"{date}"}</code>, by putting curly brackets (braces) </span>
-          <span>around a parameter name.</span>
-        </p>
+        <ul className="list-space-s">
+          <li>
+            <span>Add a parameter, e.g. <code className="type-bold">{"{name}"}</code> or <code className="type-bold">{"{date}"}</code>, by putting curly brackets (braces) </span>
+            <span>around a parameter name.</span>
+          </li>
 
-        <p className="mbn">
-          <span>Parameter names must begin with a letter of the alphabet, and may only include </span>
-          <span>letters, numbers and underscores (_) — <strong>no spaces.</strong></span>
-        </p>
+          <li>
+            <span>Parameter names must begin with a letter, and otherwise may only include </span>
+            <span>letters, numbers, and underscores (_).</span>
+          </li>
+
+          <li>
+            <span>If your behavior runs code, use the same parameter names in your function </span>
+            <span>that you use in your triggers. The function will receive whatever the user typed.</span>
+          </li>
+        </ul>
       </HelpPanel>
     );
   }
