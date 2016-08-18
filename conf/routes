@@ -45,6 +45,8 @@ POST        /admin/redeploy/:versionId                @controllers.AdminControll
 GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorage.getItem(itemId: String, itemType: String, token: String)
 #NOCSRF
 POST        /put_item                                 @controllers.DefaultStorage.putItem
+#NOCSRF
+POST        /api/post_message                         @controllers.APIController.postMessage
 
 # Javascript routing
 GET         /javascriptRoutes                         @controllers.ApplicationController.javascriptRoutes
