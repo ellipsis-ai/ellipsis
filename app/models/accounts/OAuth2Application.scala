@@ -50,7 +50,7 @@ case class OAuth2Application(
   }
 
   def keyName: String = {
-    val capitalized = WordUtils.capitalizeFully(name).replaceAll("\\s", "")
+    val capitalized = WordUtils.capitalize(name).replaceAll("\\s", "")
     capitalized.substring(0, 1).toLowerCase() + capitalized.substring(1)
   }
 
