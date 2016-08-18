@@ -163,11 +163,17 @@ return React.createClass({
   },
 
   getCodeAutocompletions: function() {
+    var apiTokens = this.getRequiredOAuth2Applications().map(function(app) {
+      return 'ellipsis.accessTokens.' + app.keyName;
+    });
+
     var envVars = this.getEnvVariableNames().map(function(name) {
       return 'ellipsis.env.' + name;
     });
 
-    return this.getCodeFunctionParams().concat(envVars);
+    var aws = this.getAWSConfig() ? ['ellipsis.AWS'] : [];
+
+    return this.getCodeFunctionParams().concat(apiTokens, aws, envVars);
   },
 
   getCodeEditorDropdownLabel: function() {

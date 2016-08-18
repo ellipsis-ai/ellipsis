@@ -24,10 +24,12 @@ describe('BehaviorEditor', () => {
     envVariables: [ { name: "HOT_DOG" } ],
     oAuth2Applications: [{
       applicationId: "567890",
-      displayName: "My awesome oauth app"
+      displayName: "My awesome oauth app",
+      keyName: "myAwesomeOauthApp"
     }, {
       applicationId: "098765",
-      displayName: "My other awesome oauth app"
+      displayName: "My other awesome oauth app",
+      keyName: "myOtherAwesomeOauthApp"
     }],
     notifications: [],
     shouldRevealCodeEditor: true
