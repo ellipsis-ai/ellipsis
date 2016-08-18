@@ -6,6 +6,7 @@ import play.api.libs.ws.WSClient
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext
+import scala.util.matching.Regex
 
 trait MessageContext extends Context {
   val fullMessageText: String
@@ -48,4 +49,9 @@ trait MessageContext extends Context {
 
   def userInfo(ws: WSClient): DBIO[UserInfo] = UserInfo.forLoginInfo(LoginInfo(name, userIdForContext), teamId, ws)
 
+}
+
+object MessageContext {
+
+  def ellipsisRegex: Regex = """^(\.\.\.|…)""".r
 }
