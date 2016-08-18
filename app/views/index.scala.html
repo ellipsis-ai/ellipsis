@@ -1,18 +1,17 @@
 @(
-  maybeUser: Option[models.accounts.User],
-  team: Team,
+  teamAccess: models.accounts.UserTeamAccess,
   behaviorVersions: Seq[json.BehaviorVersionData]
 )(implicit messages: Messages, r: RequestHeader)
 
 @import play.api.libs.json._
 @import json.Formatting._
 
-@main("Ellipsis behavior editor", maybeUser, Some(team)) {
+@main("Ellipsis behavior editor", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.ApplicationController.editBehavior
   )
   <div id="content" class="content">
-    @views.html.behaviorTabs("view", team)
+    @views.html.behaviorTabs("view", teamAccess)
 
     <div class="bg-white">
       <div class="container pvxxl mobile-ptm">

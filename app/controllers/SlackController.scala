@@ -12,6 +12,8 @@ import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.utils.UriEncoding
 import services.AWSLambdaService
+import slick.dbio.DBIO
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class SlackController @Inject() (
                                   val messagesApi: MessagesApi,
@@ -29,20 +31,27 @@ class SlackController @Inject() (
       clientId <- configuration.getString("silhouette.slack.clientID")
     } yield {
         val redirectUrl = routes.SocialAuthController.installForSlack().absoluteURL(secure=true)
-        Ok(views.html.addToSlack(request.identity, scopes, clientId, redirectUrl))
+        Ok(views.html.addToSlack(scopes, clientId, redirectUrl))
       }
     maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
   }
 
-  def signIn(maybeRedirectUrl: Option[String]) = UserAwareAction { implicit request =>
-    val maybeResult = for {
-      scopes <- configuration.getString("silhouette.slack.signInScope")
-      clientId <- configuration.getString("silhouette.slack.clientID")
-    } yield {
-        val redirectUrl = routes.SocialAuthController.authenticateSlack(maybeRedirectUrl.map(UriEncoding.encodePathSegment(_, "utf-8"))).absoluteURL(secure=true)
-        Ok(views.html.signInWithSlack(request.identity, scopes, clientId, redirectUrl))
-      }
-    maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
+  def signIn(maybeRedirectUrl: Option[String]) = UserAwareAction.async { implicit request =>
+    val eventualMaybeTeamAccess = request.identity.map { user =>
+      user.teamAccessFor(None).map(Some(_))
+    }.getOrElse(DBIO.successful(None))
+    val action = eventualMaybeTeamAccess.map { maybeTeamAccess =>
+      val maybeResult = for {
+        scopes <- configuration.getString("silhouette.slack.signInScope")
+        clientId <- configuration.getString("silhouette.slack.clientID")
+      } yield {
+          val redirectUrl = routes.SocialAuthController.authenticateSlack(maybeRedirectUrl.map(UriEncoding.encodePathSegment(_, "utf-8"))).absoluteURL(secure=true)
+          Ok(views.html.signInWithSlack(maybeTeamAccess, scopes, clientId, redirectUrl))
+        }
+      maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
+    }
+
+    models.run(action)
   }
 
 

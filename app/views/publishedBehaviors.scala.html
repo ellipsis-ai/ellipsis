@@ -1,6 +1,5 @@
 @(
-  maybeUser: Option[models.accounts.User],
-  team: Team,
+  teamAccess: models.accounts.UserTeamAccess,
   behaviorCategories: Seq[json.BehaviorCategory],
   installedBehaviors: Seq[json.InstalledBehaviorData]
   )(implicit messages: Messages, r: RequestHeader)
@@ -9,13 +8,13 @@
 @import play.api.libs.json._
 @import json.Formatting._
 
-@main("Published behaviors", maybeUser, Some(team)) {
+@main("Published behaviors", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.ApplicationController.doImportBehavior,
     routes.javascript.ApplicationController.editBehavior
   )
   <div id="content" class="content">
-    @views.html.behaviorTabs("install", team)
+    @views.html.behaviorTabs("install", teamAccess)
     <div class="bg-white">
       <div class="container pbxxl">
         <div id="importerContainer"></div>

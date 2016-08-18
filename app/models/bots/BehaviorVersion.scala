@@ -175,16 +175,6 @@ case class BehaviorVersion(
     }
   }
 
-  def copyWithNewFormat: BehaviorVersion = {
-    val maybeNewFunctionBody = maybeFunctionBody.map { body =>
-      body.
-        replaceAll("onSuccess", "ellipsis.success").
-        replaceAll("onError", "ellipsis.error").
-        replaceAll("new AWS", "new ellipsis.AWS")
-    }
-    this.copy(maybeFunctionBody = maybeNewFunctionBody)
-  }
-
   def save: DBIO[BehaviorVersion] = BehaviorVersionQueries.save(this)
 
   def toRaw: RawBehaviorVersion = {

@@ -1,12 +1,11 @@
 @(
-  maybeUser: Option[models.accounts.User],
-  application: models.accounts.OAuth2Application,
-  team: models.Team
+  teamAccess: models.accounts.UserTeamAccess,
+  application: models.accounts.OAuth2Application
   )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
 
-@main("Configure API access", maybeUser, Some(team)) {
+@main("Configure API access", Some(teamAccess)) {
 
   <div id="content" class="content">
     <div class="container ptxxxxl">
@@ -15,7 +14,7 @@
       <form action="@routes.ApplicationController.saveOAuth2Application()" method="POST">
         @CSRF.formField
         <input type="hidden" name="id" value="@application.id"/>
-        <input type="hidden" name="teamId" value="@team.id"/>
+        <input type="hidden" name="teamId" value="@teamAccess.maybeTargetTeam.map(_.id)"/>
         <input type="hidden" name="apiId" value="@application.api.id"/>
 
         <div class="columns">
