@@ -32,11 +32,17 @@ case class SlackMessageContext(
     message.channel.startsWith("D")
   }
 
-  lazy val relevantMessageText: String = SlackMessageContext.toBotRegexFor(botId).replaceFirstIn(message.text, "")
+  lazy val relevantMessageText: String = {
+    var text = message.text
+    text = SlackMessageContext.toBotRegexFor(botId).replaceFirstIn(text, "")
+    text = MessageContext.ellipsisRegex.replaceFirstIn(text, "")
+    text
+  }
 
-  // either a DM to the bot or explicitly mentions bot
   lazy val includesBotMention: Boolean = {
-    isDirectMessage || SlackMessageContext.mentionRegexFor(botId).findFirstMatchIn(message.text).nonEmpty
+    isDirectMessage ||
+      SlackMessageContext.mentionRegexFor(botId).findFirstMatchIn(message.text).nonEmpty ||
+      MessageContext.ellipsisRegex.findFirstMatchIn(message.text).nonEmpty
   }
 
   lazy val isResponseExpected: Boolean = includesBotMention
