@@ -18,10 +18,10 @@ case class LinkedOAuth2Token(
                               maybeRefreshToken: Option[String],
                               maybeScopeGranted: Option[String],
                               userId: String,
-                              config: OAuth2Application
+                              application: OAuth2Application
                               ) {
 
-  val maybeScope: Option[String] = config.maybeScope
+  val maybeScope: Option[String] = application.maybeScope
 
   def maybeOauth2Params: Option[Map[String, String]] = {
     maybeScope.map { scopes =>
@@ -43,7 +43,7 @@ case class LinkedOAuth2Token(
   def refreshIfNecessary(ws: WSClient): DBIO[LinkedOAuth2Token] = {
     val eventualMaybeNewInstance = if (isExpired) {
       maybeRefreshToken.map { token =>
-        val tokenResponse = config.refreshTokenRequestFor(token, ws).
+        val tokenResponse = application.refreshTokenRequestFor(token, ws).
           withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
           post(Results.EmptyContent())
 
@@ -82,7 +82,7 @@ case class LinkedOAuth2Token(
     maybeRefreshToken,
     maybeScopeGranted,
     userId,
-    config.id
+    application.id
   )
 
 }
@@ -94,7 +94,7 @@ case class RawLinkedOAuth2Token(
                                  maybeRefreshToken: Option[String],
                                  maybeScopeGranted: Option[String],
                                  userId: String,
-                                 configId: String
+                                 applicationId: String
                                  )
 
 class LinkedOAuth2TokensTable(tag: Tag) extends Table[RawLinkedOAuth2Token](tag, "linked_oauth2_tokens") {
@@ -104,16 +104,16 @@ class LinkedOAuth2TokensTable(tag: Tag) extends Table[RawLinkedOAuth2Token](tag,
   def maybeRefreshToken = column[Option[String]]("refresh_token")
   def maybeScopeGranted = column[Option[String]]("scope_granted")
   def userId = column[String]("user_id")
-  def configId = column[String]("config_id")
+  def applicationId = column[String]("config_id")
 
-  def * = (accessToken, maybeTokenType, maybeExpirationTime, maybeRefreshToken, maybeScopeGranted, userId, configId) <>
+  def * = (accessToken, maybeTokenType, maybeExpirationTime, maybeRefreshToken, maybeScopeGranted, userId, applicationId) <>
     ((RawLinkedOAuth2Token.apply _).tupled, RawLinkedOAuth2Token.unapply _)
 }
 
 object LinkedOAuth2TokenQueries {
 
   val all = TableQuery[LinkedOAuth2TokensTable]
-  val allWithConfig = all.join(OAuth2ApplicationQueries.allWithApi).on(_.configId === _._1.id)
+  val allWithApplication = all.join(OAuth2ApplicationQueries.allWithApi).on(_.applicationId === _._1.id)
 
   type TupleType = (RawLinkedOAuth2Token, OAuth2ApplicationQueries.TupleType)
 
@@ -131,7 +131,7 @@ object LinkedOAuth2TokenQueries {
   }
 
   def uncompiledAllForUserIdQuery(userId: Rep[String]) = {
-    allWithConfig.filter(_._1.userId === userId)
+    allWithApplication.filter(_._1.userId === userId)
   }
   val allForUserIdQuery = Compiled(uncompiledAllForUserIdQuery _)
 
@@ -141,13 +141,13 @@ object LinkedOAuth2TokenQueries {
     }
   }
 
-  def uncompiledFindQuery(userId: Rep[String], configId: Rep[String]) = {
-    all.filter(_.userId === userId).filter(_.configId === configId)
+  def uncompiledFindQuery(userId: Rep[String], applicationId: Rep[String]) = {
+    all.filter(_.userId === userId).filter(_.applicationId === applicationId)
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
   def save(token: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
-    val query = findQuery(token.userId, token.config.id)
+    val query = findQuery(token.userId, token.application.id)
     val raw = token.toRaw
     query.result.headOption.flatMap { maybeToken =>
       maybeToken match {

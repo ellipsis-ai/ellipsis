@@ -30,9 +30,9 @@ class APIAccessController @Inject() (
                                         val socialProviderRegistry: SocialProviderRegistry)
   extends ReAuthable {
 
-  private def getToken(code: String, authConfig: OAuth2Application, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {
+  private def getToken(code: String, application: OAuth2Application, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {
     val tokenResponse =
-      authConfig.accessTokenRequestFor(code, redirectUrl, ws).
+      application.accessTokenRequestFor(code, redirectUrl, ws).
         withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
         post(Results.EmptyContent())
 
@@ -45,34 +45,34 @@ class APIAccessController @Inject() (
           DateTime.now.plusSeconds(seconds)
         }
         val maybeRefreshToken = (json \ "refresh_token").asOpt[String]
-        LinkedOAuth2Token(accessToken, maybeTokenType, maybeExpirationTime, maybeRefreshToken, maybeScopeGranted, user.id, authConfig).save.map(Some(_))
+        LinkedOAuth2Token(accessToken, maybeTokenType, maybeExpirationTime, maybeRefreshToken, maybeScopeGranted, user.id, application).save.map(Some(_))
       }.getOrElse(DBIO.successful(None))
 
     }
   }
 
   def linkCustomOAuth2Service(
-                               configId: String,
+                               applicationId: String,
                                codeOpt: Option[String],
                                stateOpt: Option[String],
                                maybeInvocationId: Option[String]
                                ) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeAuthConfig <- OAuth2ApplicationQueries.find(configId)
-      isLoggedInToCorrectTeam <- maybeAuthConfig.map { config =>
-        Team.find(config.teamId, user).map(_.isDefined)
+      maybeApplication <- OAuth2ApplicationQueries.find(applicationId)
+      isLoggedInToCorrectTeam <- maybeApplication.map { application =>
+        Team.find(application.teamId, user).map(_.isDefined)
       }.getOrElse(DBIO.successful(false))
       result <- if (isLoggedInToCorrectTeam) {
         (for {
-          authConfig <- maybeAuthConfig
+          application <- maybeApplication
           code <- codeOpt
           state <- stateOpt
           oauthState <- request.session.get("oauth-state")
         } yield {
             if (state == oauthState) {
-              val redirect = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id, None, None, maybeInvocationId).absoluteURL(secure=true)
-              getToken(code, authConfig, user, redirect).map { maybeLinkedToken =>
+              val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId).absoluteURL(secure=true)
+              getToken(code, application, user, redirect).map { maybeLinkedToken =>
                 maybeLinkedToken.
                   map { _ =>
                   request.session.get("invocation-id").flatMap { invocationId =>
@@ -90,16 +90,16 @@ class APIAccessController @Inject() (
               DBIO.successful(BadRequest("Invalid state"))
             }
           }).getOrElse {
-          maybeAuthConfig.map { authConfig =>
+          maybeApplication.map { application =>
             val state = IDs.next
-            val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(authConfig.id, None, None, None).absoluteURL(secure=true)
-            val redirect = authConfig.authorizationRequestFor(state, redirectParam, ws).uri.toString
+            val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None).absoluteURL(secure=true)
+            val redirect = application.authorizationRequestFor(state, redirectParam, ws).uri.toString
             val sessionState = Seq(Some("oauth-state" -> state), maybeInvocationId.map(id => "invocation-id" -> id)).flatten
             DBIO.successful(Redirect(redirect).withSession(sessionState: _*))
-          }.getOrElse(DBIO.successful(NotFound("Bad team/config")))
+          }.getOrElse(DBIO.successful(NotFound("Can't find OAuth2 application")))
         }
       } else {
-        reAuthFor(request, maybeAuthConfig.map(_.teamId))
+        reAuthFor(request, maybeApplication.map(_.teamId))
       }
     } yield result
 
