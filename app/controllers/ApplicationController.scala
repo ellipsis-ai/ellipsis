@@ -880,6 +880,9 @@ class ApplicationController @Inject() (
         val action = for {
           teamAccess <- user.teamAccessFor(None)
           maybeToken <- APITokenQueries.find(id, teamAccess.loggedInTeam)
+          _ <- maybeToken.map { token =>
+            APITokenQueries.revoke(token, teamAccess.loggedInTeam)
+          }.getOrElse(DBIO.successful(Unit))
         } yield maybeToken.map { token =>
             Redirect(routes.ApplicationController.listAPITokens())
           }.getOrElse {

@@ -61,7 +61,7 @@ object APITokenQueries {
   }
 
   def uncompiledAllForQuery(teamId: Rep[String]) = {
-    all.filter(_.teamId === teamId)
+    all.filter(_.teamId === teamId).filterNot(_.isRevoked)
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
@@ -71,6 +71,11 @@ object APITokenQueries {
 
   def use(token: APIToken, team: Team): DBIO[APIToken] = {
     val updated = token.copy(maybeLastUsed = Some(DateTime.now))
+    findQueryFor(token.id, team.id).update(updated).map(_ => updated)
+  }
+
+  def revoke(token: APIToken, team: Team): DBIO[APIToken] = {
+    val updated = token.copy(isRevoked = true)
     findQueryFor(token.id, team.id).update(updated).map(_ => updated)
   }
 
