@@ -615,7 +615,7 @@ class ApplicationController @Inject() (
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.newOAuth2Application(teamAccess, apis))
+        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api))))
       }.getOrElse {
         NotFound("Team not accessible")
       }
