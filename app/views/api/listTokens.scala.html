@@ -10,7 +10,7 @@
       <span>@token.label</span>
       <span>Last used: </span>
       <span>@token.maybeLastUsedString.getOrElse("Never")</span>
-      <form action="@routes.ApplicationController.revokeAPIToken()" method="POST">
+      <form action="@routes.APITokenController.revokeToken()" method="POST">
         @CSRF.formField
         <input type="hidden" name="id" value="@token.id"/>
         <input type="submit" value="Revoke"/>
