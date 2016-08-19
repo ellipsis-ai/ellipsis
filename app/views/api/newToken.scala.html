@@ -1,0 +1,13 @@
+@(
+  team: Team
+  )(implicit messages: Messages, r: RequestHeader)
+
+@import helper._
+
+<p>Create a new API token named:</p>
+<form action="@routes.ApplicationController.createAPIToken()" method="POST">
+  @CSRF.formField
+  <input type="hidden" name="teamId" value="@team.id"/>
+  <input type="text" name="label"/>
+  <input type="submit" value="Create"/>
+</form>

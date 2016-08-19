@@ -1,0 +1,16 @@
+@(
+  tokens: Seq[models.APIToken]
+  )(implicit r: RequestHeader)
+
+<ul>
+  @tokens.map { token =>
+    <li>
+      <span>@token.label</span>
+      <span>Last used: </span>
+      <span>@token.maybeLastUsedString.getOrElse("Never")</span>
+      <form action="" method="GET">
+        <input type="submit" value="Revoke"/>
+      </form>
+    </li>
+  }
+</ul>

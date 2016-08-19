@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import models.bots._
-import models.{Team, Models}
+import models.{APITokenQueries, Team, Models}
 import models.accounts._
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -27,6 +27,8 @@ class APIController @Inject() (
                                 val slackService: SlackService,
                                 val eventHandler: EventHandler)
   extends Controller {
+
+  class InvalidAPITokenException extends Exception
 
   case class PostMessageInfo(
                               message: String,
@@ -54,6 +56,17 @@ class APIController @Inject() (
       info => {
         val action = for {
           maybeTeam <- Team.find(info.teamId)
+          _ <- maybeTeam.map { team =>
+            APITokenQueries.find(info.token, team).flatMap { maybeToken =>
+              maybeToken.map { token =>
+                if (token.isValid) {
+                  APITokenQueries.use(token, team)
+                } else {
+                  throw new InvalidAPITokenException()
+                }
+              }.getOrElse(DBIO.successful(Unit))
+            }
+          }.getOrElse(DBIO.successful(Unit))
           maybeBotProfile <- maybeTeam.map { team =>
             SlackBotProfileQueries.allFor(team).map(_.headOption)
           }.getOrElse(DBIO.successful(None))
@@ -73,7 +86,9 @@ class APIController @Inject() (
           }.getOrElse(DBIO.successful(NotFound("")))
         } yield result
 
-        models.run(action)
+        models.run(action).recover {
+          case e: InvalidAPITokenException => BadRequest("Invalid API token")
+        }
       }
     )
 
