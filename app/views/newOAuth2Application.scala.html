@@ -12,10 +12,10 @@
     routes.javascript.ApplicationController.saveOAuth2Application
   )
   <div id="content" class="content">
-    <div id="applicationEditorConfiguration"></div>
+    <div id="applicationEditor"></div>
     <script>
-      var APIApplicationEditorConfiguration = {
-        containerId: 'behaviorListContainer',
+      var ApplicationEditorConfig = {
+        containerId: 'applicationEditor',
         csrfToken: "@CSRF.getToken(r).map(_.value)",
         teamId: "@teamAccess.maybeTargetTeam.map(_.id)",
         apis: @Html(Json.toJson(apis).toString)
