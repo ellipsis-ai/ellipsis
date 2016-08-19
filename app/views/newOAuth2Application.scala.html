@@ -5,6 +5,7 @@
 
 @import play.filters.csrf._
 @import play.api.libs.json._
+@import json.Formatting._
 
 @main("Add an API application", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
