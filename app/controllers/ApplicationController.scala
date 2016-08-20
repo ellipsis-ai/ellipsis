@@ -687,13 +687,8 @@ class ApplicationController @Inject() (
             api <- maybeApi
             team <- maybeTeam
           } yield {
-              OAuth2ApplicationQueries.find(info.id).flatMap { maybeExisting =>
-                maybeExisting.map { existing =>
-                  OAuth2ApplicationQueries.update(OAuth2Application(info.id, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId))
-                }.getOrElse {
-                  OAuth2ApplicationQueries.createFor(info.id, api, info.name, info.clientId, info.clientSecret, info.maybeScope, team.id)
-                }
-              }.map(Some(_))
+              val instance = OAuth2Application(info.id, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId)
+              OAuth2ApplicationQueries.save(instance).map(Some(_))
             }).getOrElse(DBIO.successful(None))
 
         } yield {
