@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     Collapsible = require('../collapsible'),
+    CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
     Input = require('../form/input');
 
   return React.createClass({
@@ -24,7 +25,8 @@ define(function(require) {
         applicationClientSecret: this.props.applicationClientSecret || "",
         applicationScope: this.props.applicationScope || "",
         hasNamedApplication: false,
-        shouldRevealApplicationUrl: false
+        shouldRevealApplicationUrl: false,
+        isSaving: false
       };
     },
 
@@ -37,7 +39,9 @@ define(function(require) {
     },
 
     setApplicationApi: function(api) {
-      this.setState({ applicationApi: api });
+      this.setState({ applicationApi: api }, function() {
+        this.refs.applicationName.focus();
+      });
     },
 
     reset: function() {
@@ -61,6 +65,12 @@ define(function(require) {
 
     setApplicationName: function(name) {
       this.setState({ applicationName: name });
+    },
+
+    onApplicationNameEnterKey: function() {
+      if (!this.applicationNameIsEmpty()) {
+        this.revealApplicationURL();
+      }
     },
 
     revealApplicationURL: function() {
@@ -95,9 +105,25 @@ define(function(require) {
       this.setState({ applicationScope: value });
     },
 
+    canBeSaved: function() {
+      return !!(
+        this.getApplicationApiName() && this.getApplicationName() &&
+        this.getApplicationClientId() && this.getApplicationClientSecret()
+      );
+    },
+
+    onSaveClick: function(event) {
+      this.setState({
+        isSaving: true
+      });
+    },
+
     render: function() {
       return (
-        <div>
+        <form action={jsRoutes.controllers.ApplicationController.saveOAuth2Application} method="POST">
+          <CsrfTokenHiddenInput
+            value={this.props.csrfToken}
+          />
           <div className="bg-light">
             <div className="container pbm">
               {this.renderHeader()}
@@ -108,7 +134,7 @@ define(function(require) {
             <div className="columns">
               <div className="column column-one-quarter">
               </div>
-              <div className="column column-three-quarters bg-white pvxl phxxxxl">
+              <div className="column column-three-quarters bg-white ptxl pbxxxxl phxxxxl">
                 <Collapsible revealWhen={!this.apiIsSet()}>
                   {this.renderChooseApi()}
                 </Collapsible>
@@ -118,7 +144,32 @@ define(function(require) {
               </div>
             </div>
           </div>
-        </div>
+
+          <footer className="position-fixed-bottom position-z-front">
+            <div className="container">
+              <div className="columns mobile-columns-float">
+                <div className="column column-one-quarter"></div>
+                <div className={"column column-three-quarters border-top ptm plxxxxl prm " +
+                  (this.canBeSaved() ? "bg-white" : "bg-light-translucent")
+                }>
+                  <button type="submit"
+                    className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
+                    disabled={!this.canBeSaved()}
+                    onClick={this.onSaveClick}
+                  >
+                    <span className="button-labels">
+                      <span className="button-normal-label">
+                        <span className="mobile-display-none">Save changes</span>
+                        <span className="mobile-display-only">Save</span>
+                      </span>
+                      <span className="button-activated-label">Saving…</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </form>
       );
     },
 
@@ -183,10 +234,12 @@ define(function(require) {
             <div className="mbxxl columns">
               <div className="column column-two-thirds">
                 <Input
+                  ref="applicationName"
                   value={this.getApplicationName()}
                   placeholder={"e.g. " + this.getApplicationApiName() + " read-only"}
                   className="form-input-borderless form-input-large"
                   onChange={this.setApplicationName}
+                  onEnterKey={this.onApplicationNameEnterKey}
                 />
               </div>
             </div>
