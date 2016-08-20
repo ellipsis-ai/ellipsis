@@ -131,7 +131,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <form action={jsRoutes.controllers.ApplicationController.saveOAuth2Application} method="POST">
+        <form action={jsRoutes.controllers.ApplicationController.saveOAuth2Application().url} method="POST">
           <CsrfTokenHiddenInput
             value={this.props.csrfToken}
           />
