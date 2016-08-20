@@ -201,17 +201,27 @@ define(function(require) {
     },
 
     renderApplicationHeader: function() {
-      if (this.apiIsSet()) {
+      if (!this.apiIsSet()) {
+        return (
+          <span className="mhs">Add an application</span>
+        );
+      } else if (!this.props.applicationSaved) {
         return (
           <span>
-            <span className="mhs"><button className="button-raw" onClick={this.reset}>Add an application</button></span>
+            <span className="mhs">
+              <button className="button-raw" onClick={this.reset}>Add an application</button>
+            </span>
             <span className="mhs">→</span>
             <span className="mhs">{this.getApplicationApiName()}</span>
           </span>
         );
       } else {
         return (
-          <span className="mhs">Add an application</span>
+          <span>
+            <span className="mhs">Edit an application</span>
+            <span className="mhs">→</span>
+            <span className="mhs">{this.getApplicationName() || (<span className="type-disabled">Untitled</span>)}</span>
+          </span>
         );
       }
     },
