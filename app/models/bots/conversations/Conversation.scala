@@ -113,6 +113,7 @@ object Conversation {
   val DONE_STATE = "done"
 
   val SLACK_CONTEXT = "slack"
+  val API_CONTEXT = "api"
 
   val LEARN_BEHAVIOR = "learn_behavior"
   val INVOKE_BEHAVIOR = "invoke_behavior"
