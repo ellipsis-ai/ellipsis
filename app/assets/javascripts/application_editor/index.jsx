@@ -253,7 +253,7 @@ define(function(require) {
 
           <div>
             <h4 className="mbn position-relative">
-              <span className="position-hanging-indent">1.</span>
+              <span className="position-hanging-indent">1</span>
               <span> Enter a name for this application</span>
             </h4>
             <p className="type-s">The name should help differentiate this from any other {this.getApplicationApiName()} applications you may have with different kinds of access, or access to a different set of data.</p>
@@ -289,7 +289,7 @@ define(function(require) {
 
               <div className="mvm">
                 <h4 className="mbn position-relative">
-                  <span className="position-hanging-indent">2.</span>
+                  <span className="position-hanging-indent">2</span>
                   <span>Register a new OAuth developer application on your GitHub account. </span>
                   <a href="https://github.com/settings/applications/new" target="_blank">Go to GitHub ↗︎</a>
                 </h4>
@@ -306,7 +306,7 @@ define(function(require) {
 
               <div className="mvm">
                 <h4 className="mbn position-relative">
-                  <span className="position-hanging-indent">3.</span>
+                  <span className="position-hanging-indent">3</span>
                   <span>Paste the client ID and client secret from your {this.getApplicationApiName()} OAuth application</span>
                 </h4>
                 <p className="type-s">
@@ -339,7 +339,7 @@ define(function(require) {
 
               <div className="mvm">
                 <h4 className="mbn position-relative">
-                  <span className="position-hanging-indent">4.</span>
+                  <span className="position-hanging-indent">4</span>
                   <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
                 </h4>
                 <p className="type-s">
