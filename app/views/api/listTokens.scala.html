@@ -1,0 +1,20 @@
+@(
+  tokens: Seq[models.APIToken]
+  )(implicit r: RequestHeader)
+
+@import helper._
+
+<ul>
+  @tokens.map { token =>
+    <li>
+      <span>@token.label</span>
+      <span>Last used: </span>
+      <span>@token.maybeLastUsedString.getOrElse("Never")</span>
+      <form action="@routes.APITokenController.revokeToken()" method="POST">
+        @CSRF.formField
+        <input type="hidden" name="id" value="@token.id"/>
+        <input type="submit" value="Revoke"/>
+      </form>
+    </li>
+  }
+</ul>

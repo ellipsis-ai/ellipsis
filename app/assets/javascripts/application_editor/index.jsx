@@ -132,11 +132,11 @@ define(function(require) {
     render: function() {
       return (
         <form action={jsRoutes.controllers.ApplicationController.saveOAuth2Application().url} method="POST">
-          <CsrfTokenHiddenInput
-            value={this.props.csrfToken}
-          />
+          <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
-          <input type="hidden" name="id" value={this.props.applicationId}/>
+          <input type="hidden" name="id" value={this.props.applicationId} />
+          <input type="hidden" name="teamId" value={this.props.teamId} />
+
           <div className="bg-light">
             <div className="container pbm">
               {this.renderHeader()}

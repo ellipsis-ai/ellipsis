@@ -11,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 case class TestMessageContext(fullMessageText: String, includesBotMention: Boolean) extends MessageContext {
 
   val messageBuffer: ArrayBuffer[String] = new ArrayBuffer()
-  val relevantMessageText: String = fullMessageText
+  override def relevantMessageText: String = fullMessageText
   val userIdForContext = "test"
   val name = "test"
   val teamId = "test"
