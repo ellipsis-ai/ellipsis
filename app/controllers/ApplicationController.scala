@@ -628,6 +628,7 @@ class ApplicationController @Inject() (
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
+      apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       maybeApplication <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.find(id)
       }.getOrElse(DBIO.successful(None))
@@ -636,7 +637,7 @@ class ApplicationController @Inject() (
           team <- teamAccess.maybeTargetTeam
           application <- maybeApplication
         } yield {
-          Ok(views.html.editOAuth2Application(teamAccess, application))
+          Ok(views.html.editOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), application))
         }).getOrElse {
         NotFound(
           views.html.notFound(

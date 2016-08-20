@@ -8,11 +8,15 @@ define(function(require) {
     displayName: 'ApplicationEditor',
     propTypes: {
       apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      applicationApi: React.PropTypes.string,
+      applicationApi: React.PropTypes.shape({
+        apiId: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired
+      }),
       applicationName: React.PropTypes.string,
       applicationClientId: React.PropTypes.string,
       applicationClientSecret: React.PropTypes.string,
       applicationScope: React.PropTypes.string,
+      applicationSaved: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       callbackUrl: React.PropTypes.string,
@@ -26,8 +30,8 @@ define(function(require) {
         applicationClientId: this.props.applicationClientId || "",
         applicationClientSecret: this.props.applicationClientSecret || "",
         applicationScope: this.props.applicationScope || "",
-        hasNamedApplication: false,
-        shouldRevealApplicationUrl: false,
+        hasNamedApplication: this.props.applicationSaved || false,
+        shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false
       };
     },

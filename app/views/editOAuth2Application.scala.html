@@ -1,51 +1,38 @@
 @(
   teamAccess: models.accounts.UserTeamAccess,
+  apis: Seq[json.OAuth2ApiData],
   application: models.accounts.OAuth2Application
   )(implicit messages: Messages, r: RequestHeader)
 
-@import helper._
+@import play.filters.csrf._
+@import play.api.libs.json._
+@import json.Formatting._
 
-@main("Configure API access", Some(teamAccess)) {
-
+@main("Edit API application", Some(teamAccess)) {
+  @helper.javascriptRouter("jsRoutes")(
+    routes.javascript.ApplicationController.saveOAuth2Application
+  )
   <div id="content" class="content">
-    <div class="container ptxxxxl">
-      <h1>Add a new OAuth2 configuration:</h1>
-
-      <form action="@routes.ApplicationController.saveOAuth2Application()" method="POST">
-        @CSRF.formField
-        <input type="hidden" name="id" value="@application.id"/>
-        <input type="hidden" name="teamId" value="@teamAccess.maybeTargetTeam.map(_.id)"/>
-        <input type="hidden" name="apiId" value="@application.api.id"/>
-
-        <div class="columns">
-          <div class="column column-one-third align-r">Configure for API access on:</div>
-          <div class="column column-one-half">
-            @application.api.name
-          </div>
-        </div>
-
-        @oAuth2Field("Name of this configuration", "name", Some(application.name))
-        @oAuth2Field("Client ID of your application", "clientId", Some(application.clientId))
-        @oAuth2Field("Client secret of your application", "clientSecret", Some(application.clientSecret))
-        @oAuth2Field("Scope of the access you want to request", "scope", application.maybeScope)
-        <div class="columns">
-          <div class="column column-one-third align-r">&nbsp;</div>
-          <div class="column column-one-half">
-            <input type="submit" value="Save"/>
-          </div>
-        </div>
-      </form>
-
-      <p>Set the redirect URL in your @application.api.name API settings to:</p>
-      <p>
-        <input
-          type="text"
-          readonly="readonly"
-          size="100"
-          value="@routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None).absoluteURL(secure = true)"
-        />
-      </p>
-
-    </div>
+    <div id="applicationEditor"></div>
+    <script>
+      var ApplicationEditorConfig = {
+        containerId: 'applicationEditor',
+        csrfToken: "@CSRF.getToken(r).map(_.value)",
+        teamId: "@teamAccess.maybeTargetTeam.map(_.id)",
+        apis: @Html(Json.toJson(apis).toString),
+        callbackUrl: "@routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None).absoluteURL(secure = true)",
+        applicationId: "@application.id",
+        applicationName: "@application.name",
+        applicationClientId: "@application.clientId",
+        applicationSecret: "@application.clientSecret",
+        applicationScope: "@application.maybeScope",
+        applicationApi: {
+          apiId: "@application.api.id",
+          name: "@application.api.name"
+        },
+        applicationSaved: true
+      };
+    </script>
+    <script data-main='@routes.Assets.versioned("javascripts/application_editor/loader.js")' src='@routes.Assets.versioned("lib/requirejs/require.min.js")'></script>
   </div>
 }
