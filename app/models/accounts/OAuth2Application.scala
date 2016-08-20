@@ -124,6 +124,7 @@ object OAuth2ApplicationQueries {
   }
 
   def createFor(
+                 newId: String,
                  api: OAuth2Api,
                  name: String,
                  clientId: String,
@@ -131,7 +132,7 @@ object OAuth2ApplicationQueries {
                  maybeScope: Option[String],
                  teamId: String
                  ): DBIO[OAuth2Application] = {
-    val raw = RawOAuth2Application(IDs.next, name, api.id, clientId, clientSecret, maybeScope, teamId)
+    val raw = RawOAuth2Application(newId, name, api.id, clientId, clientSecret, maybeScope, teamId)
     (all += raw).map { _ =>
       tuple2Application((raw, api))
     }

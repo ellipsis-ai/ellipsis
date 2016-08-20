@@ -14,7 +14,9 @@ define(function(require) {
       applicationClientSecret: React.PropTypes.string,
       applicationScope: React.PropTypes.string,
       csrfToken: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired
+      teamId: React.PropTypes.string.isRequired,
+      callbackUrl: React.PropTypes.string,
+      applicationId: React.PropTypes.string
     },
 
     getInitialState: function() {
@@ -28,6 +30,10 @@ define(function(require) {
         shouldRevealApplicationUrl: false,
         isSaving: false
       };
+    },
+
+    getCallbackUrl: function() {
+      return this.props.callbackUrl;
     },
 
     apiIsSet: function() {
@@ -124,6 +130,7 @@ define(function(require) {
           <CsrfTokenHiddenInput
             value={this.props.csrfToken}
           />
+          <input type="hidden" name="id" value={this.props.applicationId}/>
           <div className="bg-light">
             <div className="container pbm">
               {this.renderHeader()}
@@ -269,7 +276,7 @@ define(function(require) {
                   <li>You can set the name, homepage and description to whatever you like.</li>
                   <li>
                     <div>Copy and paste this for the authorization callback URL:</div>
-                    <div className="box-code-example mtl">http://something.or.other/</div>
+                    <div className="box-code-example mtl">{this.getCallbackUrl()}</div>
                   </li>
                 </ul>
               </div>
