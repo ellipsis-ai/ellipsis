@@ -10,7 +10,9 @@ import scala.util.matching.Regex
 
 trait MessageContext extends Context {
   val fullMessageText: String
-  val relevantMessageText: String
+
+  def relevantMessageText: String = MessageContext.ellipsisRegex.replaceFirstIn(fullMessageText, "")
+
   val includesBotMention: Boolean
 
   def sendMessage(text: String)(implicit ec: ExecutionContext): Unit
