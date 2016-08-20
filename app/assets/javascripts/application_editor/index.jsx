@@ -21,9 +21,10 @@ define(function(require) {
         applicationApi: this.props.applicationApi || null,
         applicationName: this.props.applicationName || "",
         applicationClientId: this.props.applicationClientId || "",
-        applicationClientSecret: this.props.applicationClientSecret | "",
+        applicationClientSecret: this.props.applicationClientSecret || "",
         applicationScope: this.props.applicationScope || "",
-        hasNamedApplication: false
+        hasNamedApplication: false,
+        shouldRevealApplicationUrl: false
       };
     },
 
@@ -39,8 +40,15 @@ define(function(require) {
       this.setState({ applicationApi: api });
     },
 
-    resetApplicationApi: function() {
-      this.setApplicationApi(null);
+    reset: function() {
+      this.setState({
+        applicationApi: null,
+        applicationName: "",
+        applicationClientId: "",
+        applicationScope: "",
+        hasNamedApplication: false,
+        shouldRevealApplicationUrl: false
+      });
     },
 
     getApplicationName: function() {
@@ -79,24 +87,20 @@ define(function(require) {
       this.setState({ applicationClientSecret: value });
     },
 
-    render: function() {
-      if (this.apiIsSet()) {
-        return this.renderConfigureApplication();
-      } else {
-        return this.renderChooseApi();
-      }
+    getApplicationScope: function() {
+      return this.state.applicationScope;
     },
 
-    renderChooseApi: function() {
+    setApplicationScope: function(value) {
+      this.setState({ applicationScope: value });
+    },
+
+    render: function() {
       return (
         <div>
           <div className="bg-light">
             <div className="container pbm">
-              <h3 className="mvn ptxxl type-weak display-ellipsis">
-                <span className="mrs">API applications</span>
-                <span className="mhs">→</span>
-                <span className="mhs">Add an application</span>
-              </h3>
+              {this.renderHeader()}
             </div>
           </div>
 
@@ -104,22 +108,61 @@ define(function(require) {
             <div className="columns">
               <div className="column column-one-quarter">
               </div>
-              <div className="column column-three-quarters bg-white pvxl phxxxl">
-                <p>
-                  <span>Choose an API you would like to integrate with Ellipsis. This will allow your behaviors to read </span>
-                  <span>and/or write data from that product. You can create multiple applications for a single API, each </span>
-                  <span>with a different level of access.</span>
-                </p>
-
-                <div className="mvxl">
-                  {this.props.apis.map(function(api, index) {
-                    return (
-                      <button type="button" key={"apiTypeButton" + index} className="mrl mbl" onClick={this.setApplicationApi.bind(this, api)}>{api.name}</button>
-                    );
-                  }, this)}
-                </div>
+              <div className="column column-three-quarters bg-white pvxl phxxxxl">
+                <Collapsible revealWhen={!this.apiIsSet()}>
+                  {this.renderChooseApi()}
+                </Collapsible>
+                <Collapsible revealWhen={this.apiIsSet()}>
+                  {this.renderConfigureApplication()}
+                </Collapsible>
               </div>
             </div>
+          </div>
+        </div>
+      );
+    },
+
+    renderHeader: function() {
+      return (
+        <h3 className="mvn ptxxl type-weak display-ellipsis">
+          <span className="mrs">API applications</span>
+          <span className="mhs">→</span>
+          {this.renderApplicationHeader()}
+        </h3>
+      );
+    },
+
+    renderApplicationHeader: function() {
+      if (this.apiIsSet()) {
+        return (
+          <span>
+            <span className="mhs"><button className="button-raw" onClick={this.reset}>Add an application</button></span>
+            <span className="mhs">→</span>
+            <span className="mhs">{this.getApplicationApiName()}</span>
+          </span>
+        );
+      } else {
+        return (
+          <span className="mhs">Add an application</span>
+        );
+      }
+    },
+
+    renderChooseApi: function() {
+      return (
+        <div>
+          <p>
+            <span>Choose an API you would like to integrate with Ellipsis. This will allow your behaviors to read </span>
+            <span>and/or write data from that product. You can create multiple applications for a single API, each </span>
+            <span>with a different level of access.</span>
+          </p>
+
+          <div className="mvxl">
+            {this.props.apis.map(function(api, index) {
+              return (
+                <button type="button" key={"apiTypeButton" + index} className="mrl mbl" onClick={this.setApplicationApi.bind(this, api)}>{api.name}</button>
+              );
+            }, this)}
           </div>
         </div>
       );
@@ -128,101 +171,110 @@ define(function(require) {
     renderConfigureApplication: function() {
       return (
         <div>
-          <div className="bg-light">
-            <div className="container pbm">
-              <h3 className="mvn ptxxl type-weak display-ellipsis">
-                <span className="mrs">API applications</span>
-                <span className="mhs">→</span>
-                <span className="mhs"><button className="button-raw" onClick={this.resetApplicationApi}>Add an application</button></span>
-                <span className="mhs">→</span>
-                <span className="mhs">{this.getApplicationApiName()}</span>
-              </h3>
-            </div>
-          </div>
+          <p className="mtm mbxl">Configure a new {this.getApplicationApiName()} application so your behaviors can access data from a {this.getApplicationApiName()} account.</p>
 
-          <div className="container">
-            <div className="columns">
-              <div className="column column-one-quarter">
+          <div>
+            <h4 className="mbn position-relative">
+              <span className="position-hanging-indent">1.</span>
+              <span> Enter a name for this application</span>
+            </h4>
+            <p className="type-s">The name should help differentiate this from any other {this.getApplicationApiName()} applications you may have with different kinds of access, or access to a different set of data.</p>
+
+            <div className="mbxxl columns">
+              <div className="column column-two-thirds">
+                <Input
+                  value={this.getApplicationName()}
+                  placeholder={"e.g. " + this.getApplicationApiName() + " read-only"}
+                  className="form-input-borderless form-input-large"
+                  onChange={this.setApplicationName}
+                />
               </div>
-              <div className="column column-three-quarters bg-white pvxl phxxxl">
-                <p>Configure a new {this.getApplicationApiName()} application so your behaviors can access data from a {this.getApplicationApiName()} account.</p>
+            </div>
 
-                <div>
-                  <h4 className="mbn position-relative">
-                    <span className="position-hanging-indent">1.</span>
-                    <span> Enter a name for this application</span>
-                  </h4>
-                  <p className="type-s">The name should help differentiate this from any other {this.getApplicationApiName()} applications you may have with different kinds of access, or access to a different set of data.</p>
 
-                  <div className="mbxl columns">
-                    <div className="column column-two-thirds">
-                      <Input
-                        value={this.getApplicationName()}
-                        placeholder={"e.g. " + this.getApplicationApiName() + " read-only"}
-                        className="form-input-borderless form-input-large"
-                        onChange={this.setApplicationName}
-                      />
-                    </div>
+            <Collapsible revealWhen={!this.shouldRevealApplicationUrl()}>
+              <div className="mvxl">
+                <button type="button"
+                  className="button-primary"
+                  disabled={this.applicationNameIsEmpty()}
+                  onClick={this.revealApplicationURL}>
+                  Continue
+                </button>
+              </div>
+            </Collapsible>
+
+            <Collapsible revealWhen={this.shouldRevealApplicationUrl()}>
+              <hr className="mvxxxl" />
+
+              <div className="mvm">
+                <h4 className="mbn position-relative">
+                  <span className="position-hanging-indent">2.</span>
+                  <span>Register a new OAuth developer application on your GitHub account. </span>
+                  <a href="https://github.com/settings/applications/new" target="_blank">Go to GitHub ↗︎</a>
+                </h4>
+                <ul className="type-s list-space-l mvl">
+                  <li>You can set the name, homepage and description to whatever you like.</li>
+                  <li>
+                    <div>Copy and paste this for the authorization callback URL:</div>
+                    <div className="box-code-example mtl">http://something.or.other/</div>
+                  </li>
+                </ul>
+              </div>
+
+              <hr className="mvxxxl" />
+
+              <div className="mvm">
+                <h4 className="mbn position-relative">
+                  <span className="position-hanging-indent">3.</span>
+                  <span>Paste the client ID and client secret from your {this.getApplicationApiName()} OAuth application</span>
+                </h4>
+                <p className="type-s">
+                  These values will be generated by {this.getApplicationApiName()} after you’ve saved an application there in step 2.
+                </p>
+
+                <div className="columns mtl">
+                  <div className="column column-one-third">
+                    <h5>Client ID</h5>
+                    <Input className="form-input-borderless"
+                      placeholder="20-digit hexadecimal number"
+                      value={this.getApplicationClientId()}
+                      onChange={this.setApplicationClientId}
+                    />
                   </div>
-
-                  <Collapsible revealWhen={!this.shouldRevealApplicationUrl()}>
-                    <div className="mvxl">
-                      <button type="button" disabled={this.applicationNameIsEmpty()} onClick={this.revealApplicationURL}>Continue</button>
-                    </div>
-                  </Collapsible>
-
-                  <Collapsible revealWhen={this.shouldRevealApplicationUrl()}>
-                    <hr className="mvxxxl" />
-
-                    <div className="mvm">
-                      <h4 className="mbn position-relative">
-                        <span className="position-hanging-indent">2.</span>
-                        <span>Register a new OAuth developer application on your GitHub account. </span>
-                        <a href="https://github.com/settings/applications/new" target="_blank">Go to GitHub ↗︎</a>
-                      </h4>
-                      <ul className="type-s list-space-l mvl">
-                        <li>You can set the name, homepage and description to whatever you like.</li>
-                        <li>
-                          <div>Copy and paste this for the authorization callback URL:</div>
-                          <div className="box-code-example mtl">http://something.or.other/</div>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <hr className="mvxxxl" />
-
-                    <div className="mvm">
-                      <h4 className="mbn position-relative">
-                        <span className="position-hanging-indent">3.</span>
-                        <span>Paste the client ID and client secret from your {this.getApplicationApiName()} OAuth application</span>
-                      </h4>
-                      <p className="type-s">
-                        These values will be generated by {this.getApplicationApiName()} after you’ve saved an application there in step 2.
-                      </p>
-
-                      <div className="columns mtl">
-                        <div className="column column-one-third">
-                          <h5>Client ID</h5>
-                          <Input className="form-input-borderless"
-                            placeholder="20-digit hexadecimal number"
-                            value={this.getApplicationClientId()}
-                            onChange={this.setApplicationClientId}
-                          />
-                        </div>
-                        <div className="column column-one-third">
-                          <h5>Client secret</h5>
-                          <Input className="form-input-borderless"
-                            placeholder="40-digit hexadecimal number"
-                            value={this.getApplicationClientSecret()}
-                            onChange={this.setApplicationClientSecret}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </Collapsible>
+                  <div className="column column-two-thirds">
+                    <h5>Client secret</h5>
+                    <Input className="form-input-borderless"
+                      placeholder="40-digit hexadecimal number"
+                      value={this.getApplicationClientSecret()}
+                      onChange={this.setApplicationClientSecret}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+
+              <hr className="mvxxxl" />
+
+              <div className="mvm">
+                <h4 className="mbn position-relative">
+                  <span className="position-hanging-indent">4.</span>
+                  <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
+                </h4>
+                <p className="type-s">
+                  <span>Use the <a href="https://developer.github.com/v3/oauth/#scopes">scope documentation at GitHub</a> to determine </span>
+                  <span>the correct value for your application.</span>
+                </p>
+
+                <div className="columns">
+                  <div className="column column-one-third">
+                    <Input className="form-input-borderless"
+                      value={this.getApplicationScope()}
+                      onChange={this.setApplicationScope}
+                      placeholder="Enter scope value"
+                    />
+                  </div>
+                </div>
+              </div>
+            </Collapsible>
           </div>
         </div>
       );
