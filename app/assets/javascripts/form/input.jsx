@@ -67,6 +67,7 @@ return React.createClass({
         className={"form-input " + (this.props.className || "")}
         ref="input"
         id={this.props.id}
+        name={this.props.name}
         value={this.props.value}
         placeholder={this.props.placeholder}
         autoFocus={this.props.autoFocus}
