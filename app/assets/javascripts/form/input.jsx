@@ -9,6 +9,7 @@ return React.createClass({
       React.PropTypes.number,
       React.PropTypes.string
     ]),
+    name: React.PropTypes.string,
     onBlur: React.PropTypes.func,
     onChange: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func,
@@ -49,6 +50,10 @@ return React.createClass({
 
   focus: function() {
     this.refs.input.focus();
+  },
+
+  blur: function() {
+    this.refs.input.blur();
   },
 
   select: function() {

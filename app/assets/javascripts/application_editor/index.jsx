@@ -38,6 +38,10 @@ define(function(require) {
       return this.state.applicationApi ? this.state.applicationApi.name : "";
     },
 
+    getApplicationApiId: function() {
+      return this.state.applicationApi ? this.state.applicationApi.apiId : "";
+    },
+
     setApplicationApi: function(api) {
       this.setState({ applicationApi: api }, function() {
         this.refs.applicationName.focus();
@@ -70,6 +74,7 @@ define(function(require) {
     onApplicationNameEnterKey: function() {
       if (!this.applicationNameIsEmpty()) {
         this.revealApplicationURL();
+        this.refs.applicationName.blur();
       }
     },
 
@@ -112,7 +117,7 @@ define(function(require) {
       );
     },
 
-    onSaveClick: function(event) {
+    onSaveClick: function() {
       this.setState({
         isSaving: true
       });
@@ -124,6 +129,7 @@ define(function(require) {
           <CsrfTokenHiddenInput
             value={this.props.csrfToken}
           />
+          <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
           <div className="bg-light">
             <div className="container pbm">
               {this.renderHeader()}
@@ -235,6 +241,7 @@ define(function(require) {
               <div className="column column-two-thirds">
                 <Input
                   ref="applicationName"
+                  name="name"
                   value={this.getApplicationName()}
                   placeholder={"e.g. " + this.getApplicationApiName() + " read-only"}
                   className="form-input-borderless form-input-large"
@@ -290,6 +297,7 @@ define(function(require) {
                     <h5>Client ID</h5>
                     <Input className="form-input-borderless"
                       placeholder="20-digit hexadecimal number"
+                      name="clientId"
                       value={this.getApplicationClientId()}
                       onChange={this.setApplicationClientId}
                     />
@@ -298,6 +306,7 @@ define(function(require) {
                     <h5>Client secret</h5>
                     <Input className="form-input-borderless"
                       placeholder="40-digit hexadecimal number"
+                      name="clientSecret"
                       value={this.getApplicationClientSecret()}
                       onChange={this.setApplicationClientSecret}
                     />
@@ -320,6 +329,7 @@ define(function(require) {
                 <div className="columns">
                   <div className="column column-one-third">
                     <Input className="form-input-borderless"
+                      name="scope"
                       value={this.getApplicationScope()}
                       onChange={this.setApplicationScope}
                       placeholder="Enter scope value"
