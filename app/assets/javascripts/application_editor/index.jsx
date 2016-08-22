@@ -2,7 +2,8 @@ define(function(require) {
   var React = require('react'),
     Collapsible = require('../collapsible'),
     CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
-    Input = require('../form/input');
+    Input = require('../form/input'),
+    SettingsMenu = require('../settings_menu');
 
   return React.createClass({
     displayName: 'ApplicationEditor',
@@ -150,6 +151,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-one-quarter">
+                <SettingsMenu activePage="oauthApplications" />
               </div>
               <div className="column column-three-quarters bg-white ptxl pbxxxxl phxxxxl">
                 <Collapsible revealWhen={!this.apiIsSet()}>
