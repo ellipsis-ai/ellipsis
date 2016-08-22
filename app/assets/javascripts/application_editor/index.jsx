@@ -149,20 +149,24 @@ define(function(require) {
             </div>
           </div>
 
-          <div className="container">
-            <div className="columns">
-              <div className="column column-one-quarter">
-                <SettingsMenu activePage="oauthApplications" />
-              </div>
-              <div className="column column-three-quarters bg-white border-radius-bottom ptxl pbxxxxl phxxxxl">
-                <Collapsible revealWhen={!this.apiIsSet()}>
-                  {this.renderChooseApi()}
-                </Collapsible>
-                <Collapsible revealWhen={this.apiIsSet()}>
-                  {this.renderConfigureApplication()}
-                </Collapsible>
+          <div className="flex-container">
+            <div className="container flex flex-center">
+              <div className="columns">
+                <div className="column column-one-quarter">
+                  <SettingsMenu activePage="oauthApplications" />
+                </div>
+                <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl phxxxxl">
+                  <Collapsible revealWhen={!this.apiIsSet()}>
+                    {this.renderChooseApi()}
+                  </Collapsible>
+                  <Collapsible revealWhen={this.apiIsSet()}>
+                    {this.renderConfigureApplication()}
+                  </Collapsible>
+                </div>
               </div>
             </div>
+            <div className="flex flex-left"></div>
+            <div className="flex flex-right bg-white"></div>
           </div>
 
           <footer className={
