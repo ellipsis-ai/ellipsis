@@ -41,6 +41,7 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "jshint" % "2.9.2",
   "org.webjars.bower" % "javascript-debounce" % "1.0.0",
   "org.webjars.bower" % "moment" % "2.14.1",
+  "org.webjars.bower" % "urijs" % "1.18.1",
   "com.atlassian.commonmark" % "commonmark" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",
