@@ -5,7 +5,7 @@ define(function(require) {
     CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
     Input = require('../form/input'),
     SettingsMenu = require('../settings_menu'),
-    URI = require('urijs');
+    BrowserUtils = require('../browser_utils');
 
   return React.createClass({
     displayName: 'ApplicationEditor',
@@ -65,9 +65,7 @@ define(function(require) {
     setApplicationApi: function(api) {
       this.setState({ applicationApi: api }, function() {
         this.refs.applicationName.focus();
-        var url = new URI();
-        url.removeQuery('apiId').setQuery('apiId', api.apiId);
-        window.history.replaceState({}, "", url.href());
+        BrowserUtils.replaceQueryParam('apiId', api.apiId);
       });
     },
 
@@ -80,9 +78,7 @@ define(function(require) {
         hasNamedApplication: false,
         shouldRevealApplicationUrl: false
       }, function() {
-        var url = new URI();
-        url.removeQuery('apiId');
-        window.history.replaceState({}, "", url.href());
+        BrowserUtils.removeQueryParam('apiId');
       });
     },
 
