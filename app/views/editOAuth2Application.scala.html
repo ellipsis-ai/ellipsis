@@ -10,6 +10,7 @@
 
 @main("Edit API application", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
+    routes.javascript.ApplicationController.newOAuth2Application,
     routes.javascript.ApplicationController.saveOAuth2Application
   )
   <div id="content" class="content">
