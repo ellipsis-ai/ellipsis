@@ -12,7 +12,7 @@ define(function (require) {
 
     render: function () {
       return (
-        <nav>
+        <nav className="mvxxl">
           <ul className="list-nav">
             <li className={this.activeClassWhenPageName("oauthApplications")}>
               <a href={jsRoutes.controllers.ApplicationController.newOAuth2Application().url}>API applications</a>

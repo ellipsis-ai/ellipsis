@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    CSS = require('../css'),
     Collapsible = require('../collapsible'),
     CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
     Input = require('../form/input'),
@@ -153,7 +154,7 @@ define(function(require) {
               <div className="column column-one-quarter">
                 <SettingsMenu activePage="oauthApplications" />
               </div>
-              <div className="column column-three-quarters bg-white ptxl pbxxxxl phxxxxl">
+              <div className="column column-three-quarters bg-white border-radius-bottom ptxl pbxxxxl phxxxxl">
                 <Collapsible revealWhen={!this.apiIsSet()}>
                   {this.renderChooseApi()}
                 </Collapsible>
@@ -164,13 +165,15 @@ define(function(require) {
             </div>
           </div>
 
-          <footer className="position-fixed-bottom position-z-front">
+          <footer className={
+            "position-fixed-bottom position-z-front border-top ptm " +
+            (this.canBeSaved() ? "bg-white" : "bg-light-translucent" +
+            CSS.visibleWhen(this.shouldRevealApplicationUrl()))
+          }>
             <div className="container">
               <div className="columns mobile-columns-float">
                 <div className="column column-one-quarter"></div>
-                <div className={"column column-three-quarters border-top ptm plxxxxl prm " +
-                  (this.canBeSaved() ? "bg-white" : "bg-light-translucent")
-                }>
+                <div className="column column-three-quarters plxxxxl prm">
                   <button type="submit"
                     className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
                     disabled={!this.canBeSaved()}
@@ -231,7 +234,7 @@ define(function(require) {
     renderChooseApi: function() {
       return (
         <div>
-          <p>
+          <p className="mtm">
             <span>Choose an API you would like to integrate with Ellipsis. This will allow your behaviors to read </span>
             <span>and/or write data from that product. You can create multiple applications for a single API, each </span>
             <span>with a different level of access.</span>
