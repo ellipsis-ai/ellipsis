@@ -60,11 +60,15 @@ class APIController @Inject() (
             APITokenQueries.find(info.token, team).flatMap { maybeToken =>
               maybeToken.map { token =>
                 if (token.isValid) {
-                  APITokenQueries.use(token, team)
+                  APITokenQueries.use(token, team).map(_ => true)
                 } else {
+                  DBIO.successful(false)
+                }
+              }.getOrElse(DBIO.successful(false)).map { shouldProceed =>
+                if (!shouldProceed) {
                   throw new InvalidAPITokenException()
                 }
-              }.getOrElse(DBIO.successful(Unit))
+              }
             }
           }.getOrElse(DBIO.successful(Unit))
           maybeBotProfile <- maybeTeam.map { team =>
