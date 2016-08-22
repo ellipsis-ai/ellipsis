@@ -34,6 +34,10 @@ requirejs.config({
       name: 'react-dom',
       location: '../lib/react',
       main: 'react-dom'
+    }, {
+      name: 'urijs',
+      location: '../lib/urijs/src',
+      main: 'URI'
     }
   ],
   config: {

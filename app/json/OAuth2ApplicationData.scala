@@ -9,7 +9,6 @@ case class OAuth2ApplicationData(
                                   )
 
 object OAuth2ApplicationData {
-
   def from(app: OAuth2Application): OAuth2ApplicationData = {
     OAuth2ApplicationData(app.id, app.name, app.keyName)
   }

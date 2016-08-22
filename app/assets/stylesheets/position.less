@@ -1,4 +1,7 @@
 @import (reference) "measurements";
+@import (reference) "type";
+@import (reference) "bg";
+@import (reference) "borders";
 
 .position-absolute {
   position: absolute;
@@ -32,6 +35,17 @@
   right: 0;
   bottom: 0;
   max-height: 100%;
+}
+
+.position-hanging-indent {
+  position: absolute;
+  left: -@xxxxl;
+  .bg-lightest();
+  .type-pink();
+  .type-l();
+  padding-left: @s;
+  padding-right: @s;
+  .border-radius-right();
 }
 
 .position-z-above {

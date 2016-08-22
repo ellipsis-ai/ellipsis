@@ -1,6 +1,7 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
+  CSS = require('../css'),
   SVGXIcon = require('../svg/x');
 
 return React.createClass({
@@ -19,7 +20,7 @@ return React.createClass({
     return (
       <span className="type-weak"><button type="button"
         ref="button"
-        className={"button-subtle button-symbol" + this.visibleWhen(!this.props.hidden)}
+        className={"button-subtle button-symbol" + CSS.visibleWhen(!this.props.hidden)}
         onClick={this.onClick}
         title={this.props.title || "Delete"}
       >

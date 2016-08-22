@@ -13,6 +13,9 @@ object Formatting {
   implicit val awsConfigReads = Json.reads[AWSConfigData]
   implicit val awsConfigWrites = Json.writes[AWSConfigData]
 
+  implicit val oAuth2ApiReads = Json.reads[OAuth2ApiData]
+  implicit val oAuth2ApiWrites = Json.writes[OAuth2ApiData]
+
   implicit val oAuth2ApplicationReads = Json.reads[OAuth2ApplicationData]
   implicit val oAuth2ApplicationWrites = Json.writes[OAuth2ApplicationData]
 

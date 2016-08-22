@@ -123,22 +123,16 @@ object OAuth2ApplicationQueries {
     }
   }
 
-  def createFor(
-                 api: OAuth2Api,
-                 name: String,
-                 clientId: String,
-                 clientSecret: String,
-                 maybeScope: Option[String],
-                 teamId: String
-                 ): DBIO[OAuth2Application] = {
-    val raw = RawOAuth2Application(IDs.next, name, api.id, clientId, clientSecret, maybeScope, teamId)
-    (all += raw).map { _ =>
-      tuple2Application((raw, api))
-    }
-  }
+  def save(application: OAuth2Application): DBIO[OAuth2Application] = {
+    val raw = application.toRaw
+    findQuery(application.id).result.flatMap { r =>
+      r.headOption.map { existing =>
+        all.filter(_.id === application.id).update(raw)
+      }.getOrElse {
+        all += raw
+      }
+    }.map( _ => application )
 
-  def update(application: OAuth2Application): DBIO[OAuth2Application] = {
-    all.filter(_.id === application.id).update(application.toRaw).map( _ => application )
   }
 
 }

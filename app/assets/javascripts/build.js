@@ -34,6 +34,10 @@ requirejs.config({
       name: 'react-dom',
       location: '../lib/react',
       main: 'react-dom.min'
+    }, {
+      name: 'urijs',
+      location: '../lib/urijs/src',
+      main: 'URI.min'
     }
   ],
   modules: [
@@ -43,7 +47,8 @@ requirejs.config({
         'es6-promise',
         'javascript-debounce',
         'react',
-        'react-dom'
+        'react-dom',
+        'urijs'
       ]
     }, {
       name: 'behavior_editor/loader',

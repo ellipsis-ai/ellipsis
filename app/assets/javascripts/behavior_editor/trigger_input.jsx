@@ -5,7 +5,7 @@ var React = require('react'),
   Checkbox = require('./checkbox'),
   DeleteButton = require('./delete_button'),
   HelpButton = require('./help_button'),
-  Input = require('./input'),
+  Input = require('../form/input'),
   Collapsible = require('../collapsible');
   require('es6-promise');
   require('whatwg-fetch');

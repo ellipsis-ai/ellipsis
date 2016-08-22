@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    Input = require('./input'),
+    Input = require('../form/input'),
     Textarea = require('./textarea'),
     formatEnvVarName = require('./env_var_name_formatter');
 

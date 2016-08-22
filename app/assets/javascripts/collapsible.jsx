@@ -12,7 +12,7 @@ which should be set with a number (not a string).
 Note: to allow for child content to be dynamic in height and to overflow the
 bounds, max-height and overflow get cleared after reveal, and reset before collapse.
 */
-
+  displayName: 'Collapsible',
   propTypes: {
     animationDuration: React.PropTypes.number,
     children: React.PropTypes.node.isRequired,

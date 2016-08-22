@@ -1,7 +1,7 @@
 define(function(require) {
 var React = require('react'),
   DeleteButton = require('./delete_button'),
-  Input = require('./input');
+  Input = require('../form/input');
 
 return React.createClass({
   propTypes: {

@@ -9,6 +9,7 @@ return React.createClass({
       React.PropTypes.number,
       React.PropTypes.string
     ]),
+    name: React.PropTypes.string,
     onBlur: React.PropTypes.func,
     onChange: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func,
@@ -51,6 +52,10 @@ return React.createClass({
     this.refs.input.focus();
   },
 
+  blur: function() {
+    this.refs.input.blur();
+  },
+
   select: function() {
     this.refs.input.select();
   },
@@ -62,6 +67,7 @@ return React.createClass({
         className={"form-input " + (this.props.className || "")}
         ref="input"
         id={this.props.id}
+        name={this.props.name}
         value={this.props.value}
         placeholder={this.props.placeholder}
         autoFocus={this.props.autoFocus}

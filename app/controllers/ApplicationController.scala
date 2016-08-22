@@ -608,14 +608,14 @@ class ApplicationController @Inject() (
     Ok(Json.toJson(Array(content)))
   }
 
-  def newOAuth2Application(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def newOAuth2Application(maybeApiId: Option[String], maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.newOAuth2Application(teamAccess, apis))
+        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), IDs.next, maybeApiId))
       }.getOrElse {
         NotFound("Team not accessible")
       }
@@ -628,6 +628,7 @@ class ApplicationController @Inject() (
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
+      apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       maybeApplication <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.find(id)
       }.getOrElse(DBIO.successful(None))
@@ -636,7 +637,7 @@ class ApplicationController @Inject() (
           team <- teamAccess.maybeTargetTeam
           application <- maybeApplication
         } yield {
-          Ok(views.html.editOAuth2Application(teamAccess, application))
+          Ok(views.html.editOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), application))
         }).getOrElse {
         NotFound(
           views.html.notFound(
@@ -652,7 +653,7 @@ class ApplicationController @Inject() (
   }
 
   case class OAuth2ApplicationInfo(
-                                    maybeId: Option[String],
+                                    id: String,
                                     name: String,
                                     apiId: String,
                                     clientId: String,
@@ -663,7 +664,7 @@ class ApplicationController @Inject() (
 
   private val saveOAuth2ApplicationForm = Form(
     mapping(
-      "id" -> optional(nonEmptyText),
+      "id" -> nonEmptyText,
       "name" -> nonEmptyText,
       "apiId" -> nonEmptyText,
       "clientId" -> nonEmptyText,
@@ -687,13 +688,8 @@ class ApplicationController @Inject() (
             api <- maybeApi
             team <- maybeTeam
           } yield {
-              info.maybeId.map { applicationId =>
-                OAuth2ApplicationQueries.find(applicationId).flatMap { existing =>
-                  OAuth2ApplicationQueries.update(OAuth2Application(applicationId, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId))
-                }
-              }.getOrElse {
-                OAuth2ApplicationQueries.createFor(api, info.name, info.clientId, info.clientSecret, info.maybeScope, team.id)
-              }.map(Some(_))
+              val instance = OAuth2Application(info.id, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId)
+              OAuth2ApplicationQueries.save(instance).map(Some(_))
             }).getOrElse(DBIO.successful(None))
 
         } yield {

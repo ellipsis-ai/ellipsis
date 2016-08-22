@@ -61,6 +61,10 @@
   width: 41.6666%;
 }
 
+.column-two-thirds {
+  width: 66.6666%;
+}
+
 .column-three-quarters {
   width: 75%;
 }
@@ -124,5 +128,59 @@
 
   .mobile-columns-float > .column-group > .column-row > .mobile-column-full {
     width: 100%;
+  }
+}
+
+.container {
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: @xl;
+  padding-right: @xl;
+}
+
+.flex-container {
+  display: flex;
+  flex-flow: row;
+  width: 100%;
+  justify-content: center;
+  align-content: center;
+  align-items: stretch;
+}
+
+.flex {
+  flex: 1 1 auto;
+}
+
+.flex-left {
+  order: 1;
+}
+
+.flex-center {
+  order: 2;
+  width: 72rem;
+  padding: 0;
+}
+
+.flex-right {
+  order: 3;
+}
+
+@media (max-width: (1296px + @xl*2)) {
+  .flex-center {
+    width: 100%;
+    padding-left: @xl;
+    padding-right: @xl;
+  }
+
+  .flex-left, .flex-right {
+    display: none;
+  }
+}
+
+@media (max-width: @mobile-max-width) {
+  .container {
+    padding-left: @l;
+    padding-right: @l;
   }
 }
