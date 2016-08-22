@@ -55,6 +55,11 @@ routesGenerator := InjectedRoutesGenerator
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
+JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
+
 RjsKeys.mainConfig := "build"
 RjsKeys.mainModule := "build"
 updateOptions := updateOptions.value.withCachedResolution(true)
+BabelKeys.options := WebJs.JS.Object(
+  "presets" -> List("react", "es2015")
+)
