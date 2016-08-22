@@ -1,6 +1,7 @@
 define(function(require) {
 var React = require('react'),
-  BehaviorEditorMixin = require('./behavior_editor_mixin');
+  BehaviorEditorMixin = require('./behavior_editor_mixin'),
+  CSS = require('../css');
 
 var BehaviorEditorDropdownMenu = React.createClass({
   mixins: [BehaviorEditorMixin],
@@ -168,7 +169,7 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
         onMouseLeave={this.onMouseLeave}
       >
         {typeof(this.props.checkedWhen) !== 'undefined' ?
-          (<span className={"mrxs display-inline-block align-m " + this.visibleWhen(this.props.checkedWhen)}>✓</span>) :
+          (<span className={"mrxs display-inline-block align-m " + CSS.visibleWhen(this.props.checkedWhen)}>✓</span>) :
           null
         }
         <span className={"display-inline-block align-m " + (this.props.checkedWhen ? "type-bold" : "")}>{this.props.label}</span>
