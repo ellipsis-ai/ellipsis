@@ -19,7 +19,7 @@ GET         /regex_validation_errors/:pattern         @controllers.ApplicationCo
 GET         /version_info/:behaviorId                 @controllers.ApplicationController.versionInfoFor(behaviorId: String)
 POST        /test_behavior_version                    @controllers.ApplicationController.testBehaviorVersion
 POST        /submit_environment_variables             @controllers.ApplicationController.submitEnvironmentVariables
-GET         /new_oauth2_application                   @controllers.ApplicationController.newOAuth2Application(teamId: Option[String] ?= None)
+GET         /new_oauth2_application                   @controllers.ApplicationController.newOAuth2Application(apiId: Option[String] ?= None, teamId: Option[String] ?= None)
 GET         /edit_oauth2_application/:id              @controllers.ApplicationController.editOAuth2Application(id: String, teamId: Option[String] ?= None)
 POST        /save_oauth2_application                  @controllers.ApplicationController.saveOAuth2Application
 GET         /new_oauth2_api                           @controllers.ApplicationController.newOAuth2Api(teamId: Option[String] ?= None)

@@ -608,14 +608,14 @@ class ApplicationController @Inject() (
     Ok(Json.toJson(Array(content)))
   }
 
-  def newOAuth2Application(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def newOAuth2Application(maybeApiId: Option[String], maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), IDs.next))
+        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), IDs.next, maybeApiId))
       }.getOrElse {
         NotFound("Team not accessible")
       }

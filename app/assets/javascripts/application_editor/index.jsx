@@ -10,10 +10,7 @@ define(function(require) {
     displayName: 'ApplicationEditor',
     propTypes: {
       apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      applicationApi: React.PropTypes.shape({
-        apiId: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired
-      }),
+      applicationApiId: React.PropTypes.string,
       applicationName: React.PropTypes.string,
       applicationClientId: React.PropTypes.string,
       applicationClientSecret: React.PropTypes.string,
@@ -27,7 +24,7 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        applicationApi: this.props.applicationApi || null,
+        applicationApi: this.findApiById(this.props.applicationApiId),
         applicationName: this.props.applicationName || "",
         applicationClientId: this.props.applicationClientId || "",
         applicationClientSecret: this.props.applicationClientSecret || "",
@@ -36,6 +33,16 @@ define(function(require) {
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false
       };
+    },
+
+    findApiById: function(id) {
+      if (id) {
+        var matches = this.props.apis.filter(function(api) { return api.apiId === id; });
+        if (matches.length > 0) {
+          return matches[0];
+        }
+      }
+      return null;
     },
 
     getCallbackUrl: function() {
