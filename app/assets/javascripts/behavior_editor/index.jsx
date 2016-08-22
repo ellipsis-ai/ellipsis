@@ -1,4 +1,4 @@
-define(function(require) {
+define((require) => {
 var React = require('react'),
   ReactDOM = require('react-dom'),
   Codemirror = require('../react-codemirror'),
@@ -164,11 +164,11 @@ return React.createClass({
 
   getCodeAutocompletions: function() {
     var apiTokens = this.getRequiredOAuth2Applications().map(function(app) {
-      return 'ellipsis.accessTokens.' + app.keyName;
+      return `ellipsis.accessTokens.${app.keyName}`;
     });
 
     var envVars = this.getEnvVariableNames().map(function(name) {
-      return 'ellipsis.env.' + name;
+      return `ellipsis.env.${name}`;
     });
 
     var aws = this.getAWSConfig() ? ['ellipsis.AWS'] : [];
