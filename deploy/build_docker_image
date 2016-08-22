@@ -122,7 +122,8 @@ fi
 touch conf/version.conf
 echo application.version=\"`git rev-parse --short HEAD`\" >conf/version.conf
 activator docker:stage
-cp -r .ebextensions target/docker/.ebextensions
+mkdir -p target/docker/.ebextensions
+cp .ebextensions/* target/docker/.ebextensions/
 cp deploy/Docker* target/docker/
 pushd target/docker > /dev/null
 BUNDLE=$VERSION_LABEL.zip
