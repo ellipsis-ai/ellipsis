@@ -169,6 +169,14 @@ profile to use for AWS.
 
   else
 
+    printf "${MAGENTA}Syncing ${GREEN}assets{MAGENTA} with S3...${PLAIN}";
+    PUBLIC_ASSETS_DIR=/tmp/public-assets
+    ASSETS_BUCKET=ellipsis-assets
+    mkdir -p $PUBLIC_ASSETS_DIR
+    rm -rf $PUBLIC_ASSETS_DIR/*
+    unzip target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-assets.jar -d $PUBLIC_ASSETS_DIR/
+    aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSETS_BUCKET/ --acl=public-read
+
     S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
     printf "
 ${MAGENTA}Uploading ${GREEN}$BUNDLE${MAGENTA} to S3...${PLAIN}";
