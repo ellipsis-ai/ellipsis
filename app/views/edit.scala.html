@@ -18,7 +18,7 @@
   <div id="content" class="content">
     <div>
       <div id="editorContainer"></div>
-      <script src='@routes.Assets.versioned("lib/jshint/dist/jshint.js")'></script>
+      <script src='@RemoteAssets.getUrl("lib/jshint/dist/jshint.js")'></script>
       <script>
         var BehaviorEditorConfiguration = {
           data: @Html(json),
@@ -30,7 +30,7 @@
           notifications: @Html(notificationsJson)
         };
       </script>
-      <script data-main='@routes.Assets.versioned("javascripts/behavior_editor/loader.js")' src='@routes.Assets.versioned("lib/requirejs/require.min.js")'></script>
+      <script data-main='@RemoteAssets.getUrl("javascripts/behavior_editor/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
     </div>
   </div>
 }
