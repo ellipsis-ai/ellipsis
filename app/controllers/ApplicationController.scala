@@ -739,6 +739,8 @@ class ApplicationController @Inject() (
                             name: String,
                             authorizationUrl: String,
                             accessTokenUrl: String,
+                            maybeNewApplicationUrl: Option[String],
+                            maybeScopeDocumentationUrl: Option[String],
                             maybeTeamId: Option[String]
                             )
 
@@ -749,6 +751,8 @@ class ApplicationController @Inject() (
       "name" -> nonEmptyText,
       "authorizationUrl" -> nonEmptyText,
       "accessTokenUrl" -> nonEmptyText,
+      "newApplicationUrl" -> optional(nonEmptyText),
+      "scopeDocumentationUrl" -> optional(nonEmptyText),
       "teamId" -> optional(nonEmptyText)
     )(OAuth2ApiInfo.apply)(OAuth2ApiInfo.unapply)
   )
@@ -768,13 +772,18 @@ class ApplicationController @Inject() (
             existing.copy(
               name = info.name,
               authorizationUrl = info.authorizationUrl,
-              accessTokenUrl = info.accessTokenUrl)
+              accessTokenUrl = info.accessTokenUrl,
+              maybeNewApplicationUrl = info.maybeNewApplicationUrl,
+              maybeScopeDocumentationUrl = info.maybeScopeDocumentationUrl
+            )
           }.getOrElse {
             OAuth2Api(
               IDs.next,
               info.name,
               info.authorizationUrl,
               info.accessTokenUrl,
+              info.maybeNewApplicationUrl,
+              info.maybeScopeDocumentationUrl,
               None
             )
           })

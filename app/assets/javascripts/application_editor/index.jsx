@@ -58,6 +58,14 @@ define(function(require) {
       return this.state.applicationApi ? this.state.applicationApi.name : "";
     },
 
+    getApplicationApiScopeDocumentationUrl: function() {
+      return this.state.applicationApi ? this.state.applicationApi.scopeDocumentationUrl : "";
+    },
+
+    getApplicationApiNewApplicationUrl: function() {
+      return this.state.applicationApi ? this.state.applicationApi.newApplicationUrl : "";
+    },
+
     getApplicationApiId: function() {
       return this.state.applicationApi ? this.state.applicationApi.apiId : "";
     },
@@ -310,8 +318,8 @@ define(function(require) {
               <div className="mvm">
                 <h4 className="mbn position-relative">
                   <span className="position-hanging-indent">2</span>
-                  <span>Register a new OAuth developer application on your GitHub account. </span>
-                  <a href="https://github.com/settings/applications/new" target="_blank">Go to GitHub ↗︎</a>
+                  <span>Register a new OAuth developer application on your {this.getApplicationApiName()} account. </span>
+                  <a href={this.getApplicationApiNewApplicationUrl()} target="_blank">Go to {this.getApplicationApiName()} ↗︎</a>
                 </h4>
                 <ul className="type-s list-space-l mvl">
                   <li>You can set the name, homepage and description to whatever you like.</li>
@@ -363,7 +371,7 @@ define(function(require) {
                   <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
                 </h4>
                 <p className="type-s">
-                  <span>Use the <a href="https://developer.github.com/v3/oauth/#scopes">scope documentation at GitHub</a> to determine </span>
+                  <span>Use the <a href={this.getApplicationApiScopeDocumentationUrl()}>scope documentation at {this.getApplicationApiName()}</a> to determine </span>
                   <span>the correct value for your application.</span>
                 </p>
 

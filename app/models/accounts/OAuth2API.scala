@@ -9,6 +9,8 @@ case class OAuth2Api(
                       name: String,
                       authorizationUrl: String,
                       accessTokenUrl: String,
+                      maybeNewApplicationUrl: Option[String],
+                      maybeScopeDocumentationUrl: Option[String],
                       maybeTeamId: Option[String]
                       ) {
 
@@ -19,9 +21,11 @@ class OAuth2ApisTable(tag: Tag) extends Table[OAuth2Api](tag, "oauth2_apis") {
   def name = column[String]("name")
   def authorizationUrl = column[String]("authorization_url")
   def accessTokenUrl = column[String]("access_token_url")
+  def maybeNewApplicationUrl = column[Option[String]]("new_application_url")
+  def maybeScopeDocumentationUrl = column[Option[String]]("scope_documentation_url")
   def maybeTeamId = column[Option[String]]("team_id")
 
-  def * = (id, name, authorizationUrl, accessTokenUrl, maybeTeamId) <>
+  def * = (id, name, authorizationUrl, accessTokenUrl, maybeNewApplicationUrl, maybeScopeDocumentationUrl, maybeTeamId) <>
     ((OAuth2Api.apply _).tupled, OAuth2Api.unapply _)
 
 }
@@ -55,9 +59,11 @@ object OAuth2ApiQueries {
   def createFor(
                  name: String,
                  authorizationUrl: String,
-                 accessTokenUrl: String
+                 accessTokenUrl: String,
+                 maybeNewApplicationUrl: Option[String],
+                 maybeScopeDocumentationUrl: Option[String]
                  ): DBIO[OAuth2Api] = {
-    val api = OAuth2Api(IDs.next, name, authorizationUrl, accessTokenUrl, None)
+    val api = OAuth2Api(IDs.next, name, authorizationUrl, accessTokenUrl, maybeNewApplicationUrl, maybeScopeDocumentationUrl, None)
     (all += api).map(_ => api)
   }
 

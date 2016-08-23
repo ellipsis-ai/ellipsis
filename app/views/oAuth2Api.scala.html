@@ -22,6 +22,8 @@
         @oAuth2Field("Name of the external system", "name", maybeApi.map(_.name))
         @oAuth2Field("Authorization URL", "authorizationUrl", maybeApi.map(_.authorizationUrl))
         @oAuth2Field("Access token URL", "accessTokenUrl", maybeApi.map(_.accessTokenUrl))
+        @oAuth2Field("Where to add a new application", "newApplicationUrl", maybeApi.flatMap(_.maybeNewApplicationUrl))
+        @oAuth2Field("Where to learn about scopes", "scopeDocumentationUrl", maybeApi.flatMap(_.maybeScopeDocumentationUrl))
 
         <div class="columns">
           <div class="column column-one-third align-r">&nbsp;</div>
