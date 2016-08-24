@@ -119,6 +119,13 @@
         </div>
       </div>
     </header>
+    <script>
+      requirejs = {
+        paths: {
+          '../common': '@routes.Assets.versioned("javascripts/common.js").absoluteURL(true).replaceFirst("\\.js$", "")'
+        }
+      };
+    </script>
     @content
   </body>
   <script>window.document.body.addEventListener('touchstart', function() {})</script>
