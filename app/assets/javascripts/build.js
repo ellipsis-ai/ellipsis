@@ -25,7 +25,7 @@ requirejs.config({
     }, {
       name: 'moment',
       location: '../lib/moment/min/',
-      main: 'moment.min'
+      main: 'moment'
     }, {
       name: 'react',
       location: '../lib/react',
@@ -37,7 +37,7 @@ requirejs.config({
     }, {
       name: 'urijs',
       location: '../lib/urijs/src',
-      main: 'URI.min'
+      main: 'URI'
     }
   ],
   modules: [
