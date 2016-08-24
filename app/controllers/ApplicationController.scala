@@ -613,9 +613,18 @@ class ApplicationController @Inject() (
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
+      applications <- teamAccess.maybeTargetTeam.map { team =>
+        OAuth2ApplicationQueries.allFor(team)
+      }.getOrElse(DBIO.successful(Seq()))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.listOAuth2Applications(teamAccess, apis.map(api => OAuth2ApiData.from(api))))
+        Ok(
+          views.html.listOAuth2Applications(
+            teamAccess,
+            apis.map(api => OAuth2ApiData.from(api)),
+            applications.map(app => OAuth2ApplicationData.from(app))
+          )
+        )
       }.getOrElse{
         NotFound("Team not accessible")
       }
