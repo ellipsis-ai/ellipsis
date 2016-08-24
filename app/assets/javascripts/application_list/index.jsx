@@ -73,8 +73,18 @@ define(function(require) {
 
           <p>
             <span>API applications allow Ellipsis to access data from other products that </span>
-            <span>you may use that offer an API (application programming interface). </span>
+            <span>you use, using an API (application programming interface). </span>
           </p>
+
+          <p>
+            Each application specifies:
+          </p>
+
+          <ul className="list-space-s">
+            <li>which product API to use,</li>
+            <li>the OAuth2 credentials (client key and secret),</li>
+            <li>and the scope (level of access) to use for requests.</li>
+          </ul>
         </div>
       );
     },
