@@ -27,6 +27,6 @@
         applicationApiId: "@maybeApiId.getOrElse("")"
       };
     </script>
-    <script data-main='@routes.Assets.versioned("javascripts/application_editor/loader.js")' src='@routes.Assets.versioned("lib/requirejs/require.min.js")'></script>
+    <script data-main='@RemoteAssets.getUrl("javascripts/application_editor/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
   </div>
 }

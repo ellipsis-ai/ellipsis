@@ -371,7 +371,7 @@ define(function(require) {
                   <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
                 </h4>
                 <p className="type-s">
-                  <span>Use the <a href={this.getApplicationApiScopeDocumentationUrl()}>scope documentation at {this.getApplicationApiName()}</a> to determine </span>
+                  <span>Use the <a href={this.getApplicationApiScopeDocumentationUrl()} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
                   <span>the correct value for your application.</span>
                 </p>
 
