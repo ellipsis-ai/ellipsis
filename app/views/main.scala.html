@@ -122,7 +122,7 @@
     <script>
       requirejs = {
         paths: {
-          '../common': '@routes.Assets.versioned("javascripts/common.js").absoluteURL().replaceFirst("\\.js$", "")'
+          '../common': '@routes.Assets.versioned("javascripts/common.js").absoluteURL(true).replaceFirst("\\.js$", "")'
         }
       };
     </script>
