@@ -28,13 +28,13 @@ class RemoteAssets extends Controller {
 
 object RemoteAssets {
 
-  def getUrl(file: String) = {
+  def getUrl(file: String): String = {
     Play.configuration.getString("cdn_url") match {
       case Some(contentUrl) => {
         val withoutAssetsPrefix = controllers.routes.RemoteAssets.getAsset(file).url.substring(7)
         contentUrl + withoutAssetsPrefix
       }
-      case None => controllers.routes.RemoteAssets.getAsset(file)
+      case None => controllers.routes.RemoteAssets.getAsset(file).url
     }
   }
 
