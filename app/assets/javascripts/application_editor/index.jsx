@@ -20,7 +20,8 @@ define(function(require) {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       callbackUrl: React.PropTypes.string,
-      applicationId: React.PropTypes.string
+      applicationId: React.PropTypes.string,
+      behaviorId: React.PropTypes.string
     },
 
     getInitialState: function() {
@@ -154,6 +155,15 @@ define(function(require) {
       });
     },
 
+    renderBehaviorId: function() {
+      var id = this.props.behaviorId;
+      if (id && id.length > 0) {
+        return (<input type="hidden" name="behaviorId" value={id} />);
+      } else {
+        return null;
+      }
+    },
+
     render: function() {
       return (
         <form action={jsRoutes.controllers.ApplicationController.saveOAuth2Application().url} method="POST">
@@ -161,6 +171,7 @@ define(function(require) {
           <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
           <input type="hidden" name="id" value={this.props.applicationId} />
           <input type="hidden" name="teamId" value={this.props.teamId} />
+          {this.renderBehaviorId()}
 
           <div className="bg-light">
             <div className="container pbm">

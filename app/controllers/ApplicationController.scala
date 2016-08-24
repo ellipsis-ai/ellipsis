@@ -632,14 +632,14 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  def newOAuth2Application(maybeApiId: Option[String], maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def newOAuth2Application(maybeApiId: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), IDs.next, maybeApiId))
+        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), IDs.next, maybeApiId, maybeBehaviorId))
       }.getOrElse {
         NotFound("Team not accessible")
       }
@@ -683,7 +683,8 @@ class ApplicationController @Inject() (
                                     clientId: String,
                                     clientSecret: String,
                                     maybeScope: Option[String],
-                                    teamId: String
+                                    teamId: String,
+                                    maybeBehaviorId: Option[String]
                                     )
 
   private val saveOAuth2ApplicationForm = Form(
@@ -694,7 +695,8 @@ class ApplicationController @Inject() (
       "clientId" -> nonEmptyText,
       "clientSecret" -> nonEmptyText,
       "scope" -> optional(nonEmptyText),
-      "teamId" -> nonEmptyText
+      "teamId" -> nonEmptyText,
+      "behaviorId" -> optional(nonEmptyText)
     )(OAuth2ApplicationInfo.apply)(OAuth2ApplicationInfo.unapply)
   )
 
@@ -718,7 +720,11 @@ class ApplicationController @Inject() (
 
         } yield {
             maybeApplication.map { application =>
-              Redirect(routes.ApplicationController.editOAuth2Application(application.id, Some(application.teamId)))
+              info.maybeBehaviorId.map { behaviorId =>
+                Redirect(routes.ApplicationController.editBehavior(behaviorId))
+              }.getOrElse {
+                Redirect(routes.ApplicationController.editOAuth2Application(application.id, Some(application.teamId)))
+              }
             }.getOrElse {
               NotFound(s"Team not found: ${info.teamId}")
             }
