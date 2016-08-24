@@ -28,6 +28,6 @@
         behaviorGroups: @Html(Json.toJson(behaviorCategories).toString)
       };
     </script>
-    <script data-main='@routes.Assets.versioned("javascripts/behavior_importer/loader.js")' src='@routes.Assets.versioned("lib/requirejs/require.min.js")'></script>
+    <script data-main='@RemoteAssets.getUrl("javascripts/behavior_importer/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
   </div>
 }
