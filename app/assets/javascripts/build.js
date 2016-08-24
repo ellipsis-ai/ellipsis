@@ -3,6 +3,10 @@ RequireJS production configuration
 Development configuration lives in common.js
 */
 
+// Note: using pre-minified packages can be harmful!
+// React prefers to have the pre-minified version in production, but moment.js and URI.js
+// break things when the pre-minified versions are require()'d.
+
 requirejs.config({
   baseUrl: '/assets/javascripts/',
   packages: [
@@ -24,8 +28,8 @@ requirejs.config({
       main: 'javascript-debounce.min'
     }, {
       name: 'moment',
-      location: '../lib/moment/min/',
-      main: 'moment.min'
+      location: '../lib/moment',
+      main: 'moment'
     }, {
       name: 'react',
       location: '../lib/react',
@@ -37,7 +41,7 @@ requirejs.config({
     }, {
       name: 'urijs',
       location: '../lib/urijs/src',
-      main: 'URI.min'
+      main: 'URI'
     }
   ],
   modules: [
