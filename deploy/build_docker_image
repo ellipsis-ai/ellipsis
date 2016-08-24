@@ -169,7 +169,7 @@ profile to use for AWS.
 
   else
 
-    printf "${MAGENTA}Syncing ${GREEN}assets{MAGENTA} with S3...${PLAIN}";
+    printf "${MAGENTA}Syncing assets with S3...${PLAIN}";
     PUBLIC_ASSETS_DIR=/tmp/public-assets
     ASSETS_BUCKET=ellipsis-assets
     mkdir -p $PUBLIC_ASSETS_DIR
