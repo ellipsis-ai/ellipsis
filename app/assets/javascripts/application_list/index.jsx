@@ -20,6 +20,20 @@ define(function(require) {
       return this.props.applications || [];
     },
 
+    getSortedApplications: function() {
+      return this.getApplications().sort((a, b) => {
+        const aName = a.displayName.toLowerCase();
+        const bName = b.displayName.toLowerCase();
+        if (aName < bName) {
+          return -1;
+        } else if (aName > bName) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+    },
+
     hasApplications: function() {
       return !!(this.props.applications && this.props.applications.length > 0);
     },
@@ -90,7 +104,21 @@ define(function(require) {
     },
 
     renderApplicationList: function() {
-      return this.getApplications().map(app => app.name).join(', ');
+      return (
+        <div>
+          {this.renderApplicationCountDescription()}
+
+          {this.getSortedApplications().map((application, index) => {
+            return (
+              <div key={`oAuthApplication${index}`}>
+                <a href={jsRoutes.controllers.ApplicationController.editOAuth2Application(application.applicationId).url}>
+                  {application.displayName}
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      );
     },
 
     renderNewApplicationLink: function() {
@@ -103,6 +131,19 @@ define(function(require) {
           </a>
         </div>
       );
+    },
+
+    renderApplicationCountDescription: function() {
+      var count = this.getApplications().length;
+      if (count === 1) {
+        return (
+          <p>There is one API application configured.</p>
+        );
+      } else {
+        return (
+          <p>There are {count} API applications configured.</p>
+        );
+      }
     }
   });
 });

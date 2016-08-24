@@ -17,7 +17,8 @@
         containerId: 'applicationList',
         csrfToken: "@CSRF.getToken(r).map(_.value)",
         teamId: "@teamAccess.maybeTargetTeam.map(_.id)",
-        apis: @Html(Json.toJson(apis).toString)
+        apis: @Html(Json.toJson(apis).toString),
+        applications: @Html(Json.toJson(applications).toString)
       };
     </script>
     <script data-main='@RemoteAssets.getUrl("javascripts/application_list/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
