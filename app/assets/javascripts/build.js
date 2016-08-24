@@ -66,6 +66,10 @@ requirejs.config({
       name: 'behavior_list/loader',
       include: ['behavior_list/index'],
       exclude: ['common']
+    }, {
+      name: 'application_editor/loader',
+      include: ['application_editor/index'],
+      exclude: ['common']
     }
   ]
 });
