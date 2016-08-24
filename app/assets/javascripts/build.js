@@ -24,7 +24,7 @@ requirejs.config({
       main: 'javascript-debounce.min'
     }, {
       name: 'moment',
-      location: '../lib/moment/min/',
+      location: '../lib/moment',
       main: 'moment'
     }, {
       name: 'react',
