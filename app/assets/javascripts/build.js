@@ -3,6 +3,10 @@ RequireJS production configuration
 Development configuration lives in common.js
 */
 
+// Note: using pre-minified packages can be harmful!
+// React prefers to have the pre-minified version in production, but moment.js and URI.js
+// break things when the pre-minified versions are require()'d.
+
 requirejs.config({
   baseUrl: '/assets/javascripts/',
   packages: [
