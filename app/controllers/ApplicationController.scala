@@ -612,9 +612,10 @@ class ApplicationController @Inject() (
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
+      apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.listOAuth2Applications(teamAccess))
+        Ok(views.html.listOAuth2Applications(teamAccess, apis.map(api => OAuth2ApiData.from(api))))
       }.getOrElse{
         NotFound("Team not accessible")
       }

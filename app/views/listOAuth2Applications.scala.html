@@ -1,5 +1,6 @@
 @(
-  teamAccess: models.accounts.UserTeamAccess
+  teamAccess: models.accounts.UserTeamAccess,
+  apis: Seq[json.OAuth2ApiData]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
@@ -18,6 +19,7 @@
         containerId: 'applicationList',
         csrfToken: "@CSRF.getToken(r).map(_.value)",
         teamId: "@teamAccess.maybeTargetTeam.map(_.id)",
+        apis: @Html(Json.toJson(apis).toString)
       };
     </script>
     <script data-main='@RemoteAssets.getUrl("javascripts/application_list/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
