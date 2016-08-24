@@ -30,7 +30,10 @@ object RemoteAssets {
 
   def getUrl(file: String) = {
     Play.configuration.getString("cdn_url") match {
-      case Some(contentUrl) => contentUrl + (controllers.routes.RemoteAssets.getAsset(file).url.substring(7))
+      case Some(contentUrl) => {
+        val withoutAssetsPrefix = controllers.routes.RemoteAssets.getAsset(file).url.substring(7)
+        contentUrl + withoutAssetsPrefix
+      }
       case None => controllers.routes.RemoteAssets.getAsset(file)
     }
   }
