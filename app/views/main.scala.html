@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>@title</title>
     <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:400,700|Source+Sans+Pro:400,300,600,400italic,300italic,600italic' rel='stylesheet' type='text/css'>
-    <link rel='stylesheet' href='@routes.Assets.versioned("stylesheets/main.css")'>
+    <link rel='stylesheet' href='@RemoteAssets.getUrl("stylesheets/main.css")'>
     <!-- For IE 9 and below. ICO should be 32x32 pixels in size -->
     <!--[if IE]><link rel="shortcut icon" href="/assets/images/favicon.ico"><![endif]-->
 
@@ -121,7 +121,7 @@
     <script>
       requirejs = {
         paths: {
-          '../common': '@routes.Assets.versioned("javascripts/common.js").absoluteURL(true).replaceFirst("\\.js$", "")'
+          '../common': '@RemoteAssets.getUrl("javascripts/common.js").replaceFirst("\\.js$", "")'
         }
       };
     </script>
