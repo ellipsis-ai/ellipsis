@@ -70,6 +70,10 @@ requirejs.config({
       name: 'application_editor/loader',
       include: ['application_editor/index'],
       exclude: ['common']
+    }, {
+      name: 'application_list/loader',
+      include: ['application_list/index'],
+      exclude: ['common']
     }
   ]
 });
