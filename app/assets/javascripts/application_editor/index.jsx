@@ -221,7 +221,9 @@ define(function(require) {
     renderHeader: function() {
       return (
         <h3 className="mvn ptxxl type-weak display-ellipsis">
-          <span className="mrs">API applications</span>
+          <span className="mrs">
+            <a href={jsRoutes.controllers.ApplicationController.listOAuth2Applications().url}>API applications</a>
+          </span>
           <span className="mhs">→</span>
           {this.renderApplicationHeader()}
         </h3>

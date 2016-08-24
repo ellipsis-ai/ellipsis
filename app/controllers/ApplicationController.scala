@@ -608,6 +608,30 @@ class ApplicationController @Inject() (
     Ok(Json.toJson(Array(content)))
   }
 
+  def listOAuth2Applications(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      teamAccess <- user.teamAccessFor(maybeTeamId)
+      apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
+      applications <- teamAccess.maybeTargetTeam.map { team =>
+        OAuth2ApplicationQueries.allFor(team)
+      }.getOrElse(DBIO.successful(Seq()))
+    } yield {
+      teamAccess.maybeTargetTeam.map { team =>
+        Ok(
+          views.html.listOAuth2Applications(
+            teamAccess,
+            apis.map(api => OAuth2ApiData.from(api)),
+            applications.map(app => OAuth2ApplicationData.from(app))
+          )
+        )
+      }.getOrElse{
+        NotFound("Team not accessible")
+      }
+    }
+    models.run(action)
+  }
+
   def newOAuth2Application(maybeApiId: Option[String], maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
