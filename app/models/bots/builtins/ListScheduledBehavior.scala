@@ -2,7 +2,7 @@ package models.bots.builtins
 
 import models.Team
 import models.bots.events.MessageContext
-import models.bots.{ScheduledMessage, ScheduledMessageQueries}
+import models.bots.{BehaviorResult, ScheduledMessage, ScheduledMessageQueries, SimpleTextResult}
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 
@@ -27,7 +27,7 @@ case class ListScheduledBehavior(
      """.stripMargin
   }
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     for {
       maybeTeam <- Team.find(messageContext.teamId)
       scheduled <- maybeTeam.map { team =>
@@ -40,7 +40,7 @@ case class ListScheduledBehavior(
         responseForMessages(scheduled)
       }
 
-      messageContext.sendMessage(responseText)
+      SimpleTextResult(responseText)
     }
   }
 

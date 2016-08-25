@@ -1,5 +1,6 @@
 package models.bots.builtins
 
+import models.bots.{BehaviorResult, SimpleTextResult}
 import models.bots.events.MessageContext
 import models.{EnvironmentVariableQueries, Team}
 import services.AWSLambdaService
@@ -15,14 +16,14 @@ case class SetEnvironmentVariableBehavior(
                                           lambdaService: AWSLambdaService
                                            ) extends BuiltinBehavior {
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     for {
       maybeTeam <- Team.find(messageContext.teamId)
       maybeEnvVar <- maybeTeam.map { team =>
         EnvironmentVariableQueries.ensureFor(name, Some(value), team)
       }.getOrElse(DBIO.successful(None))
     } yield {
-      messageContext.sendMessage(s"OK, saved $name!")
+      SimpleTextResult(s"OK, saved $name!")
     }
   }
 

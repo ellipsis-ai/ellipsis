@@ -1,5 +1,6 @@
 package models.bots.builtins
 
+import models.bots.{BehaviorResult, SimpleTextResult}
 import models.bots.events.MessageContext
 import models.{EnvironmentVariableQueries, Team}
 import services.AWSLambdaService
@@ -14,7 +15,7 @@ case class UnsetEnvironmentVariableBehavior(
                                            lambdaService: AWSLambdaService
                                            ) extends BuiltinBehavior {
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     for {
       maybeTeam <- Team.find(messageContext.teamId)
       didDelete <- maybeTeam.map { team =>
@@ -26,7 +27,7 @@ case class UnsetEnvironmentVariableBehavior(
       } else {
         s"I couldn't find `$name` to delete"
       }
-      messageContext.sendMessage(msg)
+      SimpleTextResult(msg)
     }
   }
 

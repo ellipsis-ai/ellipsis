@@ -84,8 +84,8 @@ class APIController @Inject() (
               APIMessageEvent(APIMessageContext(slackClient, botProfile, info.channel, info.message))
             })
           result <- maybeEvent.map { event =>
-            DBIO.from(eventHandler.handle(event)).map { _ =>
-              Ok("success")
+            DBIO.from(eventHandler.handle(event)).map { result =>
+              Ok(result.fullText)
             }
           }.getOrElse(DBIO.successful(NotFound("")))
         } yield result

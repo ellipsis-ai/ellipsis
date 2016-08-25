@@ -23,13 +23,13 @@ trait Conversation {
   val state: String
 
   def updateWith(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Conversation]
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Unit]
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult]
 
-  def replyFor(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Unit] = {
+  def replyFor(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult] = {
     for {
       updatedConversation <- updateWith(event, lambdaService)
-      _ <- updatedConversation.respond(event, lambdaService)
-    } yield Unit
+      result <- updatedConversation.respond(event, lambdaService)
+    } yield result
   }
 
   def save: DBIO[Conversation] = ConversationQueries.save(this)

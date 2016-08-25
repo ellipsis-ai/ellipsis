@@ -35,12 +35,12 @@ trait MessageContext extends Context {
     s"[install new behaviors]($installLink)"
   }
 
-  def sendIDontKnowHowToRespondMessageFor(lambdaService: AWSLambdaService)(implicit ec: ExecutionContext): Unit = {
-    sendMessage(s"""
+  def iDontKnowHowToRespondMessageFor(lambdaService: AWSLambdaService)(implicit ec: ExecutionContext): String = {
+    s"""
                    |I don't know how to respond to `$fullMessageText`
                    |
                    |Type `@ellipsis: help` to see what I can do or ${teachMeLinkFor(lambdaService)}
-    """.stripMargin)
+    """.stripMargin
   }
 
   def recentMessages: DBIO[Seq[String]] = DBIO.successful(Seq())

@@ -2,7 +2,7 @@ package models.bots.builtins
 
 import com.amazonaws.AmazonServiceException
 import models.Team
-import models.bots.BehaviorQueries
+import models.bots.{BehaviorQueries, BehaviorResult, SimpleTextResult}
 import models.bots.events.MessageContext
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
@@ -14,7 +14,7 @@ case class ResetBehaviorsBehavior(
                             lambdaService: AWSLambdaService
                             ) extends BuiltinBehavior {
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     val eventualReply = try {
       for {
         maybeTeam <- Team.find(messageContext.teamId)
@@ -29,7 +29,7 @@ case class ResetBehaviorsBehavior(
       case e: AmazonServiceException => DBIO.successful("Got an error from AWS")
     }
     eventualReply.map { reply =>
-      messageContext.sendMessage(reply)
+      SimpleTextResult(reply)
     }
   }
 

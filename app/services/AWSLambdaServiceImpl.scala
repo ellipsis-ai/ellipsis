@@ -71,7 +71,7 @@ class AWSLambdaServiceImpl @Inject() (
       result <- if (missingEnvVars.nonEmpty) {
         Future.successful(MissingEnvVarsResult(missingEnvVars))
       } else if (behaviorVersion.functionBody.isEmpty) {
-        Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, AWSLambdaLogResult.empty))
+        Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None))
       } else {
         for {
           token <- models.run(InvocationToken.createFor(behaviorVersion.team))

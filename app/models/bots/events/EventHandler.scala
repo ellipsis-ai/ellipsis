@@ -2,7 +2,7 @@ package models.bots.events
 
 import javax.inject._
 
-import models.bots.BehaviorResponse
+import models.bots.{BehaviorResponse, BehaviorResult, NoResponseResult, SimpleTextResult}
 import models.bots.builtins.BuiltinBehavior
 import models.bots.conversations.Conversation
 import models.{Models, Team}
@@ -20,27 +20,29 @@ class EventHandler @Inject() (
                                messages: MessagesApi
                                ) {
 
-  def startInvokeConversationFor(event: MessageEvent): DBIO[Unit] = {
+  def startInvokeConversationFor(event: MessageEvent): DBIO[BehaviorResult] = {
     val context = event.context
     for {
       maybeTeam <- Team.find(context.teamId)
       maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None)
-      _ <- maybeResponse.map { response =>
+      result <- maybeResponse.map { response =>
         response.run(lambdaService)
       }.getOrElse {
-        if (context.isResponseExpected) {
-          context.sendIDontKnowHowToRespondMessageFor(lambdaService)
+        val result = if (context.isResponseExpected) {
+          SimpleTextResult(context.iDontKnowHowToRespondMessageFor(lambdaService))
+        } else {
+          NoResponseResult(None)
         }
-        DBIO.successful(Unit)
+        DBIO.successful(result)
       }
-    } yield Unit
+    } yield result
   }
 
-  def handleInConversation(conversation: Conversation, event: MessageEvent): DBIO[Unit] = {
+  def handleInConversation(conversation: Conversation, event: MessageEvent): DBIO[BehaviorResult] = {
     conversation.replyFor(event, lambdaService)
   }
 
-  def handle(event: Event): Future[Unit] = {
+  def handle(event: Event): Future[BehaviorResult] = {
     event match {
       case messageEvent: MessageEvent => {
         val action = event.context.maybeOngoingConversation.flatMap { maybeConversation =>
@@ -56,7 +58,7 @@ class EventHandler @Inject() (
         }
         models.run(action)
       }
-      case _ => Future.successful(Unit)
+      case _ => Future.successful(NoResponseResult(None))
     }
 
   }

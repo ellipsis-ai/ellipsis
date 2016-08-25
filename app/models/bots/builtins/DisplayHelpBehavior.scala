@@ -1,7 +1,7 @@
 package models.bots.builtins
 
 import models.Team
-import models.bots.BehaviorVersion
+import models.bots.{BehaviorResult, BehaviorVersion, SimpleTextResult}
 import models.bots.events.MessageContext
 import models.bots.triggers.MessageTriggerQueries
 import services.AWSLambdaService
@@ -54,7 +54,7 @@ case class DisplayHelpBehavior(helpString: String, messageContext: MessageContex
     }
   }
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
     for {
       maybeTeam <- Team.find(messageContext.teamId)
@@ -87,7 +87,7 @@ case class DisplayHelpBehavior(helpString: String, messageContext: MessageContex
           |
           |$endingString
           |""".stripMargin
-      messageContext.sendMessage(text)
+      SimpleTextResult(text)
     }
   }
 

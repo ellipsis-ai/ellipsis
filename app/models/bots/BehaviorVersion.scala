@@ -159,20 +159,21 @@ case class BehaviorVersion(
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
+    val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(successResult, parametersWithValues, maybeResponseTemplate, logResult)
+      SuccessResult(successResult, parametersWithValues, maybeResponseTemplate, logResultOption)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(logResult)
+        NoResponseResult(logResultOption)
       } else {
         if (isUnhandledError(json)) {
-          UnhandledErrorResult(logResult)
+          UnhandledErrorResult(logResultOption)
         } else if (json.toString == "null") {
           new NoCallbackTriggeredResult()
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(json, logResult)
+          SyntaxErrorResult(json, logResultOption)
         } else {
-          HandledErrorResult(json, logResult)
+          HandledErrorResult(json, logResultOption)
         }
       }
     }

@@ -2,7 +2,7 @@ package models.bots.builtins
 
 import models.Team
 import models.bots.events.MessageContext
-import models.bots.ScheduledMessageQueries
+import models.bots.{BehaviorResult, ScheduledMessageQueries, SimpleTextResult}
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 
@@ -14,7 +14,7 @@ case class UnscheduleBehavior(
                              lambdaService: AWSLambdaService
                              ) extends BuiltinBehavior {
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     for {
       maybeTeam <- Team.find(messageContext.teamId)
       didDelete <- maybeTeam.map { team =>
@@ -34,8 +34,7 @@ case class UnscheduleBehavior(
         }
         s"I couldn't find `$text` scheduled. $alternativesMessage"
       }
-
-      messageContext.sendMessage(msg)
+      SimpleTextResult(msg)
     }
   }
 
