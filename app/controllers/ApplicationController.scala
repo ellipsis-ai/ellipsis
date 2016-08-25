@@ -717,7 +717,18 @@ class ApplicationController @Inject() (
               val instance = OAuth2Application(info.id, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId)
               OAuth2ApplicationQueries.save(instance).map(Some(_))
             }).getOrElse(DBIO.successful(None))
-
+          maybeBehaviorVersion <- info.maybeBehaviorId.map { behaviorId =>
+            BehaviorQueries.find(behaviorId, user).flatMap { maybeBehavior =>
+              maybeBehavior.map { behavior =>
+                behavior.maybeCurrentVersion
+              }.getOrElse(DBIO.successful(None))
+            }
+          }.getOrElse(DBIO.successful(None))
+          maybeRequired <- maybeApplication.flatMap { application =>
+            maybeBehaviorVersion.map { behaviorVersion =>
+              RequiredOAuth2ApplicationQueries.createFor(application, behaviorVersion).map(Some(_))
+            }
+          }.getOrElse(DBIO.successful(None))
         } yield {
             maybeApplication.map { application =>
               info.maybeBehaviorId.map { behaviorId =>
