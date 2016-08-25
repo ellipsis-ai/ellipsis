@@ -14,13 +14,12 @@
 }
 
 .box-code-example {
-  .bg-blue-lightest();
+  background-color: @white-faded;
   .border();
   .border-dotted();
   padding: @xs;
   .type-monospace();
   .type-xs();
-  .type-weak();
   .type-wrap-words();
 }
 
@@ -34,8 +33,20 @@
 
 .box-warning {
   .bg-yellow();
-  .border-top-thick();
-  .border-bottom-thick();
+  .border-top();
+  .border-bottom();
   .border-yellow();
   padding: @s;
+}
+
+.box-tip {
+  .bg-white();
+  .border-top();
+  .border-bottom();
+  .border-pink-light();
+  padding: @s;
+
+  .box-code-example {
+    .bg-lightest();
+  }
 }

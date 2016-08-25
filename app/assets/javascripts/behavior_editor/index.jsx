@@ -248,9 +248,21 @@ return React.createClass({
       });
   },
 
+  buildOAuthApplicationNotifications: function() {
+    var requiredApplications = (this.state ? this.getRequiredOAuth2Applications() : this.props.config.requiredOAuth2Applications) || [];
+    var unusedApplications = requiredApplications.filter((ea) => !this.hasUsedOAuth2Application(ea.keyName));
+    return unusedApplications.map((ea) => {
+      return {
+        kind: "oauth2_application_unused",
+        name: ea.displayName,
+        code: `ellipsis.accessTokens.${ea.keyName}`
+      };
+    });
+  },
+
   buildNotifications: function() {
     var serverNotifications = this.props.notifications || [];
-    var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications());
+    var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications(), this.buildOAuthApplicationNotifications());
 
     var notifications = {};
     allNotifications.forEach(function(notification) {
@@ -610,10 +622,10 @@ return React.createClass({
     }, callback);
   },
 
-  setConfigProperty: function(property, value) {
+  setConfigProperty: function(property, value, callback) {
     var config = Object.assign({}, this.getBehaviorConfig());
     config[property] = value;
-    this.setBehaviorProp('config', config);
+    this.setBehaviorProp('config', config, callback);
   },
 
   setEnvVariableNameAtIndex: function(name, index) {
@@ -835,6 +847,12 @@ return React.createClass({
     return /\S/.test(this.getBehaviorFunctionBody());
   },
 
+  hasUsedOAuth2Application: function(keyName) {
+    var code = this.state ? this.getBehaviorFunctionBody() : this.props.functionBody;
+    var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
+    return pattern.test(code);
+  },
+
   hasModalPanel: function() {
     return !!(this.state.activePanel && this.state.activePanel.modal);
   },
@@ -999,14 +1017,18 @@ return React.createClass({
 
   onAddOAuth2Application: function(appToAdd) {
     var existing = this.getRequiredOAuth2Applications();
-    this.setConfigProperty('requiredOAuth2Applications', existing.concat([appToAdd]));
+    this.setConfigProperty('requiredOAuth2Applications', existing.concat([appToAdd]), () => {
+      this.resetNotifications();
+    });
   },
 
   onRemoveOAuth2Application: function(appToRemove) {
     var existing = this.getRequiredOAuth2Applications();
     this.setConfigProperty('requiredOAuth2Applications', existing.filter(function(app) {
       return app.applicationId !== appToRemove.applicationId;
-    }));
+    }), () => {
+      this.resetNotifications();
+    });
   },
 
   onNewOAuth2Application: function() {
