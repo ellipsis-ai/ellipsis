@@ -2,7 +2,7 @@ package models.bots.builtins
 
 import models.Team
 import models.bots.events.{MessageContext, SlackMessageContext}
-import models.bots.ScheduledMessageQueries
+import models.bots.{BehaviorResult, ScheduledMessageQueries, SimpleTextResult}
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 
@@ -23,7 +23,7 @@ case class ScheduleBehavior(
     }
   }
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     for {
       maybeTeam <- Team.find(messageContext.teamId)
       maybeScheduledMessage <- maybeTeam.map { team =>
@@ -34,7 +34,7 @@ case class ScheduleBehavior(
         scheduledMessage.successResponse
       }.getOrElse(s"Sorry, I don't know how to schedule `$recurrence`")
 
-      messageContext.sendMessage(responseText)
+      SimpleTextResult(responseText)
     }
   }
 

@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing = Value
+  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing = Value
 }
 
 sealed trait BehaviorResult {
@@ -29,9 +29,10 @@ sealed trait BehaviorResult {
 }
 
 trait BehaviorResultWithLogResult extends BehaviorResult {
-  val logResult: AWSLambdaLogResult
+  val maybeLogResult: Option[AWSLambdaLogResult]
+  val logStatements = maybeLogResult.map(_.userDefinedLogStatements).getOrElse("")
 
-  override def fullText: String = logResult.userDefinedLogStatements ++ text
+  override def fullText: String = logStatements ++ text
 
 }
 
@@ -39,7 +40,7 @@ case class SuccessResult(
                           result: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
-                          logResult: AWSLambdaLogResult
+                          maybeLogResult: Option[AWSLambdaLogResult]
                           ) extends BehaviorResultWithLogResult {
 
   val resultType = ResultType.Success
@@ -50,7 +51,15 @@ case class SuccessResult(
   }
 }
 
-case class NoResponseResult(logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {
+case class SimpleTextResult(simpleText: String) extends BehaviorResult {
+
+  val resultType = ResultType.ConversationPrompt
+
+  def text: String = simpleText
+
+}
+
+case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
 
   val resultType = ResultType.NoResponse
 
@@ -62,18 +71,18 @@ case class NoResponseResult(logResult: AWSLambdaLogResult) extends BehaviorResul
 
 }
 
-case class UnhandledErrorResult(logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {
+case class UnhandledErrorResult(maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
 
   val resultType = ResultType.UnhandledError
 
   def text: String = {
     val prompt = s"\nWe hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
-    Array(Some(prompt), logResult.maybeTranslated).flatten.mkString(":\n\n")
+    Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated)).flatten.mkString(":\n\n")
   }
 
 }
 
-case class HandledErrorResult(json: JsValue, logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {
+case class HandledErrorResult(json: JsValue, maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
 
   val resultType = ResultType.HandledError
 
@@ -89,7 +98,7 @@ case class HandledErrorResult(json: JsValue, logResult: AWSLambdaLogResult) exte
   }
 }
 
-case class SyntaxErrorResult(json: JsValue, logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {
+case class SyntaxErrorResult(json: JsValue, maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
 
   val resultType = ResultType.SyntaxError
 
@@ -98,7 +107,7 @@ case class SyntaxErrorResult(json: JsValue, logResult: AWSLambdaLogResult) exten
        |There's a syntax error in your function:
        |
        |${(json \ "errorMessage").asOpt[String].getOrElse("")}
-        |${logResult.maybeTranslated.getOrElse("")}
+        |${maybeLogResult.flatMap(_.maybeTranslated).getOrElse("")}
      """.stripMargin
   }
 }

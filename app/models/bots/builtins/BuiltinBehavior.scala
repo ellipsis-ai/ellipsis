@@ -1,14 +1,24 @@
 package models.bots.builtins
 
+import models.bots.BehaviorResult
 import models.bots.events.MessageContext
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
 
 trait BuiltinBehavior {
   val messageContext: MessageContext
   val lambdaService: AWSLambdaService
 
-  def run: DBIO[Unit]
+  def run: DBIO[BehaviorResult] = {
+    result.map { r =>
+      r.sendIn(messageContext)
+      r
+    }
+  }
+  def result: DBIO[BehaviorResult]
 }
 
 object BuiltinBehavior {

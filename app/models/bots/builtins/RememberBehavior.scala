@@ -4,7 +4,7 @@ import models.Team
 import models.accounts.User
 import models.bots.events.MessageContext
 import models.bots.triggers.MessageTriggerQueries
-import models.bots.{BehaviorQueries, BehaviorVersionQueries}
+import models.bots._
 import services.AWSLambdaService
 import utils.QuestionAnswerExtractor
 import slick.driver.PostgresDriver.api._
@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService) extends BuiltinBehavior {
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     for {
       maybeTeam <- Team.find(messageContext.teamId)
       maybeUser <- maybeTeam.map { team =>
@@ -36,12 +36,13 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
         }.map(Some(_)) transactionally
       }.getOrElse(DBIO.successful(None))
     } yield {
-      maybeBehaviorVersion.foreach { behaviorVersion =>
-        behaviorVersion.editLinkFor(lambdaService.configuration).foreach { link =>
-          messageContext.sendMessage(s"OK, I compiled recent messages at $link")
+      maybeBehaviorVersion.flatMap { behaviorVersion =>
+        behaviorVersion.editLinkFor(lambdaService.configuration).map { link =>
+          SimpleTextResult(s"OK, I compiled recent messages at $link")
         }
+      }.getOrElse{
+        NoResponseResult(None)
       }
-
     }
   }
 
