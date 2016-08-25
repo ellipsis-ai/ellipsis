@@ -608,14 +608,38 @@ class ApplicationController @Inject() (
     Ok(Json.toJson(Array(content)))
   }
 
-  def newOAuth2Application(maybeApiId: Option[String], maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def listOAuth2Applications(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      teamAccess <- user.teamAccessFor(maybeTeamId)
+      apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
+      applications <- teamAccess.maybeTargetTeam.map { team =>
+        OAuth2ApplicationQueries.allFor(team)
+      }.getOrElse(DBIO.successful(Seq()))
+    } yield {
+      teamAccess.maybeTargetTeam.map { team =>
+        Ok(
+          views.html.listOAuth2Applications(
+            teamAccess,
+            apis.map(api => OAuth2ApiData.from(api)),
+            applications.map(app => OAuth2ApplicationData.from(app))
+          )
+        )
+      }.getOrElse{
+        NotFound("Team not accessible")
+      }
+    }
+    models.run(action)
+  }
+
+  def newOAuth2Application(maybeApiId: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), IDs.next, maybeApiId))
+        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), IDs.next, maybeApiId, maybeBehaviorId))
       }.getOrElse {
         NotFound("Team not accessible")
       }
@@ -659,7 +683,8 @@ class ApplicationController @Inject() (
                                     clientId: String,
                                     clientSecret: String,
                                     maybeScope: Option[String],
-                                    teamId: String
+                                    teamId: String,
+                                    maybeBehaviorId: Option[String]
                                     )
 
   private val saveOAuth2ApplicationForm = Form(
@@ -670,7 +695,8 @@ class ApplicationController @Inject() (
       "clientId" -> nonEmptyText,
       "clientSecret" -> nonEmptyText,
       "scope" -> optional(nonEmptyText),
-      "teamId" -> nonEmptyText
+      "teamId" -> nonEmptyText,
+      "behaviorId" -> optional(nonEmptyText)
     )(OAuth2ApplicationInfo.apply)(OAuth2ApplicationInfo.unapply)
   )
 
@@ -691,10 +717,25 @@ class ApplicationController @Inject() (
               val instance = OAuth2Application(info.id, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId)
               OAuth2ApplicationQueries.save(instance).map(Some(_))
             }).getOrElse(DBIO.successful(None))
-
+          maybeBehaviorVersion <- info.maybeBehaviorId.map { behaviorId =>
+            BehaviorQueries.find(behaviorId, user).flatMap { maybeBehavior =>
+              maybeBehavior.map { behavior =>
+                behavior.maybeCurrentVersion
+              }.getOrElse(DBIO.successful(None))
+            }
+          }.getOrElse(DBIO.successful(None))
+          maybeRequired <- maybeApplication.flatMap { application =>
+            maybeBehaviorVersion.map { behaviorVersion =>
+              RequiredOAuth2ApplicationQueries.createFor(application, behaviorVersion).map(Some(_))
+            }
+          }.getOrElse(DBIO.successful(None))
         } yield {
             maybeApplication.map { application =>
-              Redirect(routes.ApplicationController.editOAuth2Application(application.id, Some(application.teamId)))
+              info.maybeBehaviorId.map { behaviorId =>
+                Redirect(routes.ApplicationController.editBehavior(behaviorId))
+              }.getOrElse {
+                Redirect(routes.ApplicationController.editOAuth2Application(application.id, Some(application.teamId)))
+              }
             }.getOrElse {
               NotFound(s"Team not found: ${info.teamId}")
             }

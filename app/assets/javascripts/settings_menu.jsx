@@ -15,7 +15,7 @@ define(function (require) {
         <nav className="mvxxl">
           <ul className="list-nav">
             <li className={this.activeClassWhenPageName("oauthApplications")}>
-              <a href={jsRoutes.controllers.ApplicationController.newOAuth2Application().url}>API applications</a>
+              <a href={jsRoutes.controllers.ApplicationController.listOAuth2Applications().url}>API applications</a>
             </li>
           </ul>
         </nav>
