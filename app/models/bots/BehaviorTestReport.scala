@@ -1,7 +1,7 @@
 package models.bots
 
 import models.bots.conversations.Conversation
-import models.bots.triggers.MessageTrigger
+import models.bots.events.{MessageContext, MessageEvent}
 import play.api.libs.json._
 import slick.driver.PostgresDriver.api._
 

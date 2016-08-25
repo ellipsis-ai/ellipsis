@@ -1,8 +1,10 @@
-package models.bots
+package models.bots.events
 
+import models.bots.SlackMessageFormatter
 import models.bots.conversations.Conversation
 import slack.rtm.SlackRtmClient
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext
 
 case class SlackNoMessageContext(client: SlackRtmClient, channel: String) extends Context {

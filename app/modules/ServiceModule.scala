@@ -1,8 +1,9 @@
 package modules
 
-import com.google.inject.{Provides, AbstractModule}
+import com.google.inject.{AbstractModule, Provides}
 import models.Models
-import models.bots.{BehaviorTestReportBuilder, EventHandler}
+import models.bots.BehaviorTestReportBuilder
+import models.bots.events.EventHandler
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi

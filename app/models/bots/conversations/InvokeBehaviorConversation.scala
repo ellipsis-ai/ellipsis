@@ -2,10 +2,12 @@ package models.bots.conversations
 
 import models.IDs
 import models.bots._
+import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTrigger
 import org.joda.time.DateTime
 import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class InvokeBehaviorConversation(

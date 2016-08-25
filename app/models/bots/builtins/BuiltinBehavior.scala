@@ -1,6 +1,6 @@
 package models.bots.builtins
 
-import models.bots.MessageContext
+import models.bots.events.MessageContext
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
 

@@ -1,7 +1,8 @@
-package models.bots
+package models.bots.events
 
 import models.bots.conversations.Conversation
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext
 
 trait Context {

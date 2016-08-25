@@ -2,11 +2,13 @@ package models.bots.builtins
 
 import models.Team
 import models.accounts.User
+import models.bots.events.MessageContext
 import models.bots.triggers.MessageTriggerQueries
-import models.bots.{BehaviorVersionQueries, BehaviorQueries, MessageContext}
+import models.bots.{BehaviorQueries, BehaviorVersionQueries}
 import services.AWSLambdaService
 import utils.QuestionAnswerExtractor
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService) extends BuiltinBehavior {

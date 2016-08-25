@@ -2,9 +2,11 @@ package models.bots.builtins
 
 import com.amazonaws.AmazonServiceException
 import models.Team
-import models.bots.{BehaviorQueries, MessageContext}
+import models.bots.BehaviorQueries
+import models.bots.events.MessageContext
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ResetBehaviorsBehavior(

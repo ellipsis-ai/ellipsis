@@ -1,9 +1,10 @@
 package models.bots.builtins
 
+import models.bots.events.MessageContext
 import models.{EnvironmentVariableQueries, Team}
-import models.bots.MessageContext
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 

@@ -2,16 +2,16 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{Silhouette, Environment}
+import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import models.bots.{MessageEvent, EventHandler}
-import models.{IDs, Team, Models}
-import models.accounts.{OAuth2ApplicationQueries, LinkedOAuth2Token, OAuth2Application, User}
+import models.{IDs, Models, Team}
+import models.accounts.{LinkedOAuth2Token, OAuth2Application, OAuth2ApplicationQueries, User}
+import models.bots.events.{EventHandler, MessageEvent}
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
-import play.api.http.{MimeTypes, HeaderNames}
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc.Results

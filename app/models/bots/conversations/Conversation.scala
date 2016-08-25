@@ -4,10 +4,12 @@ import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.Team
 import models.accounts.User
 import models.bots._
-import models.bots.triggers.{MessageTrigger, RawMessageTrigger, MessageTriggerQueries}
+import models.bots.events.MessageEvent
+import models.bots.triggers.{MessageTrigger, MessageTriggerQueries, RawMessageTrigger}
 import org.joda.time.DateTime
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait Conversation {

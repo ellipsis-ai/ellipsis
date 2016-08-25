@@ -1,14 +1,16 @@
 package models.bots
 
 import models.{IDs, Team}
-import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
+import models.accounts.{SlackBotProfile, SlackBotProfileQueries}
 import org.joda.time.format.DateTimeFormat
-import org.joda.time.{LocalTime, DateTime}
+import org.joda.time.{DateTime, LocalTime}
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import models.bots.events.{SlackMessageContext, SlackMessageEvent}
 import services.SlackService
 import slack.models.Message
 import slack.rtm.SlackRtmClient
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ScheduledMessage(
