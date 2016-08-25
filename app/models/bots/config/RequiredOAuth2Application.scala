@@ -49,11 +49,15 @@ object RequiredOAuth2ApplicationQueries {
     allForQuery(behaviorVersion.id).result.map(r => r.map(tuple2RequiredApp))
   }
 
+  def createFor(application: OAuth2Application, behaviorVersion: BehaviorVersion): DBIO[RequiredOAuth2Application] = {
+    val raw = RawRequiredOAuth2Application(IDs.next, behaviorVersion.id, application.id)
+    (all += raw).map(_ => RequiredOAuth2Application(raw.id, raw.behaviorVersionId, application))
+  }
+
   def maybeCreateFor(data: OAuth2ApplicationData, behaviorVersion: BehaviorVersion): DBIO[Option[RequiredOAuth2Application]] = {
     OAuth2ApplicationQueries.find(data.applicationId).flatMap { maybeApp =>
       maybeApp.map { app =>
-        val raw = RawRequiredOAuth2Application(IDs.next, behaviorVersion.id, app.id)
-        (all += raw).map(_ => RequiredOAuth2Application(raw.id, raw.behaviorVersionId, app)).map(Some(_))
+        createFor(app, behaviorVersion).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     }
 
