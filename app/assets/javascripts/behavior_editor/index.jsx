@@ -231,6 +231,10 @@ return React.createClass({
     );
   },
 
+  getRedirectValue: function() {
+    return this.state.redirectValue;
+  },
+
   buildEnvVarNotifications: function() {
     var envVars = (this.state ? this.state.envVariables : this.props.envVariables) || [];
     return envVars.
@@ -546,15 +550,19 @@ return React.createClass({
     }
   },
 
-  onSaveClick: function(event) {
-    if (this.getBehaviorTemplate() === this.getDefaultBehaviorTemplate()) {
-      event.preventDefault();
-      this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), function() {
-        this.refs.behaviorForm.submit();
-      }.bind(this));
+  onSubmit: function(maybeEvent) {
+    var doSubmit = () => { this.refs.behaviorForm.submit(); };
+    if (maybeEvent) {
+      maybeEvent.preventDefault();
     }
     this.setState({
       isSaving: true
+    }, () => {
+      if (this.getBehaviorTemplate() === this.getDefaultBehaviorTemplate()) {
+        this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), doSubmit);
+      } else {
+        doSubmit();
+      }
     });
   },
 
@@ -1002,7 +1010,9 @@ return React.createClass({
   },
 
   onNewOAuth2Application: function() {
-    BrowserUtils.loadURL(jsRoutes.controllers.ApplicationController.newOAuth2Application(null, this.props.teamId, this.props.behaviorId).url);
+    this.setState({
+      redirectValue: "newOAuth2Application"
+    }, () => { this.onSubmit(); });
   },
 
   onRemoveAWSConfig: function() {
@@ -1065,7 +1075,8 @@ return React.createClass({
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
-      envVariableAdderPrompt: null
+      envVariableAdderPrompt: null,
+      redirectValue: ""
     };
   },
 
@@ -1092,7 +1103,7 @@ return React.createClass({
         </div>
       </div>
 
-      <form action="/save_behavior" method="POST" ref="behaviorForm">
+      <form action="/save_behavior" method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
 
         <CsrfTokenHiddenInput
           value={this.props.csrfToken}
@@ -1100,6 +1111,7 @@ return React.createClass({
         <HiddenJsonInput
           value={JSON.stringify(this.state.behavior)}
         />
+        <input type="hidden" name="redirect" value={this.getRedirectValue()} />
 
         {/* Start of container */}
         <div className="container ptxl pbxxxl">
@@ -1455,7 +1467,6 @@ return React.createClass({
                   <button type="submit"
                     className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
                     disabled={!this.isModified()}
-                    onClick={this.onSaveClick}
                   >
                     <span className="button-labels">
                       <span className="button-normal-label">

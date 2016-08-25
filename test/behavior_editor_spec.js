@@ -133,7 +133,7 @@ describe('BehaviorEditor', () => {
       const event = {
         preventDefault: jest.fn()
       };
-      editor.onSaveClick(event);
+      editor.onSubmit(event);
       expect(event.preventDefault.mock.calls.length).toBe(1);
       expect(editor.setBehaviorProp.mock.calls.length).toBe(1);
       expect(editor.setBehaviorProp.mock.calls[0][0]).toBe('responseTemplate');
