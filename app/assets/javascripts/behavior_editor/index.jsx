@@ -1001,6 +1001,10 @@ return React.createClass({
     }));
   },
 
+  onNewOAuth2Application: function() {
+    BrowserUtils.loadURL(jsRoutes.controllers.ApplicationController.newOAuth2Application(null, this.props.teamId, this.props.behaviorId).url);
+  },
+
   onRemoveAWSConfig: function() {
     this.setConfigProperty('aws', undefined);
   },
@@ -1236,6 +1240,7 @@ return React.createClass({
                       requiredOAuth2Applications={this.getRequiredOAuth2Applications()}
                       onAddOAuth2Application={this.onAddOAuth2Application}
                       onRemoveOAuth2Application={this.onRemoveOAuth2Application}
+                      onNewOAuth2Application={this.onNewOAuth2Application}
                       />
                   </div>
 
