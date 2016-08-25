@@ -1,9 +1,11 @@
 package models.bots.builtins
 
 import models.Team
-import models.bots.{ScheduledMessage, ScheduledMessageQueries, MessageContext}
+import models.bots.events.MessageContext
+import models.bots.{ScheduledMessage, ScheduledMessageQueries}
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 

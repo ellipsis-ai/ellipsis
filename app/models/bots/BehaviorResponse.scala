@@ -2,10 +2,12 @@ package models.bots
 
 import models.Team
 import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
+import models.bots.events.MessageEvent
 import models.bots.triggers.{MessageTrigger, MessageTriggerQueries}
 import org.joda.time.DateTime
 import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.dbio.DBIO
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 

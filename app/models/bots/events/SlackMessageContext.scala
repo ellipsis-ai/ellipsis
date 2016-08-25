@@ -1,9 +1,9 @@
-package models.bots
+package models.bots.events
 
 import models.Team
 import models.accounts.{OAuth2Token, SlackBotProfile}
-import models.bots.conversations.{ConversationQueries, Conversation}
-import models.bots.templates.SlackRenderer
+import models.bots.SlackMessageFormatter
+import models.bots.conversations.{Conversation, ConversationQueries}
 import slack.api.SlackApiClient
 import slack.models.Message
 import slack.rtm.SlackRtmClient
@@ -11,7 +11,6 @@ import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.util.matching.Regex
 
 case class SlackMessageContext(

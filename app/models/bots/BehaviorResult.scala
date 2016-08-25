@@ -2,14 +2,15 @@ package models.bots
 
 import models.IDs
 import models.accounts.OAuth2Application
+import models.bots.events.{MessageContext, MessageEvent}
 import models.bots.templates.TemplateApplier
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsDefined, JsString, JsValue}
 import services.AWSLambdaConstants._
 import services.AWSLambdaLogResult
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 object ResultType extends Enumeration {

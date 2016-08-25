@@ -1,9 +1,10 @@
 package models.accounts
 
 import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
-import models.bots.{SlackMessageContext, MessageContext}
-import models.{Team, IDs}
+import models.bots.events.{MessageContext, SlackMessageContext}
+import models.{IDs, Team}
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class UserTeamAccess(user: User, loggedInTeam: Team, maybeTargetTeam: Option[Team], isAdminAccess: Boolean) {

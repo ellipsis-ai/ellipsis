@@ -2,9 +2,9 @@ package controllers
 
 import javax.inject.Inject
 
-import models.bots._
-import models.{APITokenQueries, Team, Models}
+import models.{APITokenQueries, Models, Team}
 import models.accounts._
+import models.bots.events.{APIMessageContext, APIMessageEvent, EventHandler}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.data.Form

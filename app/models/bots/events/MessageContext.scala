@@ -1,10 +1,12 @@
-package models.bots
+package models.bots.events
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import models.bots.UserInfo
 import models.bots.conversations.Conversation
 import play.api.libs.ws.WSClient
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext
 import scala.util.matching.Regex
 

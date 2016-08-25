@@ -1,4 +1,4 @@
-package models.bots
+package models.bots.events
 
 trait Event {
   val context: Context

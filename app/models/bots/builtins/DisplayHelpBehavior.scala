@@ -1,10 +1,12 @@
 package models.bots.builtins
 
 import models.Team
-import models.bots.{BehaviorVersion, MessageContext}
+import models.bots.BehaviorVersion
+import models.bots.events.MessageContext
 import models.bots.triggers.MessageTriggerQueries
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class DisplayHelpBehavior(helpString: String, messageContext: MessageContext, lambdaService: AWSLambdaService) extends BuiltinBehavior {

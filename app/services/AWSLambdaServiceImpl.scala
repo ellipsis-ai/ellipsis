@@ -4,22 +4,24 @@ import java.io.{File, PrintWriter}
 import java.nio.ByteBuffer
 import java.nio.file.{Files, Paths}
 import javax.inject.Inject
+
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
-import models.bots.config.{RequiredOAuth2ApplicationQueries, RequiredOAuth2Application, AWSConfig}
-import models.{EnvironmentVariable, Models, InvocationToken}
+import models.bots.config.{AWSConfig, RequiredOAuth2Application, RequiredOAuth2ApplicationQueries}
+import models.{EnvironmentVariable, InvocationToken, Models}
 import models.bots._
+import models.bots.events.MessageEvent
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import sun.misc.BASE64Decoder
 import utils.JavaFutureWrapper
+
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.concurrent.Future
 import scala.reflect.io.Path
 import sys.process._
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AWSLambdaServiceImpl @Inject() (

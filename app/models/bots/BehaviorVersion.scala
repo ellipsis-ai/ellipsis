@@ -2,19 +2,22 @@ package models.bots
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import json.BehaviorVersionData
 import models.accounts.User
-import models.bots.config.{RequiredOAuth2Application, RequiredOAuth2ApplicationQueries, AWSConfig, AWSConfigQueries}
+import models.bots.config.{AWSConfig, AWSConfigQueries, RequiredOAuth2Application, RequiredOAuth2ApplicationQueries}
+import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTriggerQueries
 import models.{EnvironmentVariable, EnvironmentVariableQueries, IDs, Team}
-import org.commonmark.node.{Image, AbstractVisitor}
+import org.commonmark.node.{AbstractVisitor, Image}
 import org.joda.time.DateTime
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.{JsValue, Json}
 import play.api.{Configuration, Play}
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, AWSLambdaService}
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 

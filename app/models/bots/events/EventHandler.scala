@@ -1,14 +1,17 @@
-package models.bots
+package models.bots.events
 
 import javax.inject._
-import models.{Team, Models}
+
+import models.bots.BehaviorResponse
 import models.bots.builtins.BuiltinBehavior
 import models.bots.conversations.Conversation
+import models.{Models, Team}
 import play.api.i18n.MessagesApi
 import services.AWSLambdaService
+import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import slick.driver.PostgresDriver.api._
 
 @Singleton
 class EventHandler @Inject() (
