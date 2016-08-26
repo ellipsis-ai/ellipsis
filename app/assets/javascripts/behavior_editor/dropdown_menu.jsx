@@ -100,7 +100,7 @@ var BehaviorEditorDropdownMenu = React.createClass({
             {React.Children.map(this.props.children, function(child, index) {
               if (child) {
                 return (
-                  <li ref={"menuItem" + index} onMouseUp={this.onItemMouseUp}>
+                  <li ref={"menuItem" + index} onMouseUp={this.onItemMouseUp} className={child.props.className || ""}>
                     {child}
                   </li>
                 );
@@ -120,7 +120,8 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
   propTypes: {
     checkedWhen: React.PropTypes.bool,
     label: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
-    onClick: React.PropTypes.func
+    onClick: React.PropTypes.func,
+    className: React.PropTypes.string
   },
 
   getInitialState: function() {

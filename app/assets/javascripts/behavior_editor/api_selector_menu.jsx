@@ -20,7 +20,8 @@ define(function (require) {
         })
       })).isRequired,
       onAddOAuth2Application: React.PropTypes.func.isRequired,
-      onRemoveOAuth2Application: React.PropTypes.func.isRequired
+      onRemoveOAuth2Application: React.PropTypes.func.isRequired,
+      onNewOAuth2Application: React.PropTypes.func.isRequired
     },
 
     getAPISelectorDropdownLabel: function() {
@@ -70,6 +71,10 @@ define(function (require) {
       }
     },
 
+    addNewOAuth2Application: function() {
+      this.props.onNewOAuth2Application();
+    },
+
     render: function () {
       return (
         <DropdownMenu
@@ -83,7 +88,7 @@ define(function (require) {
             checkedWhen={this.props.awsCheckedWhen}
             label={(<img src="/assets/images/logos/aws_logo_web_300px.png" height="32" />)}
           />
-          {this.props.allOAuth2Applications.map(function(app, index) {
+          {this.props.allOAuth2Applications.map((app, index) => {
             return (
               <DropdownMenu.Item
                 key={"oauth2-app-" + index}
@@ -92,7 +97,12 @@ define(function (require) {
                 label={this.getAPISelectorLabelForApp(app)}
               />
             );
-          }.bind(this))}
+          })}
+          <DropdownMenu.Item
+            onClick={this.addNewOAuth2Application}
+            className="border-top"
+            label="Add new API application…"
+          />
         </DropdownMenu>
       );
     }

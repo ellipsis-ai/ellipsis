@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    Collapsible = require('./collapsible'),
     SVGWarning = require('./svg/warning');
 
   return React.createClass({
@@ -7,23 +8,46 @@ define(function(require) {
       details: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       kind: React.PropTypes.string.isRequired,
       index: React.PropTypes.number.isRequired,
-      onClick: React.PropTypes.func.isRequired
-    },
-
-    getButtonForEnvVar: function(envVarDetail) {
-      return (
-        <button
-          type="button"
-          className="button-raw button-s type-monospace type-bold mlxs"
-          onClick={this.onClick.bind(this, envVarDetail)}
-        >{envVarDetail.environmentVariableName}</button>
-      );
+      onClick: React.PropTypes.func.isRequired,
+      hidden: React.PropTypes.bool
     },
 
     getNotificationForKind: function(kind) {
       if (kind === "env_var_not_defined") {
-        return this.getNotificationForEnvVarMissing();
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: this.getNotificationForEnvVarMissing()
+        };
+      } else if (kind === "oauth2_application_unused") {
+        return {
+          containerClass: "box-tip",
+          icon: this.getTipIcon(),
+          message: this.getNotificationForUnusedOAuth2Application()
+        };
+      } else if (kind === "aws_unused") {
+        return {
+          containerClass: "box-tip",
+          icon: this.getTipIcon(),
+          message: this.getNotificationForUnusedAWS()
+        };
       }
+    },
+
+    getWarningIcon: function() {
+      return (
+        <span className="display-inline-block mrs align-b type-yellow" style={{ height: 24 }}>
+          <SVGWarning />
+        </span>
+      );
+    },
+
+    getTipIcon: function() {
+      return (
+        <span className="display-inline-block mrs align-m type-pink type-l" style={{ height: 24 }}>
+          ☞
+        </span>
+      );
     },
 
     getNotificationForEnvVarMissing: function() {
@@ -54,6 +78,53 @@ define(function(require) {
       }
     },
 
+    getButtonForEnvVar: function(envVarDetail) {
+      return (
+        <button
+          type="button"
+          className="button-raw button-s type-monospace type-bold mlxs"
+          onClick={this.onClick.bind(this, envVarDetail)}
+        >{envVarDetail.environmentVariableName}</button>
+      );
+    },
+
+    getNotificationForUnusedOAuth2Application: function() {
+      var numApps = this.props.details.length;
+      if (numApps === 1) {
+        var firstApp = this.props.details[0];
+        return (
+          <span>
+            <span>Add <code className="box-code-example mhxs">{firstApp.code}</code> to your function to use the </span>
+            <span>API token for <b>{firstApp.name}</b>. </span>
+          </span>
+        );
+      } else {
+        return (
+          <span>
+            <span>This behavior has the following API tokens available: </span>
+            {this.props.details.map((detail, index) => {
+              return (
+                <span key={"oAuthNotificationDetail" + index}>
+                  <code className="box-code-example mhxs">{detail.code}</code>
+                  <span>{index + 1 < numApps ? ", " : ""}</span>
+                </span>
+              );
+            })}
+          </span>
+        );
+      }
+    },
+
+    getNotificationForUnusedAWS: function() {
+      return (
+        <span>
+          <span>Use <code className="box-code-example mhxs">{this.props.details[0].code}</code> in your </span>
+          <span>function to access methods and properties of the </span>
+          <span><a href="http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-intro.html" target="_blank">AWS SDK</a>.</span>
+        </span>
+      );
+    },
+
     onClick: function(notificationDetail) {
       if (this.props.onClick) {
         this.props.onClick(notificationDetail);
@@ -61,20 +132,16 @@ define(function(require) {
     },
 
     render: function() {
+      var notification = this.getNotificationForKind(this.props.kind);
       return (
-        <div className="box-warning type-s phn"
-          style={{
-            marginTop: -1,
-            zIndex: 1
-          }}
-        >
-          <div className="container">
-            <span className="display-inline-block mrs align-b type-yellow" style={{ height: 24 }}>
-              <SVGWarning />
-            </span>
-            {this.getNotificationForKind(this.props.kind)}
+        <Collapsible revealWhen={!this.props.hidden} animateInitialRender={true}>
+          <div className={"type-s phn position-z-above " + notification.containerClass} style={{ marginTop: -1 }}>
+            <div className="container">
+              {notification.icon}
+              {notification.message}
+            </div>
           </div>
-        </div>
+        </Collapsible>
       );
     }
   });

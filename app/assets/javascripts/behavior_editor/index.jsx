@@ -112,11 +112,23 @@ return React.createClass({
   },
 
   getRequiredOAuth2ApiConfigs: function() {
-    return this.getBehaviorConfig()['requiredOAuth2ApiConfigs'] || [];
+    if (this.state) {
+      return this.getBehaviorConfig()['requiredOAuth2ApiConfigs'] || [];
+    } else if (this.props.config) {
+      return this.props.config.requiredOAuth2ApiConfigs || [];
+    } else {
+      return [];
+    }
   },
 
   getAWSConfig: function() {
-    return this.getBehaviorConfig()['aws'];
+    if (this.state) {
+      return this.getBehaviorConfig()['aws'];
+    } else if (this.props.config) {
+      return this.props.config.aws;
+    } else {
+      return undefined;
+    }
   },
 
   getAWSConfigProperty: function(property) {
@@ -129,7 +141,11 @@ return React.createClass({
   },
 
   getBehaviorFunctionBody: function() {
-    return this.getBehaviorProp('functionBody') || "";
+    if (this.state) {
+      return this.getBehaviorProp('functionBody') || "";
+    } else {
+      return this.props.functionBody;
+    }
   },
 
   getBehaviorParams: function() {
@@ -237,6 +253,10 @@ return React.createClass({
     );
   },
 
+  getRedirectValue: function() {
+    return this.state.redirectValue;
+  },
+
   buildEnvVarNotifications: function() {
     var envVars = (this.state ? this.state.envVariables : this.props.envVariables) || [];
     return envVars.
@@ -250,9 +270,27 @@ return React.createClass({
       });
   },
 
+  buildOAuthApplicationNotifications: function() {
+    var unusedApplications = this.getRequiredOAuth2Applications().filter(ea => !this.hasUsedOAuth2Application(ea.keyName));
+    var notifications = unusedApplications.map(ea => {
+      return {
+        kind: "oauth2_application_unused",
+        name: ea.displayName,
+        code: `ellipsis.accessTokens.${ea.keyName}`
+      };
+    });
+    if (this.getAWSConfig() && !this.hasUsedAWSObject()) {
+      notifications.push({
+        kind: "aws_unused",
+        code: "ellipsis.AWS"
+      });
+    }
+    return notifications;
+  },
+
   buildNotifications: function() {
     var serverNotifications = this.props.notifications || [];
-    var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications());
+    var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications(), this.buildOAuthApplicationNotifications());
 
     var notifications = {};
     allNotifications.forEach(function(notification) {
@@ -552,15 +590,19 @@ return React.createClass({
     }
   },
 
-  onSaveClick: function(event) {
-    if (this.getBehaviorTemplate() === this.getDefaultBehaviorTemplate()) {
-      event.preventDefault();
-      this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), function() {
-        this.refs.behaviorForm.submit();
-      }.bind(this));
+  onSubmit: function(maybeEvent) {
+    var doSubmit = () => { this.refs.behaviorForm.submit(); };
+    if (maybeEvent) {
+      maybeEvent.preventDefault();
     }
     this.setState({
       isSaving: true
+    }, () => {
+      if (this.getBehaviorTemplate() === this.getDefaultBehaviorTemplate()) {
+        this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), doSubmit);
+      } else {
+        doSubmit();
+      }
     });
   },
 
@@ -608,10 +650,10 @@ return React.createClass({
     }, callback);
   },
 
-  setConfigProperty: function(property, value) {
+  setConfigProperty: function(property, value, callback) {
     var config = Object.assign({}, this.getBehaviorConfig());
     config[property] = value;
-    this.setBehaviorProp('config', config);
+    this.setBehaviorProp('config', config, callback);
   },
 
   setEnvVariableNameAtIndex: function(name, index) {
@@ -678,11 +720,11 @@ return React.createClass({
   },
 
   toggleAWSConfig: function() {
-    if (this.getAWSConfig()) {
-      this.onRemoveAWSConfig();
-    } else {
-      this.setConfigProperty('aws', {});
-    }
+    this.setConfigProperty(
+      'aws',
+      this.getAWSConfig() ? undefined : {},
+      this.resetNotifications
+    );
   },
 
   toggleAWSHelp: function() {
@@ -831,6 +873,17 @@ return React.createClass({
 
   hasCode: function() {
     return /\S/.test(this.getBehaviorFunctionBody());
+  },
+
+  hasUsedAWSObject: function() {
+    var code = this.getBehaviorFunctionBody();
+    return /\bellipsis\.AWS\b/.test(code);
+  },
+
+  hasUsedOAuth2Application: function(keyName) {
+    var code = this.getBehaviorFunctionBody();
+    var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
+    return pattern.test(code);
   },
 
   hasModalPanel: function() {
@@ -1001,18 +1054,20 @@ return React.createClass({
       apiId: appToAdd.apiId,
       application: appToAdd
     }
-    this.setConfigProperty('requiredOAuth2ApiConfigs', existing.concat([requiredToAdd]));
+    this.setConfigProperty('requiredOAuth2ApiConfigs', existing.concat([requiredToAdd]), this.resetNotifications);
   },
 
   onRemoveOAuth2Application: function(appToRemove) {
     var existing = this.getRequiredOAuth2ApiConfigs();
     this.setConfigProperty('requiredOAuth2ApiConfigs', existing.filter(function(config) {
       return config.application && config.application.applicationId !== appToRemove.applicationId;
-    }));
+    }), this.resetNotifications);
   },
 
-  onRemoveAWSConfig: function() {
-    this.setConfigProperty('aws', undefined);
+  onNewOAuth2Application: function() {
+    this.setState({
+      redirectValue: "newOAuth2Application"
+    }, () => { this.onSubmit(); });
   },
 
   onParamEnterKey: function(index) {
@@ -1032,8 +1087,13 @@ return React.createClass({
   },
 
   resetNotifications: function() {
+    var newNotifications = this.buildNotifications();
+    var newKinds = newNotifications.map(ea => ea.kind);
+    var visibleAndUnneeded = (notification) => !notification.hidden && !newKinds.some(kind => kind === notification.kind);
+    var notificationsToHide = this.getNotifications().filter(visibleAndUnneeded)
+      .map(deadNotification => Object.assign(deadNotification, { hidden: true }));
     this.setState({
-      notifications: this.buildNotifications()
+      notifications: newNotifications.concat(notificationsToHide)
     });
   },
 
@@ -1071,7 +1131,8 @@ return React.createClass({
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
-      envVariableAdderPrompt: null
+      envVariableAdderPrompt: null,
+      redirectValue: ""
     };
   },
 
@@ -1098,7 +1159,7 @@ return React.createClass({
         </div>
       </div>
 
-      <form action="/save_behavior" method="POST" ref="behaviorForm">
+      <form action="/save_behavior" method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
 
         <CsrfTokenHiddenInput
           value={this.props.csrfToken}
@@ -1106,6 +1167,7 @@ return React.createClass({
         <HiddenJsonInput
           value={JSON.stringify(this.state.behavior)}
         />
+        <input type="hidden" name="redirect" value={this.getRedirectValue()} />
 
         {/* Start of container */}
         <div className="container ptxl pbxxxl">
@@ -1246,6 +1308,7 @@ return React.createClass({
                       requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
                       onAddOAuth2Application={this.onAddOAuth2Application}
                       onRemoveOAuth2Application={this.onRemoveOAuth2Application}
+                      onNewOAuth2Application={this.onNewOAuth2Application}
                       />
                   </div>
 
@@ -1258,7 +1321,7 @@ return React.createClass({
                         regionName={this.getAWSConfigProperty('regionName')}
                         onAddNew={this.onAWSAddNewEnvVariable}
                         onChange={this.onAWSConfigChange}
-                        onRemoveAWSConfig={this.onRemoveAWSConfig}
+                        onRemoveAWSConfig={this.toggleAWSConfig}
                         onToggleHelp={this.toggleAWSHelp}
                         helpVisible={this.getActivePanel() === 'helpForAWS'}
                       />
@@ -1451,6 +1514,7 @@ return React.createClass({
                   index={index}
                   kind={notification.kind}
                   onClick={this.onNotificationClick}
+                  hidden={notification.hidden}
                 />
               );
             }, this)}
@@ -1460,7 +1524,6 @@ return React.createClass({
                   <button type="submit"
                     className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
                     disabled={!this.isModified()}
-                    onClick={this.onSaveClick}
                   >
                     <span className="button-labels">
                       <span className="button-normal-label">
