@@ -12,6 +12,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import slick.dbio.DBIO
+import json.APITokenData
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -90,7 +91,7 @@ class APITokenController @Inject() (
       tokens <- APITokenQueries.allFor(teamAccess.loggedInTeam)
     } yield {
         teamAccess.maybeTargetTeam.map { _ =>
-          Ok(views.html.api.listTokens(tokens))
+          Ok(views.html.api.listTokens(teamAccess, tokens.map(APITokenData.from)))
         }.getOrElse {
           NotFound("")
         }
