@@ -14,6 +14,7 @@ define(function (require) {
       })).isRequired,
       requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
         apiId: React.PropTypes.string.isRequired,
+        recommendedScope: React.PropTypes.string,
         application: React.PropTypes.shape({
           applicationId: React.PropTypes.string.isRequired,
           displayName: React.PropTypes.string.isRequired

@@ -12,7 +12,7 @@ case class RequiredOAuth2ApiConfig(
                                     id: String,
                                     behaviorVersion: BehaviorVersion,
                                     api: OAuth2Api,
-                                    requiredScope: String,
+                                    recommendedScope: String,
                                     maybeApplication: Option[OAuth2Application]
                                     ) {
   // Could check scope too
@@ -23,7 +23,7 @@ case class RequiredOAuth2ApiConfig(
       id,
       behaviorVersion.id,
       api.id,
-      requiredScope,
+      recommendedScope,
       maybeApplication.map(_.id)
     )
   }
@@ -34,7 +34,7 @@ case class RawRequiredOAuth2ApiConfig(
                                        id: String,
                                        behaviorVersionId: String,
                                        apiId: String,
-                                       requiredScope: String,
+                                       recommendedScope: String,
                                        maybeApplicationId: Option[String]
                                        )
 
@@ -43,10 +43,10 @@ class RequiredOAuth2ApiConfigsTable(tag: Tag) extends Table[RawRequiredOAuth2Api
   def id = column[String]("id", O.PrimaryKey)
   def behaviorVersionId = column[String]("behavior_version_id")
   def apiId = column[String]("api_id")
-  def requiredScope = column[String]("required_scope")
+  def recommendedScope = column[String]("required_scope")
   def maybeApplicationId = column[Option[String]]("application_id")
 
-  def * = (id, behaviorVersionId, apiId, requiredScope, maybeApplicationId) <> ((RawRequiredOAuth2ApiConfig.apply _).tupled, RawRequiredOAuth2ApiConfig.unapply _)
+  def * = (id, behaviorVersionId, apiId, recommendedScope, maybeApplicationId) <> ((RawRequiredOAuth2ApiConfig.apply _).tupled, RawRequiredOAuth2ApiConfig.unapply _)
 }
 
 object RequiredOAuth2ApiConfigQueries {
@@ -64,7 +64,7 @@ object RequiredOAuth2ApiConfigQueries {
       raw.id,
       behaviorVersion,
       tuple._1._2,
-      raw.requiredScope,
+      raw.recommendedScope,
       tuple._2.map(OAuth2ApplicationQueries.tuple2Application)
     )
   }
@@ -95,7 +95,7 @@ object RequiredOAuth2ApiConfigQueries {
         raw.id,
         behaviorVersion,
         application.api,
-        raw.requiredScope,
+        raw.recommendedScope,
         Some(application)
       )
     }
@@ -111,7 +111,7 @@ object RequiredOAuth2ApiConfigQueries {
         createFor(
           behaviorVersion,
           api,
-          data.requiredScope,
+          data.recommendedScope,
           maybeApplication
         ).map(Some(_))
       }.getOrElse(DBIO.successful(None))

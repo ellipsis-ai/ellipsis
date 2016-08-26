@@ -65,8 +65,8 @@ return React.createClass({
       }),
       requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(
         React.PropTypes.shape({
-          apiId: React.PropTypes.string.required,
-          requiredScope: React.PropTypes.string,
+          apiId: React.PropTypes.string.isRequired,
+          recommendedScope: React.PropTypes.string,
           application: React.PropTypes.shape({
             applicationId: React.PropTypes.string,
             displayName: React.PropTypes.string,
