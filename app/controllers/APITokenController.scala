@@ -25,17 +25,6 @@ class APITokenController @Inject() (
                                     val socialProviderRegistry: SocialProviderRegistry)
   extends ReAuthable {
 
-  def newToken() = SecuredAction.async { implicit request =>
-    val user = request.identity
-    val action = for {
-      teamAccess <- user.teamAccessFor(None)
-    } yield {
-        Ok(views.html.api.newToken(teamAccess.loggedInTeam))
-      }
-
-    models.run(action)
-  }
-
   case class CreateAPITokenInfo(teamId: String, label: String)
 
   private val createAPITokenForm = Form(
@@ -66,22 +55,6 @@ class APITokenController @Inject() (
         models.run(action)
       }
     )
-  }
-
-  def viewToken(tokenId: String) = SecuredAction.async { implicit request =>
-    val user = request.identity
-    val action = for {
-      teamAccess <- user.teamAccessFor(None)
-      maybeToken <- APITokenQueries.find(tokenId, teamAccess.loggedInTeam)
-    } yield {
-        maybeToken.map { token =>
-          Ok(views.html.api.viewToken(token))
-        }.getOrElse {
-          NotFound("")
-        }
-      }
-
-    models.run(action)
   }
 
   def listTokens(maybeJustCreatedTokenId: Option[String]) = SecuredAction.async { implicit request =>
