@@ -107,7 +107,13 @@ return React.createClass({
   },
 
   getRequiredOAuth2Applications: function() {
-    return this.getBehaviorConfig()['requiredOAuth2Applications'] || [];
+    if (this.state) {
+      return this.getBehaviorConfig()['requiredOAuth2Applications'] || [];
+    } else if (this.props.config) {
+      return this.props.config.requiredOAuth2Applications || [];
+    } else {
+      return [];
+    }
   },
 
   getAWSConfig: function() {
@@ -130,7 +136,11 @@ return React.createClass({
   },
 
   getBehaviorFunctionBody: function() {
-    return this.getBehaviorProp('functionBody') || "";
+    if (this.state) {
+      return this.getBehaviorProp('functionBody') || "";
+    } else {
+      return this.props.functionBody;
+    }
   },
 
   getBehaviorParams: function() {
@@ -255,9 +265,8 @@ return React.createClass({
   },
 
   buildOAuthApplicationNotifications: function() {
-    var requiredApplications = (this.state ? this.getRequiredOAuth2Applications() : this.props.config.requiredOAuth2Applications) || [];
-    var unusedApplications = requiredApplications.filter((ea) => !this.hasUsedOAuth2Application(ea.keyName));
-    var notifications = unusedApplications.map((ea) => {
+    var unusedApplications = this.getRequiredOAuth2Applications().filter(ea => !this.hasUsedOAuth2Application(ea.keyName));
+    var notifications = unusedApplications.map(ea => {
       return {
         kind: "oauth2_application_unused",
         name: ea.displayName,
@@ -861,12 +870,12 @@ return React.createClass({
   },
 
   hasUsedAWSObject: function() {
-    var code = this.state ? this.getBehaviorFunctionBody() : this.props.functionBody;
+    var code = this.getBehaviorFunctionBody();
     return /\bellipsis\.AWS\b/.test(code);
   },
 
   hasUsedOAuth2Application: function(keyName) {
-    var code = this.state ? this.getBehaviorFunctionBody() : this.props.functionBody;
+    var code = this.getBehaviorFunctionBody();
     var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
     return pattern.test(code);
   },
