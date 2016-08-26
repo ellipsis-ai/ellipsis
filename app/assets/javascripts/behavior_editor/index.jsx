@@ -1079,12 +1079,11 @@ return React.createClass({
   resetNotifications: function() {
     var newNotifications = this.buildNotifications();
     var newKinds = newNotifications.map(ea => ea.kind);
-    var notificationsToHide = this.state.notifications
-      .filter(oldNotification => !oldNotification.hidden && !newKinds.some(kind => kind === oldNotification.kind))
+    var visibleAndUnneeded = (notification) => !notification.hidden && !newKinds.some(kind => kind === notification.kind);
+    var notificationsToHide = this.getNotifications().filter(visibleAndUnneeded)
       .map(deadNotification => Object.assign(deadNotification, { hidden: true }));
-    var combined = newNotifications.concat(notificationsToHide);
     this.setState({
-      notifications: combined
+      notifications: newNotifications.concat(notificationsToHide)
     });
   },
 

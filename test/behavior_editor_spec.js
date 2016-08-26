@@ -363,4 +363,35 @@ describe('BehaviorEditor', () => {
       expect(editor.hasCalledRequire()).toBe(false);
     });
   });
+
+  describe('resetNotifications', () => {
+    const newNotifications = [{
+      kind: "a", details: "new"
+    }, {
+      kind: "b", details: "new"
+    }];
+    const oldNotifications = [{
+      kind: "b", details: "old"
+    }, {
+      kind: "c", details: "old"
+    }, {
+      kind: "d", details: "old", hidden: true
+    }];
+    it('concatenates new notifications with old, unneeded, still-visible ones', () => {
+      let editor = createEditor(editorConfig);
+      editor.buildNotifications = jest.fn(() => newNotifications);
+      editor.getNotifications = jest.fn(() => oldNotifications);
+      editor.setState = jest.fn();
+      editor.resetNotifications();
+      expect(editor.setState).toBeCalledWith({
+        notifications: [{
+          kind: "a", details: "new"
+        }, {
+          kind: "b", details: "new"
+        }, {
+          kind: "c", details: "old", hidden: true
+        }]
+      });
+    });
+  });
 });
