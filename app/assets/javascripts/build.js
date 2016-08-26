@@ -74,6 +74,10 @@ requirejs.config({
       name: 'application_list/loader',
       include: ['application_list/index'],
       exclude: ['common']
+    }, {
+      name: 'api_token_generator/loader',
+      include: ['api_token_generator/index'],
+      exclude: ['common']
     }
   ]
 });
