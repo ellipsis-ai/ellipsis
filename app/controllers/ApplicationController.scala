@@ -255,7 +255,7 @@ class ApplicationController @Inject() (
             } yield {
                 maybeBehavior.map { behavior =>
                   if (info.maybeRedirect.exists(_.equals("newOAuth2Application"))) {
-                    Redirect(routes.ApplicationController.newOAuth2Application(None, None, Some(behavior.id)))
+                    Redirect(routes.ApplicationController.newOAuth2Application(None, Some(data.teamId), Some(behavior.id)))
                   } else {
                     Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
                   }
