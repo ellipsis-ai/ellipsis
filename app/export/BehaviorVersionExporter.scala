@@ -73,12 +73,19 @@ object BehaviorVersionExporter {
         function <- maybeFunction
         versionData <- maybeVersionData
       } yield {
+        // we don't want to export the team-specific application
+        val requiredOAuth2ApiConfigsForExport = versionData.config.requiredOAuth2ApiConfigs.map { configs =>
+          configs.map { ea =>
+            ea.copy(application = None)
+          }
+        }
+        val configForExport = versionData.config.copy(requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsForExport)
         BehaviorVersionExporter(
           behaviorVersion,
           maybeFunction,
           versionData.params,
           versionData.triggers,
-          versionData.config,
+          configForExport,
           versionData.responseTemplate)
       }
     }
