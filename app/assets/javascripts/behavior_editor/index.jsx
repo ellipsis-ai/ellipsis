@@ -705,11 +705,10 @@ return React.createClass({
   },
 
   toggleAWSConfig: function() {
-    var callback = () => this.resetNotifications();
     if (this.getAWSConfig()) {
-      this.onRemoveAWSConfig(callback);
+      this.onRemoveAWSConfig(this.resetNotifications);
     } else {
-      this.setConfigProperty('aws', {}, callback);
+      this.setConfigProperty('aws', {}, this.resetNotifications);
     }
   },
 
@@ -1036,18 +1035,14 @@ return React.createClass({
 
   onAddOAuth2Application: function(appToAdd) {
     var existing = this.getRequiredOAuth2Applications();
-    this.setConfigProperty('requiredOAuth2Applications', existing.concat([appToAdd]), () => {
-      this.resetNotifications();
-    });
+    this.setConfigProperty('requiredOAuth2Applications', existing.concat([appToAdd]), this.resetNotifications);
   },
 
   onRemoveOAuth2Application: function(appToRemove) {
     var existing = this.getRequiredOAuth2Applications();
     this.setConfigProperty('requiredOAuth2Applications', existing.filter(function(app) {
       return app.applicationId !== appToRemove.applicationId;
-    }), () => {
-      this.resetNotifications();
-    });
+    }), this.resetNotifications);
   },
 
   onNewOAuth2Application: function() {
