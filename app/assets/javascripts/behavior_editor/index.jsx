@@ -705,11 +705,11 @@ return React.createClass({
   },
 
   toggleAWSConfig: function() {
-    if (this.getAWSConfig()) {
-      this.onRemoveAWSConfig(this.resetNotifications);
-    } else {
-      this.setConfigProperty('aws', {}, this.resetNotifications);
-    }
+    this.setConfigProperty(
+      'aws',
+      this.getAWSConfig() ? undefined : {},
+      this.resetNotifications
+    );
   },
 
   toggleAWSHelp: function() {
@@ -1051,10 +1051,6 @@ return React.createClass({
     }, () => { this.onSubmit(); });
   },
 
-  onRemoveAWSConfig: function(callback) {
-    this.setConfigProperty('aws', undefined, callback);
-  },
-
   onParamEnterKey: function(index) {
     if (index + 1 < this.getBehaviorParams().length) {
       this.focusOnParamIndex(index + 1);
@@ -1307,7 +1303,7 @@ return React.createClass({
                         regionName={this.getAWSConfigProperty('regionName')}
                         onAddNew={this.onAWSAddNewEnvVariable}
                         onChange={this.onAWSConfigChange}
-                        onRemoveAWSConfig={this.onRemoveAWSConfig}
+                        onRemoveAWSConfig={this.toggleAWSConfig}
                         onToggleHelp={this.toggleAWSHelp}
                         helpVisible={this.getActivePanel() === 'helpForAWS'}
                       />
