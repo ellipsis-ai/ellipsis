@@ -221,11 +221,12 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  case class SaveBehaviorInfo(dataJson: String)
+  case class SaveBehaviorInfo(dataJson: String, maybeRedirect: Option[String])
 
   private val saveBehaviorForm = Form(
     mapping(
-      "dataJson" -> nonEmptyText
+      "dataJson" -> nonEmptyText,
+      "redirect" -> optional(nonEmptyText)
     )(SaveBehaviorInfo.apply)(SaveBehaviorInfo.unapply)
   )
 
@@ -253,7 +254,11 @@ class ApplicationController @Inject() (
               }.getOrElse(DBIO.successful(None))
             } yield {
                 maybeBehavior.map { behavior =>
-                  Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
+                  if (info.maybeRedirect.contains("newOAuth2Application")) {
+                    Redirect(routes.ApplicationController.newOAuth2Application(None, Some(data.teamId), Some(behavior.id)))
+                  } else {
+                    Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
+                  }
                 }.getOrElse {
                   NotFound(
                     views.html.notFound(
