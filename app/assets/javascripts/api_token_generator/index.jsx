@@ -19,13 +19,23 @@ define(function(require) {
         lastUsed: React.PropTypes.number,
         createdAt: React.PropTypes.number.isRequired,
         isRevoked: React.PropTypes.bool.isRequired
-      })).isRequired
+      })).isRequired,
+      justCreatedTokenId: React.PropTypes.string
+    },
+
+    sortByMostRecent: function(tokens) {
+      return tokens.map(t => t).sort((a, b) => a.createdAt < b.createdAt);
     },
 
     getInitialState: function() {
       return {
-        newTokenLabel: ""
+        newTokenLabel: "",
+        tokens: this.sortByMostRecent(this.props.tokens)
       };
+    },
+
+    getTokens: function() {
+      return this.state.tokens;
     },
 
     getNewTokenLabel: function() {
@@ -34,6 +44,10 @@ define(function(require) {
 
     setNewTokenLabel: function(value) {
       this.setState({ newTokenLabel: value });
+    },
+
+    shouldHighlightToken: function(token) {
+      return this.props.justCreatedTokenId === token.id;
     },
 
     render: function() {
@@ -56,7 +70,7 @@ define(function(require) {
                     <span>For better security, use each token only for a single purpose.</span>
                   </p>
 
-                  {this.props.tokens.length > 0 ? this.renderTokenList() : this.renderNoTokens()}
+                  {this.getTokens().length > 0 ? this.renderTokenList() : this.renderNoTokens()}
 
                   {this.renderTokenCreator()}
 
@@ -79,14 +93,22 @@ define(function(require) {
               <div className="column column-shrink type-label pvs display-ellipsis">Last used</div>
               <div className="column column-shrink type-label pvs"></div>
             </div>
-            {this.props.tokens.map((token, index) => {
+            {this.getTokens().map((token, index) => {
               return (
                 <div className="column-row" key={`token${index}`}>
                   <div className="column column-expand border-top ptm pbs">
-                    {token.label}
+                    <span
+                      className={this.shouldHighlightToken(token) ? "type-bold" : ""}
+                    >{token.label}</span>
                   </div>
                   <div className="column column-shrink display-ellipsis border-top pvs">
-                    <div className="box-code-example">{token.id}</div>
+                    <div
+                      className={
+                        "box-code-example " +
+                        (this.shouldHighlightToken(token) ? " box-code-example-highlighted " : "")
+                      }>
+                      {token.id}
+                    </div>
                   </div>
                   <div className="column column-shrink type-s type-weak type-italic display-ellipsis border-top pvs">
                     {Formatter.formatTimestampRelativeIfRecent(token.createdAt)}

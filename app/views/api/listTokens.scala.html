@@ -1,6 +1,7 @@
 @(
   teamAccess: models.accounts.UserTeamAccess,
-  tokens: Seq[json.APITokenData]
+  tokens: Seq[json.APITokenData],
+  maybeJustCreatedTokenId: Option[String]
 )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
@@ -16,7 +17,8 @@
         containerId: 'apiTokenGenerator',
         csrfToken: "@CSRF.getToken(r).map(_.value)",
         teamId: "@teamAccess.maybeTargetTeam.map(_.id)",
-        tokens: @Html(Json.toJson(tokens).toString())
+        tokens: @Html(Json.toJson(tokens).toString()),
+        justCreatedTokenId: "@maybeJustCreatedTokenId.map(justCreatedTokenId => justCreatedTokenId).getOrElse("")"
       };
     </script>
     <script data-main='@RemoteAssets.getUrl("javascripts/api_token_generator/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>

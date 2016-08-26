@@ -29,7 +29,7 @@ POST        /save_oauth2_api                          @controllers.ApplicationCo
 
 GET         /new_api_token                            @controllers.APITokenController.newToken()
 GET         /view_api_token                           @controllers.APITokenController.viewToken(tokenId: String)
-GET         /list_api_tokens                          @controllers.APITokenController.listTokens()
+GET         /list_api_tokens                          @controllers.APITokenController.listTokens(tokenId: Option[String] ?= None)
 POST        /create_api_token                         @controllers.APITokenController.createToken
 POST        /revoke_api_token                         @controllers.APITokenController.revokeToken
 

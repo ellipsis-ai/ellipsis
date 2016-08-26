@@ -58,7 +58,7 @@ class APITokenController @Inject() (
             APITokenQueries.createFor(team, info.label).map(Some(_))
           }.getOrElse(DBIO.successful(None))
         } yield maybeToken.map { token =>
-            Redirect(routes.APITokenController.viewToken(token.id))
+            Redirect(routes.APITokenController.listTokens(Some(token.id)))
           }.getOrElse {
             NotFound("")
           }
@@ -84,14 +84,14 @@ class APITokenController @Inject() (
     models.run(action)
   }
 
-  def listTokens() = SecuredAction.async { implicit request =>
+  def listTokens(maybeJustCreatedTokenId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(None)
       tokens <- APITokenQueries.allFor(teamAccess.loggedInTeam)
     } yield {
         teamAccess.maybeTargetTeam.map { _ =>
-          Ok(views.html.api.listTokens(teamAccess, tokens.map(APITokenData.from)))
+          Ok(views.html.api.listTokens(teamAccess, tokens.map(APITokenData.from), maybeJustCreatedTokenId))
         }.getOrElse {
           NotFound("")
         }
