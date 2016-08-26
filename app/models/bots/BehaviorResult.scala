@@ -2,6 +2,7 @@ package models.bots
 
 import models.IDs
 import models.accounts.OAuth2Application
+import models.bots.config.RequiredOAuth2ApiConfig
 import models.bots.events.{MessageContext, MessageEvent}
 import models.bots.templates.TemplateApplier
 import play.api.Configuration
@@ -15,7 +16,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing = Value
+  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BehaviorResult {
@@ -176,6 +177,31 @@ case class OAuth2TokenMissing(
 
   override def sendIn(context: MessageContext): Unit = {
     cache.set(key, event, 5.minutes)
+    super.sendIn(context)
+  }
+}
+
+case class RequiredApiNotReady(
+                                required: RequiredOAuth2ApiConfig,
+                                event: MessageEvent,
+                                cache: CacheApi,
+                                configuration: Configuration
+                             ) extends BehaviorResult {
+
+  val resultType = ResultType.RequiredApiNotReady
+
+  def maybeConfigLink: Option[String] = required.behaviorVersion.editLinkFor(configuration)
+  def configText: String = {
+    maybeConfigLink.map { configLink =>
+      s"You first must [configure the ${required.api.name} API]($maybeConfigLink)"
+    }.getOrElse(s"You first must configure the ${required.api.name} API")
+  }
+
+  def text: String = {
+    s"This behavior is not ready to use. $configText."
+  }
+
+  override def sendIn(context: MessageContext): Unit = {
     super.sendIn(context)
   }
 }
