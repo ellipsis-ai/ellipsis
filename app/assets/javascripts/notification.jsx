@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    Collapsible = require('./collapsible'),
     SVGWarning = require('./svg/warning');
 
   return React.createClass({
@@ -7,7 +8,8 @@ define(function(require) {
       details: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       kind: React.PropTypes.string.isRequired,
       index: React.PropTypes.number.isRequired,
-      onClick: React.PropTypes.func.isRequired
+      onClick: React.PropTypes.func.isRequired,
+      hidden: React.PropTypes.bool
     },
 
     getNotificationForKind: function(kind) {
@@ -22,6 +24,12 @@ define(function(require) {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
           message: this.getNotificationForUnusedOAuth2Application()
+        };
+      } else if (kind === "aws_unused") {
+        return {
+          containerClass: "box-tip",
+          icon: this.getTipIcon(),
+          message: this.getNotificationForUnusedAWS()
         };
       }
     },
@@ -107,6 +115,16 @@ define(function(require) {
       }
     },
 
+    getNotificationForUnusedAWS: function() {
+      return (
+        <span>
+          <span>Use <code className="box-code-example mhxs">{this.props.details[0].code}</code> in your </span>
+          <span>function to access methods and properties of the </span>
+          <span><a href="http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-intro.html" target="_blank">AWS SDK</a>.</span>
+        </span>
+      );
+    },
+
     onClick: function(notificationDetail) {
       if (this.props.onClick) {
         this.props.onClick(notificationDetail);
@@ -116,12 +134,14 @@ define(function(require) {
     render: function() {
       var notification = this.getNotificationForKind(this.props.kind);
       return (
-        <div className={"type-s phn position-z-above " + notification.containerClass} style={{ marginTop: -1 }}>
-          <div className="container">
-            {notification.icon}
-            {notification.message}
+        <Collapsible revealWhen={!this.props.hidden} animateInitialRender={true}>
+          <div className={"type-s phn position-z-above " + notification.containerClass} style={{ marginTop: -1 }}>
+            <div className="container">
+              {notification.icon}
+              {notification.message}
+            </div>
           </div>
-        </div>
+        </Collapsible>
       );
     }
   });

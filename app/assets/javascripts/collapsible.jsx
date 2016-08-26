@@ -17,7 +17,8 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
     animationDuration: React.PropTypes.number,
     children: React.PropTypes.node.isRequired,
     className: React.PropTypes.string,
-    revealWhen: React.PropTypes.bool.isRequired
+    revealWhen: React.PropTypes.bool.isRequired,
+    animateInitialRender: React.PropTypes.bool
   },
 
   animationDurationSeconds: function() {
@@ -90,7 +91,9 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
   },
 
   componentDidMount: function() {
-    if (this.props.revealWhen) {
+    if (this.props.animateInitialRender && this.props.revealWhen) {
+      this.reveal();
+    } else if (this.props.revealWhen) {
       this.afterReveal();
     } else {
       this.finishCollapse();

@@ -111,7 +111,13 @@ return React.createClass({
   },
 
   getAWSConfig: function() {
-    return this.getBehaviorConfig()['aws'];
+    if (this.state) {
+      return this.getBehaviorConfig()['aws'];
+    } else if (this.props.config) {
+      return this.props.config.aws;
+    } else {
+      return undefined;
+    }
   },
 
   getAWSConfigProperty: function(property) {
@@ -251,13 +257,20 @@ return React.createClass({
   buildOAuthApplicationNotifications: function() {
     var requiredApplications = (this.state ? this.getRequiredOAuth2Applications() : this.props.config.requiredOAuth2Applications) || [];
     var unusedApplications = requiredApplications.filter((ea) => !this.hasUsedOAuth2Application(ea.keyName));
-    return unusedApplications.map((ea) => {
+    var notifications = unusedApplications.map((ea) => {
       return {
         kind: "oauth2_application_unused",
         name: ea.displayName,
         code: `ellipsis.accessTokens.${ea.keyName}`
       };
     });
+    if (this.getAWSConfig() && !this.hasUsedAWSObject()) {
+      notifications.push({
+        kind: "aws_unused",
+        code: "ellipsis.AWS"
+      });
+    }
+    return notifications;
   },
 
   buildNotifications: function() {
@@ -692,10 +705,11 @@ return React.createClass({
   },
 
   toggleAWSConfig: function() {
+    var callback = () => this.resetNotifications();
     if (this.getAWSConfig()) {
-      this.onRemoveAWSConfig();
+      this.onRemoveAWSConfig(callback);
     } else {
-      this.setConfigProperty('aws', {});
+      this.setConfigProperty('aws', {}, callback);
     }
   },
 
@@ -845,6 +859,11 @@ return React.createClass({
 
   hasCode: function() {
     return /\S/.test(this.getBehaviorFunctionBody());
+  },
+
+  hasUsedAWSObject: function() {
+    var code = this.state ? this.getBehaviorFunctionBody() : this.props.functionBody;
+    return /\bellipsis\.AWS\b/.test(code);
   },
 
   hasUsedOAuth2Application: function(keyName) {
@@ -1037,8 +1056,8 @@ return React.createClass({
     }, () => { this.onSubmit(); });
   },
 
-  onRemoveAWSConfig: function() {
-    this.setConfigProperty('aws', undefined);
+  onRemoveAWSConfig: function(callback) {
+    this.setConfigProperty('aws', undefined, callback);
   },
 
   onParamEnterKey: function(index) {
@@ -1058,8 +1077,14 @@ return React.createClass({
   },
 
   resetNotifications: function() {
+    var newNotifications = this.buildNotifications();
+    var newKinds = newNotifications.map(ea => ea.kind);
+    var notificationsToHide = this.state.notifications
+      .filter(oldNotification => !oldNotification.hidden && !newKinds.some(kind => kind === oldNotification.kind))
+      .map(deadNotification => Object.assign(deadNotification, { hidden: true }));
+    var combined = newNotifications.concat(notificationsToHide);
     this.setState({
-      notifications: this.buildNotifications()
+      notifications: combined
     });
   },
 
@@ -1480,6 +1505,7 @@ return React.createClass({
                   index={index}
                   kind={notification.kind}
                   onClick={this.onNotificationClick}
+                  hidden={notification.hidden}
                 />
               );
             }, this)}
