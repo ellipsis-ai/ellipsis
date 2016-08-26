@@ -18,6 +18,16 @@ case class RequiredOAuth2ApiConfig(
   // Could check scope too
   def isReady: Boolean = maybeApplication.isDefined
 
+  def toRaw: RawRequiredOAuth2ApiConfig = {
+    RawRequiredOAuth2ApiConfig(
+      id,
+      behaviorVersion.id,
+      api.id,
+      requiredScope,
+      maybeApplication.map(_.id)
+    )
+  }
+
 }
 
 case class RawRequiredOAuth2ApiConfig(
@@ -68,6 +78,16 @@ object RequiredOAuth2ApiConfigQueries {
     allForQuery(behaviorVersion.id).result.map(r => r.map(tuple2Required))
   }
 
+  def createFor(
+                 behaviorVersion: BehaviorVersion,
+                 api: OAuth2Api,
+                 requiredScope: String,
+                 maybeApplication: Option[OAuth2Application]
+               ): DBIO[RequiredOAuth2ApiConfig] = {
+    val newInstance = RequiredOAuth2ApiConfig(IDs.next, behaviorVersion, api, requiredScope, maybeApplication)
+    (all += newInstance.toRaw).map(_ => newInstance)
+  }
+
   def createFor(application: OAuth2Application, behaviorVersion: BehaviorVersion): DBIO[RequiredOAuth2ApiConfig] = {
     val raw = RawRequiredOAuth2ApiConfig(IDs.next, behaviorVersion.id, application.api.id, application.scopeString, Some(application.id))
     (all += raw).map { _ =>
@@ -87,16 +107,14 @@ object RequiredOAuth2ApiConfigQueries {
       maybeApplication <- data.application.map { appData =>
         OAuth2ApplicationQueries.find(appData.applicationId)
       }.getOrElse(DBIO.successful(None))
-    } yield {
-      maybeApi.map { api =>
-        RequiredOAuth2ApiConfig(
-          IDs.next,
+      maybeConfig <- maybeApi.map { api =>
+        createFor(
           behaviorVersion,
           api,
           data.requiredScope,
           maybeApplication
-        )
-      }
-    }
+        ).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+    } yield maybeConfig
   }
 }

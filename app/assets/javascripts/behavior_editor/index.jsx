@@ -271,7 +271,10 @@ return React.createClass({
   },
 
   buildOAuthApplicationNotifications: function() {
-    var unusedApplications = this.getRequiredOAuth2Applications().filter(ea => !this.hasUsedOAuth2Application(ea.keyName));
+    var unusedApplications =
+      this.getRequiredOAuth2ApiConfigs().
+        map(ea => ea.application).
+        filter(ea => ea && !this.hasUsedOAuth2Application(ea.keyName));
     var notifications = unusedApplications.map(ea => {
       return {
         kind: "oauth2_application_unused",
