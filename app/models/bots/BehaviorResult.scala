@@ -193,7 +193,7 @@ case class RequiredApiNotReady(
   def maybeConfigLink: Option[String] = required.behaviorVersion.editLinkFor(configuration)
   def configText: String = {
     maybeConfigLink.map { configLink =>
-      s"You first must [configure the ${required.api.name} API]($maybeConfigLink)"
+      s"You first must [configure the ${required.api.name} API]($configLink)"
     }.getOrElse(s"You first must configure the ${required.api.name} API")
   }
 

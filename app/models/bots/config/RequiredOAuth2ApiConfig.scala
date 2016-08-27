@@ -43,7 +43,7 @@ class RequiredOAuth2ApiConfigsTable(tag: Tag) extends Table[RawRequiredOAuth2Api
   def id = column[String]("id", O.PrimaryKey)
   def behaviorVersionId = column[String]("behavior_version_id")
   def apiId = column[String]("api_id")
-  def recommendedScope = column[String]("required_scope")
+  def recommendedScope = column[String]("recommended_scope")
   def maybeApplicationId = column[Option[String]]("application_id")
 
   def * = (id, behaviorVersionId, apiId, recommendedScope, maybeApplicationId) <> ((RawRequiredOAuth2ApiConfig.apply _).tupled, RawRequiredOAuth2ApiConfig.unapply _)
