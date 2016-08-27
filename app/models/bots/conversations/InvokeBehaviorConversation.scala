@@ -80,15 +80,13 @@ case class InvokeBehaviorConversation(
 
   }
 
-  private def sendPromptFor(event: MessageEvent, info: ParamInfo): BehaviorResult = {
+  private def promptResultFor(event: MessageEvent, info: ParamInfo): BehaviorResult = {
     val prompt = (for {
       param <- info.maybeNextToCollect
       question <- param.maybeQuestion
     } yield question).getOrElse("All done!")
 
-    val result = SimpleTextResult(prompt)
-    result.sendIn(event.context)
-    result
+    SimpleTextResult(prompt)
   }
 
   def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult] = {
@@ -97,10 +95,10 @@ case class InvokeBehaviorConversation(
 
     paramInfo.flatMap { info =>
       state match {
-        case COLLECT_PARAM_VALUES_STATE => DBIO.successful(sendPromptFor(event, info))
+        case COLLECT_PARAM_VALUES_STATE => DBIO.successful(promptResultFor(event, info))
         case DONE_STATE => {
           BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger).flatMap { br =>
-            DBIO.from(br.runCode(lambdaService))
+            DBIO.from(br.resultForFilledOut(lambdaService))
           }
         }
       }

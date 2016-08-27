@@ -25,7 +25,7 @@ trait Conversation {
   def updateWith(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Conversation]
   def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult]
 
-  def replyFor(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult] = {
+  def resultFor(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult] = {
     for {
       updatedConversation <- updateWith(event, lambdaService)
       result <- updatedConversation.respond(event, lambdaService)
