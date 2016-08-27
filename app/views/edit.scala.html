@@ -3,6 +3,7 @@
   json: String,
   envVariablesJson: String,
   oauth2ApplicationsJson: String,
+  oauth2ApisJson: String,
   justSaved: Boolean,
   notificationsJson: String
     )(implicit messages: Messages, r: RequestHeader)
@@ -28,6 +29,7 @@
           justSaved: @justSaved,
           envVariables: @Html(envVariablesJson),
           oauth2Applications: @Html(oauth2ApplicationsJson),
+          oauth2Apis: @Html(oauth2ApisJson),
           notifications: @Html(notificationsJson)
         };
       </script>

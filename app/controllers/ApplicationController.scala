@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import export.{BehaviorVersionImporter, BehaviorVersionZipImporter, BehaviorVersionExporter}
 import json._
 import json.Formatting._
-import models.bots.config.{RequiredOAuth2ApplicationQueries, AWSConfigQueries}
+import models.bots.config.{RequiredOAuth2ApiConfigQueries, AWSConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
 import models._
 import models.accounts._
@@ -149,6 +149,7 @@ class ApplicationController @Inject() (
       maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
+      oauth2Apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       result <- (for {
         team <- teamAccess.maybeTargetTeam
         envVars <- maybeEnvironmentVariables
@@ -171,6 +172,7 @@ class ApplicationController @Inject() (
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
+            Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
             justSaved = false,
             notificationsJson = Json.toJson(Array[String]()).toString
           )))
@@ -193,6 +195,7 @@ class ApplicationController @Inject() (
       maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
+      oauth2Apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       result <- (for {
         data <- maybeVersionData
         envVars <- maybeEnvironmentVariables
@@ -203,6 +206,7 @@ class ApplicationController @Inject() (
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
+            Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
             maybeJustSaved.exists(identity),
             notificationsJson = Json.toJson(Array[String]()).toString
           )))
@@ -273,7 +277,7 @@ class ApplicationController @Inject() (
 
             models.run(action)
           }
-          case e: JsError => Future.successful(BadRequest("Malformatted data"))
+          case e: JsError => Future.successful(BadRequest(s"Malformatted data: ${e.toString}"))
         }
       }
     )
@@ -323,8 +327,8 @@ class ApplicationController @Inject() (
           (version, config)
         }
       }).map(_.toMap)
-      requiredOAuth2ApplicationsByVersion <- DBIO.sequence(versions.map { version =>
-        RequiredOAuth2ApplicationQueries.allFor(version).map { apps =>
+      requiredOAuth2ApiConfigsByVersion <- DBIO.sequence(versions.map { version =>
+        RequiredOAuth2ApiConfigQueries.allFor(version).map { apps =>
           (version, apps)
         }
       }).map(_.toMap)
@@ -336,8 +340,8 @@ class ApplicationController @Inject() (
                 AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
               }
             }
-            val maybeRequiredOAuth2ApplicationsData = requiredOAuth2ApplicationsByVersion.get(version).map { apps =>
-              apps.map(ea => OAuth2ApplicationData.from(ea.application))
+            val maybeRequiredOAuth2ApiConfigsData = requiredOAuth2ApiConfigsByVersion.get(version).map { configs =>
+              configs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
             }
             BehaviorVersionData.buildFor(
               version.team.id,
@@ -354,7 +358,7 @@ class ApplicationController @Inject() (
                   BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
                 }
               }.getOrElse(Seq()),
-              BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApplicationsData),
+              BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData),
               behavior.maybeImportedId,
               None,
               Some(version.createdAt)
@@ -731,7 +735,7 @@ class ApplicationController @Inject() (
           }.getOrElse(DBIO.successful(None))
           maybeRequired <- maybeApplication.flatMap { application =>
             maybeBehaviorVersion.map { behaviorVersion =>
-              RequiredOAuth2ApplicationQueries.createFor(application, behaviorVersion).map(Some(_))
+              RequiredOAuth2ApiConfigQueries.createFor(application, behaviorVersion).map(Some(_))
             }
           }.getOrElse(DBIO.successful(None))
         } yield {

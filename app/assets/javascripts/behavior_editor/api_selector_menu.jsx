@@ -12,9 +12,13 @@ define(function (require) {
         applicationId: React.PropTypes.string.isRequired,
         displayName: React.PropTypes.string.isRequired
       })).isRequired,
-      requiredOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
-        applicationId: React.PropTypes.string.isRequired,
-        displayName: React.PropTypes.string.isRequired
+      requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
+        apiId: React.PropTypes.string.isRequired,
+        recommendedScope: React.PropTypes.string,
+        application: React.PropTypes.shape({
+          applicationId: React.PropTypes.string.isRequired,
+          displayName: React.PropTypes.string.isRequired
+        })
       })).isRequired,
       onAddOAuth2Application: React.PropTypes.func.isRequired,
       onRemoveOAuth2Application: React.PropTypes.func.isRequired,
@@ -22,7 +26,8 @@ define(function (require) {
     },
 
     getAPISelectorDropdownLabel: function() {
-      var activeAPICount = this.props.requiredOAuth2Applications.length;
+      var activeApiConfigs = this.props.requiredOAuth2ApiConfigs.filter((ea) => !!ea.application);
+      var activeAPICount = activeApiConfigs.length;
       if (this.props.awsCheckedWhen) {
         activeAPICount++;
       }
@@ -54,8 +59,8 @@ define(function (require) {
     },
 
     isRequiredOAuth2Application: function(app) {
-      var appIndex = this.props.requiredOAuth2Applications.findIndex(function(ea) {
-        return ea.applicationId === app.applicationId;
+      var appIndex = this.props.requiredOAuth2ApiConfigs.findIndex(function(ea) {
+        return ea.application && ea.application.applicationId === app.applicationId;
       });
       return appIndex >= 0;
     },

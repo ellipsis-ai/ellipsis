@@ -19,6 +19,12 @@ define(function(require) {
           icon: this.getWarningIcon(),
           message: this.getNotificationForEnvVarMissing()
         };
+      } else if (kind === "oauth2_config_without_application") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: this.getNotificationForMissingOAuth2Application()
+        };
       } else if (kind === "oauth2_application_unused") {
         return {
           containerClass: "box-tip",
@@ -86,6 +92,65 @@ define(function(require) {
           onClick={this.onClick.bind(this, envVarDetail)}
         >{envVarDetail.environmentVariableName}</button>
       );
+    },
+
+    onAddOAuth2Application: function(detail, app) {
+      detail.onAddOAuth2Application(app);
+    },
+
+    addOAuth2ApplicationPrompt: function(detail) {
+      var matchingApplication = detail.existingOAuth2Applications.find(ea => ea.apiId === detail.requiredApiConfig.apiId);
+      if (matchingApplication) {
+        return (
+          <span className="mhxs">
+            <button
+              type="button"
+              className="button-raw link button-s"
+              onClick={this.onAddOAuth2Application.bind(this, detail, matchingApplication)}>
+
+              Add {matchingApplication.displayName} to this behavior
+
+            </button>
+          </span>
+        );
+      }
+    },
+
+    recommendedScopeAnnotation: function(detail) {
+      var recommendedScope = detail.requiredApiConfig.recommendedScope;
+      if (recommendedScope) {
+        return (
+          <span>(recommended scope: <b>{recommendedScope}</b>)</span>
+        );
+      }
+    },
+
+    getNotificationForMissingOAuth2Application: function() {
+      var numRequiredApiConfigs = this.props.details.length;
+      if (numRequiredApiConfigs === 1) {
+        var detail = this.props.details[0];
+        return (
+          <span>
+            <span>This behavior needs to be configured to use the <b>{detail.name}</b> API {this.recommendedScopeAnnotation(detail)}.</span>
+            {this.addOAuth2ApplicationPrompt(detail)}
+          </span>
+        );
+      } else {
+        return (
+          <span>
+            <span>This behavior needs to be configured to use the following APIs: </span>
+            {this.props.details.map((detail, index) => {
+              return (
+                <span key={"oAuthNotificationDetail" + index}>
+                  <span>{detail.name} {this.recommendedScopeAnnotation(detail)}</span>
+                  {this.addOAuth2ApplicationPrompt(detail)}
+                  <span>{index + 1 < numRequiredApiConfigs ? ", " : ""}</span>
+                </span>
+              );
+            })}
+          </span>
+        );
+      }
     },
 
     getNotificationForUnusedOAuth2Application: function() {

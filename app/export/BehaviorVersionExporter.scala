@@ -1,12 +1,14 @@
 package export
 
-import java.io.{PrintWriter, File}
+import java.io.{File, PrintWriter}
+
 import json._
 import json.Formatting._
 import models.accounts.User
 import models.bots.{BehaviorVersion, BehaviorQueries}
 import play.api.libs.json.Json
 import slick.dbio.DBIO
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.io.Path
 import scala.sys.process.Process
@@ -71,12 +73,20 @@ object BehaviorVersionExporter {
         function <- maybeFunction
         versionData <- maybeVersionData
       } yield {
+        // we don't want to export the team-specific application, but we want to keep the scope
+        val requiredOAuth2ApiConfigsForExport = versionData.config.requiredOAuth2ApiConfigs.map { configs =>
+          configs.map { ea =>
+            val maybeScope = ea.application.flatMap(_.scope)
+            ea.copy(application = None, recommendedScope = maybeScope)
+          }
+        }
+        val configForExport = versionData.config.copy(requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsForExport)
         BehaviorVersionExporter(
           behaviorVersion,
           maybeFunction,
           versionData.params,
           versionData.triggers,
-          versionData.config,
+          configForExport,
           versionData.responseTemplate)
       }
     }

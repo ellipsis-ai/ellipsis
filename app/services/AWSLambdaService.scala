@@ -1,7 +1,7 @@
 package services
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
-import models.bots.config.{AWSConfig, RequiredOAuth2Application}
+import models.bots.config.{AWSConfig, RequiredOAuth2ApiConfig}
 import models.bots.events.MessageEvent
 import models.{EnvironmentVariable, Models}
 import models.bots.{BehaviorResult, BehaviorVersion, ParameterWithValue}
@@ -31,7 +31,7 @@ trait AWSLambdaService extends AWSService {
                          functionBody: String,
                          params: Array[String],
                          maybeAWSConfig: Option[AWSConfig],
-                         requiredOAuth2Applications: Seq[RequiredOAuth2Application]
+                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
                          ): Future[Unit]
 
 }
