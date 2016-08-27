@@ -139,11 +139,11 @@ define(function(require) {
         return (
           <span>
             <span>This behavior needs to be configured to use the following APIs: </span>
-            {this.props.details.map((detail, index) => {
+            {this.props.details.map((ea, index) => {
               return (
                 <span key={"oAuthNotificationDetail" + index}>
-                  <span>{detail.name} {this.recommendedScopeAnnotation(detail)}</span>
-                  {this.addOAuth2ApplicationPrompt(detail)}
+                  <span>{ea.name} {this.recommendedScopeAnnotation(ea)}</span>
+                  {this.addOAuth2ApplicationPrompt(ea)}
                   <span>{index + 1 < numRequiredApiConfigs ? ", " : ""}</span>
                 </span>
               );
