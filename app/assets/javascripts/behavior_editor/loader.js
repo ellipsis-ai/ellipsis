@@ -7,6 +7,7 @@ requirejs(['../common'], function() {
       csrfToken: config.csrfToken,
       envVariables: config.envVariables,
       oauth2Applications: config.oauth2Applications,
+      oauth2Apis: config.oauth2Apis,
       justSaved: config.justSaved,
       notifications: config.notifications
     };

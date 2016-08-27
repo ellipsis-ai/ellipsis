@@ -84,6 +84,10 @@ return React.createClass({
         applicationId: React.PropTypes.string.isRequired,
         displayName: React.PropTypes.string.isRequired
     })),
+    oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
+      apiId: React.PropTypes.string.isRequired,
+      name: React.PropTypes.string.isRequired
+    })),
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool
   },
@@ -270,17 +274,35 @@ return React.createClass({
       });
   },
 
+  getOAuth2ApiWithId: function(apiId) {
+    return this.props.oauth2Apis.find(ea => ea.apiId === apiId);
+  },
+
+  getRequiredOAuth2ApiConfigsWithNoApplication: function() {
+    return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application);
+  },
+
   buildOAuthApplicationNotifications: function() {
+    var notifications = [];
+    this.getRequiredOAuth2ApiConfigsWithNoApplication().forEach(ea => {
+      notifications.push({
+        kind: "oauth2_config_without_application",
+        name: this.getOAuth2ApiWithId(ea.apiId).name,
+        requiredApiConfig: ea,
+        existingOAuth2Applications: this.getAllOAuth2Applications(),
+        onAddOAuth2Application: this.onAddOAuth2Application
+      });
+    });
     var unusedApplications =
       this.getRequiredOAuth2ApiConfigs().
         map(ea => ea.application).
         filter(ea => ea && !this.hasUsedOAuth2Application(ea.keyName));
-    var notifications = unusedApplications.map(ea => {
-      return {
+    unusedApplications.forEach(ea => {
+      notifications.push({
         kind: "oauth2_application_unused",
         name: ea.displayName,
         code: `ellipsis.accessTokens.${ea.keyName}`
-      };
+      });
     });
     if (this.getAWSConfig() && !this.hasUsedAWSObject()) {
       notifications.push({
@@ -846,8 +868,10 @@ return React.createClass({
       behavior: newBehavior,
       versions: newVersions,
       revealCodeEditor: this.shouldRevealCodeEditor()
+    }, () => {
+      this.hideActivePanel();
+      this.resetNotifications();
     });
-    this.hideActivePanel();
   },
 
 
@@ -1053,11 +1077,16 @@ return React.createClass({
 
   onAddOAuth2Application: function(appToAdd) {
     var existing = this.getRequiredOAuth2ApiConfigs();
-    var requiredToAdd = {
+    var toRemoveIndex = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
+    var configs = existing.slice();
+    if (toRemoveIndex >= 0) {
+      configs.splice(toRemoveIndex, 1);
+    }
+    var toAdd = {
       apiId: appToAdd.apiId,
       application: appToAdd
-    }
-    this.setConfigProperty('requiredOAuth2ApiConfigs', existing.concat([requiredToAdd]), this.resetNotifications);
+    };
+    this.setConfigProperty('requiredOAuth2ApiConfigs', configs.concat([toAdd]), this.resetNotifications);
   },
 
   onRemoveOAuth2Application: function(appToRemove) {

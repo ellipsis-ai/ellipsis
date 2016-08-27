@@ -12,7 +12,7 @@ case class RequiredOAuth2ApiConfig(
                                     id: String,
                                     behaviorVersion: BehaviorVersion,
                                     api: OAuth2Api,
-                                    recommendedScope: String,
+                                    maybeRecommendedScope: Option[String],
                                     maybeApplication: Option[OAuth2Application]
                                     ) {
   // Could check scope too
@@ -23,7 +23,7 @@ case class RequiredOAuth2ApiConfig(
       id,
       behaviorVersion.id,
       api.id,
-      recommendedScope,
+      maybeRecommendedScope,
       maybeApplication.map(_.id)
     )
   }
@@ -34,7 +34,7 @@ case class RawRequiredOAuth2ApiConfig(
                                        id: String,
                                        behaviorVersionId: String,
                                        apiId: String,
-                                       recommendedScope: String,
+                                       maybeRecommendedScope: Option[String],
                                        maybeApplicationId: Option[String]
                                        )
 
@@ -43,10 +43,10 @@ class RequiredOAuth2ApiConfigsTable(tag: Tag) extends Table[RawRequiredOAuth2Api
   def id = column[String]("id", O.PrimaryKey)
   def behaviorVersionId = column[String]("behavior_version_id")
   def apiId = column[String]("api_id")
-  def recommendedScope = column[String]("recommended_scope")
+  def maybeRecommendedScope = column[Option[String]]("recommended_scope")
   def maybeApplicationId = column[Option[String]]("application_id")
 
-  def * = (id, behaviorVersionId, apiId, recommendedScope, maybeApplicationId) <> ((RawRequiredOAuth2ApiConfig.apply _).tupled, RawRequiredOAuth2ApiConfig.unapply _)
+  def * = (id, behaviorVersionId, apiId, maybeRecommendedScope, maybeApplicationId) <> ((RawRequiredOAuth2ApiConfig.apply _).tupled, RawRequiredOAuth2ApiConfig.unapply _)
 }
 
 object RequiredOAuth2ApiConfigQueries {
@@ -64,7 +64,7 @@ object RequiredOAuth2ApiConfigQueries {
       raw.id,
       behaviorVersion,
       tuple._1._2,
-      raw.recommendedScope,
+      raw.maybeRecommendedScope,
       tuple._2.map(OAuth2ApplicationQueries.tuple2Application)
     )
   }
@@ -81,21 +81,21 @@ object RequiredOAuth2ApiConfigQueries {
   def createFor(
                  behaviorVersion: BehaviorVersion,
                  api: OAuth2Api,
-                 requiredScope: String,
+                 maybeRecommendedScope: Option[String],
                  maybeApplication: Option[OAuth2Application]
                ): DBIO[RequiredOAuth2ApiConfig] = {
-    val newInstance = RequiredOAuth2ApiConfig(IDs.next, behaviorVersion, api, requiredScope, maybeApplication)
+    val newInstance = RequiredOAuth2ApiConfig(IDs.next, behaviorVersion, api, maybeRecommendedScope, maybeApplication)
     (all += newInstance.toRaw).map(_ => newInstance)
   }
 
   def createFor(application: OAuth2Application, behaviorVersion: BehaviorVersion): DBIO[RequiredOAuth2ApiConfig] = {
-    val raw = RawRequiredOAuth2ApiConfig(IDs.next, behaviorVersion.id, application.api.id, application.scopeString, Some(application.id))
+    val raw = RawRequiredOAuth2ApiConfig(IDs.next, behaviorVersion.id, application.api.id, application.maybeScope, Some(application.id))
     (all += raw).map { _ =>
       RequiredOAuth2ApiConfig(
         raw.id,
         behaviorVersion,
         application.api,
-        raw.recommendedScope,
+        raw.maybeRecommendedScope,
         Some(application)
       )
     }

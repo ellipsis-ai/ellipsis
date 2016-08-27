@@ -149,6 +149,7 @@ class ApplicationController @Inject() (
       maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
+      oauth2Apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       result <- (for {
         team <- teamAccess.maybeTargetTeam
         envVars <- maybeEnvironmentVariables
@@ -171,6 +172,7 @@ class ApplicationController @Inject() (
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
+            Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
             justSaved = false,
             notificationsJson = Json.toJson(Array[String]()).toString
           )))
@@ -193,6 +195,7 @@ class ApplicationController @Inject() (
       maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
+      oauth2Apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       result <- (for {
         data <- maybeVersionData
         envVars <- maybeEnvironmentVariables
@@ -203,6 +206,7 @@ class ApplicationController @Inject() (
             Json.toJson(data).toString,
             Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
             Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
+            Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
             maybeJustSaved.exists(identity),
             notificationsJson = Json.toJson(Array[String]()).toString
           )))
@@ -273,7 +277,7 @@ class ApplicationController @Inject() (
 
             models.run(action)
           }
-          case e: JsError => Future.successful(BadRequest("Malformatted data"))
+          case e: JsError => Future.successful(BadRequest(s"Malformatted data: ${e.toString}"))
         }
       }
     )

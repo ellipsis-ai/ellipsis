@@ -4,7 +4,7 @@ ALTER TABLE required_oauth2_applications RENAME TO required_oauth2_api_configs;
 
 ALTER TABLE required_oauth2_api_configs ALTER COLUMN application_id DROP NOT NULL;
 ALTER TABLE required_oauth2_api_configs ADD COLUMN api_id TEXT REFERENCES oauth2_apis(id);
-ALTER TABLE required_oauth2_api_configs ADD COLUMN recommended_scope TEXT NOT NULL DEFAULT '';
+ALTER TABLE required_oauth2_api_configs ADD COLUMN recommended_scope TEXT;
 
 UPDATE required_oauth2_api_configs
 SET api_id = apps.api_id

@@ -26,7 +26,8 @@ define(function (require) {
     },
 
     getAPISelectorDropdownLabel: function() {
-      var activeAPICount = this.props.requiredOAuth2ApiConfigs.length;
+      var activeApiConfigs = this.props.requiredOAuth2ApiConfigs.filter((ea) => !!ea.application);
+      var activeAPICount = activeApiConfigs.length;
       if (this.props.awsCheckedWhen) {
         activeAPICount++;
       }
