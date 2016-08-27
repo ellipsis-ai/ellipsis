@@ -12,6 +12,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import slick.dbio.DBIO
+import json.APITokenData
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -23,17 +24,6 @@ class APITokenController @Inject() (
                                     val models: Models,
                                     val socialProviderRegistry: SocialProviderRegistry)
   extends ReAuthable {
-
-  def newToken() = SecuredAction.async { implicit request =>
-    val user = request.identity
-    val action = for {
-      teamAccess <- user.teamAccessFor(None)
-    } yield {
-        Ok(views.html.api.newToken(teamAccess.loggedInTeam))
-      }
-
-    models.run(action)
-  }
 
   case class CreateAPITokenInfo(teamId: String, label: String)
 
@@ -57,7 +47,7 @@ class APITokenController @Inject() (
             APITokenQueries.createFor(team, info.label).map(Some(_))
           }.getOrElse(DBIO.successful(None))
         } yield maybeToken.map { token =>
-            Redirect(routes.APITokenController.viewToken(token.id))
+            Redirect(routes.APITokenController.listTokens(Some(token.id)))
           }.getOrElse {
             NotFound("")
           }
@@ -67,30 +57,14 @@ class APITokenController @Inject() (
     )
   }
 
-  def viewToken(tokenId: String) = SecuredAction.async { implicit request =>
-    val user = request.identity
-    val action = for {
-      teamAccess <- user.teamAccessFor(None)
-      maybeToken <- APITokenQueries.find(tokenId, teamAccess.loggedInTeam)
-    } yield {
-        maybeToken.map { token =>
-          Ok(views.html.api.viewToken(token))
-        }.getOrElse {
-          NotFound("")
-        }
-      }
-
-    models.run(action)
-  }
-
-  def listTokens() = SecuredAction.async { implicit request =>
+  def listTokens(maybeJustCreatedTokenId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(None)
       tokens <- APITokenQueries.allFor(teamAccess.loggedInTeam)
     } yield {
         teamAccess.maybeTargetTeam.map { _ =>
-          Ok(views.html.api.listTokens(tokens))
+          Ok(views.html.api.listTokens(teamAccess, tokens.map(APITokenData.from), maybeJustCreatedTokenId))
         }.getOrElse {
           NotFound("")
         }

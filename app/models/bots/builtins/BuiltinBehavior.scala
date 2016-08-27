@@ -12,12 +12,6 @@ trait BuiltinBehavior {
   val messageContext: MessageContext
   val lambdaService: AWSLambdaService
 
-  def run: DBIO[BehaviorResult] = {
-    result.map { r =>
-      r.sendIn(messageContext)
-      r
-    }
-  }
   def result: DBIO[BehaviorResult]
 }
 

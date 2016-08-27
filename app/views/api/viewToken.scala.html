@@ -1,7 +1,0 @@
-@(
-  apiToken: models.APIToken
-  )(implicit messages: Messages, r: RequestHeader)
-
-<p>Use the following secret token to post API requests:</p>
-
-<input type="text" readonly="readonly" value="@apiToken.id" size="60"/>

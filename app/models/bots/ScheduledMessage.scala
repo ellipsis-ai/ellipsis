@@ -71,11 +71,12 @@ case class ScheduledMessage(
   def send(slackService: SlackService, client: SlackRtmClient, profile: SlackBotProfile): DBIO[Unit] = {
     maybeChannelName.map { channelName =>
       val message = Message("ts", channelName, profile.userId, text, None)
+      val context = SlackMessageContext(client, profile, message)
       for {
-        _ <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(SlackMessageContext(client, profile, message)))
+        result <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
         _ <- withUpdatedNextTriggeredFor(DateTime.now).save
-      } yield {}
-    }.getOrElse(DBIO.successful({}))
+      } yield result.sendIn(context)
+    }.getOrElse(DBIO.successful(Unit))
   }
 
   def withUpdatedNextTriggeredFor(when: DateTime): ScheduledMessage = {
