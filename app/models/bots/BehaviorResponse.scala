@@ -26,11 +26,10 @@ case class BehaviorResponse(
     parametersWithValues.forall(_.maybeValue.isDefined)
   }
 
-  def runCode(service: AWSLambdaService): Future[BehaviorResult] = {
+  def resultForFilledOut(service: AWSLambdaService): Future[BehaviorResult] = {
     val startTime = DateTime.now
     behaviorVersion.resultFor(parametersWithValues, event, service).flatMap { result =>
       val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
-      result.sendIn(event.context)
       service.models.run(
         InvocationLogEntryQueries.createFor(
           behaviorVersion,
@@ -43,9 +42,9 @@ case class BehaviorResponse(
     }
   }
 
-  def run(service: AWSLambdaService): DBIO[BehaviorResult] = {
+  def result(service: AWSLambdaService): DBIO[BehaviorResult] = {
     if (isFilledOut) {
-      DBIO.from(runCode(service))
+      DBIO.from(resultForFilledOut(service))
     } else {
       for {
         convo <- InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext, activatedTrigger)
@@ -54,7 +53,7 @@ case class BehaviorResponse(
             CollectedParameterValue(p.parameter, convo, v).save
           }.getOrElse(DBIO.successful(Unit))
         })
-        result <- convo.replyFor(event, service)
+        result <- convo.resultFor(event, service)
       } yield result
     }
   }

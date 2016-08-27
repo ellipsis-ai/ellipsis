@@ -15,7 +15,7 @@ class BehaviorTestReportBuilder @Inject() (lambdaService: AWSLambdaService) {
     for {
       maybeResponse <- BehaviorResponse.chooseFor(event, None, Some(behaviorVersion.behavior))
       _ <- maybeResponse.map { behaviorResponse =>
-        behaviorResponse.run(lambdaService)
+        behaviorResponse.result(lambdaService)
       }.getOrElse(DBIO.successful(Unit))
     } yield {
       BehaviorTestReport(event, behaviorVersion, maybeResponse)

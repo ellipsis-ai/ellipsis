@@ -72,19 +72,20 @@ class APIAccessController @Inject() (
         } yield {
             if (state == oauthState) {
               val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId).absoluteURL(secure=true)
-              getToken(code, application, user, redirect).map { maybeLinkedToken =>
+              getToken(code, application, user, redirect).flatMap { maybeLinkedToken =>
                 maybeLinkedToken.
                   map { _ =>
                   request.session.get("invocation-id").flatMap { invocationId =>
                     cache.get[MessageEvent](invocationId).map { event =>
-                      eventHandler.handle(event)
-                      Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.context.name}."))
+                      DBIO.from(eventHandler.handle(event)).map { result =>
+                        result.sendIn(event.context)
+                        Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.context.name}."))
+                      }
                     }
                   }.getOrElse {
-                    Redirect(routes.APIAccessController.authenticated(s"You are now authenticated and can try again."))
+                    DBIO.successful(Redirect(routes.APIAccessController.authenticated(s"You are now authenticated and can try again.")))
                   }
-                }.
-                  getOrElse(BadRequest("boom"))
+                }.getOrElse(DBIO.successful(BadRequest("boom")))
               }
             } else {
               DBIO.successful(BadRequest("Invalid state"))

@@ -26,7 +26,7 @@ class EventHandler @Inject() (
       maybeTeam <- Team.find(context.teamId)
       maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None)
       result <- maybeResponse.map { response =>
-        response.run(lambdaService)
+        response.result(lambdaService)
       }.getOrElse {
         val result = if (context.isResponseExpected) {
           SimpleTextResult(context.iDontKnowHowToRespondMessageFor(lambdaService))
@@ -39,23 +39,24 @@ class EventHandler @Inject() (
   }
 
   def handleInConversation(conversation: Conversation, event: MessageEvent): DBIO[BehaviorResult] = {
-    conversation.replyFor(event, lambdaService)
+    conversation.resultFor(event, lambdaService)
   }
 
   def handle(event: Event): Future[BehaviorResult] = {
     event match {
       case messageEvent: MessageEvent => {
-        val action = event.context.maybeOngoingConversation.flatMap { maybeConversation =>
-          maybeConversation.map { conversation =>
+        val action = for {
+          maybeConversation <- event.context.maybeOngoingConversation
+          result <- maybeConversation.map { conversation =>
             handleInConversation(conversation, messageEvent)
           }.getOrElse {
             BuiltinBehavior.maybeFrom(messageEvent.context, lambdaService).map { builtin =>
-              builtin.run
+              builtin.result
             }.getOrElse {
               startInvokeConversationFor(messageEvent)
             }
           }
-        }
+        } yield result
         models.run(action)
       }
       case _ => Future.successful(NoResponseResult(None))

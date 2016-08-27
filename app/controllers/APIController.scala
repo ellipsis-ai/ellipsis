@@ -85,6 +85,7 @@ class APIController @Inject() (
             })
           result <- maybeEvent.map { event =>
             DBIO.from(eventHandler.handle(event)).map { result =>
+              result.sendIn(event.context)
               Ok(result.fullText)
             }
           }.getOrElse(DBIO.successful(NotFound("")))
