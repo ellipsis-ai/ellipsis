@@ -78,27 +78,39 @@ object RequiredOAuth2ApiConfigQueries {
     allForQuery(behaviorVersion.id).result.map(r => r.map(tuple2Required))
   }
 
-  def createFor(
-                 behaviorVersion: BehaviorVersion,
-                 api: OAuth2Api,
-                 maybeRecommendedScope: Option[String],
-                 maybeApplication: Option[OAuth2Application]
-               ): DBIO[RequiredOAuth2ApiConfig] = {
-    val newInstance = RequiredOAuth2ApiConfig(IDs.next, behaviorVersion, api, maybeRecommendedScope, maybeApplication)
-    (all += newInstance.toRaw).map(_ => newInstance)
+  def uncompiledAllForApiAndVersionQuery(apiId: Rep[String], behaviorVersionId: Rep[String]) = {
+    allWithApplication.filter(_._1._1._1.apiId === apiId).filter(_._1._1._1.behaviorVersionId === behaviorVersionId)
+  }
+  val allForApiAndVersionQuery = Compiled(uncompiledAllForApiAndVersionQuery _)
+
+  def allFor(api: OAuth2Api, behaviorVersion: BehaviorVersion): DBIO[Seq[RequiredOAuth2ApiConfig]] = {
+    allForApiAndVersionQuery(api.id, behaviorVersion.id).result.map { r =>
+      r.map(tuple2Required)
+    }
   }
 
-  def createFor(application: OAuth2Application, behaviorVersion: BehaviorVersion): DBIO[RequiredOAuth2ApiConfig] = {
-    val raw = RawRequiredOAuth2ApiConfig(IDs.next, behaviorVersion.id, application.api.id, application.maybeScope, Some(application.id))
-    (all += raw).map { _ =>
-      RequiredOAuth2ApiConfig(
-        raw.id,
-        behaviorVersion,
-        application.api,
-        raw.maybeRecommendedScope,
-        Some(application)
-      )
+  def uncompiledFindQuery(id: Rep[String]) = allWithApplication.filter(_._1._1._1.id === id)
+  val findQuery = Compiled(uncompiledFindQuery _)
+
+  def find(id: String): DBIO[Option[RequiredOAuth2ApiConfig]] = {
+    findQuery(id).result.map { r =>
+      r.headOption.map(tuple2Required)
     }
+  }
+
+  def uncompiledFindRawQuery(id: Rep[String]) = all.filter(_.id === id)
+  val findRawQuery = Compiled(uncompiledFindRawQuery _)
+
+  def save(requiredOAuth2ApiConfig: RequiredOAuth2ApiConfig): DBIO[RequiredOAuth2ApiConfig] = {
+    val query = findRawQuery(requiredOAuth2ApiConfig.id)
+    val raw = requiredOAuth2ApiConfig.toRaw
+    query.result.flatMap { r =>
+      r.headOption.map { _ =>
+        query.update(raw)
+      }.getOrElse {
+        all += raw
+      }
+    }.map(_ => requiredOAuth2ApiConfig)
   }
 
   def maybeCreateFor(data: RequiredOAuth2ApiConfigData, behaviorVersion: BehaviorVersion): DBIO[Option[RequiredOAuth2ApiConfig]] = {
@@ -108,12 +120,8 @@ object RequiredOAuth2ApiConfigQueries {
         OAuth2ApplicationQueries.find(appData.applicationId)
       }.getOrElse(DBIO.successful(None))
       maybeConfig <- maybeApi.map { api =>
-        createFor(
-          behaviorVersion,
-          api,
-          data.recommendedScope,
-          maybeApplication
-        ).map(Some(_))
+        val newInstance = RequiredOAuth2ApiConfig(IDs.next, behaviorVersion, api, data.recommendedScope, maybeApplication)
+        (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig
   }
