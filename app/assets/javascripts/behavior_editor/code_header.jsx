@@ -1,7 +1,7 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  HelpButton = require('./help_button'),
+  HelpButton = require('../help/help_button'),
   UserInputDefinition = require('./user_input_definition');
 
 return React.createClass({

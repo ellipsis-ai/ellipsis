@@ -4,7 +4,7 @@ var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
   Checkbox = require('./checkbox'),
   DeleteButton = require('./delete_button'),
-  HelpButton = require('./help_button'),
+  HelpButton = require('../help/help_button'),
   Input = require('../form/input'),
   Collapsible = require('../collapsible');
   require('es6-promise');

@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  HelpPanel = require('./help_panel');
+  HelpPanel = require('../help/panel');
 
 return React.createClass({
   propTypes: {
