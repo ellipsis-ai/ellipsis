@@ -13,6 +13,7 @@ define(function(require) {
       apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       applicationApiId: React.PropTypes.string,
       recommendedScope: React.PropTypes.string,
+      requiredOAuth2ApiConfigId: React.PropTypes.string,
       applicationName: React.PropTypes.string,
       applicationClientId: React.PropTypes.string,
       applicationClientSecret: React.PropTypes.string,
@@ -170,6 +171,7 @@ define(function(require) {
         <form action={jsRoutes.controllers.ApplicationController.saveOAuth2Application().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
+          <input type="hidden" name="requiredOAuth2ApiConfigId" value={this.props.requiredOAuth2ApiConfigId} />
           <input type="hidden" name="id" value={this.props.applicationId} />
           <input type="hidden" name="teamId" value={this.props.teamId} />
           {this.renderBehaviorId()}

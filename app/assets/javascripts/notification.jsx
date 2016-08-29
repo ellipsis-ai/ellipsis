@@ -98,8 +98,8 @@ define(function(require) {
       detail.onAddOAuth2Application(app);
     },
 
-    onNewOAuth2Application: function(detail, apiId, recommendedScope) {
-      detail.onNewOAuth2Application(apiId, recommendedScope);
+    onNewOAuth2Application: function(detail, requiredOAuth2ApiConfigId) {
+      detail.onNewOAuth2Application(requiredOAuth2ApiConfigId);
     },
 
     addOAuth2ApplicationPrompt: function(detail) {
@@ -123,7 +123,7 @@ define(function(require) {
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onNewOAuth2Application.bind(this, detail, detail.requiredApiConfig.apiId, detail.requiredApiConfig.recommendedScope)}>
+              onClick={this.onNewOAuth2Application.bind(this, detail, detail.requiredApiConfig.id)}>
 
               Configure the {detail.name} API for this behavior
 

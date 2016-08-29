@@ -65,6 +65,7 @@ return React.createClass({
       }),
       requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(
         React.PropTypes.shape({
+          id: React.PropTypes.string.isRequired,
           apiId: React.PropTypes.string.isRequired,
           recommendedScope: React.PropTypes.string,
           application: React.PropTypes.shape({
@@ -1078,15 +1079,15 @@ return React.createClass({
 
   onAddOAuth2Application: function(appToAdd) {
     var existing = this.getRequiredOAuth2ApiConfigs();
-    var toRemoveIndex = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
+    var targetIndex = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
+    var target = existing[targetIndex];
     var configs = existing.slice();
-    if (toRemoveIndex >= 0) {
-      configs.splice(toRemoveIndex, 1);
+    if (targetIndex >= 0) {
+      configs.splice(targetIndex, 1);
     }
-    var toAdd = {
-      apiId: appToAdd.apiId,
+    var toAdd = Object.assign(target, {
       application: appToAdd
-    };
+    });
     this.setConfigProperty('requiredOAuth2ApiConfigs', configs.concat([toAdd]), this.resetNotifications);
   },
 
@@ -1097,11 +1098,10 @@ return React.createClass({
     }), this.resetNotifications);
   },
 
-  onNewOAuth2Application: function(apiId, recommendedScope) {
+  onNewOAuth2Application: function(requiredOAuth2ApiConfigId) {
     this.setState({
       redirectValue: "newOAuth2Application",
-      newOAuth2ApplicationApiId: apiId,
-      newOAuth2ApplicationRecommendedScope: recommendedScope
+      requiredOAuth2ApiConfigId: requiredOAuth2ApiConfigId
     }, () => { this.onSubmit(); });
   },
 
@@ -1168,8 +1168,7 @@ return React.createClass({
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
       redirectValue: "",
-      newOAuth2ApplicationApiId: "",
-      newOAuth2ApplicationRecommendedScope: ""
+      requiredOAuth2ApiConfigId: ""
     };
   },
 
@@ -1205,8 +1204,7 @@ return React.createClass({
           value={JSON.stringify(this.state.behavior)}
         />
         <input type="hidden" name="redirect" value={this.getRedirectValue()} />
-        <input type="hidden" name="newOAuth2ApplicationApiId" value={this.state.newOAuth2ApplicationApiId} />
-        <input type="hidden" name="newOAuth2ApplicationRecommendedScope" value={this.state.newOAuth2ApplicationRecommendedScope} />
+        <input type="hidden" name="requiredOAuth2ApiConfigId" value={this.state.requiredOAuth2ApiConfigId} />
 
         {/* Start of container */}
         <div className="container ptxl pbxxxl">
