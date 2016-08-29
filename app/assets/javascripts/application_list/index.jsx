@@ -1,7 +1,9 @@
 define(function(require) {
-  var React = require('react'),
-    Collapsible = require('../collapsible'),
-    SettingsMenu = require('../settings_menu');
+  var React        = require('react'),
+      Collapsible  = require('../collapsible'),
+      HelpButton   = require('../help/help_button'),
+      HelpPanel    = require('../help/panel'),
+      SettingsMenu = require('../settings_menu');
 
   return React.createClass({
     displayName: 'ApplicationList',
@@ -10,6 +12,12 @@ define(function(require) {
       teamId: React.PropTypes.string.isRequired,
       apis: React.PropTypes.arrayOf(React.PropTypes.object),
       applications: React.PropTypes.arrayOf(React.PropTypes.object)
+    },
+
+    getInitialState: function() {
+      return {
+        activePanel: null
+      };
     },
 
     hasApis: function() {
@@ -56,6 +64,16 @@ define(function(require) {
       return !!(this.props.applications && this.props.applications.length > 0);
     },
 
+    toggleOAuth2ApplicationHelp: function() {
+      this.setState({
+        activePanel: this.state.activePanel === "oAuth2ApplicationHelp" ? null : "oAuth2ApplicationHelp"
+      });
+    },
+
+    getActivePanel: function() {
+      return this.state.activePanel;
+    },
+
     render: function() {
       return (
         <div>
@@ -82,6 +100,14 @@ define(function(require) {
                     <span>product to share their data with Ellipsis.</span>
                   </p>
 
+                  <p>
+                    <HelpButton className="mrs" onClick={this.toggleOAuth2ApplicationHelp}
+                                toggled={this.getActivePanel() === 'oAuth2ApplicationHelp'}/>
+                    <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>How APi
+                      applications work
+                    </button>
+                  </p>
+
                   <hr />
 
                   <Collapsible revealWhen={this.hasApplications()}>
@@ -101,6 +127,12 @@ define(function(require) {
             <div className="flex flex-left"></div>
             <div className="flex flex-right bg-white"></div>
           </div>
+
+          <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
+            <Collapsible ref="oAuth2ApplicationHelp" revealWhen={this.getActivePanel() === 'oAuth2ApplicationHelp'}>
+              {this.renderOAuth2ApplicationHelp()}
+            </Collapsible>
+          </footer>
         </div>
       );
     },
@@ -173,7 +205,7 @@ define(function(require) {
       return (
         <div className="mvxl">
           <a className="button"
-            href={jsRoutes.controllers.ApplicationController.newOAuth2Application().url}
+             href={jsRoutes.controllers.ApplicationController.newOAuth2Application().url}
           >
             Add a new API application
           </a>
@@ -195,6 +227,43 @@ define(function(require) {
           <p>There are {appCount} API applications configured for {apiGroupCount} products.</p>
         );
       }
+    },
+
+    renderOAuth2ApplicationHelp: function() {
+      return (
+        <HelpPanel
+          heading="Configuring an OAuth2 API application"
+          onCollapseClick={this.toggleOAuth2ApplicationHelp}
+        >
+          <p>
+            <span>In order to connect Ellipsis to other products securely, </span>
+            <span>you need to tell the other product how to recognize Ellipsis, and tell Ellipsis how </span>
+            <span>to authenticate with the other product’s API using OAuth2.</span>
+          </p>
+
+          <p>
+            <span>An OAuth2 application configuration tells Ellipsis:</span>
+          </p>
+
+          <ul>
+            <li>which product API to use, </li>
+            <li>how to identify itself to the other product (using a client ID and secret), and </li>
+            <li>the “scope” (level of access) to request.</li>
+          </ul>
+
+          <p>
+            <span>Obtaining a client ID and secret requires you to register Ellipsis as a client application </span>
+            <span>with the other product.</span>
+          </p>
+
+          <p>
+            <span>Once configured, Ellipsis will be able to talk to the other product, while ensuring </span>
+            <span>that each user authenticates separately (no credentials are shared). </span>
+            <span>For better security, you should make separate configurations for each scope you deem </span>
+            <span>appropriate so that, for example, only certain behaviors can make requests to modify data.</span>
+          </p>
+        </HelpPanel>
+      );
     }
   });
 });
