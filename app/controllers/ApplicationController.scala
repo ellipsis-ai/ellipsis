@@ -228,16 +228,14 @@ class ApplicationController @Inject() (
   case class SaveBehaviorInfo(
                                dataJson: String,
                                maybeRedirect: Option[String],
-                               maybeNewOAuth2ApplicationApidId: Option[String],
-                               maybeNewOAuth2ApplicationRecommendedScope: Option[String]
+                               maybeRequiredOAuth2ApiConfigId: Option[String]
                              )
 
   private val saveBehaviorForm = Form(
     mapping(
       "dataJson" -> nonEmptyText,
       "redirect" -> optional(nonEmptyText),
-      "newOAuth2ApplicationApiId" -> optional(nonEmptyText),
-      "newOAuth2ApplicationRecommendedScope" -> optional(nonEmptyText)
+      "requiredOAuth2ApiConfigId" -> optional(nonEmptyText)
     )(SaveBehaviorInfo.apply)(SaveBehaviorInfo.unapply)
   )
 
@@ -263,10 +261,18 @@ class ApplicationController @Inject() (
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
                 BehaviorVersionQueries.createFor(behavior, Some(user), lambdaService, data).map(Some(_))
               }.getOrElse(DBIO.successful(None))
+              maybePreviousRequiredOAuth2ApiConfig <- info.maybeRequiredOAuth2ApiConfigId.map { id =>
+                RequiredOAuth2ApiConfigQueries.find(id)
+              }.getOrElse(DBIO.successful(None))
+              maybeRequiredOAuth2ApiConfig <- maybePreviousRequiredOAuth2ApiConfig.flatMap { config =>
+                maybeBehaviorVersion.map { version =>
+                  RequiredOAuth2ApiConfigQueries.allFor(config.api, version).map(_.headOption)
+                }
+              }.getOrElse(DBIO.successful(None))
             } yield {
                 maybeBehavior.map { behavior =>
                   if (info.maybeRedirect.contains("newOAuth2Application")) {
-                    Redirect(routes.ApplicationController.newOAuth2Application(info.maybeNewOAuth2ApplicationApidId, info.maybeNewOAuth2ApplicationRecommendedScope, Some(data.teamId), Some(behavior.id)))
+                    Redirect(routes.ApplicationController.newOAuth2Application(maybeRequiredOAuth2ApiConfig.map(_.id), Some(data.teamId), Some(behavior.id)))
                   } else {
                     Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
                   }
@@ -648,14 +654,27 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  def newOAuth2Application(maybeApiId: Option[String], maybeRecommendedScope: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = SecuredAction.async { implicit request =>
+  def newOAuth2Application(maybeRequiredOAuth2ApiConfigId: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
+      maybeRequiredOAuth2ApiConfig <- maybeRequiredOAuth2ApiConfigId.map { id =>
+        RequiredOAuth2ApiConfigQueries.find(id)
+      }.getOrElse(DBIO.successful(None))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), IDs.next, maybeApiId, maybeRecommendedScope, maybeBehaviorId))
+        val maybeApiId = maybeRequiredOAuth2ApiConfig.map(_.api.id)
+        val maybeRecommendedScope = maybeRequiredOAuth2ApiConfig.flatMap(_.maybeRecommendedScope)
+        Ok(views.html.newOAuth2Application(
+          teamAccess,
+          apis.map(api => OAuth2ApiData.from(api)),
+          IDs.next,
+          maybeApiId,
+          maybeRecommendedScope,
+          maybeRequiredOAuth2ApiConfigId,
+          maybeBehaviorId)
+        )
       }.getOrElse {
         NotFound("Team not accessible")
       }
@@ -696,6 +715,7 @@ class ApplicationController @Inject() (
                                     id: String,
                                     name: String,
                                     apiId: String,
+                                    maybeRequiredOAuth2ApiConfigId: Option[String],
                                     clientId: String,
                                     clientSecret: String,
                                     maybeScope: Option[String],
@@ -708,6 +728,7 @@ class ApplicationController @Inject() (
       "id" -> nonEmptyText,
       "name" -> nonEmptyText,
       "apiId" -> nonEmptyText,
+      "requiredOAuth2ApiConfigId" -> optional(nonEmptyText),
       "clientId" -> nonEmptyText,
       "clientSecret" -> nonEmptyText,
       "scope" -> optional(nonEmptyText),
@@ -740,9 +761,11 @@ class ApplicationController @Inject() (
               }.getOrElse(DBIO.successful(None))
             }
           }.getOrElse(DBIO.successful(None))
-          maybeRequired <- maybeApplication.flatMap { application =>
-            maybeBehaviorVersion.map { behaviorVersion =>
-              RequiredOAuth2ApiConfigQueries.createFor(application, behaviorVersion).map(Some(_))
+          maybeRequired <- info.maybeRequiredOAuth2ApiConfigId.map { requiredId =>
+            RequiredOAuth2ApiConfigQueries.find(requiredId).flatMap { maybeExisting =>
+              maybeExisting.map { existing =>
+                RequiredOAuth2ApiConfigQueries.save(existing.copy(maybeApplication = maybeApplication)).map(Some(_))
+              }.getOrElse(DBIO.successful(None))
             }
           }.getOrElse(DBIO.successful(None))
         } yield {
