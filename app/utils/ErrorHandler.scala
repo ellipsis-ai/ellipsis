@@ -27,8 +27,14 @@ class ErrorHandler @Inject() (
   with SecuredErrorHandler {
 
   override def onNotAuthenticated(request: RequestHeader, messages: Messages): Option[Future[Result]] = {
+    val path = request.uri
+    val maybeRedirect = if (path == "/") {
+      None
+    } else {
+      Some(path)
+    }
     // TODO: platform-agnostic
-    Some(Future.successful(Redirect(routes.SlackController.signIn(Some(request.uri)))))
+    Some(Future.successful(Redirect(routes.SlackController.signIn(maybeRedirect))))
   }
 
   override def onNotAuthorized(request: RequestHeader, messages: Messages): Option[Future[Result]] = {
