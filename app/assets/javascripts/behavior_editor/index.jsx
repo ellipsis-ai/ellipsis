@@ -1079,13 +1079,13 @@ return React.createClass({
 
   onAddOAuth2Application: function(appToAdd) {
     var existing = this.getRequiredOAuth2ApiConfigs();
-    var targetIndex = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
-    var target = existing[targetIndex];
+    var indexToReplace = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
+    var toReplace = existing[indexToReplace];
     var configs = existing.slice();
-    if (targetIndex >= 0) {
-      configs.splice(targetIndex, 1);
+    if (indexToReplace >= 0) {
+      configs.splice(indexToReplace, 1);
     }
-    var toAdd = Object.assign({}, target, {
+    var toAdd = Object.assign({}, toReplace, {
       apiId: appToAdd.apiId,
       application: appToAdd
     });
