@@ -103,8 +103,8 @@ define(function(require) {
                   <p>
                     <HelpButton className="mrs" onClick={this.toggleOAuth2ApplicationHelp}
                                 toggled={this.getActivePanel() === 'oAuth2ApplicationHelp'}/>
-                    <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>How APi
-                      applications work
+                    <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>
+                      How API applications work
                     </button>
                   </p>
 
