@@ -356,19 +356,19 @@ define(function(require) {
                 </p>
 
                 <div className="columns mtl">
-                  <div className="column column-one-third">
+                  <div className="column column-one-half">
                     <h5>Client ID</h5>
                     <Input className="form-input-borderless"
-                      placeholder="20-digit hexadecimal number"
+                      placeholder="Enter identifier"
                       name="clientId"
                       value={this.getApplicationClientId()}
                       onChange={this.setApplicationClientId}
                     />
                   </div>
-                  <div className="column column-two-thirds">
+                  <div className="column column-one-half">
                     <h5>Client secret</h5>
                     <Input className="form-input-borderless"
-                      placeholder="40-digit hexadecimal number"
+                      placeholder="Enter secret"
                       name="clientSecret"
                       value={this.getApplicationClientSecret()}
                       onChange={this.setApplicationClientSecret}
