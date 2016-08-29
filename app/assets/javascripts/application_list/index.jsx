@@ -98,6 +98,8 @@ define(function(require) {
                 </div>
               </div>
             </div>
+            <div className="flex flex-left"></div>
+            <div className="flex flex-right bg-white"></div>
           </div>
         </div>
       );
