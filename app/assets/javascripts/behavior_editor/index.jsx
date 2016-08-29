@@ -38,6 +38,14 @@ var AWSEnvVariableStrings = {
   regionName: "AWS Region"
 };
 
+var oauth2ApplicationShape = React.PropTypes.shape({
+  apiId: React.PropTypes.string.isRequired,
+  applicationId: React.PropTypes.string.isRequired,
+  displayName: React.PropTypes.string,
+  keyName: React.PropTypes.string,
+  scope: React.PropTypes.string
+});
+
 return React.createClass({
   displayName: 'BehaviorEditor',
   mixins: [BehaviorEditorMixin],
@@ -68,11 +76,7 @@ return React.createClass({
           id: React.PropTypes.string.isRequired,
           apiId: React.PropTypes.string.isRequired,
           recommendedScope: React.PropTypes.string,
-          application: React.PropTypes.shape({
-            applicationId: React.PropTypes.string,
-            displayName: React.PropTypes.string,
-            parameterName: React.PropTypes.string
-          })
+          application: oauth2ApplicationShape
         })
       )
     }),
@@ -80,11 +84,7 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
-    oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
-        apiId: React.PropTypes.string.isRequired,
-        applicationId: React.PropTypes.string.isRequired,
-        displayName: React.PropTypes.string.isRequired
-    })),
+    oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
