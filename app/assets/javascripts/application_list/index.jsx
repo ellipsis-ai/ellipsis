@@ -130,11 +130,39 @@ define(function(require) {
     },
 
     renderApplicationList: function() {
+      var grouped = this.getGroupedApplications();
+      var route = jsRoutes.controllers.ApplicationController.editOAuth2Application;
+      var groupKeys = Object.keys(grouped);
       return (
         <div>
-          {this.renderApplicationCountDescription()}
+          {this.renderApplicationCountDescription(this.getApplications().length, groupKeys.length)}
 
-          {this.renderGroupedApplications()}
+          {groupKeys.map((key, groupIndex) => {
+            var group = grouped[key];
+            var groupName = this.getApiNameForId(key);
+            if (group.length === 1 && groupName.toLowerCase() === group[0].displayName.toLowerCase()) {
+              return (
+                <div key={`oAuthApplicationGroup${groupIndex}`} className="mvm">
+                  <h4><a href={route(group[0].applicationId).url}>{groupName}</a></h4>
+                </div>
+              );
+            } else {
+              return (
+                <div key={`oAuthApplicationGroup${groupIndex}`} className="mvm">
+                  <h4 className="mbn">{groupName}</h4>
+                  <ul>
+                    {group.map((app, appIndex) => {
+                      return (
+                        <li key={`oAuthApplicationGroup${groupIndex}-${appIndex}`}>
+                          <a href={route(app.applicationId).url}>{app.displayName}</a>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            }
+          })}
         </div>
       );
     },
@@ -151,48 +179,20 @@ define(function(require) {
       );
     },
 
-    renderApplicationCountDescription: function() {
-      var count = this.getApplications().length;
-      if (count === 1) {
+    renderApplicationCountDescription: function(appCount, apiGroupCount) {
+      if (appCount === 1) {
         return (
           <p>There is one API application configured.</p>
         );
+      } else if (apiGroupCount === 1) {
+        return (
+          <p>There are {appCount} API applications configured.</p>
+        );
       } else {
         return (
-          <p>There are {count} API applications configured.</p>
+          <p>There are {appCount} API applications configured for {apiGroupCount} products.</p>
         );
       }
-    },
-
-    renderGroupedApplications: function() {
-      var grouped = this.getGroupedApplications();
-      var route = jsRoutes.controllers.ApplicationController.editOAuth2Application;
-      return Object.keys(grouped).map((key, groupIndex) => {
-        var group = grouped[key];
-        var groupName = this.getApiNameForId(key);
-        if (group.length === 1 && groupName.toLowerCase() === group[0].displayName.toLowerCase()) {
-          return (
-            <div key={`oAuthApplicationGroup${groupIndex}`} className="mvm">
-              <h4><a href={route(group[0].applicationId).url}>{groupName}</a></h4>
-            </div>
-          );
-        } else {
-          return (
-            <div key={`oAuthApplicationGroup${groupIndex}`} className="mvm">
-              <h4 className="mbn">{groupName}</h4>
-              <ul>
-              {group.map((app, appIndex) => {
-                return (
-                  <li key={`oAuthApplicationGroup${groupIndex}-${appIndex}`}>
-                    <a href={route(app.applicationId).url}>{app.displayName}</a>
-                  </li>
-                );
-              })}
-              </ul>
-            </div>
-          );
-        }
-      });
     }
   });
 });
