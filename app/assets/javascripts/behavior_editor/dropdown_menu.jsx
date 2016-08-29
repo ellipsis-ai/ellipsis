@@ -169,11 +169,16 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
         onMouseEnter={this.onMouseEnter}
         onMouseLeave={this.onMouseLeave}
       >
-        {typeof(this.props.checkedWhen) !== 'undefined' ?
-          (<span className={"mrxs display-inline-block align-m " + CSS.visibleWhen(this.props.checkedWhen)}>✓</span>) :
-          null
-        }
-        <span className={"display-inline-block align-m " + (this.props.checkedWhen ? "type-bold" : "")}>{this.props.label}</span>
+        <div className="columns columns-elastic">
+          {typeof(this.props.checkedWhen) !== 'undefined' ? (
+            <div className={"column column-shrink prs align-m " + CSS.visibleWhen(this.props.checkedWhen)}>
+              ✓
+            </div>
+          ) : null}
+          <div className={"column column-expand align-m " + (this.props.checkedWhen ? "type-bold" : "")}>
+            {this.props.label}
+          </div>
+        </div>
       </button>
     );
   }
