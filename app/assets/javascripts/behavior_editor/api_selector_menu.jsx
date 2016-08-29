@@ -1,4 +1,4 @@
-define(function (require) {
+define(function(require) {
   var React = require('react'),
     DropdownMenu = require('./dropdown_menu');
 
@@ -46,10 +46,14 @@ define(function (require) {
     getAPISelectorLabelForApp: function(app) {
       if (app.displayName.match(/github/i)) {
         return (
-          <span>
-          <img className="align-m mrs" src="/assets/images/logos/GitHub-Mark-64px.png" height="24" />
-          <span>{app.displayName}</span>
-        </span>
+          <div className="columns columns-elastic">
+            <div className="column column-shrink prs">
+              <img className="align-m" src="/assets/images/logos/GitHub-Mark-64px.png" height="24"/>
+            </div>
+            <div className="column column-expand">
+              {app.displayName}
+            </div>
+          </div>
         );
       } else {
         return (
@@ -77,7 +81,7 @@ define(function (require) {
       this.props.onNewOAuth2Application();
     },
 
-    render: function () {
+    render: function() {
       return (
         <DropdownMenu
           openWhen={this.props.openWhen}
@@ -88,7 +92,7 @@ define(function (require) {
           <DropdownMenu.Item
             onClick={this.props.onAWSClick}
             checkedWhen={this.props.awsCheckedWhen}
-            label={(<img src="/assets/images/logos/aws_logo_web_300px.png" height="32" />)}
+            label={(<img src="/assets/images/logos/aws_logo_web_300px.png" height="32"/>)}
           />
           {this.props.allOAuth2Applications.map((app, index) => {
             return (
