@@ -1,9 +1,9 @@
 define(function(require) {
-  var React        = require('react'),
-      Collapsible  = require('../collapsible'),
-      HelpButton   = require('../help/help_button'),
-      HelpPanel    = require('../help/panel'),
-      SettingsMenu = require('../settings_menu');
+  var React = require('react'),
+    Collapsible = require('../collapsible'),
+    HelpButton = require('../help/help_button'),
+    HelpPanel = require('../help/panel'),
+    SettingsMenu = require('../settings_menu');
 
   return React.createClass({
     displayName: 'ApplicationList',
@@ -102,7 +102,7 @@ define(function(require) {
 
                   <p>
                     <HelpButton className="mrs" onClick={this.toggleOAuth2ApplicationHelp}
-                                toggled={this.getActivePanel() === 'oAuth2ApplicationHelp'}/>
+                      toggled={this.getActivePanel() === 'oAuth2ApplicationHelp'}/>
                     <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>
                       How API applications work
                     </button>
@@ -205,7 +205,7 @@ define(function(require) {
       return (
         <div className="mvxl">
           <a className="button"
-             href={jsRoutes.controllers.ApplicationController.newOAuth2Application().url}
+            href={jsRoutes.controllers.ApplicationController.newOAuth2Application().url}
           >
             Add a new API application
           </a>
@@ -246,8 +246,8 @@ define(function(require) {
           </p>
 
           <ul>
-            <li>which product API to use, </li>
-            <li>how to identify itself to the other product (using a client ID and secret), and </li>
+            <li>which product API to use,</li>
+            <li>how to identify itself to the other product (using a client ID and secret), and</li>
             <li>the “scope” (level of access) to request.</li>
           </ul>
 
