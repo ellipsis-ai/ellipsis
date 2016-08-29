@@ -16,7 +16,8 @@ return React.createClass({
     onFocus: React.PropTypes.func,
     placeholder: React.PropTypes.string,
     type: React.PropTypes.string,
-    value: React.PropTypes.string.isRequired
+    value: React.PropTypes.string.isRequired,
+    disableAuto: React.PropTypes.bool
   },
 
   onChange: function() {
@@ -75,6 +76,10 @@ return React.createClass({
         onBlur={this.onBlur}
         onFocus={this.onFocus}
         onKeyPress={this.handleEnterKey}
+        autoCapitalize={this.props.disableAuto ? "off" : null}
+        autoComplete={this.props.disableAuto ? "off" : null}
+        autoCorrect={this.props.disableAuto ? "off" : null}
+        spellCheck={this.props.disableAuto ? false : null}
       />
     );
   }

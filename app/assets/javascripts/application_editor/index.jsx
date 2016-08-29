@@ -360,20 +360,22 @@ define(function(require) {
                 <div className="columns mtl">
                   <div className="column column-one-half">
                     <h5>Client ID</h5>
-                    <Input className="form-input-borderless"
+                    <Input className="form-input-borderless type-monospace"
                       placeholder="Enter identifier"
                       name="clientId"
                       value={this.getApplicationClientId()}
                       onChange={this.setApplicationClientId}
+                      disableAuto={true}
                     />
                   </div>
                   <div className="column column-one-half">
                     <h5>Client secret</h5>
-                    <Input className="form-input-borderless"
+                    <Input className="form-input-borderless type-monospace"
                       placeholder="Enter secret"
                       name="clientSecret"
                       value={this.getApplicationClientSecret()}
                       onChange={this.setApplicationClientSecret}
+                      disableAuto={true}
                     />
                   </div>
                 </div>
@@ -393,11 +395,12 @@ define(function(require) {
 
                 <div className="columns">
                   <div className="column column-one-third">
-                    <Input className="form-input-borderless"
+                    <Input className="form-input-borderless type-monospace"
                       name="scope"
                       value={this.getApplicationScope()}
                       onChange={this.setApplicationScope}
                       placeholder="Enter scope value"
+                      disableAuto={true}
                     />
                   </div>
                 </div>
