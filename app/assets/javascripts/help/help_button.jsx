@@ -1,14 +1,11 @@
 define(function(require) {
 var React = require('react'),
-  BehaviorEditorMixin = require('./behavior_editor_mixin'),
   SVGQuestionMark = require('../svg/question_mark'),
   SVGXIcon = require('../svg/x');
 
 return React.createClass({
-  mixins: [BehaviorEditorMixin],
   propTypes: {
     className: React.PropTypes.string,
-    children: React.PropTypes.node,
     inline: React.PropTypes.bool,
     onClick: React.PropTypes.func.isRequired,
     toggled: React.PropTypes.bool

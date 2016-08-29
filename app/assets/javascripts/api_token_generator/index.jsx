@@ -1,7 +1,10 @@
 define(function(require) {
   var React = require('react'),
+      Collapsible = require('../collapsible'),
       CSRFTokenHiddenInput = require('../csrf_token_hidden_input'),
       Formatter = require('../formatter'),
+      HelpButton = require('../help/help_button'),
+      HelpPanel = require('../help/panel'),
       Input = require('../form/input'),
       SettingsMenu = require('../settings_menu');
 
@@ -29,6 +32,7 @@ define(function(require) {
 
     getInitialState: function() {
       return {
+        activePanel: null,
         newTokenLabel: "",
         tokens: this.sortByMostRecent(this.props.tokens)
       };
@@ -50,6 +54,14 @@ define(function(require) {
       return this.props.justCreatedTokenId === token.id;
     },
 
+    getActivePanel: function() {
+      return this.state.activePanel;
+    },
+
+    toggleApiHelp: function() {
+      this.setState({ activePanel: this.getActivePanel() === "ellipsisApiHelp" ? null : "ellipsisApiHelp" });
+    },
+
     render: function() {
       return (
         <div>
@@ -66,8 +78,13 @@ define(function(require) {
                 </div>
                 <div className="column column-three-quarters bg-white border-radius-bottom-left ptxxl pbxxxxl phxxxxl">
                   <p>
-                    <span>Generate API tokens to make remote calls to Ellipsis that trigger a response. </span>
+                    <span>Generate API tokens to make requests to Ellipsis that trigger a response. </span>
                     <span>For better security, use each token only for a single purpose.</span>
+                  </p>
+
+                  <p>
+                    <HelpButton className="mrs" onClick={this.toggleApiHelp} toggled={this.getActivePanel() === 'ellipsisApiHelp'} />
+                    <button type="button" className="button-raw" onClick={this.toggleApiHelp}>How to make requests</button>
                   </p>
 
                   {this.getTokens().length > 0 ? this.renderTokenList() : this.renderNoTokens()}
@@ -78,6 +95,31 @@ define(function(require) {
               </div>
             </div>
           </div>
+
+          <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
+            <Collapsible ref="ellipsisApiHelp" revealWhen={this.getActivePanel() === 'ellipsisApiHelp'}>
+              <HelpPanel
+                heading="Sending API requests to Ellipsis"
+                onCollapseClick={this.toggleApiHelp}
+              >
+                <p>
+                  Any application can send a message to Ellipsis by making a GET request to <code className="box-code-example">https://bot.ellipsis.ai/post_message</code>.
+                </p>
+
+                <p>
+                  The request should include the following parameters:
+                </p>
+
+                <ul>
+                  <li><code className="box-code-example">teamId:</code> your team ID — <code className="box-code-example">{this.props.teamId}</code></li>
+                  <li><code className="box-code-example">message:</code> a message which would normally trigger a behavior</li>
+                  <li><code className="box-code-example">responseContext:</code> use <code className="box-code-example">slack</code> to see a response in Slack</li>
+                  <li><code className="box-code-example">channel:</code> the name of the channel to send a response</li>
+                  <li><code className="box-code-example">token:</code> a valid API token</li>
+                </ul>
+              </HelpPanel>
+            </Collapsible>
+          </footer>
         </div>
       );
     },
