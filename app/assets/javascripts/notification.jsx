@@ -98,6 +98,10 @@ define(function(require) {
       detail.onAddOAuth2Application(app);
     },
 
+    onNewOAuth2Application: function(detail, apiId, recommendedScope) {
+      detail.onNewOAuth2Application(apiId, recommendedScope);
+    },
+
     addOAuth2ApplicationPrompt: function(detail) {
       var matchingApplication = detail.existingOAuth2Applications.find(ea => ea.apiId === detail.requiredApiConfig.apiId);
       if (matchingApplication) {
@@ -109,6 +113,19 @@ define(function(require) {
               onClick={this.onAddOAuth2Application.bind(this, detail, matchingApplication)}>
 
               Add {matchingApplication.displayName} to this behavior
+
+            </button>
+          </span>
+        );
+      } else {
+        return (
+          <span className="mhxs">
+            <button
+              type="button"
+              className="button-raw link button-s"
+              onClick={this.onNewOAuth2Application.bind(this, detail, detail.requiredApiConfig.apiId, detail.requiredApiConfig.recommendedScope)}>
+
+              Configure the {detail.name} API for this behavior
 
             </button>
           </span>

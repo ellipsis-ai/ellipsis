@@ -12,6 +12,7 @@ define(function(require) {
     propTypes: {
       apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       applicationApiId: React.PropTypes.string,
+      recommendedScope: React.PropTypes.string,
       applicationName: React.PropTypes.string,
       applicationClientId: React.PropTypes.string,
       applicationClientSecret: React.PropTypes.string,
@@ -30,7 +31,7 @@ define(function(require) {
         applicationName: this.props.applicationName || "",
         applicationClientId: this.props.applicationClientId || "",
         applicationClientSecret: this.props.applicationClientSecret || "",
-        applicationScope: this.props.applicationScope || "",
+        applicationScope: this.props.applicationScope || this.props.recommendedScope || "",
         hasNamedApplication: this.props.applicationSaved || false,
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false
