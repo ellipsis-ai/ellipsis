@@ -1086,6 +1086,7 @@ return React.createClass({
       configs.splice(targetIndex, 1);
     }
     var toAdd = Object.assign({}, target, {
+      apiId: appToAdd.apiId,
       application: appToAdd
     });
     this.setConfigProperty('requiredOAuth2ApiConfigs', configs.concat([toAdd]), this.resetNotifications);
