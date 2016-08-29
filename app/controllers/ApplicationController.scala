@@ -225,12 +225,19 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  case class SaveBehaviorInfo(dataJson: String, maybeRedirect: Option[String])
+  case class SaveBehaviorInfo(
+                               dataJson: String,
+                               maybeRedirect: Option[String],
+                               maybeNewOAuth2ApplicationApidId: Option[String],
+                               maybeNewOAuth2ApplicationRecommendedScope: Option[String]
+                             )
 
   private val saveBehaviorForm = Form(
     mapping(
       "dataJson" -> nonEmptyText,
-      "redirect" -> optional(nonEmptyText)
+      "redirect" -> optional(nonEmptyText),
+      "newOAuth2ApplicationApiId" -> optional(nonEmptyText),
+      "newOAuth2ApplicationRecommendedScope" -> optional(nonEmptyText)
     )(SaveBehaviorInfo.apply)(SaveBehaviorInfo.unapply)
   )
 
@@ -259,7 +266,7 @@ class ApplicationController @Inject() (
             } yield {
                 maybeBehavior.map { behavior =>
                   if (info.maybeRedirect.contains("newOAuth2Application")) {
-                    Redirect(routes.ApplicationController.newOAuth2Application(None, Some(data.teamId), Some(behavior.id)))
+                    Redirect(routes.ApplicationController.newOAuth2Application(info.maybeNewOAuth2ApplicationApidId, info.maybeNewOAuth2ApplicationRecommendedScope, Some(data.teamId), Some(behavior.id)))
                   } else {
                     Redirect(routes.ApplicationController.editBehavior(behavior.id, justSaved = Some(true)))
                   }
@@ -641,14 +648,14 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  def newOAuth2Application(maybeApiId: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = SecuredAction.async { implicit request =>
+  def newOAuth2Application(maybeApiId: Option[String], maybeRecommendedScope: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), IDs.next, maybeApiId, maybeBehaviorId))
+        Ok(views.html.newOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), IDs.next, maybeApiId, maybeRecommendedScope, maybeBehaviorId))
       }.getOrElse {
         NotFound("Team not accessible")
       }

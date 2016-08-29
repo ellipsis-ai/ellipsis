@@ -290,7 +290,8 @@ return React.createClass({
         name: this.getOAuth2ApiWithId(ea.apiId).name,
         requiredApiConfig: ea,
         existingOAuth2Applications: this.getAllOAuth2Applications(),
-        onAddOAuth2Application: this.onAddOAuth2Application
+        onAddOAuth2Application: this.onAddOAuth2Application,
+        onNewOAuth2Application: this.onNewOAuth2Application
       });
     });
     var unusedApplications =
@@ -1096,9 +1097,11 @@ return React.createClass({
     }), this.resetNotifications);
   },
 
-  onNewOAuth2Application: function() {
+  onNewOAuth2Application: function(apiId, recommendedScope) {
     this.setState({
-      redirectValue: "newOAuth2Application"
+      redirectValue: "newOAuth2Application",
+      newOAuth2ApplicationApiId: apiId,
+      newOAuth2ApplicationRecommendedScope: recommendedScope
     }, () => { this.onSubmit(); });
   },
 
@@ -1164,7 +1167,9 @@ return React.createClass({
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
-      redirectValue: ""
+      redirectValue: "",
+      newOAuth2ApplicationApiId: "",
+      newOAuth2ApplicationRecommendedScope: ""
     };
   },
 
@@ -1200,6 +1205,8 @@ return React.createClass({
           value={JSON.stringify(this.state.behavior)}
         />
         <input type="hidden" name="redirect" value={this.getRedirectValue()} />
+        <input type="hidden" name="newOAuth2ApplicationApiId" value={this.state.newOAuth2ApplicationApiId} />
+        <input type="hidden" name="newOAuth2ApplicationRecommendedScope" value={this.state.newOAuth2ApplicationRecommendedScope} />
 
         {/* Start of container */}
         <div className="container ptxl pbxxxl">

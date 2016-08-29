@@ -3,6 +3,7 @@
   apis: Seq[json.OAuth2ApiData],
   applicationId: String,
   maybeApiId: Option[String],
+  maybeRecommendedScope: Option[String],
   maybeBehaviorId: Option[String]
   )(implicit messages: Messages, r: RequestHeader)
 
@@ -23,6 +24,7 @@
         callbackUrl: "@routes.APIAccessController.linkCustomOAuth2Service(applicationId, None, None, None).absoluteURL(secure = true)",
         applicationId: "@applicationId",
         applicationApiId: "@maybeApiId.getOrElse("")",
+        recommendedScope: "@maybeRecommendedScope.getOrElse("")",
         behaviorId: "@maybeBehaviorId.getOrElse("")"
       };
     </script>
