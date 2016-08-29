@@ -20,6 +20,19 @@ define(function(require) {
       return this.props.applications || [];
     },
 
+    getGroupedApplications: function() {
+      var flatApps = this.getSortedApplications();
+      var groupedApps = {};
+      flatApps.forEach(ea => {
+        if (groupedApps[ea.apiId]) {
+          groupedApps[ea.apiId].push(ea);
+        } else {
+          groupedApps[ea.apiId] = [ea];
+        }
+      });
+      return groupedApps;
+    },
+
     getSortedApplications: function() {
       return this.getApplications().sort((a, b) => {
         const aName = a.displayName.toLowerCase();
@@ -32,6 +45,11 @@ define(function(require) {
           return 0;
         }
       });
+    },
+
+    getApiNameForId: function(apiId) {
+      var found = this.props.apis.find(ea => ea.apiId === apiId);
+      return found ? found.name : "";
     },
 
     hasApplications: function() {
@@ -53,6 +71,19 @@ define(function(require) {
                   <SettingsMenu activePage="oauthApplications"/>
                 </div>
                 <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl phxxxxl">
+
+                  <p>
+                    <span>API applications allow you to use Ellipsis to access data from other products that </span>
+                    <span>you use, using another product’s API (application programming interface). </span>
+                  </p>
+
+                  <p>
+                    <span>Once a product is configured, each user can quickly grant permission for that </span>
+                    <span>product to share their data with Ellipsis.</span>
+                  </p>
+
+                  <hr />
+
                   <Collapsible revealWhen={this.hasApplications()}>
                     {this.renderApplicationList()}
                   </Collapsible>
@@ -86,11 +117,6 @@ define(function(require) {
           <p><b>There are no API applications configured.</b></p>
 
           <p>
-            <span>API applications allow Ellipsis to access data from other products that </span>
-            <span>you use, using an API (application programming interface). </span>
-          </p>
-
-          <p>
             Each application specifies:
           </p>
 
@@ -108,15 +134,7 @@ define(function(require) {
         <div>
           {this.renderApplicationCountDescription()}
 
-          {this.getSortedApplications().map((application, index) => {
-            return (
-              <div key={`oAuthApplication${index}`}>
-                <a href={jsRoutes.controllers.ApplicationController.editOAuth2Application(application.applicationId).url}>
-                  {application.displayName}
-                </a>
-              </div>
-            );
-          })}
+          {this.renderGroupedApplications()}
         </div>
       );
     },
@@ -144,6 +162,37 @@ define(function(require) {
           <p>There are {count} API applications configured.</p>
         );
       }
+    },
+
+    renderGroupedApplications: function() {
+      var grouped = this.getGroupedApplications();
+      var route = jsRoutes.controllers.ApplicationController.editOAuth2Application;
+      return Object.keys(grouped).map((key, groupIndex) => {
+        var group = grouped[key];
+        var groupName = this.getApiNameForId(key);
+        if (group.length === 1 && groupName.toLowerCase() === group[0].displayName.toLowerCase()) {
+          return (
+            <div key={`oAuthApplicationGroup${groupIndex}`} className="mvm">
+              <h4><a href={route(group[0].applicationId).url}>{groupName}</a></h4>
+            </div>
+          );
+        } else {
+          return (
+            <div key={`oAuthApplicationGroup${groupIndex}`} className="mvm">
+              <h4 className="mbn">{groupName}</h4>
+              <ul>
+              {group.map((app, appIndex) => {
+                return (
+                  <li key={`oAuthApplicationGroup${groupIndex}-${appIndex}`}>
+                    <a href={route(app.applicationId).url}>{app.displayName}</a>
+                  </li>
+                );
+              })}
+              </ul>
+            </div>
+          );
+        }
+      });
     }
   });
 });
