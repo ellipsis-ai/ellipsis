@@ -6,7 +6,6 @@ var React = require('react'),
 return React.createClass({
   propTypes: {
     className: React.PropTypes.string,
-    children: React.PropTypes.node,
     inline: React.PropTypes.bool,
     onClick: React.PropTypes.func.isRequired,
     toggled: React.PropTypes.bool
