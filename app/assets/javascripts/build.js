@@ -10,8 +10,6 @@ Development configuration lives in common.js
 requirejs.config({
   baseUrl: '/assets/javascripts/',
   fileExclusionRegExp: /(^\.|\btests?\b|\btheme\b|jshint-rhino|jshint\.ai)/,
-  skipDirOptimize: true,
-  normalizeDirDefines: "skip",
   removeCombined: true,
   packages: [
     {
