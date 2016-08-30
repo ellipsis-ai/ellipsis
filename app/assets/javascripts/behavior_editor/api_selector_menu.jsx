@@ -46,22 +46,11 @@ define(function(require) {
 
     getAPISelectorLabelForApp: function(app) {
       var api = this.props.getOAuth2ApiWithId(app.apiId);
-      if (api && api.name.match(/github/i)) {
+      if (api && api.imageUrl) {
         return (
           <div className="columns columns-elastic">
             <div className="column column-shrink prs align-m">
-              <img src="/assets/images/logos/GitHub-Mark-64px.png" width="24" height="24"/>
-            </div>
-            <div className="column column-expand align-m">
-              {app.displayName}
-            </div>
-          </div>
-        );
-      } else if (api && api.name.match(/todoist/i)) {
-        return (
-          <div className="columns columns-elastic">
-            <div className="column column-shrink prs align-m">
-              <img src="/assets/images/logos/todoist.png" width="24" height="24"/>
+              <img src={api.imageUrl} width="24" height="24"/>
             </div>
             <div className="column column-expand align-m">
               {app.displayName}
