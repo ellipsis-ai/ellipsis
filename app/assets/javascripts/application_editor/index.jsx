@@ -21,7 +21,8 @@ define(function(require) {
       applicationSaved: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
-      callbackUrl: React.PropTypes.string,
+      callbackUrl: React.PropTypes.string.isRequired,
+      mainUrl: React.PropTypes.string.isRequired,
       applicationId: React.PropTypes.string,
       behaviorId: React.PropTypes.string
     },
@@ -51,6 +52,10 @@ define(function(require) {
 
     getCallbackUrl: function() {
       return this.props.callbackUrl;
+    },
+
+    getMainUrl: function() {
+      return this.props.mainUrl;
     },
 
     apiIsSet: function() {
@@ -343,10 +348,14 @@ define(function(require) {
                   <a href={this.getApplicationApiNewApplicationUrl()} target="_blank">Go to {this.getApplicationApiName()} ↗︎</a>
                 </h4>
                 <ul className="type-s list-space-l mvl">
-                  <li>You can set the name, homepage and description to whatever you like.</li>
+                  <li>You can set the name and description to whatever you like.</li>
                   <li>
-                    <div>Copy and paste this for the authorization callback URL:</div>
+                    <div>Copy and paste this for the <b>callback URL</b> (sometimes called <b>redirect URL</b>):</div>
                     <div className="box-code-example mtl">{this.getCallbackUrl()}</div>
+                  </li>
+                  <li>
+                    <div>If there is a homepage, application or other URL option, you can set it to:</div>
+                    <div className="box-code-example mtl">{this.getMainUrl()}</div>
                   </li>
                 </ul>
               </div>
