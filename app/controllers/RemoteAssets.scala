@@ -32,12 +32,14 @@ object RemoteAssets {
 
   def getUrl(file: String): String = {
     val asset = Asset(file)
-    Play.configuration.getString("cdn_url") match {
-      case Some(contentUrl) => {
-        val withoutAssetsPrefix = controllers.routes.RemoteAssets.getAsset(asset).url.substring(7)
-        contentUrl + withoutAssetsPrefix
+    Play.configuration.getString("external_cdn_assets." + asset.name).getOrElse {
+      Play.configuration.getString("cdn_url") match {
+        case Some(contentUrl) => {
+          val withoutAssetsPrefix = controllers.routes.RemoteAssets.getAsset(asset).url.substring(7)
+          contentUrl + withoutAssetsPrefix
+        }
+        case None => controllers.routes.RemoteAssets.getAsset(asset).url
       }
-      case None => controllers.routes.RemoteAssets.getAsset(asset).url
     }
   }
 
