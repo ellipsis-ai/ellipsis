@@ -9,7 +9,9 @@ Development configuration lives in common.js
 
 requirejs.config({
   baseUrl: '/assets/javascripts/',
-  fileExclusionRegExp: /(^\.|\btests\.js\b|\btest\b|\btheme\b)/,
+//  fileExclusionRegExp: /(^\.|\btests\.js\b|\btest\b|\btheme\b)/,
+  skipDirOptimize: true,
+  normalizeDirDefines: "skip",
   packages: [
     {
       name: 'codemirror',
