@@ -19,10 +19,6 @@ requirejs.config({
       location: '../lib/core.js/client',
       main: 'shim.min'
     }, {
-      name: 'es6-promise',
-      location: '../lib/es6-promise',
-      main: 'es6-promise.min'
-    }, {
       name: 'whatwg-fetch',
       location: '../lib/fetch',
       main: 'fetch'
@@ -53,7 +49,6 @@ requirejs.config({
       name: 'common',
       include: [
         'core-js',
-        'es6-promise',
         'javascript-debounce',
         'react',
         'react-dom',

@@ -3,7 +3,6 @@ define(function(require) {
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
     SVGInstalling = require('../svg/installing');
-    require('es6-promise');
     require('whatwg-fetch');
 
   return React.createClass({

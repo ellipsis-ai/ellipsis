@@ -36,7 +36,6 @@ libraryDependencies ++= Seq(
   "org.webjars" % "requirejs" % "2.1.14-1",
   "org.webjars.bower" % "core.js" % "2.4.1",
   "org.webjars.bower" % "react" % "15.3.1",
-  "org.webjars.bower" % "es6-promise" % "3.2.2",
   "org.webjars.bower" % "fetch" % "1.0.0",
   "org.webjars.bower" % "codemirror" % "5.15.2",
   "org.webjars.bower" % "jshint" % "2.9.2",
