@@ -12,6 +12,7 @@ requirejs.config({
   fileExclusionRegExp: /(^\.|\btests?\b|\btheme\b|jshint-rhino|jshint\.ai)/,
   skipDirOptimize: true,
   normalizeDirDefines: "skip",
+  removeCombined: true,
   packages: [
     {
       name: 'codemirror',
