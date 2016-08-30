@@ -282,7 +282,12 @@ define(function(require) {
           <div className="mvxl">
             {this.props.apis.map(function(api, index) {
               return (
-                <button type="button" key={"apiTypeButton" + index} className="mrl mbl" onClick={this.setApplicationApi.bind(this, api)}>{api.name}</button>
+                <button type="button" key={"apiTypeButton" + index} className="button-l mrl mbl" onClick={this.setApplicationApi.bind(this, api)}>
+                  {api.imageUrl ? (
+                    <img src={api.imageUrl} width="24" height="24" className="mrm align-m mbxs" />
+                  ) : null}
+                  <span className="type-black">{api.name}</span>
+                </button>
               );
             }, this)}
           </div>

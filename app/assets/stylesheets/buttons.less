@@ -4,6 +4,7 @@
 
 @button-height: @s * 2 + @xl;
 @button-small-height: @xs * 2 + @l;
+@button-large-height: @l * 2 + @xl;
 
 button,
 a.button,
@@ -110,6 +111,13 @@ select.form-select-s {
   padding: (@xs - @border-width + 1) (@m - @border-width) (@xs - @border-width - 1);
   height: @button-small-height;
   border-radius: @border-radius-small;
+}
+
+button.button-l {
+  font-size: @type-m;
+  font-weight: 600;
+  line-height: @xxl;
+  height: @button-large-height;
 }
 
 button[disabled] {
