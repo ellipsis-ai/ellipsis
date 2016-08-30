@@ -11,6 +11,7 @@ requirejs.config({
   baseUrl: '/assets/javascripts/',
   fileExclusionRegExp: /(^\.|\btests?\b|\btheme\b|jshint-rhino|jshint\.ai)/,
   removeCombined: true,
+  skipDirOptimize: true,
   packages: [
     {
       name: 'codemirror',
