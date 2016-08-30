@@ -1,7 +1,7 @@
 package models.bots
 
 import models.IDs
-import models.accounts.OAuth2Application
+import models.accounts.{LoginToken, OAuth2Application}
 import models.bots.config.RequiredOAuth2ApiConfig
 import models.bots.events.{MessageContext, MessageEvent}
 import models.bots.templates.TemplateApplier
@@ -24,7 +24,7 @@ sealed trait BehaviorResult {
   def text: String
   def fullText: String = text
 
-  def sendIn(context: MessageContext): Unit = {
+  def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
     context.sendMessage(fullText)
   }
 }
@@ -66,7 +66,7 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
 
   def text: String = ""
 
-  override def sendIn(context: MessageContext): Unit = {
+  override def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
     // do nothing
   }
 
@@ -156,6 +156,7 @@ class AWSDownResult extends BehaviorResult {
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
                                event: MessageEvent,
+                               loginToken: LoginToken,
                                cache: CacheApi,
                                configuration: Configuration
                                ) extends BehaviorResult {
@@ -165,10 +166,11 @@ case class OAuth2TokenMissing(
   val resultType = ResultType.OAuth2TokenMissing
 
   def authLink: String = {
-    configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key))
-      s"$baseUrl$path"
-    }.getOrElse("")
+    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val redirectPath = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key))
+    val redirect = s"$baseUrl$redirectPath"
+    val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))
+    s"$baseUrl$authPath"
   }
 
   def text: String = {
@@ -178,9 +180,9 @@ case class OAuth2TokenMissing(
        |""".stripMargin
   }
 
-  override def sendIn(context: MessageContext): Unit = {
+  override def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(context)
+    super.sendIn(context, Some(false))
   }
 }
 
@@ -204,7 +206,4 @@ case class RequiredApiNotReady(
     s"This behavior is not ready to use. $configText."
   }
 
-  override def sendIn(context: MessageContext): Unit = {
-    super.sendIn(context)
-  }
 }

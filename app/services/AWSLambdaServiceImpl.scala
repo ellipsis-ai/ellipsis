@@ -7,6 +7,7 @@ import javax.inject.Inject
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
+import models.accounts.LoginTokenQueries
 import models.bots.config.{AWSConfig, RequiredOAuth2ApiConfig, RequiredOAuth2ApiConfigQueries}
 import models.{EnvironmentVariable, InvocationToken, Models}
 import models.bots._
@@ -84,7 +85,12 @@ class AWSLambdaServiceImpl @Inject() (
             Future.successful(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, configuration))
           }.getOrElse {
             missingOAuth2Applications.headOption.map { firstMissingOAuth2App =>
-              Future.successful(OAuth2TokenMissing(firstMissingOAuth2App, event, cache, configuration))
+              val action = event.context.ensureUser.flatMap { user =>
+                LoginTokenQueries.createFor(user).map { loginToken =>
+                  OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
+                }
+              }
+              models.run(action)
             }.getOrElse {
               val payloadJson = JsObject(
                 parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++

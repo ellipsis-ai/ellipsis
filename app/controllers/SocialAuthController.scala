@@ -194,6 +194,39 @@ class SocialAuthController @Inject() (
     }
   }
 
+  def loginWithToken(
+            token: String,
+            maybeRedirect: Option[String]
+            ) = UserAwareAction.async { implicit request =>
+    println(s"attempting to log in with token: $token")
+    val successRedirect = validatedRedirectUri(maybeRedirect.getOrElse(routes.ApplicationController.index().toString))
+    request.identity.map { user =>
+      Future.successful(Redirect(successRedirect))
+    }.getOrElse {
+      val action = for {
+        maybeToken <- LoginTokenQueries.find(token)
+        result <- maybeToken.map { token =>
+          if (token.isValid) {
+            for {
+              maybeUser <- User.find(token.userId)
+              resultForValidToken <- maybeUser.map { user =>
+                authenticatorResultForUserAndResult(user, Redirect(successRedirect))
+              }.getOrElse {
+                DBIO.successful(Redirect(routes.SlackController.signIn(maybeRedirect)))
+              }
+            } yield resultForValidToken
+          } else {
+            DBIO.successful(Ok("Token expired"))
+          }
+        }.getOrElse {
+          DBIO.successful(NotFound("Token not found"))
+        }
+      } yield result
+
+      models.run(action)
+    }
+  }
+
   def signOut = SecuredAction.async { implicit request =>
     val redirect = request.request.headers.get("referer").getOrElse(routes.ApplicationController.index().toString)
     env.authenticatorService.discard(request.authenticator, Redirect(redirect))

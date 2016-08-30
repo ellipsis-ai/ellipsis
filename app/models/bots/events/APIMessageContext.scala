@@ -26,7 +26,7 @@ case class APIMessageContext(
 
   lazy val isResponseExpected: Boolean = includesBotMention
 
-  def sendMessage(unformattedText: String)(implicit ec: ExecutionContext): Unit = {
+  def sendMessage(unformattedText: String, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
     val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
     // The Slack API considers sending an empty message to be an error rather than a no-op
     if (formattedText.nonEmpty) {

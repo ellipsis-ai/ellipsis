@@ -7,7 +7,7 @@ import scala.concurrent.ExecutionContext
 
 trait Context {
 
-  def sendMessage(text: String)(implicit ec: ExecutionContext): Unit
+  def sendMessage(text: String, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit
 
   def maybeOngoingConversation: DBIO[Option[Conversation]]
 

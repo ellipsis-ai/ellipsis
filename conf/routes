@@ -34,6 +34,7 @@ POST        /revoke_api_token                         @controllers.APITokenContr
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 POST        /sign_out                                 @controllers.SocialAuthController.signOut
+GET         /login_with_token/:token                  @controllers.SocialAuthController.loginWithToken(token: String, redirect: Option[String] ?= None)
 
 GET         /add_to_slack                             @controllers.SlackController.add
 GET         /sign_in_with_slack                       @controllers.SlackController.signIn(redirect: Option[String] ?= None)
