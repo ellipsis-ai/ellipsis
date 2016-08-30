@@ -42,7 +42,7 @@ define(function(require) {
 
     getWarningIcon: function() {
       return (
-        <span className="display-inline-block mrs align-b type-yellow" style={{ height: 24 }}>
+        <span className="display-inline-block mrs align-b type-yellow" style={{ width: 22, height: 24 }}>
           <SVGWarning />
         </span>
       );
