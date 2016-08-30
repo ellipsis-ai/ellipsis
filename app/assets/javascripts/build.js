@@ -15,9 +15,9 @@ requirejs.config({
       location: '../lib/codemirror',
       main: 'lib/codemirror'
     }, {
-      name: 'es6-promise',
-      location: '../lib/es6-promise',
-      main: 'es6-promise.min'
+      name: 'core-js',
+      location: '../lib/core.js/client',
+      main: 'shim.min'
     }, {
       name: 'whatwg-fetch',
       location: '../lib/fetch',
@@ -48,7 +48,7 @@ requirejs.config({
     {
       name: 'common',
       include: [
-        'es6-promise',
+        'core-js',
         'javascript-debounce',
         'react',
         'react-dom',

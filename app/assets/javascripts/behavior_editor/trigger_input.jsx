@@ -7,7 +7,6 @@ var React = require('react'),
   HelpButton = require('../help/help_button'),
   Input = require('../form/input'),
   Collapsible = require('../collapsible');
-  require('es6-promise');
   require('whatwg-fetch');
 
 return React.createClass({
