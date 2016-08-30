@@ -1,7 +1,7 @@
 /* global BehaviorEditorConfiguration:false */
 
 requirejs(['../common'], function() {
-  requirejs(['react', 'react-dom', './behavior_editor/index'], function(React, ReactDOM, BehaviorEditor) {
+  requirejs(['core-js', 'react', 'react-dom', './behavior_editor/index'], function(Core, React, ReactDOM, BehaviorEditor) {
     var config = BehaviorEditorConfiguration;
     var additionalData = {
       csrfToken: config.csrfToken,

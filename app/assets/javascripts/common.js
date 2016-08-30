@@ -11,6 +11,10 @@ requirejs.config({
       location: '../lib/codemirror',
       main: 'lib/codemirror'
     }, {
+      name: 'core-js',
+      location: '../lib/core.js/client',
+      main: 'shim'
+    }, {
       name: 'es6-promise',
       location: '../lib/es6-promise',
       main: 'es6-promise'
