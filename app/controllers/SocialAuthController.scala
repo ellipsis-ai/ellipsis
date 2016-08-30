@@ -208,6 +208,7 @@ class SocialAuthController @Inject() (
         result <- maybeToken.map { token =>
           if (token.isValid) {
             for {
+              _ <- token.use
               maybeUser <- User.find(token.userId)
               resultForValidToken <- maybeUser.map { user =>
                 authenticatorResultForUserAndResult(user, Redirect(successRedirect))

@@ -25,7 +25,7 @@ sealed trait BehaviorResult {
   def fullText: String = text
 
   def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
-    context.sendMessage(fullText)
+    context.sendMessage(fullText, maybeShouldUnfurl)
   }
 }
 
