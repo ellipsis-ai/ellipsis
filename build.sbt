@@ -33,7 +33,7 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "net.ceedubs" %% "ficus" % "1.1.2",
   "com.amazonaws" % "aws-java-sdk" % "1.10.72",
-  "org.webjars" % "requirejs" % "2.1.14-1",
+  "org.webjars" % "requirejs" % "2.2.0",
   "org.webjars.bower" % "core.js" % "2.4.1",
   "org.webjars.bower" % "react" % "15.3.1",
   "org.webjars.bower" % "fetch" % "1.0.0",
