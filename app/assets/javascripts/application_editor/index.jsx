@@ -5,7 +5,8 @@ define(function(require) {
     CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
     Input = require('../form/input'),
     SettingsMenu = require('../settings_menu'),
-    BrowserUtils = require('../browser_utils');
+    BrowserUtils = require('../browser_utils'),
+    ifPresent = require('../if_present');
 
   return React.createClass({
     displayName: 'ApplicationEditor',
@@ -21,7 +22,8 @@ define(function(require) {
       applicationSaved: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
-      callbackUrl: React.PropTypes.string,
+      callbackUrl: React.PropTypes.string.isRequired,
+      mainUrl: React.PropTypes.string.isRequired,
       applicationId: React.PropTypes.string,
       behaviorId: React.PropTypes.string
     },
@@ -51,6 +53,10 @@ define(function(require) {
 
     getCallbackUrl: function() {
       return this.props.callbackUrl;
+    },
+
+    getMainUrl: function() {
+      return this.props.mainUrl;
     },
 
     apiIsSet: function() {
@@ -155,6 +161,12 @@ define(function(require) {
       this.setState({
         isSaving: true
       });
+    },
+
+    onFocusExample: function(event) {
+      if (event) {
+        event.target.select();
+      }
     },
 
     renderBehaviorId: function() {
@@ -283,9 +295,9 @@ define(function(require) {
             {this.props.apis.map(function(api, index) {
               return (
                 <button type="button" key={"apiTypeButton" + index} className="button-l mrl mbl" onClick={this.setApplicationApi.bind(this, api)}>
-                  {api.imageUrl ? (
-                    <img src={api.imageUrl} width="24" height="24" className="mrm align-m mbxs" />
-                  ) : null}
+                  {ifPresent(api.imageUrl, url => (
+                    <img src={url} width="24" height="24" className="mrm align-m mbxs" />
+                  ))}
                   <span className="type-black">{api.name}</span>
                 </button>
               );
@@ -340,13 +352,19 @@ define(function(require) {
                 <h4 className="mbn position-relative">
                   <span className="position-hanging-indent">2</span>
                   <span>Register a new OAuth developer application on your {this.getApplicationApiName()} account. </span>
-                  <a href={this.getApplicationApiNewApplicationUrl()} target="_blank">Go to {this.getApplicationApiName()} ↗︎</a>
+                  {ifPresent(this.getApplicationApiNewApplicationUrl(), url => (
+                    <a href={url} target="_blank">Go to {this.getApplicationApiName()} ↗︎</a>
+                  ))}
                 </h4>
                 <ul className="type-s list-space-l mvl">
-                  <li>You can set the name, homepage and description to whatever you like.</li>
+                  <li>You can set the name and description to whatever you like.</li>
                   <li>
-                    <div>Copy and paste this for the authorization callback URL:</div>
-                    <div className="box-code-example mtl">{this.getCallbackUrl()}</div>
+                    <div>Copy and paste this for the <b>callback URL</b> (sometimes called <b>redirect URL</b>):</div>
+                    <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getCallbackUrl()} onFocus={this.onFocusExample} />
+                  </li>
+                  <li>
+                    <div>If there is a homepage, application or other URL option, you can set it to:</div>
+                    <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getMainUrl()} onFocus={this.onFocusExample} />
                   </li>
                 </ul>
               </div>
@@ -393,10 +411,12 @@ define(function(require) {
                   <span className="position-hanging-indent">4</span>
                   <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
                 </h4>
-                <p className="type-s">
-                  <span>Use the <a href={this.getApplicationApiScopeDocumentationUrl()} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
-                  <span>the correct value for your application.</span>
-                </p>
+                {ifPresent(this.getApplicationApiScopeDocumentationUrl(), url => (
+                  <p className="type-s">
+                    <span>Use the <a href={url} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
+                    <span>the correct value for your application.</span>
+                  </p>
+                ))}
 
                 <div className="columns">
                   <div className="column column-one-third">

@@ -19,6 +19,7 @@
         teamId: "@teamAccess.maybeTargetTeam.map(_.id)",
         apis: @Html(Json.toJson(apis).toString),
         callbackUrl: "@routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None).absoluteURL(secure = true)",
+        mainUrl: "@routes.ApplicationController.index().absoluteURL(secure = true)",
         applicationId: "@application.id",
         applicationName: "@application.name",
         applicationClientId: "@application.clientId",
