@@ -22,7 +22,8 @@ define(function(require) {
       })).isRequired,
       onAddOAuth2Application: React.PropTypes.func.isRequired,
       onRemoveOAuth2Application: React.PropTypes.func.isRequired,
-      onNewOAuth2Application: React.PropTypes.func.isRequired
+      onNewOAuth2Application: React.PropTypes.func.isRequired,
+      getOAuth2ApiWithId: React.PropTypes.func.isRequired
     },
 
     getAPISelectorDropdownLabel: function() {
@@ -44,13 +45,25 @@ define(function(require) {
     },
 
     getAPISelectorLabelForApp: function(app) {
-      if (app.displayName.match(/github/i)) {
+      var api = this.props.getOAuth2ApiWithId(app.apiId);
+      if (api && api.name.match(/github/i)) {
         return (
           <div className="columns columns-elastic">
-            <div className="column column-shrink prs">
-              <img className="align-m" src="/assets/images/logos/GitHub-Mark-64px.png" height="24"/>
+            <div className="column column-shrink prs align-m">
+              <img src="/assets/images/logos/GitHub-Mark-64px.png" width="24" height="24"/>
             </div>
-            <div className="column column-expand">
+            <div className="column column-expand align-m">
+              {app.displayName}
+            </div>
+          </div>
+        );
+      } else if (api && api.name.match(/todoist/i)) {
+        return (
+          <div className="columns columns-elastic">
+            <div className="column column-shrink prs align-m">
+              <img src="/assets/images/logos/todoist.png" width="24" height="24"/>
+            </div>
+            <div className="column column-expand align-m">
               {app.displayName}
             </div>
           </div>
@@ -92,7 +105,7 @@ define(function(require) {
           <DropdownMenu.Item
             onClick={this.props.onAWSClick}
             checkedWhen={this.props.awsCheckedWhen}
-            label={(<img src="/assets/images/logos/aws_logo_web_300px.png" height="32"/>)}
+            label={(<img src="/assets/images/logos/aws_logo_web_300px.png" width="77" height="32"/>)}
           />
           {this.props.allOAuth2Applications.map((app, index) => {
             return (

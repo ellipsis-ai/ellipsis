@@ -1101,7 +1101,7 @@ return React.createClass({
   onNewOAuth2Application: function(requiredOAuth2ApiConfigId) {
     this.setState({
       redirectValue: "newOAuth2Application",
-      requiredOAuth2ApiConfigId: requiredOAuth2ApiConfigId
+      requiredOAuth2ApiConfigId: requiredOAuth2ApiConfigId || ""
     }, () => { this.onSubmit(); });
   },
 
@@ -1346,6 +1346,7 @@ return React.createClass({
                       onAddOAuth2Application={this.onAddOAuth2Application}
                       onRemoveOAuth2Application={this.onRemoveOAuth2Application}
                       onNewOAuth2Application={this.onNewOAuth2Application}
+                      getOAuth2ApiWithId={this.getOAuth2ApiWithId}
                       />
                   </div>
 
