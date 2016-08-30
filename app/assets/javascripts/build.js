@@ -9,9 +9,13 @@ Development configuration lives in common.js
 
 requirejs.config({
   baseUrl: '/assets/javascripts/',
+
+  // Helps trim some unwanted assets
   fileExclusionRegExp: /(^\.|\btests?\b|\btheme\b|jshint-rhino|jshint\.ai)/,
-  removeCombined: true,
+
+  // Stops r.js from unnecessarily minifying non-build assets
   skipDirOptimize: true,
+
   packages: [
     {
       name: 'codemirror',
