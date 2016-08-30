@@ -162,6 +162,12 @@ define(function(require) {
       });
     },
 
+    onFocusExample: function(event) {
+      if (event) {
+        event.target.select();
+      }
+    },
+
     renderBehaviorId: function() {
       var id = this.props.behaviorId;
       if (id && id.length > 0) {
@@ -351,11 +357,11 @@ define(function(require) {
                   <li>You can set the name and description to whatever you like.</li>
                   <li>
                     <div>Copy and paste this for the <b>callback URL</b> (sometimes called <b>redirect URL</b>):</div>
-                    <div className="box-code-example mtl">{this.getCallbackUrl()}</div>
+                    <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getCallbackUrl()} onFocus={this.onFocusExample} />
                   </li>
                   <li>
                     <div>If there is a homepage, application or other URL option, you can set it to:</div>
-                    <div className="box-code-example mtl">{this.getMainUrl()}</div>
+                    <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getMainUrl()} onFocus={this.onFocusExample} />
                   </li>
                 </ul>
               </div>
