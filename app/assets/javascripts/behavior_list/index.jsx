@@ -84,7 +84,7 @@ define(function(require) {
     getImportedStatusFromVersion: function(version) {
       if (version.importedId) {
         return (
-          <span title="Installed from ellipsis.ai" className="mtxs display-inline-block" style={{ height: 18 }}>
+          <span title="Installed from ellipsis.ai" className="mtxs display-inline-block" style={{ width: 30, height: 18 }}>
             <SVGInstalled />
           </span>
         );
