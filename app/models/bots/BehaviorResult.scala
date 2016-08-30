@@ -172,7 +172,10 @@ case class OAuth2TokenMissing(
   }
 
   def text: String = {
-    s"To use this behavior, you need to [authenticate with ${oAuth2Application.name}]($authLink)"
+    s"""To use this behavior, you need to [authenticate with ${oAuth2Application.name}]($authLink).
+       |
+       |You only need to do this one time for ${oAuth2Application.name}. You may be prompted to sign in to Ellipsis using your Slack account.
+       |""".stripMargin
   }
 
   override def sendIn(context: MessageContext): Unit = {
