@@ -24,8 +24,8 @@ sealed trait BehaviorResult {
   def text: String
   def fullText: String = text
 
-  def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
-    context.sendMessage(fullText, maybeShouldUnfurl)
+  def sendIn(context: MessageContext, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+    context.sendMessage(fullText, forcePrivate, maybeShouldUnfurl)
   }
 }
 
@@ -66,7 +66,7 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
 
   def text: String = ""
 
-  override def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+  override def sendIn(context: MessageContext, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
     // do nothing
   }
 
@@ -180,9 +180,9 @@ case class OAuth2TokenMissing(
        |""".stripMargin
   }
 
-  override def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+  override def sendIn(context: MessageContext, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(context, Some(false))
+    super.sendIn(context, forcePrivate = true, Some(false))
   }
 }
 
