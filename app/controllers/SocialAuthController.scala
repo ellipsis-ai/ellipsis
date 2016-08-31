@@ -198,7 +198,6 @@ class SocialAuthController @Inject() (
             token: String,
             maybeRedirect: Option[String]
             ) = UserAwareAction.async { implicit request =>
-    println(s"attempting to log in with token: $token")
     val successRedirect = validatedRedirectUri(maybeRedirect.getOrElse(routes.ApplicationController.index().toString))
     request.identity.map { user =>
       Future.successful(Redirect(successRedirect))
