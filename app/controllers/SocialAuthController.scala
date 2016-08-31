@@ -217,7 +217,7 @@ class SocialAuthController @Inject() (
               }
             } yield resultForValidToken
           } else {
-            DBIO.successful(Ok("Token expired"))
+            DBIO.successful(Ok(views.html.loginTokenExpired()))
           }
         }.getOrElse {
           DBIO.successful(NotFound("Token not found"))
