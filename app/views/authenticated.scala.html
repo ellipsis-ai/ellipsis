@@ -1,4 +1,5 @@
 @(
+  maybeTeam: Option[models.Team],
   message: String
   )(implicit messages: Messages, r: RequestHeader)
 
@@ -8,7 +9,7 @@
     <div class="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
       <div class="container">
         <p class="type-l type-white">
-          Authenticated
+          You are logged in@maybeTeam.map(team => s" to ${team.name}")
         </p>
       </div>
     </div>

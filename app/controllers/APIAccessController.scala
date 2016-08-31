@@ -107,8 +107,12 @@ class APIAccessController @Inject() (
     models.run(action)
   }
 
-  def authenticated(message: String) = SecuredAction { implicit request =>
-    Ok(views.html.authenticated(message))
+  def authenticated(message: String) = SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = Team.find(user.teamId).map { maybeTeam =>
+      Ok(views.html.authenticated(maybeTeam, message))
+    }
+    models.run(action)
   }
 
 
