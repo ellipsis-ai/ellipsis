@@ -19,9 +19,8 @@ var React = require('react'),
   HiddenJsonInput = require('./hidden_json_input'),
   Notification = require('../notification'),
   SectionHeading = require('./section_heading'),
+  TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
-  TriggerOptionsHelp = require('./trigger_options_help'),
-  TriggerInput = require('./trigger_input'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
   Collapsible = require('../collapsible'),
@@ -462,8 +461,8 @@ return React.createClass({
     this.setBehaviorProp('params', newParams, this.focusOnLastParam);
   },
 
-  addTrigger: function() {
-    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), this.focusOnFirstBlankTrigger);
+  addTrigger: function(callback) {
+    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), callback);
   },
 
   cancelEnvVariableAdder: function() {
@@ -791,10 +790,6 @@ return React.createClass({
     this.toggleActivePanel('helpForTriggerParameters');
   },
 
-  toggleTriggerOptionsHelp: function() {
-    this.toggleActivePanel('helpForTriggerOptions');
-  },
-
   toggleVersionListMenu: function() {
     this.toggleActiveDropdown('versionList');
   },
@@ -922,15 +917,6 @@ return React.createClass({
     return this.state.hasModifiedTemplate;
   },
 
-  hasMultipleTriggers: function() {
-    return this.getBehaviorTriggers().length > 1;
-  },
-
-  hasPrimaryTrigger: function() {
-    var triggers = this.getBehaviorTriggers();
-    return !!(triggers.length > 0 && triggers[0].text);
-  },
-
   hasUserParameters: function() {
     return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
@@ -999,12 +985,6 @@ return React.createClass({
     return !!(template && template.match(/\{successResult.*?\}/));
   },
 
-  triggersUseParams: function() {
-    return this.getBehaviorTriggers().some(function(trigger) {
-      return trigger.text.match(/{.+}/);
-    });
-  },
-
   versionEqualsVersion: function(version1, version2) {
     var shallow1 = JSON.stringify({
       functionBody: version1.functionBody,
@@ -1037,25 +1017,12 @@ return React.createClass({
     BrowserUtils.ensureYPosInView(cursorBottom, this.refs.footer.clientHeight);
   },
 
-  focusOnFirstBlankTrigger: function() {
-    var blankTrigger = Object.keys(this.refs).find(function(key) {
-      return key.match(/^trigger\d+$/) && this.refs[key].isEmpty();
-    }, this);
-    if (blankTrigger) {
-      this.refs[blankTrigger].focus();
-    }
-  },
-
   focusOnParamIndex: function(index) {
     this.refs.codeHeader.focusIndex(index);
   },
 
   focusOnLastParam: function() {
     this.focusOnParamIndex(this.getBehaviorParams().length - 1);
-  },
-
-  focusOnTriggerIndex: function(index) {
-    this.refs['trigger' + index].focus();
   },
 
   onAddNewEnvVariable: function() {
@@ -1110,14 +1077,6 @@ return React.createClass({
       this.focusOnParamIndex(index + 1);
     } else if (this.getBehaviorParams()[index].question) {
       this.addParam();
-    }
-  },
-
-  onTriggerEnterKey: function(index) {
-    if (index + 1 < this.getBehaviorTriggers().length) {
-      this.focusOnTriggerIndex(index + 1);
-    } else if (this.getBehaviorTriggers()[index].text) {
-      this.addTrigger();
     }
   },
 
@@ -1209,55 +1168,15 @@ return React.createClass({
         {/* Start of container */}
         <div className="container ptxl pbxxxl">
 
-          <div className="columns">
-            <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-              <SectionHeading>When someone says</SectionHeading>
-
-              <Checklist disabledWhen={this.isFinishedBehavior()}>
-                <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.isFinishedBehavior()}>
-                  Write a question or phrase people should use to trigger a response.
-                </Checklist.Item>
-                <Checklist.Item checkedWhen={this.hasMultipleTriggers()} hiddenWhen={this.isFinishedBehavior() && this.hasMultipleTriggers()}>
-                  You can add multiple triggers.
-                </Checklist.Item>
-                <Checklist.Item checkedWhen={this.triggersUseParams()}>
-                  <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
-                  <span className="pls">
-                    <HelpButton onClick={this.toggleTriggerHelp} toggled={this.getActivePanel() === 'helpForTriggerParameters'} />
-                  </span>
-                </Checklist.Item>
-              </Checklist>
-
-            </div>
-            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
-              <div className="mbm">
-              {this.getBehaviorTriggers().map(function(trigger, index) {
-                return (
-                  <TriggerInput
-                    className={index === 0 ? "form-input-large" : ""}
-                    includeHelp={index === 0}
-                    key={"BehaviorEditorTrigger" + index}
-                    id={"trigger" + index}
-                    ref={"trigger" + index}
-                    value={trigger.text}
-                    requiresMention={trigger.requiresMention}
-                    isRegex={trigger.isRegex}
-                    caseSensitive={trigger.caseSensitive}
-                    hideDelete={!this.hasMultipleTriggers()}
-                    onChange={this.updateTriggerAtIndexWithTrigger.bind(this, index)}
-                    onDelete={this.deleteTriggerAtIndex.bind(this, index)}
-                    onEnterKey={this.onTriggerEnterKey.bind(this, index)}
-                    onHelpClick={this.toggleTriggerOptionsHelp}
-                    helpVisible={this.getActivePanel() === 'helpForTriggerOptions'}
-                  />
-                );
-              }, this)}
-              </div>
-              <div className="prsymbol mobile-prn align-r mobile-align-l">
-                <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
-              </div>
-            </div>
-          </div>
+          <TriggerConfiguration
+            isFinishedBehavior={this.isFinishedBehavior()}
+            triggers={this.getBehaviorTriggers()}
+            onToggleHelp={this.toggleTriggerHelp}
+            helpVisible={this.getActivePanel() === 'helpForTriggerParameters'}
+            onTriggerAdd={this.addTrigger}
+            onTriggerChange={this.updateTriggerAtIndexWithTrigger}
+            onTriggerDelete={this.deleteTriggerAtIndex}
+          />
 
           <Collapsible revealWhen={this.state.revealCodeEditor}>
             <hr className="mtn" />
@@ -1490,10 +1409,6 @@ return React.createClass({
 
           <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerParameters'}>
             <TriggerHelp onCollapseClick={this.toggleTriggerHelp} />
-          </Collapsible>
-
-          <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerOptions'}>
-            <TriggerOptionsHelp onCollapseClick={this.toggleTriggerOptionsHelp} />
           </Collapsible>
 
           <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>

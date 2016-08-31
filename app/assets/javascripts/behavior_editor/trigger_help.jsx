@@ -40,6 +40,24 @@ return React.createClass({
             <span>that you use in your triggers. The function will receive whatever the user typed.</span>
           </li>
         </ul>
+
+        <h5>Trigger options</h5>
+        <p>The way triggers are interpreted can be changed with certain options.</p>
+
+        <ul className="list-space-s">
+          <li><b className="type-m">🗣 🤖 </b> — if checked, Ellipsis will only respond to this trigger when someone mentions
+          @ellipsis or starts their message with “…”.</li>
+          <li>
+            <b className="type-m"><i>Aa</i></b> — if checked, Ellipsis will only respond if uppercase and lowercase letters match exactly. If
+            unchecked, letter case is ignored.
+          </li>
+          <li>
+            <b className="type-m"><code>/^…$/</code></b> — if checked, this trigger will be interpreted as a regular expression
+            pattern (regex) instead of normal text. Use regex capturing parentheses
+            to collect user input instead of the <code>{"{paramName}"}</code> style.
+          </li>
+        </ul>
+
       </HelpPanel>
     );
   }
