@@ -55,15 +55,16 @@ trait MessageContext extends Context {
 
   def userInfo(ws: WSClient): DBIO[UserInfo] = UserInfo.forLoginInfo(LoginInfo(name, userIdForContext), teamId, ws)
 
+  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+
   def ensureUser(implicit ec: ExecutionContext): DBIO[User] = {
-    val loginInfo = LoginInfo(name, userIdForContext)
     LinkedAccount.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
       maybeLinkedAccount.map(DBIO.successful).getOrElse {
         User.createOnTeamWithId(teamId).save.flatMap { user =>
           LinkedAccount(user, loginInfo, DateTime.now).save
         }
       }.map(_.user)
-    }
+    } transactionally
   }
 
 }

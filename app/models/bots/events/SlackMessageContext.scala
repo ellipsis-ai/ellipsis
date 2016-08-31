@@ -1,7 +1,7 @@
 package models.bots.events
 
 import models.Team
-import models.accounts.{OAuth2Token, SlackBotProfile}
+import models.accounts._
 import models.bots.SlackMessageFormatter
 import models.bots.conversations.{Conversation, ConversationQueries}
 import slack.api.SlackApiClient
@@ -77,6 +77,12 @@ case class SlackMessageContext(
 
   def maybeOngoingConversation: DBIO[Option[Conversation]] = {
     ConversationQueries.findOngoingFor(message.user, Conversation.SLACK_CONTEXT)
+  }
+
+  override def ensureUser(implicit ec: ExecutionContext): DBIO[User] = {
+    super.ensureUser.flatMap { user =>
+      SlackProfileQueries.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)
+    } transactionally
   }
 }
 
