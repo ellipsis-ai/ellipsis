@@ -58,13 +58,11 @@ trait MessageContext extends Context {
   def ensureUser(implicit ec: ExecutionContext): DBIO[User] = {
     val loginInfo = LoginInfo(name, userIdForContext)
     LinkedAccount.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
-      maybeLinkedAccount.map { linkedAccount =>
-        DBIO.successful(linkedAccount.user)
-      }.getOrElse {
+      maybeLinkedAccount.map(DBIO.successful).getOrElse {
         User.createOnTeamWithId(teamId).save.flatMap { user =>
-          LinkedAccount(user, loginInfo, DateTime.now).save.map(_.user)
+          LinkedAccount(user, loginInfo, DateTime.now).save
         }
-      }
+      }.map(_.user)
     }
   }
 
