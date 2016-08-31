@@ -1,8 +1,10 @@
 package models.bots.events
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import models.accounts.{LinkedAccount, User}
 import models.bots.UserInfo
 import models.bots.conversations.Conversation
+import org.joda.time.DateTime
 import play.api.libs.ws.WSClient
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
@@ -17,7 +19,7 @@ trait MessageContext extends Context {
 
   val includesBotMention: Boolean
 
-  def sendMessage(text: String)(implicit ec: ExecutionContext): Unit
+  def sendMessage(text: String, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
@@ -52,6 +54,18 @@ trait MessageContext extends Context {
   val isResponseExpected: Boolean
 
   def userInfo(ws: WSClient): DBIO[UserInfo] = UserInfo.forLoginInfo(LoginInfo(name, userIdForContext), teamId, ws)
+
+  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+
+  def ensureUser(implicit ec: ExecutionContext): DBIO[User] = {
+    LinkedAccount.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
+      maybeLinkedAccount.map(DBIO.successful).getOrElse {
+        User.createOnTeamWithId(teamId).save.flatMap { user =>
+          LinkedAccount(user, loginInfo, DateTime.now).save
+        }
+      }.map(_.user)
+    } transactionally
+  }
 
 }
 

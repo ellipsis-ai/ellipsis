@@ -1,7 +1,7 @@
 package models.bots.events
 
 import models.Team
-import models.accounts.{OAuth2Token, SlackBotProfile}
+import models.accounts._
 import models.bots.SlackMessageFormatter
 import models.bots.conversations.{Conversation, ConversationQueries}
 import slack.api.SlackApiClient
@@ -43,11 +43,17 @@ case class SlackMessageContext(
 
   lazy val isResponseExpected: Boolean = includesBotMention
 
-  def sendMessage(unformattedText: String)(implicit ec: ExecutionContext): Unit = {
+  def sendMessage(unformattedText: String, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
     val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
     // The Slack API considers sending an empty message to be an error rather than a no-op
     if (formattedText.nonEmpty) {
-      client.apiClient.postChatMessage(message.channel, formattedText, asUser = Some(true))
+      val apiClient = client.apiClient
+      val maybeDMChannel = if (forcePrivate) {
+        apiClient.listIms.find(_.user == message.user).map(_.id)
+      } else {
+        None
+      }
+      apiClient.postChatMessage(maybeDMChannel.getOrElse(message.channel), formattedText, asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
     }
   }
 
@@ -71,6 +77,12 @@ case class SlackMessageContext(
 
   def maybeOngoingConversation: DBIO[Option[Conversation]] = {
     ConversationQueries.findOngoingFor(message.user, Conversation.SLACK_CONTEXT)
+  }
+
+  override def ensureUser(implicit ec: ExecutionContext): DBIO[User] = {
+    super.ensureUser.flatMap { user =>
+      SlackProfileQueries.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)
+    } transactionally
   }
 }
 

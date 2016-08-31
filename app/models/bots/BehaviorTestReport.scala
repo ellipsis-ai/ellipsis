@@ -19,7 +19,7 @@ case class TestMessageContext(fullMessageText: String, includesBotMention: Boole
 
   def maybeOngoingConversation: DBIO[Option[Conversation]] = DBIO.successful(None)
 
-  def sendMessage(text: String)(implicit ec: ExecutionContext): Unit = {
+  def sendMessage(text: String, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
     messageBuffer += text
   }
 
