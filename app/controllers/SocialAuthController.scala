@@ -199,32 +199,31 @@ class SocialAuthController @Inject() (
             maybeRedirect: Option[String]
             ) = UserAwareAction.async { implicit request =>
     val successRedirect = validatedRedirectUri(maybeRedirect.getOrElse(routes.ApplicationController.index().toString))
-    request.identity.map { user =>
-      Future.successful(Redirect(successRedirect))
-    }.getOrElse {
-      val action = for {
-        maybeToken <- LoginTokenQueries.find(token)
-        result <- maybeToken.map { token =>
-          if (token.isValid) {
-            for {
-              _ <- token.use
-              maybeUser <- User.find(token.userId)
-              resultForValidToken <- maybeUser.map { user =>
-                authenticatorResultForUserAndResult(user, Redirect(successRedirect))
-              }.getOrElse {
-                DBIO.successful(Redirect(routes.SlackController.signIn(maybeRedirect)))
-              }
-            } yield resultForValidToken
-          } else {
-            DBIO.successful(Ok(views.html.loginTokenExpired()))
-          }
-        }.getOrElse {
-          DBIO.successful(NotFound("Token not found"))
+    val action = for {
+      maybeToken <- LoginTokenQueries.find(token)
+      result <- maybeToken.map { token =>
+        val isAlreadyLoggedInAsTokenUser = request.identity.exists(_.id == token.userId)
+        if (isAlreadyLoggedInAsTokenUser) {
+          DBIO.successful(Redirect(successRedirect))
+        } else if (token.isValid) {
+          for {
+            _ <- token.use
+            maybeUser <- User.find(token.userId)
+            resultForValidToken <- maybeUser.map { user =>
+              authenticatorResultForUserAndResult(user, Redirect(successRedirect))
+            }.getOrElse {
+              DBIO.successful(Redirect(routes.SlackController.signIn(maybeRedirect)))
+            }
+          } yield resultForValidToken
+        } else {
+          DBIO.successful(Ok(views.html.loginTokenExpired()))
         }
-      } yield result
+      }.getOrElse {
+        DBIO.successful(NotFound("Token not found"))
+      }
+    } yield result
 
-      models.run(action)
-    }
+    models.run(action)
   }
 
   def signOut = SecuredAction.async { implicit request =>
