@@ -14,12 +14,10 @@ import models._
 import models.accounts._
 import models.bots._
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
 import services.AWSLambdaService
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
@@ -35,8 +33,6 @@ class BehaviorEditorController @Inject() (
                                           val models: Models,
                                           val lambdaService: AWSLambdaService,
                                           val testReportBuilder: BehaviorTestReportBuilder,
-                                          val ws: WSClient,
-                                          val cache: CacheApi,
                                           val socialProviderRegistry: SocialProviderRegistry)
   extends ReAuthable {
 

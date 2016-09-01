@@ -7,11 +7,9 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.Models
 import models.accounts.User
-import models.bots._
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.utils.UriEncoding
-import services.AWSLambdaService
 import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -20,8 +18,6 @@ class SlackController @Inject() (
                                   val env: Environment[User, CookieAuthenticator],
                                   val configuration: Configuration,
                                   val models: Models,
-                                  val lambdaService: AWSLambdaService,
-                                  val testReportBuilder: BehaviorTestReportBuilder,
                                   socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] {
 
