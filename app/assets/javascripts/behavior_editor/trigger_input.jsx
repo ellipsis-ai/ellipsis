@@ -86,7 +86,7 @@ return React.createClass({
       return;
     }
 
-    var url = jsRoutes.controllers.ApplicationController.regexValidationErrorsFor(this.props.value).url;
+    var url = jsRoutes.controllers.BehaviorEditorController.regexValidationErrorsFor(this.props.value).url;
     fetch(url, { credentials: 'same-origin' })
       .then(function(response) {
         return response.json();

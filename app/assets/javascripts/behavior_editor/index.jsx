@@ -540,7 +540,7 @@ return React.createClass({
   },
 
   loadVersions: function() {
-    var url = jsRoutes.controllers.ApplicationController.versionInfoFor(this.props.behaviorId).url;
+    var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.props.behaviorId).url;
     this.setState({
       versionsLoadStatus: 'loading'
     });

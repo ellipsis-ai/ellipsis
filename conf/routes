@@ -6,18 +6,18 @@
 GET         /                                         @controllers.ApplicationController.index(teamId: Option[String] ?= None)
 GET         /intro                                    @controllers.ApplicationController.intro(teamId: Option[String] ?= None)
 GET         /install_behaviors                        @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None)
-GET         /new_behavior                             @controllers.ApplicationController.newBehavior(teamId: Option[String] ?= None)
-GET         /edit_behavior/:id                        @controllers.ApplicationController.editBehavior(id: String, justSaved: Option[Boolean] ?= None)
+GET         /new_behavior                             @controllers.BehaviorEditorController.newBehavior(teamId: Option[String] ?= None)
+GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
 GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
 GET         /import_behavior_zip                      @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)
 POST        /import_behavior_zip                      @controllers.BehaviorImportExportController.doImportZip
 POST        /import_behavior                          @controllers.BehaviorImportExportController.doImport
-POST        /save_behavior                            @controllers.ApplicationController.saveBehavior
-POST        /delete_behavior                          @controllers.ApplicationController.deleteBehavior
-POST        /clone_behavior                           @controllers.ApplicationController.cloneBehavior
-GET         /regex_validation_errors/:pattern         @controllers.ApplicationController.regexValidationErrorsFor(pattern: String)
-GET         /version_info/:behaviorId                 @controllers.ApplicationController.versionInfoFor(behaviorId: String)
-POST        /test_behavior_version                    @controllers.ApplicationController.testBehaviorVersion
+POST        /save_behavior                            @controllers.BehaviorEditorController.save
+POST        /delete_behavior                          @controllers.BehaviorEditorController.delete
+POST        /clone_behavior                           @controllers.BehaviorEditorController.duplicate
+GET         /regex_validation_errors/:pattern         @controllers.BehaviorEditorController.regexValidationErrorsFor(pattern: String)
+GET         /version_info/:behaviorId                 @controllers.BehaviorEditorController.versionInfoFor(behaviorId: String)
+POST        /test_behavior_version                    @controllers.BehaviorEditorController.test
 
 POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
 
@@ -56,9 +56,6 @@ GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorag
 POST        /put_item                                 @controllers.DefaultStorage.putItem
 #NOCSRF
 POST        /api/post_message                         @controllers.APIController.postMessage
-
-# Javascript routing
-GET         /javascriptRoutes                         @controllers.ApplicationController.javascriptRoutes
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)

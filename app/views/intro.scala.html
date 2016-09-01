@@ -11,7 +11,7 @@
 @main("Welcome to Ellipsis", Some(teamAccess), "intro") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorImportExportController.doImport,
-    routes.javascript.ApplicationController.editBehavior
+    routes.javascript.BehaviorEditorController.edit
   )
   <div id="content" class="content">
     <div class="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
@@ -36,7 +36,7 @@
             <div class="arrow-right mobile-display-none"></div>
           </h4>
 
-          <h4>Or else <a href='@routes.ApplicationController.newBehavior(teamAccess.maybeAdminAccessToTeamId)'>teach Ellipsis something brand new.</a></h4>
+          <h4>Or else <a href='@routes.BehaviorEditorController.newBehavior(teamAccess.maybeAdminAccessToTeamId)'>teach Ellipsis something brand new.</a></h4>
 
           <ul class="type-s list-space-s checklist type-weak">
             <li>Behaviors instruct your bot how to do repetitive or cumbersome tasks, and what

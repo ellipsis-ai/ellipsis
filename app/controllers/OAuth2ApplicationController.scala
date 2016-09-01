@@ -174,7 +174,7 @@ class OAuth2ApplicationController @Inject() (
         } yield {
           maybeApplication.map { application =>
             info.maybeBehaviorId.map { behaviorId =>
-              Redirect(routes.ApplicationController.editBehavior(behaviorId))
+              Redirect(routes.BehaviorEditorController.edit(behaviorId))
             }.getOrElse {
               Redirect(routes.OAuth2ApplicationController.edit(application.id, Some(application.teamId)))
             }

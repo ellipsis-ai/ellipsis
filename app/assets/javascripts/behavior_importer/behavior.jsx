@@ -46,7 +46,7 @@ define(function(require) {
       }
       var localBehaviorId = this.getLocalBehaviorId();
       if (localBehaviorId) {
-        var url = jsRoutes.controllers.ApplicationController.editBehavior(localBehaviorId).url;
+        var url = jsRoutes.controllers.BehaviorEditorController.edit(localBehaviorId).url;
         return (
           <a
             className="mhm fade-in"

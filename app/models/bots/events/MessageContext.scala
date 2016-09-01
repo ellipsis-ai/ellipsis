@@ -23,7 +23,7 @@ trait MessageContext extends Context {
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ApplicationController.newBehavior(Some(teamId))
+      val path = controllers.routes.BehaviorEditorController.newBehavior(Some(teamId))
       s"$baseUrl$path"
     }.get
     s"[teach me something new]($newBehaviorLink)"

@@ -11,7 +11,7 @@
 @main("Published behaviors", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorImportExportController.doImport,
-    routes.javascript.ApplicationController.editBehavior
+    routes.javascript.BehaviorEditorController.edit
   )
   <div id="content" class="content">
     @views.html.behaviorTabs("install", teamAccess)

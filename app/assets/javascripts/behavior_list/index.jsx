@@ -71,7 +71,7 @@ define(function(require) {
       var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTrigger.index);
       return (
         <div>
-          <a href={jsRoutes.controllers.ApplicationController.editBehavior(version.behaviorId).url}
+          <a href={jsRoutes.controllers.BehaviorEditorController.edit(version.behaviorId).url}
             className="link-block">
             {firstTrigger.label}
             {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
