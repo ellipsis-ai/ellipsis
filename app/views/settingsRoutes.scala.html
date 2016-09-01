@@ -1,9 +1,9 @@
 @()(implicit r: RequestHeader)
 @helper.javascriptRouter("jsRoutes")(
-  routes.javascript.ApplicationController.listOAuth2Applications,
-  routes.javascript.ApplicationController.newOAuth2Application,
-  routes.javascript.ApplicationController.editOAuth2Application,
-  routes.javascript.ApplicationController.saveOAuth2Application,
+  routes.javascript.OAuth2ApplicationController.list,
+  routes.javascript.OAuth2ApplicationController.newApp,
+  routes.javascript.OAuth2ApplicationController.edit,
+  routes.javascript.OAuth2ApplicationController.save,
   routes.javascript.APITokenController.listTokens,
   routes.javascript.APITokenController.createToken,
   routes.javascript.APITokenController.revokeToken
