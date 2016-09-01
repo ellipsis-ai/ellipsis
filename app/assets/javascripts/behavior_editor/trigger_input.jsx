@@ -14,7 +14,7 @@ return React.createClass({
   mixins: [BehaviorEditorMixin],
   propTypes: {
     caseSensitive: React.PropTypes.bool.isRequired,
-    className: React.PropTypes.string,
+    large: React.PropTypes.bool,
     helpVisible: React.PropTypes.bool.isRequired,
     hideDelete: React.PropTypes.bool.isRequired,
     id: React.PropTypes.oneOfType([
@@ -126,10 +126,10 @@ return React.createClass({
   render: function() {
     return (
       <div className="columns columns-elastic mobile-columns-float mbs mobile-mbxl">
-        <div className="column column-expand prn">
+        <div className="column column-expand">
           <div className="columns columns-elastic">
             <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-              <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.className || "")}>
+              <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.large ? " form-input-large " : "")}>
                 <label htmlFor={this.props.id}>/</label>
               </div>
             </div>
@@ -138,7 +138,7 @@ return React.createClass({
                 className={
                   " form-input-borderless " +
                   (this.props.isRegex ? " type-monospace " : "") +
-                  (this.props.className || "")
+                  (this.props.large ? " form-input-large " : "")
                 }
                 id={this.props.id}
                 ref="input"
@@ -171,15 +171,17 @@ return React.createClass({
               </Collapsible>
             </div>
             <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-              <div className={"type-disabled type-monospace form-input form-input-borderless prs " + (this.props.className || "")}>
+              <div className={
+                "type-disabled type-monospace form-input form-input-borderless prs " +
+                (this.props.large ? " form-input-large " : "")
+              }>
                 <label htmlFor={this.props.id}>/</label>
               </div>
             </div>
           </div>
         </div>
         <div className="column column-shrink prn position-relative">
-          <div className={"display-ellipsis form-input form-input-borderless " +
-            (this.props.className || "")}>
+          <div className={"display-ellipsis mobile-pts " + (this.props.large ? " pts " : " ptxs ")}>
             {this.props.includeHelp ? (
               <HelpButton onClick={this.toggleHelp} toggled={this.props.helpVisible} className="align-m mrs" />
               ) : ""}

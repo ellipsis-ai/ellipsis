@@ -481,14 +481,14 @@ button.button-activated {
 
     &:first-child:focus {
       padding-left: @s;
-      border-top-left-radius: @border-radius-tiny + 1;
-      border-bottom-left-radius: @border-radius-tiny + 1;
+      border-top-left-radius: @border-radius-tiny - 1;
+      border-bottom-left-radius: @border-radius-tiny - 1;
     }
 
     &:last-child:focus {
       padding-right: @s;
-      border-top-right-radius: @border-radius-tiny + 1;
-      border-bottom-right-radius: @border-radius-tiny + 1;
+      border-top-right-radius: @border-radius-tiny - 1;
+      border-bottom-right-radius: @border-radius-tiny - 1;
     }
   }
 }

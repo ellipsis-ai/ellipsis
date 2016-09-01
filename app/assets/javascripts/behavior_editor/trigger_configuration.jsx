@@ -95,7 +95,7 @@ define(function(require) {
               {this.props.triggers.map(function(trigger, index) {
                 return (
                   <TriggerInput
-                    className={index === 0 ? "form-input-large" : ""}
+                    large={index === 0}
                     includeHelp={index === 0}
                     key={"BehaviorEditorTrigger" + index}
                     id={"trigger" + index}
