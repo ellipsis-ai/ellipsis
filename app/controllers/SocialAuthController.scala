@@ -15,6 +15,7 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
 import models._
 import models.accounts._
+import models.accounts.user.User
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{RequestHeader, Result}

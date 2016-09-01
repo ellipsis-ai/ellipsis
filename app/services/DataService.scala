@@ -1,6 +1,7 @@
 package services
 
 import models.accounts._
+import models.accounts.user.UserService
 import slick.dbio.DBIO
 
 import scala.concurrent.Future

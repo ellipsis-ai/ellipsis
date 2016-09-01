@@ -2,6 +2,7 @@ package models.bots.events
 
 import models.Team
 import models.accounts._
+import models.accounts.user.User
 import models.bots.SlackMessageFormatter
 import models.bots.conversations.{Conversation, ConversationQueries}
 import services.DataService

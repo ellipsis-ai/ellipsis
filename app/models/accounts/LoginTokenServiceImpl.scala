@@ -3,6 +3,7 @@ package models.accounts
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import javax.inject.{Inject, Singleton}
 
+import models.accounts.user.User
 import models.{IDs, Models}
 import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._

@@ -3,8 +3,10 @@ package models.accounts
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.Team
+import models.accounts.user.{User, UserQueries}
 import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class LinkedAccount(user: User, loginInfo: LoginInfo, createdAt: DateTime) {

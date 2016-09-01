@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import json.BehaviorVersionData
-import models.accounts.{User, UserQueries}
+import models.accounts.user.{User, UserQueries}
 import models.bots.config.{AWSConfig, AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTriggerQueries

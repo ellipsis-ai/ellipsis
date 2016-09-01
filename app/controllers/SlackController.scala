@@ -2,15 +2,16 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
+import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.Models
-import models.accounts.User
+import models.accounts.user.User
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.utils.UriEncoding
 import slick.dbio.DBIO
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class SlackController @Inject() (

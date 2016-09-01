@@ -1,11 +1,12 @@
 package models.bots
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
-import models.accounts.User
+import models.accounts.user.User
 import models.{IDs, Team}
 import org.joda.time.DateTime
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class Behavior(

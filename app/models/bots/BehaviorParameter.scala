@@ -1,8 +1,9 @@
 package models.bots
 
-import models.accounts.User
+import models.accounts.user.User
 import models.{IDs, Team}
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class BehaviorParameter(
