@@ -1,8 +1,8 @@
-package models.accounts
+package models.accounts.logintoken
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import javax.inject.{Inject, Singleton}
 
+import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.accounts.user.User
 import models.{IDs, Models}
 import org.joda.time.DateTime

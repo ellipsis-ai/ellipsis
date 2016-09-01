@@ -1,4 +1,4 @@
-package models.accounts
+package models.accounts.logintoken
 
 import org.joda.time.DateTime
 
