@@ -6,7 +6,8 @@ var React = require('react'),
   DeleteButton = require('./delete_button'),
   HelpButton = require('../help/help_button'),
   Input = require('../form/input'),
-  Collapsible = require('../collapsible');
+  Collapsible = require('../collapsible'),
+  ToggleGroup = require('../form/toggle_group');
   require('whatwg-fetch');
 
 return React.createClass({
@@ -127,14 +128,6 @@ return React.createClass({
       <div className="columns columns-elastic mobile-columns-float mbs mobile-mbxl">
         <div className="column column-expand prn">
           <div className="columns columns-elastic">
-            <div className={"column column-shrink prn " + (this.props.requiresMention ? "" : "display-none")}>
-              <div className={
-                "type-weak type-s form-input form-input-borderless prxs " +
-                (this.props.className || "")
-              }>
-                <label htmlFor={this.props.id}>@ellipsis:</label>
-              </div>
-            </div>
             <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
               <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.className || "")}>
                 <label htmlFor={this.props.id}>/</label>
@@ -190,11 +183,22 @@ return React.createClass({
             {this.props.includeHelp ? (
               <HelpButton onClick={this.toggleHelp} toggled={this.props.helpVisible} className="align-m mrs" />
               ) : ""}
-            <label className="mrm type-s" title="Only respond when someone mentions @ellipsis">
-              <Checkbox
-                checked={this.props.requiresMention}
-                onChange={this.onChange.bind(this, 'requiresMention')}
-              /> <span>🗣 🤖</span>
+            <label className="mrm">
+              <ToggleGroup className="form-toggle-group-s align-m">
+                <ToggleGroup.Item
+                  title="Ellipsis will respond to any message with this phrase"
+                  label="Any message"
+                  activeWhen={!this.props.requiresMention}
+                  onClick={this.onChange.bind(this, 'requiresMention', false)}
+                />
+                <ToggleGroup.Item
+                  title="Ellipsis will only respond when mentioned, or when a message begins with three periods
+                  “…”."
+                  label="To Ellipsis"
+                  activeWhen={this.props.requiresMention}
+                  onClick={this.onChange.bind(this, 'requiresMention', true)}
+                />
+              </ToggleGroup>
             </label>
             <label
               className={"mrm type-s " + (this.state.highlightCaseSensitivity ? "blink-twice" : "")}

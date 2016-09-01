@@ -45,8 +45,15 @@ return React.createClass({
         <p>The way triggers are interpreted can be changed with certain options.</p>
 
         <ul className="list-space-s">
-          <li><b className="type-m">🗣 🤖 </b> — if checked, Ellipsis will only respond to this trigger when someone mentions
-          @ellipsis or starts their message with “…”.</li>
+          <li>
+            <span><b className="type-m">Any message</b> — if selected, Ellipsis will respond when a phrase </span>
+            <span>is used at any time in any channel Ellipsis participates in.</span>
+          </li>
+          <li>
+            <span><b className="type-m">To Ellipsis</b> — if selected, Ellipsis will only respond when </span>
+            <span>someone mentions @Ellipsis in a message, sends a direct message to Ellipsis, or begins a message </span>
+            <span>with three periods (“<b>…</b>”).</span>
+          </li>
           <li>
             <b className="type-m"><i>Aa</i></b> — if checked, Ellipsis will only respond if uppercase and lowercase letters match exactly. If
             unchecked, letter case is ignored.
