@@ -32,6 +32,7 @@ class SocialAuthController @Inject() (
                                        val models: Models,
                                        slackProvider: SlackProvider,
                                        userService: UserService,
+                                       loginTokenService: LoginTokenService,
                                        authInfoRepository: AuthInfoRepository,
                                        socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] with Logger {
@@ -200,14 +201,14 @@ class SocialAuthController @Inject() (
             ) = UserAwareAction.async { implicit request =>
     val successRedirect = validatedRedirectUri(maybeRedirect.getOrElse(routes.ApplicationController.index().toString))
     val action = for {
-      maybeToken <- LoginTokenQueries.find(token)
+      maybeToken <- DBIO.from(loginTokenService.find(token))
       result <- maybeToken.map { token =>
         val isAlreadyLoggedInAsTokenUser = request.identity.exists(_.id == token.userId)
         if (isAlreadyLoggedInAsTokenUser) {
           DBIO.successful(Redirect(successRedirect))
         } else if (token.isValid) {
           for {
-            _ <- token.use
+            _ <- DBIO.from(loginTokenService.use(token))
             maybeUser <- User.find(token.userId)
             resultForValidToken <- maybeUser.map { user =>
               authenticatorResultForUserAndResult(user, Redirect(successRedirect))
