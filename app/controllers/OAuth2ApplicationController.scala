@@ -28,7 +28,6 @@ class OAuth2ApplicationController @Inject() (
                                               val configuration: Configuration,
                                               val models: Models,
                                               val lambdaService: AWSLambdaService,
-                                              val testReportBuilder: BehaviorTestReportBuilder,
                                               val ws: WSClient,
                                               val cache: CacheApi,
                                               val socialProviderRegistry: SocialProviderRegistry)
