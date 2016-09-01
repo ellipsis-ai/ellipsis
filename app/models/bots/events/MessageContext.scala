@@ -57,7 +57,7 @@ trait MessageContext extends Context {
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
 
   def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
-    dataService.userService.ensureUserFor(loginInfo, teamId)
+    dataService.users.ensureUserFor(loginInfo, teamId)
   }
 
 }

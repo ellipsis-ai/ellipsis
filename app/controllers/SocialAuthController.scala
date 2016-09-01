@@ -104,7 +104,7 @@ class SocialAuthController @Inject() (
           linkedAccount <- models.run(LinkedAccount.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
             maybeExisting.map(DBIO.successful).getOrElse {
               val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
-                dataService.userService.createFor(botProfile.teamId)
+                dataService.users.createFor(botProfile.teamId)
               })
               eventualUser.flatMap { user =>
                 LinkedAccount(user, profile.loginInfo, DateTime.now).save
@@ -172,7 +172,7 @@ class SocialAuthController @Inject() (
               linkedAccount <- models.run(
                 maybeExistingLinkedAccount.map(DBIO.successful).getOrElse {
                   val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
-                    dataService.userService.createFor(teamId)
+                    dataService.users.createFor(teamId)
                   })
                   eventualUser.flatMap { user =>
                     LinkedAccount(user, profile.loginInfo, DateTime.now).save
@@ -199,15 +199,15 @@ class SocialAuthController @Inject() (
             ) = UserAwareAction.async { implicit request =>
     val successRedirect = validatedRedirectUri(maybeRedirect.getOrElse(routes.ApplicationController.index().toString))
     val action = for {
-      maybeToken <- DBIO.from(dataService.loginTokenService.find(token))
+      maybeToken <- DBIO.from(dataService.loginTokens.find(token))
       result <- maybeToken.map { token =>
         val isAlreadyLoggedInAsTokenUser = request.identity.exists(_.id == token.userId)
         if (isAlreadyLoggedInAsTokenUser) {
           DBIO.successful(Redirect(successRedirect))
         } else if (token.isValid) {
           for {
-            _ <- DBIO.from(dataService.loginTokenService.use(token))
-            maybeUser <- DBIO.from(dataService.userService.find(token.userId))
+            _ <- DBIO.from(dataService.loginTokens.use(token))
+            maybeUser <- DBIO.from(dataService.users.find(token.userId))
             resultForValidToken <- maybeUser.map { user =>
               authenticatorResultForUserAndResult(user, Redirect(successRedirect))
             }.getOrElse {

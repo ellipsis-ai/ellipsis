@@ -86,7 +86,7 @@ class AWSLambdaServiceImpl @Inject() (
           }.getOrElse {
             missingOAuth2Applications.headOption.map { firstMissingOAuth2App =>
               event.context.ensureUser(dataService).flatMap { user =>
-                dataService.loginTokenService.createFor(user).map { loginToken =>
+                dataService.loginTokens.createFor(user).map { loginToken =>
                   OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
                 }
               }
