@@ -10,9 +10,9 @@ import scala.concurrent.Future
 
 @Singleton
 class PostgresDataService @Inject() (
-                              val models: Models,
-                              val userService: UserService,
-                              val loginTokenService: LoginTokenService
+                                      val models: Models,
+                                      val users: UserService,
+                                      val loginTokens: LoginTokenService
                             ) extends DataService {
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)

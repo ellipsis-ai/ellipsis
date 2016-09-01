@@ -16,7 +16,7 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
     for {
       maybeTeam <- Team.find(messageContext.teamId)
       maybeUser <- maybeTeam.map { team =>
-        DBIO.from(dataService.userService.findFromMessageContext(messageContext, team))
+        DBIO.from(dataService.users.findFromMessageContext(messageContext, team))
       }.getOrElse(DBIO.successful(None))
       messages <- messageContext.recentMessages
       qaExtractor <- DBIO.successful(QuestionAnswerExtractor(messages))
