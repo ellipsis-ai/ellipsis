@@ -10,7 +10,7 @@
 
 @main("Published behaviors", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
-    routes.javascript.ApplicationController.doImportBehavior,
+    routes.javascript.BehaviorImportExportController.doImport,
     routes.javascript.ApplicationController.editBehavior
   )
   <div id="content" class="content">

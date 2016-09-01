@@ -180,7 +180,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <form action={jsRoutes.controllers.ApplicationController.saveOAuth2Application().url} method="POST">
+        <form action={jsRoutes.controllers.OAuth2ApplicationController.save().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
           <input type="hidden" name="requiredOAuth2ApiConfigId" value={this.props.requiredOAuth2ApiConfigId} />
@@ -248,7 +248,7 @@ define(function(require) {
       return (
         <h3 className="mvn ptxxl type-weak display-ellipsis">
           <span className="mrs">
-            <a href={jsRoutes.controllers.ApplicationController.listOAuth2Applications().url}>API applications</a>
+            <a href={jsRoutes.controllers.OAuth2ApplicationController.list().url}>API applications</a>
           </span>
           <span className="mhs">→</span>
           {this.renderApplicationHeader()}

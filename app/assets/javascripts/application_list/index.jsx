@@ -165,7 +165,7 @@ define(function(require) {
 
     renderApplicationList: function() {
       var grouped = this.getGroupedApplications();
-      var route = jsRoutes.controllers.ApplicationController.editOAuth2Application;
+      var route = jsRoutes.controllers.OAuth2ApplicationController.edit;
       var groupKeys = Object.keys(grouped);
       return (
         <div>
@@ -205,7 +205,7 @@ define(function(require) {
       return (
         <div className="mvxl">
           <a className="button"
-            href={jsRoutes.controllers.ApplicationController.newOAuth2Application().url}
+            href={jsRoutes.controllers.OAuth2ApplicationController.newApp().url}
           >
             Add a new API application
           </a>
