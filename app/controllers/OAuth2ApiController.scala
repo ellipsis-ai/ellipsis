@@ -7,13 +7,9 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models._
 import models.accounts._
-import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
-import play.api.libs.ws.WSClient
-import services.AWSLambdaService
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -22,11 +18,7 @@ import scala.concurrent.Future
 class OAuth2ApiController @Inject() (
                                       val messagesApi: MessagesApi,
                                       val env: Environment[User, CookieAuthenticator],
-                                      val configuration: Configuration,
                                       val models: Models,
-                                      val lambdaService: AWSLambdaService,
-                                      val ws: WSClient,
-                                      val cache: CacheApi,
                                       val socialProviderRegistry: SocialProviderRegistry)
   extends ReAuthable {
 

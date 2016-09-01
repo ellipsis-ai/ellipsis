@@ -8,7 +8,6 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models._
 import models.accounts._
 import models.bots._
-import play.api.Configuration
 import play.api.i18n.MessagesApi
 import services.AWSLambdaService
 import slick.dbio.DBIO
@@ -17,7 +16,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class AdminController @Inject() (
                                   val messagesApi: MessagesApi,
                                   val env: Environment[User, CookieAuthenticator],
-                                  val configuration: Configuration,
                                   val models: Models,
                                   val lambdaService: AWSLambdaService,
                                   val socialProviderRegistry: SocialProviderRegistry)
