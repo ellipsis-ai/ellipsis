@@ -89,7 +89,7 @@ class BehaviorImportExportController @Inject() (
             }.getOrElse(DBIO.successful(None))
           } yield {
             maybeBehaviorVersion.map { behaviorVersion =>
-              Redirect(routes.ApplicationController.editBehavior(behaviorVersion.behavior.id))
+              Redirect(routes.BehaviorEditorController.edit(behaviorVersion.behavior.id))
             }.getOrElse {
               NotFound(s"Team not found: ${info.teamId}")
             }
@@ -134,7 +134,7 @@ class BehaviorImportExportController @Inject() (
                 if (request.headers.get("x-requested-with").contains("XMLHttpRequest")) {
                   Ok(Json.obj("behaviorId" -> behaviorVersion.behavior.id))
                 } else {
-                  Redirect(routes.ApplicationController.editBehavior(behaviorVersion.behavior.id, justSaved = Some(true)))
+                  Redirect(routes.BehaviorEditorController.edit(behaviorVersion.behavior.id, justSaved = Some(true)))
                 }
               }.getOrElse {
                 NotFound("Behavior not found")

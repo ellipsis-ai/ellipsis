@@ -71,7 +71,7 @@ case class BehaviorVersion(
 
   def editLinkFor(configuration: Configuration): Option[String] = {
     configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ApplicationController.editBehavior(behavior.id)
+      val path = controllers.routes.BehaviorEditorController.edit(behavior.id)
       s"$baseUrl$path"
     }
   }

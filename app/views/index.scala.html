@@ -8,7 +8,7 @@
 
 @main("Ellipsis behavior editor", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
-    routes.javascript.ApplicationController.editBehavior
+    routes.javascript.BehaviorEditorController.edit
   )
   <div id="content" class="content">
     @views.html.behaviorTabs("view", teamAccess)

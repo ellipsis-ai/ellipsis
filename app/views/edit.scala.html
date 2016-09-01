@@ -12,8 +12,8 @@
 
 @main("Ellipsis behavior editor", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
-    routes.javascript.ApplicationController.regexValidationErrorsFor,
-    routes.javascript.ApplicationController.versionInfoFor,
+    routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
+    routes.javascript.BehaviorEditorController.versionInfoFor,
     routes.javascript.EnvironmentVariablesController.submit,
     routes.javascript.OAuth2ApplicationController.newApp
   )

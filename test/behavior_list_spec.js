@@ -5,7 +5,7 @@ import TestUtils from 'react-addons-test-utils';
 const BehaviorList = require('../app/assets/javascripts/behavior_list/index');
 
 describe('BehaviorList', () => {
-  jsRoutes.controllers.ApplicationController.editBehavior = function() { return '/edit'; };
+  jsRoutes.controllers.BehaviorEditorController.edit = function() { return '/edit'; };
 
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",
