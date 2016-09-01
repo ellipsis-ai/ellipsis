@@ -1,15 +1,14 @@
 package models.bots.events
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.{LinkedAccount, User}
+import models.accounts.User
 import models.bots.UserInfo
 import models.bots.conversations.Conversation
-import org.joda.time.DateTime
 import play.api.libs.ws.WSClient
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 trait MessageContext extends Context {
@@ -57,14 +56,8 @@ trait MessageContext extends Context {
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
 
-  def ensureUser(implicit ec: ExecutionContext): DBIO[User] = {
-    LinkedAccount.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
-      maybeLinkedAccount.map(DBIO.successful).getOrElse {
-        User.createOnTeamWithId(teamId).save.flatMap { user =>
-          LinkedAccount(user, loginInfo, DateTime.now).save
-        }
-      }.map(_.user)
-    } transactionally
+  def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
+    dataService.userService.ensureUserFor(loginInfo, teamId)
   }
 
 }

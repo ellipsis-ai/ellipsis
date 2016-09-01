@@ -7,7 +7,6 @@ import javax.inject.Inject
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
-import models.accounts.LoginTokenService
 import models.bots.config.{AWSConfig, RequiredOAuth2ApiConfig, RequiredOAuth2ApiConfigQueries}
 import models.{EnvironmentVariable, InvocationToken, Models}
 import models.bots._
@@ -16,7 +15,6 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
-import slick.dbio.DBIO
 import sun.misc.BASE64Decoder
 import utils.JavaFutureWrapper
 
@@ -31,7 +29,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        val models: Models,
                                        val ws: WSClient,
                                        val cache: CacheApi,
-                                       val loginTokenService: LoginTokenService
+                                       val dataService: DataService
                                        ) extends AWSLambdaService {
 
   import AWSLambdaConstants._
@@ -87,12 +85,11 @@ class AWSLambdaServiceImpl @Inject() (
             Future.successful(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, configuration))
           }.getOrElse {
             missingOAuth2Applications.headOption.map { firstMissingOAuth2App =>
-              val action = event.context.ensureUser.flatMap { user =>
-                DBIO.from(loginTokenService.createFor(user)).map { loginToken =>
+              event.context.ensureUser(dataService).flatMap { user =>
+                dataService.loginTokenService.createFor(user).map { loginToken =>
                   OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
                 }
               }
-              models.run(action)
             }.getOrElse {
               val payloadJson = JsObject(
                 parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++

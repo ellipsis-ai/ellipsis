@@ -1,18 +1,18 @@
 package modules
 
 import _root_.services._
-import com.google.inject.{ AbstractModule, Provides }
+import com.google.inject.{AbstractModule, Provides}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
-import com.mohiva.play.silhouette.api.{ Environment, EventBus }
+import com.mohiva.play.silhouette.api.{Environment, EventBus}
 import com.mohiva.play.silhouette.impl.authenticators._
 import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.providers.oauth2.state.DummyStateProvider
 import com.mohiva.play.silhouette.impl.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.util._
-import models.accounts.{User, SlackProvider}
+import models.accounts.{SlackProvider, User, UserService, UserServiceImpl}
 import models.silhouette._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._

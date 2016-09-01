@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import json.BehaviorVersionData
-import models.accounts.User
+import models.accounts.{User, UserQueries}
 import models.bots.config.{AWSConfig, AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTriggerQueries
@@ -217,7 +217,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 object BehaviorVersionQueries {
 
   def all = TableQuery[BehaviorVersionsTable]
-  def allWithUser = all.joinLeft(User.all).on(_.maybeAuthorId === _.id)
+  def allWithUser = all.joinLeft(UserQueries.all).on(_.maybeAuthorId === _.id)
   def allWithBehavior = allWithUser.join(BehaviorQueries.allWithTeam).on(_._1.behaviorId === _._1.id)
 
   type TupleType = ((RawBehaviorVersion, Option[User]), (RawBehavior, Team))
