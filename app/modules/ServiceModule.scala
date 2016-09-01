@@ -3,7 +3,7 @@ package modules
 import com.google.inject.{AbstractModule, Provides}
 import models.Models
 import models.accounts.user.UserService
-import models.accounts.{LoginTokenService, LoginTokenServiceImpl}
+import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
 import models.bots.BehaviorTestReportBuilder
 import models.bots.events.EventHandler
 import play.api.Configuration

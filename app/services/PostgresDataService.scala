@@ -3,7 +3,7 @@ package services
 import javax.inject._
 
 import models._
-import models.accounts._
+import models.accounts.logintoken.LoginTokenService
 import models.accounts.user.UserService
 import slick.dbio.DBIO
 

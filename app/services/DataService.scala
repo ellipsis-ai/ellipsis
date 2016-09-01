@@ -1,6 +1,6 @@
 package services
 
-import models.accounts._
+import models.accounts.logintoken.LoginTokenService
 import models.accounts.user.UserService
 import slick.dbio.DBIO
 
