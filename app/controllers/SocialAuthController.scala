@@ -1,25 +1,24 @@
 package controllers
 
-import java.net.{URLEncoder, URI}
+import java.net.{URI, URLEncoder}
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.services.AuthenticatorResult
+import services.DataService
 import com.mohiva.play.silhouette.api.util.Clock
-import models.accounts._
 import org.joda.time.DateTime
 import play.api.Configuration
-import services.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
+import com.mohiva.play.silhouette.api.services.AuthenticatorResult
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
 import models._
+import models.accounts._
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{RequestHeader, Result}
 import slick.driver.PostgresDriver.api._
-
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -31,8 +30,7 @@ class SocialAuthController @Inject() (
                                        val clock: Clock,
                                        val models: Models,
                                        slackProvider: SlackProvider,
-                                       userService: UserService,
-                                       loginTokenService: LoginTokenService,
+                                       dataService: DataService,
                                        authInfoRepository: AuthInfoRepository,
                                        socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] with Logger {
@@ -106,7 +104,7 @@ class SocialAuthController @Inject() (
           linkedAccount <- models.run(LinkedAccount.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
             maybeExisting.map(DBIO.successful).getOrElse {
               val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
-                userService.createFor(botProfile.teamId)
+                dataService.userService.createFor(botProfile.teamId)
               })
               eventualUser.flatMap { user =>
                 LinkedAccount(user, profile.loginInfo, DateTime.now).save
@@ -174,7 +172,7 @@ class SocialAuthController @Inject() (
               linkedAccount <- models.run(
                 maybeExistingLinkedAccount.map(DBIO.successful).getOrElse {
                   val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
-                    userService.createFor(teamId)
+                    dataService.userService.createFor(teamId)
                   })
                   eventualUser.flatMap { user =>
                     LinkedAccount(user, profile.loginInfo, DateTime.now).save
@@ -201,15 +199,15 @@ class SocialAuthController @Inject() (
             ) = UserAwareAction.async { implicit request =>
     val successRedirect = validatedRedirectUri(maybeRedirect.getOrElse(routes.ApplicationController.index().toString))
     val action = for {
-      maybeToken <- DBIO.from(loginTokenService.find(token))
+      maybeToken <- DBIO.from(dataService.loginTokenService.find(token))
       result <- maybeToken.map { token =>
         val isAlreadyLoggedInAsTokenUser = request.identity.exists(_.id == token.userId)
         if (isAlreadyLoggedInAsTokenUser) {
           DBIO.successful(Redirect(successRedirect))
         } else if (token.isValid) {
           for {
-            _ <- DBIO.from(loginTokenService.use(token))
-            maybeUser <- User.find(token.userId)
+            _ <- DBIO.from(dataService.loginTokenService.use(token))
+            maybeUser <- DBIO.from(dataService.userService.find(token.userId))
             resultForValidToken <- maybeUser.map { user =>
               authenticatorResultForUserAndResult(user, Redirect(successRedirect))
             }.getOrElse {

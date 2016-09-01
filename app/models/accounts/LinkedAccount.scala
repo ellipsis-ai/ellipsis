@@ -45,7 +45,7 @@ class LinkedAccountsTable(tag: Tag) extends Table[RawLinkedAccount](tag, "linked
 
 object LinkedAccount {
   val all = TableQuery[LinkedAccountsTable]
-  val joined = all.join(User.all).on(_.userId === _.id)
+  val joined = all.join(UserQueries.all).on(_.userId === _.id)
 
   def uncompiledFindQuery(providerId: Rep[String], providerKey: Rep[String], teamId: Rep[String]) = {
     joined.
