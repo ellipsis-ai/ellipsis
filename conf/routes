@@ -18,7 +18,8 @@ POST        /clone_behavior                           @controllers.ApplicationCo
 GET         /regex_validation_errors/:pattern         @controllers.ApplicationController.regexValidationErrorsFor(pattern: String)
 GET         /version_info/:behaviorId                 @controllers.ApplicationController.versionInfoFor(behaviorId: String)
 POST        /test_behavior_version                    @controllers.ApplicationController.testBehaviorVersion
-POST        /submit_environment_variables             @controllers.ApplicationController.submitEnvironmentVariables
+
+POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
 
 GET         /list_oauth2_applications                 @controllers.OAuth2ApplicationController.list(teamId: Option[String] ?= None)
 GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(requiredOAuth2ApiConfigId: Option[String] ?= None, teamId: Option[String] ?= None, behaviorId: Option[String] ?= None)

@@ -809,7 +809,7 @@ return React.createClass({
   },
 
   updateEnvVariables: function(envVars, cb) {
-    var url = jsRoutes.controllers.ApplicationController.submitEnvironmentVariables().url;
+    var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
     var data = {
       teamId: this.props.teamId,
       variables: envVars
