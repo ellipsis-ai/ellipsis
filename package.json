@@ -36,7 +36,8 @@
     "globals": {
       "jsRoutes": {
         "controllers": {
-          "ApplicationController": {}
+          "ApplicationController": {},
+          "BehaviorEditorController": {}
         }
       }
     },
