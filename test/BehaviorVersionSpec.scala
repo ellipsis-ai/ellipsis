@@ -1,6 +1,6 @@
-import models.accounts.User
-import models.bots.{Behavior, BehaviorVersionQueries, BehaviorQueries}
-import models.{Team, IDs}
+import models.accounts.user.User
+import models.bots.{Behavior, BehaviorQueries, BehaviorVersionQueries}
+import models.{IDs, Team}
 import org.scalatestplus.play.PlaySpec
 import slick.driver.PostgresDriver.api.{Database => PostgresDatabase}
 

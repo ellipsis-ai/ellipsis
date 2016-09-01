@@ -1,4 +1,4 @@
-package models.accounts
+package models.accounts.user
 
 import slick.driver.PostgresDriver.api._
 

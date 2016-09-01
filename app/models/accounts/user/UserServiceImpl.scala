@@ -1,8 +1,9 @@
-package models.accounts
+package models.accounts.user
 
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import models.accounts.LinkedAccount
 import models.bots.events.{MessageContext, SlackMessageContext}
 import models.{IDs, Models, Team}
 import org.joda.time.DateTime

@@ -1,13 +1,14 @@
 package json
 
 import models.Team
-import models.accounts.User
-import models.bots.config.{RequiredOAuth2ApiConfigQueries, AWSConfigQueries}
+import models.accounts.user.User
+import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
-import models.bots.{BehaviorVersionQueries, BehaviorParameterQueries, BehaviorQueries}
+import models.bots.{BehaviorParameterQueries, BehaviorQueries, BehaviorVersionQueries}
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import slick.dbio.DBIO
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import Formatting._
 

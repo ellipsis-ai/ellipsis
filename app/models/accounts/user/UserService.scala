@@ -1,4 +1,4 @@
-package models.accounts
+package models.accounts.user
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService

@@ -8,12 +8,13 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import json._
 import models._
 import models.accounts._
+import models.accounts.user.User
 import models.bots._
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
-import services.{GithubService, AWSLambdaService}
+import services.{AWSLambdaService, GithubService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global

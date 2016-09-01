@@ -6,11 +6,12 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models._
-import models.accounts._
+import models.accounts.user.User
 import models.bots._
 import play.api.i18n.MessagesApi
 import services.AWSLambdaService
 import slick.dbio.DBIO
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AdminController @Inject() (

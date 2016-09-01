@@ -1,7 +1,7 @@
 package models.bots.events
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.User
+import models.accounts.user.User
 import models.bots.UserInfo
 import models.bots.conversations.Conversation
 import play.api.libs.ws.WSClient

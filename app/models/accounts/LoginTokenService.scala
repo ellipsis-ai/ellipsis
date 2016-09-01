@@ -1,5 +1,7 @@
 package models.accounts
 
+import models.accounts.user.User
+
 import scala.concurrent.Future
 
 trait LoginTokenService {

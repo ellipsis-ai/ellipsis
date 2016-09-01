@@ -1,8 +1,8 @@
-package models.accounts
+package models.accounts.user
 
 import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
-import models.bots.events.{MessageContext, SlackMessageContext}
-import models.{IDs, Team}
+import models.Team
+import models.accounts.LinkedAccount
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global

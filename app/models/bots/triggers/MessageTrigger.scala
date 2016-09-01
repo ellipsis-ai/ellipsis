@@ -2,7 +2,7 @@ package models.bots.triggers
 
 import java.util.regex.PatternSyntaxException
 
-import models.accounts.User
+import models.accounts.user.User
 import models.{IDs, Team}
 import models.bots._
 import models.bots.events.{Event, MessageEvent}
