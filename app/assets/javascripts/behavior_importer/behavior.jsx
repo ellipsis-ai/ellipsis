@@ -106,7 +106,7 @@ define(function(require) {
       });
       var headers = new Headers();
       headers.append('x-requested-with', 'XMLHttpRequest');
-      fetch(jsRoutes.controllers.ApplicationController.doImportBehavior().url, {
+      fetch(jsRoutes.controllers.BehaviorImportExportController.doImport().url, {
         credentials: 'same-origin',
         headers: headers,
         method: 'POST',
@@ -123,7 +123,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <form ref="form" action={jsRoutes.controllers.ApplicationController.doImportBehavior().url} method="POST">
+        <form ref="form" action={jsRoutes.controllers.BehaviorImportExportController.doImport().url} method="POST">
           <input type="hidden" name="csrfToken" value={this.props.csrfToken} />
           <input type="hidden" name="teamId" value={this.props.behaviorData.teamId} />
           <input type="hidden" name="dataJson" value={JSON.stringify(this.props.behaviorData)} />

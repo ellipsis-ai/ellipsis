@@ -18,7 +18,7 @@ define(function (require) {
               <a href={jsRoutes.controllers.APITokenController.listTokens().url}>Ellipsis API tokens</a>
             </li>
             <li className={this.activeClassWhenPageName("oauthApplications")}>
-              <a href={jsRoutes.controllers.ApplicationController.listOAuth2Applications().url}>Third-party API applications</a>
+              <a href={jsRoutes.controllers.OAuth2ApplicationController.list().url}>Third-party API applications</a>
             </li>
           </ul>
         </nav>
