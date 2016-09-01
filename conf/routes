@@ -25,9 +25,9 @@ GET         /new_oauth2_application                   @controllers.OAuth2Applica
 GET         /edit_oauth2_application/:id              @controllers.OAuth2ApplicationController.edit(id: String, teamId: Option[String] ?= None)
 POST        /save_oauth2_application                  @controllers.OAuth2ApplicationController.save
 
-GET         /new_oauth2_api                           @controllers.ApplicationController.newOAuth2Api(teamId: Option[String] ?= None)
-GET         /edit_oauth2_api/:id                      @controllers.ApplicationController.editOAuth2Api(id: String, teamId: Option[String] ?= None)
-POST        /save_oauth2_api                          @controllers.ApplicationController.saveOAuth2Api
+GET         /new_oauth2_api                           @controllers.OAuth2ApiController.newApi(teamId: Option[String] ?= None)
+GET         /edit_oauth2_api/:id                      @controllers.OAuth2ApiController.edit(id: String, teamId: Option[String] ?= None)
+POST        /save_oauth2_api                          @controllers.OAuth2ApiController.save
 
 GET         /list_api_tokens                          @controllers.APITokenController.listTokens(tokenId: Option[String] ?= None)
 POST        /create_api_token                         @controllers.APITokenController.createToken
