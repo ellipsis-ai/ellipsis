@@ -102,7 +102,6 @@ define(function(require) {
                 return (
                   <TriggerInput
                     large={index === 0}
-                    includeHelp={index === 0}
                     dropdownIsOpen={this.props.openDropdownName === `BehaviorEditorTriggerDropdown${index}`}
                     key={`BehaviorEditorTrigger${index}`}
                     id={`trigger${index}`}

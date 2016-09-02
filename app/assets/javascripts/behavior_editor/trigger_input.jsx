@@ -22,7 +22,6 @@ return React.createClass({
       React.PropTypes.number,
       React.PropTypes.string
     ]).isRequired,
-    includeHelp: React.PropTypes.bool.isRequired,
     isRegex: React.PropTypes.bool.isRequired,
     onChange: React.PropTypes.func.isRequired,
     onDelete: React.PropTypes.func.isRequired,
@@ -118,26 +117,19 @@ return React.createClass({
     this.setState({ showError: !this.state.showError });
     this.focus();
   },
-  toggleHelp: function() {
-    this.props.onHelpClick();
-  },
   focus: function() {
     this.refs.input.focus();
-  },
-
-  hasPrefix: function() {
-    return this.props.isRegex || this.props.caseSensitive;
   },
 
   getPrefix: function() {
     if (this.props.caseSensitive && this.props.isRegex) {
       return "Case-sensitive regex pattern:";
     } else if (this.props.caseSensitive) {
-      return "Case-sensitive:";
+      return "Case-sensitive phrase:";
     } else if (this.props.isRegex) {
       return "Case-insensitive regex pattern:";
     } else {
-      return "";
+      return "Phrase:";
     }
   },
 
@@ -152,18 +144,24 @@ return React.createClass({
       <div className="columns columns-elastic mobile-columns-float mbs mobile-mbxl">
         <div className="column column-expand">
           <div className="columns columns-elastic">
-            <div className={
-              "column column-shrink prn " +
-              (this.hasPrefix() ? "" : "display-none")
-            }>
-              <div className={
-                "display-ellipsis type-disabled form-input form-input-borderless " +
-                (this.props.large ? " form-input-large " : "")
-              }>
-                <label className="type-label mrxs" htmlFor={this.props.id}>
-                  {this.getPrefix()}
-                </label>
-              </div>
+            <div className="column column-shrink align-m prn">
+              <DropdownMenu
+                openWhen={this.props.dropdownIsOpen}
+                label={this.getPrefix()}
+                labelClassName="button-s mrm type-label"
+                toggle={this.props.onToggleDropdown}
+              >
+                <DropdownMenu.Item
+                  onClick={this.toggleCaseSensitive}
+                  label="Case-sensitive"
+                  checkedWhen={this.props.caseSensitive}
+                />
+                <DropdownMenu.Item
+                  onClick={this.toggleIsRegex}
+                  label="Regular expression pattern"
+                  checkedWhen={this.props.isRegex}
+                />
+              </DropdownMenu>
             </div>
             <div className="column column-expand prn position-relative">
               <Input
@@ -210,9 +208,6 @@ return React.createClass({
           "column column-shrink prxs display-ellipsis mobile-pts " +
           (this.props.large ? " pts " : " ptxs ")
         }>
-          {this.props.includeHelp ? (
-            <HelpButton onClick={this.toggleHelp} toggled={this.props.helpVisible} className="align-m mrs" />
-            ) : ""}
           <ToggleGroup className="form-toggle-group-s align-m">
             <ToggleGroup.Item
               title="Ellipsis will respond to any message with this phrase"
@@ -228,29 +223,6 @@ return React.createClass({
               onClick={this.onChange.bind(this, 'requiresMention', true)}
             />
           </ToggleGroup>
-        </div>
-        <div className={
-          "column column-shrink prn mobile-pts " +
-          (this.props.large ? " pts " : " ptxs ")
-        }>
-          <DropdownMenu
-            openWhen={this.props.dropdownIsOpen}
-            label="Options"
-            menuClassName="popup-dropdown-menu-right"
-            labelClassName="button-s"
-            toggle={this.props.onToggleDropdown}
-          >
-            <DropdownMenu.Item
-              onClick={this.toggleCaseSensitive}
-              label="Case-sensitive"
-              checkedWhen={this.props.caseSensitive}
-            />
-            <DropdownMenu.Item
-              onClick={this.toggleIsRegex}
-              label="Regular expression pattern"
-              checkedWhen={this.props.isRegex}
-            />
-          </DropdownMenu>
         </div>
         <div className="column column-shrink">
           <DeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
