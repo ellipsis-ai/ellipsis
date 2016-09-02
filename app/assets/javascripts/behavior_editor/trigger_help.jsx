@@ -55,13 +55,13 @@ return React.createClass({
             <span>with three periods (“<b>…</b>”).</span>
           </li>
           <li>
-            <b className="type-m"><i>Aa</i></b> — if checked, Ellipsis will only respond if uppercase and lowercase letters match exactly. If
-            unchecked, letter case is ignored.
+            <span><b className="type-m">Case-sensitive</b> — if checked, Ellipsis will only respond </span>
+            <span>if uppercase and lowercase letters match exactly. If unchecked, letter case is ignored.</span>
           </li>
           <li>
-            <b className="type-m"><code>/^…$/</code></b> — if checked, this trigger will be interpreted as a regular expression
-            pattern (regex) instead of normal text. Use regex capturing parentheses
-            to collect user input instead of the <code>{"{paramName}"}</code> style.
+            <span><b className="type-m">Regular expression pattern</b> — if checked, this trigger will </span>
+            <span>be interpreted as a regular expression pattern (regex) instead of normal text. Use regex capturing parentheses </span>
+            <span>to collect user input instead of the <code>{"{paramName}"}</code> style.</span>
           </li>
         </ul>
 
