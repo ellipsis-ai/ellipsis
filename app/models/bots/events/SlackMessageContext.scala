@@ -2,14 +2,16 @@ package models.bots.events
 
 import models.Team
 import models.accounts._
+import models.accounts.user.User
 import models.bots.SlackMessageFormatter
 import models.bots.conversations.{Conversation, ConversationQueries}
+import services.DataService
 import slack.api.SlackApiClient
 import slack.models.Message
 import slack.rtm.SlackRtmClient
 import slick.driver.PostgresDriver.api._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
 
@@ -79,10 +81,10 @@ case class SlackMessageContext(
     ConversationQueries.findOngoingFor(message.user, Conversation.SLACK_CONTEXT)
   }
 
-  override def ensureUser(implicit ec: ExecutionContext): DBIO[User] = {
-    super.ensureUser.flatMap { user =>
-      SlackProfileQueries.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)
-    } transactionally
+  override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
+    super.ensureUser(dataService).flatMap { user =>
+      dataService.run(SlackProfileQueries.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user))
+    }
   }
 }
 

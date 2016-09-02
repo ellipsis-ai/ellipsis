@@ -4,8 +4,8 @@ import java.io.{File, PrintWriter}
 
 import json._
 import json.Formatting._
-import models.accounts.User
-import models.bots.{BehaviorVersion, BehaviorQueries}
+import models.accounts.user.User
+import models.bots.{BehaviorQueries, BehaviorVersion}
 import play.api.libs.json.Json
 import slick.dbio.DBIO
 

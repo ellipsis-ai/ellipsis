@@ -27,6 +27,7 @@ libraryDependencies ++= Seq(
   "com.zaxxer" % "HikariCP" % "2.4.1",
   "com.github.tototoshi" %% "slick-joda-mapper" % "2.0.0",
   "org.scalatestplus" % "play_2.11" % "1.4.0" % Test,
+  "org.mockito" % "mockito-core" % "1.8.5" % Test,
   "com.mohiva" %% "play-silhouette" % "3.0.2",
   "com.typesafe.slick" %% "slick" % "3.0.0",
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc4",

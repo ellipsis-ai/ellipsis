@@ -5,9 +5,9 @@ import javax.inject._
 import models.bots.{BehaviorResponse, BehaviorResult, NoResponseResult, SimpleTextResult}
 import models.bots.builtins.BuiltinBehavior
 import models.bots.conversations.Conversation
-import models.{Models, Team}
+import models.Team
 import play.api.i18n.MessagesApi
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,7 +16,7 @@ import scala.concurrent.Future
 @Singleton
 class EventHandler @Inject() (
                                lambdaService: AWSLambdaService,
-                               models: Models,
+                               dataService: DataService,
                                messages: MessagesApi
                                ) {
 
@@ -50,14 +50,14 @@ class EventHandler @Inject() (
           result <- maybeConversation.map { conversation =>
             handleInConversation(conversation, messageEvent)
           }.getOrElse {
-            BuiltinBehavior.maybeFrom(messageEvent.context, lambdaService).map { builtin =>
+            BuiltinBehavior.maybeFrom(messageEvent.context, lambdaService, dataService).map { builtin =>
               builtin.result
             }.getOrElse {
               startInvokeConversationFor(messageEvent)
             }
           }
         } yield result
-        models.run(action)
+        dataService.run(action)
       }
       case _ => Future.successful(NoResponseResult(None))
     }

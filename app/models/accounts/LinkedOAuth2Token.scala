@@ -2,8 +2,9 @@ package models.accounts
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
+import models.accounts.user.User
 import org.joda.time.{DateTime, Seconds}
-import play.api.http.{MimeTypes, HeaderNames}
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.WSClient
 import play.api.mvc.Results
 import slick.dbio.DBIO

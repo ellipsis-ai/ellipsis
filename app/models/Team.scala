@@ -1,7 +1,8 @@
 package models
 
-import models.accounts.User
+import models.accounts.user.User
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class Team(

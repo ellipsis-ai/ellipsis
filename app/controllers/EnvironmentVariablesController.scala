@@ -9,13 +9,13 @@ import json._
 import json.Formatting._
 import models._
 import models.accounts._
+import models.accounts.user.User
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
-
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

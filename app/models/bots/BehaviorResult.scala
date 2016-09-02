@@ -1,7 +1,8 @@
 package models.bots
 
 import models.IDs
-import models.accounts.{LoginToken, OAuth2Application}
+import models.accounts.OAuth2Application
+import models.accounts.logintoken.LoginToken
 import models.bots.config.RequiredOAuth2ApiConfig
 import models.bots.events.{MessageContext, MessageEvent}
 import models.bots.templates.TemplateApplier

@@ -2,11 +2,8 @@ package models.bots.builtins
 
 import models.bots.BehaviorResult
 import models.bots.events.MessageContext
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
-
-import scala.concurrent.ExecutionContext.Implicits.global
-
 
 trait BuiltinBehavior {
   val messageContext: MessageContext
@@ -17,7 +14,7 @@ trait BuiltinBehavior {
 
 object BuiltinBehavior {
 
-  def maybeFrom(messageContext: MessageContext, lambdaService: AWSLambdaService): Option[BuiltinBehavior] = {
+  def maybeFrom(messageContext: MessageContext, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
     val setEnvironmentVariableRegex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
     val unsetEnvironmentVariableRegex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
     val startLearnConversationRegex = s"""(?i)^learn\\s*$$""".r
@@ -36,7 +33,7 @@ object BuiltinBehavior {
         case startLearnConversationRegex() => Some(LearnBehavior(messageContext, lambdaService))
         case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, messageContext, lambdaService))
         case helpRegex(helpString) => Some(DisplayHelpBehavior(helpString, messageContext, lambdaService))
-        case rememberRegex(cmd) => Some(RememberBehavior(messageContext, lambdaService))
+        case rememberRegex(cmd) => Some(RememberBehavior(messageContext, lambdaService, dataService))
         case scheduledRegex() => Some(ListScheduledBehavior(messageContext, lambdaService))
         case scheduleRegex(text, recurrence) => Some(ScheduleBehavior(text, recurrence, messageContext, lambdaService))
         case unscheduleRegex(text) => Some(UnscheduleBehavior(text, messageContext, lambdaService))

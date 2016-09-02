@@ -9,6 +9,7 @@ import json._
 import models.bots.config.RequiredOAuth2ApiConfigQueries
 import models._
 import models.accounts._
+import models.accounts.user.User
 import models.bots._
 import play.api.data.Form
 import play.api.data.Forms._

@@ -8,10 +8,11 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
-import models.bots.config.{RequiredOAuth2ApiConfigQueries, AWSConfigQueries}
+import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
 import models._
 import models.accounts._
+import models.accounts.user.User
 import models.bots._
 import play.api.Configuration
 import play.api.data.Form
@@ -21,7 +22,6 @@ import play.api.libs.json._
 import services.AWSLambdaService
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
-
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

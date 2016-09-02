@@ -5,11 +5,12 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import export.{BehaviorVersionImporter, BehaviorVersionZipImporter, BehaviorVersionExporter}
+import export.{BehaviorVersionExporter, BehaviorVersionImporter, BehaviorVersionZipImporter}
 import json._
 import json.Formatting._
 import models._
 import models.accounts._
+import models.accounts.user.User
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi

@@ -2,9 +2,11 @@ package models.bots
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts._
+import models.accounts.user.User
 import play.api.libs.ws.WSClient
 import slick.dbio.DBIO
 import play.api.libs.json._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class LinkedInfo(externalSystem: String, accessToken: String) {

@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models._
-import models.accounts._
+import models.accounts.user.User
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._

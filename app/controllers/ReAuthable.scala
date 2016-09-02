@@ -1,10 +1,10 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.{Silhouette, Environment}
+import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import models.accounts.User
-import play.api.mvc.{RequestHeader, Result, AnyContent}
+import models.accounts.user.User
+import play.api.mvc.{AnyContent, RequestHeader, Result}
 import slick.dbio.DBIO
 
 trait ReAuthable extends Silhouette[User, CookieAuthenticator] {

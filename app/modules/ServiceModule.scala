@@ -2,6 +2,8 @@ package modules
 
 import com.google.inject.{AbstractModule, Provides}
 import models.Models
+import models.accounts.user.UserService
+import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
 import models.bots.BehaviorTestReportBuilder
 import models.bots.events.EventHandler
 import play.api.Configuration
@@ -21,8 +23,24 @@ class ServiceModule extends AbstractModule with ScalaModule {
   }
 
   @Provides
-  def provideAWSLambdaService(configuration: Configuration, models: Models, ws: WSClient, cache: CacheApi): AWSLambdaService = {
-    new AWSLambdaServiceImpl(configuration, models, ws, cache)
+  def providesDataService(models: Models, userService: UserService, loginTokenService: LoginTokenService): DataService = {
+    new PostgresDataService(models, userService, loginTokenService)
+  }
+
+  @Provides
+  def providesLoginTokenService(models: Models): LoginTokenService = {
+    new LoginTokenServiceImpl(models)
+  }
+
+  @Provides
+  def provideAWSLambdaService(
+                               configuration: Configuration,
+                               models: Models,
+                               ws: WSClient,
+                               cache: CacheApi,
+                               dataService: DataService
+                             ): AWSLambdaService = {
+    new AWSLambdaServiceImpl(configuration, models, ws, cache, dataService)
   }
 
   @Provides
@@ -33,10 +51,10 @@ class ServiceModule extends AbstractModule with ScalaModule {
   @Provides
   def providesEventHandler(
                             lambdaService: AWSLambdaService,
-                            models: Models,
+                            dataService: DataService,
                             messages: MessagesApi
                             ): EventHandler = {
-    new EventHandler(lambdaService, models, messages)
+    new EventHandler(lambdaService, dataService, messages)
   }
 
 }
