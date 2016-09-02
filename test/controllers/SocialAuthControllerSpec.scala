@@ -1,5 +1,7 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.crypto.{CookieSigner, Crypter, CrypterAuthenticatorEncoder}
+import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import com.mohiva.play.silhouette.impl.authenticators.{CookieAuthenticator, CookieAuthenticatorSettings}
@@ -14,7 +16,7 @@ import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.inject.bind
+import play.api.inject.{BindingKey, bind}
 import play.api.mvc.{RequestHeader, Result}
 import services.DataService
 
@@ -31,7 +33,10 @@ class SocialAuthControllerSpec extends PlaySpec with OneAppPerSuite with Mockito
 
   lazy val controller = app.injector.instanceOf(classOf[SocialAuthController])
   lazy val dataService = app.injector.instanceOf(classOf[DataService])
-  lazy val cookieAuthenticatorService = controller.env.authenticatorService
+  lazy val cookieSigner = app.injector.instanceOf(BindingKey(classOf[CookieSigner]).qualifiedWith("authenticator-cookie-signer"))
+  lazy val crypter = app.injector.instanceOf(BindingKey(classOf[Crypter]).qualifiedWith("authenticator-crypter"))
+  lazy val encoder = new CrypterAuthenticatorEncoder(crypter)
+  lazy val cookieAuthenticatorService = app.injector.instanceOf(classOf[AuthenticatorService[CookieAuthenticator]]) //controller.env.authenticatorService
   lazy val cookieAuthenticatorSettings = app.configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
   lazy val authenticatorCookieName = app.configuration.getString("silhouette.authenticator.cookieName").get
 
@@ -45,7 +50,7 @@ class SocialAuthControllerSpec extends PlaySpec with OneAppPerSuite with Mockito
   def assertUserLoggedIn(user: User, result: Future[Result]): Unit = {
     val maybeAuthenticatorCookie = cookies(result).get(authenticatorCookieName)
     maybeAuthenticatorCookie mustNot be(None)
-    CookieAuthenticator.unserialize(maybeAuthenticatorCookie.get.value)(cookieAuthenticatorSettings) match {
+    CookieAuthenticator.unserialize(maybeAuthenticatorCookie.get.value, cookieSigner, encoder) match {
       case Success(authenticator: CookieAuthenticator) => authenticator.loginInfo.providerKey mustBe user.id
       case Failure(e) => throw e
     }

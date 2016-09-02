@@ -11,7 +11,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.Action
 import services.SlackService
 import slick.dbio.DBIO
 
@@ -26,7 +26,7 @@ class APIController @Inject() (
                                 val cache: CacheApi,
                                 val slackService: SlackService,
                                 val eventHandler: EventHandler)
-  extends Controller {
+  extends EllipsisController {
 
   class InvalidAPITokenException extends Exception
 

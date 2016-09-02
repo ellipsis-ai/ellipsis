@@ -2,14 +2,12 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import json._
 import json.Formatting._
 import models._
-import models.accounts._
-import models.accounts.user.User
+import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -21,10 +19,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class EnvironmentVariablesController @Inject() (
-                                                val messagesApi: MessagesApi,
-                                                val env: Environment[User, CookieAuthenticator],
-                                                val models: Models,
-                                                val socialProviderRegistry: SocialProviderRegistry)
+                                                 val messagesApi: MessagesApi,
+                                                 val silhouette: Silhouette[EllipsisEnv],
+                                                 val models: Models,
+                                                 val socialProviderRegistry: SocialProviderRegistry)
   extends ReAuthable {
 
   case class EnvironmentVariablesInfo(teamId: String, dataJson: String)
@@ -36,7 +34,7 @@ class EnvironmentVariablesController @Inject() (
     )(EnvironmentVariablesInfo.apply)(EnvironmentVariablesInfo.unapply)
   )
 
-  def submit = SecuredAction.async { implicit request =>
+  def submit = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     submitForm.bindFromRequest.fold(
       formWithErrors => {

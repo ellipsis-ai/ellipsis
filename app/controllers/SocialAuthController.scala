@@ -16,9 +16,10 @@ import com.mohiva.play.silhouette.impl.providers._
 import models._
 import models.accounts._
 import models.accounts.user.User
+import models.silhouette.EllipsisEnv
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{RequestHeader, Result}
+import play.api.mvc.{Controller, RequestHeader, Result}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.Future
@@ -26,7 +27,7 @@ import scala.concurrent.duration.FiniteDuration
 
 class SocialAuthController @Inject() (
                                        val messagesApi: MessagesApi,
-                                       val env: Environment[User, CookieAuthenticator],
+                                       val silhouette: Silhouette[EllipsisEnv],
                                        val configuration: Configuration,
                                        val clock: Clock,
                                        val models: Models,
@@ -34,7 +35,9 @@ class SocialAuthController @Inject() (
                                        dataService: DataService,
                                        authInfoRepository: AuthInfoRepository,
                                        socialProviderRegistry: SocialProviderRegistry)
-  extends Silhouette[User, CookieAuthenticator] with Logger {
+  extends EllipsisController with Logger {
+
+  val env = silhouette.env
 
   def authenticatorResultForUserAndResult(user: User, result: Result)(implicit request: RequestHeader): Future[AuthenticatorResult] = {
     val c = configuration.underlying
@@ -47,7 +50,7 @@ class SocialAuthController @Inject() (
         idleTimeout = Some(FiniteDuration(idleTimeoutSeconds, TimeUnit.SECONDS)),
         cookieMaxAge = Some(FiniteDuration(cookieMaxAgeSeconds, TimeUnit.SECONDS)))
     }.flatMap { authenticator =>
-      env.eventBus.publish(LoginEvent(user, request, request2Messages))
+      env.eventBus.publish(LoginEvent(user, request))
       env.authenticatorService.init(authenticator).flatMap { v =>
         env.authenticatorService.embed(v, result)
       }
@@ -75,7 +78,7 @@ class SocialAuthController @Inject() (
                          maybeRedirect: Option[String],
                          maybeTeamId: Option[String],
                          maybeChannelId: Option[String]
-                         ) = UserAwareAction.async { implicit request =>
+                         ) = silhouette.UserAwareAction.async { implicit request =>
     val provider = slackProvider.withSettings { settings =>
       val url = routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       val authorizationParams = maybeTeamId.map { teamId =>
@@ -130,7 +133,7 @@ class SocialAuthController @Inject() (
                          maybeRedirect: Option[String],
                          maybeTeamId: Option[String],
                          maybeChannelId: Option[String]
-                         ) = UserAwareAction.async { implicit request =>
+                         ) = silhouette.UserAwareAction.async { implicit request =>
     val provider = slackProvider.withSettings { settings =>
       val url = routes.SocialAuthController.authenticateSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       var authorizationParams = settings.authorizationParams
@@ -197,7 +200,7 @@ class SocialAuthController @Inject() (
   def loginWithToken(
             token: String,
             maybeRedirect: Option[String]
-            ) = UserAwareAction.async { implicit request =>
+            ) = silhouette.UserAwareAction.async { implicit request =>
     val successRedirect = validatedRedirectUri(maybeRedirect.getOrElse(routes.ApplicationController.index().toString))
     for {
       maybeToken <- dataService.loginTokens.find(token)
@@ -224,7 +227,7 @@ class SocialAuthController @Inject() (
     } yield result
   }
 
-  def signOut = SecuredAction.async { implicit request =>
+  def signOut = silhouette.SecuredAction.async { implicit request =>
     val redirect = request.request.headers.get("referer").getOrElse(routes.ApplicationController.index().toString)
     env.authenticatorService.discard(request.authenticator, Redirect(redirect))
   }

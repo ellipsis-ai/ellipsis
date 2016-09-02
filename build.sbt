@@ -14,21 +14,21 @@ pipelineStages := Seq(rjs, digest, gzip)
 
 scalaVersion := "2.11.7"
 
-lazy val slackClientVersion = "07dff82bb109509aa093651f85e3ba9720834f45"
+lazy val slackClientVersion = "ce95e8ee647c87cc15314190078f02f41f72a3a6"
+lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
 
-lazy val slackClientProject =
-  RootProject(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"))
 
 libraryDependencies ++= Seq(
   evolutions,
   jdbc,
   filters,
   cache,
-  "com.zaxxer" % "HikariCP" % "2.4.1",
   "com.github.tototoshi" %% "slick-joda-mapper" % "2.0.0",
-  "org.scalatestplus" % "play_2.11" % "1.4.0" % Test,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test,
   "org.mockito" % "mockito-core" % "1.8.5" % Test,
-  "com.mohiva" %% "play-silhouette" % "3.0.2",
+  "com.mohiva" %% "play-silhouette" % "4.0.0",
+  "com.mohiva" %% "play-silhouette-persistence" % "4.0.0",
+  "com.mohiva" %% "play-silhouette-crypto-jca" % "4.0.0",
   "com.typesafe.slick" %% "slick" % "3.0.0",
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc4",
   "net.codingwell" %% "scala-guice" % "4.0.0",

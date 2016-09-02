@@ -2,17 +2,17 @@ package models.accounts
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
-import com.mohiva.play.silhouette.impl.providers.SocialProfileParser
+import com.mohiva.play.silhouette.impl.providers.{OAuth2Info, SocialProfileParser}
 import play.api.libs.json._
 
 import scala.concurrent.Future
 
 case class SlackProfileParseException(json: JsValue, message: String) extends Exception(message)
 
-class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile] {
+class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile, OAuth2Info] {
   import SlackProvider._
 
-  def parse(json: JsValue): Future[SlackProfile] = parseForSignIn(json)
+  def parse(json: JsValue, authInfo: OAuth2Info): Future[SlackProfile] = parseForSignIn(json)
 
   def parseForInstall(json: JsValue): Future[SlackProfile] = Future.successful {
     val success = (json \ "ok").as[Boolean]

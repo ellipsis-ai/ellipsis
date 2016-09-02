@@ -5,7 +5,7 @@ import javax.inject.Inject
 import play.api.mvc.{EssentialFilter, EssentialAction}
 import play.filters.csrf.CSRFFilter
 
-class ExcludingCSRFFilter @Inject() (csrfFilter: CSRFFilter ) extends EssentialFilter {
+class ExcludingCSRFFilter @Inject() (csrfFilter: CSRFFilter) extends EssentialFilter {
   override def apply(nextFilter: EssentialAction) = new EssentialAction {
 
     import play.api.mvc._

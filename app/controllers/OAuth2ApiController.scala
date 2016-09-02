@@ -2,12 +2,11 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models._
 import models.accounts._
-import models.accounts.user.User
+import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -18,12 +17,12 @@ import scala.concurrent.Future
 
 class OAuth2ApiController @Inject() (
                                       val messagesApi: MessagesApi,
-                                      val env: Environment[User, CookieAuthenticator],
+                                      val silhouette: Silhouette[EllipsisEnv],
                                       val models: Models,
                                       val socialProviderRegistry: SocialProviderRegistry)
   extends ReAuthable {
 
-  def newApi(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def newApi(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = user.teamAccessFor(maybeTeamId).map { teamAccess =>
       teamAccess.maybeTargetTeam.map { _ =>
@@ -36,7 +35,7 @@ class OAuth2ApiController @Inject() (
     models.run(action)
   }
 
-  def edit(apiId: String, maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def edit(apiId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
@@ -75,7 +74,7 @@ class OAuth2ApiController @Inject() (
     )(OAuth2ApiInfo.apply)(OAuth2ApiInfo.unapply)
   )
 
-  def save = SecuredAction.async { implicit request =>
+  def save = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     saveOAuth2ApiForm.bindFromRequest.fold(
       formWithErrors => {
