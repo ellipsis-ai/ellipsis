@@ -122,15 +122,19 @@ return React.createClass({
   },
 
   getPrefix: function() {
+    var label;
     if (this.props.caseSensitive && this.props.isRegex) {
-      return "Case-sensitive regex pattern:";
+      label = "Case-sensitive regex pattern:";
     } else if (this.props.caseSensitive) {
-      return "Case-sensitive phrase:";
+      label = "Case-sensitive phrase:";
     } else if (this.props.isRegex) {
-      return "Case-insensitive regex pattern:";
+      label = "Case-insensitive regex pattern:";
     } else {
-      return "Phrase:";
+      label = "Phrase:";
     }
+    return (
+      <span className="type-weak">{label}</span>
+    );
   },
 
   componentDidMount: function() {
@@ -144,11 +148,11 @@ return React.createClass({
       <div className="columns columns-elastic mobile-columns-float mbs mobile-mbxl">
         <div className="column column-expand">
           <div className="columns columns-elastic">
-            <div className="column column-shrink align-m prn">
+            <div className="column column-shrink align-m ptxs prn">
               <DropdownMenu
                 openWhen={this.props.dropdownIsOpen}
                 label={this.getPrefix()}
-                labelClassName="button-s mrm type-label"
+                labelClassName="button-dropdown-trigger-borderless button-s mrs type-label"
                 toggle={this.props.onToggleDropdown}
               >
                 <DropdownMenu.Item
