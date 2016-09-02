@@ -2,12 +2,12 @@ define(function(require) {
 var React = require('react'),
   debounce = require('javascript-debounce'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  Checkbox = require('./checkbox'),
   DeleteButton = require('./delete_button'),
   HelpButton = require('../help/help_button'),
   Input = require('../form/input'),
   Collapsible = require('../collapsible'),
-  ToggleGroup = require('../form/toggle_group');
+  ToggleGroup = require('../form/toggle_group'),
+  DropdownMenu = require('./dropdown_menu');
   require('whatwg-fetch');
 
 return React.createClass({
@@ -15,6 +15,7 @@ return React.createClass({
   propTypes: {
     caseSensitive: React.PropTypes.bool.isRequired,
     large: React.PropTypes.bool,
+    dropdownIsOpen: React.PropTypes.bool.isRequired,
     helpVisible: React.PropTypes.bool.isRequired,
     hideDelete: React.PropTypes.bool.isRequired,
     id: React.PropTypes.oneOfType([
@@ -27,6 +28,7 @@ return React.createClass({
     onDelete: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func.isRequired,
     onHelpClick: React.PropTypes.func.isRequired,
+    onToggleDropdown: React.PropTypes.func.isRequired,
     requiresMention: React.PropTypes.bool.isRequired,
     value: React.PropTypes.string.isRequired
   },
@@ -65,6 +67,12 @@ return React.createClass({
     changes[propName] = newValue;
     this.changeTrigger(changes);
     this.focus();
+  },
+  toggleCaseSensitive: function() {
+    this.onChange('caseSensitive', !this.props.caseSensitive);
+  },
+  toggleIsRegex: function() {
+    this.onChange('isRegex', !this.props.isRegex);
   },
   onBlur: function(newValue) {
     var text = newValue;
@@ -180,44 +188,51 @@ return React.createClass({
             </div>
           </div>
         </div>
-        <div className="column column-shrink prn position-relative">
-          <div className={"display-ellipsis mobile-pts " + (this.props.large ? " pts " : " ptxs ")}>
-            {this.props.includeHelp ? (
-              <HelpButton onClick={this.toggleHelp} toggled={this.props.helpVisible} className="align-m mrs" />
-              ) : ""}
-            <label className="mrm">
-              <ToggleGroup className="form-toggle-group-s align-m">
-                <ToggleGroup.Item
-                  title="Ellipsis will respond to any message with this phrase"
-                  label="Any message"
-                  activeWhen={!this.props.requiresMention}
-                  onClick={this.onChange.bind(this, 'requiresMention', false)}
-                />
-                <ToggleGroup.Item
-                  title="Ellipsis will only respond when mentioned, or when a message begins with three periods
-                  “…”."
-                  label="To Ellipsis"
-                  activeWhen={this.props.requiresMention}
-                  onClick={this.onChange.bind(this, 'requiresMention', true)}
-                />
-              </ToggleGroup>
-            </label>
-            <label
-              className={"mrm type-s " + (this.state.highlightCaseSensitivity ? "blink-twice" : "")}
-              title="Match uppercase and lowercase letters exactly — if unchecked, case is ignored"
-            >
-              <Checkbox
-                checked={this.props.caseSensitive}
-                onChange={this.onChange.bind(this, 'caseSensitive')}
-              /> <i>Aa</i>
-            </label>
-            <label className="type-s" title="Use regular expression pattern matching">
-              <Checkbox
-                checked={this.props.isRegex}
-                onChange={this.onChange.bind(this, 'isRegex')}
-              /> <code>/^…$/</code>
-            </label>
-          </div>
+        <div className={
+          "column column-shrink prxs display-ellipsis mobile-pts " +
+          (this.props.large ? " pts " : " ptxs ")
+        }>
+          {this.props.includeHelp ? (
+            <HelpButton onClick={this.toggleHelp} toggled={this.props.helpVisible} className="align-m mrs" />
+            ) : ""}
+          <ToggleGroup className="form-toggle-group-s align-m">
+            <ToggleGroup.Item
+              title="Ellipsis will respond to any message with this phrase"
+              label="Any message"
+              activeWhen={!this.props.requiresMention}
+              onClick={this.onChange.bind(this, 'requiresMention', false)}
+            />
+            <ToggleGroup.Item
+              title="Ellipsis will only respond when mentioned, or when a message begins with three periods
+              “…”."
+              label="To Ellipsis"
+              activeWhen={this.props.requiresMention}
+              onClick={this.onChange.bind(this, 'requiresMention', true)}
+            />
+          </ToggleGroup>
+        </div>
+        <div className={
+          "column column-shrink prn mobile-pts " +
+          (this.props.large ? " pts " : " ptxs ")
+        }>
+          <DropdownMenu
+            openWhen={this.props.dropdownIsOpen}
+            label="Options"
+            menuClassName="popup-dropdown-menu-right"
+            labelClassName="button-s"
+            toggle={this.props.onToggleDropdown}
+          >
+            <DropdownMenu.Item
+              onClick={this.toggleCaseSensitive}
+              label="Case-sensitive"
+              checkedWhen={this.props.caseSensitive}
+            />
+            <DropdownMenu.Item
+              onClick={this.toggleIsRegex}
+              label="Regular expression pattern"
+              checkedWhen={this.props.isRegex}
+            />
+          </DropdownMenu>
         </div>
         <div className="column column-shrink">
           <DeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />

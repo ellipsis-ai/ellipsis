@@ -1176,6 +1176,8 @@ return React.createClass({
             onTriggerAdd={this.addTrigger}
             onTriggerChange={this.updateTriggerAtIndexWithTrigger}
             onTriggerDelete={this.deleteTriggerAtIndex}
+            onTriggerDropdownToggle={this.toggleActiveDropdown}
+            openDropdownName={this.getActiveDropdown()}
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor}>
