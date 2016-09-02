@@ -125,6 +125,22 @@ return React.createClass({
     this.refs.input.focus();
   },
 
+  hasPrefix: function() {
+    return this.props.isRegex || this.props.caseSensitive;
+  },
+
+  getPrefix: function() {
+    if (this.props.caseSensitive && this.props.isRegex) {
+      return "Case-sensitive regex pattern:";
+    } else if (this.props.caseSensitive) {
+      return "Case-sensitive:";
+    } else if (this.props.isRegex) {
+      return "Case-insensitive regex pattern:";
+    } else {
+      return "";
+    }
+  },
+
   componentDidMount: function() {
     if (this.props.isRegex) {
       this.validateTrigger();
@@ -136,9 +152,17 @@ return React.createClass({
       <div className="columns columns-elastic mobile-columns-float mbs mobile-mbxl">
         <div className="column column-expand">
           <div className="columns columns-elastic">
-            <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-              <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.large ? " form-input-large " : "")}>
-                <label htmlFor={this.props.id}>/</label>
+            <div className={
+              "column column-shrink prn " +
+              (this.hasPrefix() ? "" : "display-none")
+            }>
+              <div className={
+                "display-ellipsis type-disabled form-input form-input-borderless " +
+                (this.props.large ? " form-input-large " : "")
+              }>
+                <label className="type-label mrxs" htmlFor={this.props.id}>
+                  {this.getPrefix()}
+                </label>
               </div>
             </div>
             <div className="column column-expand prn position-relative">
@@ -173,18 +197,12 @@ return React.createClass({
                   <div className="position-absolute position-top-right ptxs prxs">
                     <HelpButton onClick={this.toggleError} toggled={true} inline={true} />
                   </div>
-                  <div><b>This regex trigger cannot be used because of a format error:</b></div>
+                  <div className="prl">
+                    <b>This regex pattern has an error:</b>
+                  </div>
                   <pre>{this.state.regexError || "\n\n\n"}</pre>
                 </div>
               </Collapsible>
-            </div>
-            <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-              <div className={
-                "type-disabled type-monospace form-input form-input-borderless prs " +
-                (this.props.large ? " form-input-large " : "")
-              }>
-                <label htmlFor={this.props.id}>/</label>
-              </div>
             </div>
           </div>
         </div>
