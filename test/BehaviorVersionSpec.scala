@@ -3,13 +3,15 @@ import javax.inject.Inject
 import models.accounts.user.User
 import models.bots.{Behavior, BehaviorQueries, BehaviorVersionQueries}
 import models.{IDs, Team}
-import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import services.DataService
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api.{Database => PostgresDatabase}
 
 
-class BehaviorVersionSpec @Inject() (dataService: DataService) extends PlaySpec with DBMixin {
+class BehaviorVersionSpec extends PlaySpec with DBMixin with OneAppPerSuite {
+
+  val dataService = app.injector.instanceOf(classOf[DataService])
 
   def reloadBehavior(db: PostgresDatabase, behavior: Behavior): Behavior = {
     runNow(db, BehaviorQueries.findWithoutAccessCheck(behavior.id)).get
