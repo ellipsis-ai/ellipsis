@@ -145,7 +145,7 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="columns columns-elastic mobile-columns-float mbs mobile-mbxl">
+      <div className="columns columns-elastic mobile-columns-float mbm mobile-mbxl">
         <div className="column column-expand">
           <div className="columns columns-elastic">
             <div className="column column-shrink align-m ptxs prn">
@@ -209,8 +209,8 @@ return React.createClass({
           </div>
         </div>
         <div className={
-          "column column-shrink prxs display-ellipsis mobile-pts " +
-          (this.props.large ? " pts " : " ptxs ")
+          "column column-shrink prn display-ellipsis mobile-pts " +
+          (this.props.large ? " ptm " : " pts ")
         }>
           <ToggleGroup className="form-toggle-group-s align-m">
             <ToggleGroup.Item
