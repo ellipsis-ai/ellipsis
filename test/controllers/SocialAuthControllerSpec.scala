@@ -36,7 +36,7 @@ class SocialAuthControllerSpec extends PlaySpec with OneAppPerSuite with Mockito
   lazy val cookieSigner = app.injector.instanceOf(BindingKey(classOf[CookieSigner]).qualifiedWith("authenticator-cookie-signer"))
   lazy val crypter = app.injector.instanceOf(BindingKey(classOf[Crypter]).qualifiedWith("authenticator-crypter"))
   lazy val encoder = new CrypterAuthenticatorEncoder(crypter)
-  lazy val cookieAuthenticatorService = app.injector.instanceOf(classOf[AuthenticatorService[CookieAuthenticator]]) //controller.env.authenticatorService
+  lazy val cookieAuthenticatorService = app.injector.instanceOf(classOf[AuthenticatorService[CookieAuthenticator]])
   lazy val cookieAuthenticatorSettings = app.configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
   lazy val authenticatorCookieName = app.configuration.getString("silhouette.authenticator.cookieName").get
 
