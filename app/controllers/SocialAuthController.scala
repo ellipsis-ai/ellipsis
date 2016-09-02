@@ -36,7 +36,7 @@ class SocialAuthController @Inject() (
                                        socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] with Logger {
 
-  def authenticatorResultForUserAndResult(user: User, result: Result)(implicit request: RequestHeader): DBIO[AuthenticatorResult] = DBIO.from {
+  def authenticatorResultForUserAndResult(user: User, result: Result)(implicit request: RequestHeader): Future[AuthenticatorResult] = {
     val c = configuration.underlying
     env.authenticatorService.create(user.loginInfo).map { (authenticator: CookieAuthenticator) =>
       val expirationTime = clock.now.plusSeconds(c.getDuration("silhouette.authenticator.authenticatorExpiry", TimeUnit.SECONDS).toInt)
@@ -118,7 +118,7 @@ class SocialAuthController @Inject() (
               Redirect(validatedRedirectUri(redirect))
             }.getOrElse(Redirect(routes.ApplicationController.index()))
           }
-          authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
+          authenticatedResult <- authenticatorResultForUserAndResult(user, result)
         } yield {
           authenticatedResult
         }
@@ -186,7 +186,7 @@ class SocialAuthController @Inject() (
                   Redirect(validatedRedirectUri(redirect))
                 }.getOrElse(Redirect(routes.ApplicationController.index()))
               }
-              authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
+              authenticatedResult <- authenticatorResultForUserAndResult(user, result)
             } yield authenticatedResult
           }
         } yield result
@@ -199,31 +199,29 @@ class SocialAuthController @Inject() (
             maybeRedirect: Option[String]
             ) = UserAwareAction.async { implicit request =>
     val successRedirect = validatedRedirectUri(maybeRedirect.getOrElse(routes.ApplicationController.index().toString))
-    val action = for {
-      maybeToken <- DBIO.from(dataService.loginTokens.find(token))
+    for {
+      maybeToken <- dataService.loginTokens.find(token)
       result <- maybeToken.map { token =>
         val isAlreadyLoggedInAsTokenUser = request.identity.exists(_.id == token.userId)
         if (isAlreadyLoggedInAsTokenUser) {
-          DBIO.successful(Redirect(successRedirect))
+          Future.successful(Redirect(successRedirect))
         } else if (token.isValid) {
           for {
-            _ <- DBIO.from(dataService.loginTokens.use(token))
-            maybeUser <- DBIO.from(dataService.users.find(token.userId))
+            _ <- dataService.loginTokens.use(token)
+            maybeUser <- dataService.users.find(token.userId)
             resultForValidToken <- maybeUser.map { user =>
               authenticatorResultForUserAndResult(user, Redirect(successRedirect))
             }.getOrElse {
-              DBIO.successful(Redirect(routes.SlackController.signIn(maybeRedirect)))
+              Future.successful(Redirect(routes.SlackController.signIn(maybeRedirect)))
             }
           } yield resultForValidToken
         } else {
-          DBIO.successful(Ok(views.html.loginTokenExpired()))
+          Future.successful(Ok(views.html.loginTokenExpired()))
         }
       }.getOrElse {
-        DBIO.successful(NotFound("Token not found"))
+        Future.successful(NotFound("Token not found"))
       }
     } yield result
-
-    models.run(action)
   }
 
   def signOut = SecuredAction.async { implicit request =>
