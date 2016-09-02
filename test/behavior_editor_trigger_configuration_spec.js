@@ -17,7 +17,9 @@ describe('TriggerConfiguration', () => {
     helpVisible: false,
     onTriggerAdd: jest.fn(),
     onTriggerChange: jest.fn(),
-    onTriggerDelete: jest.fn()
+    onTriggerDelete: jest.fn(),
+    onTriggerDropdownToggle: jest.fn(),
+    openDropdownName: ""
   };
 
   let triggerConfig = {};

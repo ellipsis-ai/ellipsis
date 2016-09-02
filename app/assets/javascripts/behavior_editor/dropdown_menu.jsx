@@ -82,7 +82,7 @@ var BehaviorEditorDropdownMenu = React.createClass({
       <div ref="container" className="display-inline-block">
         <button type="button"
           className={
-            "button-dropdown-trigger position-z-popup-trigger " +
+            "button-dropdown-trigger " +
             (this.props.openWhen ? " button-dropdown-trigger-menu-open " : "") +
             (this.props.labelClassName || "")
           }

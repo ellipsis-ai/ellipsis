@@ -18,7 +18,9 @@ define(function(require) {
       helpVisible: React.PropTypes.bool.isRequired,
       onTriggerAdd: React.PropTypes.func.isRequired,
       onTriggerChange: React.PropTypes.func.isRequired,
-      onTriggerDelete: React.PropTypes.func.isRequired
+      onTriggerDelete: React.PropTypes.func.isRequired,
+      onTriggerDropdownToggle: React.PropTypes.func.isRequired,
+      openDropdownName: React.PropTypes.string.isRequired
     },
 
     hasMultipleTriggers: function() {
@@ -68,6 +70,10 @@ define(function(require) {
       this.props.onTriggerDelete(index);
     },
 
+    toggleDropdown: function(dropdownName) {
+      this.props.onTriggerDropdownToggle(dropdownName);
+    },
+
     render: function() {
       return (
         <div className="columns">
@@ -95,11 +101,11 @@ define(function(require) {
               {this.props.triggers.map(function(trigger, index) {
                 return (
                   <TriggerInput
-                    className={index === 0 ? "form-input-large" : ""}
-                    includeHelp={index === 0}
-                    key={"BehaviorEditorTrigger" + index}
-                    id={"trigger" + index}
-                    ref={"trigger" + index}
+                    large={index === 0}
+                    dropdownIsOpen={this.props.openDropdownName === `BehaviorEditorTriggerDropdown${index}`}
+                    key={`BehaviorEditorTrigger${index}`}
+                    id={`trigger${index}`}
+                    ref={`trigger${index}`}
                     value={trigger.text}
                     requiresMention={trigger.requiresMention}
                     isRegex={trigger.isRegex}
@@ -109,6 +115,7 @@ define(function(require) {
                     onDelete={this.deleteTrigger.bind(this, index)}
                     onEnterKey={this.onTriggerEnterKey.bind(this, index)}
                     onHelpClick={this.props.onToggleHelp}
+                    onToggleDropdown={this.toggleDropdown.bind(this, `BehaviorEditorTriggerDropdown${index}`)}
                     helpVisible={this.props.helpVisible}
                   />
                 );
