@@ -120,11 +120,11 @@ class SocialAuthControllerSpec extends PlaySpec with MockitoSugar {
 
   trait TestContext {
 
-    def newAppFor(module: TestSilhouetteModule): Application = {
+    def newAppFor(testSilhouetteModule: TestSilhouetteModule): Application = {
       GuiceApplicationBuilder().
         overrides(bind[DataService].to[MockDataService]).
         disable[SilhouetteModule].
-        bindings(module).
+        bindings(testSilhouetteModule).
         build()
     }
     lazy val redirect = "/whatever"
