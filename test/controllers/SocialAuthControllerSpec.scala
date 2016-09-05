@@ -133,12 +133,6 @@ class SocialAuthControllerSpec extends PlaySpec with MockitoSugar {
     lazy val identities: Seq[(LoginInfo, User)] = Seq()
     lazy implicit val app: Application = {
       newAppFor(new TestSilhouetteModule {
-
-        override def configure() {
-          super.configure()
-          bind[Silhouette[EllipsisEnv]].to[SilhouetteProvider[EllipsisEnv]]
-        }
-
         @Provides
         def provideEnvironment(): Environment[EllipsisEnv] = env
       })

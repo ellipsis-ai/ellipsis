@@ -6,7 +6,7 @@ import com.google.inject.Provides
 import com.mohiva.play.silhouette.api.crypto.{CookieSigner, Crypter, CrypterAuthenticatorEncoder}
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
-import com.mohiva.play.silhouette.api.{Environment, EventBus, Silhouette, SilhouetteProvider}
+import com.mohiva.play.silhouette.api.{Environment, EventBus}
 import com.mohiva.play.silhouette.crypto.{JcaCookieSigner, JcaCookieSignerSettings, JcaCrypter, JcaCrypterSettings}
 import com.mohiva.play.silhouette.impl.authenticators._
 import models.accounts.user.UserService
@@ -16,15 +16,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
 
-/**
- * The Guice module which wires all Silhouette dependencies.
- */
 class SilhouetteModule extends AbstractSilhouetteModule {
-
-  override def configure() {
-    super.configure()
-    bind[Silhouette[EllipsisEnv]].to[SilhouetteProvider[EllipsisEnv]]
-  }
 
   @Provides
   def provideEnvironment(

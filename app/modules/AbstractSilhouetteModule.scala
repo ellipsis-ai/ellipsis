@@ -4,7 +4,7 @@ import com.google.inject.Provides
 import com.mohiva.play.silhouette.api.actions.SecuredErrorHandler
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util._
-import com.mohiva.play.silhouette.api.EventBus
+import com.mohiva.play.silhouette.api.{EventBus, Silhouette, SilhouetteProvider}
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.providers.oauth2.state.DummyStateProvider
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
@@ -23,6 +23,7 @@ import utils.CustomSecuredErrorHandler
 trait AbstractSilhouetteModule extends ScalaModule {
 
   def configure() {
+    bind[Silhouette[EllipsisEnv]].to[SilhouetteProvider[EllipsisEnv]]
     //    bind[UnsecuredErrorHandler].to[CustomUnsecuredErrorHandler]
     bind[SecuredErrorHandler].to[CustomSecuredErrorHandler]
     bind[CacheLayer].to[PlayCacheLayer]
