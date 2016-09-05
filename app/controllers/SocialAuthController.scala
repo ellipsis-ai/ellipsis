@@ -19,7 +19,7 @@ import models.accounts.user.User
 import models.silhouette.EllipsisEnv
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Controller, RequestHeader, Result}
+import play.api.mvc.{RequestHeader, Result}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.Future

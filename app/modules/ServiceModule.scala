@@ -2,7 +2,7 @@ package modules
 
 import com.google.inject.{AbstractModule, Provides}
 import models.Models
-import models.accounts.user.UserService
+import models.accounts.user.{UserService, UserServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
 import models.bots.BehaviorTestReportBuilder
 import models.bots.events.EventHandler
@@ -13,10 +13,10 @@ import play.api.libs.ws.WSClient
 import services._
 import net.codingwell.scalaguice.ScalaModule
 
-
 class ServiceModule extends AbstractModule with ScalaModule {
 
   override def configure() = {
+    bind[UserService].to[UserServiceImpl]
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).asEagerSingleton()
     bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()

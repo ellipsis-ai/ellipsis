@@ -2,13 +2,10 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{Environment, Silhouette}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import json._
 import models._
-import models.accounts._
-import models.accounts.user.User
 import models.bots._
 import models.silhouette.EllipsisEnv
 import play.api.Configuration

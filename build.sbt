@@ -29,6 +29,7 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette" % "4.0.0",
   "com.mohiva" %% "play-silhouette-persistence" % "4.0.0",
   "com.mohiva" %% "play-silhouette-crypto-jca" % "4.0.0",
+  "com.mohiva" %% "play-silhouette-testkit" % "4.0.0" % Test,
   "com.typesafe.slick" %% "slick" % "3.0.0",
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc4",
   "net.codingwell" %% "scala-guice" % "4.0.0",
