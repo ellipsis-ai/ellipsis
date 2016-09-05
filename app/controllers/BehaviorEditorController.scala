@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
@@ -31,9 +30,8 @@ class BehaviorEditorController @Inject() (
                                            val configuration: Configuration,
                                            val models: Models,
                                            val lambdaService: AWSLambdaService,
-                                           val testReportBuilder: BehaviorTestReportBuilder,
-                                           val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                           val testReportBuilder: BehaviorTestReportBuilder
+                                         ) extends ReAuthable {
 
   def newBehavior(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity

@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models._
 import play.api.Configuration
 import play.api.data.Form
@@ -20,9 +19,8 @@ class APITokenController @Inject() (
                                      val messagesApi: MessagesApi,
                                      val silhouette: Silhouette[EllipsisEnv],
                                      val configuration: Configuration,
-                                     val models: Models,
-                                     val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                     val models: Models
+                                   ) extends ReAuthable {
 
   case class CreateAPITokenInfo(teamId: String, label: String)
 

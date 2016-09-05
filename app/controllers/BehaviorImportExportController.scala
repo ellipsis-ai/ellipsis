@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import export.{BehaviorVersionExporter, BehaviorVersionImporter, BehaviorVersionZipImporter}
 import json._
 import json.Formatting._
@@ -23,9 +22,8 @@ class BehaviorImportExportController @Inject() (
                                                  val messagesApi: MessagesApi,
                                                  val silhouette: Silhouette[EllipsisEnv],
                                                  val models: Models,
-                                                 val lambdaService: AWSLambdaService,
-                                                 val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                                 val lambdaService: AWSLambdaService
+                                               ) extends ReAuthable {
 
   def export(id: String) = silhouette.SecuredAction.async { implicit request =>
     val action = BehaviorVersionExporter.maybeFor(id, request.identity).map { maybeExporter =>

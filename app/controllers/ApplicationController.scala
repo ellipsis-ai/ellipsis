@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import json._
 import models._
 import models.bots._
@@ -24,9 +23,8 @@ class ApplicationController @Inject() (
                                         val models: Models,
                                         val lambdaService: AWSLambdaService,
                                         val ws: WSClient,
-                                        val cache: CacheApi,
-                                        val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                        val cache: CacheApi
+                                      ) extends ReAuthable {
 
   def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity

@@ -2,15 +2,11 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{Environment, Silhouette}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.mohiva.play.silhouette.api.Silhouette
 import models.Models
-import models.accounts.user.User
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.i18n.MessagesApi
-import play.api.mvc.Controller
 import play.utils.UriEncoding
 import slick.dbio.DBIO
 
@@ -20,9 +16,8 @@ class SlackController @Inject() (
                                   val messagesApi: MessagesApi,
                                   val silhouette: Silhouette[EllipsisEnv],
                                   val configuration: Configuration,
-                                  val models: Models,
-                                  socialProviderRegistry: SocialProviderRegistry)
-  extends EllipsisController {
+                                  val models: Models
+                                ) extends EllipsisController {
 
   def add = silhouette.UserAwareAction { implicit request =>
     val maybeResult = for {

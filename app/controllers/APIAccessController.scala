@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.accounts.user.User
 import models.{IDs, Models, Team}
 import models.accounts.{LinkedOAuth2Token, OAuth2Application, OAuth2ApplicationQueries}
@@ -27,8 +26,8 @@ class APIAccessController @Inject() (
                                       val models: Models,
                                       val ws: WSClient,
                                       val cache: CacheApi,
-                                      val eventHandler: EventHandler,
-                                      val socialProviderRegistry: SocialProviderRegistry)
+                                      val eventHandler: EventHandler
+                                    )
   extends ReAuthable {
 
   private def getToken(code: String, application: OAuth2Application, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {

@@ -12,7 +12,6 @@ import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers._
 import models._
 import models.accounts._
 import models.accounts.user.User
@@ -33,9 +32,8 @@ class SocialAuthController @Inject() (
                                        val models: Models,
                                        slackProvider: SlackProvider,
                                        dataService: DataService,
-                                       authInfoRepository: AuthInfoRepository,
-                                       socialProviderRegistry: SocialProviderRegistry)
-  extends EllipsisController with Logger {
+                                       authInfoRepository: AuthInfoRepository
+                                     ) extends EllipsisController with Logger {
 
   val env = silhouette.env
 

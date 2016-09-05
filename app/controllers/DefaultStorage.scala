@@ -2,7 +2,6 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models.{Models, Team}
 import play.api.Configuration
 import play.api.data.Form
@@ -20,9 +19,8 @@ class DefaultStorage @Inject() (
                                  val messagesApi: MessagesApi,
                                  val configuration: Configuration,
                                  val models: Models,
-                                 val dynamoDBService: AWSDynamoDBService,
-                                 socialProviderRegistry: SocialProviderRegistry)
-  extends EllipsisController {
+                                 val dynamoDBService: AWSDynamoDBService
+                               ) extends EllipsisController {
 
   case class PutItemInfo(token: String, itemType: String, itemId: String, itemJson: String)
 

@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import json._
 import models.bots.config.RequiredOAuth2ApiConfigQueries
 import models._
@@ -21,9 +20,8 @@ import scala.concurrent.Future
 class OAuth2ApplicationController @Inject() (
                                               val messagesApi: MessagesApi,
                                               val silhouette: Silhouette[EllipsisEnv],
-                                              val models: Models,
-                                              val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                              val models: Models
+                                            ) extends ReAuthable {
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity

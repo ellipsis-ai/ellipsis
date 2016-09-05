@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import models._
 import models.bots._
 import models.silhouette.EllipsisEnv
@@ -17,9 +16,8 @@ class AdminController @Inject() (
                                   val messagesApi: MessagesApi,
                                   val silhouette: Silhouette[EllipsisEnv],
                                   val models: Models,
-                                  val lambdaService: AWSLambdaService,
-                                  val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                  val lambdaService: AWSLambdaService
+                                ) extends ReAuthable {
 
   def lambdaFunctions() = silhouette.SecuredAction.async { implicit request =>
     val action = for {
