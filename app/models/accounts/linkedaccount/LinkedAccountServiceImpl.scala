@@ -1,37 +1,17 @@
-package models.accounts
+package models.accounts.linkedaccount
+
+import javax.inject._
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.Team
+import models.accounts.{SlackProfileQueries, SlackProvider}
 import models.accounts.user.{User, UserQueries}
 import org.joda.time.DateTime
+import services.DataService
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
-case class LinkedAccount(user: User, loginInfo: LoginInfo, createdAt: DateTime) {
-  def raw: RawLinkedAccount = RawLinkedAccount(user.id, loginInfo, createdAt)
-  def save = LinkedAccount.save(this)
-
-  def maybeFullToken: DBIO[Option[OAuth2Token]] = {
-    OAuth2Token.maybeFullFor(loginInfo)
-  }
-
-  def maybeMyToken: DBIO[Option[OAuth2Token]] = {
-    OAuth2Token.findByLoginInfo(loginInfo)
-  }
-
-  def maybeSlackProfile: DBIO[Option[SlackProfile]] = {
-    SlackProfileQueries.find(loginInfo)
-  }
-
-  def maybeSlackTeamId: DBIO[Option[String]] = maybeSlackProfile.map(_.map(_.teamId))
-
-  def isAdmin: DBIO[Boolean] = maybeSlackTeamId.map { maybeId =>
-    maybeId.contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
-  }
-
-}
+import scala.concurrent.Future
 
 case class RawLinkedAccount(userId: String, loginInfo: LoginInfo, createdAt: DateTime)
 
@@ -45,7 +25,10 @@ class LinkedAccountsTable(tag: Tag) extends Table[RawLinkedAccount](tag, "linked
   def * = (userId, loginInfo, createdAt) <> (RawLinkedAccount.tupled, RawLinkedAccount.unapply _)
 }
 
-object LinkedAccount {
+class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) extends LinkedAccountService {
+
+  def dataService = dataServiceProvider.get
+
   val all = TableQuery[LinkedAccountsTable]
   val joined = all.join(UserQueries.all).on(_.userId === _.id)
 
@@ -57,23 +40,25 @@ object LinkedAccount {
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def find(loginInfo: LoginInfo, teamId: String): DBIO[Option[LinkedAccount]] = {
-    findQuery(loginInfo.providerID, loginInfo.providerKey, teamId).
+  def find(loginInfo: LoginInfo, teamId: String): Future[Option[LinkedAccount]] = {
+    val action = findQuery(loginInfo.providerID, loginInfo.providerKey, teamId).
       result.
       map { result =>
-      result.headOption.map(tuple2LinkedAccount)
-    }
+        result.headOption.map(tuple2LinkedAccount)
+      }
+    dataService.run(action)
   }
 
-  def save(link: LinkedAccount): DBIO[LinkedAccount] = {
+  def save(link: LinkedAccount): Future[LinkedAccount] = {
     val query = all.filter(_.providerId === link.loginInfo.providerID).filter(_.providerKey === link.loginInfo.providerKey)
-    query.result.headOption.flatMap {
+    val action = query.result.headOption.flatMap {
       case Some(_) => {
         query.
-          update(link.raw)
+          update(link.toRaw)
       }
-      case None => all += link.raw
+      case None => all += link.toRaw
     }.map { _ => link }
+    dataService.run(action)
   }
 
   def tuple2LinkedAccount(tuple: (RawLinkedAccount, User)): LinkedAccount = {
@@ -85,12 +70,13 @@ object LinkedAccount {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def allFor(user: User): DBIO[Seq[LinkedAccount]] = {
-    allForQuery(user.id).
+  def allFor(user: User): Future[Seq[LinkedAccount]] = {
+    val action = allForQuery(user.id).
       result.
       map { result =>
-      result.map(tuple2LinkedAccount)
-    }
+        result.map(tuple2LinkedAccount)
+      }
+    dataService.run(action)
   }
 
   def uncompiledForSlackForQuery(userId: Rep[String]) = {
@@ -100,10 +86,18 @@ object LinkedAccount {
   }
   val forSlackForQuery = Compiled(uncompiledForSlackForQuery _)
 
-  def maybeForSlackFor(user: User): DBIO[Option[LinkedAccount]] = {
-    forSlackForQuery(user.id).result.map { r =>
+  def maybeForSlackFor(user: User): Future[Option[LinkedAccount]] = {
+    val action = forSlackForQuery(user.id).result.map { r =>
       r.headOption.map(tuple2LinkedAccount)
     }
+    dataService.run(action)
+  }
+
+  def isAdmin(linkedAccount: LinkedAccount): Future[Boolean] = {
+    val action = SlackProfileQueries.find(linkedAccount.loginInfo).map { maybeId =>
+      maybeId.contains(ELLIPSIS_SLACK_TEAM_ID)
+    }
+    dataService.run(action)
   }
 
   val ELLIPSIS_SLACK_TEAM_ID = "T0LP53H0A"

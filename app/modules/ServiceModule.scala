@@ -2,6 +2,7 @@ package modules
 
 import com.google.inject.{AbstractModule, Provides}
 import models.Models
+import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
 import models.accounts.user.{UserService, UserServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
 import models.bots.BehaviorTestReportBuilder
@@ -16,20 +17,13 @@ import net.codingwell.scalaguice.ScalaModule
 class ServiceModule extends AbstractModule with ScalaModule {
 
   override def configure() = {
-    bind[UserService].to[UserServiceImpl]
+    bind[DataService].to(classOf[PostgresDataService])
+    bind[UserService].to(classOf[UserServiceImpl])
+    bind[LoginTokenService].to(classOf[LoginTokenServiceImpl])
+    bind[LinkedAccountService].to(classOf[LinkedAccountServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).asEagerSingleton()
     bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()
-  }
-
-  @Provides
-  def providesDataService(models: Models, userService: UserService, loginTokenService: LoginTokenService): DataService = {
-    new PostgresDataService(models, userService, loginTokenService)
-  }
-
-  @Provides
-  def providesLoginTokenService(models: Models): LoginTokenService = {
-    new LoginTokenServiceImpl(models)
   }
 
   @Provides

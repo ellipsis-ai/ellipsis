@@ -2,17 +2,21 @@ package models.accounts.user
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.LinkedAccount
+import models.accounts.linkedaccount.LinkedAccount
 import models.bots.events.{MessageContext, SlackMessageContext}
-import models.{IDs, Models, Team}
+import models.{IDs, Team}
 import org.joda.time.DateTime
+import services.DataService
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class UserServiceImpl @Inject() (models: Models) extends UserService {
+class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) extends UserService {
+
+  def dataService = dataServiceProvider.get
 
   import UserQueries._
 
@@ -26,17 +30,16 @@ class UserServiceImpl @Inject() (models: Models) extends UserService {
   }
 
   def find(id: String): Future[Option[User]] = {
-    models.run(findQueryFor(id).result.map(_.headOption))
+    dataService.run(findQueryFor(id).result.map(_.headOption))
   }
 
   def findFromMessageContext(context: MessageContext, team: Team): Future[Option[User]] = {
-    val action = context match {
-      case mc: SlackMessageContext => LinkedAccount.find(LoginInfo(mc.name, mc.userIdForContext), team.id).map { maybeLinked =>
+    context match {
+      case mc: SlackMessageContext => dataService.linkedAccounts.find(LoginInfo(mc.name, mc.userIdForContext), team.id).map { maybeLinked =>
         maybeLinked.map(_.user)
       }
-      case _ => DBIO.successful(None)
+      case _ => Future.successful(None)
     }
-    models.run(action)
   }
 
   def createOnTeamWithId(teamId: String): User = User(IDs.next, teamId, None)
@@ -44,30 +47,45 @@ class UserServiceImpl @Inject() (models: Models) extends UserService {
 
   def createFor(teamId: String): Future[User] = save(createOnTeamWithId(teamId))
 
-  private def saveAction(user: User): DBIO[User] = {
+  def save(user: User): Future[User] = {
     val query = findQueryFor(user.id)
-    query.result.flatMap { result =>
+    val action = query.result.flatMap { result =>
       result.headOption.map { existing =>
         all.filter(_.id === user.id).update(user)
       }.getOrElse {
         all += user
       }.map { _ => user }
     }
-  }
-
-  def save(user: User): Future[User] = {
-    models.run(saveAction(user))
+    dataService.run(action)
   }
 
   def ensureUserFor(loginInfo: LoginInfo, teamId: String): Future[User] = {
-    val action = LinkedAccount.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
-      maybeLinkedAccount.map(DBIO.successful).getOrElse {
-        saveAction(createOnTeamWithId(teamId)).flatMap { user =>
-          LinkedAccount(user, loginInfo, DateTime.now).save
+    dataService.linkedAccounts.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
+      maybeLinkedAccount.map(Future.successful).getOrElse {
+        save(createOnTeamWithId(teamId)).flatMap { user =>
+          dataService.linkedAccounts.save(LinkedAccount(user, loginInfo, DateTime.now))
         }
       }.map(_.user)
-    } transactionally
-
-    models.run(action)
+    }
   }
+
+  def teamAccessFor(user: User, maybeTargetTeamId: Option[String]): Future[UserTeamAccess] = {
+    val action = for {
+      loggedInTeam <- Team.find(user.teamId).map(_.get)
+      maybeSlackLinkedAccount <- DBIO.from(dataService.linkedAccounts.maybeForSlackFor(user))
+      isAdmin <- DBIO.from(maybeSlackLinkedAccount.map(dataService.linkedAccounts.isAdmin).getOrElse(Future.successful(false)))
+      maybeTeam <- maybeTargetTeamId.map { targetTeamId =>
+        if (targetTeamId != user.teamId && !isAdmin) {
+          DBIO.successful(None)
+        } else {
+          Team.find(targetTeamId)
+        }
+      }.getOrElse {
+        Team.find(user.teamId)
+      }
+    } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeTeam.exists(t => t.id != user.teamId))
+    dataService.run(action)
+  }
+
+
 }

@@ -15,11 +15,11 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import models._
 import models.accounts._
 import models.accounts.user.User
+import models.accounts.linkedaccount.LinkedAccount
 import models.silhouette.EllipsisEnv
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{RequestHeader, Result}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -103,16 +103,16 @@ class SocialAuthController @Inject() (
           maybeSlackTeamId <- Future.successful(Some(maybeTeamId.getOrElse(profile.teamId)))
           savedProfile <- models.run(SlackProfileQueries.save(profile))
           savedAuthInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
-          linkedAccount <- models.run(LinkedAccount.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
-            maybeExisting.map(DBIO.successful).getOrElse {
-              val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
+          linkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
+            maybeExisting.map(Future.successful).getOrElse {
+              val eventualUser = request.identity.map(Future.successful).getOrElse {
                 dataService.users.createFor(botProfile.teamId)
-              })
+              }
               eventualUser.flatMap { user =>
-                LinkedAccount(user, profile.loginInfo, DateTime.now).save
+                dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, DateTime.now))
               }
             }
-          })
+          }
           user <- Future.successful(linkedAccount.user)
           result <- Future.successful {
             maybeRedirect.map { redirect =>
@@ -170,17 +170,15 @@ class SocialAuthController @Inject() (
               savedProfile <- models.run(SlackProfileQueries.save(profile))
               loginInfo <- Future.successful(profile.loginInfo)
               savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
-              maybeExistingLinkedAccount <- models.run(LinkedAccount.find(profile.loginInfo, teamId))
-              linkedAccount <- models.run(
-                maybeExistingLinkedAccount.map(DBIO.successful).getOrElse {
-                  val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
-                    dataService.users.createFor(teamId)
-                  })
-                  eventualUser.flatMap { user =>
-                    LinkedAccount(user, profile.loginInfo, DateTime.now).save
-                  }
+              maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, teamId)
+              linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
+                val eventualUser = request.identity.map(Future.successful).getOrElse {
+                  dataService.users.createFor(teamId)
                 }
-              )
+                eventualUser.flatMap { user =>
+                  dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, DateTime.now))
+                }
+              }
               user <- Future.successful(linkedAccount.user)
               result <- Future.successful {
                 maybeRedirect.map { redirect =>

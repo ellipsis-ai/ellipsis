@@ -11,6 +11,7 @@ import play.api.i18n.MessagesApi
 import slick.dbio.DBIO
 import json.APITokenData
 import models.silhouette.EllipsisEnv
+import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -19,7 +20,7 @@ class APITokenController @Inject() (
                                      val messagesApi: MessagesApi,
                                      val silhouette: Silhouette[EllipsisEnv],
                                      val configuration: Configuration,
-                                     val models: Models
+                                     val dataService: DataService
                                    ) extends ReAuthable {
 
   case class CreateAPITokenInfo(teamId: String, label: String)
@@ -39,7 +40,7 @@ class APITokenController @Inject() (
       },
       info => {
         val action = for {
-          teamAccess <- user.teamAccessFor(Some(info.teamId))
+          teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, Some(info.teamId)))
           maybeToken <- teamAccess.maybeTargetTeam.map { team =>
             APITokenQueries.createFor(team, info.label).map(Some(_))
           }.getOrElse(DBIO.successful(None))
@@ -49,7 +50,7 @@ class APITokenController @Inject() (
             NotFound("")
           }
 
-        models.run(action)
+        dataService.run(action)
       }
     )
   }
@@ -57,7 +58,7 @@ class APITokenController @Inject() (
   def listTokens(maybeJustCreatedTokenId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      teamAccess <- user.teamAccessFor(None)
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, None))
       tokens <- APITokenQueries.allFor(teamAccess.loggedInTeam)
     } yield {
         teamAccess.maybeTargetTeam.map { _ =>
@@ -67,7 +68,7 @@ class APITokenController @Inject() (
         }
       }
 
-    models.run(action)
+    dataService.run(action)
   }
 
   private val revokeApiTokenForm = Form(
@@ -82,7 +83,7 @@ class APITokenController @Inject() (
       },
       id => {
         val action = for {
-          teamAccess <- user.teamAccessFor(None)
+          teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, None))
           maybeToken <- APITokenQueries.find(id, teamAccess.loggedInTeam)
           _ <- maybeToken.map { token =>
             APITokenQueries.revoke(token, teamAccess.loggedInTeam)
@@ -93,7 +94,7 @@ class APITokenController @Inject() (
             NotFound("")
           }
 
-        models.run(action)
+        dataService.run(action)
       }
     )
   }

@@ -4,7 +4,7 @@ import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.accounts.user.User
 import models.{IDs, Team}
 import org.joda.time.DateTime
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -87,11 +87,11 @@ object BehaviorQueries {
     findQuery(id).result.map(_.headOption.map(tuple2Behavior))
   }
 
-  def find(id: String, user: User): DBIO[Option[Behavior]] = {
+  def find(id: String, user: User, dataService: DataService): DBIO[Option[Behavior]] = {
     for {
       maybeBehavior <- findWithoutAccessCheck(id)
       canAccess <- maybeBehavior.map { behavior =>
-        user.canAccess(behavior.team)
+        DBIO.from(dataService.users.canAccess(user, behavior))
       }.getOrElse(DBIO.successful(false))
     } yield {
       if (canAccess) {

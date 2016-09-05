@@ -1,6 +1,7 @@
 package models
 
 import models.accounts.user.User
+import services.DataService
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,11 +47,11 @@ object Team {
     findQueryFor(id).result.map(_.headOption)
   }
 
-  def find(id: String, user: User): DBIO[Option[Team]] = {
+  def find(id: String, user: User, dataService: DataService): DBIO[Option[Team]] = {
     for {
       maybeTeam <- find(id)
       canAccess <- maybeTeam.map { team =>
-        user.canAccess(team)
+        DBIO.from(dataService.users.canAccess(user, team))
       }.getOrElse(DBIO.successful(false))
     } yield if (canAccess) {
         maybeTeam

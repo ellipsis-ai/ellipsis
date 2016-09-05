@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models.accounts.user.User
-import models.{IDs, Models, Team}
+import models.{IDs, Team}
 import models.accounts.{LinkedOAuth2Token, OAuth2Application, OAuth2ApplicationQueries}
 import models.bots.events.{EventHandler, MessageEvent}
 import models.silhouette.EllipsisEnv
@@ -15,6 +15,7 @@ import play.api.http.{HeaderNames, MimeTypes}
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc.Results
+import services.DataService
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -23,7 +24,7 @@ class APIAccessController @Inject() (
                                       val messagesApi: MessagesApi,
                                       val silhouette: Silhouette[EllipsisEnv],
                                       val configuration: Configuration,
-                                      val models: Models,
+                                      val dataService: DataService,
                                       val ws: WSClient,
                                       val cache: CacheApi,
                                       val eventHandler: EventHandler
@@ -61,7 +62,7 @@ class APIAccessController @Inject() (
     val action = for {
       maybeApplication <- OAuth2ApplicationQueries.find(applicationId)
       isLoggedInToCorrectTeam <- maybeApplication.map { application =>
-        Team.find(application.teamId, user).map(_.isDefined)
+        Team.find(application.teamId, user, dataService).map(_.isDefined)
       }.getOrElse(DBIO.successful(false))
       result <- if (isLoggedInToCorrectTeam) {
         (for {
@@ -104,7 +105,7 @@ class APIAccessController @Inject() (
       }
     } yield result
 
-    models.run(action)
+    dataService.run(action)
   }
 
   def authenticated(message: String) = silhouette.SecuredAction.async { implicit request =>
@@ -112,7 +113,7 @@ class APIAccessController @Inject() (
     val action = Team.find(user.teamId).map { maybeTeam =>
       Ok(views.html.authenticated(maybeTeam, message))
     }
-    models.run(action)
+    dataService.run(action)
   }
 
 

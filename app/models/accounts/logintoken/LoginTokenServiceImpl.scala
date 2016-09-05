@@ -1,11 +1,13 @@
 package models.accounts.logintoken
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import com.google.inject.Provider
 import models.accounts.user.User
-import models.{IDs, Models}
+import models.IDs
 import org.joda.time.DateTime
+import services.DataService
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,8 +22,10 @@ class LoginTokensTable(tag: Tag) extends Table[LoginToken](tag, "login_tokens") 
   def * = (value, userId, isUsed, createdAt) <> ((LoginToken.apply _).tupled, LoginToken.unapply _)
 }
 
-@Singleton
-class LoginTokenServiceImpl @Inject() (models: Models) extends LoginTokenService {
+class LoginTokenServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) extends LoginTokenService {
+
+  def dataService = dataServiceProvider.get
+
   val all = TableQuery[LoginTokensTable]
 
   def uncompiledFindQuery(value: Rep[String]) = {
@@ -30,16 +34,16 @@ class LoginTokenServiceImpl @Inject() (models: Models) extends LoginTokenService
   val findQuery = Compiled(uncompiledFindQuery _)
 
   def find(value: String): Future[Option[LoginToken]] = {
-    models.run(findQuery(value).result.map(_.headOption))
+    dataService.run(findQuery(value).result.map(_.headOption))
   }
 
   def use(loginToken: LoginToken): Future[Unit] = {
-    models.run(all.filter(_.value === loginToken.value).map(_.isUsed).update(true).map(_ => Unit))
+    dataService.run(all.filter(_.value === loginToken.value).map(_.isUsed).update(true).map(_ => Unit))
   }
 
   def createFor(user: User): Future[LoginToken] = {
     val instance = LoginToken(IDs.next, user.id, isUsed = false, DateTime.now)
-    models.run((all += instance).map(_ => instance))
+    dataService.run((all += instance).map(_ => instance))
   }
 
 }
