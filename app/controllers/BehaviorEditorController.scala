@@ -2,9 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
@@ -12,8 +10,8 @@ import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
 import models._
 import models.accounts._
-import models.accounts.user.User
 import models.bots._
+import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
@@ -27,16 +25,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class BehaviorEditorController @Inject() (
-                                          val messagesApi: MessagesApi,
-                                          val env: Environment[User, CookieAuthenticator],
-                                          val configuration: Configuration,
-                                          val models: Models,
-                                          val lambdaService: AWSLambdaService,
-                                          val testReportBuilder: BehaviorTestReportBuilder,
-                                          val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                           val messagesApi: MessagesApi,
+                                           val silhouette: Silhouette[EllipsisEnv],
+                                           val configuration: Configuration,
+                                           val models: Models,
+                                           val lambdaService: AWSLambdaService,
+                                           val testReportBuilder: BehaviorTestReportBuilder
+                                         ) extends ReAuthable {
 
-  def newBehavior(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def newBehavior(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
@@ -81,7 +78,7 @@ class BehaviorEditorController @Inject() (
     models.run(action)
   }
 
-  def edit(id: String, maybeJustSaved: Option[Boolean]) = SecuredAction.async { implicit request =>
+  def edit(id: String, maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       maybeVersionData <- BehaviorVersionData.maybeFor(id, user)
@@ -136,7 +133,7 @@ class BehaviorEditorController @Inject() (
     )(SaveBehaviorInfo.apply)(SaveBehaviorInfo.unapply)
   )
 
-  def save = SecuredAction.async { implicit request =>
+  def save = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     saveForm.bindFromRequest.fold(
       formWithErrors => {
@@ -197,7 +194,7 @@ class BehaviorEditorController @Inject() (
     "behaviorId" -> nonEmptyText
   )
 
-  def delete = SecuredAction.async { implicit request =>
+  def delete = silhouette.SecuredAction.async { implicit request =>
     deleteForm.bindFromRequest.fold(
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
@@ -215,7 +212,7 @@ class BehaviorEditorController @Inject() (
     )
   }
 
-  def versionInfoFor(behaviorId: String) = SecuredAction.async { implicit request =>
+  def versionInfoFor(behaviorId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       maybeBehavior <- BehaviorQueries.find(behaviorId, user)
@@ -292,7 +289,7 @@ class BehaviorEditorController @Inject() (
     )(TestBehaviorInfo.apply)(TestBehaviorInfo.unapply)
   )
 
-  def test = SecuredAction.async { implicit request =>
+  def test = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     testForm.bindFromRequest.fold(
       formWithErrors => {
@@ -326,7 +323,7 @@ class BehaviorEditorController @Inject() (
     "behaviorId" -> nonEmptyText
   )
 
-  def duplicate = SecuredAction.async { implicit request =>
+  def duplicate = silhouette.SecuredAction.async { implicit request =>
     cloneForm.bindFromRequest.fold(
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
@@ -356,7 +353,7 @@ class BehaviorEditorController @Inject() (
     )
   }
 
-  def regexValidationErrorsFor(pattern: String) = SecuredAction { implicit request =>
+  def regexValidationErrorsFor(pattern: String) = silhouette.SecuredAction { implicit request =>
     val content = MessageTriggerQueries.maybeRegexValidationErrorFor(pattern).map { errMessage =>
       Array(errMessage)
     }.getOrElse {

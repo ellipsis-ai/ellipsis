@@ -2,13 +2,12 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.mohiva.play.silhouette.api.Silhouette
 import models.accounts.user.User
 import models.{IDs, Models, Team}
 import models.accounts.{LinkedOAuth2Token, OAuth2Application, OAuth2ApplicationQueries}
 import models.bots.events.{EventHandler, MessageEvent}
+import models.silhouette.EllipsisEnv
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -21,14 +20,14 @@ import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class APIAccessController @Inject() (
-                                        val messagesApi: MessagesApi,
-                                        val env: Environment[User, CookieAuthenticator],
-                                        val configuration: Configuration,
-                                        val models: Models,
-                                        val ws: WSClient,
-                                        val cache: CacheApi,
-                                        val eventHandler: EventHandler,
-                                        val socialProviderRegistry: SocialProviderRegistry)
+                                      val messagesApi: MessagesApi,
+                                      val silhouette: Silhouette[EllipsisEnv],
+                                      val configuration: Configuration,
+                                      val models: Models,
+                                      val ws: WSClient,
+                                      val cache: CacheApi,
+                                      val eventHandler: EventHandler
+                                    )
   extends ReAuthable {
 
   private def getToken(code: String, application: OAuth2Application, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {
@@ -57,7 +56,7 @@ class APIAccessController @Inject() (
                                codeOpt: Option[String],
                                stateOpt: Option[String],
                                maybeInvocationId: Option[String]
-                               ) = SecuredAction.async { implicit request =>
+                               ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       maybeApplication <- OAuth2ApplicationQueries.find(applicationId)
@@ -108,7 +107,7 @@ class APIAccessController @Inject() (
     models.run(action)
   }
 
-  def authenticated(message: String) = SecuredAction.async { implicit request =>
+  def authenticated(message: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = Team.find(user.teamId).map { maybeTeam =>
       Ok(views.html.authenticated(maybeTeam, message))

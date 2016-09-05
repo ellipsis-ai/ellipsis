@@ -2,11 +2,9 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{Environment, Silhouette}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.mohiva.play.silhouette.api.Silhouette
 import models.Models
-import models.accounts.user.User
+import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.utils.UriEncoding
@@ -16,13 +14,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class SlackController @Inject() (
                                   val messagesApi: MessagesApi,
-                                  val env: Environment[User, CookieAuthenticator],
+                                  val silhouette: Silhouette[EllipsisEnv],
                                   val configuration: Configuration,
-                                  val models: Models,
-                                  socialProviderRegistry: SocialProviderRegistry)
-  extends Silhouette[User, CookieAuthenticator] {
+                                  val models: Models
+                                ) extends EllipsisController {
 
-  def add = UserAwareAction { implicit request =>
+  def add = silhouette.UserAwareAction { implicit request =>
     val maybeResult = for {
       scopes <- configuration.getString("silhouette.slack.scope")
       clientId <- configuration.getString("silhouette.slack.clientID")
@@ -33,7 +30,7 @@ class SlackController @Inject() (
     maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
   }
 
-  def signIn(maybeRedirectUrl: Option[String]) = UserAwareAction.async { implicit request =>
+  def signIn(maybeRedirectUrl: Option[String]) = silhouette.UserAwareAction.async { implicit request =>
     val eventualMaybeTeamAccess = request.identity.map { user =>
       user.teamAccessFor(None).map(Some(_))
     }.getOrElse(DBIO.successful(None))

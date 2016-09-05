@@ -108,8 +108,6 @@ case class BehaviorVersion(
     }.getOrElse(DBIO.successful(None))
   }
 
-  lazy val conf = Play.current.configuration
-
   def functionName: String = id
 
   def resultFor(parametersWithValues: Seq[ParameterWithValue], event: MessageEvent, service: AWSLambdaService): Future[BehaviorResult] = {

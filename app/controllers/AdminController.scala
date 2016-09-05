@@ -2,12 +2,10 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.mohiva.play.silhouette.api.Silhouette
 import models._
-import models.accounts.user.User
 import models.bots._
+import models.silhouette.EllipsisEnv
 import play.api.i18n.MessagesApi
 import services.AWSLambdaService
 import slick.dbio.DBIO
@@ -16,13 +14,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AdminController @Inject() (
                                   val messagesApi: MessagesApi,
-                                  val env: Environment[User, CookieAuthenticator],
+                                  val silhouette: Silhouette[EllipsisEnv],
                                   val models: Models,
-                                  val lambdaService: AWSLambdaService,
-                                  val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                  val lambdaService: AWSLambdaService
+                                ) extends ReAuthable {
 
-  def lambdaFunctions() = SecuredAction.async { implicit request =>
+  def lambdaFunctions() = silhouette.SecuredAction.async { implicit request =>
     val action = for {
       allFunctionNames <- DBIO.from(lambdaService.listFunctionNames)
       currentVersionIdsWithFunction <- BehaviorVersionQueries.currentIdsWithFunction
@@ -36,7 +33,7 @@ class AdminController @Inject() (
     models.run(action)
   }
 
-  def redeploy(versionId: String) = SecuredAction.async { implicit request =>
+  def redeploy(versionId: String) = silhouette.SecuredAction.async { implicit request =>
     val action = for {
       maybeBehaviorVersion <- BehaviorVersionQueries.findWithoutAccessCheck(versionId)
       _ <- maybeBehaviorVersion.map { version =>

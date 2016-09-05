@@ -2,17 +2,13 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import models.accounts.user.User
 import models.{Models, Team}
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.Action
 import services.AWSDynamoDBService
 import slick.dbio.DBIO
 
@@ -20,13 +16,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class DefaultStorage @Inject() (
-                                val messagesApi: MessagesApi,
-                                val env: Environment[User, CookieAuthenticator],
-                                val configuration: Configuration,
-                                val models: Models,
-                                val dynamoDBService: AWSDynamoDBService,
-                                socialProviderRegistry: SocialProviderRegistry)
-  extends Controller {
+                                 val messagesApi: MessagesApi,
+                                 val configuration: Configuration,
+                                 val models: Models,
+                                 val dynamoDBService: AWSDynamoDBService
+                               ) extends EllipsisController {
 
   case class PutItemInfo(token: String, itemType: String, itemId: String, itemJson: String)
 

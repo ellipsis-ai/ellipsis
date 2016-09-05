@@ -2,15 +2,13 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import models.bots.config.RequiredOAuth2ApiConfigQueries
 import models._
 import models.accounts._
-import models.accounts.user.User
 import models.bots._
+import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -21,12 +19,11 @@ import scala.concurrent.Future
 
 class OAuth2ApplicationController @Inject() (
                                               val messagesApi: MessagesApi,
-                                              val env: Environment[User, CookieAuthenticator],
-                                              val models: Models,
-                                              val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                              val silhouette: Silhouette[EllipsisEnv],
+                                              val models: Models
+                                            ) extends ReAuthable {
 
-  def list(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
@@ -50,7 +47,7 @@ class OAuth2ApplicationController @Inject() (
     models.run(action)
   }
 
-  def newApp(maybeRequiredOAuth2ApiConfigId: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = SecuredAction.async { implicit request =>
+  def newApp(maybeRequiredOAuth2ApiConfigId: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
@@ -79,7 +76,7 @@ class OAuth2ApplicationController @Inject() (
     models.run(action)
   }
 
-  def edit(id: String, maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def edit(id: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
@@ -133,7 +130,7 @@ class OAuth2ApplicationController @Inject() (
     )(OAuth2ApplicationInfo.apply)(OAuth2ApplicationInfo.unapply)
   )
 
-  def save = SecuredAction.async { implicit request =>
+  def save = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     saveForm.bindFromRequest.fold(
       formWithErrors => {

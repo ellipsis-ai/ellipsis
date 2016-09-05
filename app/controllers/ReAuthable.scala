@@ -1,16 +1,14 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.{Environment, Silhouette}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import models.accounts.user.User
+import com.mohiva.play.silhouette.api.actions.SecuredRequest
+import com.mohiva.play.silhouette.api.Silhouette
+import models.silhouette.EllipsisEnv
 import play.api.mvc.{AnyContent, RequestHeader, Result}
 import slick.dbio.DBIO
 
-trait ReAuthable extends Silhouette[User, CookieAuthenticator] {
+trait ReAuthable extends EllipsisController {
 
-  val socialProviderRegistry: SocialProviderRegistry
-  val env: Environment[User, CookieAuthenticator]
+  val silhouette: Silhouette[EllipsisEnv]
 
   protected def reAuthLinkFor(request: RequestHeader, maybeTeamId: Option[String]) = {
     routes.SocialAuthController.authenticateSlack(
@@ -20,11 +18,11 @@ trait ReAuthable extends Silhouette[User, CookieAuthenticator] {
     )
   }
 
-  protected def withAuthDiscarded(request: SecuredRequest[AnyContent], result: Result)(implicit r: RequestHeader) = {
-    DBIO.from(env.authenticatorService.discard(request.authenticator, result))
+  protected def withAuthDiscarded(request: SecuredRequest[EllipsisEnv, AnyContent], result: Result)(implicit r: RequestHeader) = {
+    DBIO.from(silhouette.env.authenticatorService.discard(request.authenticator, result))
   }
 
-  protected def reAuthFor(request: SecuredRequest[AnyContent], maybeTeamId: Option[String])(implicit r: RequestHeader) = {
+  protected def reAuthFor(request: SecuredRequest[EllipsisEnv, AnyContent], maybeTeamId: Option[String])(implicit r: RequestHeader) = {
     withAuthDiscarded(request, Redirect(reAuthLinkFor(request, maybeTeamId)))
   }
 }

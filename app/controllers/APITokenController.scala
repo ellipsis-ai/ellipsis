@@ -2,28 +2,25 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.mohiva.play.silhouette.api.Silhouette
 import models._
-import models.accounts.user.User
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import slick.dbio.DBIO
 import json.APITokenData
+import models.silhouette.EllipsisEnv
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class APITokenController @Inject() (
-                                    val messagesApi: MessagesApi,
-                                    val env: Environment[User, CookieAuthenticator],
-                                    val configuration: Configuration,
-                                    val models: Models,
-                                    val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                     val messagesApi: MessagesApi,
+                                     val silhouette: Silhouette[EllipsisEnv],
+                                     val configuration: Configuration,
+                                     val models: Models
+                                   ) extends ReAuthable {
 
   case class CreateAPITokenInfo(teamId: String, label: String)
 
@@ -34,7 +31,7 @@ class APITokenController @Inject() (
     )(CreateAPITokenInfo.apply)(CreateAPITokenInfo.unapply)
   )
 
-  def createToken  = SecuredAction.async { implicit request =>
+  def createToken  = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     createAPITokenForm.bindFromRequest.fold(
       formWithErrors => {
@@ -57,7 +54,7 @@ class APITokenController @Inject() (
     )
   }
 
-  def listTokens(maybeJustCreatedTokenId: Option[String]) = SecuredAction.async { implicit request =>
+  def listTokens(maybeJustCreatedTokenId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(None)
@@ -77,7 +74,7 @@ class APITokenController @Inject() (
     "id" -> nonEmptyText
   )
 
-  def revokeToken = SecuredAction.async { implicit request =>
+  def revokeToken = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     revokeApiTokenForm.bindFromRequest.fold(
       formWithErrors => {

@@ -2,15 +2,12 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.mohiva.play.silhouette.api.Silhouette
 import export.{BehaviorVersionExporter, BehaviorVersionImporter, BehaviorVersionZipImporter}
 import json._
 import json.Formatting._
 import models._
-import models.accounts._
-import models.accounts.user.User
+import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -22,14 +19,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class BehaviorImportExportController @Inject() (
-                                                val messagesApi: MessagesApi,
-                                                val env: Environment[User, CookieAuthenticator],
-                                                val models: Models,
-                                                val lambdaService: AWSLambdaService,
-                                                val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                                 val messagesApi: MessagesApi,
+                                                 val silhouette: Silhouette[EllipsisEnv],
+                                                 val models: Models,
+                                                 val lambdaService: AWSLambdaService
+                                               ) extends ReAuthable {
 
-  def export(id: String) = SecuredAction.async { implicit request =>
+  def export(id: String) = silhouette.SecuredAction.async { implicit request =>
     val action = BehaviorVersionExporter.maybeFor(id, request.identity).map { maybeExporter =>
       maybeExporter.map { exporter =>
         Ok.sendFile(exporter.getZipFile)
@@ -41,7 +37,7 @@ class BehaviorImportExportController @Inject() (
     models.run(action)
   }
 
-  def importZip(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def importZip(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = user.teamAccessFor(maybeTeamId).map { teamAccess =>
       teamAccess.maybeTargetTeam.map { team =>
@@ -62,7 +58,7 @@ class BehaviorImportExportController @Inject() (
     )(ImportBehaviorZipInfo.apply)(ImportBehaviorZipInfo.unapply)
   )
 
-  def doImportZip = SecuredAction.async { implicit request =>
+  def doImportZip = silhouette.SecuredAction.async { implicit request =>
     (for {
       formData <- request.body.asMultipartFormData
       zipFile <- formData.file("zipFile")
@@ -104,7 +100,7 @@ class BehaviorImportExportController @Inject() (
     )(ImportBehaviorInfo.apply)(ImportBehaviorInfo.unapply)
   )
 
-  def doImport = SecuredAction.async { implicit request =>
+  def doImport = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     importBehaviorForm.bindFromRequest.fold(
       formWithErrors => {

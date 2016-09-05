@@ -2,14 +2,11 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import models._
-import models.accounts._
-import models.accounts.user.User
 import models.bots._
+import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
@@ -21,16 +18,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class ApplicationController @Inject() (
                                         val messagesApi: MessagesApi,
-                                        val env: Environment[User, CookieAuthenticator],
+                                        val silhouette: Silhouette[EllipsisEnv],
                                         val configuration: Configuration,
                                         val models: Models,
                                         val lambdaService: AWSLambdaService,
                                         val ws: WSClient,
-                                        val cache: CacheApi,
-                                        val socialProviderRegistry: SocialProviderRegistry)
-  extends ReAuthable {
+                                        val cache: CacheApi
+                                      ) extends ReAuthable {
 
-  def index(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
@@ -71,7 +67,7 @@ class ApplicationController @Inject() (
     }
   }
 
-  def intro(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def intro(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
@@ -99,7 +95,7 @@ class ApplicationController @Inject() (
     models.run(action)
   }
 
-  def installBehaviors(maybeTeamId: Option[String]) = SecuredAction.async { implicit request =>
+  def installBehaviors(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- user.teamAccessFor(maybeTeamId)
