@@ -76,7 +76,7 @@ class AWSLambdaServiceImpl @Inject() (
       } else {
         for {
           token <- models.run(InvocationToken.createFor(behaviorVersion.team))
-          userInfo <- models.run(event.context.userInfo(ws))
+          userInfo <- models.run(event.context.userInfo(ws, dataService))
           notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
           missingOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
             !userInfo.links.exists(_.externalSystem == app.name)

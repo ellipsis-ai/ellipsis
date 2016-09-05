@@ -12,7 +12,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,12 +21,12 @@ import scala.concurrent.Future
 class BehaviorImportExportController @Inject() (
                                                  val messagesApi: MessagesApi,
                                                  val silhouette: Silhouette[EllipsisEnv],
-                                                 val models: Models,
+                                                 val dataService: DataService,
                                                  val lambdaService: AWSLambdaService
                                                ) extends ReAuthable {
 
   def export(id: String) = silhouette.SecuredAction.async { implicit request =>
-    val action = BehaviorVersionExporter.maybeFor(id, request.identity).map { maybeExporter =>
+    val action = BehaviorVersionExporter.maybeFor(id, request.identity, dataService).map { maybeExporter =>
       maybeExporter.map { exporter =>
         Ok.sendFile(exporter.getZipFile)
       }.getOrElse {
@@ -34,20 +34,18 @@ class BehaviorImportExportController @Inject() (
       }
     }
 
-    models.run(action)
+    dataService.run(action)
   }
 
   def importZip(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = user.teamAccessFor(maybeTeamId).map { teamAccess =>
+    dataService.users.teamAccessFor(user, maybeTeamId).map { teamAccess =>
       teamAccess.maybeTargetTeam.map { team =>
         Ok(views.html.importBehaviorZip(teamAccess))
       }.getOrElse {
         NotFound(s"No accessible team")
-      }
-    }
+      }}
 
-    models.run(action)
   }
 
   case class ImportBehaviorZipInfo(teamId: String)
@@ -69,7 +67,7 @@ class BehaviorImportExportController @Inject() (
         },
         info => {
           val action = for {
-            maybeTeam <- Team.find(info.teamId, request.identity)
+            maybeTeam <- Team.find(info.teamId, request.identity, dataService)
             maybeImporter <- DBIO.successful(maybeTeam.map { team =>
               BehaviorVersionZipImporter(team, request.identity, lambdaService, zipFile.ref.file)
             })
@@ -84,7 +82,7 @@ class BehaviorImportExportController @Inject() (
             }
           }
 
-          models.run(action)
+          dataService.run(action)
         }
       )
     }).getOrElse(Future.successful(BadRequest("")))
@@ -111,7 +109,7 @@ class BehaviorImportExportController @Inject() (
         json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
             val action = for {
-              maybeTeam <- Team.find(data.teamId, user)
+              maybeTeam <- Team.find(data.teamId, user, dataService)
               maybeImporter <- DBIO.successful(maybeTeam.map { team =>
                 BehaviorVersionImporter(team, user, lambdaService, data)
               })
@@ -130,7 +128,7 @@ class BehaviorImportExportController @Inject() (
               }
             }
 
-            models.run(action)
+            dataService.run(action)
           }
           case e: JsError => Future.successful(BadRequest("Malformatted data"))
         }

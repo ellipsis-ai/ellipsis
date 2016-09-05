@@ -11,6 +11,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
+import services.DataService
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
 
@@ -20,7 +21,7 @@ import scala.concurrent.Future
 class EnvironmentVariablesController @Inject() (
                                                  val messagesApi: MessagesApi,
                                                  val silhouette: Silhouette[EllipsisEnv],
-                                                 val models: Models
+                                                 val dataService: DataService
                                                ) extends ReAuthable {
 
   case class EnvironmentVariablesInfo(teamId: String, dataJson: String)
@@ -43,7 +44,7 @@ class EnvironmentVariablesController @Inject() (
         json.validate[EnvironmentVariablesData] match {
           case JsSuccess(data, jsPath) => {
             val action = (for {
-              maybeTeam <- Team.find(data.teamId, user)
+              maybeTeam <- Team.find(data.teamId, user, dataService)
               maybeEnvironmentVariables <- maybeTeam.map { team =>
                 DBIO.sequence(data.variables.map { envVarData =>
                   EnvironmentVariableQueries.ensureFor(envVarData.name, envVarData.value, team)
@@ -64,7 +65,7 @@ class EnvironmentVariablesController @Inject() (
               }
             }) transactionally
 
-            models.run(action)
+            dataService.run(action)
           }
           case e: JsError => Future.successful(BadRequest("Malformatted data"))
         }

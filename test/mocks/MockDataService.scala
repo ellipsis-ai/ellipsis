@@ -2,6 +2,7 @@ package mocks
 
 import javax.inject.Singleton
 
+import models.accounts.linkedaccount.LinkedAccountService
 import models.accounts.logintoken.LoginTokenService
 import models.accounts.user.UserService
 import org.scalatest.mock.MockitoSugar
@@ -15,6 +16,7 @@ class MockDataService extends DataService with MockitoSugar {
 
   val users: UserService = mock[UserService]
   val loginTokens: LoginTokenService = mock[LoginTokenService]
+  val linkedAccounts: LinkedAccountService = mock[LinkedAccountService]
 
   def run[T](action: DBIO[T]): Future[T] = throw new Exception("Don't call me")
 

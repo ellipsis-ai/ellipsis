@@ -11,7 +11,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, GithubService}
+import services.{AWSLambdaService, DataService, GithubService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,7 +20,7 @@ class ApplicationController @Inject() (
                                         val messagesApi: MessagesApi,
                                         val silhouette: Silhouette[EllipsisEnv],
                                         val configuration: Configuration,
-                                        val models: Models,
+                                        val dataService: DataService,
                                         val lambdaService: AWSLambdaService,
                                         val ws: WSClient,
                                         val cache: CacheApi
@@ -29,7 +29,7 @@ class ApplicationController @Inject() (
   def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      teamAccess <- user.teamAccessFor(maybeTeamId)
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       maybeBehaviors <- teamAccess.maybeTargetTeam.map { team =>
         BehaviorQueries.allForTeam(team).map { behaviors =>
           Some(behaviors)
@@ -39,7 +39,7 @@ class ApplicationController @Inject() (
       }
       versionData <- DBIO.sequence(maybeBehaviors.map { behaviors =>
         behaviors.map { behavior =>
-          BehaviorVersionData.maybeFor(behavior.id, user)
+          BehaviorVersionData.maybeFor(behavior.id, user, dataService)
         }
       }.getOrElse(Seq())).map(_.flatten)
       result <- teamAccess.maybeTargetTeam.map { team =>
@@ -53,7 +53,7 @@ class ApplicationController @Inject() (
       }
     } yield result
 
-    models.run(action)
+    dataService.run(action)
   }
 
   case class PublishedBehaviorInfo(published: Seq[BehaviorCategory], installedBehaviors: Seq[InstalledBehaviorData])
@@ -70,7 +70,7 @@ class ApplicationController @Inject() (
   def intro(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      teamAccess <- user.teamAccessFor(maybeTeamId)
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
         withPublishedBehaviorInfoFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
@@ -92,13 +92,13 @@ class ApplicationController @Inject() (
       }
     } yield result
 
-    models.run(action)
+    dataService.run(action)
   }
 
   def installBehaviors(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      teamAccess <- user.teamAccessFor(maybeTeamId)
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
         withPublishedBehaviorInfoFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
@@ -120,7 +120,7 @@ class ApplicationController @Inject() (
       }
     } yield result
 
-    models.run(action)
+    dataService.run(action)
   }
 
 }

@@ -9,6 +9,7 @@ import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
+import services.DataService
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,26 +18,24 @@ import scala.concurrent.Future
 class OAuth2ApiController @Inject() (
                                       val messagesApi: MessagesApi,
                                       val silhouette: Silhouette[EllipsisEnv],
-                                      val models: Models
+                                      val dataService: DataService
                                     ) extends ReAuthable {
 
   def newApi(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = user.teamAccessFor(maybeTeamId).map { teamAccess =>
+    dataService.users.teamAccessFor(user, maybeTeamId).map { teamAccess =>
       teamAccess.maybeTargetTeam.map { _ =>
         Ok(views.html.oAuth2Api(teamAccess, None))
       }.getOrElse {
         NotFound("Team not accessible")
       }
     }
-
-    models.run(action)
   }
 
   def edit(apiId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      teamAccess <- user.teamAccessFor(maybeTeamId)
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       maybeApi <- OAuth2ApiQueries.find(apiId)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
@@ -46,7 +45,7 @@ class OAuth2ApiController @Inject() (
       }
     }
 
-    models.run(action)
+    dataService.run(action)
   }
 
   case class OAuth2ApiInfo(
@@ -106,7 +105,7 @@ class OAuth2ApiController @Inject() (
           Redirect(routes.OAuth2ApiController.edit(api.id, None))
         }
 
-        models.run(action)
+        dataService.run(action)
       }
     )
   }

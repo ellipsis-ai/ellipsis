@@ -17,7 +17,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
 
@@ -28,7 +28,7 @@ class BehaviorEditorController @Inject() (
                                            val messagesApi: MessagesApi,
                                            val silhouette: Silhouette[EllipsisEnv],
                                            val configuration: Configuration,
-                                           val models: Models,
+                                           val dataService: DataService,
                                            val lambdaService: AWSLambdaService,
                                            val testReportBuilder: BehaviorTestReportBuilder
                                          ) extends ReAuthable {
@@ -36,7 +36,7 @@ class BehaviorEditorController @Inject() (
   def newBehavior(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      teamAccess <- user.teamAccessFor(maybeTeamId)
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
         EnvironmentVariableQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
@@ -75,14 +75,14 @@ class BehaviorEditorController @Inject() (
       }
     } yield result
 
-    models.run(action)
+    dataService.run(action)
   }
 
   def edit(id: String, maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeVersionData <- BehaviorVersionData.maybeFor(id, user)
-      teamAccess <- user.teamAccessFor(maybeVersionData.map(_.teamId))
+      maybeVersionData <- BehaviorVersionData.maybeFor(id, user, dataService)
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeVersionData.map(_.teamId)))
       maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
         EnvironmentVariableQueries.allFor(team).map(Some(_))
       }.getOrElse(DBIO.successful(None))
@@ -116,7 +116,7 @@ class BehaviorEditorController @Inject() (
       }
     } yield result
 
-    models.run(action)
+    dataService.run(action)
   }
 
   case class SaveBehaviorInfo(
@@ -144,9 +144,9 @@ class BehaviorEditorController @Inject() (
         json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
             val action = (for {
-              teamAccess <- user.teamAccessFor(Some(data.teamId))
+              teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, Some(data.teamId)))
               maybeBehavior <- data.behaviorId.map { behaviorId =>
-                BehaviorQueries.find(behaviorId, user)
+                BehaviorQueries.find(behaviorId, user, dataService)
               }.getOrElse {
                 teamAccess.maybeTargetTeam.map { team =>
                   BehaviorQueries.createFor(team, None).map(Some(_))
@@ -182,7 +182,7 @@ class BehaviorEditorController @Inject() (
               }
             }) transactionally
 
-            models.run(action)
+            dataService.run(action)
           }
           case e: JsError => Future.successful(BadRequest(s"Malformatted data: ${e.toString}"))
         }
@@ -201,13 +201,13 @@ class BehaviorEditorController @Inject() (
       },
       behaviorId => {
         val action = for {
-          maybeBehavior <- BehaviorQueries.find(behaviorId, request.identity)
+          maybeBehavior <- BehaviorQueries.find(behaviorId, request.identity, dataService)
           _ <- maybeBehavior.map { behavior =>
             behavior.unlearn(lambdaService)
           }.getOrElse(DBIO.successful(Unit))
         } yield Redirect(routes.ApplicationController.index())
 
-        models.run(action)
+        dataService.run(action)
       }
     )
   }
@@ -215,7 +215,7 @@ class BehaviorEditorController @Inject() (
   def versionInfoFor(behaviorId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeBehavior <- BehaviorQueries.find(behaviorId, user)
+      maybeBehavior <- BehaviorQueries.find(behaviorId, user, dataService)
       versions <- maybeBehavior.map { behavior =>
         BehaviorVersionQueries.allFor(behavior)
       }.getOrElse(DBIO.successful(Seq()))
@@ -277,7 +277,7 @@ class BehaviorEditorController @Inject() (
       }
     }
 
-    models.run(action)
+    dataService.run(action)
   }
 
   case class TestBehaviorInfo(behaviorId: String, message: String)
@@ -297,7 +297,7 @@ class BehaviorEditorController @Inject() (
       },
       info => {
         val action = for {
-          maybeBehavior <- BehaviorQueries.find(info.behaviorId, user)
+          maybeBehavior <- BehaviorQueries.find(info.behaviorId, user, dataService)
           maybeBehaviorVersion <- maybeBehavior.map { behavior =>
             behavior.maybeCurrentVersion
           }.getOrElse(DBIO.successful(None))
@@ -314,7 +314,7 @@ class BehaviorEditorController @Inject() (
           }
         }
 
-        models.run(action)
+        dataService.run(action)
       }
     )
   }
@@ -331,9 +331,9 @@ class BehaviorEditorController @Inject() (
       behaviorId => {
         val user = request.identity
         val action = for {
-          maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user)
+          maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService)
           maybeTeam <- maybeVersionData.map { data =>
-            Team.find(data.teamId, user)
+            Team.find(data.teamId, user,dataService)
           }.getOrElse(DBIO.successful(None))
           maybeImporter <- DBIO.successful(for {
             team <- maybeTeam
@@ -348,7 +348,7 @@ class BehaviorEditorController @Inject() (
           NotFound("")
         }
 
-        models.run(action)
+        dataService.run(action)
       }
     )
   }

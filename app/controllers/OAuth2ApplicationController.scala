@@ -12,6 +12,7 @@ import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
+import services.DataService
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,13 +21,13 @@ import scala.concurrent.Future
 class OAuth2ApplicationController @Inject() (
                                               val messagesApi: MessagesApi,
                                               val silhouette: Silhouette[EllipsisEnv],
-                                              val models: Models
+                                              val dataService: DataService
                                             ) extends ReAuthable {
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      teamAccess <- user.teamAccessFor(maybeTeamId)
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       applications <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.allFor(team)
@@ -44,13 +45,13 @@ class OAuth2ApplicationController @Inject() (
         NotFound("Team not accessible")
       }
     }
-    models.run(action)
+    dataService.run(action)
   }
 
   def newApp(maybeRequiredOAuth2ApiConfigId: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      teamAccess <- user.teamAccessFor(maybeTeamId)
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       maybeRequiredOAuth2ApiConfig <- maybeRequiredOAuth2ApiConfigId.map { id =>
         RequiredOAuth2ApiConfigQueries.find(id)
@@ -73,13 +74,13 @@ class OAuth2ApplicationController @Inject() (
       }
     }
 
-    models.run(action)
+    dataService.run(action)
   }
 
   def edit(id: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      teamAccess <- user.teamAccessFor(maybeTeamId)
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       maybeApplication <- teamAccess.maybeTargetTeam.map { team =>
         OAuth2ApplicationQueries.find(id)
@@ -101,7 +102,7 @@ class OAuth2ApplicationController @Inject() (
       }
     }
 
-    models.run(action)
+    dataService.run(action)
   }
 
   case class OAuth2ApplicationInfo(
@@ -138,7 +139,7 @@ class OAuth2ApplicationController @Inject() (
       },
       info => {
         val action = for {
-          maybeTeam <- Team.find(info.teamId, user)
+          maybeTeam <- Team.find(info.teamId, user, dataService)
           maybeApi <- OAuth2ApiQueries.find(info.apiId)
           maybeApplication <- (for {
             api <- maybeApi
@@ -148,7 +149,7 @@ class OAuth2ApplicationController @Inject() (
             OAuth2ApplicationQueries.save(instance).map(Some(_))
           }).getOrElse(DBIO.successful(None))
           maybeBehaviorVersion <- info.maybeBehaviorId.map { behaviorId =>
-            BehaviorQueries.find(behaviorId, user).flatMap { maybeBehavior =>
+            BehaviorQueries.find(behaviorId, user, dataService).flatMap { maybeBehavior =>
               maybeBehavior.map { behavior =>
                 behavior.maybeCurrentVersion
               }.getOrElse(DBIO.successful(None))
@@ -173,7 +174,7 @@ class OAuth2ApplicationController @Inject() (
           }
         }
 
-        models.run(action)
+        dataService.run(action)
       }
     )
   }

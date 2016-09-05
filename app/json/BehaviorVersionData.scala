@@ -11,6 +11,7 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import Formatting._
+import services.DataService
 
 case class BehaviorVersionData(
                                 teamId: String,
@@ -91,9 +92,9 @@ object BehaviorVersionData {
     )
   }
 
-  def maybeFor(behaviorId: String, user: User, maybePublishedId: Option[String] = None): DBIO[Option[BehaviorVersionData]] = {
+  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybePublishedId: Option[String] = None): DBIO[Option[BehaviorVersionData]] = {
     for {
-      maybeBehavior <- BehaviorQueries.find(behaviorId, user)
+      maybeBehavior <- BehaviorQueries.find(behaviorId, user, dataService)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
         behavior.maybeCurrentVersion
       }.getOrElse(DBIO.successful(None))
