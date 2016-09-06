@@ -26,4 +26,5 @@ class PostgresDataService @Inject() (
   val teams = teamsProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
+  def runNow[T](action: DBIO[T]): T = models.runNow(action)
 }

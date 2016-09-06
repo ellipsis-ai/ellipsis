@@ -16,4 +16,5 @@ trait DataService {
   val teams: TeamService
 
   def run[T](action: DBIO[T]): Future[T]
+  def runNow[T](action: DBIO[T]): T
 }
