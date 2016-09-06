@@ -1,6 +1,7 @@
-import models.{IDs, Team}
+import models.IDs
 import models.bots.{Behavior, BehaviorParameter, BehaviorVersion}
 import models.bots.triggers.TemplateMessageTrigger
+import models.team.Team
 import org.joda.time.DateTime
 
 class TemplateMessageTriggerSpec extends MessageTriggerSpec {

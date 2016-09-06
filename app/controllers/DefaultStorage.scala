@@ -2,15 +2,13 @@ package controllers
 
 import javax.inject.Inject
 
-import models.{Models, Team}
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc.Action
-import services.AWSDynamoDBService
-import slick.dbio.DBIO
+import services.{AWSDynamoDBService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -18,7 +16,7 @@ import scala.concurrent.Future
 class DefaultStorage @Inject() (
                                  val messagesApi: MessagesApi,
                                  val configuration: Configuration,
-                                 val models: Models,
+                                 val dataService: DataService,
                                  val dynamoDBService: AWSDynamoDBService
                                ) extends EllipsisController {
 
@@ -39,33 +37,29 @@ class DefaultStorage @Inject() (
         Future.successful(BadRequest("oops"))
       },
       info => {
-        val action = for {
-          maybeTeam <- Team.findForToken(info.token)
+        for {
+          maybeTeam <- dataService.teams.findForToken(info.token)
           result <- maybeTeam.map { team =>
-            DBIO.from(dynamoDBService.putItem(info.itemId, Json.toJson(info.itemJson), info.itemType, team).map { _ =>
+            dynamoDBService.putItem(info.itemId, Json.toJson(info.itemJson), info.itemType, team).map { _ =>
               Ok("success")
-            })
-          }.getOrElse(DBIO.successful(Unauthorized("Invalid request token")))
+            }
+          }.getOrElse(Future.successful(Unauthorized("Invalid request token")))
         } yield result
-
-        models.run(action)
       }
     )
   }
 
   def getItem(itemId: String, itemType: String, token: String) = Action.async { implicit request =>
-    val action = for {
-      maybeTeam <- Team.findForToken(token)
+    for {
+      maybeTeam <- dataService.teams.findForToken(token)
       result <- maybeTeam.map { team =>
-        DBIO.from(dynamoDBService.getItem(itemId, itemType, team).map { maybeItem =>
+        dynamoDBService.getItem(itemId, itemType, team).map { maybeItem =>
           maybeItem.map { item =>
             Ok(item)
           }.getOrElse(NotFound("item not found"))
-        })
-      }.getOrElse(DBIO.successful(Unauthorized("Invalid request token")))
+        }
+      }.getOrElse(Future.successful(Unauthorized("Invalid request token")))
     } yield result
-
-    models.run(action)
   }
 
 }

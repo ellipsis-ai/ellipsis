@@ -2,7 +2,8 @@ package models.bots
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.accounts.user.User
-import models.{IDs, Team}
+import models.IDs
+import models.team.{Team, TeamQueries}
 import org.joda.time.DateTime
 import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
@@ -59,7 +60,7 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
 object BehaviorQueries {
 
   def all = TableQuery[BehaviorsTable]
-  def allWithTeam = all.join(Team.all).on(_.teamId === _.id)
+  def allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
 
   def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
     val raw = tuple._1

@@ -2,7 +2,7 @@ package services
 
 import javax.inject.Inject
 import com.amazonaws.services.dynamodbv2.model._
-import models.Team
+import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsValue
 import utils.JavaFutureWrapper

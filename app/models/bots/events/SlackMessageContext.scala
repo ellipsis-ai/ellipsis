@@ -1,6 +1,5 @@
 package models.bots.events
 
-import models.Team
 import models.accounts._
 import models.accounts.user.User
 import models.bots.SlackMessageFormatter
@@ -59,9 +58,9 @@ case class SlackMessageContext(
     }
   }
 
-  override def recentMessages: DBIO[Seq[String]] = {
+  override def recentMessages(dataService: DataService): DBIO[Seq[String]] = {
     for {
-      maybeTeam <- Team.find(profile.teamId)
+      maybeTeam <- DBIO.from(dataService.teams.find(profile.teamId))
       maybeOAuthToken <- OAuth2Token.maybeFullForSlackTeamId(profile.slackTeamId)
       maybeUserClient <- DBIO.successful(maybeOAuthToken.map { token =>
         SlackApiClient(token.accessToken)

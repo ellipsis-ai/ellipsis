@@ -1,6 +1,5 @@
 package models.bots.builtins
 
-import models.Team
 import models.bots.events.MessageContext
 import models.bots.triggers.MessageTriggerQueries
 import models.bots._
@@ -14,11 +13,11 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
 
   def result: DBIO[BehaviorResult] = {
     for {
-      maybeTeam <- Team.find(messageContext.teamId)
+      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       maybeUser <- maybeTeam.map { team =>
         DBIO.from(dataService.users.findFromMessageContext(messageContext, team))
       }.getOrElse(DBIO.successful(None))
-      messages <- messageContext.recentMessages
+      messages <- messageContext.recentMessages(dataService)
       qaExtractor <- DBIO.successful(QuestionAnswerExtractor(messages))
       maybeBehavior <- maybeTeam.map { team =>
         BehaviorQueries.createFor(team, None).map(Some(_))

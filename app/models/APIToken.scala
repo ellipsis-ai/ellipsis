@@ -1,5 +1,6 @@
 package models
 
+import models.team.Team
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat

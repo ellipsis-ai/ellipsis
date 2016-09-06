@@ -7,6 +7,7 @@ import models.accounts.user.{UserService, UserServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
 import models.bots.BehaviorTestReportBuilder
 import models.bots.events.EventHandler
+import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
@@ -21,6 +22,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[UserService].to(classOf[UserServiceImpl])
     bind[LoginTokenService].to(classOf[LoginTokenServiceImpl])
     bind[LinkedAccountService].to(classOf[LinkedAccountServiceImpl])
+    bind[TeamService].to(classOf[TeamServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).asEagerSingleton()
     bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()

@@ -1,7 +1,7 @@
 package services
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsyncClient
-import models.Team
+import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsValue
 

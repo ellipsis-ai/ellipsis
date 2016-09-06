@@ -3,9 +3,10 @@ package models.bots.triggers
 import java.util.regex.PatternSyntaxException
 
 import models.accounts.user.User
-import models.{IDs, Team}
+import models.IDs
 import models.bots._
 import models.bots.events.{Event, MessageEvent}
+import models.team.Team
 import services.AWSLambdaConstants
 import slick.driver.PostgresDriver.api._
 

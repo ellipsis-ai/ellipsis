@@ -1,6 +1,6 @@
 package json
 
-import models.Team
+import models.team.Team
 import models.accounts.user.User
 import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.triggers.MessageTriggerQueries

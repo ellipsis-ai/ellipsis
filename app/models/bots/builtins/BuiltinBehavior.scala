@@ -28,16 +28,16 @@ object BuiltinBehavior {
 
     if (messageContext.includesBotMention) {
       messageContext.relevantMessageText match {
-        case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, messageContext, lambdaService))
-        case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, messageContext, lambdaService))
+        case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, messageContext, lambdaService, dataService))
+        case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, messageContext, lambdaService, dataService))
         case startLearnConversationRegex() => Some(LearnBehavior(messageContext, lambdaService))
         case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, messageContext, lambdaService))
-        case helpRegex(helpString) => Some(DisplayHelpBehavior(helpString, messageContext, lambdaService))
+        case helpRegex(helpString) => Some(DisplayHelpBehavior(helpString, messageContext, lambdaService, dataService))
         case rememberRegex(cmd) => Some(RememberBehavior(messageContext, lambdaService, dataService))
-        case scheduledRegex() => Some(ListScheduledBehavior(messageContext, lambdaService))
-        case scheduleRegex(text, recurrence) => Some(ScheduleBehavior(text, recurrence, messageContext, lambdaService))
-        case unscheduleRegex(text) => Some(UnscheduleBehavior(text, messageContext, lambdaService))
-        case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(messageContext, lambdaService))
+        case scheduledRegex() => Some(ListScheduledBehavior(messageContext, lambdaService, dataService))
+        case scheduleRegex(text, recurrence) => Some(ScheduleBehavior(text, recurrence, messageContext, lambdaService, dataService))
+        case unscheduleRegex(text) => Some(UnscheduleBehavior(text, messageContext, lambdaService, dataService))
+        case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(messageContext, lambdaService, dataService))
         case _ => None
       }
     } else {

@@ -44,7 +44,7 @@ class EnvironmentVariablesController @Inject() (
         json.validate[EnvironmentVariablesData] match {
           case JsSuccess(data, jsPath) => {
             val action = (for {
-              maybeTeam <- Team.find(data.teamId, user, dataService)
+              maybeTeam <- DBIO.from(dataService.teams.find(data.teamId, user))
               maybeEnvironmentVariables <- maybeTeam.map { team =>
                 DBIO.sequence(data.variables.map { envVarData =>
                   EnvironmentVariableQueries.ensureFor(envVarData.name, envVarData.value, team)

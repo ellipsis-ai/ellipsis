@@ -4,7 +4,7 @@ import java.io.{ByteArrayOutputStream, File, FileInputStream}
 import java.util.zip.{ZipEntry, ZipInputStream}
 
 import json.BehaviorVersionData
-import models.Team
+import models.team.Team
 import models.accounts.user.User
 import models.bots.BehaviorVersion
 import services.AWSLambdaService

@@ -1,7 +1,7 @@
 package models.accounts.user
 
 import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
-import models.Team
+import models.team.Team
 
 case class UserTeamAccess(user: User, loggedInTeam: Team, maybeTargetTeam: Option[Team], isAdminAccess: Boolean) {
 

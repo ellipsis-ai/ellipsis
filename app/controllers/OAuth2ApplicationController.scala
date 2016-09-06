@@ -139,7 +139,7 @@ class OAuth2ApplicationController @Inject() (
       },
       info => {
         val action = for {
-          maybeTeam <- Team.find(info.teamId, user, dataService)
+          maybeTeam <- DBIO.from(dataService.teams.find(info.teamId, user))
           maybeApi <- OAuth2ApiQueries.find(info.apiId)
           maybeApplication <- (for {
             api <- maybeApi

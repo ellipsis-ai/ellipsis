@@ -1,6 +1,6 @@
 package json
 
-import models.Team
+import models.team.Team
 
 case class BehaviorCategory(
                              name: String,

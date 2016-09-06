@@ -67,7 +67,7 @@ class BehaviorImportExportController @Inject() (
         },
         info => {
           val action = for {
-            maybeTeam <- Team.find(info.teamId, request.identity, dataService)
+            maybeTeam <- DBIO.from(dataService.teams.find(info.teamId, request.identity))
             maybeImporter <- DBIO.successful(maybeTeam.map { team =>
               BehaviorVersionZipImporter(team, request.identity, lambdaService, zipFile.ref.file)
             })
@@ -109,7 +109,7 @@ class BehaviorImportExportController @Inject() (
         json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
             val action = for {
-              maybeTeam <- Team.find(data.teamId, user, dataService)
+              maybeTeam <- DBIO.from(dataService.teams.find(data.teamId, user))
               maybeImporter <- DBIO.successful(maybeTeam.map { team =>
                 BehaviorVersionImporter(team, user, lambdaService, data)
               })
