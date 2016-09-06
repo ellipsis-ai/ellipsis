@@ -37,6 +37,14 @@ object InvocationLogEntryQueries {
 
   def all = TableQuery[InvocationLogEntriesTable]
 
+  val truncateDate = SimpleFunction.binary[String, DateTime, DateTime]("date_trunc")
+
+  def countsByDay: DBIO[Seq[(DateTime, Int)]] = {
+    all.map(ea => (truncateDate("day", ea.createdAt), 1)).groupBy(_._1).map { case(date, q) =>
+      (date, q.map(_._2).sum.getOrElse(0))
+    }.result
+  }
+
   def createFor(
                  behaviorVersion: BehaviorVersion,
                  result: BehaviorResult,
