@@ -1,9 +1,8 @@
 package models.bots.builtins
 
-import models.Team
 import models.bots.events.{MessageContext, SlackMessageContext}
 import models.bots.{BehaviorResult, ScheduledMessageQueries, SimpleTextResult}
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -13,7 +12,8 @@ case class ScheduleBehavior(
                              text: String,
                              recurrence: String,
                              messageContext: MessageContext,
-                             lambdaService: AWSLambdaService
+                             lambdaService: AWSLambdaService,
+                             dataService: DataService
                              ) extends BuiltinBehavior {
 
   def maybeChannel: Option[String] = {
@@ -25,7 +25,7 @@ case class ScheduleBehavior(
 
   def result: DBIO[BehaviorResult] = {
     for {
-      maybeTeam <- Team.find(messageContext.teamId)
+      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       maybeScheduledMessage <- maybeTeam.map { team =>
         ScheduledMessageQueries.maybeCreateFor(text, recurrence, team, maybeChannel)
       }.getOrElse(DBIO.successful(None))

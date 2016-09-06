@@ -7,6 +7,7 @@ import json._
 import models._
 import models.bots._
 import models.silhouette.EllipsisEnv
+import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi

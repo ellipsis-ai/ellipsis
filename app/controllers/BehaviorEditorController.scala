@@ -333,7 +333,7 @@ class BehaviorEditorController @Inject() (
         val action = for {
           maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService)
           maybeTeam <- maybeVersionData.map { data =>
-            Team.find(data.teamId, user,dataService)
+            DBIO.from(dataService.teams.find(data.teamId, user))
           }.getOrElse(DBIO.successful(None))
           maybeImporter <- DBIO.successful(for {
             team <- maybeTeam

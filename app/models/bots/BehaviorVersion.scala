@@ -9,7 +9,8 @@ import models.accounts.user.{User, UserQueries}
 import models.bots.config.{AWSConfig, AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTriggerQueries
-import models.{EnvironmentVariable, EnvironmentVariableQueries, IDs, Team}
+import models.{EnvironmentVariable, EnvironmentVariableQueries, IDs}
+import models.team.Team
 import org.commonmark.node.{AbstractVisitor, Image}
 import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json}

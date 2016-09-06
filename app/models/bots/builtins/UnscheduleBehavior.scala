@@ -1,9 +1,8 @@
 package models.bots.builtins
 
-import models.Team
 import models.bots.events.MessageContext
 import models.bots.{BehaviorResult, ScheduledMessageQueries, SimpleTextResult}
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,12 +10,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class UnscheduleBehavior(
                              text: String,
                              messageContext: MessageContext,
-                             lambdaService: AWSLambdaService
+                             lambdaService: AWSLambdaService,
+                             dataService: DataService
                              ) extends BuiltinBehavior {
 
   def result: DBIO[BehaviorResult] = {
     for {
-      maybeTeam <- Team.find(messageContext.teamId)
+      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       didDelete <- maybeTeam.map { team =>
         ScheduledMessageQueries.deleteFor(text, team)
       }.getOrElse(DBIO.successful(false))

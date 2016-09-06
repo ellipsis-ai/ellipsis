@@ -1,15 +1,19 @@
 package models.bots.builtins
 
-import models.Team
 import models.bots.{BehaviorResult, BehaviorVersion, SimpleTextResult}
 import models.bots.events.MessageContext
 import models.bots.triggers.MessageTriggerQueries
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class DisplayHelpBehavior(helpString: String, messageContext: MessageContext, lambdaService: AWSLambdaService) extends BuiltinBehavior {
+case class DisplayHelpBehavior(
+                                helpString: String,
+                                messageContext: MessageContext,
+                                lambdaService: AWSLambdaService,
+                                dataService: DataService
+                              ) extends BuiltinBehavior {
 
   private def helpStringFor(behaviorVersions: Seq[BehaviorVersion], prompt: String, matchString: String): DBIO[String] = {
     DBIO.sequence(behaviorVersions.map { ea =>
@@ -57,7 +61,7 @@ case class DisplayHelpBehavior(helpString: String, messageContext: MessageContex
   def result: DBIO[BehaviorResult] = {
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
     for {
-      maybeTeam <- Team.find(messageContext.teamId)
+      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       matchingTriggers <- maybeTeam.map { team =>
         maybeHelpSearch.map { helpSearch =>
           MessageTriggerQueries.allMatching(helpSearch, team)

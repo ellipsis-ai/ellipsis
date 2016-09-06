@@ -1,7 +1,7 @@
 package models.bots.conversations
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
-import models.Team
+import models.team.Team
 import models.accounts.user.User
 import models.bots._
 import models.bots.events.MessageEvent

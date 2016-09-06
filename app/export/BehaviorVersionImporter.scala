@@ -1,7 +1,7 @@
 package export
 
 import json.BehaviorVersionData
-import models.Team
+import models.team.Team
 import models.accounts.user.User
 import models.bots.{BehaviorQueries, BehaviorVersion, BehaviorVersionQueries}
 import services.AWSLambdaService

@@ -5,7 +5,6 @@ import javax.inject._
 import models.bots.{BehaviorResponse, BehaviorResult, NoResponseResult, SimpleTextResult}
 import models.bots.builtins.BuiltinBehavior
 import models.bots.conversations.Conversation
-import models.Team
 import play.api.i18n.MessagesApi
 import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
@@ -23,7 +22,7 @@ class EventHandler @Inject() (
   def startInvokeConversationFor(event: MessageEvent): DBIO[BehaviorResult] = {
     val context = event.context
     for {
-      maybeTeam <- Team.find(context.teamId)
+      maybeTeam <- DBIO.from(dataService.teams.find(context.teamId))
       maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None)
       result <- maybeResponse.map { response =>
         response.result(lambdaService)

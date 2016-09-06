@@ -6,7 +6,8 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.linkedaccount.LinkedAccount
 import models.bots.events.{MessageContext, SlackMessageContext}
-import models.{IDs, Team}
+import models.IDs
+import models.team.Team
 import org.joda.time.DateTime
 import services.DataService
 import slick.driver.PostgresDriver.api._
@@ -70,21 +71,20 @@ class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) ext
   }
 
   def teamAccessFor(user: User, maybeTargetTeamId: Option[String]): Future[UserTeamAccess] = {
-    val action = for {
-      loggedInTeam <- Team.find(user.teamId).map(_.get)
-      maybeSlackLinkedAccount <- DBIO.from(dataService.linkedAccounts.maybeForSlackFor(user))
-      isAdmin <- DBIO.from(maybeSlackLinkedAccount.map(dataService.linkedAccounts.isAdmin).getOrElse(Future.successful(false)))
+    for {
+      loggedInTeam <- dataService.teams.find(user.teamId).map(_.get)
+      maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
+      isAdmin <- maybeSlackLinkedAccount.map(dataService.linkedAccounts.isAdmin).getOrElse(Future.successful(false))
       maybeTeam <- maybeTargetTeamId.map { targetTeamId =>
         if (targetTeamId != user.teamId && !isAdmin) {
-          DBIO.successful(None)
+          Future.successful(None)
         } else {
-          Team.find(targetTeamId)
+          dataService.teams.find(targetTeamId)
         }
       }.getOrElse {
-        Team.find(user.teamId)
+        dataService.teams.find(user.teamId)
       }
     } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeTeam.exists(t => t.id != user.teamId))
-    dataService.run(action)
   }
 
 

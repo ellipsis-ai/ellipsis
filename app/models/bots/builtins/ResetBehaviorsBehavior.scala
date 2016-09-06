@@ -1,23 +1,23 @@
 package models.bots.builtins
 
 import com.amazonaws.AmazonServiceException
-import models.Team
 import models.bots.{BehaviorQueries, BehaviorResult, SimpleTextResult}
 import models.bots.events.MessageContext
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ResetBehaviorsBehavior(
                             messageContext: MessageContext,
-                            lambdaService: AWSLambdaService
+                            lambdaService: AWSLambdaService,
+                            dataService: DataService
                             ) extends BuiltinBehavior {
 
   def result: DBIO[BehaviorResult] = {
     val eventualReply = try {
       for {
-        maybeTeam <- Team.find(messageContext.teamId)
+        maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
         behaviors <- maybeTeam.map { team =>
           BehaviorQueries.allForTeam(team)
         }.getOrElse(DBIO.successful(Seq()))

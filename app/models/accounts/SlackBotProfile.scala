@@ -1,8 +1,9 @@
 package models.accounts
 
-import models._
+import models.team.Team
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import org.joda.time.DateTime
+import services.DataService
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -65,20 +66,20 @@ object SlackBotProfileQueries {
     allSinceQuery(when).result
   }
 
-  def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): DBIO[SlackBotProfile] = {
+  def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String, dataService: DataService): DBIO[SlackBotProfile] = {
     val query = findQuery(userId)
     query.result.headOption.flatMap {
       case Some(existing) => {
         val profile = SlackBotProfile(userId, existing.teamId, slackTeamId, token, existing.createdAt)
         for {
-          maybeTeam <- Team.find(existing.teamId)
+          maybeTeam <- DBIO.from(dataService.teams.find(existing.teamId))
           _ <- query.update(profile)
           _ <- maybeTeam.map { team =>
-            team.setInitialName(slackTeamName)
+            DBIO.from(dataService.teams.setInitialNameFor(team, slackTeamName))
           }.getOrElse(DBIO.successful(Unit))
         } yield profile
       }
-      case None => Team.create(slackTeamName).flatMap { team =>
+      case None => DBIO.from(dataService.teams.create(slackTeamName)).flatMap { team =>
         val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, DateTime.now)
         (all += newProfile).map { _ => newProfile }
       }

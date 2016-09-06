@@ -1,7 +1,7 @@
 package services
 
 import json._
-import models.Team
+import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsValue, Json}

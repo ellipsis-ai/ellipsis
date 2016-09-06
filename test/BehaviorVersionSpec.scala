@@ -1,11 +1,9 @@
-import javax.inject.Inject
-
 import models.accounts.user.User
 import models.bots.{Behavior, BehaviorQueries, BehaviorVersionQueries}
-import models.{IDs, Team}
+import models.IDs
+import models.team.Team
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import services.DataService
-import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api.{Database => PostgresDatabase}
 
 
@@ -21,8 +19,8 @@ class BehaviorVersionSpec extends PlaySpec with DBMixin with OneAppPerSuite {
 
     "should load the current version" in {
       withDatabase { db =>
-        val team = runNow(db, Team(IDs.next, "").save)
-        val user = runNow(db, DBIO.from(dataService.users.save(User(IDs.next, team.id, None))))
+        val team = runNow(dataService.teams.save(Team(IDs.next, "")))
+        val user = runNow(dataService.users.save(User(IDs.next, team.id, None)))
         val behavior = runNow(db, BehaviorQueries.createFor(team, None))
         val firstVersion = runNow(db, BehaviorVersionQueries.createFor(behavior, Some(user)))
         reloadBehavior(db, behavior).maybeCurrentVersionId mustBe Some(firstVersion.id)

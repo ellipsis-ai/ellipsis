@@ -1,6 +1,6 @@
 package models.bots
 
-import models.Team
+import models.team.Team
 import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
 import models.bots.events.MessageEvent
 import models.bots.triggers.{MessageTrigger, MessageTriggerQueries}

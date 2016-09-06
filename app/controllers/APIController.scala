@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
-import models.{APITokenQueries, Models, Team}
+import models.APITokenQueries
 import models.accounts._
 import models.bots.events.{APIMessageContext, APIMessageEvent, EventHandler}
 import play.api.Configuration
@@ -12,7 +12,7 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc.Action
-import services.SlackService
+import services.{DataService, SlackService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,7 +21,7 @@ import scala.concurrent.Future
 class APIController @Inject() (
                                 val messagesApi: MessagesApi,
                                 val configuration: Configuration,
-                                val models: Models,
+                                val dataService: DataService,
                                 val ws: WSClient,
                                 val cache: CacheApi,
                                 val slackService: SlackService,
@@ -55,7 +55,7 @@ class APIController @Inject() (
       },
       info => {
         val action = for {
-          maybeTeam <- Team.find(info.teamId)
+          maybeTeam <- DBIO.from(dataService.teams.find(info.teamId))
           _ <- maybeTeam.map { team =>
             APITokenQueries.find(info.token, team).flatMap { maybeToken =>
               maybeToken.map { token =>
@@ -91,7 +91,7 @@ class APIController @Inject() (
           }.getOrElse(DBIO.successful(NotFound("")))
         } yield result
 
-        models.run(action).recover {
+        dataService.run(action).recover {
           case e: InvalidAPITokenException => BadRequest("Invalid API token")
         }
       }

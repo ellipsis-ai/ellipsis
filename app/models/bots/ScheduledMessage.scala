@@ -1,7 +1,8 @@
 package models.bots
 
-import models.{IDs, Team}
+import models.IDs
 import models.accounts.{SlackBotProfile, SlackBotProfileQueries}
+import models.team.{Team, TeamQueries}
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalTime}
 import com.github.tototoshi.slick.PostgresJodaSupport._
@@ -160,7 +161,7 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
 object ScheduledMessageQueries {
 
   val all = TableQuery[ScheduledMessagesTable]
-  val allWithTeam = all.join(Team.all).on(_.teamId === _.id)
+  val allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
 
   def tuple2ScheduledMessage(tuple: (RawScheduledMessage, Team)): ScheduledMessage = {
     val raw = tuple._1
