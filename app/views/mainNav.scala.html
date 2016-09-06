@@ -1,5 +1,5 @@
 @(
-  maybeTeamAccess: Option[models.accounts.UserTeamAccess]
+  maybeTeamAccess: Option[models.accounts.user.UserTeamAccess]
 )(implicit r: RequestHeader)
 <div class="columns columns-elastic">
   <div class="column column-expand pts pbxs">
@@ -19,7 +19,7 @@
     </a>
 
     <a class="link-light display-inline-block align-button mhs"
-      href='@routes.ApplicationController.listOAuth2Applications(maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+      href='@routes.OAuth2ApplicationController.list(maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
       Settings
     </a>
   </div>

@@ -1,6 +1,6 @@
 @import helper._
 @(
-  teamAccess: models.accounts.UserTeamAccess
+  teamAccess: models.accounts.user.UserTeamAccess
 )(implicit r: RequestHeader)
 <div class="column column-shrink align-r pts pbxs">
   <form action='@routes.SocialAuthController.signOut()' method="POST" id="main-user-menu-container">
