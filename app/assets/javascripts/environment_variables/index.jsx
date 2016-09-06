@@ -4,6 +4,7 @@ define(function(require) {
     HelpButton = require('../help/help_button'),
     HelpPanel = require('../help/panel'),
     SettingsMenu = require('../settings_menu'),
+    Setter = require('./setter'),
     IfPresent = require('../if_present');
 
   return React.createClass({
@@ -42,11 +43,6 @@ define(function(require) {
                 </div>
                 <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl phxxxxl">
 
-                  <p>
-                    <span>Use environment variables to hold secure information like passwords or access keys </span>
-                    <span>that shouldn’t be visible to your team but may be used by multiple behaviors. </span>
-                  </p>
-
                   {this.renderEnvVarList()}
 
                 </div>
@@ -72,34 +68,12 @@ define(function(require) {
 
     renderEnvVarList: function() {
       return (
-        <div className="columns">
-          <div className="column-group">
-            {this.props.data.variables.map((envVar, index) => {
-              return (
-                <div className="column-row" key={`envVar${index}`}>
-                  <div className="column column-one-quarter mobile-column-full border-top ptm pbs type-monospace display-ellipsis">
-                    {envVar.name}
-                  </div>
-                  <div className="column column-three-quarters mobile-column-full border-top mobile-border-none ptm pbs mobile-ptn">
-                    {IfPresent(envVar.isAlreadySavedWithValue, () => {
-                      return (
-                        <div>
-                          <span>••••••••</span>
-                          <button type="button" className="button-raw mlm">Reset</button>
-                        </div>
-
-                      );
-                    }, () => {
-                      return (
-                        <i>No value set</i>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <Setter
+          onCancelClick={function(){}}
+          onChangeVarName={function(){}}
+          onSave={function(){}}
+          vars={this.props.data.variables}
+        />
       );
     }
 
