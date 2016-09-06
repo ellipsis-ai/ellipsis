@@ -87,5 +87,15 @@ class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) ext
     } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeTeam.exists(t => t.id != user.teamId))
   }
 
+  def isAdmin(user: User): Future[Boolean] = {
+    for {
+      linkedAccounts <- dataService.linkedAccounts.allFor(user)
+      isAdmins <- Future.sequence(linkedAccounts.map { acc =>
+        dataService.linkedAccounts.isAdmin(acc)
+      })
+    } yield {
+      isAdmins.contains(true)
+    }
+  }
 
 }
