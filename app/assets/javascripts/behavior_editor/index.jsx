@@ -1442,13 +1442,17 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
-            <EnvVariableSetter
-              ref="envVariableSetterPanel"
-              vars={this.getEnvVariables()}
-              onCancelClick={this.cancelEnvVariableSetter}
-              onChangeVarName={this.setEnvVariableNameAtIndex}
-              onSave={this.updateEnvVariables}
-            />
+            <div className="box-action">
+              <div className="container phn">
+                <EnvVariableSetter
+                  ref="envVariableSetterPanel"
+                  vars={this.getEnvVariables()}
+                  onCancelClick={this.cancelEnvVariableSetter}
+                  onChangeVarName={this.setEnvVariableNameAtIndex}
+                  onSave={this.updateEnvVariables}
+                />
+              </div>
+            </div>
           </Collapsible>
 
           <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>

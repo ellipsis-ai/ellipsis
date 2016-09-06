@@ -159,8 +159,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="box-action">
-          <div className="container phn">
+        <div>
             <p>
               <span>Set environment variables to hold secure information like access keys for other services </span>
               <span>that may be used by multiple behaviors.</span>
@@ -190,7 +189,6 @@ define(function(require) {
               <button className="mbs" type="button" onClick={this.onCancel}>Cancel</button>
             </div>
 
-          </div>
         </div>
       );
     }
