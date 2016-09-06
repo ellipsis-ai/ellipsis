@@ -1,8 +1,13 @@
 package modules
 
-import com.google.inject.{Provides, AbstractModule}
+import com.google.inject.{AbstractModule, Provides}
 import models.Models
-import models.bots.{BehaviorTestReportBuilder, EventHandler}
+import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
+import models.accounts.user.{UserService, UserServiceImpl}
+import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
+import models.bots.BehaviorTestReportBuilder
+import models.bots.events.EventHandler
+import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
@@ -10,18 +15,28 @@ import play.api.libs.ws.WSClient
 import services._
 import net.codingwell.scalaguice.ScalaModule
 
-
 class ServiceModule extends AbstractModule with ScalaModule {
 
   override def configure() = {
+    bind[DataService].to(classOf[PostgresDataService])
+    bind[UserService].to(classOf[UserServiceImpl])
+    bind[LoginTokenService].to(classOf[LoginTokenServiceImpl])
+    bind[LinkedAccountService].to(classOf[LinkedAccountServiceImpl])
+    bind[TeamService].to(classOf[TeamServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).asEagerSingleton()
     bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()
   }
 
   @Provides
-  def provideAWSLambdaService(configuration: Configuration, models: Models, ws: WSClient, cache: CacheApi): AWSLambdaService = {
-    new AWSLambdaServiceImpl(configuration, models, ws, cache)
+  def provideAWSLambdaService(
+                               configuration: Configuration,
+                               models: Models,
+                               ws: WSClient,
+                               cache: CacheApi,
+                               dataService: DataService
+                             ): AWSLambdaService = {
+    new AWSLambdaServiceImpl(configuration, models, ws, cache, dataService)
   }
 
   @Provides
@@ -32,10 +47,10 @@ class ServiceModule extends AbstractModule with ScalaModule {
   @Provides
   def providesEventHandler(
                             lambdaService: AWSLambdaService,
-                            models: Models,
+                            dataService: DataService,
                             messages: MessagesApi
                             ): EventHandler = {
-    new EventHandler(lambdaService, models, messages)
+    new EventHandler(lambdaService, dataService, messages)
   }
 
 }

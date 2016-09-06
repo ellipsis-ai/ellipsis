@@ -5,13 +5,16 @@ define(function(require) {
     CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
     Input = require('../form/input'),
     SettingsMenu = require('../settings_menu'),
-    BrowserUtils = require('../browser_utils');
+    BrowserUtils = require('../browser_utils'),
+    ifPresent = require('../if_present');
 
   return React.createClass({
     displayName: 'ApplicationEditor',
     propTypes: {
       apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       applicationApiId: React.PropTypes.string,
+      recommendedScope: React.PropTypes.string,
+      requiredOAuth2ApiConfigId: React.PropTypes.string,
       applicationName: React.PropTypes.string,
       applicationClientId: React.PropTypes.string,
       applicationClientSecret: React.PropTypes.string,
@@ -19,7 +22,8 @@ define(function(require) {
       applicationSaved: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
-      callbackUrl: React.PropTypes.string,
+      callbackUrl: React.PropTypes.string.isRequired,
+      mainUrl: React.PropTypes.string.isRequired,
       applicationId: React.PropTypes.string,
       behaviorId: React.PropTypes.string
     },
@@ -30,7 +34,7 @@ define(function(require) {
         applicationName: this.props.applicationName || "",
         applicationClientId: this.props.applicationClientId || "",
         applicationClientSecret: this.props.applicationClientSecret || "",
-        applicationScope: this.props.applicationScope || "",
+        applicationScope: this.props.applicationScope || this.props.recommendedScope || "",
         hasNamedApplication: this.props.applicationSaved || false,
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false
@@ -49,6 +53,10 @@ define(function(require) {
 
     getCallbackUrl: function() {
       return this.props.callbackUrl;
+    },
+
+    getMainUrl: function() {
+      return this.props.mainUrl;
     },
 
     apiIsSet: function() {
@@ -155,6 +163,12 @@ define(function(require) {
       });
     },
 
+    onFocusExample: function(event) {
+      if (event) {
+        event.target.select();
+      }
+    },
+
     renderBehaviorId: function() {
       var id = this.props.behaviorId;
       if (id && id.length > 0) {
@@ -166,9 +180,10 @@ define(function(require) {
 
     render: function() {
       return (
-        <form action={jsRoutes.controllers.ApplicationController.saveOAuth2Application().url} method="POST">
+        <form action={jsRoutes.controllers.OAuth2ApplicationController.save().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
+          <input type="hidden" name="requiredOAuth2ApiConfigId" value={this.props.requiredOAuth2ApiConfigId} />
           <input type="hidden" name="id" value={this.props.applicationId} />
           <input type="hidden" name="teamId" value={this.props.teamId} />
           {this.renderBehaviorId()}
@@ -233,7 +248,7 @@ define(function(require) {
       return (
         <h3 className="mvn ptxxl type-weak display-ellipsis">
           <span className="mrs">
-            <a href={jsRoutes.controllers.ApplicationController.listOAuth2Applications().url}>API applications</a>
+            <a href={jsRoutes.controllers.OAuth2ApplicationController.list().url}>API applications</a>
           </span>
           <span className="mhs">→</span>
           {this.renderApplicationHeader()}
@@ -279,7 +294,12 @@ define(function(require) {
           <div className="mvxl">
             {this.props.apis.map(function(api, index) {
               return (
-                <button type="button" key={"apiTypeButton" + index} className="mrl mbl" onClick={this.setApplicationApi.bind(this, api)}>{api.name}</button>
+                <button type="button" key={"apiTypeButton" + index} className="button-l mrl mbl" onClick={this.setApplicationApi.bind(this, api)}>
+                  {ifPresent(api.imageUrl, url => (
+                    <img src={url} width="24" height="24" className="mrm align-m mbxs" />
+                  ))}
+                  <span className="type-black">{api.name}</span>
+                </button>
               );
             }, this)}
           </div>
@@ -332,13 +352,19 @@ define(function(require) {
                 <h4 className="mbn position-relative">
                   <span className="position-hanging-indent">2</span>
                   <span>Register a new OAuth developer application on your {this.getApplicationApiName()} account. </span>
-                  <a href={this.getApplicationApiNewApplicationUrl()} target="_blank">Go to {this.getApplicationApiName()} ↗︎</a>
+                  {ifPresent(this.getApplicationApiNewApplicationUrl(), url => (
+                    <a href={url} target="_blank">Go to {this.getApplicationApiName()} ↗︎</a>
+                  ))}
                 </h4>
                 <ul className="type-s list-space-l mvl">
-                  <li>You can set the name, homepage and description to whatever you like.</li>
+                  <li>You can set the name and description to whatever you like.</li>
                   <li>
-                    <div>Copy and paste this for the authorization callback URL:</div>
-                    <div className="box-code-example mtl">{this.getCallbackUrl()}</div>
+                    <div>Copy and paste this for the <b>callback URL</b> (sometimes called <b>redirect URL</b>):</div>
+                    <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getCallbackUrl()} onFocus={this.onFocusExample} />
+                  </li>
+                  <li>
+                    <div>If there is a homepage, application or other URL option, you can set it to:</div>
+                    <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getMainUrl()} onFocus={this.onFocusExample} />
                   </li>
                 </ul>
               </div>
@@ -355,22 +381,24 @@ define(function(require) {
                 </p>
 
                 <div className="columns mtl">
-                  <div className="column column-one-third">
+                  <div className="column column-one-half">
                     <h5>Client ID</h5>
-                    <Input className="form-input-borderless"
-                      placeholder="20-digit hexadecimal number"
+                    <Input className="form-input-borderless type-monospace"
+                      placeholder="Enter identifier"
                       name="clientId"
                       value={this.getApplicationClientId()}
                       onChange={this.setApplicationClientId}
+                      disableAuto={true}
                     />
                   </div>
-                  <div className="column column-two-thirds">
+                  <div className="column column-one-half">
                     <h5>Client secret</h5>
-                    <Input className="form-input-borderless"
-                      placeholder="40-digit hexadecimal number"
+                    <Input className="form-input-borderless type-monospace"
+                      placeholder="Enter secret"
                       name="clientSecret"
                       value={this.getApplicationClientSecret()}
                       onChange={this.setApplicationClientSecret}
+                      disableAuto={true}
                     />
                   </div>
                 </div>
@@ -383,18 +411,21 @@ define(function(require) {
                   <span className="position-hanging-indent">4</span>
                   <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
                 </h4>
-                <p className="type-s">
-                  <span>Use the <a href={this.getApplicationApiScopeDocumentationUrl()} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
-                  <span>the correct value for your application.</span>
-                </p>
+                {ifPresent(this.getApplicationApiScopeDocumentationUrl(), url => (
+                  <p className="type-s">
+                    <span>Use the <a href={url} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
+                    <span>the correct value for your application.</span>
+                  </p>
+                ))}
 
                 <div className="columns">
                   <div className="column column-one-third">
-                    <Input className="form-input-borderless"
+                    <Input className="form-input-borderless type-monospace"
                       name="scope"
                       value={this.getApplicationScope()}
                       onChange={this.setApplicationScope}
                       placeholder="Enter scope value"
+                      disableAuto={true}
                     />
                   </div>
                 </div>

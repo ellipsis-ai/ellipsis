@@ -2,6 +2,7 @@ package models
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import org.joda.time.DateTime
+import models.team.{Team, TeamQueries}
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -36,7 +37,7 @@ class EnvironmentVariablesTable(tag: Tag) extends Table[RawEnvironmentVariable](
 object EnvironmentVariableQueries {
 
   val all = TableQuery[EnvironmentVariablesTable]
-  val allWithTeam = all.join(Team.all).on(_.teamId === _.id)
+  val allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
 
   def tuple2EnvironmentVariable(tuple: (RawEnvironmentVariable, Team)): EnvironmentVariable = {
     val raw = tuple._1

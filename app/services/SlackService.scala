@@ -1,15 +1,18 @@
 package services
 
 import javax.inject._
+
 import models._
-import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
+import models.accounts.{SlackBotProfile, SlackBotProfileQueries}
 import models.bots._
 import play.api.i18n.MessagesApi
 import play.api.inject.ApplicationLifecycle
 import slack.rtm.SlackRtmClient
 import akka.actor.ActorSystem
+import models.bots.events.{EventHandler, SlackMessageContext, SlackMessageEvent}
 import slick.driver.PostgresDriver.api._
-import scala.concurrent.{Promise, Future}
+
+import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
 
 @Singleton
@@ -53,7 +56,10 @@ class SlackService @Inject() (
     client.onMessage { message =>
       if (message.user != selfId) {
         val p = Promise[Unit]()
-        val handleMessage = eventHandler.handle(SlackMessageEvent(SlackMessageContext(client, profile, message)))
+        val event = SlackMessageEvent(SlackMessageContext(client, profile, message))
+        val handleMessage = eventHandler.handle(event).map { result =>
+          result.sendIn(event.context)
+        }
         p.completeWith(handleMessage)
         val indicateTyping = Future {
           Thread.sleep(500)

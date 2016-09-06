@@ -2,19 +2,23 @@ package models.bots
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import json.BehaviorVersionData
-import models.accounts.User
-import models.bots.config.{RequiredOAuth2Application, RequiredOAuth2ApplicationQueries, AWSConfig, AWSConfigQueries}
+import models.accounts.user.{User, UserQueries}
+import models.bots.config.{AWSConfig, AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
+import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTriggerQueries
-import models.{EnvironmentVariable, EnvironmentVariableQueries, IDs, Team}
-import org.commonmark.node.{Image, AbstractVisitor}
+import models.{EnvironmentVariable, EnvironmentVariableQueries, IDs}
+import models.team.Team
+import org.commonmark.node.{AbstractVisitor, Image}
 import org.joda.time.DateTime
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.{JsValue, Json}
 import play.api.{Configuration, Play}
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, AWSLambdaService}
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -68,7 +72,7 @@ case class BehaviorVersion(
 
   def editLinkFor(configuration: Configuration): Option[String] = {
     configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ApplicationController.editBehavior(behavior.id)
+      val path = controllers.routes.BehaviorEditorController.edit(behavior.id)
       s"$baseUrl$path"
     }
   }
@@ -98,14 +102,12 @@ case class BehaviorVersion(
       (for {
         params <- BehaviorParameterQueries.allFor(this)
         maybeAWSConfig <- AWSConfigQueries.maybeFor(this)
-        requiredOAuth2Applications <- RequiredOAuth2ApplicationQueries.allFor(this)
+        requiredOAuth2ApiConfigs <- RequiredOAuth2ApiConfigQueries.allFor(this)
       } yield {
         functionWithParams(params.map(_.name).toArray)
       }).map(Some(_))
     }.getOrElse(DBIO.successful(None))
   }
-
-  lazy val conf = Play.current.configuration
 
   def functionName: String = id
 
@@ -125,14 +127,14 @@ case class BehaviorVersion(
     for {
       params <- BehaviorParameterQueries.allFor(this)
       maybeAWSConfig <- AWSConfigQueries.maybeFor(this)
-      requiredOAuth2Applications <- RequiredOAuth2ApplicationQueries.allFor(this)
+      requiredOAuth2ApiConfigs <- RequiredOAuth2ApiConfigQueries.allFor(this)
       _ <- DBIO.from(
         lambdaService.deployFunctionFor(
           this,
           functionBody,
           params.map(_.name).toArray,
           maybeAWSConfig,
-          requiredOAuth2Applications
+          requiredOAuth2ApiConfigs
         )
       )
     } yield Unit
@@ -156,20 +158,21 @@ case class BehaviorVersion(
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
+    val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(successResult, parametersWithValues, maybeResponseTemplate, logResult)
+      SuccessResult(successResult, parametersWithValues, maybeResponseTemplate, logResultOption)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(logResult)
+        NoResponseResult(logResultOption)
       } else {
         if (isUnhandledError(json)) {
-          UnhandledErrorResult(logResult)
+          UnhandledErrorResult(logResultOption)
         } else if (json.toString == "null") {
           new NoCallbackTriggeredResult()
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(json, logResult)
+          SyntaxErrorResult(json, logResultOption)
         } else {
-          HandledErrorResult(json, logResult)
+          HandledErrorResult(json, logResultOption)
         }
       }
     }
@@ -213,10 +216,12 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 object BehaviorVersionQueries {
 
   def all = TableQuery[BehaviorVersionsTable]
-  def allWithUser = all.joinLeft(User.all).on(_.maybeAuthorId === _.id)
+  def allWithUser = all.joinLeft(UserQueries.all).on(_.maybeAuthorId === _.id)
   def allWithBehavior = allWithUser.join(BehaviorQueries.allWithTeam).on(_._1.behaviorId === _._1.id)
 
-  def tuple2BehaviorVersion(tuple: ((RawBehaviorVersion, Option[User]), (RawBehavior, Team))): BehaviorVersion = {
+  type TupleType = ((RawBehaviorVersion, Option[User]), (RawBehavior, Team))
+
+  def tuple2BehaviorVersion(tuple: TupleType): BehaviorVersion = {
     val raw = tuple._1._1
     BehaviorVersion(
       raw.id,
@@ -290,15 +295,15 @@ object BehaviorVersionQueries {
           maybeAWSConfig <- data.awsConfig.map { c =>
             AWSConfigQueries.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
           }.getOrElse(DBIO.successful(None))
-          requiredOAuth2Applications <- DBIO.sequence(data.config.requiredOAuth2Applications.getOrElse(Seq()).map { appData =>
-            RequiredOAuth2ApplicationQueries.maybeCreateFor(appData, updated)
+          requiredOAuth2ApiConfigs <- DBIO.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
+            RequiredOAuth2ApiConfigQueries.maybeCreateFor(requiredData, updated)
           }).map(_.flatten)
           _ <- DBIO.from(lambdaService.deployFunctionFor(
             updated,
             data.functionBody,
             BehaviorVersionQueries.withoutBuiltin(data.params.map(_.name).toArray),
             maybeAWSConfig,
-            requiredOAuth2Applications
+            requiredOAuth2ApiConfigs
           ))
           _ <- BehaviorParameterQueries.ensureFor(updated, data.params.map(ea => (ea.name, Some(ea.question))))
           _ <- DBIO.sequence(

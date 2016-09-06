@@ -2,6 +2,7 @@ package models
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import org.joda.time.DateTime
+import models.team.Team
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 

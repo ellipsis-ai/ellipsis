@@ -1,6 +1,6 @@
 package models.accounts
 
-import models.{Team, IDs}
+import models.team.Team
 import org.apache.commons.lang.WordUtils
 import play.api.libs.ws.{WSRequest, WSClient}
 import slick.driver.PostgresDriver.api._

@@ -1,7 +1,7 @@
 package models.bots
 
 import models.bots.conversations.Conversation
-import models.bots.triggers.MessageTrigger
+import models.bots.events.{MessageContext, MessageEvent}
 import play.api.libs.json._
 import slick.driver.PostgresDriver.api._
 
@@ -19,7 +19,7 @@ case class TestMessageContext(fullMessageText: String, includesBotMention: Boole
 
   def maybeOngoingConversation: DBIO[Option[Conversation]] = DBIO.successful(None)
 
-  def sendMessage(text: String)(implicit ec: ExecutionContext): Unit = {
+  def sendMessage(text: String, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
     messageBuffer += text
   }
 

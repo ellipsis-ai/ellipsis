@@ -2,19 +2,22 @@ package models.bots
 
 import models.IDs
 import models.accounts.OAuth2Application
+import models.accounts.logintoken.LoginToken
+import models.bots.config.RequiredOAuth2ApiConfig
+import models.bots.events.{MessageContext, MessageEvent}
 import models.bots.templates.TemplateApplier
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsDefined, JsString, JsValue}
 import services.AWSLambdaConstants._
 import services.AWSLambdaLogResult
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing = Value
+  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BehaviorResult {
@@ -22,15 +25,16 @@ sealed trait BehaviorResult {
   def text: String
   def fullText: String = text
 
-  def sendIn(context: MessageContext): Unit = {
-    context.sendMessage(fullText)
+  def sendIn(context: MessageContext, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+    context.sendMessage(fullText, forcePrivate, maybeShouldUnfurl)
   }
 }
 
 trait BehaviorResultWithLogResult extends BehaviorResult {
-  val logResult: AWSLambdaLogResult
+  val maybeLogResult: Option[AWSLambdaLogResult]
+  val logStatements = maybeLogResult.map(_.userDefinedLogStatements).getOrElse("")
 
-  override def fullText: String = logResult.userDefinedLogStatements ++ text
+  override def fullText: String = logStatements ++ text
 
 }
 
@@ -38,7 +42,7 @@ case class SuccessResult(
                           result: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
-                          logResult: AWSLambdaLogResult
+                          maybeLogResult: Option[AWSLambdaLogResult]
                           ) extends BehaviorResultWithLogResult {
 
   val resultType = ResultType.Success
@@ -49,30 +53,38 @@ case class SuccessResult(
   }
 }
 
-case class NoResponseResult(logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {
+case class SimpleTextResult(simpleText: String) extends BehaviorResult {
+
+  val resultType = ResultType.ConversationPrompt
+
+  def text: String = simpleText
+
+}
+
+case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
 
   val resultType = ResultType.NoResponse
 
   def text: String = ""
 
-  override def sendIn(context: MessageContext): Unit = {
+  override def sendIn(context: MessageContext, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
     // do nothing
   }
 
 }
 
-case class UnhandledErrorResult(logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {
+case class UnhandledErrorResult(maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
 
   val resultType = ResultType.UnhandledError
 
   def text: String = {
     val prompt = s"\nWe hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
-    Array(Some(prompt), logResult.maybeTranslated).flatten.mkString(":\n\n")
+    Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated)).flatten.mkString(":\n\n")
   }
 
 }
 
-case class HandledErrorResult(json: JsValue, logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {
+case class HandledErrorResult(json: JsValue, maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
 
   val resultType = ResultType.HandledError
 
@@ -88,7 +100,7 @@ case class HandledErrorResult(json: JsValue, logResult: AWSLambdaLogResult) exte
   }
 }
 
-case class SyntaxErrorResult(json: JsValue, logResult: AWSLambdaLogResult) extends BehaviorResultWithLogResult {
+case class SyntaxErrorResult(json: JsValue, maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
 
   val resultType = ResultType.SyntaxError
 
@@ -97,7 +109,7 @@ case class SyntaxErrorResult(json: JsValue, logResult: AWSLambdaLogResult) exten
        |There's a syntax error in your function:
        |
        |${(json \ "errorMessage").asOpt[String].getOrElse("")}
-        |${logResult.maybeTranslated.getOrElse("")}
+        |${maybeLogResult.flatMap(_.maybeTranslated).getOrElse("")}
      """.stripMargin
   }
 }
@@ -145,6 +157,7 @@ class AWSDownResult extends BehaviorResult {
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
                                event: MessageEvent,
+                               loginToken: LoginToken,
                                cache: CacheApi,
                                configuration: Configuration
                                ) extends BehaviorResult {
@@ -154,18 +167,44 @@ case class OAuth2TokenMissing(
   val resultType = ResultType.OAuth2TokenMissing
 
   def authLink: String = {
-    configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key))
-      s"$baseUrl$path"
-    }.getOrElse("")
+    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val redirectPath = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key))
+    val redirect = s"$baseUrl$redirectPath"
+    val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))
+    s"$baseUrl$authPath"
   }
 
   def text: String = {
-    s"To use this behavior, you need to [authenticate with ${oAuth2Application.name}]($authLink)"
+    s"""To use this behavior, you need to [authenticate with ${oAuth2Application.name}]($authLink).
+       |
+       |You only need to do this one time for ${oAuth2Application.name}. You may be prompted to sign in to Ellipsis using your Slack account.
+       |""".stripMargin
   }
 
-  override def sendIn(context: MessageContext): Unit = {
+  override def sendIn(context: MessageContext, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(context)
+    super.sendIn(context, forcePrivate = true, Some(false))
   }
+}
+
+case class RequiredApiNotReady(
+                                required: RequiredOAuth2ApiConfig,
+                                event: MessageEvent,
+                                cache: CacheApi,
+                                configuration: Configuration
+                             ) extends BehaviorResult {
+
+  val resultType = ResultType.RequiredApiNotReady
+
+  def maybeConfigLink: Option[String] = required.behaviorVersion.editLinkFor(configuration)
+  def configText: String = {
+    maybeConfigLink.map { configLink =>
+      s"You first must [configure the ${required.api.name} API]($configLink)"
+    }.getOrElse(s"You first must configure the ${required.api.name} API")
+  }
+
+  def text: String = {
+    s"This behavior is not ready to use. $configText."
+  }
+
 }

@@ -6,36 +6,38 @@
 GET         /                                         @controllers.ApplicationController.index(teamId: Option[String] ?= None)
 GET         /intro                                    @controllers.ApplicationController.intro(teamId: Option[String] ?= None)
 GET         /install_behaviors                        @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None)
-GET         /new_behavior                             @controllers.ApplicationController.newBehavior(teamId: Option[String] ?= None)
-GET         /edit_behavior/:id                        @controllers.ApplicationController.editBehavior(id: String, justSaved: Option[Boolean] ?= None)
-GET         /export_behavior/:id                      @controllers.ApplicationController.exportBehavior(id: String)
-GET         /import_behavior_zip                      @controllers.ApplicationController.importBehaviorZip(teamId: Option[String] ?= None)
-POST        /import_behavior_zip                      @controllers.ApplicationController.doImportBehaviorZip
-POST        /import_behavior                          @controllers.ApplicationController.doImportBehavior
-POST        /save_behavior                            @controllers.ApplicationController.saveBehavior
-POST        /delete_behavior                          @controllers.ApplicationController.deleteBehavior
-POST        /clone_behavior                           @controllers.ApplicationController.cloneBehavior
-GET         /regex_validation_errors/:pattern         @controllers.ApplicationController.regexValidationErrorsFor(pattern: String)
-GET         /version_info/:behaviorId                 @controllers.ApplicationController.versionInfoFor(behaviorId: String)
-POST        /test_behavior_version                    @controllers.ApplicationController.testBehaviorVersion
-POST        /submit_environment_variables             @controllers.ApplicationController.submitEnvironmentVariables
-GET         /list_oauth2_applications                 @controllers.ApplicationController.listOAuth2Applications(teamId: Option[String] ?= None)
-GET         /new_oauth2_application                   @controllers.ApplicationController.newOAuth2Application(apiId: Option[String] ?= None, teamId: Option[String] ?= None, behaviorId: Option[String] ?= None)
-GET         /edit_oauth2_application/:id              @controllers.ApplicationController.editOAuth2Application(id: String, teamId: Option[String] ?= None)
-POST        /save_oauth2_application                  @controllers.ApplicationController.saveOAuth2Application
-GET         /new_oauth2_api                           @controllers.ApplicationController.newOAuth2Api(teamId: Option[String] ?= None)
-GET         /edit_oauth2_api/:id                      @controllers.ApplicationController.editOAuth2Api(id: String, teamId: Option[String] ?= None)
-POST        /save_oauth2_api                          @controllers.ApplicationController.saveOAuth2Api
+GET         /new_behavior                             @controllers.BehaviorEditorController.newBehavior(teamId: Option[String] ?= None)
+GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
+GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
+GET         /import_behavior_zip                      @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)
+POST        /import_behavior_zip                      @controllers.BehaviorImportExportController.doImportZip
+POST        /import_behavior                          @controllers.BehaviorImportExportController.doImport
+POST        /save_behavior                            @controllers.BehaviorEditorController.save
+POST        /delete_behavior                          @controllers.BehaviorEditorController.delete
+POST        /clone_behavior                           @controllers.BehaviorEditorController.duplicate
+GET         /regex_validation_errors/:pattern         @controllers.BehaviorEditorController.regexValidationErrorsFor(pattern: String)
+GET         /version_info/:behaviorId                 @controllers.BehaviorEditorController.versionInfoFor(behaviorId: String)
+POST        /test_behavior_version                    @controllers.BehaviorEditorController.test
 
-GET         /new_api_token                            @controllers.APITokenController.newToken()
-GET         /view_api_token                           @controllers.APITokenController.viewToken(tokenId: String)
-GET         /list_api_tokens                          @controllers.APITokenController.listTokens()
+POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
+
+GET         /list_oauth2_applications                 @controllers.OAuth2ApplicationController.list(teamId: Option[String] ?= None)
+GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(requiredOAuth2ApiConfigId: Option[String] ?= None, teamId: Option[String] ?= None, behaviorId: Option[String] ?= None)
+GET         /edit_oauth2_application/:id              @controllers.OAuth2ApplicationController.edit(id: String, teamId: Option[String] ?= None)
+POST        /save_oauth2_application                  @controllers.OAuth2ApplicationController.save
+
+GET         /new_oauth2_api                           @controllers.OAuth2ApiController.newApi(teamId: Option[String] ?= None)
+GET         /edit_oauth2_api/:id                      @controllers.OAuth2ApiController.edit(id: String, teamId: Option[String] ?= None)
+POST        /save_oauth2_api                          @controllers.OAuth2ApiController.save
+
+GET         /list_api_tokens                          @controllers.APITokenController.listTokens(tokenId: Option[String] ?= None)
 POST        /create_api_token                         @controllers.APITokenController.createToken
 POST        /revoke_api_token                         @controllers.APITokenController.revokeToken
 
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 POST        /sign_out                                 @controllers.SocialAuthController.signOut
+GET         /login_with_token/:token                  @controllers.SocialAuthController.loginWithToken(token: String, redirect: Option[String] ?= None)
 
 GET         /add_to_slack                             @controllers.SlackController.add
 GET         /sign_in_with_slack                       @controllers.SlackController.signIn(redirect: Option[String] ?= None)
@@ -54,9 +56,6 @@ GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorag
 POST        /put_item                                 @controllers.DefaultStorage.putItem
 #NOCSRF
 POST        /api/post_message                         @controllers.APIController.postMessage
-
-# Javascript routing
-GET         /javascriptRoutes                         @controllers.ApplicationController.javascriptRoutes
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)

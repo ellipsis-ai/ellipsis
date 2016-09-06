@@ -1,7 +1,7 @@
 package services
 
 import json._
-import models.Team
+import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsValue, Json}
@@ -12,6 +12,8 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class GithubService(team: Team, ws: WSClient, config: Configuration, cache: CacheApi) {
+
+  import GithubService._
 
   val repoCredentials: (String, String) = ("access_token", config.getString("github.repoAccessToken").get)
   val cacheTimeout: Duration = config.getInt("github.cacheTimeoutSeconds").get.seconds
@@ -24,7 +26,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
   }
 
   private def fetchPublishedUrl: Future[Option[String]] = {
-    withTreeFor(s"${GithubService.API_URL}/repos/ellipsis-ai/behaviors/git/trees/master").map { maybeTree =>
+    withTreeFor(s"${API_URL}/repos/ellipsis-ai/behaviors/git/trees/master").map { maybeTree =>
       for {
         tree <- maybeTree
         published <- tree.find { ea => (ea \ "path").asOpt[String].contains("published") }
@@ -92,7 +94,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
   }
 
   private def githubUrlForBehaviorPath(categoryPath: String, behaviorPath: String): String = {
-    s"${GithubService.WEB_URL}/${GithubService.USER_NAME}/${GithubService.REPO_NAME}/tree/master/published/$categoryPath/$behaviorPath"
+    s"${WEB_URL}/${USER_NAME}/${REPO_NAME}/tree/master/published/$categoryPath/$behaviorPath"
   }
 
   private def fetchBehaviorDataFor(behaviorUrl: String, behaviorPath: String, categoryPath: String): Future[Option[BehaviorVersionData]] = {
@@ -157,9 +159,9 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
   }
 
   def publishedBehaviorCategories: Seq[BehaviorCategory] = {
-    cache.getOrElse[Seq[BehaviorCategory]](GithubService.PUBLISHED_BEHAVIORS_KEY, cacheTimeout) {
+    cache.getOrElse[Seq[BehaviorCategory]](PUBLISHED_BEHAVIORS_KEY, cacheTimeout) {
       Await.result(fetchPublishedBehaviorCategories, 20.seconds)
-    }.map(_.copyForTeam(team))
+    }.map(_.copyForTeam(team)).sorted
   }
 
 }

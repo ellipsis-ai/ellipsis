@@ -3,7 +3,6 @@ define(function(require) {
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
     SVGInstalling = require('../svg/installing');
-    require('es6-promise');
     require('whatwg-fetch');
 
   return React.createClass({
@@ -47,7 +46,7 @@ define(function(require) {
       }
       var localBehaviorId = this.getLocalBehaviorId();
       if (localBehaviorId) {
-        var url = jsRoutes.controllers.ApplicationController.editBehavior(localBehaviorId).url;
+        var url = jsRoutes.controllers.BehaviorEditorController.edit(localBehaviorId).url;
         return (
           <a
             className="mhm fade-in"
@@ -66,19 +65,19 @@ define(function(require) {
     getInstallButton: function() {
       if (this.isImporting()) {
         return (
-          <button title="Installing, please wait…" type="button" className="button-raw button-s" disabled="disabled" style={{ height: "24px" }}>
+          <button title="Installing, please wait…" type="button" className="button-raw button-s" disabled="disabled" style={{ width: 40, height: 24 }}>
             <SVGInstalling />
           </button>
         );
       } else if (this.behaviorAlreadyImported()) {
         return (
-          <button title="Already installed" type="button" className="button-raw button-s" disabled="disabled" style={{ height: "24px" }}>
+          <button title="Already installed" type="button" className="button-raw button-s" disabled="disabled" style={{ width: 40, height: 24 }}>
             <SVGInstalled />
           </button>
         );
       } else {
         return (
-          <button title="Install this behavior" type="button" className="button-raw button-s" onClick={this.importBehavior} style={{ height: "24px" }}>
+          <button title="Install this behavior" type="button" className="button-raw button-s" onClick={this.importBehavior} style={{ width: 40, height: 24 }}>
             <SVGInstall />
           </button>
         );
@@ -107,7 +106,7 @@ define(function(require) {
       });
       var headers = new Headers();
       headers.append('x-requested-with', 'XMLHttpRequest');
-      fetch(jsRoutes.controllers.ApplicationController.doImportBehavior().url, {
+      fetch(jsRoutes.controllers.BehaviorImportExportController.doImport().url, {
         credentials: 'same-origin',
         headers: headers,
         method: 'POST',
@@ -124,7 +123,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <form ref="form" action={jsRoutes.controllers.ApplicationController.doImportBehavior().url} method="POST">
+        <form ref="form" action={jsRoutes.controllers.BehaviorImportExportController.doImport().url} method="POST">
           <input type="hidden" name="csrfToken" value={this.props.csrfToken} />
           <input type="hidden" name="teamId" value={this.props.behaviorData.teamId} />
           <input type="hidden" name="dataJson" value={JSON.stringify(this.props.behaviorData)} />

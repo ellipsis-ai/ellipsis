@@ -1,9 +1,10 @@
 package models.bots.builtins
 
-import models.Team
-import models.bots.{SlackMessageContext, ScheduledMessageQueries, MessageContext}
-import services.AWSLambdaService
+import models.bots.events.{MessageContext, SlackMessageContext}
+import models.bots.{BehaviorResult, ScheduledMessageQueries, SimpleTextResult}
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
@@ -11,7 +12,8 @@ case class ScheduleBehavior(
                              text: String,
                              recurrence: String,
                              messageContext: MessageContext,
-                             lambdaService: AWSLambdaService
+                             lambdaService: AWSLambdaService,
+                             dataService: DataService
                              ) extends BuiltinBehavior {
 
   def maybeChannel: Option[String] = {
@@ -21,9 +23,9 @@ case class ScheduleBehavior(
     }
   }
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     for {
-      maybeTeam <- Team.find(messageContext.teamId)
+      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       maybeScheduledMessage <- maybeTeam.map { team =>
         ScheduledMessageQueries.maybeCreateFor(text, recurrence, team, maybeChannel)
       }.getOrElse(DBIO.successful(None))
@@ -32,7 +34,7 @@ case class ScheduleBehavior(
         scheduledMessage.successResponse
       }.getOrElse(s"Sorry, I don't know how to schedule `$recurrence`")
 
-      messageContext.sendMessage(responseText)
+      SimpleTextResult(responseText)
     }
   }
 

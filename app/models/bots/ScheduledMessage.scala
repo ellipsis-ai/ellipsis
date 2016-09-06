@@ -1,14 +1,17 @@
 package models.bots
 
-import models.{IDs, Team}
-import models.accounts.{SlackBotProfileQueries, SlackBotProfile}
+import models.IDs
+import models.accounts.{SlackBotProfile, SlackBotProfileQueries}
+import models.team.{Team, TeamQueries}
 import org.joda.time.format.DateTimeFormat
-import org.joda.time.{LocalTime, DateTime}
+import org.joda.time.{DateTime, LocalTime}
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import models.bots.events.{SlackMessageContext, SlackMessageEvent}
 import services.SlackService
 import slack.models.Message
 import slack.rtm.SlackRtmClient
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ScheduledMessage(
@@ -69,11 +72,12 @@ case class ScheduledMessage(
   def send(slackService: SlackService, client: SlackRtmClient, profile: SlackBotProfile): DBIO[Unit] = {
     maybeChannelName.map { channelName =>
       val message = Message("ts", channelName, profile.userId, text, None)
+      val context = SlackMessageContext(client, profile, message)
       for {
-        _ <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(SlackMessageContext(client, profile, message)))
+        result <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
         _ <- withUpdatedNextTriggeredFor(DateTime.now).save
-      } yield {}
-    }.getOrElse(DBIO.successful({}))
+      } yield result.sendIn(context)
+    }.getOrElse(DBIO.successful(Unit))
   }
 
   def withUpdatedNextTriggeredFor(when: DateTime): ScheduledMessage = {
@@ -157,7 +161,7 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
 object ScheduledMessageQueries {
 
   val all = TableQuery[ScheduledMessagesTable]
-  val allWithTeam = all.join(Team.all).on(_.teamId === _.id)
+  val allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
 
   def tuple2ScheduledMessage(tuple: (RawScheduledMessage, Team)): ScheduledMessage = {
     val raw = tuple._1

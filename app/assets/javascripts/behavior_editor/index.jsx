@@ -15,13 +15,12 @@ var React = require('react'),
   DropdownMenu = require('./dropdown_menu'),
   EnvVariableAdder = require('./env_variable_adder'),
   EnvVariableSetter = require('./env_variable_setter'),
-  HelpButton = require('./help_button'),
+  HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Notification = require('../notification'),
   SectionHeading = require('./section_heading'),
+  TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
-  TriggerOptionsHelp = require('./trigger_options_help'),
-  TriggerInput = require('./trigger_input'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
   Collapsible = require('../collapsible'),
@@ -29,7 +28,6 @@ var React = require('react'),
   BrowserUtils = require('../browser_utils'),
   ImmutableObjectUtils = require('../immutable_object_utils');
   require('codemirror/mode/markdown/markdown');
-  require('es6-promise');
   require('whatwg-fetch');
 
 var AWSEnvVariableStrings = {
@@ -37,6 +35,14 @@ var AWSEnvVariableStrings = {
   secretKeyName: "AWS Secret Key",
   regionName: "AWS Region"
 };
+
+var oauth2ApplicationShape = React.PropTypes.shape({
+  apiId: React.PropTypes.string.isRequired,
+  applicationId: React.PropTypes.string.isRequired,
+  displayName: React.PropTypes.string,
+  keyName: React.PropTypes.string,
+  scope: React.PropTypes.string
+});
 
 return React.createClass({
   displayName: 'BehaviorEditor',
@@ -63,11 +69,12 @@ return React.createClass({
         secretKeyName: React.PropTypes.string,
         regionName: React.PropTypes.string
       }),
-      requiredOAuth2Applications: React.PropTypes.arrayOf(
+      requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(
         React.PropTypes.shape({
-          applicationId: React.PropTypes.string,
-          displayName: React.PropTypes.string,
-          parameterName: React.PropTypes.string
+          id: React.PropTypes.string.isRequired,
+          apiId: React.PropTypes.string.isRequired,
+          recommendedScope: React.PropTypes.string,
+          application: oauth2ApplicationShape
         })
       )
     }),
@@ -75,9 +82,10 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
-    oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
-        applicationId: React.PropTypes.string,
-        displayName: React.PropTypes.string
+    oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
+    oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
+      apiId: React.PropTypes.string.isRequired,
+      name: React.PropTypes.string.isRequired
     })),
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool
@@ -106,12 +114,24 @@ return React.createClass({
     return this.props.oauth2Applications || [];
   },
 
-  getRequiredOAuth2Applications: function() {
-    return this.getBehaviorConfig()['requiredOAuth2Applications'] || [];
+  getRequiredOAuth2ApiConfigs: function() {
+    if (this.state) {
+      return this.getBehaviorConfig()['requiredOAuth2ApiConfigs'] || [];
+    } else if (this.props.config) {
+      return this.props.config.requiredOAuth2ApiConfigs || [];
+    } else {
+      return [];
+    }
   },
 
   getAWSConfig: function() {
-    return this.getBehaviorConfig()['aws'];
+    if (this.state) {
+      return this.getBehaviorConfig()['aws'];
+    } else if (this.props.config) {
+      return this.props.config.aws;
+    } else {
+      return undefined;
+    }
   },
 
   getAWSConfigProperty: function(property) {
@@ -124,7 +144,11 @@ return React.createClass({
   },
 
   getBehaviorFunctionBody: function() {
-    return this.getBehaviorProp('functionBody') || "";
+    if (this.state) {
+      return this.getBehaviorProp('functionBody') || "";
+    } else {
+      return this.props.functionBody;
+    }
   },
 
   getBehaviorParams: function() {
@@ -163,9 +187,10 @@ return React.createClass({
   },
 
   getCodeAutocompletions: function() {
-    var apiTokens = this.getRequiredOAuth2Applications().map(function(app) {
-      return `ellipsis.accessTokens.${app.keyName}`;
-    });
+    var apiTokens =
+      this.getRequiredOAuth2ApiConfigs().
+        filter((config) => !!config.application).
+        map((config) => `ellipsis.accessTokens.${config.application.keyName}`);
 
     var envVars = this.getEnvVariableNames().map(function(name) {
       return `ellipsis.env.${name}`;
@@ -231,6 +256,10 @@ return React.createClass({
     );
   },
 
+  getRedirectValue: function() {
+    return this.state.redirectValue;
+  },
+
   buildEnvVarNotifications: function() {
     var envVars = (this.state ? this.state.envVariables : this.props.envVariables) || [];
     return envVars.
@@ -244,9 +273,49 @@ return React.createClass({
       });
   },
 
+  getOAuth2ApiWithId: function(apiId) {
+    return this.props.oauth2Apis.find(ea => ea.apiId === apiId);
+  },
+
+  getRequiredOAuth2ApiConfigsWithNoApplication: function() {
+    return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application);
+  },
+
+  buildOAuthApplicationNotifications: function() {
+    var notifications = [];
+    this.getRequiredOAuth2ApiConfigsWithNoApplication().forEach(ea => {
+      notifications.push({
+        kind: "oauth2_config_without_application",
+        name: this.getOAuth2ApiWithId(ea.apiId).name,
+        requiredApiConfig: ea,
+        existingOAuth2Applications: this.getAllOAuth2Applications(),
+        onAddOAuth2Application: this.onAddOAuth2Application,
+        onNewOAuth2Application: this.onNewOAuth2Application
+      });
+    });
+    var unusedApplications =
+      this.getRequiredOAuth2ApiConfigs().
+        map(ea => ea.application).
+        filter(ea => ea && !this.hasUsedOAuth2Application(ea.keyName));
+    unusedApplications.forEach(ea => {
+      notifications.push({
+        kind: "oauth2_application_unused",
+        name: ea.displayName,
+        code: `ellipsis.accessTokens.${ea.keyName}`
+      });
+    });
+    if (this.getAWSConfig() && !this.hasUsedAWSObject()) {
+      notifications.push({
+        kind: "aws_unused",
+        code: "ellipsis.AWS"
+      });
+    }
+    return notifications;
+  },
+
   buildNotifications: function() {
     var serverNotifications = this.props.notifications || [];
-    var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications());
+    var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications(), this.buildOAuthApplicationNotifications());
 
     var notifications = {};
     allNotifications.forEach(function(notification) {
@@ -392,8 +461,8 @@ return React.createClass({
     this.setBehaviorProp('params', newParams, this.focusOnLastParam);
   },
 
-  addTrigger: function() {
-    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), this.focusOnFirstBlankTrigger);
+  addTrigger: function(callback) {
+    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), callback);
   },
 
   cancelEnvVariableAdder: function() {
@@ -471,7 +540,7 @@ return React.createClass({
   },
 
   loadVersions: function() {
-    var url = jsRoutes.controllers.ApplicationController.versionInfoFor(this.props.behaviorId).url;
+    var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.props.behaviorId).url;
     this.setState({
       versionsLoadStatus: 'loading'
     });
@@ -546,15 +615,19 @@ return React.createClass({
     }
   },
 
-  onSaveClick: function(event) {
-    if (this.getBehaviorTemplate() === this.getDefaultBehaviorTemplate()) {
-      event.preventDefault();
-      this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), function() {
-        this.refs.behaviorForm.submit();
-      }.bind(this));
+  onSubmit: function(maybeEvent) {
+    var doSubmit = () => { this.refs.behaviorForm.submit(); };
+    if (maybeEvent) {
+      maybeEvent.preventDefault();
     }
     this.setState({
       isSaving: true
+    }, () => {
+      if (this.getBehaviorTemplate() === this.getDefaultBehaviorTemplate()) {
+        this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), doSubmit);
+      } else {
+        doSubmit();
+      }
     });
   },
 
@@ -602,10 +675,10 @@ return React.createClass({
     }, callback);
   },
 
-  setConfigProperty: function(property, value) {
+  setConfigProperty: function(property, value, callback) {
     var config = Object.assign({}, this.getBehaviorConfig());
     config[property] = value;
-    this.setBehaviorProp('config', config);
+    this.setBehaviorProp('config', config, callback);
   },
 
   setEnvVariableNameAtIndex: function(name, index) {
@@ -672,11 +745,11 @@ return React.createClass({
   },
 
   toggleAWSConfig: function() {
-    if (this.getAWSConfig()) {
-      this.onRemoveAWSConfig();
-    } else {
-      this.setConfigProperty('aws', {});
-    }
+    this.setConfigProperty(
+      'aws',
+      this.getAWSConfig() ? undefined : {},
+      this.resetNotifications
+    );
   },
 
   toggleAWSHelp: function() {
@@ -717,10 +790,6 @@ return React.createClass({
     this.toggleActivePanel('helpForTriggerParameters');
   },
 
-  toggleTriggerOptionsHelp: function() {
-    this.toggleActivePanel('helpForTriggerOptions');
-  },
-
   toggleVersionListMenu: function() {
     this.toggleActiveDropdown('versionList');
   },
@@ -740,7 +809,7 @@ return React.createClass({
   },
 
   updateEnvVariables: function(envVars, cb) {
-    var url = jsRoutes.controllers.ApplicationController.submitEnvironmentVariables().url;
+    var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
     var data = {
       teamId: this.props.teamId,
       variables: envVars
@@ -795,8 +864,10 @@ return React.createClass({
       behavior: newBehavior,
       versions: newVersions,
       revealCodeEditor: this.shouldRevealCodeEditor()
+    }, () => {
+      this.hideActivePanel();
+      this.resetNotifications();
     });
-    this.hideActivePanel();
   },
 
 
@@ -827,21 +898,23 @@ return React.createClass({
     return /\S/.test(this.getBehaviorFunctionBody());
   },
 
+  hasUsedAWSObject: function() {
+    var code = this.getBehaviorFunctionBody();
+    return /\bellipsis\.AWS\b/.test(code);
+  },
+
+  hasUsedOAuth2Application: function(keyName) {
+    var code = this.getBehaviorFunctionBody();
+    var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
+    return pattern.test(code);
+  },
+
   hasModalPanel: function() {
     return !!(this.state.activePanel && this.state.activePanel.modal);
   },
 
   hasModifiedTemplate: function() {
     return this.state.hasModifiedTemplate;
-  },
-
-  hasMultipleTriggers: function() {
-    return this.getBehaviorTriggers().length > 1;
-  },
-
-  hasPrimaryTrigger: function() {
-    var triggers = this.getBehaviorTriggers();
-    return !!(triggers.length > 0 && triggers[0].text);
   },
 
   hasUserParameters: function() {
@@ -912,12 +985,6 @@ return React.createClass({
     return !!(template && template.match(/\{successResult.*?\}/));
   },
 
-  triggersUseParams: function() {
-    return this.getBehaviorTriggers().some(function(trigger) {
-      return trigger.text.match(/{.+}/);
-    });
-  },
-
   versionEqualsVersion: function(version1, version2) {
     var shallow1 = JSON.stringify({
       functionBody: version1.functionBody,
@@ -950,25 +1017,12 @@ return React.createClass({
     BrowserUtils.ensureYPosInView(cursorBottom, this.refs.footer.clientHeight);
   },
 
-  focusOnFirstBlankTrigger: function() {
-    var blankTrigger = Object.keys(this.refs).find(function(key) {
-      return key.match(/^trigger\d+$/) && this.refs[key].isEmpty();
-    }, this);
-    if (blankTrigger) {
-      this.refs[blankTrigger].focus();
-    }
-  },
-
   focusOnParamIndex: function(index) {
     this.refs.codeHeader.focusIndex(index);
   },
 
   focusOnLastParam: function() {
     this.focusOnParamIndex(this.getBehaviorParams().length - 1);
-  },
-
-  focusOnTriggerIndex: function(index) {
-    this.refs['trigger' + index].focus();
   },
 
   onAddNewEnvVariable: function() {
@@ -990,19 +1044,32 @@ return React.createClass({
   },
 
   onAddOAuth2Application: function(appToAdd) {
-    var existing = this.getRequiredOAuth2Applications();
-    this.setConfigProperty('requiredOAuth2Applications', existing.concat([appToAdd]));
+    var existing = this.getRequiredOAuth2ApiConfigs();
+    var indexToReplace = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
+    var toReplace = existing[indexToReplace];
+    var configs = existing.slice();
+    if (indexToReplace >= 0) {
+      configs.splice(indexToReplace, 1);
+    }
+    var toAdd = Object.assign({}, toReplace, {
+      apiId: appToAdd.apiId,
+      application: appToAdd
+    });
+    this.setConfigProperty('requiredOAuth2ApiConfigs', configs.concat([toAdd]), this.resetNotifications);
   },
 
   onRemoveOAuth2Application: function(appToRemove) {
-    var existing = this.getRequiredOAuth2Applications();
-    this.setConfigProperty('requiredOAuth2Applications', existing.filter(function(app) {
-      return app.applicationId !== appToRemove.applicationId;
-    }));
+    var existing = this.getRequiredOAuth2ApiConfigs();
+    this.setConfigProperty('requiredOAuth2ApiConfigs', existing.filter(function(config) {
+      return config.application && config.application.applicationId !== appToRemove.applicationId;
+    }), this.resetNotifications);
   },
 
-  onRemoveAWSConfig: function() {
-    this.setConfigProperty('aws', undefined);
+  onNewOAuth2Application: function(requiredOAuth2ApiConfigId) {
+    this.setState({
+      redirectValue: "newOAuth2Application",
+      requiredOAuth2ApiConfigId: requiredOAuth2ApiConfigId || ""
+    }, () => { this.onSubmit(); });
   },
 
   onParamEnterKey: function(index) {
@@ -1013,17 +1080,14 @@ return React.createClass({
     }
   },
 
-  onTriggerEnterKey: function(index) {
-    if (index + 1 < this.getBehaviorTriggers().length) {
-      this.focusOnTriggerIndex(index + 1);
-    } else if (this.getBehaviorTriggers()[index].text) {
-      this.addTrigger();
-    }
-  },
-
   resetNotifications: function() {
+    var newNotifications = this.buildNotifications();
+    var newKinds = newNotifications.map(ea => ea.kind);
+    var visibleAndUnneeded = (notification) => !notification.hidden && !newKinds.some(kind => kind === notification.kind);
+    var notificationsToHide = this.getNotifications().filter(visibleAndUnneeded)
+      .map(deadNotification => Object.assign(deadNotification, { hidden: true }));
     this.setState({
-      notifications: this.buildNotifications()
+      notifications: newNotifications.concat(notificationsToHide)
     });
   },
 
@@ -1061,7 +1125,9 @@ return React.createClass({
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
-      envVariableAdderPrompt: null
+      envVariableAdderPrompt: null,
+      redirectValue: "",
+      requiredOAuth2ApiConfigId: ""
     };
   },
 
@@ -1088,7 +1154,7 @@ return React.createClass({
         </div>
       </div>
 
-      <form action="/save_behavior" method="POST" ref="behaviorForm">
+      <form action="/save_behavior" method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
 
         <CsrfTokenHiddenInput
           value={this.props.csrfToken}
@@ -1096,59 +1162,23 @@ return React.createClass({
         <HiddenJsonInput
           value={JSON.stringify(this.state.behavior)}
         />
+        <input type="hidden" name="redirect" value={this.getRedirectValue()} />
+        <input type="hidden" name="requiredOAuth2ApiConfigId" value={this.state.requiredOAuth2ApiConfigId} />
 
         {/* Start of container */}
         <div className="container ptxl pbxxxl">
 
-          <div className="columns">
-            <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-              <SectionHeading>When someone says</SectionHeading>
-
-              <Checklist disabledWhen={this.isFinishedBehavior()}>
-                <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.isFinishedBehavior()}>
-                  Write a question or phrase people should use to trigger a response.
-                </Checklist.Item>
-                <Checklist.Item checkedWhen={this.hasMultipleTriggers()} hiddenWhen={this.isFinishedBehavior() && this.hasMultipleTriggers()}>
-                  You can add multiple triggers.
-                </Checklist.Item>
-                <Checklist.Item checkedWhen={this.triggersUseParams()}>
-                  <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
-                  <span className="pls">
-                    <HelpButton onClick={this.toggleTriggerHelp} toggled={this.getActivePanel() === 'helpForTriggerParameters'} />
-                  </span>
-                </Checklist.Item>
-              </Checklist>
-
-            </div>
-            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
-              <div className="mbm">
-              {this.getBehaviorTriggers().map(function(trigger, index) {
-                return (
-                  <TriggerInput
-                    className={index === 0 ? "form-input-large" : ""}
-                    includeHelp={index === 0}
-                    key={"BehaviorEditorTrigger" + index}
-                    id={"trigger" + index}
-                    ref={"trigger" + index}
-                    value={trigger.text}
-                    requiresMention={trigger.requiresMention}
-                    isRegex={trigger.isRegex}
-                    caseSensitive={trigger.caseSensitive}
-                    hideDelete={!this.hasMultipleTriggers()}
-                    onChange={this.updateTriggerAtIndexWithTrigger.bind(this, index)}
-                    onDelete={this.deleteTriggerAtIndex.bind(this, index)}
-                    onEnterKey={this.onTriggerEnterKey.bind(this, index)}
-                    onHelpClick={this.toggleTriggerOptionsHelp}
-                    helpVisible={this.getActivePanel() === 'helpForTriggerOptions'}
-                  />
-                );
-              }, this)}
-              </div>
-              <div className="prsymbol mobile-prn align-r mobile-align-l">
-                <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
-              </div>
-            </div>
-          </div>
+          <TriggerConfiguration
+            isFinishedBehavior={this.isFinishedBehavior()}
+            triggers={this.getBehaviorTriggers()}
+            onToggleHelp={this.toggleTriggerHelp}
+            helpVisible={this.getActivePanel() === 'helpForTriggerParameters'}
+            onTriggerAdd={this.addTrigger}
+            onTriggerChange={this.updateTriggerAtIndexWithTrigger}
+            onTriggerDelete={this.deleteTriggerAtIndex}
+            onTriggerDropdownToggle={this.toggleActiveDropdown}
+            openDropdownName={this.getActiveDropdown()}
+          />
 
           <Collapsible revealWhen={this.state.revealCodeEditor}>
             <hr className="mtn" />
@@ -1233,9 +1263,11 @@ return React.createClass({
                       awsCheckedWhen={!!this.getAWSConfig()}
                       toggle={this.toggleAPISelectorMenu}
                       allOAuth2Applications={this.getAllOAuth2Applications()}
-                      requiredOAuth2Applications={this.getRequiredOAuth2Applications()}
+                      requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
                       onAddOAuth2Application={this.onAddOAuth2Application}
                       onRemoveOAuth2Application={this.onRemoveOAuth2Application}
+                      onNewOAuth2Application={this.onNewOAuth2Application}
+                      getOAuth2ApiWithId={this.getOAuth2ApiWithId}
                       />
                   </div>
 
@@ -1248,7 +1280,7 @@ return React.createClass({
                         regionName={this.getAWSConfigProperty('regionName')}
                         onAddNew={this.onAWSAddNewEnvVariable}
                         onChange={this.onAWSConfigChange}
-                        onRemoveAWSConfig={this.onRemoveAWSConfig}
+                        onRemoveAWSConfig={this.toggleAWSConfig}
                         onToggleHelp={this.toggleAWSHelp}
                         helpVisible={this.getActivePanel() === 'helpForAWS'}
                       />
@@ -1381,10 +1413,6 @@ return React.createClass({
             <TriggerHelp onCollapseClick={this.toggleTriggerHelp} />
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerOptions'}>
-            <TriggerOptionsHelp onCollapseClick={this.toggleTriggerOptionsHelp} />
-          </Collapsible>
-
           <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
             <BoilerplateParameterHelp
               envVariableNames={this.getEnvVariableNames()}
@@ -1441,6 +1469,7 @@ return React.createClass({
                   index={index}
                   kind={notification.kind}
                   onClick={this.onNotificationClick}
+                  hidden={notification.hidden}
                 />
               );
             }, this)}
@@ -1450,7 +1479,6 @@ return React.createClass({
                   <button type="submit"
                     className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
                     disabled={!this.isModified()}
-                    onClick={this.onSaveClick}
                   >
                     <span className="button-labels">
                       <span className="button-normal-label">

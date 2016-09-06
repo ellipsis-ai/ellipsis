@@ -2,10 +2,12 @@ package models.bots.conversations
 
 import models.IDs
 import models.bots._
+import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTrigger
 import org.joda.time.DateTime
 import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class InvokeBehaviorConversation(
@@ -78,23 +80,27 @@ case class InvokeBehaviorConversation(
 
   }
 
-  private def sendPromptFor(event: MessageEvent, info: ParamInfo): Unit = {
+  private def promptResultFor(event: MessageEvent, info: ParamInfo): BehaviorResult = {
     val prompt = (for {
       param <- info.maybeNextToCollect
       question <- param.maybeQuestion
     } yield question).getOrElse("All done!")
 
-    event.context.sendMessage(prompt)
+    SimpleTextResult(prompt)
   }
 
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Unit] = {
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult] = {
     import Conversation._
     import InvokeBehaviorConversation._
 
     paramInfo.flatMap { info =>
       state match {
-        case COLLECT_PARAM_VALUES_STATE => DBIO.successful(sendPromptFor(event, info))
-        case DONE_STATE => BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger).map(_.runCode(lambdaService))
+        case COLLECT_PARAM_VALUES_STATE => DBIO.successful(promptResultFor(event, info))
+        case DONE_STATE => {
+          BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger).flatMap { br =>
+            DBIO.from(br.resultForFilledOut(lambdaService))
+          }
+        }
       }
     }
 

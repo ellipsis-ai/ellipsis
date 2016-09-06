@@ -1,42 +1,43 @@
 package controllers
 
-import java.net.{URLEncoder, URI}
+import java.net.{URI, URLEncoder}
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.services.AuthenticatorResult
+import services.DataService
 import com.mohiva.play.silhouette.api.util.Clock
-import models.accounts._
 import org.joda.time.DateTime
 import play.api.Configuration
-import services.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
+import com.mohiva.play.silhouette.api.services.AuthenticatorResult
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers._
 import models._
+import models.accounts._
+import models.accounts.user.User
+import models.accounts.linkedaccount.LinkedAccount
+import models.silhouette.EllipsisEnv
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{RequestHeader, Result}
-import slick.driver.PostgresDriver.api._
-
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 class SocialAuthController @Inject() (
                                        val messagesApi: MessagesApi,
-                                       val env: Environment[User, CookieAuthenticator],
+                                       val silhouette: Silhouette[EllipsisEnv],
                                        val configuration: Configuration,
                                        val clock: Clock,
                                        val models: Models,
                                        slackProvider: SlackProvider,
-                                       userService: UserService,
-                                       authInfoRepository: AuthInfoRepository,
-                                       socialProviderRegistry: SocialProviderRegistry)
-  extends Silhouette[User, CookieAuthenticator] with Logger {
+                                       dataService: DataService,
+                                       authInfoRepository: AuthInfoRepository
+                                     ) extends EllipsisController with Logger {
 
-  def authenticatorResultForUserAndResult(user: User, result: Result)(implicit request: RequestHeader): DBIO[AuthenticatorResult] = DBIO.from {
+  val env = silhouette.env
+
+  def authenticatorResultForUserAndResult(user: User, result: Result)(implicit request: RequestHeader): Future[AuthenticatorResult] = {
     val c = configuration.underlying
     env.authenticatorService.create(user.loginInfo).map { (authenticator: CookieAuthenticator) =>
       val expirationTime = clock.now.plusSeconds(c.getDuration("silhouette.authenticator.authenticatorExpiry", TimeUnit.SECONDS).toInt)
@@ -47,7 +48,7 @@ class SocialAuthController @Inject() (
         idleTimeout = Some(FiniteDuration(idleTimeoutSeconds, TimeUnit.SECONDS)),
         cookieMaxAge = Some(FiniteDuration(cookieMaxAgeSeconds, TimeUnit.SECONDS)))
     }.flatMap { authenticator =>
-      env.eventBus.publish(LoginEvent(user, request, request2Messages))
+      env.eventBus.publish(LoginEvent(user, request))
       env.authenticatorService.init(authenticator).flatMap { v =>
         env.authenticatorService.embed(v, result)
       }
@@ -75,7 +76,7 @@ class SocialAuthController @Inject() (
                          maybeRedirect: Option[String],
                          maybeTeamId: Option[String],
                          maybeChannelId: Option[String]
-                         ) = UserAwareAction.async { implicit request =>
+                         ) = silhouette.UserAwareAction.async { implicit request =>
     val provider = slackProvider.withSettings { settings =>
       val url = routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       val authorizationParams = maybeTeamId.map { teamId =>
@@ -96,29 +97,29 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
-          botProfile <- slackProvider.maybeBotProfileFor(authInfo, models).map { maybeBotProfile =>
+          botProfile <- slackProvider.maybeBotProfileFor(authInfo, dataService).map { maybeBotProfile =>
             maybeBotProfile.get // Blow up if we can't get a bot profile
           }
           maybeSlackTeamId <- Future.successful(Some(maybeTeamId.getOrElse(profile.teamId)))
           savedProfile <- models.run(SlackProfileQueries.save(profile))
           savedAuthInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
-          linkedAccount <- models.run(LinkedAccount.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
-            maybeExisting.map(DBIO.successful).getOrElse {
-              val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
-                userService.createFor(botProfile.teamId)
-              })
+          linkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
+            maybeExisting.map(Future.successful).getOrElse {
+              val eventualUser = request.identity.map(Future.successful).getOrElse {
+                dataService.users.createFor(botProfile.teamId)
+              }
               eventualUser.flatMap { user =>
-                LinkedAccount(user, profile.loginInfo, DateTime.now).save
+                dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, DateTime.now))
               }
             }
-          })
+          }
           user <- Future.successful(linkedAccount.user)
           result <- Future.successful {
             maybeRedirect.map { redirect =>
               Redirect(validatedRedirectUri(redirect))
             }.getOrElse(Redirect(routes.ApplicationController.index()))
           }
-          authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
+          authenticatedResult <- authenticatorResultForUserAndResult(user, result)
         } yield {
           authenticatedResult
         }
@@ -130,7 +131,7 @@ class SocialAuthController @Inject() (
                          maybeRedirect: Option[String],
                          maybeTeamId: Option[String],
                          maybeChannelId: Option[String]
-                         ) = UserAwareAction.async { implicit request =>
+                         ) = silhouette.UserAwareAction.async { implicit request =>
     val provider = slackProvider.withSettings { settings =>
       val url = routes.SocialAuthController.authenticateSlack(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
       var authorizationParams = settings.authorizationParams
@@ -169,24 +170,22 @@ class SocialAuthController @Inject() (
               savedProfile <- models.run(SlackProfileQueries.save(profile))
               loginInfo <- Future.successful(profile.loginInfo)
               savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
-              maybeExistingLinkedAccount <- models.run(LinkedAccount.find(profile.loginInfo, teamId))
-              linkedAccount <- models.run(
-                maybeExistingLinkedAccount.map(DBIO.successful).getOrElse {
-                  val eventualUser = DBIO.from(request.identity.map(Future.successful).getOrElse {
-                    userService.createFor(teamId)
-                  })
-                  eventualUser.flatMap { user =>
-                    LinkedAccount(user, profile.loginInfo, DateTime.now).save
-                  }
+              maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, teamId)
+              linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
+                val eventualUser = request.identity.map(Future.successful).getOrElse {
+                  dataService.users.createFor(teamId)
                 }
-              )
+                eventualUser.flatMap { user =>
+                  dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, DateTime.now))
+                }
+              }
               user <- Future.successful(linkedAccount.user)
               result <- Future.successful {
                 maybeRedirect.map { redirect =>
                   Redirect(validatedRedirectUri(redirect))
                 }.getOrElse(Redirect(routes.ApplicationController.index()))
               }
-              authenticatedResult <- models.run(authenticatorResultForUserAndResult(user, result))
+              authenticatedResult <- authenticatorResultForUserAndResult(user, result)
             } yield authenticatedResult
           }
         } yield result
@@ -194,7 +193,37 @@ class SocialAuthController @Inject() (
     }
   }
 
-  def signOut = SecuredAction.async { implicit request =>
+  def loginWithToken(
+            token: String,
+            maybeRedirect: Option[String]
+            ) = silhouette.UserAwareAction.async { implicit request =>
+    val successRedirect = validatedRedirectUri(maybeRedirect.getOrElse(routes.ApplicationController.index().toString))
+    for {
+      maybeToken <- dataService.loginTokens.find(token)
+      result <- maybeToken.map { token =>
+        val isAlreadyLoggedInAsTokenUser = request.identity.exists(_.id == token.userId)
+        if (isAlreadyLoggedInAsTokenUser) {
+          Future.successful(Redirect(successRedirect))
+        } else if (token.isValid) {
+          for {
+            _ <- dataService.loginTokens.use(token)
+            maybeUser <- dataService.users.find(token.userId)
+            resultForValidToken <- maybeUser.map { user =>
+              authenticatorResultForUserAndResult(user, Redirect(successRedirect))
+            }.getOrElse {
+              Future.successful(Redirect(routes.SlackController.signIn(maybeRedirect)))
+            }
+          } yield resultForValidToken
+        } else {
+          Future.successful(Ok(views.html.loginTokenExpired()))
+        }
+      }.getOrElse {
+        Future.successful(NotFound("Token not found"))
+      }
+    } yield result
+  }
+
+  def signOut = silhouette.SecuredAction.async { implicit request =>
     val redirect = request.request.headers.get("referer").getOrElse(routes.ApplicationController.index().toString)
     env.authenticatorService.discard(request.authenticator, Redirect(redirect))
   }

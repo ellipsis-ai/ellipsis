@@ -1,11 +1,11 @@
 package export
 
-import java.io.{ByteArrayOutputStream, FileInputStream, File}
+import java.io.{ByteArrayOutputStream, File, FileInputStream}
 import java.util.zip.{ZipEntry, ZipInputStream}
 
 import json.BehaviorVersionData
-import models.Team
-import models.accounts.User
+import models.team.Team
+import models.accounts.user.User
 import models.bots.BehaviorVersion
 import services.AWSLambdaService
 import slick.dbio.DBIO

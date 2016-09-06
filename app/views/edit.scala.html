@@ -1,8 +1,9 @@
 @(
-  teamAccess: models.accounts.UserTeamAccess,
+  teamAccess: models.accounts.user.UserTeamAccess,
   json: String,
   envVariablesJson: String,
   oauth2ApplicationsJson: String,
+  oauth2ApisJson: String,
   justSaved: Boolean,
   notificationsJson: String
     )(implicit messages: Messages, r: RequestHeader)
@@ -11,9 +12,10 @@
 
 @main("Ellipsis behavior editor", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
-    routes.javascript.ApplicationController.regexValidationErrorsFor,
-    routes.javascript.ApplicationController.versionInfoFor,
-    routes.javascript.ApplicationController.submitEnvironmentVariables
+    routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
+    routes.javascript.BehaviorEditorController.versionInfoFor,
+    routes.javascript.EnvironmentVariablesController.submit,
+    routes.javascript.OAuth2ApplicationController.newApp
   )
   <div id="content" class="content">
     <div>
@@ -27,6 +29,7 @@
           justSaved: @justSaved,
           envVariables: @Html(envVariablesJson),
           oauth2Applications: @Html(oauth2ApplicationsJson),
+          oauth2Apis: @Html(oauth2ApisJson),
           notifications: @Html(notificationsJson)
         };
       </script>

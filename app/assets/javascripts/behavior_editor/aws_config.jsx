@@ -1,7 +1,7 @@
 define(function(require) {
   var React = require('react'),
     EnvironmentVariableChooser = require('./environment_variable_chooser'),
-    HelpButton = require('./help_button');
+    HelpButton = require('../help/help_button');
 
   return React.createClass({
 

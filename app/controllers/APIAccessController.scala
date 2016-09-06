@@ -2,32 +2,33 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{Silhouette, Environment}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import models.bots.{MessageEvent, EventHandler}
-import models.{IDs, Team, Models}
-import models.accounts.{OAuth2ApplicationQueries, LinkedOAuth2Token, OAuth2Application, User}
+import com.mohiva.play.silhouette.api.Silhouette
+import models.accounts.user.User
+import models.IDs
+import models.accounts.{LinkedOAuth2Token, OAuth2Application, OAuth2ApplicationQueries}
+import models.bots.events.{EventHandler, MessageEvent}
+import models.silhouette.EllipsisEnv
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
-import play.api.http.{MimeTypes, HeaderNames}
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc.Results
+import services.DataService
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class APIAccessController @Inject() (
-                                        val messagesApi: MessagesApi,
-                                        val env: Environment[User, CookieAuthenticator],
-                                        val configuration: Configuration,
-                                        val models: Models,
-                                        val ws: WSClient,
-                                        val cache: CacheApi,
-                                        val eventHandler: EventHandler,
-                                        val socialProviderRegistry: SocialProviderRegistry)
+                                      val messagesApi: MessagesApi,
+                                      val silhouette: Silhouette[EllipsisEnv],
+                                      val configuration: Configuration,
+                                      val dataService: DataService,
+                                      val ws: WSClient,
+                                      val cache: CacheApi,
+                                      val eventHandler: EventHandler
+                                    )
   extends ReAuthable {
 
   private def getToken(code: String, application: OAuth2Application, user: User, redirectUrl: String): DBIO[Option[LinkedOAuth2Token]] = {
@@ -56,12 +57,12 @@ class APIAccessController @Inject() (
                                codeOpt: Option[String],
                                stateOpt: Option[String],
                                maybeInvocationId: Option[String]
-                               ) = SecuredAction.async { implicit request =>
+                               ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       maybeApplication <- OAuth2ApplicationQueries.find(applicationId)
       isLoggedInToCorrectTeam <- maybeApplication.map { application =>
-        Team.find(application.teamId, user).map(_.isDefined)
+        DBIO.from(dataService.teams.find(application.teamId, user)).map(_.isDefined)
       }.getOrElse(DBIO.successful(false))
       result <- if (isLoggedInToCorrectTeam) {
         (for {
@@ -72,19 +73,20 @@ class APIAccessController @Inject() (
         } yield {
             if (state == oauthState) {
               val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId).absoluteURL(secure=true)
-              getToken(code, application, user, redirect).map { maybeLinkedToken =>
+              getToken(code, application, user, redirect).flatMap { maybeLinkedToken =>
                 maybeLinkedToken.
                   map { _ =>
                   request.session.get("invocation-id").flatMap { invocationId =>
                     cache.get[MessageEvent](invocationId).map { event =>
-                      eventHandler.handle(event)
-                      Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.context.name}."))
+                      DBIO.from(eventHandler.handle(event)).map { result =>
+                        result.sendIn(event.context)
+                        Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.context.name}."))
+                      }
                     }
                   }.getOrElse {
-                    Redirect(routes.APIAccessController.authenticated(s"You are now authenticated and can try again."))
+                    DBIO.successful(Redirect(routes.APIAccessController.authenticated(s"You are now authenticated and can try again.")))
                   }
-                }.
-                  getOrElse(BadRequest("boom"))
+                }.getOrElse(DBIO.successful(BadRequest("boom")))
               }
             } else {
               DBIO.successful(BadRequest("Invalid state"))
@@ -103,11 +105,14 @@ class APIAccessController @Inject() (
       }
     } yield result
 
-    models.run(action)
+    dataService.run(action)
   }
 
-  def authenticated(message: String) = SecuredAction { implicit request =>
-    Ok(views.html.authenticated(message))
+  def authenticated(message: String) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    dataService.teams.find(user.teamId).map { maybeTeam =>
+      Ok(views.html.authenticated(maybeTeam, message))
+    }
   }
 
 

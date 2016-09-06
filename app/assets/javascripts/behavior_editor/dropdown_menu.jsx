@@ -82,7 +82,7 @@ var BehaviorEditorDropdownMenu = React.createClass({
       <div ref="container" className="display-inline-block">
         <button type="button"
           className={
-            "button-dropdown-trigger position-z-popup-trigger " +
+            "button-dropdown-trigger " +
             (this.props.openWhen ? " button-dropdown-trigger-menu-open " : "") +
             (this.props.labelClassName || "")
           }
@@ -100,7 +100,7 @@ var BehaviorEditorDropdownMenu = React.createClass({
             {React.Children.map(this.props.children, function(child, index) {
               if (child) {
                 return (
-                  <li ref={"menuItem" + index} onMouseUp={this.onItemMouseUp}>
+                  <li ref={"menuItem" + index} onMouseUp={this.onItemMouseUp} className={child.props.className || ""}>
                     {child}
                   </li>
                 );
@@ -120,7 +120,8 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
   propTypes: {
     checkedWhen: React.PropTypes.bool,
     label: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
-    onClick: React.PropTypes.func
+    onClick: React.PropTypes.func,
+    className: React.PropTypes.string
   },
 
   getInitialState: function() {
@@ -168,11 +169,16 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
         onMouseEnter={this.onMouseEnter}
         onMouseLeave={this.onMouseLeave}
       >
-        {typeof(this.props.checkedWhen) !== 'undefined' ?
-          (<span className={"mrxs display-inline-block align-m " + CSS.visibleWhen(this.props.checkedWhen)}>✓</span>) :
-          null
-        }
-        <span className={"display-inline-block align-m " + (this.props.checkedWhen ? "type-bold" : "")}>{this.props.label}</span>
+        <div className="columns columns-elastic">
+          {typeof(this.props.checkedWhen) !== 'undefined' ? (
+            <div className={"column column-shrink prs align-m " + CSS.visibleWhen(this.props.checkedWhen)}>
+              ✓
+            </div>
+          ) : null}
+          <div className={"column column-expand align-m " + (this.props.checkedWhen ? "type-bold" : "")}>
+            {this.props.label}
+          </div>
+        </div>
       </button>
     );
   }

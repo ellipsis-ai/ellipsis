@@ -1,5 +1,5 @@
 @(
-  teamAccess: models.accounts.UserTeamAccess,
+  teamAccess: models.accounts.user.UserTeamAccess,
   behaviorVersions: Seq[json.BehaviorVersionData]
 )(implicit messages: Messages, r: RequestHeader)
 
@@ -8,7 +8,7 @@
 
 @main("Ellipsis behavior editor", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
-    routes.javascript.ApplicationController.editBehavior
+    routes.javascript.BehaviorEditorController.edit
   )
   <div id="content" class="content">
     @views.html.behaviorTabs("view", teamAccess)

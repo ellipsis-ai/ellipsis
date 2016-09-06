@@ -1,5 +1,5 @@
 @(
-  teamAccess: models.accounts.UserTeamAccess
+  teamAccess: models.accounts.user.UserTeamAccess
   )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
@@ -14,7 +14,7 @@
         Upload an exported zip:
       </p>
 
-      <form action="@routes.ApplicationController.doImportBehaviorZip()" method="POST" enctype="multipart/form-data">
+      <form action="@routes.BehaviorImportExportController.doImportZip()" method="POST" enctype="multipart/form-data">
         @CSRF.formField
         <input type="hidden" name="teamId" value="@teamAccess.maybeTargetTeam.map(_.id)"/>
         <input type="file" name="zipFile">

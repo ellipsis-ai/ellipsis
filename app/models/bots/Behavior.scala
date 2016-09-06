@@ -1,11 +1,13 @@
 package models.bots
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
-import models.accounts.User
-import models.{IDs, Team}
+import models.accounts.user.User
+import models.IDs
+import models.team.{Team, TeamQueries}
 import org.joda.time.DateTime
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class Behavior(
@@ -58,7 +60,7 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
 object BehaviorQueries {
 
   def all = TableQuery[BehaviorsTable]
-  def allWithTeam = all.join(Team.all).on(_.teamId === _.id)
+  def allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
 
   def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
     val raw = tuple._1
@@ -86,11 +88,11 @@ object BehaviorQueries {
     findQuery(id).result.map(_.headOption.map(tuple2Behavior))
   }
 
-  def find(id: String, user: User): DBIO[Option[Behavior]] = {
+  def find(id: String, user: User, dataService: DataService): DBIO[Option[Behavior]] = {
     for {
       maybeBehavior <- findWithoutAccessCheck(id)
       canAccess <- maybeBehavior.map { behavior =>
-        user.canAccess(behavior.team)
+        DBIO.from(dataService.users.canAccess(user, behavior))
       }.getOrElse(DBIO.successful(false))
     } yield {
       if (canAccess) {

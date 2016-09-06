@@ -35,4 +35,8 @@ trait DBMixin {
   def runNow[T](db: PostgresDatabase, action: DBIO[T]): T = {
     Await.result(run(db, action), 30.seconds)
   }
+
+  def runNow[T](future: Future[T]): T = {
+    Await.result(future, 30.seconds)
+  }
 }

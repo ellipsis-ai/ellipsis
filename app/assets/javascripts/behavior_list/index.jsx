@@ -71,7 +71,7 @@ define(function(require) {
       var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTrigger.index);
       return (
         <div>
-          <a href={jsRoutes.controllers.ApplicationController.editBehavior(version.behaviorId).url}
+          <a href={jsRoutes.controllers.BehaviorEditorController.edit(version.behaviorId).url}
             className="link-block">
             {firstTrigger.label}
             {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
@@ -84,7 +84,7 @@ define(function(require) {
     getImportedStatusFromVersion: function(version) {
       if (version.importedId) {
         return (
-          <span title="Installed from ellipsis.ai" className="mtxs display-inline-block" style={{ height: 18 }}>
+          <span title="Installed from ellipsis.ai" className="mtxs display-inline-block" style={{ width: 30, height: 18 }}>
             <SVGInstalled />
           </span>
         );

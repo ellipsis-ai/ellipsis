@@ -1,13 +1,15 @@
 package models.bots.conversations
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
-import models.Team
-import models.accounts.User
+import models.team.Team
+import models.accounts.user.User
 import models.bots._
-import models.bots.triggers.{MessageTrigger, RawMessageTrigger, MessageTriggerQueries}
+import models.bots.events.MessageEvent
+import models.bots.triggers.{MessageTrigger, MessageTriggerQueries, RawMessageTrigger}
 import org.joda.time.DateTime
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait Conversation {
@@ -21,13 +23,13 @@ trait Conversation {
   val state: String
 
   def updateWith(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Conversation]
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Unit]
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult]
 
-  def replyFor(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Unit] = {
+  def resultFor(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult] = {
     for {
       updatedConversation <- updateWith(event, lambdaService)
-      _ <- updatedConversation.respond(event, lambdaService)
-    } yield Unit
+      result <- updatedConversation.respond(event, lambdaService)
+    } yield result
   }
 
   def save: DBIO[Conversation] = ConversationQueries.save(this)

@@ -1,23 +1,23 @@
 package models.bots.builtins
 
-import models.Team
-import models.accounts.User
+import models.bots.events.MessageContext
 import models.bots.triggers.MessageTriggerQueries
-import models.bots.{BehaviorVersionQueries, BehaviorQueries, MessageContext}
-import services.AWSLambdaService
+import models.bots._
+import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService) extends BuiltinBehavior {
+case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     for {
-      maybeTeam <- Team.find(messageContext.teamId)
+      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       maybeUser <- maybeTeam.map { team =>
-        User.findFromMessageContext(messageContext, team)
+        DBIO.from(dataService.users.findFromMessageContext(messageContext, team))
       }.getOrElse(DBIO.successful(None))
-      messages <- messageContext.recentMessages
+      messages <- messageContext.recentMessages(dataService)
       qaExtractor <- DBIO.successful(QuestionAnswerExtractor(messages))
       maybeBehavior <- maybeTeam.map { team =>
         BehaviorQueries.createFor(team, None).map(Some(_))
@@ -34,12 +34,13 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
         }.map(Some(_)) transactionally
       }.getOrElse(DBIO.successful(None))
     } yield {
-      maybeBehaviorVersion.foreach { behaviorVersion =>
-        behaviorVersion.editLinkFor(lambdaService.configuration).foreach { link =>
-          messageContext.sendMessage(s"OK, I compiled recent messages at $link")
+      maybeBehaviorVersion.flatMap { behaviorVersion =>
+        behaviorVersion.editLinkFor(lambdaService.configuration).map { link =>
+          SimpleTextResult(s"OK, I compiled recent messages at $link")
         }
+      }.getOrElse{
+        NoResponseResult(None)
       }
-
     }
   }
 

@@ -1,6 +1,7 @@
 package models.accounts
 
-import models.{Team, IDs}
+import models.IDs
+import models.team.Team
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 

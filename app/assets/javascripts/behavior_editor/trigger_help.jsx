@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  HelpPanel = require('./help_panel');
+  HelpPanel = require('../help/panel');
 
 return React.createClass({
   propTypes: {
@@ -40,6 +40,31 @@ return React.createClass({
             <span>that you use in your triggers. The function will receive whatever the user typed.</span>
           </li>
         </ul>
+
+        <h5>Trigger options</h5>
+        <p>The way triggers are interpreted can be changed with certain options.</p>
+
+        <ul className="list-space-s">
+          <li>
+            <span><b className="type-m">Any message</b> — if selected, Ellipsis will respond when a phrase </span>
+            <span>is used at any time in any channel Ellipsis participates in.</span>
+          </li>
+          <li>
+            <span><b className="type-m">To Ellipsis</b> — if selected, Ellipsis will only respond when </span>
+            <span>someone mentions @Ellipsis in a message, sends a direct message to Ellipsis, or begins a message </span>
+            <span>with three periods (“<b>…</b>”).</span>
+          </li>
+          <li>
+            <span><b className="type-m">Case-sensitive</b> — if checked, Ellipsis will only respond </span>
+            <span>if uppercase and lowercase letters match exactly. If unchecked, letter case is ignored.</span>
+          </li>
+          <li>
+            <span><b className="type-m">Regular expression pattern</b> — if checked, this trigger will </span>
+            <span>be interpreted as a regular expression pattern (regex) instead of normal text. Use regex capturing parentheses </span>
+            <span>to collect user input instead of the <code>{"{paramName}"}</code> style.</span>
+          </li>
+        </ul>
+
       </HelpPanel>
     );
   }

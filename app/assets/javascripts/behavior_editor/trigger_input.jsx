@@ -2,31 +2,32 @@ define(function(require) {
 var React = require('react'),
   debounce = require('javascript-debounce'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  Checkbox = require('./checkbox'),
   DeleteButton = require('./delete_button'),
-  HelpButton = require('./help_button'),
+  HelpButton = require('../help/help_button'),
   Input = require('../form/input'),
-  Collapsible = require('../collapsible');
-  require('es6-promise');
+  Collapsible = require('../collapsible'),
+  ToggleGroup = require('../form/toggle_group'),
+  DropdownMenu = require('./dropdown_menu');
   require('whatwg-fetch');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
   propTypes: {
     caseSensitive: React.PropTypes.bool.isRequired,
-    className: React.PropTypes.string,
+    large: React.PropTypes.bool,
+    dropdownIsOpen: React.PropTypes.bool.isRequired,
     helpVisible: React.PropTypes.bool.isRequired,
     hideDelete: React.PropTypes.bool.isRequired,
     id: React.PropTypes.oneOfType([
       React.PropTypes.number,
       React.PropTypes.string
     ]).isRequired,
-    includeHelp: React.PropTypes.bool.isRequired,
     isRegex: React.PropTypes.bool.isRequired,
     onChange: React.PropTypes.func.isRequired,
     onDelete: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func.isRequired,
     onHelpClick: React.PropTypes.func.isRequired,
+    onToggleDropdown: React.PropTypes.func.isRequired,
     requiresMention: React.PropTypes.bool.isRequired,
     value: React.PropTypes.string.isRequired
   },
@@ -66,6 +67,12 @@ return React.createClass({
     this.changeTrigger(changes);
     this.focus();
   },
+  toggleCaseSensitive: function() {
+    this.onChange('caseSensitive', !this.props.caseSensitive);
+  },
+  toggleIsRegex: function() {
+    this.onChange('isRegex', !this.props.isRegex);
+  },
   onBlur: function(newValue) {
     var text = newValue;
     var changes = {};
@@ -87,7 +94,7 @@ return React.createClass({
       return;
     }
 
-    var url = jsRoutes.controllers.ApplicationController.regexValidationErrorsFor(this.props.value).url;
+    var url = jsRoutes.controllers.BehaviorEditorController.regexValidationErrorsFor(this.props.value).url;
     fetch(url, { credentials: 'same-origin' })
       .then(function(response) {
         return response.json();
@@ -110,11 +117,24 @@ return React.createClass({
     this.setState({ showError: !this.state.showError });
     this.focus();
   },
-  toggleHelp: function() {
-    this.props.onHelpClick();
-  },
   focus: function() {
     this.refs.input.focus();
+  },
+
+  getPrefix: function() {
+    var label;
+    if (this.props.caseSensitive && this.props.isRegex) {
+      label = "Case-sensitive regex pattern:";
+    } else if (this.props.caseSensitive) {
+      label = "Case-sensitive phrase:";
+    } else if (this.props.isRegex) {
+      label = "Case-insensitive regex pattern:";
+    } else {
+      label = "Phrase:";
+    }
+    return (
+      <span className="type-weak">{label}</span>
+    );
   },
 
   componentDidMount: function() {
@@ -125,28 +145,34 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="columns columns-elastic mobile-columns-float mbs mobile-mbxl">
-        <div className="column column-expand prn">
+      <div className="columns columns-elastic mobile-columns-float mbm mobile-mbxl">
+        <div className="column column-expand">
           <div className="columns columns-elastic">
-            <div className={"column column-shrink prn " + (this.props.requiresMention ? "" : "display-none")}>
-              <div className={
-                "type-weak type-s form-input form-input-borderless prxs " +
-                (this.props.className || "")
-              }>
-                <label htmlFor={this.props.id}>@ellipsis:</label>
-              </div>
-            </div>
-            <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-              <div className={"type-disabled type-monospace form-input form-input-borderless " + (this.props.className || "")}>
-                <label htmlFor={this.props.id}>/</label>
-              </div>
+            <div className="column column-shrink align-m ptxs prn">
+              <DropdownMenu
+                openWhen={this.props.dropdownIsOpen}
+                label={this.getPrefix()}
+                labelClassName="button-dropdown-trigger-borderless button-s mrs type-label"
+                toggle={this.props.onToggleDropdown}
+              >
+                <DropdownMenu.Item
+                  onClick={this.toggleCaseSensitive}
+                  label="Case-sensitive"
+                  checkedWhen={this.props.caseSensitive}
+                />
+                <DropdownMenu.Item
+                  onClick={this.toggleIsRegex}
+                  label="Regular expression pattern"
+                  checkedWhen={this.props.isRegex}
+                />
+              </DropdownMenu>
             </div>
             <div className="column column-expand prn position-relative">
               <Input
                 className={
                   " form-input-borderless " +
                   (this.props.isRegex ? " type-monospace " : "") +
-                  (this.props.className || "")
+                  (this.props.large ? " form-input-large " : "")
                 }
                 id={this.props.id}
                 ref="input"
@@ -173,46 +199,34 @@ return React.createClass({
                   <div className="position-absolute position-top-right ptxs prxs">
                     <HelpButton onClick={this.toggleError} toggled={true} inline={true} />
                   </div>
-                  <div><b>This regex trigger cannot be used because of a format error:</b></div>
+                  <div className="prl">
+                    <b>This regex pattern has an error:</b>
+                  </div>
                   <pre>{this.state.regexError || "\n\n\n"}</pre>
                 </div>
               </Collapsible>
             </div>
-            <div className={"column column-shrink prn " + (this.props.isRegex ? "" : "display-none")}>
-              <div className={"type-disabled type-monospace form-input form-input-borderless prs " + (this.props.className || "")}>
-                <label htmlFor={this.props.id}>/</label>
-              </div>
-            </div>
           </div>
         </div>
-        <div className="column column-shrink prn position-relative">
-          <div className={"display-ellipsis form-input form-input-borderless " +
-            (this.props.className || "")}>
-            {this.props.includeHelp ? (
-              <HelpButton onClick={this.toggleHelp} toggled={this.props.helpVisible} className="align-m mrs" />
-              ) : ""}
-            <label className="mrm type-s" title="Only respond when someone mentions @ellipsis">
-              <Checkbox
-                checked={this.props.requiresMention}
-                onChange={this.onChange.bind(this, 'requiresMention')}
-              /> <span>🗣 🤖</span>
-            </label>
-            <label
-              className={"mrm type-s " + (this.state.highlightCaseSensitivity ? "blink-twice" : "")}
-              title="Match uppercase and lowercase letters exactly — if unchecked, case is ignored"
-            >
-              <Checkbox
-                checked={this.props.caseSensitive}
-                onChange={this.onChange.bind(this, 'caseSensitive')}
-              /> <i>Aa</i>
-            </label>
-            <label className="type-s" title="Use regular expression pattern matching">
-              <Checkbox
-                checked={this.props.isRegex}
-                onChange={this.onChange.bind(this, 'isRegex')}
-              /> <code>/^…$/</code>
-            </label>
-          </div>
+        <div className={
+          "column column-shrink prn display-ellipsis mobile-pts " +
+          (this.props.large ? " ptm " : " pts ")
+        }>
+          <ToggleGroup className="form-toggle-group-s align-m">
+            <ToggleGroup.Item
+              title="Ellipsis will respond to any message with this phrase"
+              label="Any message"
+              activeWhen={!this.props.requiresMention}
+              onClick={this.onChange.bind(this, 'requiresMention', false)}
+            />
+            <ToggleGroup.Item
+              title="Ellipsis will only respond when mentioned, or when a message begins with three periods
+              “…”."
+              label="To Ellipsis"
+              activeWhen={this.props.requiresMention}
+              onClick={this.onChange.bind(this, 'requiresMention', true)}
+            />
+          </ToggleGroup>
         </div>
         <div className="column column-shrink">
           <DeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />

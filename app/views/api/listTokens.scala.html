@@ -1,20 +1,26 @@
 @(
-  tokens: Seq[models.APIToken]
-  )(implicit r: RequestHeader)
+  teamAccess: models.accounts.user.UserTeamAccess,
+  tokens: Seq[json.APITokenData],
+  maybeJustCreatedTokenId: Option[String]
+)(implicit messages: Messages, r: RequestHeader)
 
-@import helper._
+@import play.filters.csrf._
+@import play.api.libs.json._
+@import json.Formatting._
 
-<ul>
-  @tokens.map { token =>
-    <li>
-      <span>@token.label</span>
-      <span>Last used: </span>
-      <span>@token.maybeLastUsedString.getOrElse("Never")</span>
-      <form action="@routes.APITokenController.revokeToken()" method="POST">
-        @CSRF.formField
-        <input type="hidden" name="id" value="@token.id"/>
-        <input type="submit" value="Revoke"/>
-      </form>
-    </li>
-  }
-</ul>
+@main("API token generator", Some(teamAccess)) {
+  @views.html.settingsRoutes()
+  <div id="content" class="content">
+    <div id="apiTokenGenerator"></div>
+    <script>
+      var ApiTokenGeneratorConfig = {
+        containerId: 'apiTokenGenerator',
+        csrfToken: "@CSRF.getToken(r).map(_.value)",
+        teamId: "@teamAccess.maybeTargetTeam.map(_.id)",
+        tokens: @Html(Json.toJson(tokens).toString()),
+        justCreatedTokenId: "@maybeJustCreatedTokenId.map(justCreatedTokenId => justCreatedTokenId).getOrElse("")"
+      };
+    </script>
+    <script data-main='@RemoteAssets.getUrl("javascripts/api_token_generator/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
+  </div>
+}

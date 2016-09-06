@@ -13,17 +13,21 @@ define(function(require) {
     removeQueryParam: function(qpName) {
       var url = new URI();
       url.removeQuery(qpName);
-      this.setURL(url.href());
+      this.replaceURL(url.href());
     },
 
     replaceQueryParam: function(qpName, value) {
       var url = new URI();
       url.removeQuery(qpName).addQuery(qpName, value);
-      this.setURL(url.href());
+      this.replaceURL(url.href());
     },
 
-    setURL: function(url) {
+    replaceURL: function(url) {
       window.history.replaceState({}, "", url);
+    },
+
+    loadURL: function(url) {
+      window.location.href = url;
     }
   };
 });

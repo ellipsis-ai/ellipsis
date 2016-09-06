@@ -1,11 +1,13 @@
 package models.bots
 
-import models.Team
+import models.team.Team
 import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
+import models.bots.events.MessageEvent
 import models.bots.triggers.{MessageTrigger, MessageTriggerQueries}
 import org.joda.time.DateTime
 import services.{AWSLambdaConstants, AWSLambdaService}
 import slick.dbio.DBIO
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -24,11 +26,10 @@ case class BehaviorResponse(
     parametersWithValues.forall(_.maybeValue.isDefined)
   }
 
-  def runCode(service: AWSLambdaService): Future[Unit] = {
+  def resultForFilledOut(service: AWSLambdaService): Future[BehaviorResult] = {
     val startTime = DateTime.now
     behaviorVersion.resultFor(parametersWithValues, event, service).flatMap { result =>
       val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
-      result.sendIn(event.context)
       service.models.run(
         InvocationLogEntryQueries.createFor(
           behaviorVersion,
@@ -36,14 +37,14 @@ case class BehaviorResponse(
           event.context.name,
           Some(event.context.userIdForContext),
           runtimeInMilliseconds
-        ).map(_ => Unit)
+        ).map(_ => result)
       )
     }
   }
 
-  def run(service: AWSLambdaService): DBIO[Unit] = {
+  def result(service: AWSLambdaService): DBIO[BehaviorResult] = {
     if (isFilledOut) {
-      DBIO.from(runCode(service))
+      DBIO.from(resultForFilledOut(service))
     } else {
       for {
         convo <- InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext, activatedTrigger)
@@ -52,8 +53,8 @@ case class BehaviorResponse(
             CollectedParameterValue(p.parameter, convo, v).save
           }.getOrElse(DBIO.successful(Unit))
         })
-        _ <- convo.replyFor(event, service)
-      } yield Unit
+        result <- convo.resultFor(event, service)
+      } yield result
     }
   }
 }

@@ -1,7 +1,7 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  HelpPanel = require('./help_panel'),
+  HelpPanel = require('../help/panel'),
   EnvVariableList = require('./env_variable_list'),
   NoEnvVariables = require('./no_env_variables');
 

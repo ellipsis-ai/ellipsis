@@ -1,15 +1,17 @@
 package json
 
-import models.Team
-import models.accounts.User
-import models.bots.config.{RequiredOAuth2ApplicationQueries, AWSConfigQueries}
+import models.team.Team
+import models.accounts.user.User
+import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
-import models.bots.{BehaviorVersionQueries, BehaviorParameterQueries, BehaviorQueries}
+import models.bots.{BehaviorParameterQueries, BehaviorQueries, BehaviorVersionQueries}
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import slick.dbio.DBIO
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import Formatting._
+import services.DataService
 
 case class BehaviorVersionData(
                                 teamId: String,
@@ -90,9 +92,9 @@ object BehaviorVersionData {
     )
   }
 
-  def maybeFor(behaviorId: String, user: User, maybePublishedId: Option[String] = None): DBIO[Option[BehaviorVersionData]] = {
+  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybePublishedId: Option[String] = None): DBIO[Option[BehaviorVersionData]] = {
     for {
-      maybeBehavior <- BehaviorQueries.find(behaviorId, user)
+      maybeBehavior <- BehaviorQueries.find(behaviorId, user, dataService)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
         behavior.maybeCurrentVersion
       }.getOrElse(DBIO.successful(None))
@@ -105,8 +107,8 @@ object BehaviorVersionData {
       maybeAWSConfig <- maybeBehaviorVersion.map { behaviorVersion =>
         AWSConfigQueries.maybeFor(behaviorVersion)
       }.getOrElse(DBIO.successful(None))
-      maybeRequiredOAuth2Applications <- maybeBehaviorVersion.map { behaviorVersion =>
-        RequiredOAuth2ApplicationQueries.allFor(behaviorVersion).map(Some(_))
+      maybeRequiredOAuth2ApiConfigs <- maybeBehaviorVersion.map { behaviorVersion =>
+        RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
       for {
@@ -114,13 +116,13 @@ object BehaviorVersionData {
         behaviorVersion <- maybeBehaviorVersion
         params <- maybeParameters
         triggers <- maybeTriggers
-        requiredOAuth2Applications <- maybeRequiredOAuth2Applications
+        requiredOAuth2ApiConfigs <- maybeRequiredOAuth2ApiConfigs
       } yield {
         val maybeAWSConfigData = maybeAWSConfig.map { config =>
           AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
         }
-        val maybeOAuth2ApplicationData = maybeRequiredOAuth2Applications.map { requiredOAuth2Applications =>
-          requiredOAuth2Applications.map(ea => OAuth2ApplicationData.from(ea.application))
+        val maybeRequiredOAuth2ApiConfigData = maybeRequiredOAuth2ApiConfigs.map { requiredOAuth2ApiConfigs =>
+          requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
         }
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
@@ -133,7 +135,7 @@ object BehaviorVersionData {
           triggers.map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
-          BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeOAuth2ApplicationData),
+          BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData),
           behavior.maybeImportedId,
           githubUrl = None,
           Some(behaviorVersion.createdAt)

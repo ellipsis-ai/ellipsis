@@ -9,15 +9,22 @@ Development configuration lives in common.js
 
 requirejs.config({
   baseUrl: '/assets/javascripts/',
+
+  // Helps trim some unwanted assets
+  fileExclusionRegExp: /(^\.|\btests?\b|\btheme\b|jshint-rhino|jshint\.ai)/,
+
+  // Stops r.js from unnecessarily minifying non-build assets
+  skipDirOptimize: true,
+
   packages: [
     {
       name: 'codemirror',
       location: '../lib/codemirror',
       main: 'lib/codemirror'
     }, {
-      name: 'es6-promise',
-      location: '../lib/es6-promise',
-      main: 'es6-promise.min'
+      name: 'core-js',
+      location: '../lib/core.js/client',
+      main: 'shim.min'
     }, {
       name: 'whatwg-fetch',
       location: '../lib/fetch',
@@ -48,7 +55,7 @@ requirejs.config({
     {
       name: 'common',
       include: [
-        'es6-promise',
+        'core-js',
         'javascript-debounce',
         'react',
         'react-dom',
@@ -73,6 +80,10 @@ requirejs.config({
     }, {
       name: 'application_list/loader',
       include: ['application_list/index'],
+      exclude: ['common']
+    }, {
+      name: 'api_token_generator/loader',
+      include: ['api_token_generator/index'],
       exclude: ['common']
     }
   ]

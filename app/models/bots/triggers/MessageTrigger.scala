@@ -2,11 +2,14 @@ package models.bots.triggers
 
 import java.util.regex.PatternSyntaxException
 
-import models.accounts.User
-import models.{IDs, Team}
+import models.accounts.user.User
+import models.IDs
 import models.bots._
+import models.bots.events.{Event, MessageEvent}
+import models.team.Team
 import services.AWSLambdaConstants
 import slick.driver.PostgresDriver.api._
+
 import scala.util.matching.Regex
 import scala.concurrent.ExecutionContext.Implicits.global
 

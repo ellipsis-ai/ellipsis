@@ -20,8 +20,14 @@
   padding: @xs;
   .type-monospace();
   .type-xs();
-  .type-weak();
   .type-wrap-words();
+}
+
+.box-code-example.box-code-example-highlighted {
+  .bg-black();
+  .border-black();
+  .type-white();
+  .blink-twice();
 }
 
 .box-action {
@@ -34,8 +40,20 @@
 
 .box-warning {
   .bg-yellow();
-  .border-top-thick();
-  .border-bottom-thick();
+  .border-top();
+  .border-bottom();
   .border-yellow();
   padding: @s;
+}
+
+.box-tip {
+  .bg-white();
+  .border-top();
+  .border-bottom();
+  .border-pink-light();
+  padding: @s;
+
+  .box-code-example {
+    .bg-lightest();
+  }
 }

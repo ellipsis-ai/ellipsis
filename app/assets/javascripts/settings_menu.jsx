@@ -14,8 +14,11 @@ define(function (require) {
       return (
         <nav className="mvxxl">
           <ul className="list-nav">
+            <li className={this.activeClassWhenPageName("apiTokens")}>
+              <a href={jsRoutes.controllers.APITokenController.listTokens().url}>Ellipsis API tokens</a>
+            </li>
             <li className={this.activeClassWhenPageName("oauthApplications")}>
-              <a href={jsRoutes.controllers.ApplicationController.listOAuth2Applications().url}>API applications</a>
+              <a href={jsRoutes.controllers.OAuth2ApplicationController.list().url}>Third-party API applications</a>
             </li>
           </ul>
         </nav>

@@ -4,29 +4,32 @@ import java.io.{File, PrintWriter}
 import java.nio.ByteBuffer
 import java.nio.file.{Files, Paths}
 import javax.inject.Inject
+
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
-import models.bots.config.{RequiredOAuth2ApplicationQueries, RequiredOAuth2Application, AWSConfig}
-import models.{EnvironmentVariable, Models, InvocationToken}
+import models.bots.config.{AWSConfig, RequiredOAuth2ApiConfig, RequiredOAuth2ApiConfigQueries}
+import models.{EnvironmentVariable, InvocationToken, Models}
 import models.bots._
+import models.bots.events.MessageEvent
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import sun.misc.BASE64Decoder
 import utils.JavaFutureWrapper
+
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.concurrent.Future
 import scala.reflect.io.Path
 import sys.process._
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AWSLambdaServiceImpl @Inject() (
                                        val configuration: Configuration,
                                        val models: Models,
                                        val ws: WSClient,
-                                       val cache: CacheApi
+                                       val cache: CacheApi,
+                                       val dataService: DataService
                                        ) extends AWSLambdaService {
 
   import AWSLambdaConstants._
@@ -65,40 +68,49 @@ class AWSLambdaServiceImpl @Inject() (
               ): Future[BehaviorResult] = {
     for {
       missingEnvVars <- models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables))
-      requiredOAuth2Applications <- models.run(RequiredOAuth2ApplicationQueries.allFor(behaviorVersion))
+      requiredOAuth2ApiConfigs <- models.run(RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion))
       result <- if (missingEnvVars.nonEmpty) {
         Future.successful(MissingEnvVarsResult(missingEnvVars))
       } else if (behaviorVersion.functionBody.isEmpty) {
-        Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, AWSLambdaLogResult.empty))
+        Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None))
       } else {
         for {
           token <- models.run(InvocationToken.createFor(behaviorVersion.team))
-          userInfo <- models.run(event.context.userInfo(ws))
-          missingOAuth2Applications <- Future.successful(requiredOAuth2Applications.filter { ea =>
-            !userInfo.links.exists(_.externalSystem == ea.application.name)
+          userInfo <- models.run(event.context.userInfo(ws, dataService))
+          notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
+          missingOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
+            !userInfo.links.exists(_.externalSystem == app.name)
           })
-          result <- missingOAuth2Applications.headOption.map { firstMissingOAuth2App =>
-            Future.successful(OAuth2TokenMissing(firstMissingOAuth2App.application, event, cache, configuration))
+          result <- notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
+            Future.successful(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, configuration))
           }.getOrElse {
-            val payloadJson = JsObject(
-              parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
-                contextParamDataFor(behaviorVersion, environmentVariables, userInfo)
-            )
-            val invokeRequest =
-              new InvokeRequest().
-                withLogType(LogType.Tail).
-                withFunctionName(behaviorVersion.functionName).
-                withInvocationType(InvocationType.RequestResponse).
-                withPayload(payloadJson.toString())
-            JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
-              val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
-              val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
-              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues)
-            }.recover {
-              case e: java.util.concurrent.ExecutionException => {
-                e.getMessage match {
-                  case amazonServiceExceptionRegex() => new AWSDownResult()
-                  case _ => throw e
+            missingOAuth2Applications.headOption.map { firstMissingOAuth2App =>
+              event.context.ensureUser(dataService).flatMap { user =>
+                dataService.loginTokens.createFor(user).map { loginToken =>
+                  OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
+                }
+              }
+            }.getOrElse {
+              val payloadJson = JsObject(
+                parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
+                  contextParamDataFor(behaviorVersion, environmentVariables, userInfo)
+              )
+              val invokeRequest =
+                new InvokeRequest().
+                  withLogType(LogType.Tail).
+                  withFunctionName(behaviorVersion.functionName).
+                  withInvocationType(InvocationType.RequestResponse).
+                  withPayload(payloadJson.toString())
+              JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
+                val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
+                val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
+                behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues)
+              }.recover {
+                case e: java.util.concurrent.ExecutionException => {
+                  e.getMessage match {
+                    case amazonServiceExceptionRegex() => new AWSDownResult()
+                    case _ => throw e
+                  }
                 }
               }
             }
@@ -134,15 +146,17 @@ class AWSLambdaServiceImpl @Inject() (
     }.getOrElse("")
   }
 
-  private def accessTokenCodeFor(app: RequiredOAuth2Application): String = {
-    s"""$CONTEXT_PARAM.accessTokens.${app.application.keyName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${app.application.name}").oauthToken;"""
+  private def accessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
+    app.maybeApplication.map { application =>
+      s"""$CONTEXT_PARAM.accessTokens.${application.keyName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${application.name}").oauthToken;"""
+    }.getOrElse("")
   }
 
-  private def accessTokensCodeFor(requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {
-    requiredOAuth2Applications.map(accessTokenCodeFor).mkString("\n")
+  private def accessTokensCodeFor(requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
+    requiredOAuth2ApiConfigs.map(accessTokenCodeFor).mkString("\n")
   }
 
-  private def nodeCodeFor(functionBody: String, params: Array[String], behaviorVersion: BehaviorVersion, maybeAwsConfig: Option[AWSConfig], requiredOAuth2Applications: Seq[RequiredOAuth2Application]): String = {
+  private def nodeCodeFor(functionBody: String, params: Array[String], behaviorVersion: BehaviorVersion, maybeAwsConfig: Option[AWSConfig], requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
 
@@ -159,7 +173,7 @@ class AWSLambdaServiceImpl @Inject() (
       |   $CONTEXT_PARAM.error = function(err) { callback(err); };
       |   ${awsCodeFor(maybeAwsConfig)}
       |   $CONTEXT_PARAM.accessTokens = {};
-      |   ${accessTokensCodeFor(requiredOAuth2Applications)}
+      |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
       |   fn($invocationParamsString);
       |}
     """.stripMargin
@@ -173,14 +187,14 @@ class AWSLambdaServiceImpl @Inject() (
                                        functionBody: String,
                                        params: Array[String],
                                        maybeAWSConfig: Option[AWSConfig],
-                                       requiredOAuth2Applications: Seq[RequiredOAuth2Application]
+                                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
                                        ): Unit = {
     val dirName = dirNameFor(behaviorVersion.functionName)
     val path = Path(dirName)
     path.createDirectory()
 
     val writer = new PrintWriter(new File(s"$dirName/index.js"))
-    writer.write(nodeCodeFor(functionBody, params, behaviorVersion, maybeAWSConfig, requiredOAuth2Applications))
+    writer.write(nodeCodeFor(functionBody, params, behaviorVersion, maybeAWSConfig, requiredOAuth2ApiConfigs))
     writer.close()
 
     requiredModulesIn(functionBody).foreach { moduleName =>
@@ -196,9 +210,9 @@ class AWSLambdaServiceImpl @Inject() (
                          functionBody: String,
                          params: Array[String],
                          maybeAWSConfig: Option[AWSConfig],
-                         requiredOAuth2Applications: Seq[RequiredOAuth2Application]
+                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
                          ): ByteBuffer = {
-    createZipWithModulesFor(behaviorVersion, functionBody, params, maybeAWSConfig, requiredOAuth2Applications)
+    createZipWithModulesFor(behaviorVersion, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs)
     val path = Paths.get(zipFileNameFor(behaviorVersion.functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -218,7 +232,7 @@ class AWSLambdaServiceImpl @Inject() (
                          functionBody: String,
                          params: Array[String],
                          maybeAWSConfig: Option[AWSConfig],
-                         requiredOAuth2Applications: Seq[RequiredOAuth2Application]
+                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
                          ): Future[Unit] = {
     val functionName = behaviorVersion.functionName
 
@@ -230,7 +244,7 @@ class AWSLambdaServiceImpl @Inject() (
     } else {
       val functionCode =
         new FunctionCode().
-          withZipFile(getZipFor(behaviorVersion, functionBody, params, maybeAWSConfig, requiredOAuth2Applications))
+          withZipFile(getZipFor(behaviorVersion, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs))
       val createFunctionRequest =
         new CreateFunctionRequest().
           withFunctionName(functionName).

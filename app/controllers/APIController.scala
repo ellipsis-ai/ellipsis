@@ -2,17 +2,17 @@ package controllers
 
 import javax.inject.Inject
 
-import models.bots._
-import models.{APITokenQueries, Team, Models}
+import models.APITokenQueries
 import models.accounts._
+import models.bots.events.{APIMessageContext, APIMessageEvent, EventHandler}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
-import play.api.mvc.{Action, Controller}
-import services.SlackService
+import play.api.mvc.Action
+import services.{DataService, SlackService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,12 +21,12 @@ import scala.concurrent.Future
 class APIController @Inject() (
                                 val messagesApi: MessagesApi,
                                 val configuration: Configuration,
-                                val models: Models,
+                                val dataService: DataService,
                                 val ws: WSClient,
                                 val cache: CacheApi,
                                 val slackService: SlackService,
                                 val eventHandler: EventHandler)
-  extends Controller {
+  extends EllipsisController {
 
   class InvalidAPITokenException extends Exception
 
@@ -55,7 +55,7 @@ class APIController @Inject() (
       },
       info => {
         val action = for {
-          maybeTeam <- Team.find(info.teamId)
+          maybeTeam <- DBIO.from(dataService.teams.find(info.teamId))
           _ <- maybeTeam.map { team =>
             APITokenQueries.find(info.token, team).flatMap { maybeToken =>
               maybeToken.map { token =>
@@ -84,13 +84,14 @@ class APIController @Inject() (
               APIMessageEvent(APIMessageContext(slackClient, botProfile, info.channel, info.message))
             })
           result <- maybeEvent.map { event =>
-            DBIO.from(eventHandler.handle(event)).map { _ =>
-              Ok("success")
+            DBIO.from(eventHandler.handle(event)).map { result =>
+              result.sendIn(event.context)
+              Ok(result.fullText)
             }
           }.getOrElse(DBIO.successful(NotFound("")))
         } yield result
 
-        models.run(action).recover {
+        dataService.run(action).recover {
           case e: InvalidAPITokenException => BadRequest("Invalid API token")
         }
       }

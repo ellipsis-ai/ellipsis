@@ -25,6 +25,10 @@ label {
 @form-bg-disabled: @gray-lightest-translucent;
 @form-color-disabled: @gray-medium;
 
+input.box-code-example {
+  width: 100%;
+}
+
 .form-field {
   border-width: @border-width;
   border-style: solid;
@@ -40,6 +44,10 @@ label {
   .form-field();
   width: 100%;
   vertical-align: bottom; /* Prevents default bottom "margin" when textarea is only child of a box */
+}
+
+.form-input.type-monospace {
+  font-size: @type-s * 0.9;
 }
 
 .form-input-large {

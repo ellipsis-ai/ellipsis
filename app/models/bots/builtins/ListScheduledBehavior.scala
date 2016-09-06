@@ -1,15 +1,17 @@
 package models.bots.builtins
 
-import models.Team
-import models.bots.{ScheduledMessage, ScheduledMessageQueries, MessageContext}
-import services.AWSLambdaService
+import models.bots.events.MessageContext
+import models.bots.{BehaviorResult, ScheduledMessage, ScheduledMessageQueries, SimpleTextResult}
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
 case class ListScheduledBehavior(
                                  messageContext: MessageContext,
-                                 lambdaService: AWSLambdaService
+                                 lambdaService: AWSLambdaService,
+                                 dataService: DataService
                                  ) extends BuiltinBehavior {
 
   lazy val noMessagesResponse: String =
@@ -25,9 +27,9 @@ case class ListScheduledBehavior(
      """.stripMargin
   }
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     for {
-      maybeTeam <- Team.find(messageContext.teamId)
+      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       scheduled <- maybeTeam.map { team =>
         ScheduledMessageQueries.allForTeam(team)
       }.getOrElse(DBIO.successful(Seq()))
@@ -38,7 +40,7 @@ case class ListScheduledBehavior(
         responseForMessages(scheduled)
       }
 
-      messageContext.sendMessage(responseText)
+      SimpleTextResult(responseText)
     }
   }
 

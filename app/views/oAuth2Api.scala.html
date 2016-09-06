@@ -1,5 +1,5 @@
 @(
-  teamAccess: models.accounts.UserTeamAccess,
+  teamAccess: models.accounts.user.UserTeamAccess,
   maybeApi: Option[models.accounts.OAuth2Api]
   )(implicit messages: Messages, r: RequestHeader)
 
@@ -11,7 +11,7 @@
     <div class="container ptxxxxl">
       <h1>Configure an external API:</h1>
 
-      <form action="@routes.ApplicationController.saveOAuth2Api()" method="POST">
+      <form action="@routes.OAuth2ApiController.save()" method="POST">
         @CSRF.formField
         @teamAccess.maybeTargetTeam.map { team =>
           <input type="hidden" name="teamId" value="@team.id"/>

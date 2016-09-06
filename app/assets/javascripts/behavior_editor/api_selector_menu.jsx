@@ -1,4 +1,4 @@
-define(function (require) {
+define(function(require) {
   var React = require('react'),
     DropdownMenu = require('./dropdown_menu');
 
@@ -12,16 +12,23 @@ define(function (require) {
         applicationId: React.PropTypes.string.isRequired,
         displayName: React.PropTypes.string.isRequired
       })).isRequired,
-      requiredOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
-        applicationId: React.PropTypes.string.isRequired,
-        displayName: React.PropTypes.string.isRequired
+      requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
+        apiId: React.PropTypes.string.isRequired,
+        recommendedScope: React.PropTypes.string,
+        application: React.PropTypes.shape({
+          applicationId: React.PropTypes.string.isRequired,
+          displayName: React.PropTypes.string.isRequired
+        })
       })).isRequired,
       onAddOAuth2Application: React.PropTypes.func.isRequired,
-      onRemoveOAuth2Application: React.PropTypes.func.isRequired
+      onRemoveOAuth2Application: React.PropTypes.func.isRequired,
+      onNewOAuth2Application: React.PropTypes.func.isRequired,
+      getOAuth2ApiWithId: React.PropTypes.func.isRequired
     },
 
     getAPISelectorDropdownLabel: function() {
-      var activeAPICount = this.props.requiredOAuth2Applications.length;
+      var activeApiConfigs = this.props.requiredOAuth2ApiConfigs.filter((ea) => !!ea.application);
+      var activeAPICount = activeApiConfigs.length;
       if (this.props.awsCheckedWhen) {
         activeAPICount++;
       }
@@ -38,12 +45,17 @@ define(function (require) {
     },
 
     getAPISelectorLabelForApp: function(app) {
-      if (app.displayName.match(/github/i)) {
+      var api = this.props.getOAuth2ApiWithId(app.apiId);
+      if (api && api.imageUrl) {
         return (
-          <span>
-          <img className="align-m mrs" src="/assets/images/logos/GitHub-Mark-64px.png" height="24" />
-          <span>{app.displayName}</span>
-        </span>
+          <div className="columns columns-elastic">
+            <div className="column column-shrink prs align-m">
+              <img src={api.imageUrl} width="24" height="24"/>
+            </div>
+            <div className="column column-expand align-m">
+              {app.displayName}
+            </div>
+          </div>
         );
       } else {
         return (
@@ -53,8 +65,8 @@ define(function (require) {
     },
 
     isRequiredOAuth2Application: function(app) {
-      var appIndex = this.props.requiredOAuth2Applications.findIndex(function(ea) {
-        return ea.applicationId === app.applicationId;
+      var appIndex = this.props.requiredOAuth2ApiConfigs.findIndex(function(ea) {
+        return ea.application && ea.application.applicationId === app.applicationId;
       });
       return appIndex >= 0;
     },
@@ -67,7 +79,11 @@ define(function (require) {
       }
     },
 
-    render: function () {
+    addNewOAuth2Application: function() {
+      this.props.onNewOAuth2Application();
+    },
+
+    render: function() {
       return (
         <DropdownMenu
           openWhen={this.props.openWhen}
@@ -78,9 +94,9 @@ define(function (require) {
           <DropdownMenu.Item
             onClick={this.props.onAWSClick}
             checkedWhen={this.props.awsCheckedWhen}
-            label={(<img src="/assets/images/logos/aws_logo_web_300px.png" height="32" />)}
+            label={(<img src="/assets/images/logos/aws_logo_web_300px.png" width="77" height="32"/>)}
           />
-          {this.props.allOAuth2Applications.map(function(app, index) {
+          {this.props.allOAuth2Applications.map((app, index) => {
             return (
               <DropdownMenu.Item
                 key={"oauth2-app-" + index}
@@ -89,7 +105,12 @@ define(function (require) {
                 label={this.getAPISelectorLabelForApp(app)}
               />
             );
-          }.bind(this))}
+          })}
+          <DropdownMenu.Item
+            onClick={this.addNewOAuth2Application}
+            className="border-top"
+            label="Add new API application…"
+          />
         </DropdownMenu>
       );
     }

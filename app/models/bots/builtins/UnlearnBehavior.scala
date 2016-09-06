@@ -1,10 +1,12 @@
 package models.bots.builtins
 
 import com.amazonaws.AmazonServiceException
-import models.bots.MessageContext
+import models.bots.{BehaviorResult, SimpleTextResult}
+import models.bots.events.MessageContext
 import models.bots.triggers.MessageTriggerQueries
 import services.AWSLambdaService
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class UnlearnBehavior(
@@ -13,7 +15,7 @@ case class UnlearnBehavior(
                             lambdaService: AWSLambdaService
                             ) extends BuiltinBehavior {
 
-  def run: DBIO[Unit] = {
+  def result: DBIO[BehaviorResult] = {
     val eventualReply = try {
       for {
         triggers <- MessageTriggerQueries.allWithExactPattern(patternString, messageContext.teamId)
@@ -25,7 +27,7 @@ case class UnlearnBehavior(
       case e: AmazonServiceException => DBIO.successful("D'oh! That didn't work.")
     }
     eventualReply.map { reply =>
-      messageContext.sendMessage(reply)
+      SimpleTextResult(reply)
     }
   }
 
