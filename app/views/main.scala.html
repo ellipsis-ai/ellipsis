@@ -4,7 +4,6 @@
   pageId: String = ""
   )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
-@import helper._
 @navBorderColorForPage = @{if (pageId == "intro") " border-blue-medium " else " border-pink "}
 @navBgColorForPage = @{if (maybeTeamAccess.exists(_.isAdminAccess)) " bg-pink " else " bg-blue-dark "}
 <!DOCTYPE html>
