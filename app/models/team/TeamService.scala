@@ -17,4 +17,6 @@ trait TeamService {
   def create(name: String): Future[Team]
 
   def save(team: Team): Future[Team]
+
+  def isAdmin(team: Team): Future[Boolean]
 }
