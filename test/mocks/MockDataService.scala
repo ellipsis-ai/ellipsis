@@ -21,5 +21,6 @@ class MockDataService extends DataService with MockitoSugar {
   val teams: TeamService = mock[TeamService]
 
   def run[T](action: DBIO[T]): Future[T] = throw new Exception("Don't call me")
+  def runNow[T](action: DBIO[T]): T = throw new Exception("Don't call me")
 
 }

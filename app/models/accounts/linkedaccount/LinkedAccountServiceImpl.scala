@@ -95,11 +95,9 @@ class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataServ
 
   def isAdmin(linkedAccount: LinkedAccount): Future[Boolean] = {
     val action = SlackProfileQueries.find(linkedAccount.loginInfo).map { maybeProfile =>
-      maybeProfile.map(_.teamId).contains(ELLIPSIS_SLACK_TEAM_ID)
+      maybeProfile.map(_.teamId).contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
     }
     dataService.run(action)
   }
-
-  val ELLIPSIS_SLACK_TEAM_ID = "T0LP53H0A"
 
 }
