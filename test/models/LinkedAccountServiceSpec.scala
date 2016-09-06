@@ -1,6 +1,5 @@
 package models
 
-import _root_.DBMixin
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.accounts.{SlackProfile, SlackProfileQueries, SlackProvider}
@@ -9,6 +8,7 @@ import models.team.Team
 import org.joda.time.DateTime
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import services.PostgresDataService
+import support.DBMixin
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
