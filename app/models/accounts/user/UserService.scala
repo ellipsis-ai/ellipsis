@@ -20,4 +20,5 @@ trait UserService extends IdentityService[User] {
   def canAccess(user: User, team: Team): Future[Boolean] = {
     teamAccessFor(user, Some(team.id)).map(_.canAccessTargetTeam)
   }
+  def isAdmin(user: User): Future[Boolean]
 }
