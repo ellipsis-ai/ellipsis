@@ -50,6 +50,8 @@ GET         /authenticated/:message                   @controllers.APIAccessCont
 GET         /admin/lambda_functions                   @controllers.AdminController.lambdaFunctions()
 POST        /admin/redeploy/:versionId                @controllers.AdminController.redeploy(versionId: String)
 
+GET         /metrics/invocations_by_day/:token        @controllers.VisibilityAPIController.invocationCountsByDay(token: String)
+
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp
 

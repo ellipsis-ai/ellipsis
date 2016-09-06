@@ -819,7 +819,8 @@ return React.createClass({
       method: 'POST',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Csrf-Token': this.props.csrfToken
       },
       body: JSON.stringify({ teamId: this.props.teamId, dataJson: JSON.stringify(data) })
     })

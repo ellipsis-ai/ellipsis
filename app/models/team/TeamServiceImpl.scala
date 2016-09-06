@@ -3,6 +3,8 @@ package models.team
 import javax.inject.Inject
 
 import com.google.inject.Provider
+import models.accounts.SlackBotProfileQueries
+import models.accounts.linkedaccount.LinkedAccount
 import models.{IDs, InvocationToken}
 import models.accounts.user.User
 import services.DataService
@@ -71,6 +73,15 @@ class TeamServiceImpl @Inject() (
       }.getOrElse {
         all += team
       }.map { _ => team }
+    }
+    dataService.run(action)
+  }
+
+  def isAdmin(team: Team): Future[Boolean] = {
+    val action = for {
+      botProfiles <- SlackBotProfileQueries.allFor(team)
+    } yield {
+      botProfiles.exists(_.slackTeamId == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
     }
     dataService.run(action)
   }
