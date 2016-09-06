@@ -3,6 +3,7 @@ import com.typesafe.config.ConfigFactory
 import models.accounts.SlackProfileQueries
 import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
+import services.PostgresDataService
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -30,6 +31,24 @@ trait DBMixin {
       }
     }
 
+  }
+
+  def withEmptyDB[T](dataService: PostgresDataService, fn: PostgresDatabase => T) = {
+    Databases.withDatabase(
+      driver = config.getString("db.default.driver"),
+      url = config.getString("db.default.url"),
+      config = Map(
+        "user" -> config.getString("db.default.username"),
+        "password" -> config.getString("db.default.password")
+      )
+    ) { database =>
+      Evolutions.withEvolutions(database) {
+        val db = dataService.models.db
+        fn(db)
+        // A misguided legacy down evolution will blow up if any SlackProfiles exist, so delete them
+        runNow(db, SlackProfileQueries.profiles.delete)
+      }
+    }
   }
 
   def run[T](db: PostgresDatabase, action: DBIO[T]): Future[T] = {
