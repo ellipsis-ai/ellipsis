@@ -2,19 +2,21 @@ define(function(require) {
   var React = require('react'),
     Input = require('../form/input'),
     Textarea = require('../form/textarea'),
-    formatEnvVarName = require('./formatter');
+    formatEnvVarName = require('./formatter'),
+    ifPresent = require('../if_present');
 
   return React.createClass({
     propTypes: {
       prompt: React.PropTypes.string,
-      index:  React.PropTypes.number.isRequired,
       onCancelClick: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
       return {
-        newVar: {}
+        newVar: {},
+        saveError: false,
+        isSaving: false
       };
     },
 
@@ -45,7 +47,6 @@ define(function(require) {
 
     onChangeVarName: function(newName) {
       var newVar = {
-        isAlreadySavedWithName: false,
         isAlreadySavedWithValue: false,
         name: formatEnvVarName(newName),
         value: this.getValue()
@@ -57,7 +58,6 @@ define(function(require) {
 
     onChangeVarValue: function(newValue) {
       var newVar = {
-        isAlreadySavedWithName: false,
         isAlreadySavedWithValue: false,
         name: this.getName(),
         value: newValue
@@ -68,7 +68,19 @@ define(function(require) {
     },
 
     onSave: function() {
-      this.props.onSave(this.getNewVar());
+      this.setState({
+        saveError: false,
+        isSaving: true
+      }, () => {
+        this.props.onSave(this.getNewVar());
+      });
+    },
+
+    onSaveError: function() {
+      this.setState({
+        saveError: true,
+        isSaving: false
+      });
     },
 
     reset: function() {
@@ -136,11 +148,21 @@ define(function(require) {
 
             <div className="mtm">
               <button type="button"
-                      className="button-primary mrs mbs"
-                      disabled={!this.hasNameAndValue()}
-                      onClick={this.onSave}
-                >Save</button>
-              <button className="mbs" type="button" onClick={this.onCancel}>Cancel</button>
+                className={"button-primary mrs mbs " + (this.state.isSaving ? "button-activated" : "")}
+                disabled={!this.hasNameAndValue()}
+                onClick={this.onSave}
+              >
+                <span className="button-labels">
+                  <span className="button-normal-label">Save</span>
+                  <span className="button-activated-label">Saving…</span>
+                </span>
+              </button>
+              <button className="mbs mrl" type="button" onClick={this.onCancel}>Cancel</button>
+              {ifPresent(this.state.saveError, () => (
+                <span className="mbs type-pink type-bold align-button fade-in">
+                  An error occurred while saving. Please try again.
+                </span>
+              ))}
             </div>
 
           </div>

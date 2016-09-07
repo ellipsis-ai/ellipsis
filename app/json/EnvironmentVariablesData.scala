@@ -4,7 +4,6 @@ import models.environmentvariable.EnvironmentVariable
 
 case class EnvironmentVariableData(
                                     name: String,
-                                    isAlreadySavedWithName: Boolean,
                                     isAlreadySavedWithValue: Boolean,
                                     value: Option[String] // can be None even when there is a value when we want to hide it
                                     )
@@ -12,7 +11,7 @@ case class EnvironmentVariableData(
 object EnvironmentVariableData {
 
   def withoutValueFor(variable: EnvironmentVariable): EnvironmentVariableData = {
-    apply(variable.name, variable.name.trim.nonEmpty, variable.value.trim.nonEmpty, None)
+    apply(variable.name, variable.value.trim.nonEmpty, None)
   }
 
 }

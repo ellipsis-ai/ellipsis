@@ -465,22 +465,6 @@ return React.createClass({
     this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), callback);
   },
 
-  cancelEnvVariableAdder: function() {
-    var withoutBlanks = this.state.envVariables.filter(function(ea) { return !!ea.name; });
-    this.setState({
-      envVariables: withoutBlanks
-    });
-    this.hideActivePanel();
-  },
-
-  cancelEnvVariableSetter: function() {
-    var withoutBlanks = this.state.envVariables.filter(function(ea) { return !!ea.name; });
-    this.setState({
-      envVariables: withoutBlanks
-    });
-    this.hideActivePanel();
-  },
-
   cancelVersionPanel: function() {
     this.hideActivePanel();
     this.showVersionIndex(0);
@@ -681,14 +665,6 @@ return React.createClass({
     this.setBehaviorProp('config', config, callback);
   },
 
-  setEnvVariableNameAtIndex: function(name, index) {
-    var prevEnvVarAtIndex = this.state.envVariables[index] || {};
-    var envVarAtIndex = Object.assign(prevEnvVarAtIndex, { name: name });
-    this.setState({
-      envVariables: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.envVariables, envVarAtIndex, index)
-    });
-  },
-
   showEnvVariableAdder: function(prompt) {
     this.setState({
       envVariableAdderPrompt: prompt
@@ -800,15 +776,19 @@ return React.createClass({
 
   addEnvVar: function(envVar) {
     var newEnvVars = this.getEnvVariables().concat(envVar);
-    var cb = function() {
-      if (this.state.onNextNewEnvVar) {
-        this.state.onNextNewEnvVar(envVar);
+    this.updateEnvVariables(newEnvVars, {
+      saveCallback: () => {
+        if (this.state.onNextNewEnvVar) {
+          this.state.onNextNewEnvVar(envVar);
+        }
+      },
+      errorCallback: () => {
+        this.refs.envVariableAdderPanel.onSaveError();
       }
-    }.bind(this);
-    this.updateEnvVariables(newEnvVars, cb);
+    });
   },
 
-  updateEnvVariables: function(envVars, cb) {
+  updateEnvVariables: function(envVars, options) {
     var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
     var data = {
       teamId: this.props.teamId,
@@ -833,12 +813,15 @@ return React.createClass({
         }, () => {
           this.resetNotifications();
           this.refs.envVariableSetterPanel.reset();
-          if (cb) {
-            cb();
+          if (options.saveCallback) {
+            options.saveCallback();
           }
         });
       }).catch(() => {
         this.refs.envVariableSetterPanel.onSaveError();
+        if (options.errorCallback) {
+          options.errorCallback();
+        }
       });
   },
 
@@ -1450,8 +1433,7 @@ return React.createClass({
                     <EnvVariableSetter
                       ref="envVariableSetterPanel"
                       vars={this.getEnvVariables()}
-                      onCancelClick={this.cancelEnvVariableSetter}
-                      onChangeVarName={this.setEnvVariableNameAtIndex}
+                      onCancelClick={this.hideActivePanel}
                       onSave={this.updateEnvVariables}
                     />
                   </div>
@@ -1463,11 +1445,10 @@ return React.createClass({
           <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>
             <EnvVariableAdder
               ref="envVariableAdderPanel"
-              onCancelClick={this.cancelEnvVariableAdder}
-              index={this.getEnvVariables().length}
+              onCancelClick={this.hideActivePanel}
               onSave={this.addEnvVar}
               prompt={this.state.envVariableAdderPrompt}
-              />
+            />
           </Collapsible>
 
           <Collapsible revealWhen={!this.hasModalPanel()}>
