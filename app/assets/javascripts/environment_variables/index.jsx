@@ -69,7 +69,6 @@ define(function(require) {
     renderEnvVarList: function() {
       return (
         <Setter
-          onCancelClick={function(){}}
           onChangeVarName={function(){}}
           onSave={function(){}}
           vars={this.props.data.variables}
