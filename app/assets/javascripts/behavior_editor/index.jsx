@@ -824,22 +824,21 @@ return React.createClass({
       },
       body: JSON.stringify({ teamId: this.props.teamId, dataJson: JSON.stringify(data) })
     })
-      .then(function(response) {
-        return response.json();
-      }).then(function(json) {
+      .then((response) => response.json())
+      .then((json) => {
         this.hideActivePanel();
         this.refs.envVariableAdderPanel.reset();
         this.setState({
           envVariables: json.variables
-        }, function() {
+        }, () => {
           this.resetNotifications();
           this.refs.envVariableSetterPanel.reset();
           if (cb) {
             cb();
           }
         });
-      }.bind(this)).catch(function() {
-        // TODO: figure out what to do if there's a request error
+      }).catch(() => {
+        this.refs.envVariableSetterPanel.onSaveError();
       });
   },
 

@@ -64,7 +64,7 @@ define(function(require) {
             this.refs.setter.reset();
           });
         }).catch(() => {
-          // TODO: figure out what to do if there's a request error
+          this.refs.envVariableSetterPanel.onSaveError();
         });
     },
 

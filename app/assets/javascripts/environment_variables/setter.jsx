@@ -3,7 +3,8 @@ define(function(require) {
     Input = require('../form/input'),
     ImmutableObjectUtils = require('../immutable_object_utils'),
     Textarea = require('../form/textarea'),
-    formatEnvVarName = require('./formatter');
+    formatEnvVarName = require('./formatter'),
+    ifPresent = require('../if_present');
 
   return React.createClass({
     propTypes: {
@@ -11,7 +12,8 @@ define(function(require) {
       onChangeVarName: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired,
       vars: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      saveButtonLabel: React.PropTypes.string
+      saveButtonLabel: React.PropTypes.string,
+      errorMessage: React.PropTypes.string
     },
 
     getVars: function() {
@@ -30,7 +32,8 @@ define(function(require) {
           } else {
             return 0;
           }
-        })
+        }),
+        saveError: false
       };
     },
 
@@ -106,7 +109,11 @@ define(function(require) {
     },
 
     onSave: function() {
-      this.props.onSave(this.state.vars);
+      this.setState({
+        saveError: false
+      }, () => {
+        this.props.onSave(this.state.vars);
+      });
     },
 
     resetVar: function(index) {
@@ -168,6 +175,12 @@ define(function(require) {
       }
     },
 
+    onSaveError: function() {
+      this.setState({
+        saveError: true
+      });
+    },
+
     render: function() {
       return (
         <div>
@@ -199,13 +212,18 @@ define(function(require) {
                 disabled={!this.hasChanges()}
                 onClick={this.onSave}
               >{this.props.saveButtonLabel || "Save"}</button>
-              <button className="mbs"
+              <button className="mbs mrl"
                 type="button"
                 onClick={this.onCancel}
                 disabled={this.cancelShouldBeDisabled()}
               >
                 Cancel
               </button>
+              {ifPresent(this.state.saveError, () => (
+                <span className="mbs type-pink type-bold align-button fade-in">
+                  An error occurred while saving. Please try again.
+                </span>
+              ))}
             </div>
 
         </div>
