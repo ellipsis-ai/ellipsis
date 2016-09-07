@@ -7,6 +7,7 @@ import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class ResetBehaviorsBehavior(
                             messageContext: MessageContext,
@@ -14,7 +15,7 @@ case class ResetBehaviorsBehavior(
                             dataService: DataService
                             ) extends BuiltinBehavior {
 
-  def result: DBIO[BehaviorResult] = {
+  def result: Future[BehaviorResult] = {
     val eventualReply = try {
       for {
         maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
@@ -28,9 +29,10 @@ case class ResetBehaviorsBehavior(
     } catch {
       case e: AmazonServiceException => DBIO.successful("Got an error from AWS")
     }
-    eventualReply.map { reply =>
+    val action = eventualReply.map { reply =>
       SimpleTextResult(reply)
     }
+    dataService.run(action)
   }
 
 }

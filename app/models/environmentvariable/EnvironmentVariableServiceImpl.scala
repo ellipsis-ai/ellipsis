@@ -1,28 +1,23 @@
-package models
+package models.environmentvariable
+
+import javax.inject.Inject
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import com.google.inject.Provider
+import models.team._
 import org.joda.time.DateTime
-import models.team.{Team, TeamQueries}
+import services.DataService
 import slick.driver.PostgresDriver.api._
-import scala.concurrent.ExecutionContext.Implicits.global
 
-case class EnvironmentVariable(
-                              name: String,
-                              value: String,
-                              team: Team,
-                              createdAt: DateTime
-                            ) {
-  def toRaw: RawEnvironmentVariable = {
-    RawEnvironmentVariable(name, value, team.id, createdAt)
-  }
-}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class RawEnvironmentVariable(
-                                 name: String,
-                                 value: String,
-                                 teamId: String,
-                                 createdAt: DateTime
-                                   )
+                                   name: String,
+                                   value: String,
+                                   teamId: String,
+                                   createdAt: DateTime
+                                 )
 
 class EnvironmentVariablesTable(tag: Tag) extends Table[RawEnvironmentVariable](tag, "environment_variables") {
 
@@ -34,7 +29,11 @@ class EnvironmentVariablesTable(tag: Tag) extends Table[RawEnvironmentVariable](
   def * = (name, value, teamId, createdAt) <> ((RawEnvironmentVariable.apply _).tupled, RawEnvironmentVariable.unapply _)
 }
 
-object EnvironmentVariableQueries {
+class EnvironmentVariableServiceImpl @Inject() (
+                                      dataServiceProvider: Provider[DataService]
+                                    ) extends EnvironmentVariableService {
+
+  def dataService = dataServiceProvider.get
 
   val all = TableQuery[EnvironmentVariablesTable]
   val allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
@@ -56,12 +55,12 @@ object EnvironmentVariableQueries {
   }
   val rawFindQueryFor = Compiled(uncompiledRawFindQueryFor _)
 
-  def find(name: String, team: Team): DBIO[Option[EnvironmentVariable]] = {
-    findQueryFor(name, team.id).result.map { r => r.headOption.map(tuple2EnvironmentVariable) }
+  def find(name: String, team: Team): Future[Option[EnvironmentVariable]] = {
+    dataService.run(findQueryFor(name, team.id).result.map { r => r.headOption.map(tuple2EnvironmentVariable) })
   }
 
-  def ensureFor(name: String, maybeValue: Option[String], team: Team): DBIO[Option[EnvironmentVariable]] = {
-    Option(name).filter(_.trim.nonEmpty).map { nonEmptyName =>
+  def ensureFor(name: String, maybeValue: Option[String], team: Team): Future[Option[EnvironmentVariable]] = {
+    val action = Option(name).filter(_.trim.nonEmpty).map { nonEmptyName =>
       val query = rawFindQueryFor(name, team.id)
       query.result.flatMap { r =>
         r.headOption.map { existing =>
@@ -78,16 +77,19 @@ object EnvironmentVariableQueries {
         }
       }
     }.getOrElse(DBIO.successful(None))
+    dataService.run(action)
   }
 
-  def deleteFor(name: String, team: Team): DBIO[Boolean] = {
-    rawFindQueryFor(name, team.id).delete.map( result => result > 0)
+  def deleteFor(name: String, team: Team): Future[Boolean] = {
+    val action = rawFindQueryFor(name, team.id).delete.map( result => result > 0)
+    dataService.run(action)
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = allWithTeam.filter(_._1.teamId === teamId)
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
-  def allFor(team: Team): DBIO[Seq[EnvironmentVariable]] = {
-    allForTeamQuery(team.id).result.map { r => r.map(tuple2EnvironmentVariable)}
+  def allFor(team: Team): Future[Seq[EnvironmentVariable]] = {
+    val action = allForTeamQuery(team.id).result.map { r => r.map(tuple2EnvironmentVariable)}
+    dataService.run(action)
   }
 }

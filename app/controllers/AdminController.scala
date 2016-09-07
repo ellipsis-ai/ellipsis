@@ -54,7 +54,7 @@ class AdminController @Inject() (
       val action = for {
         maybeBehaviorVersion <- BehaviorVersionQueries.findWithoutAccessCheck(versionId)
         _ <- maybeBehaviorVersion.map { version =>
-          version.redeploy(lambdaService)
+          version.redeploy(lambdaService, dataService)
         }.getOrElse(DBIO.successful(Unit))
       } yield Redirect(routes.AdminController.lambdaFunctions())
 

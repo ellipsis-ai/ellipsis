@@ -9,14 +9,15 @@ import models.accounts.user.{User, UserQueries}
 import models.bots.config.{AWSConfig, AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTriggerQueries
-import models.{EnvironmentVariable, EnvironmentVariableQueries, IDs}
+import models.IDs
+import models.environmentvariable.EnvironmentVariable
 import models.team.Team
 import org.commonmark.node.{AbstractVisitor, Image}
 import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json}
-import play.api.{Configuration, Play}
+import play.api.Configuration
 import services.AWSLambdaConstants._
-import services.{AWSLambdaLogResult, AWSLambdaService}
+import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,22 +42,22 @@ case class BehaviorVersion(
 
   val team: Team = behavior.team
 
-  private def environmentVariablesUsedInConfig: DBIO[Seq[String]] = {
-    AWSConfigQueries.maybeFor(this).map { maybeAwsConfig =>
+  private def environmentVariablesUsedInConfig(dataService: DataService): DBIO[Seq[String]] = {
+    AWSConfigQueries.maybeFor(this, dataService).map { maybeAwsConfig =>
       maybeAwsConfig.map { awsConfig =>
         awsConfig.environmentVariableNames
       }.getOrElse(Seq())
     }
   }
 
-  def knownEnvironmentVariablesUsed: DBIO[Seq[String]] = {
-    environmentVariablesUsedInConfig.map { inConfig =>
+  def knownEnvironmentVariablesUsed(dataService: DataService): DBIO[Seq[String]] = {
+    environmentVariablesUsedInConfig(dataService).map { inConfig =>
       inConfig ++ BehaviorVersionQueries.environmentVariablesUsedInCode(functionBody)
     }
   }
 
-  def missingEnvironmentVariablesIn(environmentVariables: Seq[EnvironmentVariable]): DBIO[Seq[String]] = {
-    knownEnvironmentVariablesUsed.map{ used =>
+  def missingEnvironmentVariablesIn(environmentVariables: Seq[EnvironmentVariable], dataService: DataService): DBIO[Seq[String]] = {
+    knownEnvironmentVariablesUsed(dataService).map{ used =>
       used diff environmentVariables.filter(_.value.trim.nonEmpty).map(_.name)
     }
   }
@@ -97,11 +98,11 @@ case class BehaviorVersion(
       |}""".stripMargin
   }
 
-  def maybeFunction: DBIO[Option[String]] = {
+  def maybeFunction(dataService: DataService): DBIO[Option[String]] = {
     maybeFunctionBody.map { functionBody =>
       (for {
         params <- BehaviorParameterQueries.allFor(this)
-        maybeAWSConfig <- AWSConfigQueries.maybeFor(this)
+        maybeAWSConfig <- AWSConfigQueries.maybeFor(this, dataService)
         requiredOAuth2ApiConfigs <- RequiredOAuth2ApiConfigQueries.allFor(this)
       } yield {
         functionWithParams(params.map(_.name).toArray)
@@ -111,9 +112,9 @@ case class BehaviorVersion(
 
   def functionName: String = id
 
-  def resultFor(parametersWithValues: Seq[ParameterWithValue], event: MessageEvent, service: AWSLambdaService): Future[BehaviorResult] = {
+  def resultFor(parametersWithValues: Seq[ParameterWithValue], event: MessageEvent, service: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
     for {
-      envVars <- service.models.run(EnvironmentVariableQueries.allFor(team))
+      envVars <- dataService.environmentVariables.allFor(team)
       result <- service.invoke(this, parametersWithValues, envVars, event)
     } yield result
   }
@@ -123,10 +124,10 @@ case class BehaviorVersion(
     BehaviorVersionQueries.delete(this).map(_ => Unit)
   }
 
-  def redeploy(lambdaService: AWSLambdaService): DBIO[Unit] = {
+  def redeploy(lambdaService: AWSLambdaService, dataService: DataService): DBIO[Unit] = {
     for {
       params <- BehaviorParameterQueries.allFor(this)
-      maybeAWSConfig <- AWSConfigQueries.maybeFor(this)
+      maybeAWSConfig <- AWSConfigQueries.maybeFor(this, dataService)
       requiredOAuth2ApiConfigs <- RequiredOAuth2ApiConfigQueries.allFor(this)
       _ <- DBIO.from(
         lambdaService.deployFunctionFor(
@@ -283,7 +284,12 @@ object BehaviorVersionQueries {
     }
   }
 
-  def createFor(behavior: Behavior, maybeUser: Option[User], lambdaService: AWSLambdaService, data: BehaviorVersionData): DBIO[BehaviorVersion] = {
+  def createFor(
+                 behavior: Behavior,
+                 maybeUser: Option[User],
+                 lambdaService: AWSLambdaService,
+                 data: BehaviorVersionData,
+                 dataService: DataService): DBIO[BehaviorVersion] = {
     (for {
       behaviorVersion <- createFor(behavior, maybeUser)
       _ <-
@@ -293,7 +299,7 @@ object BehaviorVersionQueries {
             maybeResponseTemplate = Some(data.responseTemplate)
           ).save
           maybeAWSConfig <- data.awsConfig.map { c =>
-            AWSConfigQueries.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
+            AWSConfigQueries.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName, dataService).map(Some(_))
           }.getOrElse(DBIO.successful(None))
           requiredOAuth2ApiConfigs <- DBIO.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
             RequiredOAuth2ApiConfigQueries.maybeCreateFor(requiredData, updated)

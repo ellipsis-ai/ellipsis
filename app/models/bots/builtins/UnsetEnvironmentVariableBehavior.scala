@@ -2,11 +2,10 @@ package models.bots.builtins
 
 import models.bots.{BehaviorResult, SimpleTextResult}
 import models.bots.events.MessageContext
-import models.EnvironmentVariableQueries
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 
 case class UnsetEnvironmentVariableBehavior(
@@ -16,12 +15,12 @@ case class UnsetEnvironmentVariableBehavior(
                                            dataService: DataService
                                            ) extends BuiltinBehavior {
 
-  def result: DBIO[BehaviorResult] = {
+  def result: Future[BehaviorResult] = {
     for {
-      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
+      maybeTeam <- dataService.teams.find(messageContext.teamId)
       didDelete <- maybeTeam.map { team =>
-        EnvironmentVariableQueries.deleteFor(name, team)
-      }.getOrElse(DBIO.successful(false))
+        dataService.environmentVariables.deleteFor(name, team)
+      }.getOrElse(Future.successful(false))
     } yield {
       val msg = if (didDelete) {
         s"OK, I deleted the env var `$name`"

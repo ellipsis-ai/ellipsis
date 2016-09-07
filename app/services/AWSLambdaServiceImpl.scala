@@ -8,9 +8,10 @@ import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
 import models.bots.config.{AWSConfig, RequiredOAuth2ApiConfig, RequiredOAuth2ApiConfigQueries}
-import models.{EnvironmentVariable, InvocationToken, Models}
+import models.{InvocationToken, Models}
 import models.bots._
 import models.bots.events.MessageEvent
+import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -67,7 +68,7 @@ class AWSLambdaServiceImpl @Inject() (
               event: MessageEvent
               ): Future[BehaviorResult] = {
     for {
-      missingEnvVars <- models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables))
+      missingEnvVars <- models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables, dataService))
       requiredOAuth2ApiConfigs <- models.run(RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion))
       result <- if (missingEnvVars.nonEmpty) {
         Future.successful(MissingEnvVarsResult(missingEnvVars))

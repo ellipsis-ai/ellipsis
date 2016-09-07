@@ -1,6 +1,6 @@
 package json
 
-import models.EnvironmentVariable
+import models.environmentvariable.EnvironmentVariable
 
 case class EnvironmentVariableData(
                                     name: String,

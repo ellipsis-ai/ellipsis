@@ -65,7 +65,7 @@ object BehaviorVersionExporter {
         behavior.maybeCurrentVersion
       }.getOrElse(DBIO.successful(None))
       maybeFunction <- maybeBehaviorVersion.map { behaviorVersion =>
-        behaviorVersion.maybeFunction
+        behaviorVersion.maybeFunction(dataService)
       }.getOrElse(DBIO.successful(None))
       maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, Some(behaviorId))
     } yield {

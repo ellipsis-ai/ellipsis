@@ -7,6 +7,7 @@ import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class DisplayHelpBehavior(
                                 helpString: String,
@@ -58,9 +59,9 @@ case class DisplayHelpBehavior(
     }
   }
 
-  def result: DBIO[BehaviorResult] = {
+  def result: Future[BehaviorResult] = {
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
-    for {
+    val action = for {
       maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       matchingTriggers <- maybeTeam.map { team =>
         maybeHelpSearch.map { helpSearch =>
@@ -93,6 +94,7 @@ case class DisplayHelpBehavior(
           |""".stripMargin
       SimpleTextResult(text)
     }
+    dataService.run(action)
   }
 
 }

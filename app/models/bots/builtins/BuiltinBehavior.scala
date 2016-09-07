@@ -3,13 +3,15 @@ package models.bots.builtins
 import models.bots.BehaviorResult
 import models.bots.events.MessageContext
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
+
+import scala.concurrent.Future
 
 trait BuiltinBehavior {
   val messageContext: MessageContext
   val lambdaService: AWSLambdaService
+  val dataService: DataService
 
-  def result: DBIO[BehaviorResult]
+  def result: Future[BehaviorResult]
 }
 
 object BuiltinBehavior {
@@ -30,8 +32,8 @@ object BuiltinBehavior {
       messageContext.relevantMessageText match {
         case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, messageContext, lambdaService, dataService))
         case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, messageContext, lambdaService, dataService))
-        case startLearnConversationRegex() => Some(LearnBehavior(messageContext, lambdaService))
-        case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, messageContext, lambdaService))
+        case startLearnConversationRegex() => Some(LearnBehavior(messageContext, lambdaService, dataService))
+        case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, messageContext, lambdaService, dataService))
         case helpRegex(helpString) => Some(DisplayHelpBehavior(helpString, messageContext, lambdaService, dataService))
         case rememberRegex(cmd) => Some(RememberBehavior(messageContext, lambdaService, dataService))
         case scheduledRegex() => Some(ListScheduledBehavior(messageContext, lambdaService, dataService))
