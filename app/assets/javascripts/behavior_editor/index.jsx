@@ -776,15 +776,19 @@ return React.createClass({
 
   addEnvVar: function(envVar) {
     var newEnvVars = this.getEnvVariables().concat(envVar);
-    var cb = function() {
-      if (this.state.onNextNewEnvVar) {
-        this.state.onNextNewEnvVar(envVar);
+    this.updateEnvVariables(newEnvVars, {
+      saveCallback: () => {
+        if (this.state.onNextNewEnvVar) {
+          this.state.onNextNewEnvVar(envVar);
+        }
+      },
+      errorCallback: () => {
+        this.refs.envVariableAdderPanel.onSaveError();
       }
-    }.bind(this);
-    this.updateEnvVariables(newEnvVars, cb);
+    });
   },
 
-  updateEnvVariables: function(envVars, cb) {
+  updateEnvVariables: function(envVars, options) {
     var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
     var data = {
       teamId: this.props.teamId,
@@ -809,12 +813,15 @@ return React.createClass({
         }, () => {
           this.resetNotifications();
           this.refs.envVariableSetterPanel.reset();
-          if (cb) {
-            cb();
+          if (options.saveCallback) {
+            options.saveCallback();
           }
         });
       }).catch(() => {
         this.refs.envVariableSetterPanel.onSaveError();
+        if (options.errorCallback) {
+          options.errorCallback();
+        }
       });
   },
 
