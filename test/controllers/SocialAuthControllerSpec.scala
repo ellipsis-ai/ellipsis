@@ -10,7 +10,7 @@ import models.IDs
 import models.accounts.logintoken.LoginToken
 import models.accounts.user.User
 import models.silhouette.EllipsisEnv
-import modules.{SilhouetteModule, TestSilhouetteModule}
+import modules.{ActorModule, SilhouetteModule, TestSilhouetteModule}
 import org.joda.time.DateTime
 import org.scalatest.mock.MockitoSugar
 import org.mockito.Mockito._
@@ -124,6 +124,7 @@ class SocialAuthControllerSpec extends PlaySpec with MockitoSugar {
       GuiceApplicationBuilder().
         overrides(bind[DataService].to[MockDataService]).
         disable[SilhouetteModule].
+        disable[ActorModule].
         bindings(testSilhouetteModule).
         build()
     }
