@@ -34,9 +34,11 @@ case class ScheduledMessage(
   }
 
   def scheduleInfoResult = SimpleTextResult(
-    s"""I've been asked to run `$text` ${recurrence.displayString.trim}. Here goes:
+    s"""I've been asked to run `$text` ${recurrence.displayString.trim}.
        |
        |For more details on what is scheduled, try `@ellipsis: scheduled`.
+       |
+       |Here goes:
      """.stripMargin)
 
   def listResponse: String = {
