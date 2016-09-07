@@ -20,7 +20,17 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        vars: this.props.vars
+        vars: this.props.vars.sort((a, b) => {
+          var aName = a.name.toLowerCase();
+          var bName = b.name.toLowerCase();
+          if (aName < bName) {
+            return -1;
+          } else if (aName > bName) {
+            return 1;
+          } else {
+            return 0;
+          }
+        })
       };
     },
 
