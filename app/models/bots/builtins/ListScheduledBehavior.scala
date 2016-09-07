@@ -6,6 +6,7 @@ import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 
 case class ListScheduledBehavior(
@@ -31,8 +32,8 @@ case class ListScheduledBehavior(
      """.stripMargin
   }
 
-  def result: DBIO[BehaviorResult] = {
-    for {
+  def result: Future[BehaviorResult] = {
+    val action = for {
       maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       scheduled <- maybeTeam.map { team =>
         ScheduledMessageQueries.allForTeam(team)
@@ -46,6 +47,7 @@ case class ListScheduledBehavior(
 
       SimpleTextResult(responseText)
     }
+    dataService.run(action)
   }
 
 }

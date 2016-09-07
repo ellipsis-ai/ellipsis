@@ -5,7 +5,7 @@ import models.bots._
 import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTrigger
 import org.joda.time.DateTime
-import services.{AWSLambdaConstants, AWSLambdaService}
+import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -89,7 +89,7 @@ case class InvokeBehaviorConversation(
     SimpleTextResult(prompt)
   }
 
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult] = {
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[BehaviorResult] = {
     import Conversation._
     import InvokeBehaviorConversation._
 
@@ -98,7 +98,7 @@ case class InvokeBehaviorConversation(
         case COLLECT_PARAM_VALUES_STATE => DBIO.successful(promptResultFor(event, info))
         case DONE_STATE => {
           BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger).flatMap { br =>
-            DBIO.from(br.resultForFilledOut(lambdaService))
+            DBIO.from(br.resultForFilledOut(lambdaService, dataService))
           }
         }
       }

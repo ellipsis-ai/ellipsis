@@ -5,7 +5,6 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import json.Formatting._
-import models._
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
@@ -47,7 +46,7 @@ class EnvironmentVariablesController @Inject() (
               maybeTeam <- DBIO.from(dataService.teams.find(data.teamId, user))
               maybeEnvironmentVariables <- maybeTeam.map { team =>
                 DBIO.sequence(data.variables.map { envVarData =>
-                  EnvironmentVariableQueries.ensureFor(envVarData.name, envVarData.value, team)
+                  DBIO.from(dataService.environmentVariables.ensureFor(envVarData.name, envVarData.value, team))
                 }).map( vars => Some(vars.flatten) )
               }.getOrElse(DBIO.successful(None))
             } yield {
@@ -75,11 +74,11 @@ class EnvironmentVariablesController @Inject() (
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        EnvironmentVariableQueries.allFor(team).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
+        dataService.environmentVariables.allFor(team).map(Some(_))
+      }.getOrElse(Future.successful(None))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
         val envVars = maybeEnvironmentVariables.map(envVars => envVars).getOrElse(Seq())
@@ -89,7 +88,6 @@ class EnvironmentVariablesController @Inject() (
         NotFound("Team not accessible")
       }
     }
-    dataService.run(action)
   }
 
 }

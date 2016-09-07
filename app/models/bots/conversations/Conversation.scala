@@ -7,7 +7,7 @@ import models.bots._
 import models.bots.events.MessageEvent
 import models.bots.triggers.{MessageTrigger, MessageTriggerQueries, RawMessageTrigger}
 import org.joda.time.DateTime
-import services.AWSLambdaService
+import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -23,12 +23,12 @@ trait Conversation {
   val state: String
 
   def updateWith(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Conversation]
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult]
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[BehaviorResult]
 
-  def resultFor(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[BehaviorResult] = {
+  def resultFor(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[BehaviorResult] = {
     for {
       updatedConversation <- updateWith(event, lambdaService)
-      result <- updatedConversation.respond(event, lambdaService)
+      result <- updatedConversation.respond(event, lambdaService, dataService)
     } yield result
   }
 

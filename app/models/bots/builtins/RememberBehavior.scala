@@ -8,11 +8,12 @@ import utils.QuestionAnswerExtractor
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
-  def result: DBIO[BehaviorResult] = {
-    for {
+  def result: Future[BehaviorResult] = {
+    val action = for {
       maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       maybeUser <- maybeTeam.map { team =>
         DBIO.from(dataService.users.findFromMessageContext(messageContext, team))
@@ -42,6 +43,7 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
         NoResponseResult(None)
       }
     }
+    dataService.run(action)
   }
 
 }

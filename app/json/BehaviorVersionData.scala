@@ -105,7 +105,7 @@ object BehaviorVersionData {
         MessageTriggerQueries.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeAWSConfig <- maybeBehaviorVersion.map { behaviorVersion =>
-        AWSConfigQueries.maybeFor(behaviorVersion)
+        AWSConfigQueries.maybeFor(behaviorVersion, dataService)
       }.getOrElse(DBIO.successful(None))
       maybeRequiredOAuth2ApiConfigs <- maybeBehaviorVersion.map { behaviorVersion =>
         RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion).map(Some(_))
