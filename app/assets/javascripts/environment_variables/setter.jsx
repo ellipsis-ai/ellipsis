@@ -108,18 +108,15 @@ define(function(require) {
     getNameInputForVar: function(v, index) {
       if (v.isAlreadySavedWithName) {
         return (
-          <input type="text"
-            className="form-input form-input-left"
-            placeholder="ENVIRONMENT_VARIABLE_NAME"
-            value={v.name}
-            readOnly={true}
-          />
+          <div className="type-monospace align-button display-ellipsis">
+            {v.name}
+          </div>
         );
       } else {
         return (
           <Input
             ref={"envVarName" + index}
-            className="form-input-left"
+            className="form-input-borderless"
             placeholder="Enter name"
             value={v.name}
             onChange={this.onChangeVarName.bind(this, index)}
@@ -132,23 +129,18 @@ define(function(require) {
       if (v.isAlreadySavedWithValue) {
         return (
           <div className="position-relative">
-            <input
-              className="form-input form-input-right"
-              type="text"
-              disabled={true}
-              value="........"
-            />
-            <div className="position-absolute position-top-right mts mrm">
-              <button type="button" className="button-raw button-s"
-                onClick={this.resetVar.bind(this, index)}>Reset</button>
-            </div>
+            <span className="align-button type-monospace type-weak mrm">
+              ••••••••
+            </span>
+            <button type="button" className="button-raw mbs"
+              onClick={this.resetVar.bind(this, index)}>Reset</button>
           </div>
         );
       } else {
         return (
           <Textarea
             ref={"envVarValue" + index}
-            className="form-input-right"
+            className="type-monospace"
             placeholder="Enter value"
             value={v.value || ""}
             onChange={this.onChangeVarValue.bind(this, index)}
@@ -165,19 +157,21 @@ define(function(require) {
               <span>that may be used by multiple behaviors.</span>
             </p>
 
-            <div className="form-grouped-inputs">
-            {this.getVars().map(function(v, index) {
-              return (
-                <div className="columns" key={"envVar" + index}>
-                  <div className="column column-one-quarter mobile-column-one-half prn">
-                    {this.getNameInputForVar(v, index)}
-                  </div>
-                  <div className="column column-one-quarter mobile-column-one-half pln">
-                    {this.getValueInputForVar(v, index)}
-                  </div>
-                </div>
-              );
-            }, this)}
+            <div className="columns columns-elastic mobile-columns-float">
+              <div className="column-group">
+                {this.getVars().map(function(v, index) {
+                  return (
+                    <div className="column-row" key={"envVar" + index}>
+                      <div className="column column-shrink mobile-column-full type-monospace pvs mobile-pbn">
+                        {this.getNameInputForVar(v, index)}
+                      </div>
+                      <div className="column column-expand pvs mobile-ptn">
+                        {this.getValueInputForVar(v, index)}
+                      </div>
+                    </div>
+                 );
+                }, this)}
+              </div>
             </div>
 
             <div className="mtm">
