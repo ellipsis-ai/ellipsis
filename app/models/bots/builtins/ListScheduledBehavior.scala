@@ -24,6 +24,10 @@ case class ListScheduledBehavior(
     s"""Here is what you have scheduled:
        |
        |${messages.map(_.listResponse).mkString("\n\n")}
+       |
+       |You can unschedule by typing something like:
+       |
+       |@ellipsis: unschedule `some ellipsis behavior`
      """.stripMargin
   }
 
