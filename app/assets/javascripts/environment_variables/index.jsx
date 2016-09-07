@@ -22,15 +22,13 @@ define(function(require) {
       return {
         activePanel: null,
         environmentVariables: this.props.data.variables,
-        justSaved: false,
-        saving: false
+        justSaved: false
       };
     },
 
     onSave: function(envVars) {
       this.setState({
-        justSaved: false,
-        saving: true
+        justSaved: false
       }, () => { this.save(envVars); });
     },
 
@@ -54,8 +52,7 @@ define(function(require) {
         .then((json) => {
           this.setState({
             environmentVariables: json.variables,
-            justSaved: true,
-            saving: false
+            justSaved: true
           }, () => {
             this.refs.setter.reset();
           });
@@ -66,10 +63,6 @@ define(function(require) {
 
     getVars: function() {
       return this.state.environmentVariables;
-    },
-
-    getSaveButtonLabel: function() {
-      return this.state.saving ? "Saving…" : "Save";
     },
 
     render: function() {
@@ -115,7 +108,6 @@ define(function(require) {
           ref="setter"
           onSave={this.onSave}
           vars={this.getVars()}
-          saveButtonLabel={this.getSaveButtonLabel()}
         />
       );
     }

@@ -9,7 +9,6 @@ define(function(require) {
       onCancelClick: React.PropTypes.func,
       onSave: React.PropTypes.func.isRequired,
       vars: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      saveButtonLabel: React.PropTypes.string,
       errorMessage: React.PropTypes.string
     },
 
@@ -30,7 +29,8 @@ define(function(require) {
             return 0;
           }
         }),
-        saveError: false
+        saveError: false,
+        isSaving: false
       };
     },
 
@@ -92,7 +92,8 @@ define(function(require) {
 
     onSave: function() {
       this.setState({
-        saveError: false
+        saveError: false,
+        isSaving: true
       }, () => {
         this.props.onSave(this.state.vars);
       });
@@ -138,7 +139,8 @@ define(function(require) {
 
     onSaveError: function() {
       this.setState({
-        saveError: true
+        saveError: true,
+        isSaving: false
       });
     },
 
@@ -171,10 +173,15 @@ define(function(require) {
 
             <div className="mtxl">
               <button type="button"
-                className="button-primary mrs mbs"
+                className={"button-primary mrs mbs " + (this.state.isSaving ? "button-activated" : "")}
                 disabled={!this.hasChanges()}
                 onClick={this.onSave}
-              >{this.props.saveButtonLabel || "Save"}</button>
+              >
+                <span className="button-labels">
+                  <span className="button-normal-label">Save</span>
+                  <span className="button-activated-label">Saving…</span>
+                </span>
+              </button>
               <button className="mbs mrl"
                 type="button"
                 onClick={this.onCancel}
