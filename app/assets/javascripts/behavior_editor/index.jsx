@@ -13,8 +13,8 @@ var React = require('react'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('./confirm_action_panel'),
   DropdownMenu = require('./dropdown_menu'),
-  EnvVariableAdder = require('./env_variable_adder'),
-  EnvVariableSetter = require('./env_variable_setter'),
+  EnvVariableAdder = require('../environment_variables/adder'),
+  EnvVariableSetter = require('../environment_variables/setter'),
   HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Notification = require('../notification'),
@@ -833,6 +833,7 @@ return React.createClass({
           envVariables: json.variables
         }, function() {
           this.resetNotifications();
+          this.refs.envVariableSetterPanel.reset();
           if (cb) {
             cb();
           }
@@ -1442,13 +1443,22 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
-            <EnvVariableSetter
-              ref="envVariableSetterPanel"
-              vars={this.getEnvVariables()}
-              onCancelClick={this.cancelEnvVariableSetter}
-              onChangeVarName={this.setEnvVariableNameAtIndex}
-              onSave={this.updateEnvVariables}
-            />
+            <div className="box-action">
+              <div className="container phn">
+                <div className="columns">
+                  <div className="column column-one-quarter mobile-column-full"></div>
+                  <div className="column column-three-quarters  mobile-column-full">
+                    <EnvVariableSetter
+                      ref="envVariableSetterPanel"
+                      vars={this.getEnvVariables()}
+                      onCancelClick={this.cancelEnvVariableSetter}
+                      onChangeVarName={this.setEnvVariableNameAtIndex}
+                      onSave={this.updateEnvVariables}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </Collapsible>
 
           <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>

@@ -73,4 +73,23 @@ class EnvironmentVariablesController @Inject() (
     )
   }
 
+  def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    val action = for {
+      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
+      maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
+        EnvironmentVariableQueries.allFor(team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+    } yield {
+      teamAccess.maybeTargetTeam.map { team =>
+        val envVars = maybeEnvironmentVariables.map(envVars => envVars).getOrElse(Seq())
+        val jsonData = Json.toJson(EnvironmentVariablesData(team.id, envVars.map(ea => EnvironmentVariableData.withoutValueFor(ea))))
+        Ok(views.html.listEnvironmentVariables(teamAccess, jsonData.toString))
+      }.getOrElse{
+        NotFound("Team not accessible")
+      }
+    }
+    dataService.run(action)
+  }
+
 }

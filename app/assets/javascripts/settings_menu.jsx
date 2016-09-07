@@ -14,6 +14,9 @@ define(function (require) {
       return (
         <nav className="mvxxl">
           <ul className="list-nav">
+            <li className={this.activeClassWhenPageName("environmentVariables")}>
+              <a href={jsRoutes.controllers.EnvironmentVariablesController.list().url}>Environment variables</a>
+            </li>
             <li className={this.activeClassWhenPageName("apiTokens")}>
               <a href={jsRoutes.controllers.APITokenController.listTokens().url}>Ellipsis API tokens</a>
             </li>
