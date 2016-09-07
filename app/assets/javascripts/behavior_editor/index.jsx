@@ -833,6 +833,7 @@ return React.createClass({
           envVariables: json.variables
         }, function() {
           this.resetNotifications();
+          this.refs.envVariableSetterPanel.reset();
           if (cb) {
             cb();
           }

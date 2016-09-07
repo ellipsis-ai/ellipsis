@@ -10,7 +10,8 @@ define(function(require) {
       onCancelClick: React.PropTypes.func,
       onChangeVarName: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired,
-      vars: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
+      vars: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      saveButtonLabel: React.PropTypes.string
     },
 
     getVars: function() {
@@ -23,21 +24,23 @@ define(function(require) {
       };
     },
 
-    componentWillReceiveProps: function(newProps) {
-      if (newProps.vars.length !== this.state.vars.length) {
-        this.setState(this.getInitialState());
-      }
+    reset: function() {
+      this.setState(this.getInitialState());
     },
 
-    hasNameAndValue: function() {
-      return !this.getVars().every(function(v, index) {
-        var theVar = this.props.vars[index];
+    hasChanges: function() {
+      return this.hasChangesComparedTo(this.props.vars);
+    },
+
+    hasChangesComparedTo: function(oldVars) {
+      return !this.getVars().every((v, index) => {
+        var theVar = oldVars[index];
         return theVar &&
           v.name === theVar.name &&
           v.value === theVar.value &&
           v.isAlreadySavedWithName === theVar.isAlreadySavedWithName &&
           v.isAlreadySavedWithValue === theVar.isAlreadySavedWithValue;
-      }, this);
+      });
     },
 
     focusOnVarName: function(name) {
@@ -57,16 +60,6 @@ define(function(require) {
 
     cancelShouldBeDisabled: function() {
       return !this.props.onCancelClick && !this.hasChanges();
-    },
-
-    hasChanges: function() {
-      var initialVars = this.getInitialState().vars;
-      return !this.getVars().every((ea, index) => {
-        return ea.name === initialVars[index].name
-          && ea.isAlreadySavedWithName === initialVars[index].isAlreadySavedWithName
-          && ea.isAlreadySavedWithValue === initialVars[index].isAlreadySavedWithValue
-          && ea.value === initialVars[index].value;
-      });
     },
 
     onCancel: function() {
@@ -193,9 +186,9 @@ define(function(require) {
             <div className="mtxl">
               <button type="button"
                 className="button-primary mrs mbs"
-                disabled={!this.hasNameAndValue()}
+                disabled={!this.hasChanges()}
                 onClick={this.onSave}
-              >Save</button>
+              >{this.props.saveButtonLabel || "Save"}</button>
               <button className="mbs"
                 type="button"
                 onClick={this.onCancel}

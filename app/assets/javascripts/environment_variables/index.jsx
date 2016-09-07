@@ -5,7 +5,8 @@ define(function(require) {
     HelpPanel = require('../help/panel'),
     SettingsMenu = require('../settings_menu'),
     Setter = require('./setter'),
-    IfPresent = require('../if_present');
+    ifPresent = require('../if_present');
+    require('whatwg-fetch');
 
   return React.createClass({
     displayName: 'EnvironmentVariableList',
@@ -23,8 +24,56 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        activePanel: null
+        activePanel: null,
+        environmentVariables: this.props.data.variables,
+        justSaved: false,
+        saving: false
       };
+    },
+
+    onSave: function(envVars) {
+      this.setState({
+        justSaved: false,
+        saving: true
+      }, () => { this.save(envVars); });
+    },
+
+    save: function(envVars) {
+      var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
+      var data = {
+        teamId: this.props.data.teamId,
+        variables: envVars
+      };
+      fetch(url, {
+        credentials: 'same-origin',
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Csrf-Token': this.props.csrfToken
+        },
+        body: JSON.stringify({ teamId: this.props.data.teamId, dataJson: JSON.stringify(data) })
+      })
+        .then((response) => response.json())
+        .then((json) => {
+          this.setState({
+            environmentVariables: json.variables,
+            justSaved: true,
+            saving: false
+          }, () => {
+            this.refs.setter.reset();
+          });
+        }).catch(() => {
+          // TODO: figure out what to do if there's a request error
+        });
+    },
+
+    getVars: function() {
+      return this.state.environmentVariables;
+    },
+
+    getSaveButtonLabel: function() {
+      return this.state.saving ? "Saving…" : "Save";
     },
 
     render: function() {
@@ -62,6 +111,7 @@ define(function(require) {
       return (
         <h3 className="mvn ptxxl type-weak display-ellipsis">
           <span className="mrs">Environment variables</span>
+          {ifPresent(this.state.justSaved, () => (<span className="type-green fade-in"> — saved successfully</span>))}
         </h3>
       );
     },
@@ -69,9 +119,11 @@ define(function(require) {
     renderEnvVarList: function() {
       return (
         <Setter
+          ref="setter"
           onChangeVarName={function(){}}
-          onSave={function(){}}
-          vars={this.props.data.variables}
+          onSave={this.onSave}
+          vars={this.getVars()}
+          saveButtonLabel={this.getSaveButtonLabel()}
         />
       );
     }
