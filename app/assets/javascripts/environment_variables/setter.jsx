@@ -1,15 +1,12 @@
 define(function(require) {
   var React = require('react'),
-    Input = require('../form/input'),
     ImmutableObjectUtils = require('../immutable_object_utils'),
     Textarea = require('../form/textarea'),
-    formatEnvVarName = require('./formatter'),
     ifPresent = require('../if_present');
 
   return React.createClass({
     propTypes: {
       onCancelClick: React.PropTypes.func,
-      onChangeVarName: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired,
       vars: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       saveButtonLabel: React.PropTypes.string,
@@ -51,7 +48,6 @@ define(function(require) {
         return theVar &&
           v.name === theVar.name &&
           v.value === theVar.value &&
-          v.isAlreadySavedWithName === theVar.isAlreadySavedWithName &&
           v.isAlreadySavedWithValue === theVar.isAlreadySavedWithValue;
       });
     },
@@ -82,23 +78,9 @@ define(function(require) {
       }
     },
 
-    onChangeVarName: function(index, newName) {
-      var vars = this.getVars();
-      var newVar = {
-        isAlreadySavedWithName: vars[index].isAlreadySavedWithName,
-        isAlreadySavedWithValue: false,
-        name: formatEnvVarName(newName),
-        value: vars[index].value
-      };
-      this.setState({
-        vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, index)
-      });
-    },
-
     onChangeVarValue: function(index, newValue) {
       var vars = this.getVars();
       var newVar = {
-        isAlreadySavedWithName: vars[index].isAlreadySavedWithName,
         isAlreadySavedWithValue: false,
         name: vars[index].name,
         value: newValue
@@ -119,7 +101,6 @@ define(function(require) {
     resetVar: function(index) {
       var vars = this.getVars();
       var newVar = {
-        isAlreadySavedWithName: vars[index].isAlreadySavedWithName,
         isAlreadySavedWithValue: false,
         name: vars[index].name,
         value: ''
@@ -129,26 +110,6 @@ define(function(require) {
       }, function() {
         this.refs['envVarValue' + index].focus();
       });
-    },
-
-    getNameInputForVar: function(v, index) {
-      if (v.isAlreadySavedWithName) {
-        return (
-          <div className="type-monospace align-button display-ellipsis">
-            {v.name}
-          </div>
-        );
-      } else {
-        return (
-          <Input
-            ref={"envVarName" + index}
-            className="form-input-borderless"
-            placeholder="Enter name"
-            value={v.name}
-            onChange={this.onChangeVarName.bind(this, index)}
-          />
-        );
-      }
     },
 
     getValueInputForVar: function(v, index) {
@@ -195,7 +156,9 @@ define(function(require) {
                   return (
                     <div className="column-row" key={"envVar" + index}>
                       <div className="column column-shrink mobile-column-full type-monospace pvs mobile-pbn">
-                        {this.getNameInputForVar(v, index)}
+                        <div className="type-monospace align-button display-ellipsis">
+                          {v.name}
+                        </div>
                       </div>
                       <div className="column column-expand pvs mobile-ptn">
                         {this.getValueInputForVar(v, index)}

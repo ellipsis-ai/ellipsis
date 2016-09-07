@@ -681,14 +681,6 @@ return React.createClass({
     this.setBehaviorProp('config', config, callback);
   },
 
-  setEnvVariableNameAtIndex: function(name, index) {
-    var prevEnvVarAtIndex = this.state.envVariables[index] || {};
-    var envVarAtIndex = Object.assign(prevEnvVarAtIndex, { name: name });
-    this.setState({
-      envVariables: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.envVariables, envVarAtIndex, index)
-    });
-  },
-
   showEnvVariableAdder: function(prompt) {
     this.setState({
       envVariableAdderPrompt: prompt
@@ -1451,7 +1443,6 @@ return React.createClass({
                       ref="envVariableSetterPanel"
                       vars={this.getEnvVariables()}
                       onCancelClick={this.cancelEnvVariableSetter}
-                      onChangeVarName={this.setEnvVariableNameAtIndex}
                       onSave={this.updateEnvVariables}
                     />
                   </div>

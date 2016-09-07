@@ -45,7 +45,6 @@ define(function(require) {
 
     onChangeVarName: function(newName) {
       var newVar = {
-        isAlreadySavedWithName: false,
         isAlreadySavedWithValue: false,
         name: formatEnvVarName(newName),
         value: this.getValue()
@@ -57,7 +56,6 @@ define(function(require) {
 
     onChangeVarValue: function(newValue) {
       var newVar = {
-        isAlreadySavedWithName: false,
         isAlreadySavedWithValue: false,
         name: this.getName(),
         value: newValue

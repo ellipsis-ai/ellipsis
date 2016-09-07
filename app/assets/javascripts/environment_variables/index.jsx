@@ -13,7 +13,6 @@ define(function(require) {
         teamId: React.PropTypes.string.isRequired,
         variables: React.PropTypes.arrayOf(React.PropTypes.shape({
           name: React.PropTypes.string.isRequired,
-          isAlreadySavedWithName: React.PropTypes.bool.isRequired,
           isAlreadySavedWithValue: React.PropTypes.bool.isRequired
         })).isRequired
       })
@@ -114,7 +113,6 @@ define(function(require) {
       return (
         <Setter
           ref="setter"
-          onChangeVarName={function(){}}
           onSave={this.onSave}
           vars={this.getVars()}
           saveButtonLabel={this.getSaveButtonLabel()}
