@@ -6,6 +6,7 @@ import models._
 import models.accounts.linkedaccount.LinkedAccountService
 import models.accounts.logintoken.LoginTokenService
 import models.accounts.user.UserService
+import models.apitoken.APITokenService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -17,13 +18,15 @@ class PostgresDataService @Inject() (
                                       val usersProvider: Provider[UserService],
                                       val loginTokensProvider: Provider[LoginTokenService],
                                       val linkedAccountsProvider: Provider[LinkedAccountService],
-                                      val teamsProvider: Provider[TeamService]
+                                      val teamsProvider: Provider[TeamService],
+                                      val apiTokensProvider: Provider[APITokenService]
                             ) extends DataService {
 
   val users = usersProvider.get
   val loginTokens = loginTokensProvider.get
   val linkedAccounts = linkedAccountsProvider.get
   val teams = teamsProvider.get
+  val apiTokens = apiTokensProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)
