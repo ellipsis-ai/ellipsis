@@ -19,7 +19,7 @@ class VisibilityAPIController @Inject() (
                                  val dataService: DataService
                                ) extends EllipsisController {
 
-  case class InvocationCount(date: String, count: Int)
+  case class InvocationCount(date: String, teamName: String, count: Int)
 
   implicit val invocationCountWrites = Json.writes[InvocationCount]
 
@@ -32,13 +32,17 @@ class VisibilityAPIController @Inject() (
         DBIO.from(dataService.teams.isAdmin(team))
       }.getOrElse(DBIO.successful(false))
       counts <- InvocationLogEntryQueries.countsByDay
+      teamsById <- DBIO.from(dataService.teams.allTeams).map(_.groupBy(_.id))
     } yield {
       if (isAdmin) {
         Ok(
           Json.toJson(
             counts.toArray.
               sortBy(_._1.toDate).reverse.
-              map { case(date, count) => InvocationCount(date.toString(dateFormatter), count) }
+              map { case(date, teamId, count) =>
+                val teamName = teamsById.get(teamId).flatMap(_.headOption).map(_.name).getOrElse("<no team>")
+                InvocationCount(date.toString(dateFormatter), teamName, count)
+              }
           )
         )
       } else {

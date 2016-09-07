@@ -21,6 +21,10 @@ class TeamServiceImpl @Inject() (
 
   import TeamQueries._
 
+  def allTeams: Future[Seq[Team]] = {
+    dataService.run(all.result)
+  }
+
   def find(id: String): Future[Option[Team]] = {
     val action = findQueryFor(id).result.map(_.headOption)
     dataService.run(action)
