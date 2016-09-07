@@ -85,7 +85,9 @@ case class ScheduledMessage(
         result <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
         _ <- withUpdatedNextTriggeredFor(DateTime.now).save
       } yield {
-        scheduleInfoResult.sendIn(context)
+        if (result.hasText) {
+          scheduleInfoResult.sendIn(context)
+        }
         result.sendIn(context)
       }
     }.getOrElse(DBIO.successful(Unit))

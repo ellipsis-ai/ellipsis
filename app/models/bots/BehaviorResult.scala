@@ -24,6 +24,7 @@ sealed trait BehaviorResult {
   val resultType: ResultType.Value
   def text: String
   def fullText: String = text
+  def hasText: Boolean = fullText.trim.nonEmpty
 
   def sendIn(context: MessageContext, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
     context.sendMessage(fullText, forcePrivate, maybeShouldUnfurl)
