@@ -111,7 +111,6 @@ define(function(require) {
                 </p>
 
                 <ul>
-                  <li><code className="box-code-example">teamId:</code> your team ID — <code className="box-code-example">{this.props.teamId}</code></li>
                   <li><code className="box-code-example">message:</code> a message which would normally trigger a behavior</li>
                   <li><code className="box-code-example">responseContext:</code> use <code className="box-code-example">slack</code> to see a response in Slack</li>
                   <li><code className="box-code-example">channel:</code> the name of the channel to send a response</li>

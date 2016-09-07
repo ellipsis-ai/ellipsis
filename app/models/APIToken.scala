@@ -1,16 +1,17 @@
 package models
 
-import models.team.Team
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import models.accounts.user.User
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class APIToken(
                     id: String,
                     label: String,
-                    teamId: String,
+                    userId: String,
                     isRevoked: Boolean,
                     maybeLastUsed: Option[DateTime],
                     createdAt: DateTime
@@ -24,60 +25,49 @@ class APITokensTable(tag: Tag) extends Table[APIToken](tag, "api_tokens") {
 
   def id = column[String]("id", O.PrimaryKey)
   def label = column[String]("label")
-  def teamId = column[String]("team_id")
+  def userId = column[String]("user_id")
   def isRevoked = column[Boolean]("is_revoked")
   def maybeLastUsed = column[Option[DateTime]]("last_used")
   def createdAt = column[DateTime]("created_at")
 
-  def * = (id, label, teamId, isRevoked, maybeLastUsed, createdAt) <> ((APIToken.apply _).tupled, APIToken.unapply _)
+  def * = (id, label, userId, isRevoked, maybeLastUsed, createdAt) <> ((APIToken.apply _).tupled, APIToken.unapply _)
 }
 
 object APITokenQueries {
 
   val all = TableQuery[APITokensTable]
 
-  def uncompiledFindQueryFor(id: Rep[String], teamId: Rep[String]) = {
-    all.filter(_.id === id).filter(_.teamId === teamId)
+  def uncompiledFindQueryFor(id: Rep[String]) = {
+    all.filter(_.id === id)
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
-  def find(id: String, team: Team): DBIO[Option[APIToken]] = {
-    findQueryFor(id, team.id).result.map(_.headOption)
+  def find(id: String): DBIO[Option[APIToken]] = {
+    findQueryFor(id).result.map(_.headOption)
   }
 
-  def createFor(team: Team, label: String): DBIO[APIToken] = {
-    val newInstance = APIToken(IDs.next, label, team.id, isRevoked = false, None, DateTime.now)
+  def createFor(user: User, label: String): DBIO[APIToken] = {
+    val newInstance = APIToken(IDs.next, label, user.id, isRevoked = false, None, DateTime.now)
     (all += newInstance).map(_ => newInstance)
   }
 
-  def uncompiledFindValidForQuery(teamId: Rep[String]) = {
-    all.filter(_.teamId === teamId).filterNot(_.isRevoked)
-  }
-  val findValidForQuery = Compiled(uncompiledFindValidForQuery _)
-
-  def findValidFor(team: Team): DBIO[Option[APIToken]] = {
-    findValidForQuery(team.id).result.map { r =>
-      r.headOption
-    }
-  }
-
-  def uncompiledAllForQuery(teamId: Rep[String]) = {
-    all.filter(_.teamId === teamId).filterNot(_.isRevoked)
+  def uncompiledAllForQuery(userId: Rep[String]) = {
+    all.filter(_.userId === userId).filterNot(_.isRevoked)
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def allFor(team: Team): DBIO[Seq[APIToken]] = {
-    allForQuery(team.id).result
+  def allFor(user: User): DBIO[Seq[APIToken]] = {
+    allForQuery(user.id).result
   }
 
-  def use(token: APIToken, team: Team): DBIO[APIToken] = {
+  def use(token: APIToken): DBIO[APIToken] = {
     val updated = token.copy(maybeLastUsed = Some(DateTime.now))
-    findQueryFor(token.id, team.id).update(updated).map(_ => updated)
+    findQueryFor(token.id).update(updated).map(_ => updated)
   }
 
-  def revoke(token: APIToken, team: Team): DBIO[APIToken] = {
+  def revoke(token: APIToken): DBIO[APIToken] = {
     val updated = token.copy(isRevoked = true)
-    findQueryFor(token.id, team.id).update(updated).map(_ => updated)
+    findQueryFor(token.id).update(updated).map(_ => updated)
   }
 
   val formatter = DateTimeFormat.forPattern("MMMM d, yyyy")

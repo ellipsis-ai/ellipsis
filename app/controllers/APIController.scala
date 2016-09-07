@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import models.APITokenQueries
 import models.accounts._
+import models.bots.SimpleTextResult
 import models.bots.events.{APIMessageContext, APIMessageEvent, EventHandler}
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -32,7 +33,6 @@ class APIController @Inject() (
 
   case class PostMessageInfo(
                               message: String,
-                              teamId: String,
                               responseContext: String,
                               channel: String,
                               token: String
@@ -41,7 +41,6 @@ class APIController @Inject() (
   private val postMessageForm = Form(
     mapping(
       "message" -> nonEmptyText,
-      "teamId" -> nonEmptyText,
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
       "token" -> nonEmptyText
@@ -55,28 +54,36 @@ class APIController @Inject() (
       },
       info => {
         val action = for {
-          maybeTeam <- DBIO.from(dataService.teams.find(info.teamId))
-          _ <- maybeTeam.map { team =>
-            APITokenQueries.find(info.token, team).flatMap { maybeToken =>
-              maybeToken.map { token =>
-                if (token.isValid) {
-                  APITokenQueries.use(token, team).map(_ => true)
-                } else {
-                  DBIO.successful(false)
-                }
-              }.getOrElse(DBIO.successful(false)).map { shouldProceed =>
-                if (!shouldProceed) {
-                  throw new InvalidAPITokenException()
-                }
-              }
+          maybeToken <- APITokenQueries.find(info.token)
+          maybeUser <- maybeToken.map { token =>
+            DBIO.from(dataService.users.find(token.userId))
+          }.getOrElse(DBIO.successful(None))
+          _ <- maybeToken.map { token =>
+            if (token.isValid) {
+              APITokenQueries.use(token).map(_ => true)
+            } else {
+              DBIO.successful(false)
             }
-          }.getOrElse(DBIO.successful(Unit))
+          }.getOrElse(DBIO.successful(false)).map { shouldProceed =>
+            if (!shouldProceed) {
+              throw new InvalidAPITokenException()
+            }
+          }
+          maybeTeam <- maybeUser.map { user =>
+            DBIO.from(dataService.teams.find(user.teamId))
+          }.getOrElse(DBIO.successful(None))
           maybeBotProfile <- maybeTeam.map { team =>
             SlackBotProfileQueries.allFor(team).map(_.headOption)
           }.getOrElse(DBIO.successful(None))
           maybeSlackClient <- DBIO.successful(maybeBotProfile.flatMap { botProfile =>
             slackService.clients.get(botProfile)
           })
+          maybeSlackLinkedAccount <- maybeUser.map { user =>
+            DBIO.from(dataService.linkedAccounts.maybeForSlackFor(user))
+          }.getOrElse(DBIO.successful(None))
+          maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
+            SlackProfileQueries.find(slackLinkedAccount.loginInfo)
+          }.getOrElse(DBIO.successful(None))
           maybeEvent <- DBIO.successful(for {
             slackClient <- maybeSlackClient
             botProfile <- maybeBotProfile
@@ -85,6 +92,10 @@ class APIController @Inject() (
             })
           result <- maybeEvent.map { event =>
             DBIO.from(eventHandler.handle(event)).map { result =>
+              maybeSlackProfile.foreach { slackProfile =>
+                val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:")
+                introResult.sendIn(event.context)
+              }
               result.sendIn(event.context)
               Ok(result.fullText)
             }
