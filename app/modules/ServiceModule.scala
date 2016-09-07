@@ -5,6 +5,7 @@ import models.Models
 import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
 import models.accounts.user.{UserService, UserServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
+import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.bots.BehaviorTestReportBuilder
 import models.bots.events.EventHandler
 import models.team.{TeamService, TeamServiceImpl}
@@ -23,6 +24,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[LoginTokenService].to(classOf[LoginTokenServiceImpl])
     bind[LinkedAccountService].to(classOf[LinkedAccountServiceImpl])
     bind[TeamService].to(classOf[TeamServiceImpl])
+    bind[APITokenService].to(classOf[APITokenServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).asEagerSingleton()
     bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()

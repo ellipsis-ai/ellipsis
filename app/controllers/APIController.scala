@@ -2,7 +2,6 @@ package controllers
 
 import javax.inject.Inject
 
-import models.APITokenQueries
 import models.accounts._
 import models.bots.SimpleTextResult
 import models.bots.events.{APIMessageContext, APIMessageEvent, EventHandler}
@@ -54,13 +53,13 @@ class APIController @Inject() (
       },
       info => {
         val action = for {
-          maybeToken <- APITokenQueries.find(info.token)
+          maybeToken <- DBIO.from(dataService.apiTokens.find(info.token))
           maybeUser <- maybeToken.map { token =>
             DBIO.from(dataService.users.find(token.userId))
           }.getOrElse(DBIO.successful(None))
           _ <- maybeToken.map { token =>
             if (token.isValid) {
-              APITokenQueries.use(token).map(_ => true)
+              DBIO.from(dataService.apiTokens.use(token).map(_ => true))
             } else {
               DBIO.successful(false)
             }

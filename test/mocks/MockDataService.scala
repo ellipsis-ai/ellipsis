@@ -5,6 +5,7 @@ import javax.inject.Singleton
 import models.accounts.linkedaccount.LinkedAccountService
 import models.accounts.logintoken.LoginTokenService
 import models.accounts.user.UserService
+import models.apitoken.APITokenService
 import models.team.TeamService
 import org.scalatest.mock.MockitoSugar
 import slick.dbio.DBIO
@@ -19,6 +20,7 @@ class MockDataService extends DataService with MockitoSugar {
   val loginTokens: LoginTokenService = mock[LoginTokenService]
   val linkedAccounts: LinkedAccountService = mock[LinkedAccountService]
   val teams: TeamService = mock[TeamService]
+  val apiTokens: APITokenService = mock[APITokenService]
 
   def run[T](action: DBIO[T]): Future[T] = throw new Exception("Don't call me")
   def runNow[T](action: DBIO[T]): T = throw new Exception("Don't call me")

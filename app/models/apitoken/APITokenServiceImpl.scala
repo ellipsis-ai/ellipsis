@@ -1,25 +1,17 @@
-package models
+package models.apitoken
+
+import javax.inject.Inject
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import com.google.inject.Provider
+import models.IDs
 import models.accounts.user.User
 import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
+import services.DataService
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
-case class APIToken(
-                    id: String,
-                    label: String,
-                    userId: String,
-                    isRevoked: Boolean,
-                    maybeLastUsed: Option[DateTime],
-                    createdAt: DateTime
-                    ) {
-  val isValid: Boolean = !isRevoked
-
-  val maybeLastUsedString: Option[String] = maybeLastUsed.map(_.toString(APITokenQueries.formatter))
-}
+import scala.concurrent.Future
 
 class APITokensTable(tag: Tag) extends Table[APIToken](tag, "api_tokens") {
 
@@ -33,7 +25,11 @@ class APITokensTable(tag: Tag) extends Table[APIToken](tag, "api_tokens") {
   def * = (id, label, userId, isRevoked, maybeLastUsed, createdAt) <> ((APIToken.apply _).tupled, APIToken.unapply _)
 }
 
-object APITokenQueries {
+class APITokenServiceImpl @Inject() (
+                                  dataServiceProvider: Provider[DataService]
+                                ) extends APITokenService {
+
+  def dataService = dataServiceProvider.get
 
   val all = TableQuery[APITokensTable]
 
@@ -42,13 +38,13 @@ object APITokenQueries {
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
-  def find(id: String): DBIO[Option[APIToken]] = {
-    findQueryFor(id).result.map(_.headOption)
+  def find(id: String): Future[Option[APIToken]] = {
+    dataService.run(findQueryFor(id).result.map(_.headOption))
   }
 
-  def createFor(user: User, label: String): DBIO[APIToken] = {
+  def createFor(user: User, label: String): Future[APIToken] = {
     val newInstance = APIToken(IDs.next, label, user.id, isRevoked = false, None, DateTime.now)
-    (all += newInstance).map(_ => newInstance)
+    dataService.run((all += newInstance).map(_ => newInstance))
   }
 
   def uncompiledAllForQuery(userId: Rep[String]) = {
@@ -56,20 +52,17 @@ object APITokenQueries {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def allFor(user: User): DBIO[Seq[APIToken]] = {
-    allForQuery(user.id).result
+  def allFor(user: User): Future[Seq[APIToken]] = {
+    dataService.run(allForQuery(user.id).result)
   }
 
-  def use(token: APIToken): DBIO[APIToken] = {
+  def use(token: APIToken): Future[APIToken] = {
     val updated = token.copy(maybeLastUsed = Some(DateTime.now))
-    findQueryFor(token.id).update(updated).map(_ => updated)
+    dataService.run(findQueryFor(token.id).update(updated).map(_ => updated))
   }
 
-  def revoke(token: APIToken): DBIO[APIToken] = {
+  def revoke(token: APIToken): Future[APIToken] = {
     val updated = token.copy(isRevoked = true)
-    findQueryFor(token.id).update(updated).map(_ => updated)
+    dataService.run(findQueryFor(token.id).update(updated).map(_ => updated))
   }
-
-  val formatter = DateTimeFormat.forPattern("MMMM d, yyyy")
-
 }
