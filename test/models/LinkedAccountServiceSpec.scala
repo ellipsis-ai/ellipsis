@@ -5,8 +5,11 @@ import models.accounts.user.User
 import models.accounts.{SlackProfile, SlackProfileQueries, SlackProvider}
 import models.accounts.linkedaccount.LinkedAccount
 import models.team.Team
+import modules.ActorModule
 import org.joda.time.DateTime
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import services.PostgresDataService
 import support.DBMixin
 
@@ -14,6 +17,11 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class LinkedAccountServiceSpec extends PlaySpec with DBMixin with OneAppPerSuite {
+
+  override implicit lazy val app: Application =
+    new GuiceApplicationBuilder().
+      disable[ActorModule].
+      build()
 
   val dataService = app.injector.instanceOf(classOf[PostgresDataService])
 
