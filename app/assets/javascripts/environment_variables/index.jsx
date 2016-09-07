@@ -1,8 +1,5 @@
 define(function(require) {
   var React = require('react'),
-    Collapsible = require('../collapsible'),
-    HelpButton = require('../help/help_button'),
-    HelpPanel = require('../help/panel'),
     SettingsMenu = require('../settings_menu'),
     Setter = require('./setter'),
     ifPresent = require('../if_present');
@@ -64,7 +61,7 @@ define(function(require) {
             this.refs.setter.reset();
           });
         }).catch(() => {
-          // TODO: figure out what to do if there's a request error
+          this.refs.envVariableSetterPanel.onSaveError();
         });
     },
 
@@ -100,9 +97,6 @@ define(function(require) {
             <div className="flex flex-left"></div>
             <div className="flex flex-right bg-white"></div>
           </div>
-
-          <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
-          </footer>
         </div>
       );
     },
