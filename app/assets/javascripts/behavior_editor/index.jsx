@@ -465,22 +465,6 @@ return React.createClass({
     this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), callback);
   },
 
-  cancelEnvVariableAdder: function() {
-    var withoutBlanks = this.state.envVariables.filter(function(ea) { return !!ea.name; });
-    this.setState({
-      envVariables: withoutBlanks
-    });
-    this.hideActivePanel();
-  },
-
-  cancelEnvVariableSetter: function() {
-    var withoutBlanks = this.state.envVariables.filter(function(ea) { return !!ea.name; });
-    this.setState({
-      envVariables: withoutBlanks
-    });
-    this.hideActivePanel();
-  },
-
   cancelVersionPanel: function() {
     this.hideActivePanel();
     this.showVersionIndex(0);
@@ -1442,7 +1426,7 @@ return React.createClass({
                     <EnvVariableSetter
                       ref="envVariableSetterPanel"
                       vars={this.getEnvVariables()}
-                      onCancelClick={this.cancelEnvVariableSetter}
+                      onCancelClick={this.hideActivePanel}
                       onSave={this.updateEnvVariables}
                     />
                   </div>
@@ -1454,7 +1438,7 @@ return React.createClass({
           <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>
             <EnvVariableAdder
               ref="envVariableAdderPanel"
-              onCancelClick={this.cancelEnvVariableAdder}
+              onCancelClick={this.hideActivePanel}
               index={this.getEnvVariables().length}
               onSave={this.addEnvVar}
               prompt={this.state.envVariableAdderPrompt}
