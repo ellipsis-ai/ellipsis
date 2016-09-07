@@ -19,7 +19,7 @@ trait DBMixin {
       driver = config.getString("db.default.driver"),
       url = config.getString("db.default.url"),
       config = Map(
-        "user" -> config.getString("db.default.username"),
+        "username" -> config.getString("db.default.username"),
         "password" -> config.getString("db.default.password")
       )
     ) { database =>
