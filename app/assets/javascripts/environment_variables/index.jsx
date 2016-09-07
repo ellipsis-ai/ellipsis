@@ -97,9 +97,6 @@ define(function(require) {
             <div className="flex flex-left"></div>
             <div className="flex flex-right bg-white"></div>
           </div>
-
-          <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
-          </footer>
         </div>
       );
     },
