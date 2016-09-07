@@ -1,8 +1,5 @@
 define(function(require) {
   var React = require('react'),
-    Collapsible = require('../collapsible'),
-    HelpButton = require('../help/help_button'),
-    HelpPanel = require('../help/panel'),
     SettingsMenu = require('../settings_menu'),
     Setter = require('./setter'),
     ifPresent = require('../if_present');
