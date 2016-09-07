@@ -33,6 +33,12 @@ case class ScheduledMessage(
      """.stripMargin
   }
 
+  def scheduleInfoResult = SimpleTextResult(
+    s"""I've been asked to run `$text` ${recurrence.displayString.trim}. Here goes:
+       |
+       |For more details on what is scheduled, try `@ellipsis: scheduled`.
+     """.stripMargin)
+
   def listResponse: String = {
     s"""`$text` ${recurrence.displayString.trim}
        |
@@ -76,7 +82,10 @@ case class ScheduledMessage(
       for {
         result <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
         _ <- withUpdatedNextTriggeredFor(DateTime.now).save
-      } yield result.sendIn(context)
+      } yield {
+        scheduleInfoResult.sendIn(context)
+        result.sendIn(context)
+      }
     }.getOrElse(DBIO.successful(Unit))
   }
 
