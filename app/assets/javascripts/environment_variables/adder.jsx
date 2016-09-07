@@ -7,7 +7,6 @@ define(function(require) {
   return React.createClass({
     propTypes: {
       prompt: React.PropTypes.string,
-      index:  React.PropTypes.number.isRequired,
       onCancelClick: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired
     },

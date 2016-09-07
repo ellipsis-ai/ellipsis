@@ -1439,10 +1439,9 @@ return React.createClass({
             <EnvVariableAdder
               ref="envVariableAdderPanel"
               onCancelClick={this.hideActivePanel}
-              index={this.getEnvVariables().length}
               onSave={this.addEnvVar}
               prompt={this.state.envVariableAdderPrompt}
-              />
+            />
           </Collapsible>
 
           <Collapsible revealWhen={!this.hasModalPanel()}>
