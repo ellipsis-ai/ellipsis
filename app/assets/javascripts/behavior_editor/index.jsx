@@ -813,13 +813,13 @@ return React.createClass({
         }, () => {
           this.resetNotifications();
           this.refs.envVariableSetterPanel.reset();
-          if (options.saveCallback) {
+          if (options && options.saveCallback) {
             options.saveCallback();
           }
         });
       }).catch(() => {
         this.refs.envVariableSetterPanel.onSaveError();
-        if (options.errorCallback) {
+        if (options && options.errorCallback) {
           options.errorCallback();
         }
       });
