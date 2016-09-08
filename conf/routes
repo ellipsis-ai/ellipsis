@@ -20,6 +20,7 @@ GET         /version_info/:behaviorId                 @controllers.BehaviorEdito
 POST        /test_behavior_version                    @controllers.BehaviorEditorController.test
 
 POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
+POST        /delete_environment_variable              @controllers.EnvironmentVariablesController.delete
 
 GET         /list_oauth2_applications                 @controllers.OAuth2ApplicationController.list(teamId: Option[String] ?= None)
 GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(requiredOAuth2ApiConfigId: Option[String] ?= None, teamId: Option[String] ?= None, behaviorId: Option[String] ?= None)
