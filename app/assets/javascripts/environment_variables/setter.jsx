@@ -6,12 +6,6 @@ define(function(require) {
     formatEnvVarName = require('./formatter'),
     ifPresent = require('../if_present');
 
-  var newEnvVarTemplate = {
-    name: "",
-    value: "",
-    isAlreadySavedWithValue: false
-  };
-
   return React.createClass({
     propTypes: {
       onCancelClick: React.PropTypes.func,
@@ -24,20 +18,32 @@ define(function(require) {
       return this.state.vars;
     },
 
+    createNewVar: function() {
+      return {
+        name: "",
+        value: "",
+        isAlreadySavedWithValue: false
+      };
+    },
+
+    getInitialVarsSorted: function() {
+      return this.props.vars.slice().sort((a, b) => {
+        var aName = a.name.toLowerCase();
+        var bName = b.name.toLowerCase();
+        if (aName < bName) {
+          return -1;
+        } else if (aName > bName) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+    },
+
     getInitialState: function() {
       return {
-        vars: this.props.vars.sort((a, b) => {
-          var aName = a.name.toLowerCase();
-          var bName = b.name.toLowerCase();
-          if (aName < bName) {
-            return -1;
-          } else if (aName > bName) {
-            return 1;
-          } else {
-            return 0;
-          }
-        }),
-        newVars: [Object.assign({}, newEnvVarTemplate)],
+        vars: this.getInitialVarsSorted(),
+        newVars: [this.createNewVar()],
         saveError: false,
         isSaving: false
       };
@@ -52,7 +58,7 @@ define(function(require) {
     },
 
     hasChanges: function() {
-      return this.hasChangesComparedTo(this.props.vars) || this.getNewVars().some((ea) => !!ea.name);
+      return this.hasChangesComparedTo(this.getInitialVarsSorted()) || this.getNewVars().some((ea) => !!ea.name);
     },
 
     hasChangesComparedTo: function(oldVars) {
@@ -91,18 +97,14 @@ define(function(require) {
 
     addNewVar: function() {
       this.setState({
-        newVars: this.state.newVars.concat(Object.assign({}, newEnvVarTemplate))
+        newVars: this.state.newVars.concat(this.createNewVar())
       });
     },
 
     focusOnVarName: function(name) {
-      var numVars = this.getVars().length;
-      var varFound = false;
-      for (var i = 0; i < numVars && !varFound; i++) {
-        if (this.getVars()[i].name === name) {
-          this.refs['envVarValue' + i].focus();
-          varFound = true;
-        }
+      var matchingVarIndex = this.getVars().findIndex((ea) => ea.name === name);
+      if (matchingVarIndex >= 0) {
+        this.refs[`envVarValue${matchingVarIndex}`].focus();
       }
     },
 
@@ -130,9 +132,10 @@ define(function(require) {
     },
 
     onSave: function() {
+      var namedNewVars = this.getNewVars().filter((ea) => !!ea.name);
       this.setState({
-        vars: this.state.vars.concat(this.getNewVars().filter((ea) => !!ea.name)),
-        newVars: [Object.assign({}, newEnvVarTemplate)],
+        vars: this.state.vars.concat(namedNewVars),
+        newVars: [this.createNewVar()],
         saveError: false,
         isSaving: true
       }, () => {
