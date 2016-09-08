@@ -6,6 +6,12 @@ define(function(require) {
     formatEnvVarName = require('./formatter'),
     ifPresent = require('../if_present');
 
+  var newEnvVarTemplate = {
+    name: "",
+    value: "",
+    isAlreadySavedWithValue: false
+  };
+
   return React.createClass({
     propTypes: {
       onCancelClick: React.PropTypes.func,
@@ -31,7 +37,7 @@ define(function(require) {
             return 0;
           }
         }),
-        newVarName: "",
+        newVars: [Object.assign({}, newEnvVarTemplate)],
         saveError: false,
         isSaving: false
       };
@@ -41,8 +47,12 @@ define(function(require) {
       this.setState(this.getInitialState());
     },
 
+    isValid: function() {
+      return this.hasChanges() && this.getDuplicateNames().length === 0;
+    },
+
     hasChanges: function() {
-      return this.hasChangesComparedTo(this.props.vars) || !!this.getNewVarName();
+      return this.hasChangesComparedTo(this.props.vars) || this.getNewVars().some((ea) => !!ea.name);
     },
 
     hasChangesComparedTo: function(oldVars) {
@@ -55,33 +65,33 @@ define(function(require) {
       });
     },
 
-    getNewVarName: function() {
-      return this.state.newVarName;
+    getNewVars: function() {
+      return this.state.newVars;
     },
 
-    setNewVarName: function(newName) {
-      this.setState({ newVarName: formatEnvVarName(newName) });
+    setNewVarIndexName: function(index, newName) {
+      var previousNewVars = this.state.newVars;
+      var newVar = Object.assign({}, previousNewVars[index], { name: formatEnvVarName(newName) });
+      var newNewVars = ImmutableObjectUtils.arrayWithNewElementAtIndex(previousNewVars, newVar, index);
+      this.setState({ newVars: newNewVars });
     },
 
-    newNameIsDuplicate: function() {
-      var newName = this.getNewVarName();
-      return !!newName && !this.getVars().every((ea) => ea.name !== newName);
+    setNewVarIndexValue: function(index, newValue) {
+      var previousNewVars = this.state.newVars;
+      var newVar = Object.assign({}, previousNewVars[index], { value: newValue });
+      var newNewVars = ImmutableObjectUtils.arrayWithNewElementAtIndex(previousNewVars, newVar, index);
+      this.setState({ newVars: newNewVars });
     },
 
-    hasAcceptableNewVarName: function() {
-      return !!this.getNewVarName() && !this.newNameIsDuplicate();
+    getDuplicateNames: function() {
+      return this.getNewVars().filter((newVar) => {
+        return newVar.name && this.getVars().some((ea) => ea.name === newVar.name);
+      }).map((dupe) => dupe.name);
     },
 
     addNewVar: function() {
       this.setState({
-        vars: this.getVars().concat({
-          isAlreadySavedWithValue: false,
-          name: this.getNewVarName(),
-          value: ""
-        }),
-        newVarName: ""
-      }, () => {
-        this.focusOnVarIndex(this.getVars().length - 1);
+        newVars: this.state.newVars.concat(Object.assign({}, newEnvVarTemplate))
       });
     },
 
@@ -113,11 +123,7 @@ define(function(require) {
 
     onChangeVarValue: function(index, newValue) {
       var vars = this.getVars();
-      var newVar = {
-        isAlreadySavedWithValue: false,
-        name: vars[index].name,
-        value: newValue
-      };
+      var newVar = Object.assign({}, vars[index], { value: newValue });
       this.setState({
         vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, index)
       });
@@ -125,6 +131,8 @@ define(function(require) {
 
     onSave: function() {
       this.setState({
+        vars: this.state.vars.concat(this.getNewVars().filter((ea) => !!ea.name)),
+        newVars: [Object.assign({}, newEnvVarTemplate)],
         saveError: false,
         isSaving: true
       }, () => {
@@ -134,14 +142,13 @@ define(function(require) {
 
     resetVar: function(index) {
       var vars = this.getVars();
-      var newVar = {
+      var newVar = Object.assign({}, vars[index], {
         isAlreadySavedWithValue: false,
-        name: vars[index].name,
         value: ''
-      };
+      });
       this.setState({
         vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, index)
-      }, function() {
+      }, () => {
         this.refs['envVarValue' + index].focus();
       });
     },
@@ -177,6 +184,19 @@ define(function(require) {
       });
     },
 
+    getDuplicateErrorMessage: function() {
+      var names = this.getDuplicateNames();
+      if (names.length === 0) {
+        return null;
+      }
+      var errorMessage = (names.length === 1) ?
+        `There is already a variable named ${names[0]}.` :
+        `These variable names already exist: ${names.join(', ')}`;
+      return (
+        <span className="mbs type-pink type-s align-button fade-in">{errorMessage}</span>
+      );
+    },
+
     render: function() {
       return (
         <div>
@@ -187,9 +207,9 @@ define(function(require) {
 
             <div className="columns">
               <div className="column-group">
-                {this.getVars().map(function(v, index) {
+                {this.getVars().map((v, index) => {
                   return (
-                    <div className="column-row" key={"envVar" + index}>
+                    <div className="column-row" key={`envVar${index}`}>
                       <div className="column column-one-quarter mobile-column-full type-monospace pvxs mobile-pbn">
                         <div className="type-monospace align-button display-ellipsis">
                           {v.name}
@@ -201,35 +221,44 @@ define(function(require) {
                     </div>
                  );
                 }, this)}
-                <div className="column-row">
-                  <div className="column column-one-quarter mobile-column-one-half pvxs mobile-phn">
-                    <Input
-                      className="form-input-borderless type-monospace"
-                      placeholder="New variable name"
-                      value={this.getNewVarName()}
-                      onChange={this.setNewVarName}
-                    />
-                  </div>
-                  <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
-                    <button type="button"
-                      className="button-s mts mrl"
-                      disabled={!this.hasAcceptableNewVarName()}
-                      onClick={this.addNewVar}
-                    >Add new variable</button>
-                    {ifPresent(this.newNameIsDuplicate(), () => (
-                      <span className="type-pink type-s fade-in">
-                        There is already a variable named {this.getNewVarName()}.
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                {this.getNewVars().map((v, index) => {
+                  return (
+                    <div className="column-row" key={`newEnvVar${index}`}>
+                      <div className="column column-one-quarter mobile-column-one-half pvxs mobile-phn">
+                        <Input
+                          className="form-input-borderless type-monospace"
+                          placeholder="New variable name"
+                          value={v.name}
+                          onChange={this.setNewVarIndexName.bind(this, index)}
+                        />
+                      </div>
+                      <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
+                        <Textarea
+                          ref={"newEnvVarValue" + index}
+                          className="type-monospace"
+                          placeholder="Enter value"
+                          value={v.value || ""}
+                          onChange={this.setNewVarIndexValue.bind(this, index)}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+            </div>
+            <div className="align-r mts">
+              <button type="button"
+                className="button-s"
+                onClick={this.addNewVar}
+              >
+                Add another
+              </button>
             </div>
 
             <div className="mtxl">
               <button type="button"
                 className={"button-primary mrs mbs " + (this.state.isSaving ? "button-activated" : "")}
-                disabled={!this.hasChanges()}
+                disabled={!this.isValid()}
                 onClick={this.onSave}
               >
                 <span className="button-labels">
@@ -248,7 +277,7 @@ define(function(require) {
                 <span className="mbs type-pink type-bold align-button fade-in">
                   An error occurred while saving. Please try again.
                 </span>
-              ))}
+              ), () => (this.getDuplicateErrorMessage()))}
             </div>
 
         </div>
