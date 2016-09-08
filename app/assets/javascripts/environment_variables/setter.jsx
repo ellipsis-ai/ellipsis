@@ -1,7 +1,9 @@
 define(function(require) {
   var React = require('react'),
     ImmutableObjectUtils = require('../immutable_object_utils'),
+    Input = require('../form/input'),
     Textarea = require('../form/textarea'),
+    formatEnvVarName = require('./formatter'),
     ifPresent = require('../if_present');
 
   return React.createClass({
@@ -29,6 +31,7 @@ define(function(require) {
             return 0;
           }
         }),
+        newVarName: "",
         saveError: false,
         isSaving: false
       };
@@ -39,7 +42,7 @@ define(function(require) {
     },
 
     hasChanges: function() {
-      return this.hasChangesComparedTo(this.props.vars);
+      return this.hasChangesComparedTo(this.props.vars) || !!this.getNewVarName();
     },
 
     hasChangesComparedTo: function(oldVars) {
@@ -49,6 +52,27 @@ define(function(require) {
           v.name === theVar.name &&
           v.value === theVar.value &&
           v.isAlreadySavedWithValue === theVar.isAlreadySavedWithValue;
+      });
+    },
+
+    getNewVarName: function() {
+      return this.state.newVarName;
+    },
+
+    setNewVarName: function(newName) {
+      this.setState({ newVarName: formatEnvVarName(newName) });
+    },
+
+    addNewVar: function() {
+      this.setState({
+        vars: this.getVars().concat({
+          isAlreadySavedWithValue: false,
+          name: this.getNewVarName(),
+          value: ""
+        }),
+        newVarName: ""
+      }, () => {
+        this.focusOnVarIndex(this.getVars().length - 1);
       });
     },
 
@@ -64,7 +88,7 @@ define(function(require) {
     },
 
     focusOnVarIndex: function(index) {
-      this.refs['envVarName' + index].focus();
+      this.refs['envVarValue' + index].focus();
     },
 
     cancelShouldBeDisabled: function() {
@@ -152,22 +176,39 @@ define(function(require) {
               <span>that may be used by multiple behaviors.</span>
             </p>
 
-            <div className="columns columns-elastic mobile-columns-float">
+            <div className="columns">
               <div className="column-group">
                 {this.getVars().map(function(v, index) {
                   return (
                     <div className="column-row" key={"envVar" + index}>
-                      <div className="column column-shrink mobile-column-full type-monospace pvs mobile-pbn">
+                      <div className="column column-one-quarter mobile-column-full type-monospace pvxs mobile-pbn">
                         <div className="type-monospace align-button display-ellipsis">
                           {v.name}
                         </div>
                       </div>
-                      <div className="column column-expand pvs mobile-ptn">
+                      <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
                         {this.getValueInputForVar(v, index)}
                       </div>
                     </div>
                  );
                 }, this)}
+                <div className="column-row">
+                  <div className="column column-one-quarter mobile-column-one-half pvxs mobile-phn">
+                    <Input
+                      className="form-input-borderless type-monospace"
+                      placeholder="New variable name"
+                      value={this.getNewVarName()}
+                      onChange={this.setNewVarName}
+                    />
+                  </div>
+                  <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
+                    <button type="button"
+                      className="button-s mts"
+                      disabled={!this.getNewVarName()}
+                      onClick={this.addNewVar}
+                    >Add new variable</button>
+                  </div>
+                </div>
               </div>
             </div>
 
