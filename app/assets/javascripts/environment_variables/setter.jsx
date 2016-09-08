@@ -76,7 +76,7 @@ define(function(require) {
     },
 
     setNewVarIndexName: function(index, newName) {
-      var previousNewVars = this.state.newVars;
+      var previousNewVars = this.getNewVars();
       var newVar = Object.assign({}, previousNewVars[index], { name: formatEnvVarName(newName) });
       var newNewVars = ImmutableObjectUtils.arrayWithNewElementAtIndex(previousNewVars, newVar, index);
       this.setState({ newVars: newNewVars });
@@ -134,7 +134,7 @@ define(function(require) {
     onSave: function() {
       var namedNewVars = this.getNewVars().filter((ea) => !!ea.name);
       this.setState({
-        vars: this.state.vars.concat(namedNewVars),
+        vars: this.getVars().concat(namedNewVars),
         newVars: [this.createNewVar()],
         saveError: false,
         isSaving: true
