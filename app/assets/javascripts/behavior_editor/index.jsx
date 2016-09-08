@@ -1448,6 +1448,7 @@ return React.createClass({
               onCancelClick={this.hideActivePanel}
               onSave={this.addEnvVar}
               prompt={this.state.envVariableAdderPrompt}
+              existingNames={this.getEnvVariableNames()}
             />
           </Collapsible>
 

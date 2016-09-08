@@ -9,7 +9,8 @@ define(function(require) {
     propTypes: {
       prompt: React.PropTypes.string,
       onCancelClick: React.PropTypes.func.isRequired,
-      onSave: React.PropTypes.func.isRequired
+      onSave: React.PropTypes.func.isRequired,
+      existingNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
     },
 
     getInitialState: function() {
@@ -34,6 +35,15 @@ define(function(require) {
 
     hasNameAndValue: function() {
       return this.getValue() && this.getValue().trim().length > 0 && this.getName() && this.getName().trim().length > 0;
+    },
+
+    nameIsDuplicate: function() {
+      var newName = this.getName();
+      return newName && this.props.existingNames.some((ea) => ea === newName);
+    },
+
+    isValid: function() {
+      return this.hasNameAndValue() && !this.nameIsDuplicate();
     },
 
     focusOnVarName: function() {
@@ -149,7 +159,7 @@ define(function(require) {
             <div className="mtm">
               <button type="button"
                 className={"button-primary mrs mbs " + (this.state.isSaving ? "button-activated" : "")}
-                disabled={!this.hasNameAndValue()}
+                disabled={!this.isValid()}
                 onClick={this.onSave}
               >
                 <span className="button-labels">
@@ -161,6 +171,11 @@ define(function(require) {
               {ifPresent(this.state.saveError, () => (
                 <span className="mbs type-pink type-bold align-button fade-in">
                   An error occurred while saving. Please try again.
+                </span>
+              ))}
+              {ifPresent(this.nameIsDuplicate(), () => (
+                <span className="mbs type-pink align-button fade-in">
+                  There is already a variable named {this.getName()}.
                 </span>
               ))}
             </div>
