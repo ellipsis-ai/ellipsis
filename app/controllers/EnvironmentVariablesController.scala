@@ -72,6 +72,33 @@ class EnvironmentVariablesController @Inject() (
     )
   }
 
+  private val deleteForm = Form(
+    "name" -> nonEmptyText
+  )
+
+  def delete = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    deleteForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      name => {
+        for {
+          maybeTeam <- dataService.teams.find(user.teamId)
+          isDeleted <- maybeTeam.map { team =>
+            dataService.environmentVariables.deleteFor(name, team)
+          }.getOrElse(Future.successful(false))
+        } yield {
+          if (isDeleted) {
+            Ok("Deleted")
+          } else {
+            NotFound("Couldn't find env var to delete for this team")
+          }
+        }
+      }
+    )
+  }
+
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
