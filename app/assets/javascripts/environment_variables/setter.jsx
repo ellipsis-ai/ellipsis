@@ -63,6 +63,15 @@ define(function(require) {
       this.setState({ newVarName: formatEnvVarName(newName) });
     },
 
+    newNameIsDuplicate: function() {
+      var newName = this.getNewVarName();
+      return !!newName && !this.getVars().every((ea) => ea.name !== newName);
+    },
+
+    hasAcceptableNewVarName: function() {
+      return !!this.getNewVarName() && !this.newNameIsDuplicate();
+    },
+
     addNewVar: function() {
       this.setState({
         vars: this.getVars().concat({
@@ -203,10 +212,15 @@ define(function(require) {
                   </div>
                   <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
                     <button type="button"
-                      className="button-s mts"
-                      disabled={!this.getNewVarName()}
+                      className="button-s mts mrl"
+                      disabled={!this.hasAcceptableNewVarName()}
                       onClick={this.addNewVar}
                     >Add new variable</button>
+                    {ifPresent(this.newNameIsDuplicate(), () => (
+                      <span className="type-pink type-s fade-in">
+                        There is already a variable named {this.getNewVarName()}.
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
