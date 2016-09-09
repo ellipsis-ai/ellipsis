@@ -1,6 +1,6 @@
 package models.accounts.oauth2application
 
-import models.accounts.OAuth2Api
+import models.accounts.oauth2api.OAuth2Api
 import org.apache.commons.lang.WordUtils
 import play.api.libs.ws.{WSClient, WSRequest}
 

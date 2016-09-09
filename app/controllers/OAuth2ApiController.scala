@@ -4,13 +4,12 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
-import models.accounts._
+import models.accounts.oauth2api.OAuth2Api
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import services.DataService
-import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -34,9 +33,9 @@ class OAuth2ApiController @Inject() (
 
   def edit(apiId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
-      maybeApi <- OAuth2ApiQueries.find(apiId)
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      maybeApi <- dataService.oauth2Apis.find(apiId)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
         Ok(views.html.oAuth2Api(teamAccess, maybeApi))
@@ -44,8 +43,6 @@ class OAuth2ApiController @Inject() (
         NotFound("Team not accessible")
       }
     }
-
-    dataService.run(action)
   }
 
   case class OAuth2ApiInfo(
@@ -78,11 +75,11 @@ class OAuth2ApiController @Inject() (
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       info => {
-        val action = for {
+        for {
           maybeExistingApi <- info.maybeId.map { id =>
-            OAuth2ApiQueries.find(id)
-          }.getOrElse(DBIO.successful(None))
-          api <- OAuth2ApiQueries.save(maybeExistingApi.map { existing =>
+            dataService.oauth2Apis.find(id)
+          }.getOrElse(Future.successful(None))
+          api <- dataService.oauth2Apis.save(maybeExistingApi.map { existing =>
             existing.copy(
               name = info.name,
               authorizationUrl = info.authorizationUrl,
@@ -104,8 +101,6 @@ class OAuth2ApiController @Inject() (
         } yield {
           Redirect(routes.OAuth2ApiController.edit(api.id, None))
         }
-
-        dataService.run(action)
       }
     )
   }

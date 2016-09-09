@@ -27,12 +27,12 @@ class OAuth2ApplicationController @Inject() (
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
-      apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       applications <- teamAccess.maybeTargetTeam.map { team =>
-        DBIO.from(dataService.oauth2Applications.allFor(team))
-      }.getOrElse(DBIO.successful(Seq()))
+        dataService.oauth2Applications.allFor(team)
+      }.getOrElse(Future.successful(Seq()))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
         Ok(
@@ -46,14 +46,13 @@ class OAuth2ApplicationController @Inject() (
         NotFound("Team not accessible")
       }
     }
-    dataService.run(action)
   }
 
   def newApp(maybeRequiredOAuth2ApiConfigId: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
       teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
-      apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
+      apis <- DBIO.from(dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam))
       maybeRequiredOAuth2ApiConfig <- maybeRequiredOAuth2ApiConfigId.map { id =>
         RequiredOAuth2ApiConfigQueries.find(id)
       }.getOrElse(DBIO.successful(None))
@@ -80,12 +79,12 @@ class OAuth2ApplicationController @Inject() (
 
   def edit(id: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
-      apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       maybeApplication <- teamAccess.maybeTargetTeam.map { team =>
-        DBIO.from(dataService.oauth2Applications.find(id))
-      }.getOrElse(DBIO.successful(None))
+        dataService.oauth2Applications.find(id)
+      }.getOrElse(Future.successful(None))
     } yield {
       (for {
         team <- teamAccess.maybeTargetTeam
@@ -102,8 +101,6 @@ class OAuth2ApplicationController @Inject() (
           ))
       }
     }
-
-    dataService.run(action)
   }
 
   case class OAuth2ApplicationInfo(
@@ -141,7 +138,7 @@ class OAuth2ApplicationController @Inject() (
       info => {
         val action = for {
           maybeTeam <- DBIO.from(dataService.teams.find(info.teamId, user))
-          maybeApi <- OAuth2ApiQueries.find(info.apiId)
+          maybeApi <- DBIO.from(dataService.oauth2Apis.find(info.apiId))
           maybeApplication <- (for {
             api <- maybeApi
             team <- maybeTeam
