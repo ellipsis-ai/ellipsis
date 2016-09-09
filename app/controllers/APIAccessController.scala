@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models.accounts.user.User
 import models.IDs
 import models.accounts.linkedoauth2token.LinkedOAuth2Token
-import models.accounts.{OAuth2Application, OAuth2ApplicationQueries}
+import models.accounts.oauth2application.OAuth2Application
 import models.bots.events.{EventHandler, MessageEvent}
 import models.silhouette.EllipsisEnv
 import org.joda.time.DateTime
@@ -62,7 +62,7 @@ class APIAccessController @Inject() (
                                ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
-      maybeApplication <- dataService.run(OAuth2ApplicationQueries.find(applicationId))
+      maybeApplication <- dataService.oauth2Applications.find(applicationId)
       isLoggedInToCorrectTeam <- maybeApplication.map { application =>
         dataService.teams.find(application.teamId, user).map(_.isDefined)
       }.getOrElse(Future.successful(false))

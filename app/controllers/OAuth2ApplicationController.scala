@@ -7,6 +7,7 @@ import json._
 import models.bots.config.RequiredOAuth2ApiConfigQueries
 import models._
 import models.accounts._
+import models.accounts.oauth2application.OAuth2Application
 import models.bots._
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
@@ -30,7 +31,7 @@ class OAuth2ApplicationController @Inject() (
       teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       applications <- teamAccess.maybeTargetTeam.map { team =>
-        OAuth2ApplicationQueries.allFor(team)
+        DBIO.from(dataService.oauth2Applications.allFor(team))
       }.getOrElse(DBIO.successful(Seq()))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
@@ -83,7 +84,7 @@ class OAuth2ApplicationController @Inject() (
       teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       maybeApplication <- teamAccess.maybeTargetTeam.map { team =>
-        OAuth2ApplicationQueries.find(id)
+        DBIO.from(dataService.oauth2Applications.find(id))
       }.getOrElse(DBIO.successful(None))
     } yield {
       (for {
@@ -146,7 +147,7 @@ class OAuth2ApplicationController @Inject() (
             team <- maybeTeam
           } yield {
             val instance = OAuth2Application(info.id, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId)
-            OAuth2ApplicationQueries.save(instance).map(Some(_))
+            DBIO.from(dataService.oauth2Applications.save(instance)).map(Some(_))
           }).getOrElse(DBIO.successful(None))
           maybeBehaviorVersion <- info.maybeBehaviorId.map { behaviorId =>
             BehaviorQueries.find(behaviorId, user, dataService).flatMap { maybeBehavior =>
