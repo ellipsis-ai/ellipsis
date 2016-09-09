@@ -3,6 +3,7 @@ package modules
 import com.google.inject.{AbstractModule, Provides}
 import models.Models
 import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
+import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
 import models.accounts.user.{UserService, UserServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
@@ -29,6 +30,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[APITokenService].to(classOf[APITokenServiceImpl])
     bind[EnvironmentVariableService].to(classOf[EnvironmentVariableServiceImpl])
     bind[InvocationTokenService].to(classOf[InvocationTokenServiceImpl])
+    bind[LinkedOAuth2TokenService].to(classOf[LinkedOAuth2TokenServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).asEagerSingleton()
     bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()

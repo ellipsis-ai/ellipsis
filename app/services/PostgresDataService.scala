@@ -4,6 +4,7 @@ import javax.inject._
 
 import models._
 import models.accounts.linkedaccount.LinkedAccountService
+import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.logintoken.LoginTokenService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
@@ -23,7 +24,8 @@ class PostgresDataService @Inject() (
                                       val teamsProvider: Provider[TeamService],
                                       val apiTokensProvider: Provider[APITokenService],
                                       val environmentVariablesProvider: Provider[EnvironmentVariableService],
-                                      val invocationTokensProvider: Provider[InvocationTokenService]
+                                      val invocationTokensProvider: Provider[InvocationTokenService],
+                                      val linkedOAuth2TokensProvider: Provider[LinkedOAuth2TokenService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -33,6 +35,7 @@ class PostgresDataService @Inject() (
   val apiTokens = apiTokensProvider.get
   val environmentVariables = environmentVariablesProvider.get
   val invocationTokens = invocationTokensProvider.get
+  val linkedOAuth2Tokens = linkedOAuth2TokensProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)

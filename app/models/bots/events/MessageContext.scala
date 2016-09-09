@@ -52,7 +52,7 @@ trait MessageContext extends Context {
   val teamId: String
   val isResponseExpected: Boolean
 
-  def userInfo(ws: WSClient, dataService: DataService): DBIO[UserInfo] = {
+  def userInfo(ws: WSClient, dataService: DataService): Future[UserInfo] = {
     UserInfo.forLoginInfo(LoginInfo(name, userIdForContext), teamId, ws, dataService)
   }
 
