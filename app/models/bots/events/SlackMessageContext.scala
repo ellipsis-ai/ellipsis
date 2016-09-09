@@ -1,6 +1,7 @@
 package models.bots.events
 
-import models.accounts._
+import models.accounts.slack.profile.SlackProfile
+import models.accounts.{OAuth2Token, SlackBotProfile}
 import models.accounts.user.User
 import models.bots.SlackMessageFormatter
 import models.bots.conversations.{Conversation, ConversationQueries}
@@ -82,7 +83,7 @@ case class SlackMessageContext(
 
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
     super.ensureUser(dataService).flatMap { user =>
-      dataService.run(SlackProfileQueries.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user))
+      dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)
     }
   }
 }

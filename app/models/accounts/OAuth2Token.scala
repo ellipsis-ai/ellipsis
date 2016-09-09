@@ -3,6 +3,7 @@ package models.accounts
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
+import models.accounts.slack.profile.SlackProfileQueries
 import org.joda.time.{DateTime, Seconds}
 import slick.driver.PostgresDriver.api._
 
@@ -99,13 +100,4 @@ object OAuth2Token {
     allFullForSlackTeamId(teamId).map(_.headOption)
   }
 
-  def maybeFullFor(loginInfo: LoginInfo): DBIO[Option[OAuth2Token]] = {
-    SlackProfileQueries.find(loginInfo).flatMap { maybeProfile =>
-      maybeProfile.map { profile =>
-        maybeFullForSlackTeamId(profile.teamId)
-      }.getOrElse {
-        DBIO.successful(None)
-      }
-    }
-  }
 }

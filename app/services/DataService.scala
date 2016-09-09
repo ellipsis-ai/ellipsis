@@ -4,6 +4,7 @@ import models.accounts.linkedaccount.LinkedAccountService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.logintoken.LoginTokenService
 import models.accounts.oauth2application.OAuth2ApplicationService
+import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.environmentvariable.EnvironmentVariableService
@@ -24,6 +25,7 @@ trait DataService {
   val invocationTokens: InvocationTokenService
   val linkedOAuth2Tokens: LinkedOAuth2TokenService
   val oauth2Applications: OAuth2ApplicationService
+  val slackProfiles: SlackProfileService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T
