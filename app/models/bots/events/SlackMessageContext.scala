@@ -58,17 +58,17 @@ case class SlackMessageContext(
     }
   }
 
-  override def recentMessages(dataService: DataService): DBIO[Seq[String]] = {
+  override def recentMessages(dataService: DataService): Future[Seq[String]] = {
     for {
-      maybeTeam <- DBIO.from(dataService.teams.find(profile.teamId))
-      maybeOAuthToken <- OAuth2Token.maybeFullForSlackTeamId(profile.slackTeamId)
-      maybeUserClient <- DBIO.successful(maybeOAuthToken.map { token =>
+      maybeTeam <- dataService.teams.find(profile.teamId)
+      maybeOAuthToken <- dataService.oauth2Tokens.maybeFullForSlackTeamId(profile.slackTeamId)
+      maybeUserClient <- Future.successful(maybeOAuthToken.map { token =>
         SlackApiClient(token.accessToken)
       })
       maybeHistory <- maybeUserClient.map { userClient =>
-        DBIO.from(userClient.getChannelHistory(message.channel, latest = Some(message.ts))).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-      messages <- DBIO.successful(maybeHistory.map { history =>
+        userClient.getChannelHistory(message.channel, latest = Some(message.ts)).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      messages <- Future.successful(maybeHistory.map { history =>
         history.messages.slice(0, 10).reverse.flatMap { json =>
           (json \ "text").asOpt[String]
         }
