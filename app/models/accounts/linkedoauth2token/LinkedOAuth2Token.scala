@@ -1,7 +1,7 @@
 package models.accounts.linkedoauth2token
 
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import models.accounts.OAuth2Application
+import models.accounts.oauth2application.OAuth2Application
 import org.joda.time.{DateTime, Seconds}
 
 case class LinkedOAuth2Token(

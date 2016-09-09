@@ -4,7 +4,7 @@ import javax.inject.{Inject, Provider}
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.accounts.user.User
-import models.accounts.OAuth2ApplicationQueries
+import models.accounts.oauth2application.OAuth2ApplicationQueries
 import org.joda.time.DateTime
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.WSClient

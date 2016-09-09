@@ -6,6 +6,7 @@ import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountService
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
 import models.accounts.user.{UserService, UserServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
+import models.accounts.oauth2application.{OAuth2ApplicationService, OAuth2ApplicationServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.bots.BehaviorTestReportBuilder
 import models.bots.events.EventHandler
@@ -31,6 +32,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[EnvironmentVariableService].to(classOf[EnvironmentVariableServiceImpl])
     bind[InvocationTokenService].to(classOf[InvocationTokenServiceImpl])
     bind[LinkedOAuth2TokenService].to(classOf[LinkedOAuth2TokenServiceImpl])
+    bind[OAuth2ApplicationService].to(classOf[OAuth2ApplicationServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).asEagerSingleton()
     bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()

@@ -40,7 +40,7 @@ class BehaviorEditorController @Inject() (
         DBIO.from(dataService.environmentVariables.allFor(team).map(Some(_)))
       }.getOrElse(DBIO.successful(None))
       maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
-        OAuth2ApplicationQueries.allFor(team).map(Some(_))
+        DBIO.from(dataService.oauth2Applications.allFor(team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       oauth2Apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       result <- (for {
@@ -86,7 +86,7 @@ class BehaviorEditorController @Inject() (
         DBIO.from(dataService.environmentVariables.allFor(team).map(Some(_)))
       }.getOrElse(DBIO.successful(None))
       maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
-        OAuth2ApplicationQueries.allFor(team).map(Some(_))
+        DBIO.from(dataService.oauth2Applications.allFor(team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       oauth2Apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
       result <- (for {

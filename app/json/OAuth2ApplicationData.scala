@@ -1,6 +1,6 @@
 package json
 
-import models.accounts.OAuth2Application
+import models.accounts.oauth2application.OAuth2Application
 
 case class OAuth2ApplicationData(
                                   apiId: String,

@@ -302,7 +302,7 @@ object BehaviorVersionQueries {
             AWSConfigQueries.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName, dataService).map(Some(_))
           }.getOrElse(DBIO.successful(None))
           requiredOAuth2ApiConfigs <- DBIO.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
-            RequiredOAuth2ApiConfigQueries.maybeCreateFor(requiredData, updated)
+            RequiredOAuth2ApiConfigQueries.maybeCreateFor(requiredData, updated, dataService)
           }).map(_.flatten)
           _ <- DBIO.from(lambdaService.deployFunctionFor(
             updated,
