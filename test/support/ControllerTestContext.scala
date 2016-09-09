@@ -44,6 +44,13 @@ trait ControllerTestContext extends MustMatchers {
     cookies(result).get(authenticatorCookieName) mustBe None
   }
 
+  def assertJustLoggedOut(app: Application, result: Future[Result]): Unit = {
+    val authenticatorCookieName = app.configuration.getString("silhouette.authenticator.cookieName").get
+    cookies(result).get(authenticatorCookieName).map { cookie =>
+      cookie.value must have length(0)
+    }.getOrElse(assert(false, "Authenticator cookie must be present and empty"))
+  }
+
   def newUserFor(teamId: String): User = User(IDs.next, teamId, None)
 
   def newAppFor(testSilhouetteModule: TestSilhouetteModule): Application = {

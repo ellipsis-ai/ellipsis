@@ -70,7 +70,7 @@ class BehaviorEditorController @Inject() (
           notificationsJson = Json.toJson(Array[String]()).toString
         )))
       }).getOrElse {
-        reAuthFor(request, maybeTeamId)
+        DBIO.from(reAuthFor(request, maybeTeamId))
       }
     } yield result
 
@@ -111,7 +111,7 @@ class BehaviorEditorController @Inject() (
             Some("The behavior you are trying to access could not be found."),
             Some(reAuthLinkFor(request, None))
           ))
-        withAuthDiscarded(request, response)
+        DBIO.from(withAuthDiscarded(request, response))
       }
     } yield result
 
