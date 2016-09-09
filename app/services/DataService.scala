@@ -1,6 +1,7 @@
 package services
 
 import models.accounts.linkedaccount.LinkedAccountService
+import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.logintoken.LoginTokenService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
@@ -20,6 +21,7 @@ trait DataService {
   val apiTokens: APITokenService
   val environmentVariables: EnvironmentVariableService
   val invocationTokens: InvocationTokenService
+  val linkedOAuth2Tokens: LinkedOAuth2TokenService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T
