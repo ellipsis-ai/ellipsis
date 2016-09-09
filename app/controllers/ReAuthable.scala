@@ -19,7 +19,7 @@ trait ReAuthable extends EllipsisController {
   }
 
   protected def withAuthDiscarded(request: SecuredRequest[EllipsisEnv, AnyContent], result: Result)(implicit r: RequestHeader) = {
-    DBIO.from(silhouette.env.authenticatorService.discard(request.authenticator, result))
+    silhouette.env.authenticatorService.discard(request.authenticator, result)
   }
 
   protected def reAuthFor(request: SecuredRequest[EllipsisEnv, AnyContent], maybeTeamId: Option[String])(implicit r: RequestHeader) = {

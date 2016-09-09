@@ -50,7 +50,7 @@ class ApplicationController @Inject() (
           Ok(views.html.index(teamAccess, versionData))
         })
       }.getOrElse {
-        reAuthFor(request, maybeTeamId)
+        DBIO.from(reAuthFor(request, maybeTeamId))
       }
     } yield result
 
@@ -89,7 +89,7 @@ class ApplicationController @Inject() (
             )
           )
         }).getOrElse {
-        reAuthFor(request, maybeTeamId)
+        DBIO.from(reAuthFor(request, maybeTeamId))
       }
     } yield result
 
@@ -117,7 +117,7 @@ class ApplicationController @Inject() (
             )
           )
         }).getOrElse {
-        reAuthFor(request, maybeTeamId)
+        DBIO.from(reAuthFor(request, maybeTeamId))
       }
     } yield result
 

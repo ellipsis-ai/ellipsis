@@ -1,7 +1,7 @@
 package json
 
-import models.accounts.OAuth2Api
 import controllers.RemoteAssets.getUrl
+import models.accounts.oauth2api.OAuth2Api
 
 case class OAuth2ApiData(
                           apiId: String,
