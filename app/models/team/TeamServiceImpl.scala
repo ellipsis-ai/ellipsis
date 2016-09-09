@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import models.accounts.SlackBotProfileQueries
 import models.accounts.linkedaccount.LinkedAccount
-import models.{IDs, InvocationToken}
+import models.IDs
 import models.accounts.user.User
 import services.DataService
 import slick.driver.PostgresDriver.api._
@@ -44,19 +44,18 @@ class TeamServiceImpl @Inject() (
   }
 
   def findForToken(tokenId: String): Future[Option[Team]] = {
-    val action = for {
-      maybeToken <- InvocationToken.find(tokenId)
+    for {
+      maybeToken <- dataService.invocationTokens.find(tokenId)
       maybeTeam <- maybeToken.map { token =>
         if (token.isExpired || token.isUsed) {
-          DBIO.successful(None)
+          Future.successful(None)
         } else {
-          InvocationToken.use(token).flatMap { _ =>
-            DBIO.from(find(token.teamId))
+          dataService.invocationTokens.use(token).flatMap { _ =>
+            find(token.teamId)
           }
         }
-      }.getOrElse(DBIO.successful(None))
+      }.getOrElse(Future.successful(None))
     } yield maybeTeam
-    dataService.run(action)
   }
 
   def create(name: String): Future[Team] = save(Team(IDs.next, name))

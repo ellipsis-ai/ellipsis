@@ -9,6 +9,7 @@ import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.bots.BehaviorTestReportBuilder
 import models.bots.events.EventHandler
 import models.environmentvariable.{EnvironmentVariableService, EnvironmentVariableServiceImpl}
+import models.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -27,6 +28,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[TeamService].to(classOf[TeamServiceImpl])
     bind[APITokenService].to(classOf[APITokenServiceImpl])
     bind[EnvironmentVariableService].to(classOf[EnvironmentVariableServiceImpl])
+    bind[InvocationTokenService].to(classOf[InvocationTokenServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).asEagerSingleton()
     bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()
