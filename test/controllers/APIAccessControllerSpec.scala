@@ -2,8 +2,8 @@ package controllers
 
 import com.mohiva.play.silhouette.test._
 import models.IDs
-import models.accounts.OAuth2Api
 import models.accounts.logintoken.LoginToken
+import models.accounts.oauth2api.OAuth2Api
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.team.Team

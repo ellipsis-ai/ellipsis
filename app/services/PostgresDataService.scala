@@ -8,6 +8,7 @@ import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.logintoken.LoginTokenService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
+import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.environmentvariable.EnvironmentVariableService
@@ -29,7 +30,8 @@ class PostgresDataService @Inject() (
                                       val invocationTokensProvider: Provider[InvocationTokenService],
                                       val linkedOAuth2TokensProvider: Provider[LinkedOAuth2TokenService],
                                       val oauth2ApisProvider: Provider[OAuth2ApiService],
-                                      val oauth2ApplicationsProvider: Provider[OAuth2ApplicationService]
+                                      val oauth2ApplicationsProvider: Provider[OAuth2ApplicationService],
+                                      val slackProfilesProvider: Provider[SlackProfileService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -42,6 +44,7 @@ class PostgresDataService @Inject() (
   val linkedOAuth2Tokens = linkedOAuth2TokensProvider.get
   val oauth2Apis = oauth2ApisProvider.get
   val oauth2Applications = oauth2ApplicationsProvider.get
+  val slackProfiles = slackProfilesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)

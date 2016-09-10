@@ -4,6 +4,7 @@ import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException
 import com.mohiva.play.silhouette.impl.providers.OAuth2Provider._
 import com.mohiva.play.silhouette.impl.providers._
+import models.accounts.slack.profile.{SlackProfile, SlackProfileBuilder, SlackProfileParser}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSResponse
 import services.DataService
