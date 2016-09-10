@@ -16,6 +16,7 @@ import models._
 import models.accounts._
 import models.accounts.user.User
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.slack.SlackProvider
 import models.silhouette.EllipsisEnv
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._

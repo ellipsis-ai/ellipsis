@@ -4,7 +4,7 @@ import javax.inject._
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.SlackProvider
+import models.accounts.slack.SlackProvider
 import models.accounts.user.{User, UserQueries}
 import org.joda.time.DateTime
 import services.DataService

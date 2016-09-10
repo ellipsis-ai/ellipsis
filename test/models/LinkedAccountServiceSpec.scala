@@ -2,8 +2,8 @@ package models
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
-import models.accounts.SlackProvider
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.slack.SlackProvider
 import models.accounts.slack.profile.SlackProfile
 import models.team.Team
 import modules.ActorModule
