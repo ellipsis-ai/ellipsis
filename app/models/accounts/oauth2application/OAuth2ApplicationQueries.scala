@@ -1,6 +1,6 @@
 package models.accounts.oauth2application
 
-import models.accounts.{OAuth2Api, OAuth2ApiQueries}
+import models.accounts.oauth2api.{OAuth2Api, OAuth2ApiQueries}
 import slick.driver.PostgresDriver.api._
 
 object OAuth2ApplicationQueries {

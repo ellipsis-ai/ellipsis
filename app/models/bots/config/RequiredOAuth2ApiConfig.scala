@@ -2,8 +2,8 @@ package models.bots.config
 
 import json.RequiredOAuth2ApiConfigData
 import models.IDs
+import models.accounts.oauth2api.{OAuth2Api, OAuth2ApiQueries}
 import models.accounts.oauth2application.{OAuth2Application, OAuth2ApplicationQueries}
-import models.accounts.{OAuth2Api, OAuth2ApiQueries}
 import models.bots.{BehaviorVersion, BehaviorVersionQueries}
 import services.DataService
 import slick.driver.PostgresDriver.api._
@@ -117,7 +117,7 @@ object RequiredOAuth2ApiConfigQueries {
 
   def maybeCreateFor(data: RequiredOAuth2ApiConfigData, behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Option[RequiredOAuth2ApiConfig]] = {
     for {
-      maybeApi <- OAuth2ApiQueries.find(data.apiId)
+      maybeApi <- DBIO.from(dataService.oauth2Apis.find(data.apiId))
       maybeApplication <- data.application.map { appData =>
         DBIO.from(dataService.oauth2Applications.find(appData.applicationId))
       }.getOrElse(DBIO.successful(None))

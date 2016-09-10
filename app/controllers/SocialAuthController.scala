@@ -101,7 +101,7 @@ class SocialAuthController @Inject() (
             maybeBotProfile.get // Blow up if we can't get a bot profile
           }
           maybeSlackTeamId <- Future.successful(Some(maybeTeamId.getOrElse(profile.teamId)))
-          savedProfile <- models.run(SlackProfileQueries.save(profile))
+          savedProfile <- dataService.slackProfiles.save(profile)
           savedAuthInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
           linkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
             maybeExisting.map(Future.successful).getOrElse {
@@ -167,7 +167,7 @@ class SocialAuthController @Inject() (
             }
           } else {
             for {
-              savedProfile <- models.run(SlackProfileQueries.save(profile))
+              savedProfile <- dataService.slackProfiles.save(profile)
               loginInfo <- Future.successful(profile.loginInfo)
               savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
               maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, teamId)

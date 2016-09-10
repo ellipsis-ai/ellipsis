@@ -1,7 +1,6 @@
 package support
 
 import com.typesafe.config.ConfigFactory
-import models.accounts.SlackProfileQueries
 import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
 import services.PostgresDataService
@@ -24,10 +23,9 @@ trait DBMixin {
       )
     ) { database =>
       Evolutions.withEvolutions(database) {
-        val db = dataService.models.db
-        fn(db)
+        fn(dataService.models.db)
         // A misguided legacy down evolution will blow up if any SlackProfiles exist, so delete them
-        runNow(db, SlackProfileQueries.profiles.delete)
+        runNow(dataService.slackProfiles.deleteAll)
       }
     }
   }

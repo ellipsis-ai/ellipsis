@@ -2,8 +2,9 @@ package models
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
-import models.accounts.{SlackProfile, SlackProfileQueries, SlackProvider}
+import models.accounts.SlackProvider
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.slack.profile.SlackProfile
 import models.team.Team
 import modules.ActorModule
 import org.joda.time.DateTime
@@ -59,7 +60,7 @@ class LinkedAccountServiceSpec extends PlaySpec with DBMixin with OneAppPerSuite
       withEmptyDB(dataService, { db =>
         val linkedAccount = newSavedLinkedAccount
         val randomSlackTeamId = IDs.next
-        runNow(db, SlackProfileQueries.save(SlackProfile(randomSlackTeamId, linkedAccount.loginInfo)))
+        runNow(dataService.slackProfiles.save(SlackProfile(randomSlackTeamId, linkedAccount.loginInfo)))
 
         runNow(dataService.linkedAccounts.isAdmin(linkedAccount)) mustBe false
       })
@@ -68,7 +69,7 @@ class LinkedAccountServiceSpec extends PlaySpec with DBMixin with OneAppPerSuite
     "be true when there's a matching SlackProfile for the admin Slack team" in {
       withEmptyDB(dataService, { db =>
         val linkedAccount = newSavedLinkedAccount
-        runNow(db, SlackProfileQueries.save(SlackProfile(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, linkedAccount.loginInfo)))
+        runNow(dataService.slackProfiles.save(SlackProfile(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, linkedAccount.loginInfo)))
 
         runNow(dataService.linkedAccounts.isAdmin(linkedAccount)) mustBe true
       })

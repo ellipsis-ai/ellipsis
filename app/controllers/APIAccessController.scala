@@ -63,48 +63,46 @@ class APIAccessController @Inject() (
     val user = request.identity
     for {
       maybeApplication <- dataService.oauth2Applications.find(applicationId)
-      isLoggedInToCorrectTeam <- maybeApplication.map { application =>
-        dataService.teams.find(application.teamId, user).map(_.isDefined)
-      }.getOrElse(Future.successful(false))
-      result <- if (isLoggedInToCorrectTeam) {
-        (for {
-          application <- maybeApplication
-          code <- codeOpt
-          state <- stateOpt
-          oauthState <- request.session.get("oauth-state")
-        } yield {
-            if (state == oauthState) {
-              val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId).absoluteURL(secure=true)
-              getToken(code, application, user, redirect).flatMap { maybeLinkedToken =>
-                maybeLinkedToken.
-                  map { _ =>
-                  request.session.get("invocation-id").flatMap { invocationId =>
-                    cache.get[MessageEvent](invocationId).map { event =>
-                      eventHandler.handle(event).map { result =>
-                        result.sendIn(event.context)
-                        Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.context.name}."))
+      result <- maybeApplication.map { application =>
+        dataService.teams.find(application.teamId, user).map(_.isDefined).flatMap { isLoggedInToCorrectTeam =>
+          if (isLoggedInToCorrectTeam) {
+            (for {
+              code <- codeOpt
+              state <- stateOpt
+              oauthState <- request.session.get("oauth-state")
+            } yield {
+              if (state == oauthState) {
+                val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId).absoluteURL(secure = true)
+                getToken(code, application, user, redirect).flatMap { maybeLinkedToken =>
+                  maybeLinkedToken.
+                    map { _ =>
+                      request.session.get("invocation-id").flatMap { invocationId =>
+                        cache.get[MessageEvent](invocationId).map { event =>
+                          eventHandler.handle(event).map { result =>
+                            result.sendIn(event.context)
+                            Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.context.name}."))
+                          }
+                        }
+                      }.getOrElse {
+                        Future.successful(Redirect(routes.APIAccessController.authenticated(s"You are now authenticated and can try again.")))
                       }
-                    }
-                  }.getOrElse {
-                    Future.successful(Redirect(routes.APIAccessController.authenticated(s"You are now authenticated and can try again.")))
-                  }
-                }.getOrElse(Future.successful(BadRequest("boom")))
+                    }.getOrElse(Future.successful(BadRequest("boom")))
+                }
+              } else {
+                Future.successful(BadRequest("Invalid state"))
               }
-            } else {
-              Future.successful(BadRequest("Invalid state"))
+            }).getOrElse {
+              val state = IDs.next
+              val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None).absoluteURL(secure = true)
+              val redirect = application.authorizationRequestFor(state, redirectParam, ws).uri.toString
+              val sessionState = Seq(Some("oauth-state" -> state), maybeInvocationId.map(id => "invocation-id" -> id)).flatten
+              Future.successful(Redirect(redirect).withSession(sessionState: _*))
             }
-          }).getOrElse {
-          maybeApplication.map { application =>
-            val state = IDs.next
-            val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None).absoluteURL(secure=true)
-            val redirect = application.authorizationRequestFor(state, redirectParam, ws).uri.toString
-            val sessionState = Seq(Some("oauth-state" -> state), maybeInvocationId.map(id => "invocation-id" -> id)).flatten
-            Future.successful(Redirect(redirect).withSession(sessionState: _*))
-          }.getOrElse(Future.successful(NotFound("Can't find OAuth2 application")))
+          } else {
+            reAuthFor(request, maybeApplication.map(_.teamId))
+          }
         }
-      } else {
-        dataService.run(reAuthFor(request, maybeApplication.map(_.teamId)))
-      }
+      }.getOrElse(Future.successful(NotFound(views.html.notFound(None, Some("Can't find OAuth2 application"), None, None))))
     } yield result
   }
 

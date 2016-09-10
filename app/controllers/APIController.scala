@@ -81,7 +81,7 @@ class APIController @Inject() (
             DBIO.from(dataService.linkedAccounts.maybeForSlackFor(user))
           }.getOrElse(DBIO.successful(None))
           maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
-            SlackProfileQueries.find(slackLinkedAccount.loginInfo)
+            DBIO.from(dataService.slackProfiles.find(slackLinkedAccount.loginInfo))
           }.getOrElse(DBIO.successful(None))
           maybeEvent <- DBIO.successful(for {
             slackClient <- maybeSlackClient
