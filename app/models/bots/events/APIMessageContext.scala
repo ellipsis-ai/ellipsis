@@ -1,6 +1,6 @@
 package models.bots.events
 
-import models.accounts.SlackBotProfile
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.bots.SlackMessageFormatter
 import models.bots.conversations.Conversation
 import slack.rtm.SlackRtmClient

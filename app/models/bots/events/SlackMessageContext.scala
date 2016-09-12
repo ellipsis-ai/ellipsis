@@ -1,7 +1,7 @@
 package models.bots.events
 
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
-import models.accounts.SlackBotProfile
 import models.accounts.user.User
 import models.bots.SlackMessageFormatter
 import models.bots.conversations.{Conversation, ConversationQueries}

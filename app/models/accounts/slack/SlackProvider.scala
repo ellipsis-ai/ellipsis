@@ -4,8 +4,8 @@ import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException
 import com.mohiva.play.silhouette.impl.providers.OAuth2Provider._
 import com.mohiva.play.silhouette.impl.providers._
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.{SlackProfile, SlackProfileBuilder, SlackProfileParser}
-import models.accounts.{SlackBotProfile, SlackBotProfileQueries}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSResponse
 import services.DataService
@@ -79,16 +79,16 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
         find { case(k, v) => k == "team_name" }.
         map { case(k, v) => v }
     }
-    val maybeAction = for {
+    val maybeFuture = for {
       botJson <- maybeBotJson
       userId <- (botJson \ "bot_user_id").asOpt[String]
       token <- (botJson \ "bot_access_token").asOpt[String]
       slackTeamId <- maybeSlackTeamId
       slackTeamName <- maybeSlackTeamName
-    } yield SlackBotProfileQueries.ensure(userId, slackTeamId, slackTeamName, token, dataService)
+    } yield dataService.slackBotProfiles.ensure(userId, slackTeamId, slackTeamName, token)
 
-    maybeAction.map { action =>
-      dataService.run(action).map(Some(_))
+    maybeFuture.map { future =>
+      future.map(Some(_))
     }.getOrElse(Future.successful(None))
   }
 

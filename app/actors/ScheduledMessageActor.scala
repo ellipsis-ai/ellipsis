@@ -3,9 +3,8 @@ package actors
 import javax.inject.Inject
 
 import akka.actor.Actor
-import models.Models
 import models.bots.ScheduledMessageQueries
-import services.SlackService
+import services.{DataService, SlackService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.duration._
@@ -15,7 +14,7 @@ object ScheduledMessageActor {
   final val name = "scheduled-messages"
 }
 
-class ScheduledMessageActor @Inject() (val models: Models, val slackService: SlackService) extends Actor {
+class ScheduledMessageActor @Inject() (val dataService: DataService, val slackService: SlackService) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
   val tick = context.system.scheduler.schedule(1 minute, 1 minute, self, "tick")
@@ -28,7 +27,7 @@ class ScheduledMessageActor @Inject() (val models: Models, val slackService: Sla
     case "tick" => {
       val action = ScheduledMessageQueries.allToBeSent.flatMap { messages =>
         DBIO.sequence(messages.map { message =>
-          message.botProfile.flatMap { maybeProfile =>
+          message.botProfile(dataService).flatMap { maybeProfile =>
             maybeProfile.flatMap { profile =>
               slackService.clients.get(profile).map { client =>
                 message.send(slackService, client, profile)
@@ -38,7 +37,7 @@ class ScheduledMessageActor @Inject() (val models: Models, val slackService: Sla
         })
       }.map { _ => true }
 
-      models.runNow(action)
+      dataService.runNow(action)
     }
   }
 }
