@@ -15,13 +15,10 @@ import scala.concurrent.duration._
 @Singleton
 class SlackServiceImpl @Inject() (
                                appLifecycle: ApplicationLifecycle,
-                               dataServiceProvider: Provider[DataService],
+                               val dataService: DataService,
                                messages: MessagesApi,
-                               eventHandlerProvider: Provider[EventHandler]
+                               val eventHandler: EventHandler
                              ) extends SlackService {
-
-  val dataService = dataServiceProvider.get
-  val eventHandler = eventHandlerProvider.get
 
   implicit val system = ActorSystem("slack")
   implicit val ec = system.dispatcher
