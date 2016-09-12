@@ -18,12 +18,9 @@ import models.environmentvariable.{EnvironmentVariableService, EnvironmentVariab
 import models.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
-import play.api.libs.ws.WSClient
 import services._
 import net.codingwell.scalaguice.ScalaModule
-import play.api.inject.ApplicationLifecycle
 
 class ServiceModule extends AbstractModule with ScalaModule {
 
@@ -42,29 +39,10 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[SlackProfileService].to(classOf[SlackProfileServiceImpl])
     bind[SlackBotProfileService].to(classOf[SlackBotProfileServiceImpl])
     bind[OAuth2TokenService].to(classOf[OAuth2TokenServiceImpl])
+    bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
+    bind(classOf[SlackService]).to(classOf[SlackServiceImpl]).asEagerSingleton()
     bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()
-  }
-
-  @Provides
-  def provideSlackService(
-                           appLifecycle: ApplicationLifecycle,
-                           dataService: DataService,
-                           messagesApi: MessagesApi,
-                           eventHandler: EventHandler
-                         ): SlackService = {
-    new SlackService(appLifecycle, dataService, messagesApi, eventHandler)
-  }
-
-  @Provides
-  def provideAWSLambdaService(
-                               configuration: Configuration,
-                               models: Models,
-                               ws: WSClient,
-                               cache: CacheApi,
-                               dataService: DataService
-                             ): AWSLambdaService = {
-    new AWSLambdaServiceImpl(configuration, models, ws, cache, dataService)
   }
 
   @Provides
