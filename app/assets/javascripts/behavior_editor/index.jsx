@@ -914,7 +914,7 @@ return React.createClass({
   },
 
   isModified: function() {
-    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialState().behavior);
+    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialBehavior());
     var previewingVersions = this.getActivePanel() === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
   },
@@ -1082,8 +1082,8 @@ return React.createClass({
     window.document.addEventListener('focus', this.handleModalFocus, true);
   },
 
-  getInitialState: function() {
-    var initialBehavior = {
+  getInitialBehavior: function() {
+    return {
       teamId: this.props.teamId,
       behaviorId: this.props.behaviorId,
       functionBody: this.props.functionBody,
@@ -1093,6 +1093,10 @@ return React.createClass({
       config: this.props.config,
       knownEnvVarsUsed: this.props.knownEnvVarsUsed
     };
+  },
+
+  getInitialState: function() {
+    var initialBehavior = this.getInitialBehavior();
     return {
       behavior: initialBehavior,
       activeDropdown: null,
