@@ -2,15 +2,12 @@ package services
 
 import javax.inject._
 
-import models._
-import models.accounts.{SlackBotProfile, SlackBotProfileQueries}
-import models.bots._
 import play.api.i18n.MessagesApi
 import play.api.inject.ApplicationLifecycle
 import slack.rtm.SlackRtmClient
 import akka.actor.ActorSystem
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.bots.events.{EventHandler, SlackMessageContext, SlackMessageEvent}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
@@ -18,7 +15,7 @@ import scala.concurrent.duration._
 @Singleton
 class SlackService @Inject() (
                                appLifecycle: ApplicationLifecycle,
-                               val models: Models,
+                               val dataService: DataService,
                                messages: MessagesApi,
                                val eventHandler: EventHandler
                                ) {
@@ -73,18 +70,13 @@ class SlackService @Inject() (
 
   }
 
-  private def allProfiles: DBIO[Seq[SlackBotProfile]] = {
-    SlackBotProfileQueries.all.result
-  }
-
   def start: Future[Any] = {
     stop
-    val action = allProfiles.map { profiles =>
+    dataService.slackBotProfiles.allProfiles.map { profiles =>
       profiles.foreach { profile =>
         startFor(profile)
       }
     }
-    models.run(action)
   }
 
   def stop = {
