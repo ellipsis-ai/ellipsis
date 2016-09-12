@@ -38,6 +38,12 @@ define(function(require) {
           icon: this.getTipIcon(),
           message: this.getNotificationForUnusedAWS()
         };
+      } else if (kind === "param_not_in_function") {
+        return {
+          containerClass: "box-tip",
+          icon: this.getTipIcon(),
+          message: this.getNotificationForParamsNotInFunction()
+        };
       }
     },
 
@@ -204,6 +210,24 @@ define(function(require) {
           <span>Use <code className="box-code-example mhxs">{this.props.details[0].code}</code> in your </span>
           <span>function to access methods and properties of the </span>
           <span><a href="http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-intro.html" target="_blank">AWS SDK</a>.</span>
+        </span>
+      );
+    },
+
+    getNotificationForParamsNotInFunction: function() {
+      var numParams = this.props.details.length;
+      return (
+        <span>
+          <span>You’ve defined the following parameters in your triggers. Add them to your function: </span>
+          {this.props.details.map((detail, index) => {
+
+            return (
+              <span key={`unusedParamName${index}`}>
+                <code className="box-code-example mhxs">{detail.name}</code>
+                <span>{index + 1 < numParams ? ", " : ""}</span>
+              </span>
+            );
+          })}
         </span>
       );
     },

@@ -26,7 +26,8 @@ var React = require('react'),
   Collapsible = require('../collapsible'),
   CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
   BrowserUtils = require('../browser_utils'),
-  ImmutableObjectUtils = require('../immutable_object_utils');
+  ImmutableObjectUtils = require('../immutable_object_utils'),
+  debounce = require('javascript-debounce');
   require('codemirror/mode/markdown/markdown');
   require('whatwg-fetch');
 
@@ -152,7 +153,11 @@ return React.createClass({
   },
 
   getBehaviorParams: function() {
-    return this.getBehaviorProp('params') || [];
+    if (this.state) {
+      return this.getBehaviorProp('params') || [];
+    } else {
+      return this.props.params;
+    }
   },
 
   getBehaviorProp: function(key) {
@@ -179,7 +184,11 @@ return React.createClass({
   },
 
   getBehaviorTriggers: function() {
-    return this.getBehaviorProp('triggers');
+    if (this.state) {
+      return this.getBehaviorProp('triggers') || [];
+    } else {
+      return this.props.triggers;
+    }
   },
 
   getBehaviorConfig: function() {
@@ -313,9 +322,33 @@ return React.createClass({
     return notifications;
   },
 
+  buildParamNotifications: function() {
+    var triggerParamNames = {};
+    this.getBehaviorTriggers().forEach((ea) => {
+      if (!ea.isRegex) {
+        var matches = ea.text.match(/\{.+?\}/g) || [];
+        matches.forEach((paramName) => {
+          var rawName = paramName.replace(/^\{|\}$/g, '');
+          triggerParamNames[rawName] = true;
+        });
+      }
+    });
+    this.getBehaviorParams().forEach((codeParam) => {
+      delete triggerParamNames[codeParam.name];
+    });
+    return Object.keys(triggerParamNames).map((name) => ({
+      kind: "param_not_in_function",
+      name: name
+    }));
+  },
+
   buildNotifications: function() {
     var serverNotifications = this.props.notifications || [];
-    var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications(), this.buildOAuthApplicationNotifications());
+    var allNotifications = serverNotifications.concat(
+      this.buildEnvVarNotifications(),
+      this.buildOAuthApplicationNotifications(),
+      this.buildParamNotifications()
+    );
 
     var notifications = {};
     allNotifications.forEach(function(notification) {
@@ -838,6 +871,7 @@ return React.createClass({
 
   updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
     this.setBehaviorProp('triggers', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
+    this.resetNotifications();
   },
 
   undoChanges: function() {
@@ -1064,7 +1098,7 @@ return React.createClass({
     }
   },
 
-  resetNotifications: function() {
+  resetNotifications: debounce(function() {
     var newNotifications = this.buildNotifications();
     var newKinds = newNotifications.map(ea => ea.kind);
     var visibleAndUnneeded = (notification) => !notification.hidden && !newKinds.some(kind => kind === notification.kind);
@@ -1073,7 +1107,7 @@ return React.createClass({
     this.setState({
       notifications: newNotifications.concat(notificationsToHide)
     });
-  },
+  }, 250),
 
     /* Component API methods */
   componentDidMount: function() {
