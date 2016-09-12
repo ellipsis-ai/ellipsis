@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     Collapsible = require('./collapsible'),
+    SVGTip = require('./svg/tip'),
     SVGWarning = require('./svg/warning');
 
   return React.createClass({
@@ -50,8 +51,8 @@ define(function(require) {
 
     getTipIcon: function() {
       return (
-        <span className="display-inline-block mrs align-m type-pink type-l" style={{ height: 24 }}>
-          ☞
+        <span className="display-inline-block mrs align-b type-pink" style={{ width: 22, height: 24 }}>
+          <SVGTip />
         </span>
       );
     },
