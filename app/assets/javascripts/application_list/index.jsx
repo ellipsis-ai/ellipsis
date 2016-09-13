@@ -183,8 +183,8 @@ define(function(require) {
             } else {
               return (
                 <div key={`oAuthApplicationGroup${groupIndex}`} className="mvm">
-                  <h4 className="mbn">{groupName}</h4>
-                  <ul>
+                  <h4 className="mbxs">{groupName}</h4>
+                  <ul className="list-space-s">
                     {group.map((app, appIndex) => {
                       return (
                         <li key={`oAuthApplicationGroup${groupIndex}-${appIndex}`}>

@@ -85,6 +85,10 @@ requirejs.config({
       name: 'api_token_generator/loader',
       include: ['api_token_generator/index'],
       exclude: ['common']
+    }, {
+      name: 'environment_variables/loader',
+      include: ['environment_variables/index'],
+      exclude: ['common']
     }
   ]
 });

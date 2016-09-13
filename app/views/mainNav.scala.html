@@ -1,0 +1,27 @@
+@(
+  maybeTeamAccess: Option[models.accounts.user.UserTeamAccess]
+)(implicit r: RequestHeader)
+<div class="columns columns-elastic">
+  <div class="column column-expand pts pbxs">
+    <a class="link-green display-inline-block align-b mrs" style="height: 36px"
+      href='@routes.ApplicationController.index(maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+      @if(maybeTeamAccess.exists(_.isAdminAccess)) {
+        <div class="type-l mobile-ptxs">👻</div>
+      } else {
+        <span class="mobile-display-none">@views.html.logo()</span>
+        <span class="mobile-display-only">@views.html.logoSymbol()</span>
+      }
+    </a>
+
+    <a class="link-light display-inline-block align-button mhs"
+      href='@routes.ApplicationController.index(maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+      Behaviors
+    </a>
+
+    <a class="link-light display-inline-block align-button mhs"
+      href='@routes.EnvironmentVariablesController.list(maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+      Settings
+    </a>
+  </div>
+  @maybeTeamAccess.map { teamAccess => @views.html.teamMenu(teamAccess) }
+</div>
