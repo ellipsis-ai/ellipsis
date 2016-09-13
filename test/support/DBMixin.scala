@@ -25,7 +25,7 @@ trait DBMixin {
       Evolutions.withEvolutions(database) {
         fn(dataService.models.db)
         // A misguided legacy down evolution will blow up if any SlackProfiles exist, so delete them
-        runNow(dataService.slackProfiles.deleteAll)
+        runNow(dataService.slackProfiles.deleteAll())
       }
     }
   }

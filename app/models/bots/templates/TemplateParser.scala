@@ -16,7 +16,7 @@ class TemplateParser extends RegexParsers with JavaTokenParsers {
 
   def path: Parser[Path] = repsep(identifier, ".") ^^ { segments => Path(segments) }
 
-  def substitution: Parser[Substitution] = """\{\s*""".r ~> path <~ """\s*\}""".r ^^ { case path => Substitution(path) }
+  def substitution: Parser[Substitution] = """\{\s*""".r ~> path <~ """\s*\}""".r ^^ { path => Substitution(path) }
 
   def block: Parser[Block] = rep(text | substitution | iteration) ^^ { children => Block(children) }
 

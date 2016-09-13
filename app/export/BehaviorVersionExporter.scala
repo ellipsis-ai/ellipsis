@@ -50,7 +50,7 @@ case class BehaviorVersionExporter(
   }
 
   def getZipFile: File = {
-    createZip
+    createZip()
     new File(zipFileName)
   }
 

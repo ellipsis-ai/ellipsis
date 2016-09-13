@@ -73,7 +73,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
           //noinspection UnitInMap
           redirectLocation must startWith(oauth2App.authorizationUrl)
         }.getOrElse {
-          assert(condition=false, "Redirect location must contain authorization URL")
+          assert(false, "Redirect location must contain authorization URL")
         }
         verify(dataService.oauth2Applications, times(1)).find(oauth2App.id)
       }

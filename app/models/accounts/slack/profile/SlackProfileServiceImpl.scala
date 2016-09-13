@@ -55,7 +55,7 @@ class SlackProfileServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def deleteAll: Future[Unit] = {
+  def deleteAll(): Future[Unit] = {
     dataService.run(all.delete).map(_ => Unit)
   }
 

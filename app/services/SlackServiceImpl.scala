@@ -71,7 +71,7 @@ class SlackServiceImpl @Inject() (
   }
 
   def start(): Future[Any] = {
-    stop
+    stop()
     dataService.slackBotProfiles.allProfiles.map { profiles =>
       profiles.foreach { profile =>
         startFor(profile)
