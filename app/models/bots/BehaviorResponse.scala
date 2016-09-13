@@ -1,5 +1,6 @@
 package models.bots
 
+import models.bots.behavior.Behavior
 import models.team.Team
 import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
 import models.bots.events.MessageEvent
@@ -76,10 +77,10 @@ object BehaviorResponse {
     }
   }
 
-  def chooseFor(event: MessageEvent, maybeTeam: Option[Team], maybeLimitToBehavior: Option[Behavior]): DBIO[Option[BehaviorResponse]] = {
+  def chooseFor(event: MessageEvent, maybeTeam: Option[Team], maybeLimitToBehavior: Option[Behavior], dataService: DataService): DBIO[Option[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
-        limitToBehavior.maybeCurrentVersion
+        DBIO.from(dataService.behaviors.maybeCurrentVersionFor(limitToBehavior))
       }.getOrElse(DBIO.successful(None))
       triggers <- maybeLimitToBehaviorVersion.map { limitToBehaviorVersion =>
         MessageTriggerQueries.allFor(limitToBehaviorVersion)

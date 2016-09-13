@@ -21,7 +21,7 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
       messages <- DBIO.from(messageContext.recentMessages(dataService))
       qaExtractor <- DBIO.successful(QuestionAnswerExtractor(messages))
       maybeBehavior <- maybeTeam.map { team =>
-        BehaviorQueries.createFor(team, None).map(Some(_))
+        DBIO.from(dataService.behaviors.createFor(team, None)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
         BehaviorVersionQueries.createFor(behavior, maybeUser).flatMap { behaviorVersion =>

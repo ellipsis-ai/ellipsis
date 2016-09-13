@@ -5,7 +5,7 @@ import java.io.{File, PrintWriter}
 import json._
 import json.Formatting._
 import models.accounts.user.User
-import models.bots.{BehaviorQueries, BehaviorVersion}
+import models.bots.BehaviorVersion
 import play.api.libs.json.Json
 import services.DataService
 import slick.dbio.DBIO
@@ -60,9 +60,9 @@ object BehaviorVersionExporter {
 
   def maybeFor(behaviorId: String, user: User, dataService: DataService): DBIO[Option[BehaviorVersionExporter]] = {
     for {
-      maybeBehavior <- BehaviorQueries.find(behaviorId, user, dataService)
+      maybeBehavior <- DBIO.from(dataService.behaviors.find(behaviorId, user))
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        behavior.maybeCurrentVersion
+        DBIO.from(dataService.behaviors.maybeCurrentVersionFor(behavior))
       }.getOrElse(DBIO.successful(None))
       maybeFunction <- maybeBehaviorVersion.map { behaviorVersion =>
         behaviorVersion.maybeFunction(dataService)

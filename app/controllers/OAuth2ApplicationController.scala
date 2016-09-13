@@ -147,9 +147,9 @@ class OAuth2ApplicationController @Inject() (
             DBIO.from(dataService.oauth2Applications.save(instance)).map(Some(_))
           }).getOrElse(DBIO.successful(None))
           maybeBehaviorVersion <- info.maybeBehaviorId.map { behaviorId =>
-            BehaviorQueries.find(behaviorId, user, dataService).flatMap { maybeBehavior =>
+            DBIO.from(dataService.behaviors.find(behaviorId, user)).flatMap { maybeBehavior =>
               maybeBehavior.map { behavior =>
-                behavior.maybeCurrentVersion
+                DBIO.from(dataService.behaviors.maybeCurrentVersionFor(behavior))
               }.getOrElse(DBIO.successful(None))
             }
           }.getOrElse(DBIO.successful(None))

@@ -10,6 +10,7 @@ import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
+import models.bots.behavior.BehaviorService
 import models.environmentvariable.EnvironmentVariableService
 import models.invocationtoken.InvocationTokenService
 import models.team.TeamService
@@ -32,6 +33,7 @@ trait DataService {
   val slackProfiles: SlackProfileService
   val slackBotProfiles: SlackBotProfileService
   val oauth2Tokens: OAuth2TokenService
+  val behaviors: BehaviorService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T

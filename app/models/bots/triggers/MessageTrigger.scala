@@ -5,6 +5,7 @@ import java.util.regex.PatternSyntaxException
 import models.accounts.user.User
 import models.IDs
 import models.bots._
+import models.bots.behavior.RawBehavior
 import models.bots.events.{Event, MessageEvent}
 import models.team.Team
 import services.AWSLambdaConstants

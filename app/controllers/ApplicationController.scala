@@ -4,8 +4,6 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
-import models._
-import models.bots._
 import models.silhouette.EllipsisEnv
 import models.team.Team
 import play.api.Configuration
@@ -16,6 +14,7 @@ import services.{AWSLambdaService, DataService, GithubService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class ApplicationController @Inject() (
                                         val messagesApi: MessagesApi,
@@ -32,7 +31,7 @@ class ApplicationController @Inject() (
     val action = for {
       teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       maybeBehaviors <- teamAccess.maybeTargetTeam.map { team =>
-        BehaviorQueries.allForTeam(team).map { behaviors =>
+        DBIO.from(dataService.behaviors.allForTeam(team)).map { behaviors =>
           Some(behaviors)
         }
       }.getOrElse {
@@ -59,8 +58,8 @@ class ApplicationController @Inject() (
 
   case class PublishedBehaviorInfo(published: Seq[BehaviorCategory], installedBehaviors: Seq[InstalledBehaviorData])
 
-  private def withPublishedBehaviorInfoFor(team: Team): DBIO[PublishedBehaviorInfo] = {
-    BehaviorQueries.allForTeam(team).map { behaviors =>
+  private def withPublishedBehaviorInfoFor(team: Team): Future[PublishedBehaviorInfo] = {
+    dataService.behaviors.allForTeam(team).map { behaviors =>
       behaviors.map { ea => InstalledBehaviorData(ea.id, ea.maybeImportedId)}
     }.map { installedBehaviors =>
       val githubService = GithubService(team, ws, configuration, cache)
@@ -70,16 +69,16 @@ class ApplicationController @Inject() (
 
   def intro(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
         withPublishedBehaviorInfoFor(team).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
+      }.getOrElse(Future.successful(None))
       result <- (for {
         team <- teamAccess.maybeTargetTeam
         data <- maybePublishedBehaviorInfo
       } yield {
-          DBIO.successful(
+          Future.successful(
             Ok(
               views.html.intro(
                 teamAccess,
@@ -89,25 +88,23 @@ class ApplicationController @Inject() (
             )
           )
         }).getOrElse {
-        DBIO.from(reAuthFor(request, maybeTeamId))
+        reAuthFor(request, maybeTeamId)
       }
     } yield result
-
-    dataService.run(action)
   }
 
   def installBehaviors(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
         withPublishedBehaviorInfoFor(team).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
+      }.getOrElse(Future.successful(None))
       result <- (for {
         team <- teamAccess.maybeTargetTeam
         data <- maybePublishedBehaviorInfo
       } yield {
-          DBIO.successful(
+          Future.successful(
             Ok(
               views.html.publishedBehaviors(
                 teamAccess,
@@ -117,11 +114,9 @@ class ApplicationController @Inject() (
             )
           )
         }).getOrElse {
-        DBIO.from(reAuthFor(request, maybeTeamId))
+        reAuthFor(request, maybeTeamId)
       }
     } yield result
-
-    dataService.run(action)
   }
 
 }
