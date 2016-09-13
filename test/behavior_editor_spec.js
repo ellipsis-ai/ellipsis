@@ -47,19 +47,19 @@ describe('BehaviorEditor', () => {
     );
   }
 
-  describe('getBehaviorTriggers', () => {
+  describe('getInitialTriggers', () => {
     it('returns the defined triggers', () => {
       editorConfig.triggers = [{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }];
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTriggers()).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
+      expect(editor.getInitialTriggers()).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
     });
 
     it('returns getInitialTriggers when no triggers are defined', () => {
       delete editorConfig.triggers;
       let editor = createEditor(editorConfig);
-      editor.getInitialTriggers = jest.fn();
-      editor.getInitialTriggers.mockReturnValue([{ text: '', requiresMention: false, isRegex: false, caseSensitive: false }]);
-      expect(editor.getBehaviorTriggers()).toEqual([{ text: '', requiresMention: false, isRegex: false, caseSensitive: false }]);
+      editor.getNewBlankTrigger = jest.fn();
+      editor.getNewBlankTrigger.mockReturnValue({ text: '', requiresMention: false, isRegex: false, caseSensitive: false });
+      expect(editor.getInitialTriggers()).toEqual([{ text: '', requiresMention: false, isRegex: false, caseSensitive: false }]);
     });
   });
 
