@@ -43,24 +43,7 @@ class BehaviorServiceImpl @Inject() (
   def dataService = dataServiceProvider.get
   def lambdaService = lambdaServiceProvider.get
 
-  def all = TableQuery[BehaviorsTable]
-  def allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
-
-  def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
-    val raw = tuple._1
-    Behavior(
-      raw.id,
-      tuple._2,
-      raw.maybeCurrentVersionId,
-      raw.maybeImportedId,
-      raw.createdAt
-    )
-  }
-
-  def uncompiledFindQuery(id: Rep[String]) = {
-    allWithTeam.filter { case(behavior, team) => behavior.id === id }
-  }
-  val findQuery = Compiled(uncompiledFindQuery _)
+  import BehaviorQueries._
 
   def findWithoutAccessCheck(id: String): Future[Option[Behavior]] = {
     val action = findQuery(id).result.map(_.headOption.map(tuple2Behavior))
@@ -82,12 +65,6 @@ class BehaviorServiceImpl @Inject() (
     }
   }
 
-  def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
-    allWithTeam.
-      filter { case(behavior, team) => team.id === teamId }
-  }
-  val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
-
   def allForTeam(team: Team): Future[Seq[Behavior]] = {
     val action = allForTeamQuery(team.id).result.map { tuples => tuples.map(tuple2Behavior) }
     dataService.run(action)
@@ -103,13 +80,9 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
-  val findQueryFor = Compiled(uncompiledFindQueryFor _)
-
   def delete(behavior: Behavior): Future[Behavior] = {
-    dataService.run(findQueryFor(behavior.id).delete.map(_ => behavior))
+    dataService.run(findRawQueryFor(behavior.id).delete.map(_ => behavior))
   }
-
 
   def maybeCurrentVersionFor(behavior: Behavior): Future[Option[BehaviorVersion]] = {
     behavior.maybeCurrentVersionId.map { versionId =>
