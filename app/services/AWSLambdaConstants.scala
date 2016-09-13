@@ -2,10 +2,9 @@ package services
 
 object AWSLambdaConstants {
   val NO_RESPONSE_KEY = "noResponse"
-  val ON_SUCCESS_PARAM = "onSuccess"
-  val ON_ERROR_PARAM = "onError"
   val CONTEXT_PARAM = "ellipsis"
-  val HANDLER_PARAMS = Array(ON_SUCCESS_PARAM, ON_ERROR_PARAM)
+  val SUCCESS_CALLBACK = s"$CONTEXT_PARAM.success()"
+  val ERROR_CALLBACK = s"$CONTEXT_PARAM.error()"
   val INVOCATION_TIMEOUT_SECONDS = 10
   val TOKEN_KEY = "token"
   val USER_INFO_KEY = "userInfo"

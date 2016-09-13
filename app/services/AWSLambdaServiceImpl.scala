@@ -72,7 +72,7 @@ class AWSLambdaServiceImpl @Inject() (
       missingEnvVars <- models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables, dataService))
       requiredOAuth2ApiConfigs <- models.run(RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion))
       result <- if (missingEnvVars.nonEmpty) {
-        Future.successful(MissingEnvVarsResult(missingEnvVars))
+        Future.successful(MissingEnvVarsResult(behaviorVersion, configuration, missingEnvVars))
       } else if (behaviorVersion.functionBody.isEmpty) {
         Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None))
       } else {
@@ -106,7 +106,7 @@ class AWSLambdaServiceImpl @Inject() (
               JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
                 val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
                 val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
-                behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues)
+                behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, configuration)
               }.recover {
                 case e: java.util.concurrent.ExecutionException => {
                   e.getMessage match {
