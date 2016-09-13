@@ -156,7 +156,7 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('params') || [];
     } else {
-      return this.props.params;
+      return this.props.params || [];
     }
   },
 
@@ -187,7 +187,7 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('triggers') || [];
     } else {
-      return this.props.triggers;
+      return this.props.triggers || [];
     }
   },
 
