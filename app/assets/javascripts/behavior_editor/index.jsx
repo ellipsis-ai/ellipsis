@@ -323,23 +323,31 @@ return React.createClass({
   },
 
   buildParamNotifications: function() {
-    var triggerParamNames = {};
+    var triggerParamObj = {};
     this.getBehaviorTriggers().forEach((ea) => {
       if (!ea.isRegex) {
         var matches = ea.text.match(/\{.+?\}/g) || [];
         matches.forEach((paramName) => {
           var rawName = paramName.replace(/^\{|\}$/g, '');
-          triggerParamNames[rawName] = true;
+          triggerParamObj[rawName] = true;
         });
       }
     });
     this.getBehaviorParams().forEach((codeParam) => {
-      delete triggerParamNames[codeParam.name];
+      delete triggerParamObj[codeParam.name];
     });
-    return Object.keys(triggerParamNames).map((name) => ({
-      kind: "param_not_in_function",
-      name: name
-    }));
+    var triggerParamNames = Object.keys(triggerParamObj);
+    if (this.hasCode() || this.state && this.state.revealCodeEditor) {
+      return triggerParamNames.map((name) => ({
+        kind: "param_not_in_function",
+        name: name
+      }));
+    } else {
+      return triggerParamNames.map((name) => ({
+        kind: "param_without_function",
+        name: name
+      }));
+    }
   },
 
   buildNotifications: function() {
@@ -494,6 +502,14 @@ return React.createClass({
     this.setBehaviorProp('params', newParams, this.focusOnLastParam);
   },
 
+  addParams: function(newParamNames) {
+    var newParams = this.getBehaviorParams().concat(newParamNames.map((name) => ({
+      name: name,
+      question: ''
+    })));
+    this.setBehaviorProp('params', newParams);
+  },
+
   addTrigger: function(callback) {
     this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), callback);
   },
@@ -627,8 +643,18 @@ return React.createClass({
   },
 
   onNotificationClick: function(notificationDetail) {
-    if (notificationDetail && notificationDetail.kind === 'env_var_not_defined') {
+    if (!notificationDetail) {
+      return;
+    }
+    if (notificationDetail.kind === 'env_var_not_defined') {
       this.showEnvVariableSetter(notificationDetail);
+    } else if (notificationDetail.kind === 'param_without_function') {
+      this.addParams(notificationDetail.paramNames);
+      if (!this.state.revealCodeEditor) {
+        this.toggleCodeEditor();
+      }
+    } else if (notificationDetail.kind === 'param_not_in_function') {
+      this.addParams([notificationDetail.name]);
     }
   },
 
@@ -689,7 +715,12 @@ return React.createClass({
       behavior: newBehavior,
       versions: newVersions,
       justSaved: false
-    }, callback);
+    }, () => {
+      if (callback) {
+        callback();
+      }
+      this.resetNotifications();
+    });
   },
 
   setConfigProperty: function(property, value, callback) {
@@ -754,11 +785,7 @@ return React.createClass({
   },
 
   toggleAWSConfig: function() {
-    this.setConfigProperty(
-      'aws',
-      this.getAWSConfig() ? undefined : {},
-      this.resetNotifications
-    );
+    this.setConfigProperty('aws', this.getAWSConfig() ? undefined : {});
   },
 
   toggleAWSHelp: function() {
@@ -772,7 +799,7 @@ return React.createClass({
   toggleCodeEditor: function() {
     this.setState({
       revealCodeEditor: !this.state.revealCodeEditor
-    });
+    }, this.resetNotifications);
   },
 
   toggleCodeEditorLineWrapping: function() {
@@ -871,7 +898,6 @@ return React.createClass({
 
   updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
     this.setBehaviorProp('triggers', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
-    this.resetNotifications();
   },
 
   undoChanges: function() {
@@ -1073,14 +1099,14 @@ return React.createClass({
       apiId: appToAdd.apiId,
       application: appToAdd
     });
-    this.setConfigProperty('requiredOAuth2ApiConfigs', configs.concat([toAdd]), this.resetNotifications);
+    this.setConfigProperty('requiredOAuth2ApiConfigs', configs.concat([toAdd]));
   },
 
   onRemoveOAuth2Application: function(appToRemove) {
     var existing = this.getRequiredOAuth2ApiConfigs();
     this.setConfigProperty('requiredOAuth2ApiConfigs', existing.filter(function(config) {
       return config.application && config.application.applicationId !== appToRemove.applicationId;
-    }), this.resetNotifications);
+    }));
   },
 
   onNewOAuth2Application: function(requiredOAuth2ApiConfigId) {

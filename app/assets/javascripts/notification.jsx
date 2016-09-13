@@ -44,6 +44,12 @@ define(function(require) {
           icon: this.getTipIcon(),
           message: this.getNotificationForParamsNotInFunction()
         };
+      } else if (kind === "param_without_function") {
+        return {
+          containerClass: "box-tip",
+          icon: this.getTipIcon(),
+          message: this.getNotificationForParamsWithoutFunction()
+        };
       }
     },
 
@@ -216,18 +222,50 @@ define(function(require) {
 
     getNotificationForParamsNotInFunction: function() {
       var numParams = this.props.details.length;
+      if (numParams === 1) {
+        let detail = this.props.details[0];
+        return (
+          <span>
+            <span>You’ve added a parameter in your triggers. Now add it to your </span>
+            <span>function to use it in code: </span>
+            <button type="button"
+              className="button-raw type-monospace"
+              onClick={this.onClick.bind(this, detail)}
+            >{detail.name}</button>
+          </span>
+        );
+      } else {
+        return (
+          <span>
+            <span>You’ve added some parameters in your triggers. Now add them to your </span>
+            <span>function to use them in code: </span>
+              {this.props.details.map((detail, index) => (
+                <span key={`unusedParamName${index}`}>
+                  <button type="button"
+                    className="button-raw type-monospace"
+                    onClick={this.onClick.bind(this, detail)}
+                  >{detail.name}</button>
+                  <span>{index + 1 < numParams ? ", " : ""}</span>
+                </span>
+              ))}
+          </span>
+        );
+      }
+    },
+
+    getNotificationForParamsWithoutFunction: function() {
+      var paramNames = this.props.details.map((ea) => ea.name);
       return (
         <span>
-          <span>You’ve defined the following parameters in your triggers. Add them to your function: </span>
-          {this.props.details.map((detail, index) => {
-
-            return (
-              <span key={`unusedParamName${index}`}>
-                <code className="box-code-example mhxs">{detail.name}</code>
-                <span>{index + 1 < numParams ? ", " : ""}</span>
-              </span>
-            );
-          })}
+          <span>If your behavior is going to run code, the function can receive any </span>
+          <span>trigger fill-in-the-blanks as parameters. </span>
+          <button type="button"
+            className="button-raw"
+            onClick={this.onClick.bind(this, {
+              kind: "param_without_function",
+              paramNames: paramNames
+            })}
+          >Add code with parameters</button>
         </span>
       );
     },
