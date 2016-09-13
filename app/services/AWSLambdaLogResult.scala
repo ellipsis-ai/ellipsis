@@ -20,6 +20,11 @@ object AWSLambdaLogResult {
       m.subgroups.headOption
     }.getOrElse(text)
     var maybeErrorContent: Option[String] = None
+    val syntaxErrorRegex = """(?s)(.*\n)(Syntax error in module 'index': SyntaxError.*)\n[^\n]*\nEND.*""".r
+    syntaxErrorRegex.findFirstMatchIn(text).foreach { m =>
+      nonErrorContent = m.subgroups.head
+      maybeErrorContent = None
+    }
     val extractErrorRegex = """(?s)(.*\n)\S+\t\S+\t(\S*Error:.*)\n[^\n]*\nEND.*""".r
     extractErrorRegex.findFirstMatchIn(text).foreach { m =>
       nonErrorContent = m.subgroups.head

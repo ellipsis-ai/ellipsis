@@ -74,18 +74,39 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
 
 }
 
-case class UnhandledErrorResult(maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
+trait WithBehaviorLink {
+
+  val behaviorVersion: BehaviorVersion
+  val configuration: Configuration
+
+  def link: String = behaviorVersion.editLinkFor(configuration)
+
+  def linkToBehaviorFor(text: String): String = {
+    s"[$text](${link})"
+  }
+}
+
+case class UnhandledErrorResult(
+                                 behaviorVersion: BehaviorVersion,
+                                 configuration: Configuration,
+                                 maybeLogResult: Option[AWSLambdaLogResult]
+                               ) extends BehaviorResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.UnhandledError
 
   def text: String = {
-    val prompt = s"\nWe hit an error before calling $ON_SUCCESS_PARAM or $ON_ERROR_PARAM"
+    val prompt = s"\nWe hit an error in ${linkToBehaviorFor("one of your behaviors")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
     Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated)).flatten.mkString(":\n\n")
   }
 
 }
 
-case class HandledErrorResult(json: JsValue, maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
+case class HandledErrorResult(
+                               behaviorVersion: BehaviorVersion,
+                               configuration: Configuration,
+                               json: JsValue,
+                               maybeLogResult: Option[AWSLambdaLogResult]
+                             ) extends BehaviorResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.HandledError
 
@@ -96,41 +117,56 @@ case class HandledErrorResult(json: JsValue, maybeLogResult: Option[AWSLambdaLog
   }
 
   def text: String = {
-    val maybeDetail = (json \ "errorMessage").toOption.map(processedResultFor)
-    maybeDetail.getOrElse(s"$ON_ERROR_PARAM triggered")
+    val detail = (json \ "errorMessage").toOption.map(processedResultFor).map { msg =>
+      s":\n\n$msg"
+    }.getOrElse("")
+    s"$ERROR_CALLBACK triggered in ${linkToBehaviorFor("one of your behaviors")}$detail"
   }
 }
 
-case class SyntaxErrorResult(json: JsValue, maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
+case class SyntaxErrorResult(
+                              behaviorVersion: BehaviorVersion,
+                              configuration: Configuration,
+                              json: JsValue,
+                              maybeLogResult: Option[AWSLambdaLogResult]
+                            ) extends BehaviorResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.SyntaxError
 
   def text: String = {
     s"""
-       |There's a syntax error in your function:
+       |There's a syntax error in your behavior:
        |
        |${(json \ "errorMessage").asOpt[String].getOrElse("")}
-        |${maybeLogResult.flatMap(_.maybeTranslated).getOrElse("")}
+       |
+       |${linkToBehaviorFor("Take a look in the behavior editor")} for more details.
      """.stripMargin
   }
 }
 
-class NoCallbackTriggeredResult extends BehaviorResult {
+case class NoCallbackTriggeredResult(
+                                      behaviorVersion: BehaviorVersion,
+                                      configuration: Configuration
+                                    ) extends BehaviorResult with WithBehaviorLink {
 
   val resultType = ResultType.NoCallbackTriggered
 
-  def text = s"It looks like neither callback was triggered — you need to make sure that `$ON_SUCCESS_PARAM`" ++
-    s"is called to end every successful invocation and `$ON_ERROR_PARAM` is called to end every unsuccessful one"
+  def text = s"It looks like neither callback was triggered in ${linkToBehaviorFor("your behavior")}— you need to make sure that `$SUCCESS_CALLBACK`" ++
+    s"is called to end every successful invocation and `$ERROR_CALLBACK` is called to end every unsuccessful one"
 
 }
 
-case class MissingEnvVarsResult(missingEnvVars: Seq[String]) extends BehaviorResult {
+case class MissingEnvVarsResult(
+                                 behaviorVersion: BehaviorVersion,
+                                 configuration: Configuration,
+                                 missingEnvVars: Seq[String]
+                               ) extends BehaviorResult with WithBehaviorLink {
 
   val resultType = ResultType.MissingEnvVar
 
   def text = {
     s"""
-       |To use this behavior, you need the following environment variables defined:
+       |To use ${linkToBehaviorFor("this behavior")}, you need the following environment variables defined:
        |${missingEnvVars.map( ea => s"\n- $ea").mkString("")}
         |
         |You can define an environment variable by typing something like:
@@ -197,11 +233,9 @@ case class RequiredApiNotReady(
 
   val resultType = ResultType.RequiredApiNotReady
 
-  def maybeConfigLink: Option[String] = required.behaviorVersion.editLinkFor(configuration)
+  def configLink: String = required.behaviorVersion.editLinkFor(configuration)
   def configText: String = {
-    maybeConfigLink.map { configLink =>
-      s"You first must [configure the ${required.api.name} API]($configLink)"
-    }.getOrElse(s"You first must configure the ${required.api.name} API")
+    s"You first must [configure the ${required.api.name} API]($configLink)"
   }
 
   def text: String = {
