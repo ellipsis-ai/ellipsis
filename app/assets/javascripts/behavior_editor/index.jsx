@@ -148,7 +148,7 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('functionBody') || "";
     } else {
-      return this.props.functionBody;
+      return this.props.functionBody || "";
     }
   },
 
