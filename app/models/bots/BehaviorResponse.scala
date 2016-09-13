@@ -5,7 +5,7 @@ import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConvers
 import models.bots.events.MessageEvent
 import models.bots.triggers.{MessageTrigger, MessageTriggerQueries}
 import org.joda.time.DateTime
-import services.{AWSLambdaConstants, AWSLambdaService}
+import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -26,9 +26,9 @@ case class BehaviorResponse(
     parametersWithValues.forall(_.maybeValue.isDefined)
   }
 
-  def resultForFilledOut(service: AWSLambdaService): Future[BehaviorResult] = {
+  def resultForFilledOut(service: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
     val startTime = DateTime.now
-    behaviorVersion.resultFor(parametersWithValues, event, service).flatMap { result =>
+    behaviorVersion.resultFor(parametersWithValues, event, service, dataService).flatMap { result =>
       val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
       service.models.run(
         InvocationLogEntryQueries.createFor(
@@ -42,9 +42,9 @@ case class BehaviorResponse(
     }
   }
 
-  def result(service: AWSLambdaService): DBIO[BehaviorResult] = {
+  def result(awsService: AWSLambdaService, dataService: DataService): DBIO[BehaviorResult] = {
     if (isFilledOut) {
-      DBIO.from(resultForFilledOut(service))
+      DBIO.from(resultForFilledOut(awsService, dataService))
     } else {
       for {
         convo <- InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext, activatedTrigger)
@@ -53,7 +53,7 @@ case class BehaviorResponse(
             CollectedParameterValue(p.parameter, convo, v).save
           }.getOrElse(DBIO.successful(Unit))
         })
-        result <- convo.resultFor(event, service)
+        result <- convo.resultFor(event, awsService, dataService)
       } yield result
     }
   }

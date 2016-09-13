@@ -1,7 +1,7 @@
 @(
   teamAccess: models.accounts.user.UserTeamAccess,
   apis: Seq[json.OAuth2ApiData],
-  application: models.accounts.OAuth2Application
+  application: models.accounts.oauth2application.OAuth2Application
   )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._

@@ -1,13 +1,13 @@
 package models.bots
 
 import models.IDs
-import models.accounts.{SlackBotProfile, SlackBotProfileQueries}
 import models.team.{Team, TeamQueries}
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalTime}
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.bots.events.{SlackMessageContext, SlackMessageEvent}
-import services.SlackService
+import services.{DataService, SlackService}
 import slack.models.Message
 import slack.rtm.SlackRtmClient
 import slick.driver.PostgresDriver.api._
@@ -32,6 +32,14 @@ case class ScheduledMessage(
        |$nextRunsString
      """.stripMargin
   }
+
+  def scheduleInfoResult = SimpleTextResult(
+    s"""I've been asked to run `$text` ${recurrence.displayString.trim}.
+       |
+       |For more details on what is scheduled, try `@ellipsis: scheduled`.
+       |
+       |Here goes:
+     """.stripMargin)
 
   def listResponse: String = {
     s"""`$text` ${recurrence.displayString.trim}
@@ -64,8 +72,8 @@ case class ScheduledMessage(
      """.stripMargin
   }
 
-  def botProfile: DBIO[Option[SlackBotProfile]] = {
-    SlackBotProfileQueries.allFor(team).map(_.headOption)
+  def botProfile(dataService: DataService): DBIO[Option[SlackBotProfile]] = {
+    DBIO.from(dataService.slackBotProfiles.allFor(team)).map(_.headOption)
   }
 
   // TODO: don't be slack-specific
@@ -76,7 +84,12 @@ case class ScheduledMessage(
       for {
         result <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
         _ <- withUpdatedNextTriggeredFor(DateTime.now).save
-      } yield result.sendIn(context)
+      } yield {
+        if (result.hasText) {
+          scheduleInfoResult.sendIn(context)
+        }
+        result.sendIn(context)
+      }
     }.getOrElse(DBIO.successful(Unit))
   }
 

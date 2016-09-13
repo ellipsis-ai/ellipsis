@@ -6,6 +6,7 @@ import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 
 case class ScheduleBehavior(
@@ -23,8 +24,8 @@ case class ScheduleBehavior(
     }
   }
 
-  def result: DBIO[BehaviorResult] = {
-    for {
+  def result: Future[BehaviorResult] = {
+    val action = for {
       maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       maybeScheduledMessage <- maybeTeam.map { team =>
         ScheduledMessageQueries.maybeCreateFor(text, recurrence, team, maybeChannel)
@@ -36,6 +37,7 @@ case class ScheduleBehavior(
 
       SimpleTextResult(responseText)
     }
+    dataService.run(action)
   }
 
 }

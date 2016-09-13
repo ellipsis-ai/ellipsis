@@ -35,7 +35,7 @@ case class MarkdownRenderer(
     environment = environment.newWith(data)
   }
 
-  def pop: Unit = {
+  def pop(): Unit = {
     environment.maybeParent.foreach { parent =>
       environment = parent
     }
@@ -78,10 +78,27 @@ case class MarkdownRenderer(
             arr.as[Seq[JsValue]].foreach { ea =>
               push(Map(iteration.item.name -> ea))
               visit(iteration.body)
-              pop
+              pop()
             }
           }
           case _ => stringBuilder.append(s"**${iteration.list.dotString} is not a list**")
+        }
+      }
+    }
+  }
+
+  def visit(conditional: Conditional): Unit = {
+    val dotString = conditional.condition.dotString
+    lookUp(Substitution(conditional.condition)) match {
+      case lookupResult: JsUndefined => stringBuilder.append(notFound(dotString))
+      case lookupResult: JsDefined => {
+        lookupResult.value match {
+          case bool: JsBoolean => {
+            if (bool.value) {
+              visit(conditional.body)
+            }
+          }
+          case nonBoolean => stringBuilder.append(s"**$dotString is not a boolean** (${nonBoolean.toString})")
         }
       }
     }

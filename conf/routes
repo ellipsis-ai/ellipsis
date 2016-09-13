@@ -20,6 +20,7 @@ GET         /version_info/:behaviorId                 @controllers.BehaviorEdito
 POST        /test_behavior_version                    @controllers.BehaviorEditorController.test
 
 POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
+POST        /delete_environment_variable              @controllers.EnvironmentVariablesController.delete
 
 GET         /list_oauth2_applications                 @controllers.OAuth2ApplicationController.list(teamId: Option[String] ?= None)
 GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(requiredOAuth2ApiConfigId: Option[String] ?= None, teamId: Option[String] ?= None, behaviorId: Option[String] ?= None)
@@ -34,6 +35,8 @@ GET         /list_api_tokens                          @controllers.APITokenContr
 POST        /create_api_token                         @controllers.APITokenController.createToken
 POST        /revoke_api_token                         @controllers.APITokenController.revokeToken
 
+GET         /list_environment_variables               @controllers.EnvironmentVariablesController.list(teamId: Option[String] ?= None)
+
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 POST        /sign_out                                 @controllers.SocialAuthController.signOut
@@ -47,6 +50,8 @@ GET         /authenticated/:message                   @controllers.APIAccessCont
 
 GET         /admin/lambda_functions                   @controllers.AdminController.lambdaFunctions()
 POST        /admin/redeploy/:versionId                @controllers.AdminController.redeploy(versionId: String)
+
+GET         /metrics/invocations_by_day/:token        @controllers.VisibilityAPIController.invocationCountsByDay(token: String)
 
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp

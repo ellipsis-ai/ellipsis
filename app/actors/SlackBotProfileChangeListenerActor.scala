@@ -3,12 +3,12 @@ package actors
 import javax.inject.Inject
 
 import akka.actor.Actor
-import models.accounts.SlackBotProfile
+import models.accounts.slack.botprofile.SlackBotProfile
 import org.joda.time.DateTime
 import org.postgresql.{PGConnection, PGNotification}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import services.SlackService
+import services.{DataService, SlackService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.duration._
@@ -19,9 +19,10 @@ object SlackBotProfileChangeListenerActor {
   final val name = "slackbot-profile-change-listener"
 }
 
-class SlackBotProfileChangeListenerActor @Inject() (val slackService: SlackService) extends Actor {
-
-  val models = slackService.models
+class SlackBotProfileChangeListenerActor @Inject() (
+                                                     val dataService: DataService,
+                                                     val slackService: SlackService
+                                                   ) extends Actor {
 
   implicit val slackBotProfileReads: Reads[SlackBotProfile] = (
     (JsPath \ "user_id").read[String] and
@@ -34,7 +35,7 @@ class SlackBotProfileChangeListenerActor @Inject() (val slackService: SlackServi
   val tick = context.system.scheduler.schedule(500 millis, 1000 millis, self, "tick")
 
   override def preStart() = {
-    models.runNow(sqlu"LISTEN events")
+    dataService.runNow(sqlu"LISTEN events")
   }
 
   override def postStop() = {
@@ -65,7 +66,7 @@ class SlackBotProfileChangeListenerActor @Inject() (val slackService: SlackServi
         true
       }
 
-      models.runNow(action)
+      dataService.runNow(action)
     }
   }
 }

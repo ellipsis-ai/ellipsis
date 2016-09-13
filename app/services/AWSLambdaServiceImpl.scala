@@ -8,9 +8,11 @@ import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
 import models.bots.config.{AWSConfig, RequiredOAuth2ApiConfig, RequiredOAuth2ApiConfigQueries}
-import models.{EnvironmentVariable, InvocationToken, Models}
+import models.Models
 import models.bots._
 import models.bots.events.MessageEvent
+import models.environmentvariable.EnvironmentVariable
+import models.invocationtoken.InvocationToken
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -47,9 +49,9 @@ class AWSLambdaServiceImpl @Inject() (
   private def contextParamDataFor(
                                    behaviorVersion: BehaviorVersion,
                                    environmentVariables: Seq[EnvironmentVariable],
-                                   userInfo: UserInfo
-                                   ) = {
-    val token = models.runNow(InvocationToken.createFor(behaviorVersion.team))
+                                   userInfo: UserInfo,
+                                   token: InvocationToken
+                                   ): Seq[(String, JsObject)] = {
     Seq(CONTEXT_PARAM -> JsObject(Seq(
       API_BASE_URL_KEY -> JsString(apiBaseUrl),
       TOKEN_KEY -> JsString(token.id),
@@ -67,16 +69,16 @@ class AWSLambdaServiceImpl @Inject() (
               event: MessageEvent
               ): Future[BehaviorResult] = {
     for {
-      missingEnvVars <- models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables))
+      missingEnvVars <- models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables, dataService))
       requiredOAuth2ApiConfigs <- models.run(RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion))
       result <- if (missingEnvVars.nonEmpty) {
-        Future.successful(MissingEnvVarsResult(missingEnvVars))
+        Future.successful(MissingEnvVarsResult(behaviorVersion, configuration, missingEnvVars))
       } else if (behaviorVersion.functionBody.isEmpty) {
         Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None))
       } else {
         for {
-          token <- models.run(InvocationToken.createFor(behaviorVersion.team))
-          userInfo <- models.run(event.context.userInfo(ws, dataService))
+          token <- dataService.invocationTokens.createFor(behaviorVersion.team)
+          userInfo <- event.context.userInfo(ws, dataService)
           notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
           missingOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
             !userInfo.links.exists(_.externalSystem == app.name)
@@ -93,7 +95,7 @@ class AWSLambdaServiceImpl @Inject() (
             }.getOrElse {
               val payloadJson = JsObject(
                 parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
-                  contextParamDataFor(behaviorVersion, environmentVariables, userInfo)
+                  contextParamDataFor(behaviorVersion, environmentVariables, userInfo, token)
               )
               val invokeRequest =
                 new InvokeRequest().
@@ -104,7 +106,7 @@ class AWSLambdaServiceImpl @Inject() (
               JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
                 val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
                 val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
-                behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues)
+                behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, configuration)
               }.recover {
                 case e: java.util.concurrent.ExecutionException => {
                   e.getMessage match {

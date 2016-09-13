@@ -1,8 +1,9 @@
-package models.accounts
+package models.accounts.slack.profile
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers.{OAuth2Info, SocialProfileParser}
+import models.accounts.slack.SlackProvider
 import play.api.libs.json._
 
 import scala.concurrent.Future

@@ -1,6 +1,6 @@
 package json
 
-import models.APIToken
+import models.apitoken.APIToken
 import org.joda.time.DateTime
 
 case class APITokenData(

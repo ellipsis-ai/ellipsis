@@ -6,6 +6,7 @@ import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class UnscheduleBehavior(
                              text: String,
@@ -14,8 +15,8 @@ case class UnscheduleBehavior(
                              dataService: DataService
                              ) extends BuiltinBehavior {
 
-  def result: DBIO[BehaviorResult] = {
-    for {
+  def result: Future[BehaviorResult] = {
+    val action = for {
       maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       didDelete <- maybeTeam.map { team =>
         ScheduledMessageQueries.deleteFor(text, team)
@@ -36,6 +37,7 @@ case class UnscheduleBehavior(
       }
       SimpleTextResult(msg)
     }
+    dataService.run(action)
   }
 
 }

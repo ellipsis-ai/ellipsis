@@ -8,7 +8,6 @@ import json._
 import json.Formatting._
 import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
-import models._
 import models.accounts._
 import models.bots._
 import models.silhouette.EllipsisEnv
@@ -38,12 +37,12 @@ class BehaviorEditorController @Inject() (
     val action = for {
       teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
       maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        EnvironmentVariableQueries.allFor(team).map(Some(_))
+        DBIO.from(dataService.environmentVariables.allFor(team).map(Some(_)))
       }.getOrElse(DBIO.successful(None))
       maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
-        OAuth2ApplicationQueries.allFor(team).map(Some(_))
+        DBIO.from(dataService.oauth2Applications.allFor(team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      oauth2Apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
+      oauth2Apis <- DBIO.from(dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam))
       result <- (for {
         team <- teamAccess.maybeTargetTeam
         envVars <- maybeEnvironmentVariables
@@ -71,7 +70,7 @@ class BehaviorEditorController @Inject() (
           notificationsJson = Json.toJson(Array[String]()).toString
         )))
       }).getOrElse {
-        reAuthFor(request, maybeTeamId)
+        DBIO.from(reAuthFor(request, maybeTeamId))
       }
     } yield result
 
@@ -84,12 +83,12 @@ class BehaviorEditorController @Inject() (
       maybeVersionData <- BehaviorVersionData.maybeFor(id, user, dataService)
       teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeVersionData.map(_.teamId)))
       maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        EnvironmentVariableQueries.allFor(team).map(Some(_))
+        DBIO.from(dataService.environmentVariables.allFor(team).map(Some(_)))
       }.getOrElse(DBIO.successful(None))
       maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
-        OAuth2ApplicationQueries.allFor(team).map(Some(_))
+        DBIO.from(dataService.oauth2Applications.allFor(team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-      oauth2Apis <- OAuth2ApiQueries.allFor(teamAccess.maybeTargetTeam)
+      oauth2Apis <- DBIO.from(dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam))
       result <- (for {
         data <- maybeVersionData
         envVars <- maybeEnvironmentVariables
@@ -112,7 +111,7 @@ class BehaviorEditorController @Inject() (
             Some("The behavior you are trying to access could not be found."),
             Some(reAuthLinkFor(request, None))
           ))
-        withAuthDiscarded(request, response)
+        DBIO.from(withAuthDiscarded(request, response))
       }
     } yield result
 
@@ -153,7 +152,7 @@ class BehaviorEditorController @Inject() (
                 }.getOrElse(DBIO.successful(None))
               }
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-                BehaviorVersionQueries.createFor(behavior, Some(user), lambdaService, data).map(Some(_))
+                BehaviorVersionQueries.createFor(behavior, Some(user), lambdaService, data, dataService).map(Some(_))
               }.getOrElse(DBIO.successful(None))
               maybePreviousRequiredOAuth2ApiConfig <- info.maybeRequiredOAuth2ApiConfigId.map { id =>
                 RequiredOAuth2ApiConfigQueries.find(id)
@@ -230,7 +229,7 @@ class BehaviorEditorController @Inject() (
         }
       }).map(_.toMap)
       awsConfigByVersion <- DBIO.sequence(versions.map { version =>
-        AWSConfigQueries.maybeFor(version).map { config =>
+        AWSConfigQueries.maybeFor(version, dataService).map { config =>
           (version, config)
         }
       }).map(_.toMap)
@@ -338,7 +337,7 @@ class BehaviorEditorController @Inject() (
           maybeImporter <- DBIO.successful(for {
             team <- maybeTeam
             data <- maybeVersionData
-          } yield BehaviorVersionImporter(team, user, lambdaService, data))
+          } yield BehaviorVersionImporter(team, user, lambdaService, data, dataService))
           maybeCloned <- maybeImporter.map { importer =>
             importer.run.map(Some(_))
           }.getOrElse(DBIO.successful(None))

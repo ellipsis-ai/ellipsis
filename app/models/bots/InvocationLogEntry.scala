@@ -35,7 +35,22 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[InvocationLogEntry](tag,
 
 object InvocationLogEntryQueries {
 
-  def all = TableQuery[InvocationLogEntriesTable]
+  val all = TableQuery[InvocationLogEntriesTable]
+  val allWithVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
+
+  val truncateDate = SimpleFunction.binary[String, DateTime, DateTime]("date_trunc")
+
+  def countsByDay: DBIO[Seq[(DateTime, String, Int)]] = {
+    allWithVersion.
+      map { case(entry, ((version, _), (behavior, team))) =>
+        (truncateDate("day", entry.createdAt), team.id, 1)
+      }.
+      groupBy { case(date, teamId, _) => (date, teamId)}.
+      map { case((date, teamId), q) =>
+        (date, teamId, q.map(_._3).sum.getOrElse(0))
+      }.
+      result
+  }
 
   def createFor(
                  behaviorVersion: BehaviorVersion,

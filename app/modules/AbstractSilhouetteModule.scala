@@ -10,7 +10,7 @@ import com.mohiva.play.silhouette.impl.providers.oauth2.state.DummyStateProvider
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.util._
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
-import models.accounts.SlackProvider
+import models.accounts.slack.SlackProvider
 import models.silhouette._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._

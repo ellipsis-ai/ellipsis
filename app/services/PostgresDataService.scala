@@ -4,8 +4,17 @@ import javax.inject._
 
 import models._
 import models.accounts.linkedaccount.LinkedAccountService
+import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.logintoken.LoginTokenService
+import models.accounts.oauth2api.OAuth2ApiService
+import models.accounts.oauth2application.OAuth2ApplicationService
+import models.accounts.slack.profile.SlackProfileService
+import models.accounts.oauth2token.OAuth2TokenService
+import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.user.UserService
+import models.apitoken.APITokenService
+import models.environmentvariable.EnvironmentVariableService
+import models.invocationtoken.InvocationTokenService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -17,14 +26,33 @@ class PostgresDataService @Inject() (
                                       val usersProvider: Provider[UserService],
                                       val loginTokensProvider: Provider[LoginTokenService],
                                       val linkedAccountsProvider: Provider[LinkedAccountService],
-                                      val teamsProvider: Provider[TeamService]
+                                      val teamsProvider: Provider[TeamService],
+                                      val apiTokensProvider: Provider[APITokenService],
+                                      val environmentVariablesProvider: Provider[EnvironmentVariableService],
+                                      val invocationTokensProvider: Provider[InvocationTokenService],
+                                      val linkedOAuth2TokensProvider: Provider[LinkedOAuth2TokenService],
+                                      val oauth2ApisProvider: Provider[OAuth2ApiService],
+                                      val oauth2ApplicationsProvider: Provider[OAuth2ApplicationService],
+                                      val slackProfilesProvider: Provider[SlackProfileService],
+                                      val slackBotProfilesProvider: Provider[SlackBotProfileService],
+                                      val oauth2TokensProvider: Provider[OAuth2TokenService]
                             ) extends DataService {
 
   val users = usersProvider.get
   val loginTokens = loginTokensProvider.get
   val linkedAccounts = linkedAccountsProvider.get
   val teams = teamsProvider.get
+  val apiTokens = apiTokensProvider.get
+  val environmentVariables = environmentVariablesProvider.get
+  val invocationTokens = invocationTokensProvider.get
+  val linkedOAuth2Tokens = linkedOAuth2TokensProvider.get
+  val oauth2Apis = oauth2ApisProvider.get
+  val oauth2Applications = oauth2ApplicationsProvider.get
+  val slackProfiles = slackProfilesProvider.get
+  val slackBotProfiles = slackBotProfilesProvider.get
+  val oauth2Tokens = oauth2TokensProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)
+  def runNow[T](future: Future[T]): T = models.runNow(future)
 }

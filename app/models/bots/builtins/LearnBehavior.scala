@@ -2,13 +2,18 @@ package models.bots.builtins
 
 import models.bots.{BehaviorResult, SimpleTextResult}
 import models.bots.events.MessageContext
-import services.AWSLambdaService
-import slick.driver.PostgresDriver.api._
+import services.{AWSLambdaService, DataService}
 
-case class LearnBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService) extends BuiltinBehavior {
+import scala.concurrent.Future
 
-  def result: DBIO[BehaviorResult] = {
-    DBIO.successful(SimpleTextResult(s"I love to learn. Come ${messageContext.teachMeLinkFor(lambdaService)}."))
+case class LearnBehavior(
+                          messageContext: MessageContext,
+                          lambdaService: AWSLambdaService,
+                          dataService: DataService
+                        ) extends BuiltinBehavior {
+
+  def result: Future[BehaviorResult] = {
+    Future.successful(SimpleTextResult(s"I love to learn. Come ${messageContext.teachMeLinkFor(lambdaService)}."))
   }
 
 }

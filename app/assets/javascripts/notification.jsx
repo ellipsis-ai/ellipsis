@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     Collapsible = require('./collapsible'),
+    SVGTip = require('./svg/tip'),
     SVGWarning = require('./svg/warning');
 
   return React.createClass({
@@ -37,6 +38,18 @@ define(function(require) {
           icon: this.getTipIcon(),
           message: this.getNotificationForUnusedAWS()
         };
+      } else if (kind === "param_not_in_function") {
+        return {
+          containerClass: "box-tip",
+          icon: this.getTipIcon(),
+          message: this.getNotificationForParamsNotInFunction()
+        };
+      } else if (kind === "param_without_function") {
+        return {
+          containerClass: "box-tip",
+          icon: this.getTipIcon(),
+          message: this.getNotificationForParamsWithoutFunction()
+        };
       }
     },
 
@@ -50,8 +63,8 @@ define(function(require) {
 
     getTipIcon: function() {
       return (
-        <span className="display-inline-block mrs align-m type-pink type-l" style={{ height: 24 }}>
-          ☞
+        <span className="display-inline-block mrs align-b type-pink" style={{ width: 22, height: 24 }}>
+          <SVGTip />
         </span>
       );
     },
@@ -203,6 +216,56 @@ define(function(require) {
           <span>Use <code className="box-code-example mhxs">{this.props.details[0].code}</code> in your </span>
           <span>function to access methods and properties of the </span>
           <span><a href="http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-intro.html" target="_blank">AWS SDK</a>.</span>
+        </span>
+      );
+    },
+
+    getNotificationForParamsNotInFunction: function() {
+      var numParams = this.props.details.length;
+      if (numParams === 1) {
+        let detail = this.props.details[0];
+        return (
+          <span>
+            <span>You’ve added a parameter in your triggers. Now add it to your </span>
+            <span>function to use it in code: </span>
+            <button type="button"
+              className="button-raw type-monospace"
+              onClick={this.onClick.bind(this, detail)}
+            >{detail.name}</button>
+          </span>
+        );
+      } else {
+        return (
+          <span>
+            <span>You’ve added some parameters in your triggers. Now add them to your </span>
+            <span>function to use them in code: </span>
+              {this.props.details.map((detail, index) => (
+                <span key={`unusedParamName${index}`}>
+                  <button type="button"
+                    className="button-raw type-monospace"
+                    onClick={this.onClick.bind(this, detail)}
+                  >{detail.name}</button>
+                  <span>{index + 1 < numParams ? ", " : ""}</span>
+                </span>
+              ))}
+          </span>
+        );
+      }
+    },
+
+    getNotificationForParamsWithoutFunction: function() {
+      var paramNames = this.props.details.map((ea) => ea.name);
+      return (
+        <span>
+          <span>If your behavior is going to run code, the function can receive any </span>
+          <span>trigger fill-in-the-blanks as parameters. </span>
+          <button type="button"
+            className="button-raw"
+            onClick={this.onClick.bind(this, {
+              kind: "param_without_function",
+              paramNames: paramNames
+            })}
+          >Add code with parameters</button>
         </span>
       );
     },

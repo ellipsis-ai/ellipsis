@@ -13,9 +13,9 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import models._
-import models.accounts._
 import models.accounts.user.User
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.slack.SlackProvider
 import models.silhouette.EllipsisEnv
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
@@ -101,7 +101,7 @@ class SocialAuthController @Inject() (
             maybeBotProfile.get // Blow up if we can't get a bot profile
           }
           maybeSlackTeamId <- Future.successful(Some(maybeTeamId.getOrElse(profile.teamId)))
-          savedProfile <- models.run(SlackProfileQueries.save(profile))
+          savedProfile <- dataService.slackProfiles.save(profile)
           savedAuthInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
           linkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
             maybeExisting.map(Future.successful).getOrElse {
@@ -156,18 +156,18 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
-          teamId <- models.run(SlackBotProfileQueries.allForSlackTeamId(profile.teamId).map { botProfiles =>
+          teamId <- dataService.slackBotProfiles.allForSlackTeamId(profile.teamId).map { botProfiles =>
             botProfiles.head.teamId // Blow up if no bot profile
-          })
+          }
           result <- if (maybeTeamId.exists(t => t != teamId)) {
             Future.successful {
-              val redir = s"/oauth/authorize?client_id=${provider.settings.clientID}&redirect_url=${provider.settings.redirectURL}&scope=${provider.settings.authorizationParams.get("scope").get}"
+              val redir = s"/oauth/authorize?client_id=${provider.settings.clientID}&redirect_url=${provider.settings.redirectURL}&scope=${provider.settings.authorizationParams("scope")}"
               val url = s"https://slack.com/signin?redir=${URLEncoder.encode(redir, "UTF-8")}"
               Redirect(url)
             }
           } else {
             for {
-              savedProfile <- models.run(SlackProfileQueries.save(profile))
+              savedProfile <- dataService.slackProfiles.save(profile)
               loginInfo <- Future.successful(profile.loginInfo)
               savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
               maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, teamId)

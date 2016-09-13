@@ -3,12 +3,10 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models._
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
-import slick.dbio.DBIO
 import json.APITokenData
 import models.silhouette.EllipsisEnv
 import services.DataService
@@ -23,13 +21,8 @@ class APITokenController @Inject() (
                                      val dataService: DataService
                                    ) extends ReAuthable {
 
-  case class CreateAPITokenInfo(teamId: String, label: String)
-
   private val createAPITokenForm = Form(
-    mapping(
-      "teamId" -> nonEmptyText,
-      "label" -> nonEmptyText
-    )(CreateAPITokenInfo.apply)(CreateAPITokenInfo.unapply)
+    "label" -> nonEmptyText
   )
 
   def createToken  = silhouette.SecuredAction.async { implicit request =>
@@ -38,37 +31,21 @@ class APITokenController @Inject() (
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
-      info => {
-        val action = for {
-          teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, Some(info.teamId)))
-          maybeToken <- teamAccess.maybeTargetTeam.map { team =>
-            APITokenQueries.createFor(team, info.label).map(Some(_))
-          }.getOrElse(DBIO.successful(None))
-        } yield maybeToken.map { token =>
-            Redirect(routes.APITokenController.listTokens(Some(token.id)))
-          }.getOrElse {
-            NotFound("")
-          }
-
-        dataService.run(action)
+      label => {
+        dataService.apiTokens.createFor(user, label).map { token =>
+          Redirect(routes.APITokenController.listTokens(Some(token.id)))
+        }
       }
     )
   }
 
   def listTokens(maybeJustCreatedTokenId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, None))
-      tokens <- APITokenQueries.allFor(teamAccess.loggedInTeam)
-    } yield {
-        teamAccess.maybeTargetTeam.map { _ =>
-          Ok(views.html.api.listTokens(teamAccess, tokens.map(APITokenData.from), maybeJustCreatedTokenId))
-        }.getOrElse {
-          NotFound("")
-        }
-      }
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, None)
+      tokens <- dataService.apiTokens.allFor(user)
+    } yield Ok(views.html.api.listTokens(teamAccess, tokens.map(APITokenData.from), maybeJustCreatedTokenId))
 
-    dataService.run(action)
   }
 
   private val revokeApiTokenForm = Form(
@@ -82,19 +59,20 @@ class APITokenController @Inject() (
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       id => {
-        val action = for {
-          teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, None))
-          maybeToken <- APITokenQueries.find(id, teamAccess.loggedInTeam)
+        for {
+          maybeToken <- dataService.apiTokens.find(id)
           _ <- maybeToken.map { token =>
-            APITokenQueries.revoke(token, teamAccess.loggedInTeam)
-          }.getOrElse(DBIO.successful(Unit))
+            if (token.userId == user.id) {
+              dataService.apiTokens.revoke(token)
+            } else {
+              Future.successful(Unit)
+            }
+          }.getOrElse(Future.successful(Unit))
         } yield maybeToken.map { token =>
-            Redirect(routes.APITokenController.listTokens())
-          }.getOrElse {
-            NotFound("")
-          }
-
-        dataService.run(action)
+          Redirect(routes.APITokenController.listTokens())
+        }.getOrElse {
+          NotFound("")
+        }
       }
     )
   }

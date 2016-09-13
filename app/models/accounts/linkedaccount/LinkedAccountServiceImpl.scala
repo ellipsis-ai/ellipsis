@@ -4,7 +4,7 @@ import javax.inject._
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.{SlackProfileQueries, SlackProvider}
+import models.accounts.slack.SlackProvider
 import models.accounts.user.{User, UserQueries}
 import org.joda.time.DateTime
 import services.DataService
@@ -94,10 +94,9 @@ class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataServ
   }
 
   def isAdmin(linkedAccount: LinkedAccount): Future[Boolean] = {
-    val action = SlackProfileQueries.find(linkedAccount.loginInfo).map { maybeProfile =>
+    dataService.slackProfiles.find(linkedAccount.loginInfo).map { maybeProfile =>
       maybeProfile.map(_.teamId).contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
     }
-    dataService.run(action)
   }
 
 }

@@ -181,7 +181,7 @@ define(function(require) {
       if (knowledge.length > 0) {
         return (
           <div className="column-group">
-            <div className="column-row">
+            <div className="column-row type-bold">
               <div className="column column-expand ptxxl type-l pbs">What Ellipsis knows</div>
               <div className="column column-shrink type-label align-r pbs align-b">Last modified</div>
             </div>

@@ -8,16 +8,17 @@ import utils.QuestionAnswerExtractor
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
-  def result: DBIO[BehaviorResult] = {
-    for {
+  def result: Future[BehaviorResult] = {
+    val action = for {
       maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
       maybeUser <- maybeTeam.map { team =>
         DBIO.from(dataService.users.findFromMessageContext(messageContext, team))
       }.getOrElse(DBIO.successful(None))
-      messages <- messageContext.recentMessages(dataService)
+      messages <- DBIO.from(messageContext.recentMessages(dataService))
       qaExtractor <- DBIO.successful(QuestionAnswerExtractor(messages))
       maybeBehavior <- maybeTeam.map { team =>
         BehaviorQueries.createFor(team, None).map(Some(_))
@@ -34,14 +35,14 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
         }.map(Some(_)) transactionally
       }.getOrElse(DBIO.successful(None))
     } yield {
-      maybeBehaviorVersion.flatMap { behaviorVersion =>
-        behaviorVersion.editLinkFor(lambdaService.configuration).map { link =>
-          SimpleTextResult(s"OK, I compiled recent messages at $link")
-        }
+      maybeBehaviorVersion.map { behaviorVersion =>
+        val link = behaviorVersion.editLinkFor(lambdaService.configuration)
+        SimpleTextResult(s"OK, I compiled recent messages into [a new behavior]($link)")
       }.getOrElse{
         NoResponseResult(None)
       }
     }
+    dataService.run(action)
   }
 
 }

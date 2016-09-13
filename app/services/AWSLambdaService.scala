@@ -3,8 +3,9 @@ package services
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import models.bots.config.{AWSConfig, RequiredOAuth2ApiConfig}
 import models.bots.events.MessageEvent
-import models.{EnvironmentVariable, Models}
+import models.Models
 import models.bots.{BehaviorResult, BehaviorVersion, ParameterWithValue}
+import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
 
 import scala.concurrent.Future

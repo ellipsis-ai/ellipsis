@@ -44,7 +44,7 @@ trait MessageContext extends Context {
     """.stripMargin
   }
 
-  def recentMessages(dataService: DataService): DBIO[Seq[String]] = DBIO.successful(Seq())
+  def recentMessages(dataService: DataService): Future[Seq[String]] = Future.successful(Seq())
   def maybeOngoingConversation: DBIO[Option[Conversation]]
 
   val name: String
@@ -52,7 +52,7 @@ trait MessageContext extends Context {
   val teamId: String
   val isResponseExpected: Boolean
 
-  def userInfo(ws: WSClient, dataService: DataService): DBIO[UserInfo] = {
+  def userInfo(ws: WSClient, dataService: DataService): Future[UserInfo] = {
     UserInfo.forLoginInfo(LoginInfo(name, userIdForContext), teamId, ws, dataService)
   }
 

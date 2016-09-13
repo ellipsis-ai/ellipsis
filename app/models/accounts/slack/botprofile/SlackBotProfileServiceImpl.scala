@@ -1,14 +1,15 @@
-package models.accounts
+package models.accounts.slack.botprofile
 
-import models.team.Team
+import javax.inject.{Inject, Provider}
+
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import models.team.Team
 import org.joda.time.DateTime
 import services.DataService
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
-
-
-case class SlackBotProfile(userId: String, teamId: String, slackTeamId: String, token: String, createdAt: DateTime)
+import scala.concurrent.Future
 
 class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_bot_profiles") {
   def userId = column[String]("user_id", O.PrimaryKey)
@@ -21,31 +22,28 @@ class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_
 
 }
 
-object SlackBotProfileQueries {
+class SlackBotProfileServiceImpl @Inject() (
+                                          dataServiceProvider: Provider[DataService]
+                                        ) extends SlackBotProfileService {
+
+  def dataService = dataServiceProvider.get
+
   val all = TableQuery[SlackBotProfileTable]
+
+  def allProfiles: Future[Seq[SlackBotProfile]] = dataService.run(all.result)
 
   def uncompiledFindQuery(userId: Rep[String]) = {
     all.filter(_.userId === userId)
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def save(profile: SlackBotProfile): DBIO[SlackBotProfile] = {
-    val query = findQuery(profile.userId)
-    query.result.headOption.flatMap {
-      case Some(existing) => query.update(profile)
-      case None => all += profile
-    }.map { number =>
-      profile
-    }
-  }
-
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
     all.filter(_.teamId === teamId)
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
-  def allFor(team: Team): DBIO[Seq[SlackBotProfile]] = {
-    allForTeamQuery(team.id).result
+  def allFor(team: Team): Future[Seq[SlackBotProfile]] = {
+    dataService.run(allForTeamQuery(team.id).result)
   }
 
   def uncompiledAllForSlackTeamQuery(slackTeamId: Rep[String]) = {
@@ -53,8 +51,8 @@ object SlackBotProfileQueries {
   }
   val allForSlackTeamQuery = Compiled(uncompiledAllForSlackTeamQuery _)
 
-  def allForSlackTeamId(slackTeamId: String): DBIO[Seq[SlackBotProfile]] = {
-    allForSlackTeamQuery(slackTeamId).result
+  def allForSlackTeamId(slackTeamId: String): Future[Seq[SlackBotProfile]] = {
+    dataService.run(allForSlackTeamQuery(slackTeamId).result)
   }
 
   def uncompiledAllSinceQuery(when: Rep[DateTime]) = {
@@ -62,13 +60,13 @@ object SlackBotProfileQueries {
   }
   val allSinceQuery = Compiled(uncompiledAllSinceQuery _)
 
-  def allSince(when: DateTime): DBIO[Seq[SlackBotProfile]] = {
-    allSinceQuery(when).result
+  def allSince(when: DateTime): Future[Seq[SlackBotProfile]] = {
+    dataService.run(allSinceQuery(when).result)
   }
 
-  def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String, dataService: DataService): DBIO[SlackBotProfile] = {
+  def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile] = {
     val query = findQuery(userId)
-    query.result.headOption.flatMap {
+    val action = query.result.headOption.flatMap {
       case Some(existing) => {
         val profile = SlackBotProfile(userId, existing.teamId, slackTeamId, token, existing.createdAt)
         for {
@@ -84,6 +82,8 @@ object SlackBotProfileQueries {
         (all += newProfile).map { _ => newProfile }
       }
     }
+    dataService.run(action)
   }
+
 
 }

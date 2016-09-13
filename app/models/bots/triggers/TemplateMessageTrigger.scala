@@ -22,6 +22,8 @@ case class TemplateMessageTrigger(
     pattern = TemplateMessageTriggerUtils.escapeRegexCharactersIn(pattern)
     pattern = """\{.*?\}""".r.replaceAllIn(pattern, """(.+)""")
     pattern = """\s+""".r.replaceAllIn(pattern, """\\s+""")
+    pattern = """[“”\"]""".r.replaceAllIn(pattern, """[“”\"]""")
+    pattern = """[‘’']""".r.replaceAllIn(pattern, """[‘’']""")
     pattern = "^" ++ pattern
     if (!isCaseSensitive) {
       pattern = "(?i)" ++ pattern

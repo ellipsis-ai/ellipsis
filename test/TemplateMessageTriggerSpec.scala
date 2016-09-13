@@ -96,6 +96,26 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
       invocationParams mustBe Map("param0" -> "San Francisco")
     }
 
+    "be permissive with curly single quotes in messages" in {
+      val trigger = triggerFor("Single quotes are 'cool'")
+      matches(trigger, "Single quotes are ‘cool’") mustBe true
+    }
+
+    "be permissive with curly single quotes in triggers" in {
+      val trigger = triggerFor("Single quotes are ‘cool’")
+      matches(trigger, "Single quotes are 'cool'") mustBe true
+    }
+
+    "be permissive with curly double quotes in messages" in {
+      val trigger = triggerFor("Double quotes are \"cool\"")
+      matches(trigger, "Double quotes are “cool”") mustBe true
+    }
+
+    "be permissive with curly double quotes in triggers" in {
+      val trigger = triggerFor("Double quotes are “cool”")
+      matches(trigger, "Double quotes are \"cool\"") mustBe true
+    }
+
   }
 
 }

@@ -56,7 +56,7 @@ class BehaviorImportExportController @Inject() (
     )(ImportBehaviorZipInfo.apply)(ImportBehaviorZipInfo.unapply)
   )
 
-  def doImportZip = silhouette.SecuredAction.async { implicit request =>
+  def doImportZip() = silhouette.SecuredAction.async { implicit request =>
     (for {
       formData <- request.body.asMultipartFormData
       zipFile <- formData.file("zipFile")
@@ -69,7 +69,7 @@ class BehaviorImportExportController @Inject() (
           val action = for {
             maybeTeam <- DBIO.from(dataService.teams.find(info.teamId, request.identity))
             maybeImporter <- DBIO.successful(maybeTeam.map { team =>
-              BehaviorVersionZipImporter(team, request.identity, lambdaService, zipFile.ref.file)
+              BehaviorVersionZipImporter(team, request.identity, lambdaService, zipFile.ref.file, dataService)
             })
             maybeBehaviorVersion <- maybeImporter.map { importer =>
               importer.run.map(Some(_))
@@ -98,7 +98,7 @@ class BehaviorImportExportController @Inject() (
     )(ImportBehaviorInfo.apply)(ImportBehaviorInfo.unapply)
   )
 
-  def doImport = silhouette.SecuredAction.async { implicit request =>
+  def doImport() = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     importBehaviorForm.bindFromRequest.fold(
       formWithErrors => {
@@ -111,7 +111,7 @@ class BehaviorImportExportController @Inject() (
             val action = for {
               maybeTeam <- DBIO.from(dataService.teams.find(data.teamId, user))
               maybeImporter <- DBIO.successful(maybeTeam.map { team =>
-                BehaviorVersionImporter(team, user, lambdaService, data)
+                BehaviorVersionImporter(team, user, lambdaService, data, dataService)
               })
               maybeBehaviorVersion <- maybeImporter.map { importer =>
                 importer.run.map(Some(_))
