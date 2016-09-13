@@ -19,6 +19,12 @@ ul {
   }
 }
 
+.list-space-xl {
+  > li {
+    margin-bottom: @xl;
+  }
+}
+
 .checklist > li {
   transition: color 0.2s ease;
   list-style-type: circle;
@@ -62,17 +68,18 @@ ul {
 }
 
 .list-nav {
-  .list-space-l();
+  .list-space-xl();
 
   padding-left: 0;
 
   li {
     list-style-type: none;
+  }
+
+  .list-nav-active-item {
+    border-left: @xs solid @pink-medium;
+    margin-left: -@l;
     padding-left: @m;
   }
 }
 
-.list-nav-active-item {
-  border-left: @xs solid @pink-medium;
-  margin-left: -@xs;
-}
