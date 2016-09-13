@@ -86,4 +86,21 @@ case class MarkdownRenderer(
       }
     }
   }
+
+  def visit(conditional: Conditional): Unit = {
+    val dotString = conditional.condition.dotString
+    lookUp(Substitution(conditional.condition)) match {
+      case lookupResult: JsUndefined => stringBuilder.append(notFound(dotString))
+      case lookupResult: JsDefined => {
+        lookupResult.value match {
+          case bool: JsBoolean => {
+            if (bool.value) {
+              visit(conditional.body)
+            }
+          }
+          case nonBoolean => stringBuilder.append(s"**$dotString is not a boolean** (${nonBoolean.toString})")
+        }
+      }
+    }
+  }
 }
