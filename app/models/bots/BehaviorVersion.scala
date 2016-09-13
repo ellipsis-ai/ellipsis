@@ -66,9 +66,9 @@ case class BehaviorVersion(
   def isInDevelopmentMode: Boolean = true
 
   def isSkill: Boolean = {
-    maybeFunctionBody.map { body =>
-      Option(body).filter(_.trim.nonEmpty).isDefined
-    }.getOrElse(false)
+    maybeFunctionBody.exists { body =>
+      Option(body).exists(_.trim.nonEmpty)
+    }
   }
 
   def editLinkFor(configuration: Configuration): String = {

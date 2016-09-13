@@ -70,9 +70,10 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
         status(result) mustBe SEE_OTHER
         val expectedRedirectParam = routes.APIAccessController.linkCustomOAuth2Service(oauth2App.id, None, None, None).absoluteURL(secure = true)
         redirectLocation(result).map { redirectLocation =>
+          //noinspection UnitInMap
           redirectLocation must startWith(oauth2App.authorizationUrl)
         }.getOrElse {
-          assert(false, "Redirect location must contain authorization URL")
+          assert(condition=false, "Redirect location must contain authorization URL")
         }
         verify(dataService.oauth2Applications, times(1)).find(oauth2App.id)
       }

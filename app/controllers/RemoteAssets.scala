@@ -22,7 +22,7 @@ class RemoteAssets extends Controller {
     val action = Assets.versioned(path, file)
     action.apply(request).map { result =>
       val resultWithHeaders = result.asInstanceOf[ResultWithHeaders]
-      resultWithHeaders.withHeaders(DATE -> df.print({new java.util.Date}.getTime))
+      resultWithHeaders.withHeaders(DATE -> df.print((new java.util.Date).getTime))
     }
   }
 

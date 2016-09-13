@@ -14,6 +14,6 @@ trait SlackProfileService {
 
   def find(loginInfo: LoginInfo): Future[Option[SlackProfile]]
 
-  def deleteAll: Future[Unit]
+  def deleteAll(): Future[Unit]
 
 }

@@ -35,7 +35,7 @@ case class MarkdownRenderer(
     environment = environment.newWith(data)
   }
 
-  def pop: Unit = {
+  def pop(): Unit = {
     environment.maybeParent.foreach { parent =>
       environment = parent
     }

@@ -56,7 +56,7 @@ class BehaviorImportExportController @Inject() (
     )(ImportBehaviorZipInfo.apply)(ImportBehaviorZipInfo.unapply)
   )
 
-  def doImportZip = silhouette.SecuredAction.async { implicit request =>
+  def doImportZip() = silhouette.SecuredAction.async { implicit request =>
     (for {
       formData <- request.body.asMultipartFormData
       zipFile <- formData.file("zipFile")
@@ -98,7 +98,7 @@ class BehaviorImportExportController @Inject() (
     )(ImportBehaviorInfo.apply)(ImportBehaviorInfo.unapply)
   )
 
-  def doImport = silhouette.SecuredAction.async { implicit request =>
+  def doImport() = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     importBehaviorForm.bindFromRequest.fold(
       formWithErrors => {
