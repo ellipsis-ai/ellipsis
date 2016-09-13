@@ -35,7 +35,7 @@ case class MarkdownRenderer(
     environment = environment.newWith(data)
   }
 
-  def pop: Unit = {
+  def pop(): Unit = {
     environment.maybeParent.foreach { parent =>
       environment = parent
     }
@@ -78,7 +78,7 @@ case class MarkdownRenderer(
             arr.as[Seq[JsValue]].foreach { ea =>
               push(Map(iteration.item.name -> ea))
               visit(iteration.body)
-              pop
+              pop()
             }
           }
           case _ => stringBuilder.append(s"**${iteration.list.dotString} is not a list**")

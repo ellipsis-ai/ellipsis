@@ -1,7 +1,8 @@
-package models.bots
+package models
 
 import java.util
 
+import models.bots.CommonmarkVisitor
 import models.bots.templates.SlackRenderer
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension

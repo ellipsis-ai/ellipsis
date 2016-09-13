@@ -31,7 +31,7 @@ class SlackBotProfileActor @Inject() (
       val cutoff = nextCutoff
       nextCutoff = DateTime.now.minusSeconds(1)
       val startFuture = dataService.slackBotProfiles.allSince(cutoff).map { profiles =>
-        profiles.map { profile =>
+        profiles.foreach { profile =>
           slackService.startFor(profile)
         }
       }.map { _ => true }

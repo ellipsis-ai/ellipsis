@@ -36,7 +36,7 @@ case class BehaviorVersionExporter(
     writer.close()
   }
 
-  private def createZip: Unit = {
+  private def createZip(): Unit = {
     val path = Path(dirName)
     path.createDirectory()
 
@@ -50,7 +50,7 @@ case class BehaviorVersionExporter(
   }
 
   def getZipFile: File = {
-    createZip
+    createZip()
     new File(zipFileName)
   }
 

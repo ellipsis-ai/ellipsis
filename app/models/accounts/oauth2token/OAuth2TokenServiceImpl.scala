@@ -50,11 +50,9 @@ class OAuth2TokenServiceImpl @Inject() (
 
   def save(token: OAuth2Token): Future[OAuth2Token] = {
     val query = findByLoginInfoQuery(token.loginInfo.providerID, token.loginInfo.providerKey)
-    val action = query.result.headOption.flatMap { maybeToken =>
-      maybeToken match {
-        case Some(_) => query.update(token)
-        case None => tokens += token
-      }
+    val action = query.result.headOption.flatMap {
+      case Some(_) => query.update(token)
+      case None => tokens += token
     }.map { _ => token }
     dataService.run(action)
   }

@@ -161,7 +161,7 @@ class SocialAuthController @Inject() (
           }
           result <- if (maybeTeamId.exists(t => t != teamId)) {
             Future.successful {
-              val redir = s"/oauth/authorize?client_id=${provider.settings.clientID}&redirect_url=${provider.settings.redirectURL}&scope=${provider.settings.authorizationParams.get("scope").get}"
+              val redir = s"/oauth/authorize?client_id=${provider.settings.clientID}&redirect_url=${provider.settings.redirectURL}&scope=${provider.settings.authorizationParams("scope")}"
               val url = s"https://slack.com/signin?redir=${URLEncoder.encode(redir, "UTF-8")}"
               Redirect(url)
             }

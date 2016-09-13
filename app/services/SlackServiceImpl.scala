@@ -25,10 +25,10 @@ class SlackServiceImpl @Inject() (
 
   val clients = scala.collection.mutable.Map.empty[SlackBotProfile, SlackRtmClient]
 
-  start
+  start()
 
   appLifecycle.addStopHook { () =>
-    Future.successful(stop)
+    Future.successful(stop())
   }
 
   def stopFor(profile: SlackBotProfile): Unit = {
@@ -70,8 +70,8 @@ class SlackServiceImpl @Inject() (
 
   }
 
-  def start: Future[Any] = {
-    stop
+  def start(): Future[Any] = {
+    stop()
     dataService.slackBotProfiles.allProfiles.map { profiles =>
       profiles.foreach { profile =>
         startFor(profile)
@@ -79,9 +79,9 @@ class SlackServiceImpl @Inject() (
     }
   }
 
-  def stop = {
+  def stop() = {
     clients.clone().foreach { case(profile, client) =>
-      client.close
+      client.close()
       clients.remove(profile)
     }
   }

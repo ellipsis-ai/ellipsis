@@ -33,12 +33,10 @@ class SlackProfileServiceImpl @Inject() (
 
   def save(slackProfile: SlackProfile): Future[SlackProfile] = {
     val query = findSlackProfileQuery(slackProfile.loginInfo.providerID, slackProfile.loginInfo.providerKey)
-    val action = query.result.headOption.flatMap { maybeSlackProfile =>
-      maybeSlackProfile match {
-        case Some(_) => query.update(slackProfile)
-        case None => {
-          all += slackProfile
-        }
+    val action = query.result.headOption.flatMap {
+      case Some(_) => query.update(slackProfile)
+      case None => {
+        all += slackProfile
       }
     }.map { number =>
       slackProfile
@@ -57,7 +55,7 @@ class SlackProfileServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def deleteAll: Future[Unit] = {
+  def deleteAll(): Future[Unit] = {
     dataService.run(all.delete).map(_ => Unit)
   }
 

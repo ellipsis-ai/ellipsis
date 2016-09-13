@@ -16,13 +16,10 @@ class RemoteAssets extends Controller {
   private val df: DateTimeFormatter =
     DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss '"+timeZoneCode+"'").withLocale(java.util.Locale.ENGLISH).withZone(DateTimeZone.forID(timeZoneCode))
 
-  type ResultWithHeaders = Result { def withHeaders(headers: (String, String)*): Result }
-
   def getAsset(path: String, file: Asset): Action[AnyContent] = Action.async { request =>
     val action = Assets.versioned(path, file)
     action.apply(request).map { result =>
-      val resultWithHeaders = result.asInstanceOf[ResultWithHeaders]
-      resultWithHeaders.withHeaders(DATE -> df.print({new java.util.Date}.getTime))
+      result.withHeaders(DATE -> df.print((new java.util.Date).getTime))
     }
   }
 
