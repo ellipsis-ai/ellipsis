@@ -70,3 +70,11 @@ case class Iteration(item: Identifier, list: Path, body: Block) extends Expr {
   }
 
 }
+
+case class Conditional(condition: Path, body: Block) extends Expr {
+
+  override def accept(visitor: MarkdownRenderer): Unit = {
+    visitor.visit(this)
+  }
+
+}

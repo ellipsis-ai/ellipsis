@@ -154,6 +154,66 @@ class TemplateApplierSpec extends PlaySpec {
       applier.apply.trim mustBe "**list.second not found**"
     }
 
+    "apply for a true conditional" in {
+      val resultJson = Json.toJson(Map("shouldDisplay" -> true))
+      val applier = TemplateApplier(Some(
+        """{if successResult.shouldDisplay}
+          |displayed
+          |{endif}
+        """.stripMargin), JsDefined(resultJson))
+      applier.apply.trim mustBe "displayed"
+    }
+
+    "apply for a false conditional" in {
+      val resultJson = Json.toJson(Map("shouldDisplay" -> false))
+      val applier = TemplateApplier(Some(
+        """{if successResult.shouldDisplay}
+          |displayed
+          |{endif}
+        """.stripMargin), JsDefined(resultJson))
+      applier.apply.trim mustBe ""
+    }
+
+    "handle non-boolean condition" in {
+      val resultJson = Json.toJson(Map("shouldDisplay" -> "non-boolean"))
+      val applier = TemplateApplier(Some(
+        """{if successResult.shouldDisplay}
+          |displayed
+          |{endif}
+        """.stripMargin), JsDefined(resultJson))
+      applier.apply.trim mustBe """**successResult.shouldDisplay is not a boolean** ("non-boolean")"""
+    }
+
+    "apply for nested true conditionals" in {
+      val resultJson = Json.toJson(Map("isHighEnough" -> true, "shouldDisplay" -> true))
+      val applier = TemplateApplier(Some(
+        """{if successResult.shouldDisplay}
+          |displayed
+          |{if successResult.isHighEnough}
+          |and high enough
+          |{endif}
+          |{endif}
+        """.stripMargin), JsDefined(resultJson))
+      applier.apply.trim mustBe "displayed\nand high enough"
+    }
+
+    "apply for conditional in iteration" in {
+      val result = Json.parse(
+        """{ "numbers": [
+          |{ "number": 1, "isEven": false },
+          |{ "number": 2, "isEven": true },
+          |{ "number": 3, "isEven": false },
+          |{ "number": 4, "isEven": true }
+          ] }""".stripMargin)
+      val applier = TemplateApplier(Some(
+        """{for ea in successResult.numbers}
+          |{if ea.isEven}{ea.number} is even{endif}
+          |{endfor}
+        """.stripMargin), JsDefined(result))
+
+      applier.apply.trim mustBe "2 is even\n\n\n\n4 is even"
+    }
+
   }
 
 }
