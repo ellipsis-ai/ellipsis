@@ -115,11 +115,9 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   def save(token: LinkedOAuth2Token): Future[LinkedOAuth2Token] = {
     val query = findQuery(token.userId, token.application.id)
     val raw = token.toRaw
-    val action = query.result.headOption.flatMap { maybeToken =>
-      maybeToken match {
-        case Some(_) => query.update(raw)
-        case None => all += raw
-      }
+    val action = query.result.headOption.flatMap {
+      case Some(_) => query.update(raw)
+      case None => all += raw
     }.map { _ => token }
     dataService.run(action)
   }

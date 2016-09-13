@@ -72,7 +72,7 @@ class APIController @Inject() (
             DBIO.from(dataService.teams.find(user.teamId))
           }.getOrElse(DBIO.successful(None))
           maybeBotProfile <- maybeTeam.map { team =>
-            SlackBotProfileQueries.allFor(team).map(_.headOption)
+            DBIO.from(dataService.slackBotProfiles.allFor(team)).map(_.headOption)
           }.getOrElse(DBIO.successful(None))
           maybeSlackClient <- DBIO.successful(maybeBotProfile.flatMap { botProfile =>
             slackService.clients.get(botProfile)

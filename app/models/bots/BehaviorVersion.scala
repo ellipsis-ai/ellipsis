@@ -66,16 +66,15 @@ case class BehaviorVersion(
   def isInDevelopmentMode: Boolean = true
 
   def isSkill: Boolean = {
-    maybeFunctionBody.map { body =>
-      Option(body).filter(_.trim.nonEmpty).isDefined
-    }.getOrElse(false)
+    maybeFunctionBody.exists { body =>
+      Option(body).exists(_.trim.nonEmpty)
+    }
   }
 
-  def editLinkFor(configuration: Configuration): Option[String] = {
-    configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.BehaviorEditorController.edit(behavior.id)
-      s"$baseUrl$path"
-    }
+  def editLinkFor(configuration: Configuration): String = {
+    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val path = controllers.routes.BehaviorEditorController.edit(behavior.id)
+    s"$baseUrl$path"
   }
 
   def description: String = maybeDescription.getOrElse("")
@@ -155,7 +154,12 @@ case class BehaviorVersion(
     }.isDefined
   }
 
-  def resultFor(payload: ByteBuffer, logResult: AWSLambdaLogResult, parametersWithValues: Seq[ParameterWithValue]): BehaviorResult = {
+  def resultFor(
+                 payload: ByteBuffer,
+                 logResult: AWSLambdaLogResult,
+                 parametersWithValues: Seq[ParameterWithValue],
+                 configuration: Configuration
+               ): BehaviorResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
@@ -167,13 +171,13 @@ case class BehaviorVersion(
         NoResponseResult(logResultOption)
       } else {
         if (isUnhandledError(json)) {
-          UnhandledErrorResult(logResultOption)
+          UnhandledErrorResult(this, configuration, logResultOption)
         } else if (json.toString == "null") {
-          new NoCallbackTriggeredResult()
+          NoCallbackTriggeredResult(this, configuration)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(json, logResultOption)
+          SyntaxErrorResult(this, configuration, json, logResultOption)
         } else {
-          HandledErrorResult(json, logResultOption)
+          HandledErrorResult(this, configuration, json, logResultOption)
         }
       }
     }
@@ -350,7 +354,7 @@ object BehaviorVersionQueries {
 
   import services.AWSLambdaConstants._
 
-  def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == ON_SUCCESS_PARAM || ea == ON_ERROR_PARAM || ea == CONTEXT_PARAM)
+  def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == CONTEXT_PARAM)
 
   val functionBodyRegex = """(?s)^\s*function\s*\([^\)]*\)\s*\{(.*)\}$""".r
 

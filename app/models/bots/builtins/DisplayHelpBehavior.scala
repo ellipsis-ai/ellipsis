@@ -46,10 +46,8 @@ case class DisplayHelpBehavior(
             s""
 
         val triggersString = namedTriggers + regexTriggerString
-        val editLink = behavior.editLinkFor(lambdaService.configuration).map { link =>
-          s"[Details]($link)"
-        }.getOrElse("")
-        s"\n- $triggersString $editLink"
+        val link = behavior.editLinkFor(lambdaService.configuration)
+        s"\n- $triggersString [Details]($link)"
       }
       if (behaviorStrings.isEmpty) {
         ""

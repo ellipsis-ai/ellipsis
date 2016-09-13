@@ -3,10 +3,8 @@ package actors
 import javax.inject.Inject
 
 import akka.actor.Actor
-import models.Models
-import models.accounts.SlackBotProfileQueries
 import org.joda.time.DateTime
-import services.SlackService
+import services.{DataService, SlackService}
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,7 +13,10 @@ object SlackBotProfileActor {
   final val name = "slack-bot-profiles"
 }
 
-class SlackBotProfileActor @Inject() (val models: Models, val slackService: SlackService) extends Actor {
+class SlackBotProfileActor @Inject() (
+                                       val dataService: DataService,
+                                       val slackService: SlackService
+                                     ) extends Actor {
 
   val tick = context.system.scheduler.schedule(Duration.Zero, 10 seconds, self, "tick")
 
@@ -29,13 +30,12 @@ class SlackBotProfileActor @Inject() (val models: Models, val slackService: Slac
     case "tick" => {
       val cutoff = nextCutoff
       nextCutoff = DateTime.now.minusSeconds(1)
-      val action = SlackBotProfileQueries.allSince(cutoff).map { profiles =>
-        profiles.map { profile =>
+      val startFuture = dataService.slackBotProfiles.allSince(cutoff).map { profiles =>
+        profiles.foreach { profile =>
           slackService.startFor(profile)
         }
       }.map { _ => true }
-
-      models.runNow(action)
+      dataService.runNow(startFuture)
     }
   }
 }

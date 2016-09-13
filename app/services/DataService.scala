@@ -6,6 +6,7 @@ import models.accounts.logintoken.LoginTokenService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
+import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
@@ -29,8 +30,10 @@ trait DataService {
   val oauth2Apis: OAuth2ApiService
   val oauth2Applications: OAuth2ApplicationService
   val slackProfiles: SlackProfileService
+  val slackBotProfiles: SlackBotProfileService
   val oauth2Tokens: OAuth2TokenService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T
+  def runNow[T](future: Future[T]): T
 }

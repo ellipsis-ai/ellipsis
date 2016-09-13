@@ -33,6 +33,10 @@ class Models @Inject() (appLifecycle: ApplicationLifecycle) {
   }
 
   def runNow[T](action: DBIO[T]): T = {
-    Await.result(run(action), 30.seconds)
+    runNow(run(action))
+  }
+
+  def runNow[T](future: Future[T]): T = {
+    Await.result(future, 30.seconds)
   }
 }

@@ -5,7 +5,7 @@ import com.mohiva.play.silhouette.api.crypto.{Base64AuthenticatorEncoder, Cookie
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.test.FakeEnvironment
-import mocks.MockDataService
+import mocks.{MockDataService, MockSlackService}
 import models.IDs
 import models.accounts.user.User
 import models.silhouette.EllipsisEnv
@@ -19,7 +19,7 @@ import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.filters.csrf.CSRF.TokenProvider
 import play.filters.csrf.CSRFConfig
-import services.DataService
+import services.{DataService, SlackService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -47,6 +47,7 @@ trait ControllerTestContext extends MustMatchers {
   def assertJustLoggedOut(app: Application, result: Future[Result]): Unit = {
     val authenticatorCookieName = app.configuration.getString("silhouette.authenticator.cookieName").get
     cookies(result).get(authenticatorCookieName).map { cookie =>
+      //noinspection UnitInMap
       cookie.value must have length(0)
     }.getOrElse(assert(false, "Authenticator cookie must be present and empty"))
   }
@@ -55,6 +56,7 @@ trait ControllerTestContext extends MustMatchers {
 
   def newAppFor(testSilhouetteModule: TestSilhouetteModule): Application = {
     GuiceApplicationBuilder().
+      overrides(bind[SlackService].to[MockSlackService]).
       overrides(bind[DataService].to[MockDataService]).
       disable[SilhouetteModule].
       disable[ActorModule].

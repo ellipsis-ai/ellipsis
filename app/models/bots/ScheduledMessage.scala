@@ -1,13 +1,13 @@
 package models.bots
 
 import models.IDs
-import models.accounts.{SlackBotProfile, SlackBotProfileQueries}
 import models.team.{Team, TeamQueries}
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalTime}
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.bots.events.{SlackMessageContext, SlackMessageEvent}
-import services.SlackService
+import services.{DataService, SlackService}
 import slack.models.Message
 import slack.rtm.SlackRtmClient
 import slick.driver.PostgresDriver.api._
@@ -72,8 +72,8 @@ case class ScheduledMessage(
      """.stripMargin
   }
 
-  def botProfile: DBIO[Option[SlackBotProfile]] = {
-    SlackBotProfileQueries.allFor(team).map(_.headOption)
+  def botProfile(dataService: DataService): DBIO[Option[SlackBotProfile]] = {
+    DBIO.from(dataService.slackBotProfiles.allFor(team)).map(_.headOption)
   }
 
   // TODO: don't be slack-specific

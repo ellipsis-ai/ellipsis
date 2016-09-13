@@ -9,6 +9,7 @@ import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.slack.profile.SlackProfileService
 import models.accounts.oauth2token.OAuth2TokenService
+import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.environmentvariable.EnvironmentVariableService
@@ -34,9 +35,12 @@ class MockDataService extends DataService with MockitoSugar {
   val oauth2Apis = mock[OAuth2ApiService]
   val oauth2Applications = mock[OAuth2ApplicationService]
   val slackProfiles = mock[SlackProfileService]
+  val slackBotProfiles = mock[SlackBotProfileService]
   val oauth2Tokens = mock[OAuth2TokenService]
 
-  def run[T](action: DBIO[T]): Future[T] = throw new Exception("Don't call me")
-  def runNow[T](action: DBIO[T]): T = throw new Exception("Don't call me")
+  private def dontCallMe = throw new Exception("Don't call me")
 
+  def run[T](action: DBIO[T]): Future[T] = dontCallMe
+  def runNow[T](action: DBIO[T]): T = dontCallMe
+  def runNow[T](future: Future[T]): T = dontCallMe
 }

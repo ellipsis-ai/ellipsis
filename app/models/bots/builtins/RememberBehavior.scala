@@ -35,10 +35,9 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
         }.map(Some(_)) transactionally
       }.getOrElse(DBIO.successful(None))
     } yield {
-      maybeBehaviorVersion.flatMap { behaviorVersion =>
-        behaviorVersion.editLinkFor(lambdaService.configuration).map { link =>
-          SimpleTextResult(s"OK, I compiled recent messages at $link")
-        }
+      maybeBehaviorVersion.map { behaviorVersion =>
+        val link = behaviorVersion.editLinkFor(lambdaService.configuration)
+        SimpleTextResult(s"OK, I compiled recent messages into [a new behavior]($link)")
       }.getOrElse{
         NoResponseResult(None)
       }

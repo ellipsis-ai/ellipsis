@@ -1,7 +1,7 @@
 package models.bots.events
 
-import models.accounts.SlackBotProfile
-import models.bots.SlackMessageFormatter
+import models.SlackMessageFormatter
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.bots.conversations.Conversation
 import slack.rtm.SlackRtmClient
 import slick.driver.PostgresDriver.api._
