@@ -26,7 +26,8 @@ var React = require('react'),
   Collapsible = require('../collapsible'),
   CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
   BrowserUtils = require('../browser_utils'),
-  ImmutableObjectUtils = require('../immutable_object_utils');
+  ImmutableObjectUtils = require('../immutable_object_utils'),
+  debounce = require('javascript-debounce');
   require('codemirror/mode/markdown/markdown');
   require('whatwg-fetch');
 
@@ -147,12 +148,16 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('functionBody') || "";
     } else {
-      return this.props.functionBody;
+      return this.props.functionBody || "";
     }
   },
 
   getBehaviorParams: function() {
-    return this.getBehaviorProp('params') || [];
+    if (this.state) {
+      return this.getBehaviorProp('params') || [];
+    } else {
+      return this.props.params || [];
+    }
   },
 
   getBehaviorProp: function(key) {
@@ -179,7 +184,11 @@ return React.createClass({
   },
 
   getBehaviorTriggers: function() {
-    return this.getBehaviorProp('triggers');
+    if (this.state) {
+      return this.getBehaviorProp('triggers') || [];
+    } else {
+      return this.props.triggers || [];
+    }
   },
 
   getBehaviorConfig: function() {
@@ -313,9 +322,41 @@ return React.createClass({
     return notifications;
   },
 
+  buildParamNotifications: function() {
+    var triggerParamObj = {};
+    this.getBehaviorTriggers().forEach((ea) => {
+      if (!ea.isRegex) {
+        var matches = ea.text.match(/\{.+?\}/g) || [];
+        matches.forEach((paramName) => {
+          var rawName = paramName.replace(/^\{|\}$/g, '');
+          triggerParamObj[rawName] = true;
+        });
+      }
+    });
+    this.getBehaviorParams().forEach((codeParam) => {
+      delete triggerParamObj[codeParam.name];
+    });
+    var triggerParamNames = Object.keys(triggerParamObj);
+    if (this.hasCode() || this.state && this.state.revealCodeEditor) {
+      return triggerParamNames.map((name) => ({
+        kind: "param_not_in_function",
+        name: name
+      }));
+    } else {
+      return triggerParamNames.map((name) => ({
+        kind: "param_without_function",
+        name: name
+      }));
+    }
+  },
+
   buildNotifications: function() {
     var serverNotifications = this.props.notifications || [];
-    var allNotifications = serverNotifications.concat(this.buildEnvVarNotifications(), this.buildOAuthApplicationNotifications());
+    var allNotifications = serverNotifications.concat(
+      this.buildEnvVarNotifications(),
+      this.buildOAuthApplicationNotifications(),
+      this.buildParamNotifications()
+    );
 
     var notifications = {};
     allNotifications.forEach(function(notification) {
@@ -461,6 +502,14 @@ return React.createClass({
     this.setBehaviorProp('params', newParams, this.focusOnLastParam);
   },
 
+  addParams: function(newParamNames) {
+    var newParams = this.getBehaviorParams().concat(newParamNames.map((name) => ({
+      name: name,
+      question: ''
+    })));
+    this.setBehaviorProp('params', newParams);
+  },
+
   addTrigger: function(callback) {
     this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), callback);
   },
@@ -594,8 +643,18 @@ return React.createClass({
   },
 
   onNotificationClick: function(notificationDetail) {
-    if (notificationDetail && notificationDetail.kind === 'env_var_not_defined') {
+    if (!notificationDetail) {
+      return;
+    }
+    if (notificationDetail.kind === 'env_var_not_defined') {
       this.showEnvVariableSetter(notificationDetail);
+    } else if (notificationDetail.kind === 'param_without_function') {
+      this.addParams(notificationDetail.paramNames);
+      if (!this.state.revealCodeEditor) {
+        this.toggleCodeEditor();
+      }
+    } else if (notificationDetail.kind === 'param_not_in_function') {
+      this.addParams([notificationDetail.name]);
     }
   },
 
@@ -656,7 +715,12 @@ return React.createClass({
       behavior: newBehavior,
       versions: newVersions,
       justSaved: false
-    }, callback);
+    }, () => {
+      if (callback) {
+        callback();
+      }
+      this.resetNotifications();
+    });
   },
 
   setConfigProperty: function(property, value, callback) {
@@ -721,11 +785,7 @@ return React.createClass({
   },
 
   toggleAWSConfig: function() {
-    this.setConfigProperty(
-      'aws',
-      this.getAWSConfig() ? undefined : {},
-      this.resetNotifications
-    );
+    this.setConfigProperty('aws', this.getAWSConfig() ? undefined : {});
   },
 
   toggleAWSHelp: function() {
@@ -739,7 +799,7 @@ return React.createClass({
   toggleCodeEditor: function() {
     this.setState({
       revealCodeEditor: !this.state.revealCodeEditor
-    });
+    }, this.resetNotifications);
   },
 
   toggleCodeEditorLineWrapping: function() {
@@ -841,7 +901,7 @@ return React.createClass({
   },
 
   undoChanges: function() {
-    var newBehavior = this.getInitialState().behavior;
+    var newBehavior = this.getInitialBehavior();
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     this.setState({
@@ -914,7 +974,7 @@ return React.createClass({
   },
 
   isModified: function() {
-    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialState().behavior);
+    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialBehavior());
     var previewingVersions = this.getActivePanel() === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
   },
@@ -1039,14 +1099,14 @@ return React.createClass({
       apiId: appToAdd.apiId,
       application: appToAdd
     });
-    this.setConfigProperty('requiredOAuth2ApiConfigs', configs.concat([toAdd]), this.resetNotifications);
+    this.setConfigProperty('requiredOAuth2ApiConfigs', configs.concat([toAdd]));
   },
 
   onRemoveOAuth2Application: function(appToRemove) {
     var existing = this.getRequiredOAuth2ApiConfigs();
     this.setConfigProperty('requiredOAuth2ApiConfigs', existing.filter(function(config) {
       return config.application && config.application.applicationId !== appToRemove.applicationId;
-    }), this.resetNotifications);
+    }));
   },
 
   onNewOAuth2Application: function(requiredOAuth2ApiConfigId) {
@@ -1064,7 +1124,7 @@ return React.createClass({
     }
   },
 
-  resetNotifications: function() {
+  resetNotificationsImmediately: function() {
     var newNotifications = this.buildNotifications();
     var newKinds = newNotifications.map(ea => ea.kind);
     var visibleAndUnneeded = (notification) => !notification.hidden && !newKinds.some(kind => kind === notification.kind);
@@ -1075,6 +1135,10 @@ return React.createClass({
     });
   },
 
+  resetNotifications: debounce(function() {
+    this.resetNotificationsImmediately();
+  }, 250),
+
     /* Component API methods */
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
@@ -1082,8 +1146,8 @@ return React.createClass({
     window.document.addEventListener('focus', this.handleModalFocus, true);
   },
 
-  getInitialState: function() {
-    var initialBehavior = {
+  getInitialBehavior: function() {
+    return {
       teamId: this.props.teamId,
       behaviorId: this.props.behaviorId,
       functionBody: this.props.functionBody,
@@ -1093,6 +1157,10 @@ return React.createClass({
       config: this.props.config,
       knownEnvVarsUsed: this.props.knownEnvVarsUsed
     };
+  },
+
+  getInitialState: function() {
+    var initialBehavior = this.getInitialBehavior();
     return {
       behavior: initialBehavior,
       activeDropdown: null,
