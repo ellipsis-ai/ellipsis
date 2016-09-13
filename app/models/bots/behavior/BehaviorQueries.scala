@@ -30,7 +30,7 @@ object BehaviorQueries {
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
-  def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
-  val findQueryFor = Compiled(uncompiledFindQueryFor _)
+  def uncompiledFindRawQuery(id: Rep[String]) = all.filter(_.id === id)
+  val findRawQueryFor = Compiled(uncompiledFindRawQuery _)
 
 }

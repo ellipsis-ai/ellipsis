@@ -81,7 +81,7 @@ class BehaviorServiceImpl @Inject() (
   }
 
   def delete(behavior: Behavior): Future[Behavior] = {
-    dataService.run(findQueryFor(behavior.id).delete.map(_ => behavior))
+    dataService.run(findRawQueryFor(behavior.id).delete.map(_ => behavior))
   }
 
   def maybeCurrentVersionFor(behavior: Behavior): Future[Option[BehaviorVersion]] = {
