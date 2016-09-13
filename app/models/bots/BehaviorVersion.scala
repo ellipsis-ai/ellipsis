@@ -10,6 +10,7 @@ import models.bots.config.{AWSConfig, AWSConfigQueries, RequiredOAuth2ApiConfigQ
 import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTriggerQueries
 import models.IDs
+import models.bots.behavior.{Behavior, BehaviorQueries, RawBehavior}
 import models.environmentvariable.EnvironmentVariable
 import models.team.Team
 import org.commonmark.node.{AbstractVisitor, Image}

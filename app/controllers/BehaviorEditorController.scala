@@ -145,10 +145,10 @@ class BehaviorEditorController @Inject() (
             val action = (for {
               teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, Some(data.teamId)))
               maybeBehavior <- data.behaviorId.map { behaviorId =>
-                BehaviorQueries.find(behaviorId, user, dataService)
+                DBIO.from(dataService.behaviors.find(behaviorId, user))
               }.getOrElse {
                 teamAccess.maybeTargetTeam.map { team =>
-                  BehaviorQueries.createFor(team, None).map(Some(_))
+                  DBIO.from(dataService.behaviors.createFor(team, None)).map(Some(_))
                 }.getOrElse(DBIO.successful(None))
               }
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
@@ -199,14 +199,12 @@ class BehaviorEditorController @Inject() (
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       behaviorId => {
-        val action = for {
-          maybeBehavior <- BehaviorQueries.find(behaviorId, request.identity, dataService)
+        for {
+          maybeBehavior <- dataService.behaviors.find(behaviorId, request.identity)
           _ <- maybeBehavior.map { behavior =>
-            behavior.unlearn(lambdaService)
-          }.getOrElse(DBIO.successful(Unit))
+            dataService.behaviors.unlearn(behavior)
+          }.getOrElse(Future.successful(Unit))
         } yield Redirect(routes.ApplicationController.index())
-
-        dataService.run(action)
       }
     )
   }
@@ -214,7 +212,7 @@ class BehaviorEditorController @Inject() (
   def versionInfoFor(behaviorId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val action = for {
-      maybeBehavior <- BehaviorQueries.find(behaviorId, user, dataService)
+      maybeBehavior <- DBIO.from(dataService.behaviors.find(behaviorId, user))
       versions <- maybeBehavior.map { behavior =>
         BehaviorVersionQueries.allFor(behavior)
       }.getOrElse(DBIO.successful(Seq()))
@@ -296,9 +294,9 @@ class BehaviorEditorController @Inject() (
       },
       info => {
         val action = for {
-          maybeBehavior <- BehaviorQueries.find(info.behaviorId, user, dataService)
+          maybeBehavior <- DBIO.from(dataService.behaviors.find(info.behaviorId, user))
           maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-            behavior.maybeCurrentVersion
+            DBIO.from(dataService.behaviors.maybeCurrentVersionFor(behavior))
           }.getOrElse(DBIO.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
             val context = TestMessageContext(info.message, includesBotMention = true)

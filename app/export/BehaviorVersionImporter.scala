@@ -3,7 +3,7 @@ package export
 import json.BehaviorVersionData
 import models.team.Team
 import models.accounts.user.User
-import models.bots.{BehaviorQueries, BehaviorVersion, BehaviorVersionQueries}
+import models.bots.{BehaviorVersion, BehaviorVersionQueries}
 import services.{AWSLambdaService, DataService}
 import slick.dbio.DBIO
 
@@ -19,7 +19,7 @@ case class BehaviorVersionImporter(
 
   def run: DBIO[BehaviorVersion] = {
     for {
-      behavior <- BehaviorQueries.createFor(team, data.config.publishedId)
+      behavior <- DBIO.from(dataService.behaviors.createFor(team, data.config.publishedId))
       version <- BehaviorVersionQueries.createFor(behavior, Some(user), lambdaService, data, dataService)
     } yield version
 

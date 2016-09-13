@@ -2,6 +2,7 @@ package models.bots
 
 import models.accounts.user.User
 import models.IDs
+import models.bots.behavior.RawBehavior
 import models.team.Team
 import slick.driver.PostgresDriver.api._
 

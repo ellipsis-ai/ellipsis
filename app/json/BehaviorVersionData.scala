@@ -4,7 +4,7 @@ import models.team.Team
 import models.accounts.user.User
 import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
-import models.bots.{BehaviorParameterQueries, BehaviorQueries, BehaviorVersionQueries}
+import models.bots.{BehaviorParameterQueries, BehaviorVersionQueries}
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import slick.dbio.DBIO
@@ -94,9 +94,9 @@ object BehaviorVersionData {
 
   def maybeFor(behaviorId: String, user: User, dataService: DataService, maybePublishedId: Option[String] = None): DBIO[Option[BehaviorVersionData]] = {
     for {
-      maybeBehavior <- BehaviorQueries.find(behaviorId, user, dataService)
+      maybeBehavior <- DBIO.from(dataService.behaviors.find(behaviorId, user))
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        behavior.maybeCurrentVersion
+        DBIO.from(dataService.behaviors.maybeCurrentVersionFor(behavior))
       }.getOrElse(DBIO.successful(None))
       maybeParameters <- maybeBehaviorVersion.map { behaviorVersion =>
         BehaviorParameterQueries.allFor(behaviorVersion).map(Some(_))
