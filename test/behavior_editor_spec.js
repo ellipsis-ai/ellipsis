@@ -274,7 +274,7 @@ describe('BehaviorEditor', () => {
     });
   });
 
-  describe('resetNotifications', () => {
+  describe('resetNotificationsImmediately', () => {
     const newNotifications = [{
       kind: "a", details: "new"
     }, {
@@ -292,7 +292,7 @@ describe('BehaviorEditor', () => {
       editor.buildNotifications = jest.fn(() => newNotifications);
       editor.getNotifications = jest.fn(() => oldNotifications);
       editor.setState = jest.fn();
-      editor.resetNotifications();
+      editor.resetNotificationsImmediately();
       expect(editor.setState).toBeCalledWith({
         notifications: [{
           kind: "a", details: "new"

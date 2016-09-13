@@ -1124,7 +1124,7 @@ return React.createClass({
     }
   },
 
-  resetNotifications: debounce(function() {
+  resetNotificationsImmediately: function() {
     var newNotifications = this.buildNotifications();
     var newKinds = newNotifications.map(ea => ea.kind);
     var visibleAndUnneeded = (notification) => !notification.hidden && !newKinds.some(kind => kind === notification.kind);
@@ -1133,6 +1133,10 @@ return React.createClass({
     this.setState({
       notifications: newNotifications.concat(notificationsToHide)
     });
+  },
+
+  resetNotifications: debounce(function() {
+    this.resetNotificationsImmediately();
   }, 250),
 
     /* Component API methods */
