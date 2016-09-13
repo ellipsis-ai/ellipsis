@@ -901,7 +901,7 @@ return React.createClass({
   },
 
   undoChanges: function() {
-    var newBehavior = this.getInitialState().behavior;
+    var newBehavior = this.getInitialBehavior();
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     this.setState({
