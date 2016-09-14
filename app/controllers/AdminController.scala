@@ -35,30 +35,26 @@ class AdminController @Inject() (
 
   def lambdaFunctions() = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
-      val action = for {
-        allFunctionNames <- DBIO.from(lambdaService.listFunctionNames)
-        currentVersionIdsWithFunction <- BehaviorVersionQueries.currentIdsWithFunction
+      for {
+        allFunctionNames <- lambdaService.listFunctionNames
+        currentVersionIdsWithFunction <- dataService.behaviorVersions.currentIdsWithFunction
       } yield {
         val missing = currentVersionIdsWithFunction.diff(allFunctionNames)
         val current = currentVersionIdsWithFunction.intersect(allFunctionNames)
         val obsolete = allFunctionNames.diff(currentVersionIdsWithFunction)
         Ok(views.html.admin.listLambdaFunctions(missing, current, obsolete))
       }
-
-      dataService.run(action)
     })
   }
 
   def redeploy(versionId: String) = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
-      val action = for {
-        maybeBehaviorVersion <- BehaviorVersionQueries.findWithoutAccessCheck(versionId)
+      for {
+        maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(versionId)
         _ <- maybeBehaviorVersion.map { version =>
-          version.redeploy(lambdaService, dataService)
-        }.getOrElse(DBIO.successful(Unit))
+          dataService.behaviorVersions.redeploy(version)
+        }.getOrElse(Future.successful(Unit))
       } yield Redirect(routes.AdminController.lambdaFunctions())
-
-      dataService.run(action)
     })
   }
 

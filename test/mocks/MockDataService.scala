@@ -13,6 +13,7 @@ import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.bots.behavior.BehaviorService
+import models.bots.behaviorversion.BehaviorVersionService
 import models.environmentvariable.EnvironmentVariableService
 import models.invocationtoken.InvocationTokenService
 import models.team.TeamService
@@ -39,6 +40,7 @@ class MockDataService extends DataService with MockitoSugar {
   val slackBotProfiles = mock[SlackBotProfileService]
   val oauth2Tokens = mock[OAuth2TokenService]
   val behaviors = mock[BehaviorService]
+  val behaviorVersions = mock[BehaviorVersionService]
 
   private def dontCallMe = throw new Exception("Don't call me")
 

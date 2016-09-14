@@ -4,7 +4,7 @@ import json.RequiredOAuth2ApiConfigData
 import models.IDs
 import models.accounts.oauth2api.{OAuth2Api, OAuth2ApiQueries}
 import models.accounts.oauth2application.{OAuth2Application, OAuth2ApplicationQueries}
-import models.bots.{BehaviorVersion, BehaviorVersionQueries}
+import models.bots.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import services.DataService
 import slick.driver.PostgresDriver.api._
 

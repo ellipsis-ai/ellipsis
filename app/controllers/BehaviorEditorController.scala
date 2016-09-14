@@ -58,7 +58,8 @@ class BehaviorEditorController @Inject() (
           BehaviorConfig(None, None, None),
           None,
           None,
-          None
+          None,
+          dataService
         )
         DBIO.successful(Ok(views.html.edit(
           teamAccess,
@@ -152,7 +153,7 @@ class BehaviorEditorController @Inject() (
                 }.getOrElse(DBIO.successful(None))
               }
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-                BehaviorVersionQueries.createFor(behavior, Some(user), lambdaService, data, dataService).map(Some(_))
+                DBIO.from(dataService.behaviorVersions.createFor(behavior, Some(user), data)).map(Some(_))
               }.getOrElse(DBIO.successful(None))
               maybePreviousRequiredOAuth2ApiConfig <- info.maybeRequiredOAuth2ApiConfigId.map { id =>
                 RequiredOAuth2ApiConfigQueries.find(id)
@@ -214,7 +215,7 @@ class BehaviorEditorController @Inject() (
     val action = for {
       maybeBehavior <- DBIO.from(dataService.behaviors.find(behaviorId, user))
       versions <- maybeBehavior.map { behavior =>
-        BehaviorVersionQueries.allFor(behavior)
+        DBIO.from(dataService.behaviorVersions.allFor(behavior))
       }.getOrElse(DBIO.successful(Seq()))
       parametersByVersion <- DBIO.sequence(versions.map { version =>
         BehaviorParameterQueries.allFor(version).map { params =>
@@ -265,7 +266,8 @@ class BehaviorEditorController @Inject() (
             BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData),
             behavior.maybeImportedId,
             None,
-            Some(version.createdAt)
+            Some(version.createdAt),
+            dataService
           )
         }
         Ok(Json.toJson(versionsData))
@@ -335,9 +337,9 @@ class BehaviorEditorController @Inject() (
           maybeImporter <- DBIO.successful(for {
             team <- maybeTeam
             data <- maybeVersionData
-          } yield BehaviorVersionImporter(team, user, lambdaService, data, dataService))
+          } yield BehaviorVersionImporter(team, user, data, dataService))
           maybeCloned <- maybeImporter.map { importer =>
-            importer.run.map(Some(_))
+            DBIO.from(importer.run).map(Some(_))
           }.getOrElse(DBIO.successful(None))
         } yield maybeCloned.map { cloned =>
           Redirect(routes.BehaviorEditorController.edit(cloned.behavior.id))

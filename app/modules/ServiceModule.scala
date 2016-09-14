@@ -14,6 +14,7 @@ import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfile
 import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.bots.BehaviorTestReportBuilder
 import models.bots.behavior.{BehaviorService, BehaviorServiceImpl}
+import models.bots.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.bots.events.EventHandler
 import models.environmentvariable.{EnvironmentVariableService, EnvironmentVariableServiceImpl}
 import models.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
@@ -41,6 +42,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[SlackBotProfileService].to(classOf[SlackBotProfileServiceImpl])
     bind[OAuth2TokenService].to(classOf[OAuth2TokenServiceImpl])
     bind[BehaviorService].to(classOf[BehaviorServiceImpl])
+    bind[BehaviorVersionService].to(classOf[BehaviorVersionServiceImpl])
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).to(classOf[SlackServiceImpl]).asEagerSingleton()

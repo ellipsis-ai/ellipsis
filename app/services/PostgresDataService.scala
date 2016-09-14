@@ -14,6 +14,7 @@ import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.bots.behavior.BehaviorService
+import models.bots.behaviorversion.BehaviorVersionService
 import models.environmentvariable.EnvironmentVariableService
 import models.invocationtoken.InvocationTokenService
 import models.team.TeamService
@@ -37,7 +38,8 @@ class PostgresDataService @Inject() (
                                       val slackProfilesProvider: Provider[SlackProfileService],
                                       val slackBotProfilesProvider: Provider[SlackBotProfileService],
                                       val oauth2TokensProvider: Provider[OAuth2TokenService],
-                                      val behaviorsProvider: Provider[BehaviorService]
+                                      val behaviorsProvider: Provider[BehaviorService],
+                                      val behaviorVersionsProvider: Provider[BehaviorVersionService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -54,6 +56,7 @@ class PostgresDataService @Inject() (
   val slackBotProfiles = slackBotProfilesProvider.get
   val oauth2Tokens = oauth2TokensProvider.get
   val behaviors = behaviorsProvider.get
+  val behaviorVersions = behaviorVersionsProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)

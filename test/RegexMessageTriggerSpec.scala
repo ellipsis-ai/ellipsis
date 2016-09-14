@@ -1,6 +1,7 @@
 import models.IDs
 import models.bots.behavior.Behavior
-import models.bots.{BehaviorParameter, BehaviorVersion}
+import models.bots.BehaviorParameter
+import models.bots.behaviorversion.BehaviorVersion
 import models.bots.triggers.RegexMessageTrigger
 import models.team.Team
 import org.joda.time.DateTime

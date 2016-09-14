@@ -2,6 +2,7 @@ package models.bots
 
 import javax.inject._
 
+import models.bots.behaviorversion.BehaviorVersion
 import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 

@@ -24,8 +24,8 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
         DBIO.from(dataService.behaviors.createFor(team, None)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        BehaviorVersionQueries.createFor(behavior, maybeUser).flatMap { behaviorVersion =>
-          behaviorVersion.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)).save.flatMap { behaviorWithContent =>
+        DBIO.from(dataService.behaviorVersions.createFor(behavior, maybeUser)).flatMap { behaviorVersion =>
+          DBIO.from(dataService.behaviorVersions.save(behaviorVersion.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)))).flatMap { behaviorWithContent =>
             qaExtractor.maybeLastQuestion.map { lastQuestion =>
               MessageTriggerQueries.createFor(behaviorVersion, lastQuestion, requiresBotMention = false, shouldTreatAsRegex = false, isCaseSensitive = false)
             }.getOrElse {

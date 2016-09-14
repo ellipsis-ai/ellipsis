@@ -11,7 +11,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class GithubService(team: Team, ws: WSClient, config: Configuration, cache: CacheApi) {
+case class GithubService(team: Team, ws: WSClient, config: Configuration, cache: CacheApi, dataService: DataService) {
 
   import GithubService._
 
@@ -81,7 +81,8 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
         params,
         triggers,
         config,
-        Some(githubUrl)
+        Some(githubUrl),
+        dataService
       )
     }
 

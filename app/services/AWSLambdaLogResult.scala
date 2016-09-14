@@ -52,18 +52,13 @@ object AWSLambdaLogResult {
     }.getOrElse("")
   }
 
-  def fromText(text: String, isInDevelopmentMode: Boolean): AWSLambdaLogResult = {
-    var (maybeErrorContent, nonErrorContent) = extractErrorAndNonErrorContentFrom(text)
-
-    val userDefinedLogStatements = if (isInDevelopmentMode) {
-      extractUserDefinedLogStatementsFrom(nonErrorContent)
-    } else {
-      ""
-    }
+  def fromText(text: String): AWSLambdaLogResult = {
+    val (maybeErrorContent, nonErrorContent) = extractErrorAndNonErrorContentFrom(text)
+    val userDefinedLogStatements = extractUserDefinedLogStatementsFrom(nonErrorContent)
 
     AWSLambdaLogResult(text, userDefinedLogStatements, maybeErrorContent)
   }
 
-  def empty: AWSLambdaLogResult = fromText("", isInDevelopmentMode = true)
+  def empty: AWSLambdaLogResult = fromText("")
 
 }

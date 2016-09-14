@@ -1,5 +1,6 @@
 package models.bots
 
+import models.bots.behaviorversion.BehaviorVersion
 import models.bots.conversations.Conversation
 import models.bots.events.{MessageContext, MessageEvent}
 import play.api.libs.json._

@@ -5,6 +5,7 @@ import models.team.Team
 import models.accounts.user.User
 import models.bots._
 import models.bots.behavior.RawBehavior
+import models.bots.behaviorversion.{BehaviorVersion, RawBehaviorVersion}
 import models.bots.events.MessageEvent
 import models.bots.triggers.{MessageTrigger, MessageTriggerQueries, RawMessageTrigger}
 import org.joda.time.DateTime
