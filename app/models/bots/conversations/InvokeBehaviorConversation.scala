@@ -2,6 +2,7 @@ package models.bots.conversations
 
 import models.IDs
 import models.bots._
+import models.bots.behaviorparameter.BehaviorParameter
 import models.bots.behaviorversion.BehaviorVersion
 import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTrigger
@@ -46,19 +47,19 @@ case class InvokeBehaviorConversation(
     }
   }
 
-  private def paramInfo: DBIO[ParamInfo] = {
+  private def paramInfo(dataService: DataService): DBIO[ParamInfo] = {
     for {
-      params <- BehaviorParameterQueries.allFor(behaviorVersion)
+      params <- DBIO.from(dataService.behaviorParameters.allFor(behaviorVersion))
       collected <- CollectedParameterValueQueries.allFor(this)
     } yield ParamInfo(params, collected)
   }
 
-  private def collectParamValueFrom(event: MessageEvent, info: ParamInfo): DBIO[Conversation] = {
+  private def collectParamValueFrom(event: MessageEvent, info: ParamInfo, dataService: DataService): DBIO[Conversation] = {
     for {
       _ <- info.maybeNextToCollect.map { param =>
         CollectedParameterValue(param, this, event.context.relevantMessageText).save
       }.getOrElse(DBIO.successful(Unit))
-      updatedParamInfo <- paramInfo
+      updatedParamInfo <- paramInfo(dataService)
       updatedConversation <- if (updatedParamInfo.maybeNextToCollect.isDefined) {
         DBIO.successful(this)
       } else {
@@ -67,14 +68,14 @@ case class InvokeBehaviorConversation(
     } yield updatedConversation
   }
 
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Conversation] = {
+  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[Conversation] = {
     import Conversation._
     import InvokeBehaviorConversation._
 
-    paramInfo.flatMap { info =>
+    paramInfo(dataService).flatMap { info =>
       state match {
         case NEW_STATE => updateStateTo(COLLECT_PARAM_VALUES_STATE)
-        case COLLECT_PARAM_VALUES_STATE => collectParamValueFrom(event, info)
+        case COLLECT_PARAM_VALUES_STATE => collectParamValueFrom(event, info, dataService)
         case DONE_STATE => DBIO.successful(this)
       }
     }
@@ -94,11 +95,11 @@ case class InvokeBehaviorConversation(
     import Conversation._
     import InvokeBehaviorConversation._
 
-    paramInfo.flatMap { info =>
+    paramInfo(dataService).flatMap { info =>
       state match {
         case COLLECT_PARAM_VALUES_STATE => DBIO.successful(promptResultFor(event, info))
         case DONE_STATE => {
-          BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger).flatMap { br =>
+          DBIO.from(BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger, dataService)).flatMap { br =>
             DBIO.from(br.resultForFilledOut(lambdaService, dataService))
           }
         }

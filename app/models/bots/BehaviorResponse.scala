@@ -1,6 +1,7 @@
 package models.bots
 
 import models.bots.behavior.Behavior
+import models.bots.behaviorparameter.BehaviorParameter
 import models.bots.behaviorversion.BehaviorVersion
 import models.team.Team
 import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
@@ -67,9 +68,10 @@ object BehaviorResponse {
                 event: MessageEvent,
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
-                activatedTrigger: MessageTrigger
-                ): DBIO[BehaviorResponse] = {
-    BehaviorParameterQueries.allFor(behaviorVersion).map { params =>
+                activatedTrigger: MessageTrigger,
+                dataService: DataService
+                ): Future[BehaviorResponse] = {
+    dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
       val paramsWithValues = params.zipWithIndex.map { case (ea, i) =>
         val invocationName = AWSLambdaConstants.invocationParamFor(i)
         ParameterWithValue(ea, invocationName, paramValues.get(invocationName))
@@ -93,8 +95,8 @@ object BehaviorResponse {
       maybeActivatedTrigger <- DBIO.successful(triggers.find(_.isActivatedBy(event)))
       maybeResponse <- maybeActivatedTrigger.map { trigger =>
         for {
-          params <- BehaviorParameterQueries.allFor(trigger.behaviorVersion)
-          response <- BehaviorResponse.buildFor(event, trigger.behaviorVersion, trigger.invocationParamsFor(event, params), trigger)
+          params <- DBIO.from(dataService.behaviorParameters.allFor(trigger.behaviorVersion))
+          response <- DBIO.from(BehaviorResponse.buildFor(event, trigger.behaviorVersion, trigger.invocationParamsFor(event, params), trigger, dataService))
         } yield Some(response)
       }.getOrElse(DBIO.successful(None))
     } yield maybeResponse

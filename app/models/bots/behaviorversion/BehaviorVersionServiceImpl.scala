@@ -9,7 +9,7 @@ import com.google.inject.Provider
 import json.BehaviorVersionData
 import models.IDs
 import models.accounts.user.User
-import models.bots.{BehaviorParameterQueries, BehaviorResult, HandledErrorResult, NoCallbackTriggeredResult, NoResponseResult, ParameterWithValue, SuccessResult, SyntaxErrorResult, UnhandledErrorResult}
+import models.bots.{BehaviorResult, HandledErrorResult, NoCallbackTriggeredResult, NoResponseResult, ParameterWithValue, SuccessResult, SyntaxErrorResult, UnhandledErrorResult}
 import models.bots.behavior.Behavior
 import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.events.MessageEvent
@@ -139,7 +139,7 @@ class BehaviorVersionServiceImpl @Inject() (
           maybeAWSConfig,
           requiredOAuth2ApiConfigs
         ))
-        _ <- BehaviorParameterQueries.ensureFor(updated, data.params.map(ea => (ea.name, Some(ea.question))))
+        _ <- DBIO.from(dataService.behaviorParameters.ensureFor(updated, data.params.map(ea => (ea.name, Some(ea.question)))))
         _ <- DBIO.sequence(
           data.triggers.
             filterNot(_.text.trim.isEmpty)
@@ -223,7 +223,7 @@ class BehaviorVersionServiceImpl @Inject() (
   def maybeFunctionFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
     val action = behaviorVersion.maybeFunctionBody.map { functionBody =>
       (for {
-        params <- BehaviorParameterQueries.allFor(behaviorVersion)
+        params <- DBIO.from(dataService.behaviorParameters.allFor(behaviorVersion))
         maybeAWSConfig <- AWSConfigQueries.maybeFor(behaviorVersion, dataService)
         requiredOAuth2ApiConfigs <- RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion)
       } yield {
@@ -247,7 +247,7 @@ class BehaviorVersionServiceImpl @Inject() (
 
   def redeploy(behaviorVersion: BehaviorVersion): Future[Unit] = {
     val action = for {
-      params <- BehaviorParameterQueries.allFor(behaviorVersion)
+      params <- DBIO.from(dataService.behaviorParameters.allFor(behaviorVersion))
       maybeAWSConfig <- AWSConfigQueries.maybeFor(behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion)
       _ <- DBIO.from(

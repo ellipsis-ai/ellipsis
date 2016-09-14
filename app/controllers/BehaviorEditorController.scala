@@ -218,7 +218,7 @@ class BehaviorEditorController @Inject() (
         DBIO.from(dataService.behaviorVersions.allFor(behavior))
       }.getOrElse(DBIO.successful(Seq()))
       parametersByVersion <- DBIO.sequence(versions.map { version =>
-        BehaviorParameterQueries.allFor(version).map { params =>
+        DBIO.from(dataService.behaviorParameters.allFor(version)).map { params =>
           (version, params)
         }
       }).map(_.toMap)
