@@ -1,4 +1,4 @@
-import models.bots.triggers.MessageTrigger
+import models.bots.triggers.messagetrigger.MessageTrigger
 import org.scalatestplus.play.PlaySpec
 
 trait MessageTriggerSpec extends PlaySpec {

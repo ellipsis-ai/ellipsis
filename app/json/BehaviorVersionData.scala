@@ -3,7 +3,6 @@ package json
 import models.team.Team
 import models.accounts.user.User
 import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
-import models.bots.triggers.MessageTriggerQueries
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import slick.dbio.DBIO
@@ -105,7 +104,7 @@ object BehaviorVersionData {
         DBIO.from(dataService.behaviorParameters.allFor(behaviorVersion)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
-        MessageTriggerQueries.allFor(behaviorVersion).map(Some(_))
+        DBIO.from(dataService.messageTriggers.allFor(behaviorVersion)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       maybeAWSConfig <- maybeBehaviorVersion.map { behaviorVersion =>
         AWSConfigQueries.maybeFor(behaviorVersion, dataService)

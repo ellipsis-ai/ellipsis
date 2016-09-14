@@ -15,6 +15,7 @@ import models.apitoken.APITokenService
 import models.bots.behavior.BehaviorService
 import models.bots.behaviorparameter.BehaviorParameterService
 import models.bots.behaviorversion.BehaviorVersionService
+import models.bots.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.invocationtoken.InvocationTokenService
 import models.team.TeamService
@@ -43,6 +44,7 @@ class MockDataService extends DataService with MockitoSugar {
   val behaviors = mock[BehaviorService]
   val behaviorVersions = mock[BehaviorVersionService]
   val behaviorParameters = mock[BehaviorParameterService]
+  val messageTriggers = mock[MessageTriggerService]
 
   private def dontCallMe = throw new Exception("Don't call me")
 

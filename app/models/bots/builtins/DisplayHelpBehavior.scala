@@ -3,9 +3,7 @@ package models.bots.builtins
 import models.bots.behaviorversion.BehaviorVersion
 import models.bots.{BehaviorResult, SimpleTextResult}
 import models.bots.events.MessageContext
-import models.bots.triggers.MessageTriggerQueries
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -17,9 +15,9 @@ case class DisplayHelpBehavior(
                                 dataService: DataService
                               ) extends BuiltinBehavior {
 
-  private def helpStringFor(behaviorVersions: Seq[BehaviorVersion], prompt: String, matchString: String): DBIO[String] = {
-    DBIO.sequence(behaviorVersions.map { ea =>
-      MessageTriggerQueries.allFor(ea)
+  private def helpStringFor(behaviorVersions: Seq[BehaviorVersion], prompt: String, matchString: String): Future[String] = {
+    Future.sequence(behaviorVersions.map { ea =>
+      dataService.messageTriggers.allFor(ea)
     }).map(_.flatten).map { triggersForBehaviorVersions =>
       val grouped = triggersForBehaviorVersions.groupBy(_.behaviorVersion)
       val behaviorStrings = grouped.map { case(behavior, triggers) =>
@@ -60,18 +58,18 @@ case class DisplayHelpBehavior(
 
   def result: Future[BehaviorResult] = {
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
-    val action = for {
-      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
+    for {
+      maybeTeam <- dataService.teams.find(messageContext.teamId)
       matchingTriggers <- maybeTeam.map { team =>
         maybeHelpSearch.map { helpSearch =>
-          MessageTriggerQueries.allMatching(helpSearch, team)
+          dataService.messageTriggers.allMatching(helpSearch, team)
         }.getOrElse {
-          MessageTriggerQueries.allActiveFor(team)
+          dataService.messageTriggers.allActiveFor(team)
         }
-      }.getOrElse(DBIO.successful(Seq()))
-      behaviorVersions <- DBIO.successful(matchingTriggers.map(_.behaviorVersion).distinct)
-      (skills, knowledge) <- DBIO.successful(behaviorVersions.partition(_.isSkill))
-      matchString <- DBIO.successful(maybeHelpSearch.map { s =>
+      }.getOrElse(Future.successful(Seq()))
+      behaviorVersions <- Future.successful(matchingTriggers.map(_.behaviorVersion).distinct)
+      (skills, knowledge) <- Future.successful(behaviorVersions.partition(_.isSkill))
+      matchString <- Future.successful(maybeHelpSearch.map { s =>
         s" that matches `$s`"
       }.getOrElse(""))
       skillsString <- helpStringFor(skills, "Here's what I can do", matchString)
@@ -93,7 +91,6 @@ case class DisplayHelpBehavior(
           |""".stripMargin
       SimpleTextResult(text)
     }
-    dataService.run(action)
   }
 
 }

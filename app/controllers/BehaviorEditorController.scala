@@ -7,9 +7,8 @@ import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
 import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
-import models.bots.triggers.MessageTriggerQueries
-import models.accounts._
 import models.bots._
+import models.bots.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
@@ -223,7 +222,7 @@ class BehaviorEditorController @Inject() (
         }
       }).map(_.toMap)
       triggersByVersion <- DBIO.sequence(versions.map { version =>
-        MessageTriggerQueries.allFor(version).map { triggers =>
+        DBIO.from(dataService.messageTriggers.allFor(version)).map { triggers =>
           (version, triggers)
         }
       }).map(_.toMap)
@@ -353,7 +352,7 @@ class BehaviorEditorController @Inject() (
   }
 
   def regexValidationErrorsFor(pattern: String) = silhouette.SecuredAction { implicit request =>
-    val content = MessageTriggerQueries.maybeRegexValidationErrorFor(pattern).map { errMessage =>
+    val content = MessageTrigger.maybeRegexValidationErrorFor(pattern).map { errMessage =>
       Array(errMessage)
     }.getOrElse {
       Array()

@@ -16,7 +16,7 @@ class BehaviorTestReportBuilder @Inject() (
 
   def buildFor(event: TestEvent, behaviorVersion: BehaviorVersion): DBIO[BehaviorTestReport] = {
     for {
-      maybeResponse <- BehaviorResponse.chooseFor(event, None, Some(behaviorVersion.behavior), dataService)
+      maybeResponse <- DBIO.from(BehaviorResponse.chooseFor(event, None, Some(behaviorVersion.behavior), dataService))
       _ <- maybeResponse.map { behaviorResponse =>
         behaviorResponse.result(lambdaService, dataService)
       }.getOrElse(DBIO.successful(Unit))
