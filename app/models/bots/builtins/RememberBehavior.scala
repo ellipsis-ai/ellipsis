@@ -1,10 +1,10 @@
 package models.bots.builtins
 
+import json.{BehaviorConfig, BehaviorTriggerData, BehaviorVersionData}
 import models.bots.events.MessageContext
 import models.bots._
 import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -12,35 +12,42 @@ import scala.concurrent.Future
 case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
   def result: Future[BehaviorResult] = {
-    val action = for {
-      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
+    for {
+      maybeTeam <- dataService.teams.find(messageContext.teamId)
       maybeUser <- maybeTeam.map { team =>
-        DBIO.from(dataService.users.findFromMessageContext(messageContext, team))
-      }.getOrElse(DBIO.successful(None))
-      messages <- DBIO.from(messageContext.recentMessages(dataService))
-      qaExtractor <- DBIO.successful(QuestionAnswerExtractor(messages))
+        dataService.users.findFromMessageContext(messageContext, team)
+      }.getOrElse(Future.successful(None))
+      messages <- messageContext.recentMessages(dataService)
+      qaExtractor <- Future.successful(QuestionAnswerExtractor(messages))
       maybeBehavior <- maybeTeam.map { team =>
-        DBIO.from(dataService.behaviors.createFor(team, None)).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-      maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        DBIO.from(dataService.behaviorVersions.createFor(behavior, maybeUser)).flatMap { behaviorVersion =>
-          DBIO.from(dataService.behaviorVersions.save(behaviorVersion.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)))).flatMap { behaviorWithContent =>
-            qaExtractor.maybeLastQuestion.map { lastQuestion =>
-              DBIO.from(
-                dataService.messageTriggers.createFor(
-                  behaviorVersion,
-                  lastQuestion,
-                  requiresBotMention = false,
-                  shouldTreatAsRegex = false,
-                  isCaseSensitive = false
-                )
-              )
-            }.getOrElse {
-              DBIO.successful(Unit)
-            }.map(_ => behaviorWithContent)
-          }
-        }.map(Some(_)) transactionally
-      }.getOrElse(DBIO.successful(None))
+        dataService.behaviors.createFor(team, None).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      maybeVersionData <- Future.successful(maybeBehavior.map { behavior =>
+        val triggerData = qaExtractor.maybeLastQuestion.map { lastQuestion =>
+          Seq(BehaviorTriggerData(lastQuestion, requiresMention = false, isRegex = false, caseSensitive = false))
+        }.getOrElse(Seq())
+        Some(
+          BehaviorVersionData.buildFor(
+            behavior.team.id,
+            Some(behavior.id),
+            "",
+            qaExtractor.possibleAnswerContent,
+            Seq(),
+            triggerData,
+            BehaviorConfig(None, None, None),
+            None,
+            None,
+            None,
+            dataService
+          )
+        )
+      }.getOrElse(None))
+      maybeBehaviorVersion <- (for {
+        behavior <- maybeBehavior
+        data <- maybeVersionData
+      } yield {
+        dataService.behaviorVersions.createFor(behavior, maybeUser, data).map(Some(_))
+      }).getOrElse(Future.successful(None))
     } yield {
       maybeBehaviorVersion.map { behaviorVersion =>
         val link = behaviorVersion.editLinkFor(lambdaService.configuration)
@@ -49,7 +56,6 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
         NoResponseResult(None)
       }
     }
-    dataService.run(action)
   }
 
 }

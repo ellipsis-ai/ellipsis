@@ -16,7 +16,6 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import services.{AWSLambdaService, DataService}
 import slick.dbio.DBIO
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -32,15 +31,15 @@ class BehaviorEditorController @Inject() (
 
   def newBehavior(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        DBIO.from(dataService.environmentVariables.allFor(team).map(Some(_)))
-      }.getOrElse(DBIO.successful(None))
+        dataService.environmentVariables.allFor(team).map(Some(_))
+      }.getOrElse(Future.successful(None))
       maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
-        DBIO.from(dataService.oauth2Applications.allFor(team)).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-      oauth2Apis <- DBIO.from(dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam))
+        dataService.oauth2Applications.allFor(team).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       result <- (for {
         team <- teamAccess.maybeTargetTeam
         envVars <- maybeEnvironmentVariables
@@ -59,7 +58,7 @@ class BehaviorEditorController @Inject() (
           None,
           dataService
         )
-        DBIO.successful(Ok(views.html.edit(
+        Future.successful(Ok(views.html.edit(
           teamAccess,
           Json.toJson(data).toString,
           Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
@@ -69,31 +68,29 @@ class BehaviorEditorController @Inject() (
           notificationsJson = Json.toJson(Array[String]()).toString
         )))
       }).getOrElse {
-        DBIO.from(reAuthFor(request, maybeTeamId))
+        reAuthFor(request, maybeTeamId)
       }
     } yield result
-
-    dataService.run(action)
   }
 
   def edit(id: String, maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
+    for {
       maybeVersionData <- BehaviorVersionData.maybeFor(id, user, dataService)
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeVersionData.map(_.teamId)))
+      teamAccess <- dataService.users.teamAccessFor(user, maybeVersionData.map(_.teamId))
       maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        DBIO.from(dataService.environmentVariables.allFor(team).map(Some(_)))
-      }.getOrElse(DBIO.successful(None))
+        dataService.environmentVariables.allFor(team).map(Some(_))
+      }.getOrElse(Future.successful(None))
       maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
-        DBIO.from(dataService.oauth2Applications.allFor(team)).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-      oauth2Apis <- DBIO.from(dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam))
+        dataService.oauth2Applications.allFor(team).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       result <- (for {
         data <- maybeVersionData
         envVars <- maybeEnvironmentVariables
         oauth2Applications <- maybeOAuth2Applications
       } yield {
-        DBIO.successful(Ok(views.html.edit(
+        Future.successful(Ok(views.html.edit(
           teamAccess,
           Json.toJson(data).toString,
           Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
@@ -110,11 +107,9 @@ class BehaviorEditorController @Inject() (
             Some("The behavior you are trying to access could not be found."),
             Some(reAuthLinkFor(request, None))
           ))
-        DBIO.from(withAuthDiscarded(request, response))
+        withAuthDiscarded(request, response)
       }
     } yield result
-
-    dataService.run(action)
   }
 
   case class SaveBehaviorInfo(
@@ -141,26 +136,26 @@ class BehaviorEditorController @Inject() (
         val json = Json.parse(info.dataJson)
         json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
-            val action = (for {
-              teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, Some(data.teamId)))
+            for {
+              teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
               maybeBehavior <- data.behaviorId.map { behaviorId =>
-                DBIO.from(dataService.behaviors.find(behaviorId, user))
+                dataService.behaviors.find(behaviorId, user)
               }.getOrElse {
                 teamAccess.maybeTargetTeam.map { team =>
-                  DBIO.from(dataService.behaviors.createFor(team, None)).map(Some(_))
-                }.getOrElse(DBIO.successful(None))
+                  dataService.behaviors.createFor(team, None).map(Some(_))
+                }.getOrElse(Future.successful(None))
               }
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-                DBIO.from(dataService.behaviorVersions.createFor(behavior, Some(user), data)).map(Some(_))
-              }.getOrElse(DBIO.successful(None))
+                dataService.behaviorVersions.createFor(behavior, Some(user), data).map(Some(_))
+              }.getOrElse(Future.successful(None))
               maybePreviousRequiredOAuth2ApiConfig <- info.maybeRequiredOAuth2ApiConfigId.map { id =>
-                DBIO.from(dataService.requiredOAuth2ApiConfigs.find(id))
-              }.getOrElse(DBIO.successful(None))
+                dataService.requiredOAuth2ApiConfigs.find(id)
+              }.getOrElse(Future.successful(None))
               maybeRequiredOAuth2ApiConfig <- maybePreviousRequiredOAuth2ApiConfig.flatMap { config =>
                 maybeBehaviorVersion.map { version =>
-                  DBIO.from(dataService.requiredOAuth2ApiConfigs.allFor(config.api, version)).map(_.headOption)
+                  dataService.requiredOAuth2ApiConfigs.allFor(config.api, version).map(_.headOption)
                 }
-              }.getOrElse(DBIO.successful(None))
+              }.getOrElse(Future.successful(None))
             } yield {
               maybeBehavior.map { behavior =>
                 if (info.maybeRedirect.contains("newOAuth2Application")) {
@@ -178,9 +173,7 @@ class BehaviorEditorController @Inject() (
                   )
                 )
               }
-            }) transactionally
-
-            dataService.run(action)
+            }
           }
           case e: JsError => Future.successful(BadRequest(s"Malformatted data: ${e.toString}"))
         }
@@ -210,28 +203,28 @@ class BehaviorEditorController @Inject() (
 
   def versionInfoFor(behaviorId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      maybeBehavior <- DBIO.from(dataService.behaviors.find(behaviorId, user))
+    for {
+      maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       versions <- maybeBehavior.map { behavior =>
-        DBIO.from(dataService.behaviorVersions.allFor(behavior))
-      }.getOrElse(DBIO.successful(Seq()))
-      parametersByVersion <- DBIO.sequence(versions.map { version =>
-        DBIO.from(dataService.behaviorParameters.allFor(version)).map { params =>
+       dataService.behaviorVersions.allFor(behavior)
+      }.getOrElse(Future.successful(Seq()))
+      parametersByVersion <- Future.sequence(versions.map { version =>
+        dataService.behaviorParameters.allFor(version).map { params =>
           (version, params)
         }
       }).map(_.toMap)
-      triggersByVersion <- DBIO.sequence(versions.map { version =>
-        DBIO.from(dataService.messageTriggers.allFor(version)).map { triggers =>
+      triggersByVersion <- Future.sequence(versions.map { version =>
+        dataService.messageTriggers.allFor(version).map { triggers =>
           (version, triggers)
         }
       }).map(_.toMap)
-      awsConfigByVersion <- DBIO.sequence(versions.map { version =>
-        DBIO.from(dataService.awsConfigs.maybeFor(version)).map { config =>
+      awsConfigByVersion <- Future.sequence(versions.map { version =>
+        dataService.awsConfigs.maybeFor(version).map { config =>
           (version, config)
         }
       }).map(_.toMap)
-      requiredOAuth2ApiConfigsByVersion <- DBIO.sequence(versions.map { version =>
-        DBIO.from(dataService.requiredOAuth2ApiConfigs.allFor(version)).map { apps =>
+      requiredOAuth2ApiConfigsByVersion <- Future.sequence(versions.map { version =>
+        dataService.requiredOAuth2ApiConfigs.allFor(version).map { apps =>
           (version, apps)
         }
       }).map(_.toMap)
@@ -273,8 +266,6 @@ class BehaviorEditorController @Inject() (
         NotFound(Json.toJson("Error: behavior not found"))
       }
     }
-
-    dataService.run(action)
   }
 
   case class TestBehaviorInfo(behaviorId: String, message: String)
@@ -327,25 +318,23 @@ class BehaviorEditorController @Inject() (
       },
       behaviorId => {
         val user = request.identity
-        val action = for {
+        for {
           maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService)
           maybeTeam <- maybeVersionData.map { data =>
-            DBIO.from(dataService.teams.find(data.teamId, user))
-          }.getOrElse(DBIO.successful(None))
-          maybeImporter <- DBIO.successful(for {
+            dataService.teams.find(data.teamId, user)
+          }.getOrElse(Future.successful(None))
+          maybeImporter <- Future.successful(for {
             team <- maybeTeam
             data <- maybeVersionData
           } yield BehaviorVersionImporter(team, user, data, dataService))
           maybeCloned <- maybeImporter.map { importer =>
-            DBIO.from(importer.run).map(Some(_))
-          }.getOrElse(DBIO.successful(None))
+            importer.run.map(Some(_))
+          }.getOrElse(Future.successful(None))
         } yield maybeCloned.map { cloned =>
           Redirect(routes.BehaviorEditorController.edit(cloned.behavior.id))
         }.getOrElse {
           NotFound("")
         }
-
-        dataService.run(action)
       }
     )
   }

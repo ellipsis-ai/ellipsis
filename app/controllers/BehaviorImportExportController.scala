@@ -26,15 +26,13 @@ class BehaviorImportExportController @Inject() (
                                                ) extends ReAuthable {
 
   def export(id: String) = silhouette.SecuredAction.async { implicit request =>
-    val action = BehaviorVersionExporter.maybeFor(id, request.identity, dataService).map { maybeExporter =>
+    BehaviorVersionExporter.maybeFor(id, request.identity, dataService).map { maybeExporter =>
       maybeExporter.map { exporter =>
         Ok.sendFile(exporter.getZipFile)
       }.getOrElse {
         NotFound(s"Behavior not found: $id")
       }
     }
-
-    dataService.run(action)
   }
 
   def importZip(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -66,14 +64,14 @@ class BehaviorImportExportController @Inject() (
           Future.successful(BadRequest(formWithErrors.errorsAsJson))
         },
         info => {
-          val action = for {
-            maybeTeam <- DBIO.from(dataService.teams.find(info.teamId, request.identity))
-            maybeImporter <- DBIO.successful(maybeTeam.map { team =>
+          for {
+            maybeTeam <- dataService.teams.find(info.teamId, request.identity)
+            maybeImporter <- Future.successful(maybeTeam.map { team =>
               BehaviorVersionZipImporter(team, request.identity, lambdaService, zipFile.ref.file, dataService)
             })
             maybeBehaviorVersion <- maybeImporter.map { importer =>
               importer.run.map(Some(_))
-            }.getOrElse(DBIO.successful(None))
+            }.getOrElse(Future.successful(None))
           } yield {
             maybeBehaviorVersion.map { behaviorVersion =>
               Redirect(routes.BehaviorEditorController.edit(behaviorVersion.behavior.id))
@@ -81,8 +79,6 @@ class BehaviorImportExportController @Inject() (
               NotFound(s"Team not found: ${info.teamId}")
             }
           }
-
-          dataService.run(action)
         }
       )
     }).getOrElse(Future.successful(BadRequest("")))
@@ -108,14 +104,14 @@ class BehaviorImportExportController @Inject() (
         val json = Json.parse(info.dataJson)
         json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
-            val action = for {
-              maybeTeam <- DBIO.from(dataService.teams.find(data.teamId, user))
-              maybeImporter <- DBIO.successful(maybeTeam.map { team =>
+            for {
+              maybeTeam <- dataService.teams.find(data.teamId, user)
+              maybeImporter <- Future.successful(maybeTeam.map { team =>
                 BehaviorVersionImporter(team, user, data, dataService)
               })
               maybeBehaviorVersion <- maybeImporter.map { importer =>
-                DBIO.from(importer.run).map(Some(_))
-              }.getOrElse(DBIO.successful(None))
+                importer.run.map(Some(_))
+              }.getOrElse(Future.successful(None))
             } yield {
               maybeBehaviorVersion.map { behaviorVersion =>
                 if (request.headers.get("x-requested-with").contains("XMLHttpRequest")) {
@@ -127,8 +123,6 @@ class BehaviorImportExportController @Inject() (
                 NotFound("Behavior not found")
               }
             }
-
-            dataService.run(action)
           }
           case e: JsError => Future.successful(BadRequest("Malformatted data"))
         }

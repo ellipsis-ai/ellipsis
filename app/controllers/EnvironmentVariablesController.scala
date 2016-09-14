@@ -42,13 +42,13 @@ class EnvironmentVariablesController @Inject() (
         val json = Json.parse(info.dataJson)
         json.validate[EnvironmentVariablesData] match {
           case JsSuccess(data, jsPath) => {
-            val action = (for {
-              maybeTeam <- DBIO.from(dataService.teams.find(data.teamId, user))
+            for {
+              maybeTeam <- dataService.teams.find(data.teamId, user)
               maybeEnvironmentVariables <- maybeTeam.map { team =>
-                DBIO.sequence(data.variables.map { envVarData =>
-                  DBIO.from(dataService.environmentVariables.ensureFor(envVarData.name, envVarData.value, team))
+                Future.sequence(data.variables.map { envVarData =>
+                  dataService.environmentVariables.ensureFor(envVarData.name, envVarData.value, team)
                 }).map( vars => Some(vars.flatten) )
-              }.getOrElse(DBIO.successful(None))
+              }.getOrElse(Future.successful(None))
             } yield {
               maybeEnvironmentVariables.map { envVars =>
                 Ok(
@@ -62,9 +62,7 @@ class EnvironmentVariablesController @Inject() (
               }.getOrElse {
                 NotFound(s"Team not found: ${data.teamId}")
               }
-            }) transactionally
-
-            dataService.run(action)
+            }
           }
           case e: JsError => Future.successful(BadRequest("Malformatted data"))
         }

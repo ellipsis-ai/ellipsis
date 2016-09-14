@@ -4,11 +4,12 @@ import models.team.Team
 import models.accounts.user.User
 import org.joda.time.DateTime
 import play.api.libs.json.Json
-import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import Formatting._
 import services.DataService
+
+import scala.concurrent.Future
 
 case class BehaviorVersionData(
                                 teamId: String,
@@ -93,24 +94,24 @@ object BehaviorVersionData {
     )
   }
 
-  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybePublishedId: Option[String] = None): DBIO[Option[BehaviorVersionData]] = {
+  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybePublishedId: Option[String] = None): Future[Option[BehaviorVersionData]] = {
     for {
-      maybeBehavior <- DBIO.from(dataService.behaviors.find(behaviorId, user))
+      maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        DBIO.from(dataService.behaviors.maybeCurrentVersionFor(behavior))
-      }.getOrElse(DBIO.successful(None))
+        dataService.behaviors.maybeCurrentVersionFor(behavior)
+      }.getOrElse(Future.successful(None))
       maybeParameters <- maybeBehaviorVersion.map { behaviorVersion =>
-        DBIO.from(dataService.behaviorParameters.allFor(behaviorVersion)).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
+        dataService.behaviorParameters.allFor(behaviorVersion).map(Some(_))
+      }.getOrElse(Future.successful(None))
       maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
-        DBIO.from(dataService.messageTriggers.allFor(behaviorVersion)).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
+        dataService.messageTriggers.allFor(behaviorVersion).map(Some(_))
+      }.getOrElse(Future.successful(None))
       maybeAWSConfig <- maybeBehaviorVersion.map { behaviorVersion =>
-        DBIO.from(dataService.awsConfigs.maybeFor(behaviorVersion))
-      }.getOrElse(DBIO.successful(None))
+        dataService.awsConfigs.maybeFor(behaviorVersion)
+      }.getOrElse(Future.successful(None))
       maybeRequiredOAuth2ApiConfigs <- maybeBehaviorVersion.map { behaviorVersion =>
-        DBIO.from(dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
+        dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion).map(Some(_))
+      }.getOrElse(Future.successful(None))
     } yield {
       for {
         behavior <- maybeBehavior

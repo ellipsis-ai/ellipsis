@@ -131,30 +131,30 @@ class OAuth2ApplicationController @Inject() (
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       info => {
-        val action = for {
-          maybeTeam <- DBIO.from(dataService.teams.find(info.teamId, user))
-          maybeApi <- DBIO.from(dataService.oauth2Apis.find(info.apiId))
+        for {
+          maybeTeam <- dataService.teams.find(info.teamId, user)
+          maybeApi <- dataService.oauth2Apis.find(info.apiId)
           maybeApplication <- (for {
             api <- maybeApi
             team <- maybeTeam
           } yield {
             val instance = OAuth2Application(info.id, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId)
-            DBIO.from(dataService.oauth2Applications.save(instance)).map(Some(_))
-          }).getOrElse(DBIO.successful(None))
+            dataService.oauth2Applications.save(instance).map(Some(_))
+          }).getOrElse(Future.successful(None))
           maybeBehaviorVersion <- info.maybeBehaviorId.map { behaviorId =>
-            DBIO.from(dataService.behaviors.find(behaviorId, user)).flatMap { maybeBehavior =>
+            dataService.behaviors.find(behaviorId, user).flatMap { maybeBehavior =>
               maybeBehavior.map { behavior =>
-                DBIO.from(dataService.behaviors.maybeCurrentVersionFor(behavior))
-              }.getOrElse(DBIO.successful(None))
+                dataService.behaviors.maybeCurrentVersionFor(behavior)
+              }.getOrElse(Future.successful(None))
             }
-          }.getOrElse(DBIO.successful(None))
+          }.getOrElse(Future.successful(None))
           maybeRequired <- info.maybeRequiredOAuth2ApiConfigId.map { requiredId =>
-            DBIO.from(dataService.requiredOAuth2ApiConfigs.find(requiredId)).flatMap { maybeExisting =>
+            dataService.requiredOAuth2ApiConfigs.find(requiredId).flatMap { maybeExisting =>
               maybeExisting.map { existing =>
-                DBIO.from(dataService.requiredOAuth2ApiConfigs.save(existing.copy(maybeApplication = maybeApplication))).map(Some(_))
-              }.getOrElse(DBIO.successful(None))
+                dataService.requiredOAuth2ApiConfigs.save(existing.copy(maybeApplication = maybeApplication)).map(Some(_))
+              }.getOrElse(Future.successful(None))
             }
-          }.getOrElse(DBIO.successful(None))
+          }.getOrElse(Future.successful(None))
         } yield {
           maybeApplication.map { application =>
             info.maybeBehaviorId.map { behaviorId =>
@@ -166,8 +166,6 @@ class OAuth2ApplicationController @Inject() (
             NotFound(s"Team not found: ${info.teamId}")
           }
         }
-
-        dataService.run(action)
       }
     )
   }

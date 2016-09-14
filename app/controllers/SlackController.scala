@@ -8,9 +8,9 @@ import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.utils.UriEncoding
 import services.DataService
-import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class SlackController @Inject() (
                                   val messagesApi: MessagesApi,
@@ -32,9 +32,9 @@ class SlackController @Inject() (
 
   def signIn(maybeRedirectUrl: Option[String]) = silhouette.UserAwareAction.async { implicit request =>
     val eventualMaybeTeamAccess = request.identity.map { user =>
-      DBIO.from(dataService.users.teamAccessFor(user, None)).map(Some(_))
-    }.getOrElse(DBIO.successful(None))
-    val action = eventualMaybeTeamAccess.map { maybeTeamAccess =>
+      dataService.users.teamAccessFor(user, None).map(Some(_))
+    }.getOrElse(Future.successful(None))
+    eventualMaybeTeamAccess.map { maybeTeamAccess =>
       val maybeResult = for {
         scopes <- configuration.getString("silhouette.slack.signInScope")
         clientId <- configuration.getString("silhouette.slack.clientID")
@@ -44,8 +44,6 @@ class SlackController @Inject() (
         }
       maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
     }
-
-    dataService.run(action)
   }
 
 
