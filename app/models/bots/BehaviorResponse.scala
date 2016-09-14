@@ -9,13 +9,16 @@ import models.bots.conversations.InvokeBehaviorConversation
 import models.bots.events.MessageEvent
 import models.bots.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
+import play.api.libs.json.{JsString, JsValue}
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class ParameterWithValue(parameter: BehaviorParameter, invocationName: String, maybeValue: Option[String]) {
-  def value: String = maybeValue.getOrElse("")
+  def preparedValue: JsValue = maybeValue.map { value =>
+    parameter.paramType.prepareForInvocation(value)
+  }.getOrElse(JsString(""))
 }
 
 case class BehaviorResponse(

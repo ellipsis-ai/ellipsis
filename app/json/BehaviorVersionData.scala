@@ -132,7 +132,7 @@ object BehaviorVersionData {
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
           params.map { ea =>
-            BehaviorParameterData(ea.name, ea.question)
+            BehaviorParameterData(ea.name, BehaviorParameterTypeData(ea.paramType.name), ea.question)
           },
           triggers.map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)

@@ -96,7 +96,7 @@ class AWSLambdaServiceImpl @Inject() (
               }
             }.getOrElse {
               val payloadJson = JsObject(
-                parametersWithValues.map { ea => (ea.invocationName, JsString(ea.value)) } ++
+                parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) } ++
                   contextParamDataFor(behaviorVersion, environmentVariables, userInfo, token)
               )
               val invokeRequest =

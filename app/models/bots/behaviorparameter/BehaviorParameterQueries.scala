@@ -15,7 +15,14 @@ object BehaviorParameterQueries {
 
   def tuple2Parameter(tuple: TupleType): BehaviorParameter = {
     val raw = tuple._1
-    BehaviorParameter(raw.id, raw.name, raw.rank, BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2), raw.maybeQuestion, raw.maybeParamType)
+    BehaviorParameter(
+      raw.id,
+      raw.name,
+      raw.rank,
+      BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
+      raw.maybeQuestion,
+      BehaviorParameterType.forName(raw.paramType)
+    )
   }
 
   def uncompiledAllForQuery(behaviorVersionId: Rep[String]) = {

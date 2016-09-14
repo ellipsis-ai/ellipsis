@@ -10,6 +10,10 @@ return React.createClass({
       React.PropTypes.string
     ]).isRequired,
     name: React.PropTypes.string.isRequired,
+    paramTypes: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    paramType: React.PropTypes.shape({
+      name: React.PropTypes.string
+    }).isRequired,
     onChange: React.PropTypes.func.isRequired,
     onDelete: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func.isRequired,
@@ -18,11 +22,16 @@ return React.createClass({
   },
 
   onNameChange: function(newName) {
-    this.props.onChange({ name: newName, question: this.props.question });
+    this.props.onChange({ name: newName, paramType: this.props.paramType, question: this.props.question });
+  },
+
+  onParamTypeChange: function(event) {
+    var newTypeName = event.target.value;
+    this.props.onChange({ name: this.props.name, paramType: { name: newTypeName }, question: this.props.question });
   },
 
   onQuestionChange: function(newQuestion) {
-    this.props.onChange({ name: this.props.name, question: newQuestion });
+    this.props.onChange({ name: this.props.name, paramType: this.props.paramType, question: newQuestion });
   },
 
   onDeleteClick: function() {
@@ -32,6 +41,10 @@ return React.createClass({
   focus: function() {
     this.refs.name.focus();
     this.refs.name.select();
+  },
+
+  keyFor: function(paramTypeName) {
+    return 'param-type-' + this.props.id + '-' + paramTypeName;
   },
 
   render: function() {
@@ -53,7 +66,20 @@ return React.createClass({
             </div>
           </div>
         </div>
-        <div className="column column-three-quarters mobile-column-full mobile-mts">
+        <div className="column column-one-quarter mobile-column-full mobile-prsymbol">
+          <div className="columns columns-elastic">
+            <div className="column column-expand prn">
+              <select className="form-select form-select-s" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
+                {this.props.paramTypes.map(function(paramTypeName) {
+                  return (
+                    <option value={paramTypeName} key={this.keyFor(paramTypeName)}>{paramTypeName}</option>
+                  );
+                }, this)}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="column column-one-half mobile-column-full mobile-mts">
           <div className="columns columns-elastic">
             <div className="column column-shrink prxs align-m type-monospace type-disabled display-ellipsis">
               <label htmlFor={"question" + this.props.id}

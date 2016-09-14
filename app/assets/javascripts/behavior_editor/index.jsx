@@ -56,6 +56,9 @@ return React.createClass({
     responseTemplate: React.PropTypes.string,
     params: React.PropTypes.arrayOf(React.PropTypes.shape({
       name: React.PropTypes.string.isRequired,
+      paramType: React.PropTypes.shape({
+        name: React.PropTypes.string
+      }),
       question: React.PropTypes.string.isRequired
     })),
     triggers: React.PropTypes.arrayOf(React.PropTypes.shape({
@@ -83,6 +86,7 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
+    paramTypes: React.PropTypes.arrayOf(React.PropTypes.string),
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
@@ -505,6 +509,7 @@ return React.createClass({
   addParams: function(newParamNames) {
     var newParams = this.getBehaviorParams().concat(newParamNames.map((name) => ({
       name: name,
+      paramType: { name: 'Text' },
       question: ''
     })));
     this.setBehaviorProp('params', newParams);
@@ -1351,6 +1356,7 @@ return React.createClass({
                   onToggleHelp={this.toggleBoilerplateHelp}
                   userParams={this.getBehaviorParams()}
                   systemParams={this.getSystemParams()}
+                  paramTypes={this.props.paramTypes}
                 />
               </div>
 

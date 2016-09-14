@@ -3,6 +3,7 @@ package models.bots.behaviorparameter
 import javax.inject.Inject
 
 import com.google.inject.Provider
+import json.{BehaviorParameterData, BehaviorParameterTypeData}
 import models.IDs
 import models.bots.behaviorversion.BehaviorVersion
 import services.DataService
@@ -17,7 +18,7 @@ case class RawBehaviorParameter(
                                  rank: Int,
                                  behaviorVersionId: String,
                                  maybeQuestion: Option[String],
-                                 maybeParamType: Option[String]
+                                 paramType: String
                                )
 
 class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag, "behavior_parameters") {
@@ -27,10 +28,10 @@ class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag,
   def rank = column[Int]("rank")
   def behaviorVersionId = column[String]("behavior_version_id")
   def maybeQuestion = column[Option[String]]("question")
-  def maybeParamType = column[Option[String]]("param_type")
+  def paramType = column[String]("param_type")
 
   def * =
-    (id, name, rank, behaviorVersionId, maybeQuestion, maybeParamType) <> ((RawBehaviorParameter.apply _).tupled, RawBehaviorParameter.unapply _)
+    (id, name, rank, behaviorVersionId, maybeQuestion, paramType) <> ((RawBehaviorParameter.apply _).tupled, RawBehaviorParameter.unapply _)
 }
 
 class BehaviorParameterServiceImpl @Inject() (
@@ -46,19 +47,19 @@ class BehaviorParameterServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  private def createFor(name: String, maybeQuestion: Option[String], rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
-    val raw = RawBehaviorParameter(IDs.next, name, rank, behaviorVersion.id, maybeQuestion, None)
+  private def createFor(name: String, paramType: BehaviorParameterTypeData, maybeQuestion: Option[String], rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
+    val raw = RawBehaviorParameter(IDs.next, name, rank, behaviorVersion.id, maybeQuestion, paramType.name)
     val action = (all += raw).map { _ =>
-      BehaviorParameter(raw.id, raw.name, raw.rank, behaviorVersion, raw.maybeQuestion, raw.maybeParamType)
+      BehaviorParameter(raw.id, raw.name, raw.rank, behaviorVersion, raw.maybeQuestion, BehaviorParameterType.forName(raw.paramType))
     }
     dataService.run(action)
   }
 
-  def ensureFor(behaviorVersion: BehaviorVersion, params: Seq[(String, Option[String])]): Future[Seq[BehaviorParameter]] = {
+  def ensureFor(behaviorVersion: BehaviorVersion, params: Seq[BehaviorParameterData]): Future[Seq[BehaviorParameter]] = {
     val action = for {
       _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
-      newParams <- DBIO.sequence(params.zipWithIndex.map { case((name, maybeQuestion), i) =>
-        DBIO.from(createFor(name, maybeQuestion, i + 1, behaviorVersion))
+      newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
+        DBIO.from(createFor(data.name, data.paramType, data.maybeNonEmptyQuestion, i + 1, behaviorVersion))
       })
     } yield newParams
     dataService.run(action)

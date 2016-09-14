@@ -137,7 +137,7 @@ class BehaviorVersionServiceImpl @Inject() (
           maybeAWSConfig,
           requiredOAuth2ApiConfigs
         ))
-        _ <- DBIO.from(dataService.behaviorParameters.ensureFor(updated, data.params.map(ea => (ea.name, Some(ea.question)))))
+        _ <- DBIO.from(dataService.behaviorParameters.ensureFor(updated, data.params))
         _ <- DBIO.sequence(
           data.triggers.
             filterNot(_.text.trim.isEmpty)

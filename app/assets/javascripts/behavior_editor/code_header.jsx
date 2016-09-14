@@ -76,6 +76,8 @@ return React.createClass({
                   key={'UserInputDefinition' + paramIndex}
                   ref={'param' + paramIndex}
                   name={param.name}
+                  paramTypes={this.props.paramTypes}
+                  paramType={param.paramType}
                   question={param.question}
                   onChange={this.onChange.bind(this, paramIndex)}
                   onDelete={this.onDelete.bind(this, paramIndex)}

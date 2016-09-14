@@ -8,7 +8,7 @@ case class BehaviorParameter(
                               rank: Int,
                               behaviorVersion: BehaviorVersion,
                               maybeQuestion: Option[String],
-                              maybeParamType: Option[String]
+                              paramType: BehaviorParameterType
                             ) {
 
   def question: String = maybeQuestion.getOrElse("")
@@ -18,6 +18,6 @@ case class BehaviorParameter(
   }
 
   def toRaw: RawBehaviorParameter = {
-    RawBehaviorParameter(id, name, rank, behaviorVersion.id, maybeQuestion, maybeParamType)
+    RawBehaviorParameter(id, name, rank, behaviorVersion.id, maybeQuestion, paramType.name)
   }
 }
