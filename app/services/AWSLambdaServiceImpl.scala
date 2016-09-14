@@ -7,11 +7,11 @@ import javax.inject.Inject
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
-import models.bots.config.{RequiredOAuth2ApiConfig, RequiredOAuth2ApiConfigQueries}
 import models.Models
 import models.bots._
 import models.bots.behaviorversion.BehaviorVersion
 import models.bots.config.awsconfig.AWSConfig
+import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.bots.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
 import models.invocationtoken.InvocationToken
@@ -72,7 +72,7 @@ class AWSLambdaServiceImpl @Inject() (
               ): Future[BehaviorResult] = {
     for {
       missingEnvVars <- dataService.behaviorVersions.missingEnvironmentVariablesIn(behaviorVersion, environmentVariables)
-      requiredOAuth2ApiConfigs <- models.run(RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion))
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
       result <- if (missingEnvVars.nonEmpty) {
         Future.successful(MissingEnvVarsResult(behaviorVersion, configuration, missingEnvVars))
       } else if (behaviorVersion.functionBody.isEmpty) {

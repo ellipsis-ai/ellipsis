@@ -11,7 +11,6 @@ import models.IDs
 import models.accounts.user.User
 import models.bots.{BehaviorResult, HandledErrorResult, NoCallbackTriggeredResult, NoResponseResult, ParameterWithValue, SuccessResult, SyntaxErrorResult, UnhandledErrorResult}
 import models.bots.behavior.Behavior
-import models.bots.config.RequiredOAuth2ApiConfigQueries
 import models.bots.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
 import org.joda.time.DateTime
@@ -129,7 +128,7 @@ class BehaviorVersionServiceImpl @Inject() (
           DBIO.from(dataService.awsConfigs.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName)).map(Some(_))
         }.getOrElse(DBIO.successful(None))
         requiredOAuth2ApiConfigs <- DBIO.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
-          RequiredOAuth2ApiConfigQueries.maybeCreateFor(requiredData, updated, dataService)
+          DBIO.from(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(requiredData, updated))
         }).map(_.flatten)
         _ <- DBIO.from(lambdaService.deployFunctionFor(
           updated,
@@ -227,17 +226,15 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def maybeFunctionFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
-    val action = behaviorVersion.maybeFunctionBody.map { functionBody =>
+    behaviorVersion.maybeFunctionBody.map { functionBody =>
       (for {
-        params <- DBIO.from(dataService.behaviorParameters.allFor(behaviorVersion))
-        maybeAWSConfig <- DBIO.from(dataService.awsConfigs.maybeFor(behaviorVersion))
-        requiredOAuth2ApiConfigs <- RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion)
+        params <- dataService.behaviorParameters.allFor(behaviorVersion)
+        maybeAWSConfig <- dataService.awsConfigs.maybeFor(behaviorVersion)
+        requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
       } yield {
         behaviorVersion.functionWithParams(params.map(_.name).toArray)
       }).map(Some(_))
-    }.getOrElse(DBIO.successful(None))
-
-    dataService.run(action)
+    }.getOrElse(Future.successful(None))
   }
 
   def resultFor(
@@ -252,21 +249,18 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def redeploy(behaviorVersion: BehaviorVersion): Future[Unit] = {
-    val action = for {
-      params <- DBIO.from(dataService.behaviorParameters.allFor(behaviorVersion))
-      maybeAWSConfig <- DBIO.from(dataService.awsConfigs.maybeFor(behaviorVersion))
-      requiredOAuth2ApiConfigs <- RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion)
-      _ <- DBIO.from(
-        lambdaService.deployFunctionFor(
-          behaviorVersion,
-          behaviorVersion.functionBody,
-          params.map(_.name).toArray,
-          maybeAWSConfig,
-          requiredOAuth2ApiConfigs
-        )
-      )
+    for {
+      params <- dataService.behaviorParameters.allFor(behaviorVersion)
+      maybeAWSConfig <- dataService.awsConfigs.maybeFor(behaviorVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
+      _ <- lambdaService.deployFunctionFor(
+              behaviorVersion,
+              behaviorVersion.functionBody,
+              params.map(_.name).toArray,
+              maybeAWSConfig,
+              requiredOAuth2ApiConfigs
+            )
     } yield {}
-    dataService.run(action)
   }
 
   private def isUnhandledError(json: JsValue): Boolean = {

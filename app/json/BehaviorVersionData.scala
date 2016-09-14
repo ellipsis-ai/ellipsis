@@ -2,7 +2,6 @@ package json
 
 import models.team.Team
 import models.accounts.user.User
-import models.bots.config.RequiredOAuth2ApiConfigQueries
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import slick.dbio.DBIO
@@ -110,7 +109,7 @@ object BehaviorVersionData {
         DBIO.from(dataService.awsConfigs.maybeFor(behaviorVersion))
       }.getOrElse(DBIO.successful(None))
       maybeRequiredOAuth2ApiConfigs <- maybeBehaviorVersion.map { behaviorVersion =>
-        RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion).map(Some(_))
+        DBIO.from(dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
       for {

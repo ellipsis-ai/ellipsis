@@ -4,11 +4,8 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
-import models.bots.config.RequiredOAuth2ApiConfigQueries
 import models._
-import models.accounts._
 import models.accounts.oauth2application.OAuth2Application
-import models.bots._
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
@@ -50,12 +47,12 @@ class OAuth2ApplicationController @Inject() (
 
   def newApp(maybeRequiredOAuth2ApiConfigId: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
-      apis <- DBIO.from(dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam))
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       maybeRequiredOAuth2ApiConfig <- maybeRequiredOAuth2ApiConfigId.map { id =>
-        RequiredOAuth2ApiConfigQueries.find(id)
-      }.getOrElse(DBIO.successful(None))
+        dataService.requiredOAuth2ApiConfigs.find(id)
+      }.getOrElse(Future.successful(None))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
         val maybeApiId = maybeRequiredOAuth2ApiConfig.map(_.api.id)
@@ -73,8 +70,6 @@ class OAuth2ApplicationController @Inject() (
         NotFound("Team not accessible")
       }
     }
-
-    dataService.run(action)
   }
 
   def edit(id: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -154,9 +149,9 @@ class OAuth2ApplicationController @Inject() (
             }
           }.getOrElse(DBIO.successful(None))
           maybeRequired <- info.maybeRequiredOAuth2ApiConfigId.map { requiredId =>
-            RequiredOAuth2ApiConfigQueries.find(requiredId).flatMap { maybeExisting =>
+            DBIO.from(dataService.requiredOAuth2ApiConfigs.find(requiredId)).flatMap { maybeExisting =>
               maybeExisting.map { existing =>
-                RequiredOAuth2ApiConfigQueries.save(existing.copy(maybeApplication = maybeApplication)).map(Some(_))
+                DBIO.from(dataService.requiredOAuth2ApiConfigs.save(existing.copy(maybeApplication = maybeApplication))).map(Some(_))
               }.getOrElse(DBIO.successful(None))
             }
           }.getOrElse(DBIO.successful(None))
