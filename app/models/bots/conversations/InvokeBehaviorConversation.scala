@@ -4,6 +4,7 @@ import models.IDs
 import models.bots._
 import models.bots.behaviorparameter.BehaviorParameter
 import models.bots.behaviorversion.BehaviorVersion
+import models.bots.conversations.conversation.Conversation
 import models.bots.events.MessageEvent
 import models.bots.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
@@ -11,6 +12,7 @@ import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class InvokeBehaviorConversation(
                                       id: String,
@@ -27,8 +29,8 @@ case class InvokeBehaviorConversation(
     s"To collect a value for `${param.name}`, what question should @ellipsis ask the user?"
   }
 
-  def updateStateTo(newState: String): DBIO[Conversation] = {
-    this.copy(state = newState).save
+  def updateStateTo(newState: String, dataService: DataService): DBIO[Conversation] = {
+    DBIO.from(dataService.conversations.save(this.copy(state = newState)))
   }
 
   case class ParamInfo(params: Seq[BehaviorParameter], collected: Seq[CollectedParameterValue]) {
@@ -63,7 +65,7 @@ case class InvokeBehaviorConversation(
       updatedConversation <- if (updatedParamInfo.maybeNextToCollect.isDefined) {
         DBIO.successful(this)
       } else {
-        updateStateTo(Conversation.DONE_STATE)
+        updateStateTo(Conversation.DONE_STATE, dataService)
       }
     } yield updatedConversation
   }
@@ -74,7 +76,7 @@ case class InvokeBehaviorConversation(
 
     paramInfo(dataService).flatMap { info =>
       state match {
-        case NEW_STATE => updateStateTo(COLLECT_PARAM_VALUES_STATE)
+        case NEW_STATE => updateStateTo(COLLECT_PARAM_VALUES_STATE, dataService)
         case COLLECT_PARAM_VALUES_STATE => collectParamValueFrom(event, info, dataService)
         case DONE_STATE => DBIO.successful(this)
       }
@@ -118,9 +120,10 @@ object InvokeBehaviorConversation {
                  behaviorVersion: BehaviorVersion,
                  context: String,
                  userIdForContext: String,
-                 activatedTrigger: MessageTrigger
-                 ): DBIO[InvokeBehaviorConversation] = {
+                 activatedTrigger: MessageTrigger,
+                 dataService: DataService
+                 ): Future[InvokeBehaviorConversation] = {
     val newInstance = InvokeBehaviorConversation(IDs.next, activatedTrigger, context, userIdForContext, DateTime.now, Conversation.NEW_STATE)
-    newInstance.save.map(_ => newInstance)
+    dataService.conversations.save(newInstance).map(_ => newInstance)
   }
 }

@@ -1,12 +1,12 @@
 package models.bots
 
 import models.bots.behaviorversion.BehaviorVersion
-import models.bots.conversations.Conversation
+import models.bots.conversations.conversation.Conversation
 import models.bots.events.{MessageContext, MessageEvent}
 import play.api.libs.json._
-import slick.driver.PostgresDriver.api._
+import services.DataService
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ArrayBuffer
 
 case class TestMessageContext(fullMessageText: String, includesBotMention: Boolean) extends MessageContext {
@@ -18,7 +18,7 @@ case class TestMessageContext(fullMessageText: String, includesBotMention: Boole
   val teamId = "test"
   val isResponseExpected = true
 
-  def maybeOngoingConversation: DBIO[Option[Conversation]] = DBIO.successful(None)
+  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = Future.successful(None)
 
   def sendMessage(text: String, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
     messageBuffer += text

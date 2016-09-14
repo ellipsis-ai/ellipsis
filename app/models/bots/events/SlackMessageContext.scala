@@ -4,12 +4,11 @@ import models.SlackMessageFormatter
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.bots.conversations.{Conversation, ConversationQueries}
+import models.bots.conversations.conversation.Conversation
 import services.DataService
 import slack.api.SlackApiClient
 import slack.models.Message
 import slack.rtm.SlackRtmClient
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -77,8 +76,8 @@ case class SlackMessageContext(
     } yield messages
   }
 
-  def maybeOngoingConversation: DBIO[Option[Conversation]] = {
-    ConversationQueries.findOngoingFor(message.user, Conversation.SLACK_CONTEXT)
+  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
+    dataService.conversations.findOngoingFor(message.user, Conversation.SLACK_CONTEXT)
   }
 
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {

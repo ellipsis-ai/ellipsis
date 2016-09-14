@@ -3,10 +3,9 @@ package models.bots.events
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.bots.UserInfo
-import models.bots.conversations.Conversation
+import models.bots.conversations.conversation.Conversation
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
@@ -45,7 +44,7 @@ trait MessageContext extends Context {
   }
 
   def recentMessages(dataService: DataService): Future[Seq[String]] = Future.successful(Seq())
-  def maybeOngoingConversation: DBIO[Option[Conversation]]
+  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]]
 
   val name: String
   def userIdForContext: String

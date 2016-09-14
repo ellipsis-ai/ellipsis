@@ -2,11 +2,11 @@ package models.bots.events
 
 import models.SlackMessageFormatter
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.bots.conversations.Conversation
+import models.bots.conversations.conversation.Conversation
+import services.DataService
 import slack.rtm.SlackRtmClient
-import slick.driver.PostgresDriver.api._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 case class APIMessageContext(
                               client: SlackRtmClient,
@@ -34,5 +34,5 @@ case class APIMessageContext(
     }
   }
 
-  def maybeOngoingConversation: DBIO[Option[Conversation]] = DBIO.successful(None)
+  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = Future.successful(None)
 }

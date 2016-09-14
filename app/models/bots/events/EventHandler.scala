@@ -4,7 +4,7 @@ import javax.inject._
 
 import models.bots.{BehaviorResponse, BehaviorResult, NoResponseResult, SimpleTextResult}
 import models.bots.builtins.BuiltinBehavior
-import models.bots.conversations.Conversation
+import models.bots.conversations.conversation.Conversation
 import play.api.i18n.MessagesApi
 import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
@@ -45,7 +45,7 @@ class EventHandler @Inject() (
     event match {
       case messageEvent: MessageEvent => {
         val action = for {
-          maybeConversation <- event.context.maybeOngoingConversation
+          maybeConversation <- DBIO.from(event.context.maybeOngoingConversation(dataService))
           result <- maybeConversation.map { conversation =>
             handleInConversation(conversation, messageEvent)
           }.getOrElse {
