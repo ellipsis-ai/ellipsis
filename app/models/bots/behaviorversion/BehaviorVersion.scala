@@ -4,10 +4,10 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
 import models.accounts.user.User
-import models.bots.config.AWSConfig
 import models.bots.events.MessageEvent
 import models.bots._
 import models.bots.behavior.Behavior
+import models.bots.config.awsconfig.AWSConfig
 import models.team.Team
 import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json}

@@ -16,6 +16,7 @@ import models.bots.BehaviorTestReportBuilder
 import models.bots.behavior.{BehaviorService, BehaviorServiceImpl}
 import models.bots.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
 import models.bots.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
+import models.bots.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
 import models.bots.events.EventHandler
 import models.bots.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
 import models.environmentvariable.{EnvironmentVariableService, EnvironmentVariableServiceImpl}
@@ -30,6 +31,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
 
   override def configure() = {
     bind[DataService].to(classOf[PostgresDataService])
+
     bind[UserService].to(classOf[UserServiceImpl])
     bind[LoginTokenService].to(classOf[LoginTokenServiceImpl])
     bind[LinkedAccountService].to(classOf[LinkedAccountServiceImpl])
@@ -47,6 +49,8 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BehaviorVersionService].to(classOf[BehaviorVersionServiceImpl])
     bind[BehaviorParameterService].to(classOf[BehaviorParameterServiceImpl])
     bind[MessageTriggerService].to(classOf[MessageTriggerServiceImpl])
+    bind[AWSConfigService].to(classOf[AWSConfigServiceImpl])
+
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).to(classOf[SlackServiceImpl]).asEagerSingleton()

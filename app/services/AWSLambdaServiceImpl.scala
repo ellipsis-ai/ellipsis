@@ -7,10 +7,11 @@ import javax.inject.Inject
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
-import models.bots.config.{AWSConfig, RequiredOAuth2ApiConfig, RequiredOAuth2ApiConfigQueries}
+import models.bots.config.{RequiredOAuth2ApiConfig, RequiredOAuth2ApiConfigQueries}
 import models.Models
 import models.bots._
 import models.bots.behaviorversion.BehaviorVersion
+import models.bots.config.awsconfig.AWSConfig
 import models.bots.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
 import models.invocationtoken.InvocationToken

@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
-import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
+import models.bots.config.RequiredOAuth2ApiConfigQueries
 import models.bots._
 import models.bots.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
@@ -227,7 +227,7 @@ class BehaviorEditorController @Inject() (
         }
       }).map(_.toMap)
       awsConfigByVersion <- DBIO.sequence(versions.map { version =>
-        AWSConfigQueries.maybeFor(version, dataService).map { config =>
+        DBIO.from(dataService.awsConfigs.maybeFor(version)).map { config =>
           (version, config)
         }
       }).map(_.toMap)
