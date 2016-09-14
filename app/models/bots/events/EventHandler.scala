@@ -23,7 +23,7 @@ class EventHandler @Inject() (
     val context = event.context
     for {
       maybeTeam <- DBIO.from(dataService.teams.find(context.teamId))
-      maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None, dataService)
+      maybeResponse <- DBIO.from(BehaviorResponse.chooseFor(event, maybeTeam, None, dataService))
       result <- maybeResponse.map { response =>
         response.result(lambdaService, dataService)
       }.getOrElse {

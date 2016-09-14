@@ -1,7 +1,6 @@
 package models.bots.builtins
 
 import models.bots.events.MessageContext
-import models.bots.triggers.MessageTriggerQueries
 import models.bots._
 import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
@@ -27,7 +26,15 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
         DBIO.from(dataService.behaviorVersions.createFor(behavior, maybeUser)).flatMap { behaviorVersion =>
           DBIO.from(dataService.behaviorVersions.save(behaviorVersion.copy(maybeResponseTemplate = Some(qaExtractor.possibleAnswerContent)))).flatMap { behaviorWithContent =>
             qaExtractor.maybeLastQuestion.map { lastQuestion =>
-              MessageTriggerQueries.createFor(behaviorVersion, lastQuestion, requiresBotMention = false, shouldTreatAsRegex = false, isCaseSensitive = false)
+              DBIO.from(
+                dataService.messageTriggers.createFor(
+                  behaviorVersion,
+                  lastQuestion,
+                  requiresBotMention = false,
+                  shouldTreatAsRegex = false,
+                  isCaseSensitive = false
+                )
+              )
             }.getOrElse {
               DBIO.successful(Unit)
             }.map(_ => behaviorWithContent)

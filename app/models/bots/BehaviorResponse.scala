@@ -6,7 +6,7 @@ import models.bots.behaviorversion.BehaviorVersion
 import models.team.Team
 import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
 import models.bots.events.MessageEvent
-import models.bots.triggers.{MessageTrigger, MessageTriggerQueries}
+import models.bots.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 import slick.dbio.DBIO
@@ -80,25 +80,25 @@ object BehaviorResponse {
     }
   }
 
-  def chooseFor(event: MessageEvent, maybeTeam: Option[Team], maybeLimitToBehavior: Option[Behavior], dataService: DataService): DBIO[Option[BehaviorResponse]] = {
+  def chooseFor(event: MessageEvent, maybeTeam: Option[Team], maybeLimitToBehavior: Option[Behavior], dataService: DataService): Future[Option[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
-        DBIO.from(dataService.behaviors.maybeCurrentVersionFor(limitToBehavior))
-      }.getOrElse(DBIO.successful(None))
+        dataService.behaviors.maybeCurrentVersionFor(limitToBehavior)
+      }.getOrElse(Future.successful(None))
       triggers <- maybeLimitToBehaviorVersion.map { limitToBehaviorVersion =>
-        MessageTriggerQueries.allFor(limitToBehaviorVersion)
+        dataService.messageTriggers.allFor(limitToBehaviorVersion)
       }.getOrElse {
         maybeTeam.map { team =>
-          MessageTriggerQueries.allActiveFor(team)
-        }.getOrElse(DBIO.successful(Seq()))
+          dataService.messageTriggers.allActiveFor(team)
+        }.getOrElse(Future.successful(Seq()))
       }
-      maybeActivatedTrigger <- DBIO.successful(triggers.find(_.isActivatedBy(event)))
+      maybeActivatedTrigger <- Future.successful(triggers.find(_.isActivatedBy(event)))
       maybeResponse <- maybeActivatedTrigger.map { trigger =>
         for {
-          params <- DBIO.from(dataService.behaviorParameters.allFor(trigger.behaviorVersion))
-          response <- DBIO.from(BehaviorResponse.buildFor(event, trigger.behaviorVersion, trigger.invocationParamsFor(event, params), trigger, dataService))
+          params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
+          response <- BehaviorResponse.buildFor(event, trigger.behaviorVersion, trigger.invocationParamsFor(event, params), trigger, dataService)
         } yield Some(response)
-      }.getOrElse(DBIO.successful(None))
+      }.getOrElse(Future.successful(None))
     } yield maybeResponse
   }
 }

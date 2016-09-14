@@ -5,7 +5,7 @@ import models.bots._
 import models.bots.behaviorparameter.BehaviorParameter
 import models.bots.behaviorversion.BehaviorVersion
 import models.bots.events.MessageEvent
-import models.bots.triggers.MessageTrigger
+import models.bots.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._

@@ -2,6 +2,7 @@ package models.bots.triggers
 
 import models.bots.behaviorparameter.BehaviorParameter
 import models.bots.behaviorversion.BehaviorVersion
+import models.bots.triggers.messagetrigger.MessageTrigger
 
 import scala.util.matching.Regex
 

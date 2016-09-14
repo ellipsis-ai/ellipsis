@@ -3,7 +3,6 @@ package models.bots.builtins
 import com.amazonaws.AmazonServiceException
 import models.bots.{BehaviorResult, SimpleTextResult}
 import models.bots.events.MessageContext
-import models.bots.triggers.MessageTriggerQueries
 import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
@@ -20,20 +19,19 @@ case class UnlearnBehavior(
   def result: Future[BehaviorResult] = {
     val eventualReply = try {
       for {
-        triggers <- MessageTriggerQueries.allWithExactPattern(patternString, messageContext.teamId)
-        _ <- DBIO.from(Future.sequence(triggers.map { trigger =>
+        triggers <- dataService.messageTriggers.allWithExactPattern(patternString, messageContext.teamId)
+        _ <- Future.sequence(triggers.map { trigger =>
           dataService.behaviorVersions.unlearn(trigger.behaviorVersion)
-        }))
+        })
       } yield {
         s"$patternString? Never heard of it."
       }
     } catch {
-      case e: AmazonServiceException => DBIO.successful("D'oh! That didn't work.")
+      case e: AmazonServiceException => Future.successful("D'oh! That didn't work.")
     }
-    val action = eventualReply.map { reply =>
+    eventualReply.map { reply =>
       SimpleTextResult(reply)
     }
-    dataService.run(action)
   }
 
 }

@@ -16,6 +16,7 @@ import models.apitoken.APITokenService
 import models.bots.behavior.BehaviorService
 import models.bots.behaviorparameter.BehaviorParameterService
 import models.bots.behaviorversion.BehaviorVersionService
+import models.bots.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.invocationtoken.InvocationTokenService
 import models.team.TeamService
@@ -41,7 +42,8 @@ class PostgresDataService @Inject() (
                                       val oauth2TokensProvider: Provider[OAuth2TokenService],
                                       val behaviorsProvider: Provider[BehaviorService],
                                       val behaviorVersionsProvider: Provider[BehaviorVersionService],
-                                      val behaviorParametersProvider: Provider[BehaviorParameterService]
+                                      val behaviorParametersProvider: Provider[BehaviorParameterService],
+                                      val messageTriggersProvider: Provider[MessageTriggerService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -60,6 +62,7 @@ class PostgresDataService @Inject() (
   val behaviors = behaviorsProvider.get
   val behaviorVersions = behaviorVersionsProvider.get
   val behaviorParameters = behaviorParametersProvider.get
+  val messageTriggers = messageTriggersProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)

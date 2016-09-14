@@ -13,7 +13,6 @@ import models.bots.{BehaviorResult, HandledErrorResult, NoCallbackTriggeredResul
 import models.bots.behavior.Behavior
 import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.events.MessageEvent
-import models.bots.triggers.MessageTriggerQueries
 import models.environmentvariable.EnvironmentVariable
 import org.joda.time.DateTime
 import play.api.Configuration
@@ -144,7 +143,15 @@ class BehaviorVersionServiceImpl @Inject() (
           data.triggers.
             filterNot(_.text.trim.isEmpty)
             map { trigger =>
-            MessageTriggerQueries.createFor(updated, trigger.text, trigger.requiresMention, trigger.isRegex, trigger.caseSensitive)
+            DBIO.from(
+              dataService.messageTriggers.createFor(
+                updated,
+                trigger.text,
+                trigger.requiresMention,
+                trigger.isRegex,
+                trigger.caseSensitive
+              )
+            )
           }
         )
       } yield Unit
