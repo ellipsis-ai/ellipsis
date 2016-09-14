@@ -2,7 +2,6 @@ package controllers
 
 import javax.inject.Inject
 
-import models.accounts._
 import models.bots.SimpleTextResult
 import models.bots.events.{APIMessageContext, APIMessageEvent, EventHandler}
 import play.api.Configuration
@@ -13,7 +12,6 @@ import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc.Action
 import services.{DataService, SlackService}
-import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

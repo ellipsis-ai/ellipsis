@@ -4,12 +4,10 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import models.bots._
 import models.silhouette.EllipsisEnv
 import play.api.i18n.MessagesApi
 import play.api.mvc.{AnyContent, Result}
 import services.{AWSLambdaService, DataService}
-import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
