@@ -3,12 +3,11 @@ package actors
 import javax.inject.Inject
 
 import akka.actor.Actor
-import models.bots.ScheduledMessageQueries
 import services.{DataService, SlackService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 object ScheduledMessageActor {
   final val name = "scheduled-messages"
@@ -25,19 +24,17 @@ class ScheduledMessageActor @Inject() (val dataService: DataService, val slackSe
 
   def receive = {
     case "tick" => {
-      val action = ScheduledMessageQueries.allToBeSent.flatMap { messages =>
-        DBIO.sequence(messages.map { message =>
+      dataService.scheduledMessages.allToBeSent.flatMap { messages =>
+        Future.sequence(messages.map { message =>
           message.botProfile(dataService).flatMap { maybeProfile =>
             maybeProfile.flatMap { profile =>
               slackService.clients.get(profile).map { client =>
-                message.send(slackService, client, profile)
+                message.send(slackService, client, profile, dataService)
               }
-            }.getOrElse(DBIO.successful(Unit))
+            }.getOrElse(Future.successful(Unit))
           }
         })
       }.map { _ => true }
-
-      dataService.runNow(action)
     }
   }
 }

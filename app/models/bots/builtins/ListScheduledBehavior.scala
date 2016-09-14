@@ -1,9 +1,9 @@
 package models.bots.builtins
 
 import models.bots.events.MessageContext
-import models.bots.{BehaviorResult, ScheduledMessage, ScheduledMessageQueries, SimpleTextResult}
+import models.bots.scheduledmessage.ScheduledMessage
+import models.bots.{BehaviorResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,11 +33,11 @@ case class ListScheduledBehavior(
   }
 
   def result: Future[BehaviorResult] = {
-    val action = for {
-      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
+    for {
+      maybeTeam <- dataService.teams.find(messageContext.teamId)
       scheduled <- maybeTeam.map { team =>
-        ScheduledMessageQueries.allForTeam(team)
-      }.getOrElse(DBIO.successful(Seq()))
+        dataService.scheduledMessages.allForTeam(team)
+      }.getOrElse(Future.successful(Seq()))
     } yield {
       val responseText = if (scheduled.isEmpty) {
         noMessagesResponse
@@ -47,7 +47,6 @@ case class ListScheduledBehavior(
 
       SimpleTextResult(responseText)
     }
-    dataService.run(action)
   }
 
 }

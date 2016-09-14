@@ -20,6 +20,7 @@ import models.bots.config.awsconfig.AWSConfigService
 import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.bots.conversations.collectedparametervalue.CollectedParameterValueService
 import models.bots.conversations.conversation.ConversationService
+import models.bots.scheduledmessage.ScheduledMessageService
 import models.bots.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.invocationtoken.InvocationTokenService
@@ -51,7 +52,8 @@ class PostgresDataService @Inject() (
                                       val awsConfigsProvider: Provider[AWSConfigService],
                                       val requiredOAuth2ApiConfigsProvider: Provider[RequiredOAuth2ApiConfigService],
                                       val conversationsProvider: Provider[ConversationService],
-                                      val collectedParameterValuesProvider: Provider[CollectedParameterValueService]
+                                      val collectedParameterValuesProvider: Provider[CollectedParameterValueService],
+                                      val scheduledMessagesProvider: Provider[ScheduledMessageService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -75,6 +77,7 @@ class PostgresDataService @Inject() (
   val requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsProvider.get
   val conversations = conversationsProvider.get
   val collectedParameterValues = collectedParameterValuesProvider.get
+  val scheduledMessages = scheduledMessagesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)

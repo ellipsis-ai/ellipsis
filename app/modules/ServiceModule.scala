@@ -21,6 +21,7 @@ import models.bots.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigServic
 import models.bots.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
 import models.bots.conversations.conversation.{ConversationService, ConversationServiceImpl}
 import models.bots.events.EventHandler
+import models.bots.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
 import models.bots.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
 import models.environmentvariable.{EnvironmentVariableService, EnvironmentVariableServiceImpl}
 import models.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
@@ -56,6 +57,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[RequiredOAuth2ApiConfigService].to(classOf[RequiredOAuth2ApiConfigServiceImpl])
     bind[ConversationService].to(classOf[ConversationServiceImpl])
     bind[CollectedParameterValueService].to(classOf[CollectedParameterValueServiceImpl])
+    bind[ScheduledMessageService].to(classOf[ScheduledMessageServiceImpl])
 
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
