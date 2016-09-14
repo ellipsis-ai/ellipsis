@@ -4,7 +4,6 @@ import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import com.mohiva.play.silhouette.api.Silhouette
 import models.silhouette.EllipsisEnv
 import play.api.mvc.{AnyContent, RequestHeader, Result}
-import slick.dbio.DBIO
 
 trait ReAuthable extends EllipsisController {
 

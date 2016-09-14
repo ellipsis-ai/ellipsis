@@ -15,7 +15,6 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import services.{AWSLambdaService, DataService}
-import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
