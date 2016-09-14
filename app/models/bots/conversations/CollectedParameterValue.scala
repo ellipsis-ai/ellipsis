@@ -1,6 +1,7 @@
 package models.bots.conversations
 
 import models.bots.behaviorparameter.{BehaviorParameter, BehaviorParameterQueries}
+import models.bots.conversations.conversation.{Conversation, ConversationQueries}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global

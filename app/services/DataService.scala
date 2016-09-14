@@ -15,6 +15,7 @@ import models.bots.behaviorparameter.BehaviorParameterService
 import models.bots.behaviorversion.BehaviorVersionService
 import models.bots.config.awsconfig.AWSConfigService
 import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
+import models.bots.conversations.conversation.ConversationService
 import models.bots.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.invocationtoken.InvocationTokenService
@@ -44,6 +45,7 @@ trait DataService {
   val messageTriggers: MessageTriggerService
   val awsConfigs: AWSConfigService
   val requiredOAuth2ApiConfigs: RequiredOAuth2ApiConfigService
+  val conversations: ConversationService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T

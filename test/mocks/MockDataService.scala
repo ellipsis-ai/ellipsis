@@ -17,6 +17,7 @@ import models.bots.behaviorparameter.BehaviorParameterService
 import models.bots.behaviorversion.BehaviorVersionService
 import models.bots.config.awsconfig.AWSConfigService
 import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
+import models.bots.conversations.conversation.ConversationService
 import models.bots.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.invocationtoken.InvocationTokenService
@@ -49,6 +50,7 @@ class MockDataService extends DataService with MockitoSugar {
   val messageTriggers = mock[MessageTriggerService]
   val awsConfigs = mock[AWSConfigService]
   val requiredOAuth2ApiConfigs = mock[RequiredOAuth2ApiConfigService]
+  val conversations = mock[ConversationService]
 
   private def dontCallMe = throw new Exception("Don't call me")
 

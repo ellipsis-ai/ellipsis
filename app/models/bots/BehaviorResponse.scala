@@ -50,7 +50,7 @@ case class BehaviorResponse(
       DBIO.from(resultForFilledOut(awsService, dataService))
     } else {
       for {
-        convo <- InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext, activatedTrigger)
+        convo <- DBIO.from(InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext, activatedTrigger, dataService))
         _ <- DBIO.sequence(parametersWithValues.map { p =>
           p.maybeValue.map { v =>
             CollectedParameterValue(p.parameter, convo, v).save

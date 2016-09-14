@@ -1,14 +1,14 @@
 package models.bots.events
 
-import models.bots.conversations.Conversation
-import slick.driver.PostgresDriver.api._
+import models.bots.conversations.conversation.Conversation
+import services.DataService
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 trait Context {
 
   def sendMessage(text: String, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit
 
-  def maybeOngoingConversation: DBIO[Option[Conversation]]
+  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]]
 
 }

@@ -18,6 +18,7 @@ import models.bots.behaviorparameter.{BehaviorParameterService, BehaviorParamete
 import models.bots.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.bots.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
 import models.bots.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigService, RequiredOAuth2ApiConfigServiceImpl}
+import models.bots.conversations.conversation.{ConversationService, ConversationServiceImpl}
 import models.bots.events.EventHandler
 import models.bots.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
 import models.environmentvariable.{EnvironmentVariableService, EnvironmentVariableServiceImpl}
@@ -52,6 +53,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[MessageTriggerService].to(classOf[MessageTriggerServiceImpl])
     bind[AWSConfigService].to(classOf[AWSConfigServiceImpl])
     bind[RequiredOAuth2ApiConfigService].to(classOf[RequiredOAuth2ApiConfigServiceImpl])
+    bind[ConversationService].to(classOf[ConversationServiceImpl])
 
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
