@@ -1,12 +1,13 @@
-package models.bots
+package models.bots.scheduledmessage
 
 import java.text.{ParseException, SimpleDateFormat}
 import java.time.DayOfWeek
 import java.time.format.TextStyle
-import java.util.{Calendar, Locale, Date}
+import java.util.{Calendar, Date, Locale}
+
+import com.joestelmach.natty._
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, LocalTime, MonthDay}
-import com.joestelmach.natty._
 
 import scala.util.matching.Regex
 

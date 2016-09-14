@@ -1,9 +1,8 @@
 package models.bots.builtins
 
 import models.bots.events.MessageContext
-import models.bots.{BehaviorResult, ScheduledMessageQueries, SimpleTextResult}
+import models.bots.{BehaviorResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -16,14 +15,14 @@ case class UnscheduleBehavior(
                              ) extends BuiltinBehavior {
 
   def result: Future[BehaviorResult] = {
-    val action = for {
-      maybeTeam <- DBIO.from(dataService.teams.find(messageContext.teamId))
+    for {
+      maybeTeam <- dataService.teams.find(messageContext.teamId)
       didDelete <- maybeTeam.map { team =>
-        ScheduledMessageQueries.deleteFor(text, team)
-      }.getOrElse(DBIO.successful(false))
+        dataService.scheduledMessages.deleteFor(text, team)
+      }.getOrElse(Future.successful(false))
       scheduled <- maybeTeam.map { team =>
-        ScheduledMessageQueries.allForTeam(team)
-      }.getOrElse(DBIO.successful(Seq()))
+        dataService.scheduledMessages.allForTeam(team)
+      }.getOrElse(Future.successful(Seq()))
     } yield {
       val msg = if (didDelete) {
         s"OK, I unscheduled `$text`"
@@ -37,7 +36,6 @@ case class UnscheduleBehavior(
       }
       SimpleTextResult(msg)
     }
-    dataService.run(action)
   }
 
 }
