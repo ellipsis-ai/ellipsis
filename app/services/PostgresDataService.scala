@@ -20,10 +20,11 @@ import models.bots.config.awsconfig.AWSConfigService
 import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.bots.conversations.collectedparametervalue.CollectedParameterValueService
 import models.bots.conversations.conversation.ConversationService
+import models.bots.invocationlogentry.InvocationLogEntryService
 import models.bots.scheduledmessage.ScheduledMessageService
 import models.bots.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
-import models.invocationtoken.InvocationTokenService
+import models.bots.invocationtoken.InvocationTokenService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -53,7 +54,8 @@ class PostgresDataService @Inject() (
                                       val requiredOAuth2ApiConfigsProvider: Provider[RequiredOAuth2ApiConfigService],
                                       val conversationsProvider: Provider[ConversationService],
                                       val collectedParameterValuesProvider: Provider[CollectedParameterValueService],
-                                      val scheduledMessagesProvider: Provider[ScheduledMessageService]
+                                      val scheduledMessagesProvider: Provider[ScheduledMessageService],
+                                      val invocationLogEntriesProvider: Provider[InvocationLogEntryService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -78,6 +80,7 @@ class PostgresDataService @Inject() (
   val conversations = conversationsProvider.get
   val collectedParameterValues = collectedParameterValuesProvider.get
   val scheduledMessages = scheduledMessagesProvider.get
+  val invocationLogEntries = invocationLogEntriesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)

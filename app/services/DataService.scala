@@ -17,10 +17,11 @@ import models.bots.config.awsconfig.AWSConfigService
 import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.bots.conversations.collectedparametervalue.CollectedParameterValueService
 import models.bots.conversations.conversation.ConversationService
+import models.bots.invocationlogentry.InvocationLogEntryService
 import models.bots.scheduledmessage.ScheduledMessageService
 import models.bots.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
-import models.invocationtoken.InvocationTokenService
+import models.bots.invocationtoken.InvocationTokenService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -50,6 +51,7 @@ trait DataService {
   val conversations: ConversationService
   val collectedParameterValues: CollectedParameterValueService
   val scheduledMessages: ScheduledMessageService
+  val invocationLogEntries: InvocationLogEntryService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T

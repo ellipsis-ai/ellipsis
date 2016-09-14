@@ -33,15 +33,13 @@ case class BehaviorResponse(
     val startTime = DateTime.now
     dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event).flatMap { result =>
       val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
-      service.models.run(
-        InvocationLogEntryQueries.createFor(
-          behaviorVersion,
-          result,
-          event.context.name,
-          Some(event.context.userIdForContext),
-          runtimeInMilliseconds
-        ).map(_ => result)
-      )
+      dataService.invocationLogEntries.createFor(
+        behaviorVersion,
+        result,
+        event.context.name,
+        Some(event.context.userIdForContext),
+        runtimeInMilliseconds
+      ).map(_ => result)
     }
   }
 

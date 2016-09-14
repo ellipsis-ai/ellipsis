@@ -2,16 +2,15 @@ package controllers
 
 import javax.inject.Inject
 
-import models.bots.InvocationLogEntryQueries
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import services.DataService
-import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class VisibilityAPIController @Inject() (
                                  val messagesApi: MessagesApi,
@@ -26,13 +25,13 @@ class VisibilityAPIController @Inject() (
   private val dateFormatter =  DateTimeFormat.forPattern("EEE, dd MMM yyyy").withLocale(java.util.Locale.ENGLISH)
 
   def invocationCountsByDay(token: String) = Action.async { implicit request =>
-    val action = for {
-      maybeTeam <- DBIO.from(dataService.teams.findForToken(token))
+    for {
+      maybeTeam <- dataService.teams.findForToken(token)
       isAdmin <- maybeTeam.map { team =>
-        DBIO.from(dataService.teams.isAdmin(team))
-      }.getOrElse(DBIO.successful(false))
-      counts <- InvocationLogEntryQueries.countsByDay
-      teamsById <- DBIO.from(dataService.teams.allTeams).map(_.groupBy(_.id))
+        dataService.teams.isAdmin(team)
+      }.getOrElse(Future.successful(false))
+      counts <- dataService.invocationLogEntries.countsByDay
+      teamsById <- dataService.teams.allTeams.map(_.groupBy(_.id))
     } yield {
       if (isAdmin) {
         Ok(
@@ -49,7 +48,6 @@ class VisibilityAPIController @Inject() (
         NotFound("")
       }
     }
-    dataService.run(action)
   }
 
 }

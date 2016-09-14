@@ -1,24 +1,18 @@
-package models.bots
+package models.bots.invocationlogentry
+
+import javax.inject.Inject
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
+import com.google.inject.Provider
 import models.IDs
+import models.bots.BehaviorResult
 import models.bots.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import org.joda.time.DateTime
+import services.DataService
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
-
-case class InvocationLogEntry(
-                             id: String,
-                             behaviorVersionId: String,
-                             resultType: String,
-                             resultText: String,
-                             context: String,
-                             maybeUserIdForContext: Option[String],
-                             runtimeInMilliseconds: Long,
-                             createdAt: DateTime
-                               )
+import scala.concurrent.Future
 
 class InvocationLogEntriesTable(tag: Tag) extends Table[InvocationLogEntry](tag, "invocation_log_entries") {
 
@@ -35,15 +29,19 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[InvocationLogEntry](tag,
     ((InvocationLogEntry.apply _).tupled, InvocationLogEntry.unapply _)
 }
 
-object InvocationLogEntryQueries {
+class InvocationLogEntryServiceImpl @Inject() (
+                                             dataServiceProvider: Provider[DataService]
+                                           ) extends InvocationLogEntryService {
+
+  def dataService = dataServiceProvider.get
 
   val all = TableQuery[InvocationLogEntriesTable]
   val allWithVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
 
   val truncateDate = SimpleFunction.binary[String, DateTime, DateTime]("date_trunc")
 
-  def countsByDay: DBIO[Seq[(DateTime, String, Int)]] = {
-    allWithVersion.
+  def countsByDay: Future[Seq[(DateTime, String, Int)]] = {
+    val action = allWithVersion.
       map { case(entry, ((version, _), (behavior, team))) =>
         (truncateDate("day", entry.createdAt), team.id, 1)
       }.
@@ -52,6 +50,7 @@ object InvocationLogEntryQueries {
         (date, teamId, q.map(_._3).sum.getOrElse(0))
       }.
       result
+    dataService.run(action)
   }
 
   def createFor(
@@ -60,7 +59,7 @@ object InvocationLogEntryQueries {
                  context: String,
                  maybeUserIdForContext: Option[String],
                  runtimeInMilliseconds: Long
-                 ): DBIO[InvocationLogEntry] = {
+               ): Future[InvocationLogEntry] = {
     val newInstance =
       InvocationLogEntry(
         IDs.next,
@@ -73,7 +72,7 @@ object InvocationLogEntryQueries {
         DateTime.now
       )
 
-    (all += newInstance).map(_ => newInstance)
+    val action = (all += newInstance).map(_ => newInstance)
+    dataService.run(action)
   }
-
 }

@@ -1,4 +1,4 @@
-package models.invocationtoken
+package models.bots.invocationtoken
 
 import org.joda.time.DateTime
 

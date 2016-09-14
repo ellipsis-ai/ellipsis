@@ -1,4 +1,4 @@
-package models.invocationtoken
+package models.bots.invocationtoken
 
 import javax.inject.Inject
 
