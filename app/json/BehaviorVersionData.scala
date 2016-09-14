@@ -4,7 +4,7 @@ import models.team.Team
 import models.accounts.user.User
 import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
 import models.bots.triggers.MessageTriggerQueries
-import models.bots.{BehaviorParameterQueries, BehaviorVersionQueries}
+import models.bots.BehaviorParameterQueries
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import slick.dbio.DBIO
@@ -50,9 +50,11 @@ object BehaviorVersionData {
             config: BehaviorConfig,
             importedId: Option[String],
             githubUrl: Option[String],
-            createdAt: Option[DateTime]): BehaviorVersionData = {
+            createdAt: Option[DateTime],
+            dataService: DataService
+              ): BehaviorVersionData = {
 
-    val knownEnvVarsUsed = config.knownEnvVarsUsed ++ BehaviorVersionQueries.environmentVariablesUsedInCode(functionBody)
+    val knownEnvVarsUsed = config.knownEnvVarsUsed ++ dataService.behaviorVersions.environmentVariablesUsedInCode(functionBody)
 
     BehaviorVersionData(
     teamId,
@@ -76,7 +78,8 @@ object BehaviorVersionData {
                    params: String,
                    triggers: String,
                    config: String,
-                   maybeGithubUrl: Option[String]
+                   maybeGithubUrl: Option[String],
+                   dataService: DataService
                    ): BehaviorVersionData = {
     BehaviorVersionData.buildFor(
       teamId,
@@ -88,7 +91,8 @@ object BehaviorVersionData {
       Json.parse(config).validate[BehaviorConfig].get,
       importedId = None,
       maybeGithubUrl,
-      createdAt = None
+      createdAt = None,
+      dataService
     )
   }
 
@@ -138,7 +142,8 @@ object BehaviorVersionData {
           BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData),
           behavior.maybeImportedId,
           githubUrl = None,
-          Some(behaviorVersion.createdAt)
+          Some(behaviorVersion.createdAt),
+          dataService
         )
       }
     }

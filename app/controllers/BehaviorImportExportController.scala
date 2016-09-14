@@ -111,10 +111,10 @@ class BehaviorImportExportController @Inject() (
             val action = for {
               maybeTeam <- DBIO.from(dataService.teams.find(data.teamId, user))
               maybeImporter <- DBIO.successful(maybeTeam.map { team =>
-                BehaviorVersionImporter(team, user, lambdaService, data, dataService)
+                BehaviorVersionImporter(team, user, data, dataService)
               })
               maybeBehaviorVersion <- maybeImporter.map { importer =>
-                importer.run.map(Some(_))
+                DBIO.from(importer.run).map(Some(_))
               }.getOrElse(DBIO.successful(None))
             } yield {
               maybeBehaviorVersion.map { behaviorVersion =>

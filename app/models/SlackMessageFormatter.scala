@@ -2,13 +2,18 @@ package models
 
 import java.util
 
-import models.bots.CommonmarkVisitor
 import models.bots.templates.SlackRenderer
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
-import org.commonmark.node.Node
+import org.commonmark.node.{AbstractVisitor, Image, Node}
 import org.commonmark.parser.Parser
 import slack.rtm.SlackRtmClient
+
+class CommonmarkVisitor extends AbstractVisitor {
+  override def visit(image: Image) {
+    image.unlink()
+  }
+}
 
 case class SlackMessageFormatter(client: SlackRtmClient) {
 

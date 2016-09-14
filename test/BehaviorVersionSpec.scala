@@ -1,5 +1,4 @@
 import models.accounts.user.User
-import models.bots.BehaviorVersionQueries
 import models.IDs
 import models.bots.behavior.Behavior
 import models.team.Team
@@ -23,9 +22,9 @@ class BehaviorVersionSpec extends PlaySpec with DBMixin with OneAppPerSuite {
         val team = runNow(dataService.teams.save(Team(IDs.next, "")))
         val user = runNow(dataService.users.save(User(IDs.next, team.id, None)))
         val behavior = runNow(dataService.behaviors.createFor(team, None))
-        val firstVersion = runNow(db, BehaviorVersionQueries.createFor(behavior, Some(user)))
+        val firstVersion = runNow(dataService.behaviorVersions.createFor(behavior, Some(user)))
         reloadBehavior(db, behavior).maybeCurrentVersionId mustBe Some(firstVersion.id)
-        val secondVersion = runNow(db, BehaviorVersionQueries.createFor(behavior, Some(user)))
+        val secondVersion = runNow(dataService.behaviorVersions.createFor(behavior, Some(user)))
         reloadBehavior(db, behavior).maybeCurrentVersionId mustBe Some(secondVersion.id)
       })
     }

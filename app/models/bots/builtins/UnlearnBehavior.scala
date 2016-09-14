@@ -21,7 +21,9 @@ case class UnlearnBehavior(
     val eventualReply = try {
       for {
         triggers <- MessageTriggerQueries.allWithExactPattern(patternString, messageContext.teamId)
-        _ <- DBIO.sequence(triggers.map(_.behaviorVersion.unlearn(lambdaService)))
+        _ <- DBIO.from(Future.sequence(triggers.map { trigger =>
+          dataService.behaviorVersions.unlearn(trigger.behaviorVersion)
+        }))
       } yield {
         s"$patternString? Never heard of it."
       }

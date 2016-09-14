@@ -1,6 +1,7 @@
 package models.bots.builtins
 
-import models.bots.{BehaviorResult, BehaviorVersion, SimpleTextResult}
+import models.bots.behaviorversion.BehaviorVersion
+import models.bots.{BehaviorResult, SimpleTextResult}
 import models.bots.events.MessageContext
 import models.bots.triggers.MessageTriggerQueries
 import services.{AWSLambdaService, DataService}

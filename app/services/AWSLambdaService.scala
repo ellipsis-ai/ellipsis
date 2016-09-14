@@ -4,7 +4,8 @@ import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import models.bots.config.{AWSConfig, RequiredOAuth2ApiConfig}
 import models.bots.events.MessageEvent
 import models.Models
-import models.bots.{BehaviorResult, BehaviorVersion, ParameterWithValue}
+import models.bots.behaviorversion.BehaviorVersion
+import models.bots.{BehaviorResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
 

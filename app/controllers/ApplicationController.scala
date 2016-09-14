@@ -62,7 +62,7 @@ class ApplicationController @Inject() (
     dataService.behaviors.allForTeam(team).map { behaviors =>
       behaviors.map { ea => InstalledBehaviorData(ea.id, ea.maybeImportedId)}
     }.map { installedBehaviors =>
-      val githubService = GithubService(team, ws, configuration, cache)
+      val githubService = GithubService(team, ws, configuration, cache, dataService)
       PublishedBehaviorInfo(githubService.publishedBehaviorCategories, installedBehaviors)
     }
   }

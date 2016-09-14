@@ -6,7 +6,7 @@ import java.util.zip.{ZipEntry, ZipInputStream}
 import json.BehaviorVersionData
 import models.team.Team
 import models.accounts.user.User
-import models.bots.BehaviorVersion
+import models.bots.behaviorversion.BehaviorVersion
 import services.{AWSLambdaService, DataService}
 import slick.dbio.DBIO
 
@@ -50,10 +50,11 @@ case class BehaviorVersionZipImporter(
         strings.getOrElse("params.json", ""),
         strings.getOrElse("triggers.json", ""),
         strings.getOrElse("config.json", ""),
-        maybeGithubUrl = None
+        maybeGithubUrl = None,
+        dataService
       )
 
-    BehaviorVersionImporter(team, user, lambdaService, data, dataService).run
+    DBIO.from(BehaviorVersionImporter(team, user, data, dataService).run)
   }
 
 }

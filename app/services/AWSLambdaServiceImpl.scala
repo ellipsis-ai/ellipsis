@@ -10,6 +10,7 @@ import com.amazonaws.services.lambda.model._
 import models.bots.config.{AWSConfig, RequiredOAuth2ApiConfig, RequiredOAuth2ApiConfigQueries}
 import models.Models
 import models.bots._
+import models.bots.behaviorversion.BehaviorVersion
 import models.bots.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
 import models.invocationtoken.InvocationToken
@@ -69,7 +70,7 @@ class AWSLambdaServiceImpl @Inject() (
               event: MessageEvent
               ): Future[BehaviorResult] = {
     for {
-      missingEnvVars <- models.run(behaviorVersion.missingEnvironmentVariablesIn(environmentVariables, dataService))
+      missingEnvVars <- dataService.behaviorVersions.missingEnvironmentVariablesIn(behaviorVersion, environmentVariables)
       requiredOAuth2ApiConfigs <- models.run(RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion))
       result <- if (missingEnvVars.nonEmpty) {
         Future.successful(MissingEnvVarsResult(behaviorVersion, configuration, missingEnvVars))
@@ -105,7 +106,7 @@ class AWSLambdaServiceImpl @Inject() (
                   withPayload(payloadJson.toString())
               JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map { result =>
                 val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
-                val logResult = AWSLambdaLogResult.fromText(logString, behaviorVersion.isInDevelopmentMode)
+                val logResult = AWSLambdaLogResult.fromText(logString)
                 behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, configuration)
               }.recover {
                 case e: java.util.concurrent.ExecutionException => {

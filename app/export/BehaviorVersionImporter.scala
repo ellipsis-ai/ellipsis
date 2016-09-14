@@ -3,24 +3,23 @@ package export
 import json.BehaviorVersionData
 import models.team.Team
 import models.accounts.user.User
-import models.bots.{BehaviorVersion, BehaviorVersionQueries}
-import services.{AWSLambdaService, DataService}
-import slick.dbio.DBIO
+import models.bots.behaviorversion.BehaviorVersion
+import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class BehaviorVersionImporter(
                                     team: Team,
                                     user: User,
-                                    lambdaService: AWSLambdaService,
                                     data: BehaviorVersionData,
                                     dataService: DataService
                                   ) {
 
-  def run: DBIO[BehaviorVersion] = {
+  def run: Future[BehaviorVersion] = {
     for {
-      behavior <- DBIO.from(dataService.behaviors.createFor(team, data.config.publishedId))
-      version <- BehaviorVersionQueries.createFor(behavior, Some(user), lambdaService, data, dataService)
+      behavior <- dataService.behaviors.createFor(team, data.config.publishedId)
+      version <- dataService.behaviorVersions.createFor(behavior, Some(user), data)
     } yield version
 
   }

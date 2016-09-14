@@ -1,6 +1,7 @@
 package models.bots
 
 import models.bots.behavior.Behavior
+import models.bots.behaviorversion.BehaviorVersion
 import models.team.Team
 import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
 import models.bots.events.MessageEvent
@@ -29,7 +30,7 @@ case class BehaviorResponse(
 
   def resultForFilledOut(service: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
     val startTime = DateTime.now
-    behaviorVersion.resultFor(parametersWithValues, event, service, dataService).flatMap { result =>
+    dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event).flatMap { result =>
       val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
       service.models.run(
         InvocationLogEntryQueries.createFor(

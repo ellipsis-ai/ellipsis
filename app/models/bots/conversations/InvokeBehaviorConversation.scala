@@ -2,6 +2,7 @@ package models.bots.conversations
 
 import models.IDs
 import models.bots._
+import models.bots.behaviorversion.BehaviorVersion
 import models.bots.events.MessageEvent
 import models.bots.triggers.MessageTrigger
 import org.joda.time.DateTime

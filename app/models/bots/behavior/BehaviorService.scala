@@ -1,7 +1,7 @@
 package models.bots.behavior
 
 import models.accounts.user.User
-import models.bots.BehaviorVersion
+import models.bots.behaviorversion.BehaviorVersion
 import models.team.Team
 
 import scala.concurrent.Future

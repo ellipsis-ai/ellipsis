@@ -6,8 +6,8 @@ import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs
 import models.accounts.user.User
-import models.bots.{BehaviorVersion, BehaviorVersionQueries}
-import models.team.{Team, TeamQueries}
+import models.bots.behaviorversion.BehaviorVersion
+import models.team.Team
 import org.joda.time.DateTime
 import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
@@ -86,17 +86,16 @@ class BehaviorServiceImpl @Inject() (
 
   def maybeCurrentVersionFor(behavior: Behavior): Future[Option[BehaviorVersion]] = {
     behavior.maybeCurrentVersionId.map { versionId =>
-      dataService.run(BehaviorVersionQueries.findWithoutAccessCheck(versionId))
+      dataService.behaviorVersions.findWithoutAccessCheck(versionId)
     }.getOrElse(Future.successful(None))
   }
 
   def unlearn(behavior: Behavior): Future[Unit] = {
-    val action = for {
-      versions <- BehaviorVersionQueries.allFor(behavior)
-      _ <- DBIO.successful(versions.map(v => v.unlearn(lambdaService)))
-      _ <- DBIO.from(delete(behavior))
+    for {
+      versions <- dataService.behaviorVersions.allFor(behavior)
+      _ <- Future.sequence(versions.map(v => dataService.behaviorVersions.unlearn(v)))
+      _ <- delete(behavior)
     } yield {}
-    dataService.run(action)
   }
 
 }

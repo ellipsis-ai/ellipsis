@@ -1,6 +1,8 @@
 package models.bots.triggers
 
 import models.bots._
+import models.bots.behaviorversion.BehaviorVersion
+
 import scala.util.matching.Regex
 
 case class TemplateMessageTrigger(

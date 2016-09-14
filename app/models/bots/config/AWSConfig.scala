@@ -1,7 +1,7 @@
 package models.bots.config
 
-import models.bots.BehaviorVersion
 import models.IDs
+import models.bots.behaviorversion.BehaviorVersion
 import models.environmentvariable.EnvironmentVariable
 import services.DataService
 import slick.driver.PostgresDriver.api._

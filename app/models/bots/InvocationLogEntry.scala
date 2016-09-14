@@ -2,8 +2,10 @@ package models.bots
 
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.IDs
+import models.bots.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
