@@ -8,7 +8,8 @@ import models.team.Team
 import models.accounts.user.User
 import models.bots.behaviorversion.BehaviorVersion
 import services.{AWSLambdaService, DataService}
-import slick.dbio.DBIO
+
+import scala.concurrent.Future
 
 case class BehaviorVersionZipImporter(
                                        team: Team,
@@ -31,7 +32,7 @@ case class BehaviorVersionZipImporter(
     out.toString
   }
 
-  def run: DBIO[BehaviorVersion] = {
+  def run: Future[BehaviorVersion] = {
 
     val zipInputStream: ZipInputStream = new ZipInputStream(new FileInputStream(zipFile))
     var entry: ZipEntry = zipInputStream.getNextEntry
@@ -54,7 +55,7 @@ case class BehaviorVersionZipImporter(
         dataService
       )
 
-    DBIO.from(BehaviorVersionImporter(team, user, data, dataService).run)
+    BehaviorVersionImporter(team, user, data, dataService).run
   }
 
 }

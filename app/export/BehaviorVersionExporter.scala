@@ -8,9 +8,9 @@ import models.accounts.user.User
 import models.bots.behaviorversion.BehaviorVersion
 import play.api.libs.json.Json
 import services.DataService
-import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.reflect.io.Path
 import scala.sys.process.Process
 
@@ -58,15 +58,15 @@ case class BehaviorVersionExporter(
 
 object BehaviorVersionExporter {
 
-  def maybeFor(behaviorId: String, user: User, dataService: DataService): DBIO[Option[BehaviorVersionExporter]] = {
+  def maybeFor(behaviorId: String, user: User, dataService: DataService): Future[Option[BehaviorVersionExporter]] = {
     for {
-      maybeBehavior <- DBIO.from(dataService.behaviors.find(behaviorId, user))
+      maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        DBIO.from(dataService.behaviors.maybeCurrentVersionFor(behavior))
-      }.getOrElse(DBIO.successful(None))
+        dataService.behaviors.maybeCurrentVersionFor(behavior)
+      }.getOrElse(Future.successful(None))
       maybeFunction <- maybeBehaviorVersion.map { behaviorVersion =>
-        DBIO.from(dataService.behaviorVersions.maybeFunctionFor(behaviorVersion))
-      }.getOrElse(DBIO.successful(None))
+        dataService.behaviorVersions.maybeFunctionFor(behaviorVersion)
+      }.getOrElse(Future.successful(None))
       maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, Some(behaviorId))
     } yield {
       for {

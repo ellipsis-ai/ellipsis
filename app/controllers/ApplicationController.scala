@@ -28,32 +28,30 @@ class ApplicationController @Inject() (
 
   def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val action = for {
-      teamAccess <- DBIO.from(dataService.users.teamAccessFor(user, maybeTeamId))
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybeBehaviors <- teamAccess.maybeTargetTeam.map { team =>
-        DBIO.from(dataService.behaviors.allForTeam(team)).map { behaviors =>
+        dataService.behaviors.allForTeam(team).map { behaviors =>
           Some(behaviors)
         }
       }.getOrElse {
-        DBIO.successful(None)
+        Future.successful(None)
       }
-      versionData <- DBIO.sequence(maybeBehaviors.map { behaviors =>
+      versionData <- Future.sequence(maybeBehaviors.map { behaviors =>
         behaviors.map { behavior =>
           BehaviorVersionData.maybeFor(behavior.id, user, dataService)
         }
       }.getOrElse(Seq())).map(_.flatten)
       result <- teamAccess.maybeTargetTeam.map { team =>
-        DBIO.successful(if (versionData.isEmpty) {
+        Future.successful(if (versionData.isEmpty) {
           Redirect(routes.ApplicationController.intro(maybeTeamId))
         } else {
           Ok(views.html.index(teamAccess, versionData))
         })
       }.getOrElse {
-        DBIO.from(reAuthFor(request, maybeTeamId))
+        reAuthFor(request, maybeTeamId)
       }
     } yield result
-
-    dataService.run(action)
   }
 
   case class PublishedBehaviorInfo(published: Seq[BehaviorCategory], installedBehaviors: Seq[InstalledBehaviorData])

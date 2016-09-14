@@ -52,45 +52,45 @@ class APIController @Inject() (
         Future.successful(BadRequest(formWithErrors.toString))
       },
       info => {
-        val action = for {
-          maybeToken <- DBIO.from(dataService.apiTokens.find(info.token))
+        val eventualResult = for {
+          maybeToken <- dataService.apiTokens.find(info.token)
           maybeUser <- maybeToken.map { token =>
-            DBIO.from(dataService.users.find(token.userId))
-          }.getOrElse(DBIO.successful(None))
+            dataService.users.find(token.userId)
+          }.getOrElse(Future.successful(None))
           _ <- maybeToken.map { token =>
             if (token.isValid) {
-              DBIO.from(dataService.apiTokens.use(token).map(_ => true))
+              dataService.apiTokens.use(token).map(_ => true)
             } else {
-              DBIO.successful(false)
+              Future.successful(false)
             }
-          }.getOrElse(DBIO.successful(false)).map { shouldProceed =>
+          }.getOrElse(Future.successful(false)).map { shouldProceed =>
             if (!shouldProceed) {
               throw new InvalidAPITokenException()
             }
           }
           maybeTeam <- maybeUser.map { user =>
-            DBIO.from(dataService.teams.find(user.teamId))
-          }.getOrElse(DBIO.successful(None))
+            dataService.teams.find(user.teamId)
+          }.getOrElse(Future.successful(None))
           maybeBotProfile <- maybeTeam.map { team =>
-            DBIO.from(dataService.slackBotProfiles.allFor(team)).map(_.headOption)
-          }.getOrElse(DBIO.successful(None))
-          maybeSlackClient <- DBIO.successful(maybeBotProfile.flatMap { botProfile =>
+            dataService.slackBotProfiles.allFor(team).map(_.headOption)
+          }.getOrElse(Future.successful(None))
+          maybeSlackClient <- Future.successful(maybeBotProfile.flatMap { botProfile =>
             slackService.clients.get(botProfile)
           })
           maybeSlackLinkedAccount <- maybeUser.map { user =>
-            DBIO.from(dataService.linkedAccounts.maybeForSlackFor(user))
-          }.getOrElse(DBIO.successful(None))
+            dataService.linkedAccounts.maybeForSlackFor(user)
+          }.getOrElse(Future.successful(None))
           maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
-            DBIO.from(dataService.slackProfiles.find(slackLinkedAccount.loginInfo))
-          }.getOrElse(DBIO.successful(None))
-          maybeEvent <- DBIO.successful(for {
+            dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
+          }.getOrElse(Future.successful(None))
+          maybeEvent <- Future.successful(for {
             slackClient <- maybeSlackClient
             botProfile <- maybeBotProfile
           } yield {
               APIMessageEvent(APIMessageContext(slackClient, botProfile, info.channel, info.message))
             })
           result <- maybeEvent.map { event =>
-            DBIO.from(eventHandler.handle(event)).map { result =>
+            eventHandler.handle(event).map { result =>
               maybeSlackProfile.foreach { slackProfile =>
                 val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:")
                 introResult.sendIn(event.context)
@@ -98,10 +98,10 @@ class APIController @Inject() (
               result.sendIn(event.context)
               Ok(result.fullText)
             }
-          }.getOrElse(DBIO.successful(NotFound("")))
+          }.getOrElse(Future.successful(NotFound("")))
         } yield result
 
-        dataService.run(action).recover {
+        eventualResult.recover {
           case e: InvalidAPITokenException => BadRequest("Invalid API token")
         }
       }
