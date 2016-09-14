@@ -1,6 +1,6 @@
 import models.IDs
 import models.bots.behavior.Behavior
-import models.bots.BehaviorParameter
+import models.bots.behaviorparameter.BehaviorParameter
 import models.bots.behaviorversion.BehaviorVersion
 import models.bots.triggers.RegexMessageTrigger
 import models.team.Team

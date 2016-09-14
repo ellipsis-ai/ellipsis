@@ -24,12 +24,12 @@ trait Conversation {
   val startedAt: DateTime
   val state: String
 
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService): DBIO[Conversation]
+  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[Conversation]
   def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[BehaviorResult]
 
   def resultFor(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[BehaviorResult] = {
     for {
-      updatedConversation <- updateWith(event, lambdaService)
+      updatedConversation <- updateWith(event, lambdaService, dataService)
       result <- updatedConversation.respond(event, lambdaService, dataService)
     } yield result
   }
