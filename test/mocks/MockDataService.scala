@@ -19,10 +19,11 @@ import models.bots.config.awsconfig.AWSConfigService
 import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.bots.conversations.collectedparametervalue.CollectedParameterValueService
 import models.bots.conversations.conversation.ConversationService
+import models.bots.invocationlogentry.InvocationLogEntryService
 import models.bots.scheduledmessage.ScheduledMessageService
 import models.bots.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
-import models.invocationtoken.InvocationTokenService
+import models.bots.invocationtoken.InvocationTokenService
 import models.team.TeamService
 import org.scalatest.mock.MockitoSugar
 import slick.dbio.DBIO
@@ -55,6 +56,7 @@ class MockDataService extends DataService with MockitoSugar {
   val conversations = mock[ConversationService]
   val collectedParameterValues = mock[CollectedParameterValueService]
   val scheduledMessages = mock[ScheduledMessageService]
+  val invocationLogEntries = mock[InvocationLogEntryService]
 
   private def dontCallMe = throw new Exception("Don't call me")
 

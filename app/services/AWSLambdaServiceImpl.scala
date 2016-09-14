@@ -14,7 +14,7 @@ import models.bots.config.awsconfig.AWSConfig
 import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.bots.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
-import models.invocationtoken.InvocationToken
+import models.bots.invocationtoken.InvocationToken
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json._

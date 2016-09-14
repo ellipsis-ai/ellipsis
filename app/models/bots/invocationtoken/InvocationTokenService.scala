@@ -1,4 +1,4 @@
-package models.invocationtoken
+package models.bots.invocationtoken
 
 import models.team.Team
 import scala.concurrent.Future
