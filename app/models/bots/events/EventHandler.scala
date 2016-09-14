@@ -7,7 +7,6 @@ import models.bots.builtins.BuiltinBehavior
 import models.bots.conversations.conversation.Conversation
 import play.api.i18n.MessagesApi
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -19,11 +18,11 @@ class EventHandler @Inject() (
                                messages: MessagesApi
                                ) {
 
-  def startInvokeConversationFor(event: MessageEvent): DBIO[BehaviorResult] = {
+  def startInvokeConversationFor(event: MessageEvent): Future[BehaviorResult] = {
     val context = event.context
     for {
-      maybeTeam <- DBIO.from(dataService.teams.find(context.teamId))
-      maybeResponse <- DBIO.from(BehaviorResponse.chooseFor(event, maybeTeam, None, dataService))
+      maybeTeam <- dataService.teams.find(context.teamId)
+      maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None, dataService)
       result <- maybeResponse.map { response =>
         response.result(lambdaService, dataService)
       }.getOrElse {
@@ -32,31 +31,30 @@ class EventHandler @Inject() (
         } else {
           NoResponseResult(None)
         }
-        DBIO.successful(result)
+        Future.successful(result)
       }
     } yield result
   }
 
-  def handleInConversation(conversation: Conversation, event: MessageEvent): DBIO[BehaviorResult] = {
+  def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BehaviorResult] = {
     conversation.resultFor(event, lambdaService, dataService)
   }
 
   def handle(event: Event): Future[BehaviorResult] = {
     event match {
       case messageEvent: MessageEvent => {
-        val action = for {
-          maybeConversation <- DBIO.from(event.context.maybeOngoingConversation(dataService))
+        for {
+          maybeConversation <- event.context.maybeOngoingConversation(dataService)
           result <- maybeConversation.map { conversation =>
             handleInConversation(conversation, messageEvent)
           }.getOrElse {
             BuiltinBehavior.maybeFrom(messageEvent.context, lambdaService, dataService).map { builtin =>
-              DBIO.from(builtin.result)
+              builtin.result
             }.getOrElse {
               startInvokeConversationFor(messageEvent)
             }
           }
         } yield result
-        dataService.run(action)
       }
       case _ => Future.successful(NoResponseResult(None))
     }

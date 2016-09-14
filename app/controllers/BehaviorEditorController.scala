@@ -284,15 +284,15 @@ class BehaviorEditorController @Inject() (
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       info => {
-        val action = for {
-          maybeBehavior <- DBIO.from(dataService.behaviors.find(info.behaviorId, user))
+        for {
+          maybeBehavior <- dataService.behaviors.find(info.behaviorId, user)
           maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-            DBIO.from(dataService.behaviors.maybeCurrentVersionFor(behavior))
-          }.getOrElse(DBIO.successful(None))
+            dataService.behaviors.maybeCurrentVersionFor(behavior)
+          }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
             val context = TestMessageContext(info.message, includesBotMention = true)
             testReportBuilder.buildFor(TestEvent(context), behaviorVersion).map(Some(_))
-          }.getOrElse(DBIO.successful(None))
+          }.getOrElse(Future.successful(None))
 
         } yield {
           maybeReport.map { report =>
@@ -301,8 +301,6 @@ class BehaviorEditorController @Inject() (
             NotFound(s"Behavior not found: ${info.behaviorId}")
           }
         }
-
-        dataService.run(action)
       }
     )
   }

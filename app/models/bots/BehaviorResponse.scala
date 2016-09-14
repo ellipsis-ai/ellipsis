@@ -3,13 +3,13 @@ package models.bots
 import models.bots.behavior.Behavior
 import models.bots.behaviorparameter.BehaviorParameter
 import models.bots.behaviorversion.BehaviorVersion
+import models.bots.conversations.collectedparametervalue.CollectedParameterValue
 import models.team.Team
-import models.bots.conversations.{CollectedParameterValue, InvokeBehaviorConversation}
+import models.bots.conversations.InvokeBehaviorConversation
 import models.bots.events.MessageEvent
 import models.bots.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
-import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -45,16 +45,16 @@ case class BehaviorResponse(
     }
   }
 
-  def result(awsService: AWSLambdaService, dataService: DataService): DBIO[BehaviorResult] = {
+  def result(awsService: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
     if (isFilledOut) {
-      DBIO.from(resultForFilledOut(awsService, dataService))
+      resultForFilledOut(awsService, dataService)
     } else {
       for {
-        convo <- DBIO.from(InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext, activatedTrigger, dataService))
-        _ <- DBIO.sequence(parametersWithValues.map { p =>
+        convo <- InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext, activatedTrigger, dataService)
+        _ <- Future.sequence(parametersWithValues.map { p =>
           p.maybeValue.map { v =>
-            CollectedParameterValue(p.parameter, convo, v).save
-          }.getOrElse(DBIO.successful(Unit))
+            dataService.collectedParameterValues.save(CollectedParameterValue(p.parameter, convo, v))
+          }.getOrElse(Future.successful(Unit))
         })
         result <- convo.resultFor(event, awsService, dataService)
       } yield result

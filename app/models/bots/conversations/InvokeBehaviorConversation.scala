@@ -4,12 +4,12 @@ import models.IDs
 import models.bots._
 import models.bots.behaviorparameter.BehaviorParameter
 import models.bots.behaviorversion.BehaviorVersion
+import models.bots.conversations.collectedparametervalue.CollectedParameterValue
 import models.bots.conversations.conversation.Conversation
 import models.bots.events.MessageEvent
 import models.bots.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -29,8 +29,8 @@ case class InvokeBehaviorConversation(
     s"To collect a value for `${param.name}`, what question should @ellipsis ask the user?"
   }
 
-  def updateStateTo(newState: String, dataService: DataService): DBIO[Conversation] = {
-    DBIO.from(dataService.conversations.save(this.copy(state = newState)))
+  def updateStateTo(newState: String, dataService: DataService): Future[Conversation] = {
+    dataService.conversations.save(this.copy(state = newState))
   }
 
   case class ParamInfo(params: Seq[BehaviorParameter], collected: Seq[CollectedParameterValue]) {
@@ -49,28 +49,28 @@ case class InvokeBehaviorConversation(
     }
   }
 
-  private def paramInfo(dataService: DataService): DBIO[ParamInfo] = {
+  private def paramInfo(dataService: DataService): Future[ParamInfo] = {
     for {
-      params <- DBIO.from(dataService.behaviorParameters.allFor(behaviorVersion))
-      collected <- CollectedParameterValueQueries.allFor(this)
+      params <- dataService.behaviorParameters.allFor(behaviorVersion)
+      collected <- dataService.collectedParameterValues.allFor(this)
     } yield ParamInfo(params, collected)
   }
 
-  private def collectParamValueFrom(event: MessageEvent, info: ParamInfo, dataService: DataService): DBIO[Conversation] = {
+  private def collectParamValueFrom(event: MessageEvent, info: ParamInfo, dataService: DataService): Future[Conversation] = {
     for {
       _ <- info.maybeNextToCollect.map { param =>
-        CollectedParameterValue(param, this, event.context.relevantMessageText).save
-      }.getOrElse(DBIO.successful(Unit))
+        dataService.collectedParameterValues.save(CollectedParameterValue(param, this, event.context.relevantMessageText))
+      }.getOrElse(Future.successful(Unit))
       updatedParamInfo <- paramInfo(dataService)
       updatedConversation <- if (updatedParamInfo.maybeNextToCollect.isDefined) {
-        DBIO.successful(this)
+        Future.successful(this)
       } else {
         updateStateTo(Conversation.DONE_STATE, dataService)
       }
     } yield updatedConversation
   }
 
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[Conversation] = {
+  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[Conversation] = {
     import Conversation._
     import InvokeBehaviorConversation._
 
@@ -78,7 +78,7 @@ case class InvokeBehaviorConversation(
       state match {
         case NEW_STATE => updateStateTo(COLLECT_PARAM_VALUES_STATE, dataService)
         case COLLECT_PARAM_VALUES_STATE => collectParamValueFrom(event, info, dataService)
-        case DONE_STATE => DBIO.successful(this)
+        case DONE_STATE => Future.successful(this)
       }
     }
 
@@ -93,16 +93,16 @@ case class InvokeBehaviorConversation(
     SimpleTextResult(prompt)
   }
 
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[BehaviorResult] = {
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
     import Conversation._
     import InvokeBehaviorConversation._
 
     paramInfo(dataService).flatMap { info =>
       state match {
-        case COLLECT_PARAM_VALUES_STATE => DBIO.successful(promptResultFor(event, info))
+        case COLLECT_PARAM_VALUES_STATE => Future.successful(promptResultFor(event, info))
         case DONE_STATE => {
-          DBIO.from(BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger, dataService)).flatMap { br =>
-            DBIO.from(br.resultForFilledOut(lambdaService, dataService))
+          BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger, dataService).flatMap { br =>
+            br.resultForFilledOut(lambdaService, dataService)
           }
         }
       }
