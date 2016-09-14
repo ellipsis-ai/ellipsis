@@ -11,7 +11,7 @@ import models.IDs
 import models.accounts.user.User
 import models.bots.{BehaviorResult, HandledErrorResult, NoCallbackTriggeredResult, NoResponseResult, ParameterWithValue, SuccessResult, SyntaxErrorResult, UnhandledErrorResult}
 import models.bots.behavior.Behavior
-import models.bots.config.{AWSConfigQueries, RequiredOAuth2ApiConfigQueries}
+import models.bots.config.RequiredOAuth2ApiConfigQueries
 import models.bots.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
 import org.joda.time.DateTime
@@ -126,7 +126,7 @@ class BehaviorVersionServiceImpl @Inject() (
           maybeResponseTemplate = Some(data.responseTemplate)
         )))
         maybeAWSConfig <- data.awsConfig.map { c =>
-          AWSConfigQueries.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName, dataService).map(Some(_))
+          DBIO.from(dataService.awsConfigs.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName)).map(Some(_))
         }.getOrElse(DBIO.successful(None))
         requiredOAuth2ApiConfigs <- DBIO.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
           RequiredOAuth2ApiConfigQueries.maybeCreateFor(requiredData, updated, dataService)
@@ -203,8 +203,8 @@ class BehaviorVersionServiceImpl @Inject() (
     }.toSeq
   }
 
-  private def environmentVariablesUsedInConfigFor(behaviorVersion: BehaviorVersion): DBIO[Seq[String]] = {
-    AWSConfigQueries.maybeFor(behaviorVersion, dataService).map { maybeAwsConfig =>
+  private def environmentVariablesUsedInConfigFor(behaviorVersion: BehaviorVersion): Future[Seq[String]] = {
+    dataService.awsConfigs.maybeFor(behaviorVersion).map { maybeAwsConfig =>
       maybeAwsConfig.map { awsConfig =>
         awsConfig.environmentVariableNames
       }.getOrElse(Seq())
@@ -212,10 +212,9 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def knownEnvironmentVariablesUsedIn(behaviorVersion: BehaviorVersion): Future[Seq[String]] = {
-    val action = environmentVariablesUsedInConfigFor(behaviorVersion).map { inConfig =>
+    environmentVariablesUsedInConfigFor(behaviorVersion).map { inConfig =>
       inConfig ++ environmentVariablesUsedInCode(behaviorVersion.functionBody)
     }
-    dataService.run(action)
   }
 
   def missingEnvironmentVariablesIn(
@@ -231,7 +230,7 @@ class BehaviorVersionServiceImpl @Inject() (
     val action = behaviorVersion.maybeFunctionBody.map { functionBody =>
       (for {
         params <- DBIO.from(dataService.behaviorParameters.allFor(behaviorVersion))
-        maybeAWSConfig <- AWSConfigQueries.maybeFor(behaviorVersion, dataService)
+        maybeAWSConfig <- DBIO.from(dataService.awsConfigs.maybeFor(behaviorVersion))
         requiredOAuth2ApiConfigs <- RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion)
       } yield {
         behaviorVersion.functionWithParams(params.map(_.name).toArray)
@@ -255,7 +254,7 @@ class BehaviorVersionServiceImpl @Inject() (
   def redeploy(behaviorVersion: BehaviorVersion): Future[Unit] = {
     val action = for {
       params <- DBIO.from(dataService.behaviorParameters.allFor(behaviorVersion))
-      maybeAWSConfig <- AWSConfigQueries.maybeFor(behaviorVersion, dataService)
+      maybeAWSConfig <- DBIO.from(dataService.awsConfigs.maybeFor(behaviorVersion))
       requiredOAuth2ApiConfigs <- RequiredOAuth2ApiConfigQueries.allFor(behaviorVersion)
       _ <- DBIO.from(
         lambdaService.deployFunctionFor(

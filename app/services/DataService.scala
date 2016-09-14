@@ -13,6 +13,7 @@ import models.apitoken.APITokenService
 import models.bots.behavior.BehaviorService
 import models.bots.behaviorparameter.BehaviorParameterService
 import models.bots.behaviorversion.BehaviorVersionService
+import models.bots.config.awsconfig.AWSConfigService
 import models.bots.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.invocationtoken.InvocationTokenService
@@ -40,6 +41,7 @@ trait DataService {
   val behaviorVersions: BehaviorVersionService
   val behaviorParameters: BehaviorParameterService
   val messageTriggers: MessageTriggerService
+  val awsConfigs: AWSConfigService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T

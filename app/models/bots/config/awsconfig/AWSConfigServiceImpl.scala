@@ -1,34 +1,23 @@
-package models.bots.config
+package models.bots.config.awsconfig
 
+import javax.inject.Inject
+
+import com.google.inject.Provider
 import models.IDs
 import models.bots.behaviorversion.BehaviorVersion
-import models.environmentvariable.EnvironmentVariable
 import services.DataService
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
-case class AWSConfig(
-                    id: String,
-                    behaviorVersionId: String,
-                    maybeAccessKey: Option[EnvironmentVariable],
-                    maybeSecretKey: Option[EnvironmentVariable],
-                    maybeRegion: Option[EnvironmentVariable]
-                      ) {
-  def maybeAccessKeyName = maybeAccessKey.map(_.name)
-  def maybeSecretKeyName = maybeSecretKey.map(_.name)
-  def maybeRegionName = maybeRegion.map(_.name)
-
-  def environmentVariableNames: Seq[String] = Seq(maybeAccessKeyName, maybeSecretKeyName, maybeRegionName).flatten
-}
+import scala.concurrent.Future
 
 case class RawAWSConfig(
-                       id: String,
-                       behaviorVersionId: String,
-                       maybeAccessKeyName: Option[String],
-                       maybeSecretKeyName: Option[String],
-                       maybeRegionName: Option[String]
-                         )
+                         id: String,
+                         behaviorVersionId: String,
+                         maybeAccessKeyName: Option[String],
+                         maybeSecretKeyName: Option[String],
+                         maybeRegionName: Option[String]
+                       )
 
 class AWSConfigsTable(tag: Tag) extends Table[RawAWSConfig](tag, "aws_configs") {
 
@@ -41,14 +30,19 @@ class AWSConfigsTable(tag: Tag) extends Table[RawAWSConfig](tag, "aws_configs") 
   def * = (id, behaviorVersionId, maybeAccessKeyName, maybeSecretKeyName, maybeRegionName) <> ((RawAWSConfig.apply _).tupled, RawAWSConfig.unapply _)
 }
 
-object AWSConfigQueries {
+class AWSConfigServiceImpl @Inject() (
+                                       dataServiceProvider: Provider[DataService]
+                                     ) extends AWSConfigService {
+
+  def dataService = dataServiceProvider.get
+
   val all = TableQuery[AWSConfigsTable]
 
   def uncompiledFindQuery(behaviorVersionId: Rep[String]) = all.filter(_.behaviorVersionId === behaviorVersionId)
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def maybeFor(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Option[AWSConfig]] = {
-    for {
+  def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[AWSConfig]] = {
+    val action = for {
       maybeRaw <- findQuery(behaviorVersion.id).result.map(_.headOption)
       maybeAccessKey <- maybeRaw.flatMap { raw =>
         raw.maybeAccessKeyName.map { accessKeyName =>
@@ -71,16 +65,16 @@ object AWSConfigQueries {
       }
     }
 
+    dataService.run(action)
   }
 
   def createFor(
                  behaviorVersion: BehaviorVersion,
                  maybeAccessKeyName: Option[String],
                  maybeSecretKeyName: Option[String],
-                 maybeRegionName: Option[String],
-                 dataService: DataService
-                 ): DBIO[AWSConfig] = {
-    for {
+                 maybeRegionName: Option[String]
+               ): Future[AWSConfig] = {
+    val action = for {
       maybeAccessKey <- maybeAccessKeyName.map { name =>
         DBIO.from(dataService.environmentVariables.ensureFor(name, None, behaviorVersion.team))
       }.getOrElse(DBIO.successful(None))
@@ -102,6 +96,8 @@ object AWSConfigQueries {
         (all += raw).map { _ => AWSConfig(raw.id, raw.behaviorVersionId, maybeAccessKey, maybeSecretKey, maybeRegion) }
       }
     } yield newInstance
+
+    dataService.run(action)
   }
 
 }
