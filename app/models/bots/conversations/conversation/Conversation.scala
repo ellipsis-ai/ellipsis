@@ -3,12 +3,12 @@ package models.bots.conversations.conversation
 import models.bots._
 import models.bots.behaviorversion.BehaviorVersion
 import models.bots.events.MessageEvent
-import models.bots.triggers.messagetrigger.{MessageTrigger}
+import models.bots.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 trait Conversation {
   val id: String
@@ -20,10 +20,10 @@ trait Conversation {
   val startedAt: DateTime
   val state: String
 
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[Conversation]
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[BehaviorResult]
+  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[Conversation]
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BehaviorResult]
 
-  def resultFor(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): DBIO[BehaviorResult] = {
+  def resultFor(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
     for {
       updatedConversation <- updateWith(event, lambdaService, dataService)
       result <- updatedConversation.respond(event, lambdaService, dataService)

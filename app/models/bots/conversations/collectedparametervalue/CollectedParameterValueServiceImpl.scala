@@ -1,18 +1,15 @@
-package models.bots.conversations
+package models.bots.conversations.collectedparametervalue
 
-import models.bots.behaviorparameter.{BehaviorParameter, BehaviorParameterQueries}
+import javax.inject.Inject
+
+import com.google.inject.Provider
+import models.bots.behaviorparameter.BehaviorParameterQueries
 import models.bots.conversations.conversation.{Conversation, ConversationQueries}
+import services.DataService
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
-
-case class CollectedParameterValue(parameter: BehaviorParameter, conversation: Conversation, valueString: String) {
-
-  def save: DBIO[CollectedParameterValue] = CollectedParameterValueQueries.save(this)
-
-  def toRaw: RawCollectedParameterValue = RawCollectedParameterValue(parameter.id, conversation.id, valueString)
-}
+import scala.concurrent.Future
 
 case class RawCollectedParameterValue(parameterId: String, conversationId: String, valueString: String)
 
@@ -25,7 +22,12 @@ class CollectedParameterValuesTable(tag: Tag) extends Table[RawCollectedParamete
   def * = (parameterId, conversationId, valueString) <> ((RawCollectedParameterValue.apply _).tupled, RawCollectedParameterValue.unapply _)
 }
 
-object CollectedParameterValueQueries {
+class CollectedParameterValueServiceImpl @Inject() (
+                                                     dataServiceProvider: Provider[DataService]
+                                                   ) extends CollectedParameterValueService {
+
+  def dataService = dataServiceProvider.get
+
   val all = TableQuery[CollectedParameterValuesTable]
   val joined =
     all.
@@ -45,19 +47,21 @@ object CollectedParameterValueQueries {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def allFor(conversation: Conversation): DBIO[Seq[CollectedParameterValue]] = {
-    allForQuery(conversation.id).result.map(_.map(tuple2ParameterValue))
+  def allFor(conversation: Conversation): Future[Seq[CollectedParameterValue]] = {
+    val action = allForQuery(conversation.id).result.map(_.map(tuple2ParameterValue))
+    dataService.run(action)
   }
 
-  def save(value: CollectedParameterValue): DBIO[CollectedParameterValue] = {
+  def save(value: CollectedParameterValue): Future[CollectedParameterValue] = {
     val raw = value.toRaw
     val query = all.filter(_.parameterId === raw.parameterId).filter(_.conversationId === raw.conversationId)
-    query.result.flatMap { r =>
+    val action = query.result.flatMap { r =>
       r.headOption.map { existing =>
         query.update(raw)
       }.getOrElse {
         all += raw
       }
     }.map(_ => value)
+    dataService.run(action)
   }
 }

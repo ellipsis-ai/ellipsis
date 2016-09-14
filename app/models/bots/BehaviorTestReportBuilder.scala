@@ -4,9 +4,9 @@ import javax.inject._
 
 import models.bots.behaviorversion.BehaviorVersion
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 @Singleton
 class BehaviorTestReportBuilder @Inject() (
@@ -14,12 +14,12 @@ class BehaviorTestReportBuilder @Inject() (
                                             dataService: DataService
                                           ) {
 
-  def buildFor(event: TestEvent, behaviorVersion: BehaviorVersion): DBIO[BehaviorTestReport] = {
+  def buildFor(event: TestEvent, behaviorVersion: BehaviorVersion): Future[BehaviorTestReport] = {
     for {
-      maybeResponse <- DBIO.from(BehaviorResponse.chooseFor(event, None, Some(behaviorVersion.behavior), dataService))
+      maybeResponse <- BehaviorResponse.chooseFor(event, None, Some(behaviorVersion.behavior), dataService)
       _ <- maybeResponse.map { behaviorResponse =>
         behaviorResponse.result(lambdaService, dataService)
-      }.getOrElse(DBIO.successful(Unit))
+      }.getOrElse(Future.successful(Unit))
     } yield {
       BehaviorTestReport(event, behaviorVersion, maybeResponse)
     }

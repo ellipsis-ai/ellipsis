@@ -82,7 +82,7 @@ case class ScheduledMessage(
       val message = Message("ts", channelName, profile.userId, text, None)
       val context = SlackMessageContext(client, profile, message)
       for {
-        result <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
+        result <- DBIO.from(slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context)))
         _ <- withUpdatedNextTriggeredFor(DateTime.now).save
       } yield {
         if (result.hasText) {
