@@ -6,7 +6,6 @@ import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
-import models.bots.config.RequiredOAuth2ApiConfigQueries
 import models.bots._
 import models.bots.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
@@ -155,11 +154,11 @@ class BehaviorEditorController @Inject() (
                 DBIO.from(dataService.behaviorVersions.createFor(behavior, Some(user), data)).map(Some(_))
               }.getOrElse(DBIO.successful(None))
               maybePreviousRequiredOAuth2ApiConfig <- info.maybeRequiredOAuth2ApiConfigId.map { id =>
-                RequiredOAuth2ApiConfigQueries.find(id)
+                DBIO.from(dataService.requiredOAuth2ApiConfigs.find(id))
               }.getOrElse(DBIO.successful(None))
               maybeRequiredOAuth2ApiConfig <- maybePreviousRequiredOAuth2ApiConfig.flatMap { config =>
                 maybeBehaviorVersion.map { version =>
-                  RequiredOAuth2ApiConfigQueries.allFor(config.api, version).map(_.headOption)
+                  DBIO.from(dataService.requiredOAuth2ApiConfigs.allFor(config.api, version)).map(_.headOption)
                 }
               }.getOrElse(DBIO.successful(None))
             } yield {
@@ -232,7 +231,7 @@ class BehaviorEditorController @Inject() (
         }
       }).map(_.toMap)
       requiredOAuth2ApiConfigsByVersion <- DBIO.sequence(versions.map { version =>
-        RequiredOAuth2ApiConfigQueries.allFor(version).map { apps =>
+        DBIO.from(dataService.requiredOAuth2ApiConfigs.allFor(version)).map { apps =>
           (version, apps)
         }
       }).map(_.toMap)

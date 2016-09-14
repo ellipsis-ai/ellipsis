@@ -17,6 +17,7 @@ import models.bots.behavior.BehaviorService
 import models.bots.behaviorparameter.BehaviorParameterService
 import models.bots.behaviorversion.BehaviorVersionService
 import models.bots.config.awsconfig.AWSConfigService
+import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.bots.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.invocationtoken.InvocationTokenService
@@ -45,7 +46,8 @@ class PostgresDataService @Inject() (
                                       val behaviorVersionsProvider: Provider[BehaviorVersionService],
                                       val behaviorParametersProvider: Provider[BehaviorParameterService],
                                       val messageTriggersProvider: Provider[MessageTriggerService],
-                                      val awsConfigsProvider: Provider[AWSConfigService]
+                                      val awsConfigsProvider: Provider[AWSConfigService],
+                                      val requiredOAuth2ApiConfigsProvider: Provider[RequiredOAuth2ApiConfigService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -66,6 +68,7 @@ class PostgresDataService @Inject() (
   val behaviorParameters = behaviorParametersProvider.get
   val messageTriggers = messageTriggersProvider.get
   val awsConfigs = awsConfigsProvider.get
+  val requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)

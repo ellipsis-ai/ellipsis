@@ -1,36 +1,18 @@
-package models.bots.config
+package models.bots.config.requiredoauth2apiconfig
 
+import javax.inject.Inject
+
+import com.google.inject.Provider
 import json.RequiredOAuth2ApiConfigData
 import models.IDs
 import models.accounts.oauth2api.{OAuth2Api, OAuth2ApiQueries}
-import models.accounts.oauth2application.{OAuth2Application, OAuth2ApplicationQueries}
+import models.accounts.oauth2application.OAuth2ApplicationQueries
 import models.bots.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import services.DataService
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
-case class RequiredOAuth2ApiConfig(
-                                    id: String,
-                                    behaviorVersion: BehaviorVersion,
-                                    api: OAuth2Api,
-                                    maybeRecommendedScope: Option[String],
-                                    maybeApplication: Option[OAuth2Application]
-                                    ) {
-  // Could check scope too
-  def isReady: Boolean = maybeApplication.isDefined
-
-  def toRaw: RawRequiredOAuth2ApiConfig = {
-    RawRequiredOAuth2ApiConfig(
-      id,
-      behaviorVersion.id,
-      api.id,
-      maybeRecommendedScope,
-      maybeApplication.map(_.id)
-    )
-  }
-
-}
+import scala.concurrent.Future
 
 case class RawRequiredOAuth2ApiConfig(
                                        id: String,
@@ -38,7 +20,7 @@ case class RawRequiredOAuth2ApiConfig(
                                        apiId: String,
                                        maybeRecommendedScope: Option[String],
                                        maybeApplicationId: Option[String]
-                                       )
+                                     )
 
 class RequiredOAuth2ApiConfigsTable(tag: Tag) extends Table[RawRequiredOAuth2ApiConfig](tag, "required_oauth2_api_configs") {
 
@@ -51,7 +33,12 @@ class RequiredOAuth2ApiConfigsTable(tag: Tag) extends Table[RawRequiredOAuth2Api
   def * = (id, behaviorVersionId, apiId, maybeRecommendedScope, maybeApplicationId) <> ((RawRequiredOAuth2ApiConfig.apply _).tupled, RawRequiredOAuth2ApiConfig.unapply _)
 }
 
-object RequiredOAuth2ApiConfigQueries {
+class RequiredOAuth2ApiConfigServiceImpl @Inject() (
+                                                     dataServiceProvider: Provider[DataService]
+                                                   ) extends RequiredOAuth2ApiConfigService {
+
+  def dataService = dataServiceProvider.get
+
   val all = TableQuery[RequiredOAuth2ApiConfigsTable]
   val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
   val allWithApi = allWithBehaviorVersion.join(OAuth2ApiQueries.all).on(_._1.apiId === _.id)
@@ -76,8 +63,9 @@ object RequiredOAuth2ApiConfigQueries {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def allFor(behaviorVersion: BehaviorVersion): DBIO[Seq[RequiredOAuth2ApiConfig]] = {
-    allForQuery(behaviorVersion.id).result.map(r => r.map(tuple2Required))
+  def allFor(behaviorVersion: BehaviorVersion): Future[Seq[RequiredOAuth2ApiConfig]] = {
+    val action = allForQuery(behaviorVersion.id).result.map(r => r.map(tuple2Required))
+    dataService.run(action)
   }
 
   def uncompiledAllForApiAndVersionQuery(apiId: Rep[String], behaviorVersionId: Rep[String]) = {
@@ -85,38 +73,41 @@ object RequiredOAuth2ApiConfigQueries {
   }
   val allForApiAndVersionQuery = Compiled(uncompiledAllForApiAndVersionQuery _)
 
-  def allFor(api: OAuth2Api, behaviorVersion: BehaviorVersion): DBIO[Seq[RequiredOAuth2ApiConfig]] = {
-    allForApiAndVersionQuery(api.id, behaviorVersion.id).result.map { r =>
+  def allFor(api: OAuth2Api, behaviorVersion: BehaviorVersion): Future[Seq[RequiredOAuth2ApiConfig]] = {
+    val action = allForApiAndVersionQuery(api.id, behaviorVersion.id).result.map { r =>
       r.map(tuple2Required)
     }
+    dataService.run(action)
   }
 
   def uncompiledFindQuery(id: Rep[String]) = allWithApplication.filter(_._1._1._1.id === id)
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def find(id: String): DBIO[Option[RequiredOAuth2ApiConfig]] = {
-    findQuery(id).result.map { r =>
+  def find(id: String): Future[Option[RequiredOAuth2ApiConfig]] = {
+    val action = findQuery(id).result.map { r =>
       r.headOption.map(tuple2Required)
     }
+    dataService.run(action)
   }
 
   def uncompiledFindRawQuery(id: Rep[String]) = all.filter(_.id === id)
   val findRawQuery = Compiled(uncompiledFindRawQuery _)
 
-  def save(requiredOAuth2ApiConfig: RequiredOAuth2ApiConfig): DBIO[RequiredOAuth2ApiConfig] = {
+  def save(requiredOAuth2ApiConfig: RequiredOAuth2ApiConfig): Future[RequiredOAuth2ApiConfig] = {
     val query = findRawQuery(requiredOAuth2ApiConfig.id)
     val raw = requiredOAuth2ApiConfig.toRaw
-    query.result.flatMap { r =>
+    val action = query.result.flatMap { r =>
       r.headOption.map { _ =>
         query.update(raw)
       }.getOrElse {
         all += raw
       }
     }.map(_ => requiredOAuth2ApiConfig)
+    dataService.run(action)
   }
 
-  def maybeCreateFor(data: RequiredOAuth2ApiConfigData, behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Option[RequiredOAuth2ApiConfig]] = {
-    for {
+  def maybeCreateFor(data: RequiredOAuth2ApiConfigData, behaviorVersion: BehaviorVersion): Future[Option[RequiredOAuth2ApiConfig]] = {
+    val action = for {
       maybeApi <- DBIO.from(dataService.oauth2Apis.find(data.apiId))
       maybeApplication <- data.application.map { appData =>
         DBIO.from(dataService.oauth2Applications.find(appData.applicationId))
@@ -126,5 +117,7 @@ object RequiredOAuth2ApiConfigQueries {
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig
+
+    dataService.run(action)
   }
 }

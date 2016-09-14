@@ -1,6 +1,6 @@
 package json
 
-import models.bots.config.RequiredOAuth2ApiConfig
+import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 
 case class RequiredOAuth2ApiConfigData(
                                         id: Option[String],
