@@ -3,6 +3,11 @@ var React = require('react'),
   DeleteButton = require('./delete_button'),
   Input = require('../form/input');
 
+  var paramTypeDescriptions = {
+    "Text": "Any text",
+    "Number": "Number"
+  };
+
 return React.createClass({
   propTypes: {
     id: React.PropTypes.oneOfType([
@@ -47,6 +52,10 @@ return React.createClass({
     return 'param-type-' + this.props.id + '-' + paramTypeName;
   },
 
+  paramTypeDisplayNameFor: function(paramTypeName) {
+    return paramTypeDescriptions[paramTypeName] || paramTypeName;
+  },
+
   render: function() {
     return (
       <div className="columns mbs">
@@ -66,25 +75,24 @@ return React.createClass({
             </div>
           </div>
         </div>
-        <div className="column column-one-quarter mobile-column-full mobile-prsymbol">
+        <div className="column column-three-quarters mobile-column-full mobile-mts">
           <div className="columns columns-elastic">
-            <div className="column column-expand prn">
-              <select className="form-select form-select-s" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
+            <div className="column column-shrink prxs align-m type-monospace type-disabled display-ellipsis">
+              {"//"}
+            </div>
+            <div className="column column-shrink align-m">
+              <select className="form-select form-select-s form-select-borderless" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
                 {this.props.paramTypes.map(function(paramTypeName) {
                   return (
-                    <option value={paramTypeName} key={this.keyFor(paramTypeName)}>{paramTypeName}</option>
+                    <option value={paramTypeName} key={this.keyFor(paramTypeName)}>{this.paramTypeDisplayNameFor(paramTypeName)}</option>
                   );
                 }, this)}
               </select>
             </div>
-          </div>
-        </div>
-        <div className="column column-one-half mobile-column-full mobile-mts">
-          <div className="columns columns-elastic">
             <div className="column column-shrink prxs align-m type-monospace type-disabled display-ellipsis">
               <label htmlFor={"question" + this.props.id}
                 title="Write a question for @ellipsis to ask the user to provide this parameter."
-              >{"// Q: "}</label>
+              >{"Q: "}</label>
             </div>
             <div className="column column-expand prn">
               <Input

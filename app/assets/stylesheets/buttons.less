@@ -76,7 +76,9 @@ select.form-select {
   background-color: @white;
 }
 
-button.button-dropdown-trigger-borderless {
+button.button-dropdown-trigger-borderless,
+select.form-select-borderless {
+  background-color: transparent;
   border-color: transparent;
 }
 
@@ -216,6 +218,11 @@ select.form-select:focus {
   &::before {
     right: @border-width - @border-width-thick;
   }
+}
+
+select.form-select:focus {
+  margin-left: @border-width - @border-width-thick;
+  margin-right: @border-width - @border-width-thick;
 }
 
 button.button-dropdown-trigger.button-s:focus,
