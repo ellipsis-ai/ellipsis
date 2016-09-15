@@ -10,7 +10,7 @@ sealed trait BehaviorParameterType {
 
   def prepareForInvocation(text: String): JsValue
 
-  def invalidPromptFor(param: BehaviorParameter, text: String): String
+  val invalidPromptModifier: String
 
 }
 
@@ -21,7 +21,7 @@ class TextType extends BehaviorParameterType {
 
   def prepareForInvocation(text: String): JsValue = JsString(text)
 
-  def invalidPromptFor(param: BehaviorParameter, text: String) = s"`${param.name}` is invalid"
+  val invalidPromptModifier: String = "I need a valid answer"
 
 }
 
@@ -41,7 +41,7 @@ class NumberType extends BehaviorParameterType {
     case e: NumberFormatException => JsString(text)
   }
 
-  def invalidPromptFor(param: BehaviorParameter, text: String) = s"I need a number for `${param.name}`"
+  val invalidPromptModifier: String = "I need a number for the answer"
 }
 
 object BehaviorParameterType {

@@ -5,7 +5,7 @@ import models.bots.behaviorparameter.BehaviorParameter
 import models.bots.behaviorversion.BehaviorVersion
 import models.bots.conversations.collectedparametervalue.CollectedParameterValue
 import models.team.Team
-import models.bots.conversations.InvokeBehaviorConversation
+import models.bots.conversations.{InvalidParamValue, InvokeBehaviorConversation}
 import models.bots.events.MessageEvent
 import models.bots.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
@@ -16,9 +16,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class ParameterWithValue(parameter: BehaviorParameter, invocationName: String, maybeValue: Option[String]) {
+
   def preparedValue: JsValue = maybeValue.map { value =>
     parameter.paramType.prepareForInvocation(value)
   }.getOrElse(JsString(""))
+
+  def hasValidValue: Boolean = maybeValue.exists(v => parameter.paramType.isValid(v))
+  def hasInvalidValue: Boolean = maybeValue.exists(v => !parameter.paramType.isValid(v))
 }
 
 case class BehaviorResponse(
@@ -29,7 +33,7 @@ case class BehaviorResponse(
                              ) {
 
   def isFilledOut: Boolean = {
-    parametersWithValues.forall(_.maybeValue.isDefined)
+    parametersWithValues.forall(_.hasValidValue)
   }
 
   def resultForFilledOut(service: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
@@ -50,11 +54,23 @@ case class BehaviorResponse(
     if (isFilledOut) {
       resultForFilledOut(awsService, dataService)
     } else {
+      val maybeFirstParamWithInvalidValue = parametersWithValues.find(_.hasInvalidValue)
       for {
-        convo <- InvokeBehaviorConversation.createFor(behaviorVersion, event.context.name, event.context.userIdForContext, activatedTrigger, dataService)
+        convo <- InvokeBehaviorConversation.createFor(
+          behaviorVersion,
+          event.context.name,
+          event.context.userIdForContext,
+          activatedTrigger,
+          dataService,
+          maybeFirstParamWithInvalidValue.map(p => InvalidParamValue(p.parameter, p.maybeValue.getOrElse("")))
+        )
         _ <- Future.sequence(parametersWithValues.map { p =>
           p.maybeValue.map { v =>
-            dataService.collectedParameterValues.save(CollectedParameterValue(p.parameter, convo, v))
+            if (p.hasValidValue) {
+              dataService.collectedParameterValues.save(CollectedParameterValue(p.parameter, convo, v))
+            } else {
+              Future.successful(Unit)
+            }
           }.getOrElse(Future.successful(Unit))
         })
         result <- convo.resultFor(event, awsService, dataService)

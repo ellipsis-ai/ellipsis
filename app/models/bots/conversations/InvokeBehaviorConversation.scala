@@ -16,7 +16,7 @@ import scala.concurrent.Future
 
 case class InvalidParamValue(param: BehaviorParameter, value: String) {
 
-  def prompt: String = param.paramType.invalidPromptFor(param, value)
+  val prompt: String = param.paramType.invalidPromptModifier
 
 }
 
@@ -27,7 +27,7 @@ case class InvokeBehaviorConversation(
                                       userIdForContext: String, // id for Slack, etc user
                                       startedAt: DateTime,
                                       state: String = Conversation.NEW_STATE,
-                                      maybeInvalidValue: Option[InvalidParamValue] = None
+                                      maybeInvalidValue: Option[InvalidParamValue]
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
@@ -94,16 +94,15 @@ case class InvokeBehaviorConversation(
   }
 
   private def promptResultFor(event: MessageEvent, info: ParamInfo): BehaviorResult = {
-    val prompt = maybeInvalidValue.map { invalid =>
-      invalid.prompt
-    }.getOrElse {
-      (for {
-        param <- info.maybeNextToCollect
-        question <- param.maybeQuestion
-      } yield question).getOrElse("All done!")
-    }
+    val prompt = (for {
+      param <- info.maybeNextToCollect
+      question <- param.maybeQuestion
+    } yield question).getOrElse("All done!")
 
-    SimpleTextResult(prompt)
+    val invalidValueModifier = maybeInvalidValue.map { v =>
+      s" (${v.prompt})"
+    }.getOrElse("")
+    SimpleTextResult(s"$prompt$invalidValueModifier")
   }
 
   def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
@@ -134,9 +133,19 @@ object InvokeBehaviorConversation {
                  context: String,
                  userIdForContext: String,
                  activatedTrigger: MessageTrigger,
-                 dataService: DataService
+                 dataService: DataService,
+                 maybeInvalidValue: Option[InvalidParamValue]
                  ): Future[InvokeBehaviorConversation] = {
-    val newInstance = InvokeBehaviorConversation(IDs.next, activatedTrigger, context, userIdForContext, DateTime.now, Conversation.NEW_STATE)
+    val newInstance =
+      InvokeBehaviorConversation(
+        IDs.next,
+        activatedTrigger,
+        context,
+        userIdForContext,
+        DateTime.now,
+        Conversation.NEW_STATE,
+        maybeInvalidValue
+      )
     dataService.conversations.save(newInstance).map(_ => newInstance)
   }
 }
