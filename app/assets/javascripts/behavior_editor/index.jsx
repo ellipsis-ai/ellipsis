@@ -495,6 +495,14 @@ return React.createClass({
 
   /* Setters/togglers */
 
+  createNewParam: function(optionalValues) {
+    return Object.assign({
+      name: '',
+      question: '',
+      paramType: { name: 'Text' }
+    }, optionalValues);
+  },
+
   addParam: function() {
     var newParamIndex = this.getBehaviorParams().length + 1;
     while (this.getBehaviorParams().some(function(param) {
@@ -502,16 +510,12 @@ return React.createClass({
     })) {
       newParamIndex++;
     }
-    var newParams = this.getBehaviorParams().concat([{ name: 'userInput' + newParamIndex, question: '' }]);
+    var newParams = this.getBehaviorParams().concat([this.createNewParam({ name: 'userInput' + newParamIndex })]);
     this.setBehaviorProp('params', newParams, this.focusOnLastParam);
   },
 
   addParams: function(newParamNames) {
-    var newParams = this.getBehaviorParams().concat(newParamNames.map((name) => ({
-      name: name,
-      paramType: { name: 'Text' },
-      question: ''
-    })));
+    var newParams = this.getBehaviorParams().concat(newParamNames.map((name) => this.createNewParam({ name: name })));
     this.setBehaviorProp('params', newParams);
   },
 
