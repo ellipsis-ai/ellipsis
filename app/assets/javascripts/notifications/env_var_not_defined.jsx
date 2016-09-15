@@ -3,15 +3,11 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
-      onClick: React.PropTypes.func.isRequired,
       details: React.PropTypes.arrayOf(React.PropTypes.shape({
         kind: React.PropTypes.string.isRequired,
-        environmentVariableName: React.PropTypes.string.isRequired
+        environmentVariableName: React.PropTypes.string.isRequired,
+        onClick: React.PropTypes.func.isRequired
       })).isRequired
-    },
-
-    onClick: function(detail) {
-      this.props.onClick(detail);
     },
 
     getButtonForEnvVar: function(envVarDetail) {
@@ -19,7 +15,7 @@ define(function(require) {
         <button
           type="button"
           className="button-raw button-s type-monospace type-bold mlxs"
-          onClick={this.onClick.bind(this, envVarDetail)}
+          onClick={envVarDetail.onClick}
         >{envVarDetail.environmentVariableName}</button>
       );
     },

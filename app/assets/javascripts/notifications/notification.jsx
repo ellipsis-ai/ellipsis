@@ -15,7 +15,6 @@ define(function(require) {
       details: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       kind: React.PropTypes.string.isRequired,
       index: React.PropTypes.number.isRequired,
-      onClick: React.PropTypes.func.isRequired,
       hidden: React.PropTypes.bool
     },
 
@@ -25,7 +24,7 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForEnvVarMissing details={this.props.details} onClick={this.props.onClick} />
+            <NotificationForEnvVarMissing details={this.props.details} />
           )
         };
       } else if (kind === "oauth2_config_without_application") {
@@ -57,7 +56,7 @@ define(function(require) {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
           message: (
-            <NotificationForParamNotInFunction details={this.props.details} onClick={this.props.onClick} />
+            <NotificationForParamNotInFunction details={this.props.details} />
           )
         };
       } else if (kind === "param_without_function") {
@@ -65,7 +64,7 @@ define(function(require) {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
           message: (
-            <NotificationForParamWithoutFunction details={this.props.details} onClick={this.props.onClick} />
+            <NotificationForParamWithoutFunction details={this.props.details} />
           )
         };
       }

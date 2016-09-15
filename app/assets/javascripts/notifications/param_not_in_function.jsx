@@ -5,13 +5,9 @@ define(function(require) {
     propTypes: {
       details: React.PropTypes.arrayOf(React.PropTypes.shape({
         kind: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired
-      })),
-      onClick: React.PropTypes.func.isRequired
-    },
-
-    onClick: function(detail) {
-      this.props.onClick(detail);
+        name: React.PropTypes.string.isRequired,
+        onClick: React.PropTypes.func.isRequired
+      })).isRequired
     },
 
     render: function() {
@@ -24,7 +20,7 @@ define(function(require) {
             <span>function to use it in code: </span>
             <button type="button"
               className="button-raw type-monospace"
-              onClick={this.onClick.bind(this, detail)}
+              onClick={detail.onClick}
             >{detail.name}</button>
           </span>
         );
@@ -37,7 +33,7 @@ define(function(require) {
               <span key={`unusedParamName${index}`}>
                   <button type="button"
                     className="button-raw type-monospace"
-                    onClick={this.onClick.bind(this, detail)}
+                    onClick={detail.onClick}
                   >{detail.name}</button>
                   <span>{index + 1 < numParams ? ", " : ""}</span>
                 </span>
