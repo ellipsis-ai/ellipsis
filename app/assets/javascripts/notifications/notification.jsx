@@ -2,7 +2,9 @@ define(function(require) {
   var React = require('react'),
     Collapsible = require('../collapsible'),
     SVGTip = require('../svg/tip'),
-    SVGWarning = require('../svg/warning');
+    SVGWarning = require('../svg/warning'),
+    NotificationForEnvVarMissing = require('./env_var_missing'),
+    NotificationForMissingOAuth2Application = require('./missing_oauth2_application');
 
   return React.createClass({
     propTypes: {
@@ -18,13 +20,17 @@ define(function(require) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
-          message: this.getNotificationForEnvVarMissing()
+          message: (
+            <NotificationForEnvVarMissing details={this.props.details} onClick={this.onClick} />
+          )
         };
       } else if (kind === "oauth2_config_without_application") {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
-          message: this.getNotificationForMissingOAuth2Application()
+          message: (
+            <NotificationForMissingOAuth2Application details={this.props.details} />
+          )
         };
       } else if (kind === "oauth2_application_unused") {
         return {
@@ -67,120 +73,6 @@ define(function(require) {
           <SVGTip />
         </span>
       );
-    },
-
-    getNotificationForEnvVarMissing: function() {
-      var numVarsMissing = this.props.details.length;
-      if (numVarsMissing === 1) {
-        var firstDetail = this.props.details[0];
-        return (
-          <span>
-            <span>This behavior requires an environment variable named </span>
-            {this.getButtonForEnvVar(firstDetail)}
-            <span className="mlxs"> to work properly.</span>
-          </span>
-        );
-      } else {
-        return (
-          <span>
-            <span>This behavior requires the following environment variables to work properly: </span>
-            {this.props.details.map(function(detail, index) {
-              return (
-                <span key={"notificationDetail" + index}>
-                  {this.getButtonForEnvVar(detail)}
-                  <span>{index + 1 < numVarsMissing ? ", " : ""}</span>
-                </span>
-              );
-            }, this)}
-          </span>
-        );
-      }
-    },
-
-    getButtonForEnvVar: function(envVarDetail) {
-      return (
-        <button
-          type="button"
-          className="button-raw button-s type-monospace type-bold mlxs"
-          onClick={this.onClick.bind(this, envVarDetail)}
-        >{envVarDetail.environmentVariableName}</button>
-      );
-    },
-
-    onAddOAuth2Application: function(detail, app) {
-      detail.onAddOAuth2Application(app);
-    },
-
-    onNewOAuth2Application: function(detail, requiredOAuth2ApiConfigId) {
-      detail.onNewOAuth2Application(requiredOAuth2ApiConfigId);
-    },
-
-    addOAuth2ApplicationPrompt: function(detail) {
-      var matchingApplication = detail.existingOAuth2Applications.find(ea => ea.apiId === detail.requiredApiConfig.apiId);
-      if (matchingApplication) {
-        return (
-          <span className="mhxs">
-            <button
-              type="button"
-              className="button-raw link button-s"
-              onClick={this.onAddOAuth2Application.bind(this, detail, matchingApplication)}>
-
-              Add {matchingApplication.displayName} to this behavior
-
-            </button>
-          </span>
-        );
-      } else {
-        return (
-          <span className="mhxs">
-            <button
-              type="button"
-              className="button-raw link button-s"
-              onClick={this.onNewOAuth2Application.bind(this, detail, detail.requiredApiConfig.id)}>
-
-              Configure the {detail.name} API for this behavior
-
-            </button>
-          </span>
-        );
-      }
-    },
-
-    recommendedScopeAnnotation: function(detail) {
-      var recommendedScope = detail.requiredApiConfig.recommendedScope;
-      if (recommendedScope) {
-        return (
-          <span>(recommended scope: <b>{recommendedScope}</b>)</span>
-        );
-      }
-    },
-
-    getNotificationForMissingOAuth2Application: function() {
-      var numRequiredApiConfigs = this.props.details.length;
-      if (numRequiredApiConfigs === 1) {
-        var detail = this.props.details[0];
-        return (
-          <span>
-            <span>This behavior needs to be configured to use the <b>{detail.name}</b> API {this.recommendedScopeAnnotation(detail)}.</span>
-            {this.addOAuth2ApplicationPrompt(detail)}
-          </span>
-        );
-      } else {
-        return (
-          <span>
-            <span>This behavior needs to be configured to use the following APIs: </span>
-            {this.props.details.map((ea, index) => {
-              return (
-                <span key={"oAuthNotificationDetail" + index}>
-                  <span>{ea.name} {this.recommendedScopeAnnotation(ea)}</span>
-                  {this.addOAuth2ApplicationPrompt(ea)}
-                  <span>{index + 1 < numRequiredApiConfigs ? ", " : ""}</span>
-                </span>
-              );
-            })}
-          </span>
-        );
-      }
     },
 
     getNotificationForUnusedOAuth2Application: function() {
