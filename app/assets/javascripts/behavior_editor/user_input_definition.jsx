@@ -81,7 +81,7 @@ return React.createClass({
               {"//"}
             </div>
             <div className="column column-shrink align-m">
-              <select className="form-select form-select-s form-select-borderless" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
+              <select className="form-select form-select-s form-select-borderless type-label type-weak" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
                 {this.props.paramTypes.map(function(paramTypeName) {
                   return (
                     <option value={paramTypeName} key={this.keyFor(paramTypeName)}>{this.paramTypeDisplayNameFor(paramTypeName)}</option>
