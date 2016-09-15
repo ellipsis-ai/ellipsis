@@ -132,9 +132,7 @@ return React.createClass({
     } else {
       label = "Phrase:";
     }
-    return (
-      <span className="type-weak">{label}</span>
-    );
+    return label;
   },
 
   componentDidMount: function() {
@@ -152,7 +150,7 @@ return React.createClass({
               <DropdownMenu
                 openWhen={this.props.dropdownIsOpen}
                 label={this.getPrefix()}
-                labelClassName="button-dropdown-trigger-borderless button-s mrs type-label"
+                labelClassName="button-dropdown-trigger-borderless button-s mrs type-label type-weak"
                 toggle={this.props.onToggleDropdown}
               >
                 <DropdownMenu.Item

@@ -1,0 +1,23 @@
+@(
+  teamAccess: models.accounts.user.UserTeamAccess,
+  apis: Seq[models.accounts.oauth2api.OAuth2Api]
+)(implicit messages: Messages, r: RequestHeader)
+
+@main("APIs", Some(teamAccess)) {
+  <div id="content" class="content">
+    <div class="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
+      <div class="container">
+        <p class="type-l type-white">
+          OAuth2 APIs
+        </p>
+      </div>
+    </div>
+    <ul>
+      @apis.map { ea =>
+        <li>
+          <a href="@routes.OAuth2ApiController.edit(ea.id)">@ea.name</a>
+        </li>
+      }
+    </ul>
+  </div>
+}

@@ -17,7 +17,7 @@ var React = require('react'),
   EnvVariableSetter = require('../environment_variables/setter'),
   HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
-  Notification = require('../notification'),
+  Notification = require('../notifications/notification'),
   SectionHeading = require('./section_heading'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
@@ -276,14 +276,13 @@ return React.createClass({
   buildEnvVarNotifications: function() {
     var envVars = (this.state ? this.state.envVariables : this.props.envVariables) || [];
     return envVars.
-      filter(function(ea) { return this.props.knownEnvVarsUsed.includes(ea.name); }.bind(this)).
-      filter(function(ea) { return !ea.isAlreadySavedWithValue; }).
-      map(function(ea) {
-        return {
-          kind: "env_var_not_defined",
-          environmentVariableName: ea.name
-        };
-      });
+      filter((ea) => this.props.knownEnvVarsUsed.includes(ea.name)).
+      filter((ea) => !ea.isAlreadySavedWithValue).
+      map((ea) => ({
+        kind: "env_var_not_defined",
+        environmentVariableName: ea.name,
+        onClick: () => { this.showEnvVariableSetter(ea.name); }
+      }));
   },
 
   getOAuth2ApiWithId: function(apiId) {
@@ -344,12 +343,21 @@ return React.createClass({
     if (this.hasCode() || this.state && this.state.revealCodeEditor) {
       return triggerParamNames.map((name) => ({
         kind: "param_not_in_function",
-        name: name
+        name: name,
+        onClick: () => {
+          this.addParams([name]);
+        }
       }));
     } else {
       return triggerParamNames.map((name) => ({
         kind: "param_without_function",
-        name: name
+        name: name,
+        onClick: () => {
+          this.addParams(triggerParamNames);
+          if (!this.state.revealCodeEditor) {
+            this.toggleCodeEditor();
+          }
+        }
       }));
     }
   },
@@ -651,22 +659,6 @@ return React.createClass({
     }
   },
 
-  onNotificationClick: function(notificationDetail) {
-    if (!notificationDetail) {
-      return;
-    }
-    if (notificationDetail.kind === 'env_var_not_defined') {
-      this.showEnvVariableSetter(notificationDetail);
-    } else if (notificationDetail.kind === 'param_without_function') {
-      this.addParams(notificationDetail.paramNames);
-      if (!this.state.revealCodeEditor) {
-        this.toggleCodeEditor();
-      }
-    } else if (notificationDetail.kind === 'param_not_in_function') {
-      this.addParams([notificationDetail.name]);
-    }
-  },
-
   onSubmit: function(maybeEvent) {
     var doSubmit = () => { this.refs.behaviorForm.submit(); };
     if (maybeEvent) {
@@ -749,12 +741,10 @@ return React.createClass({
     });
   },
 
-  showEnvVariableSetter: function(detailOrIndex) {
-    this.toggleActivePanel('envVariableSetter', true, function() {
-      if (detailOrIndex.environmentVariableName) {
-        this.refs.envVariableSetterPanel.focusOnVarName(detailOrIndex.environmentVariableName);
-      } else if (typeof(detailOrIndex) === 'number') {
-        this.refs.envVariableSetterPanel.focusOnVarIndex(detailOrIndex);
+  showEnvVariableSetter: function(nameToFocus) {
+    this.toggleActivePanel('envVariableSetter', true, () => {
+      if (nameToFocus) {
+        this.refs.envVariableSetterPanel.focusOnVarName(nameToFocus);
       }
     });
   },
@@ -1538,7 +1528,6 @@ return React.createClass({
                   details={notification.details}
                   index={index}
                   kind={notification.kind}
-                  onClick={this.onNotificationClick}
                   hidden={notification.hidden}
                 />
               );
