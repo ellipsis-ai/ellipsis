@@ -5,7 +5,8 @@ define(function(require) {
     SVGWarning = require('../svg/warning'),
     NotificationForEnvVarMissing = require('./env_var_not_defined'),
     NotificationForMissingOAuth2Application = require('./oauth2_config_without_application'),
-    NotificationForUnusedOAuth2Application = require('./oauth2_application_unused');
+    NotificationForUnusedOAuth2Application = require('./oauth2_application_unused'),
+    NotificationForUnusedAWS = require('./aws_unused');
 
   return React.createClass({
     propTypes: {
@@ -45,7 +46,9 @@ define(function(require) {
         return {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
-          message: this.getNotificationForUnusedAWS()
+          message: (
+            <NotificationForUnusedAWS details={this.props.details} />
+          )
         };
       } else if (kind === "param_not_in_function") {
         return {
@@ -74,16 +77,6 @@ define(function(require) {
       return (
         <span className="display-inline-block mrs align-b type-pink" style={{ width: 22, height: 24 }}>
           <SVGTip />
-        </span>
-      );
-    },
-
-    getNotificationForUnusedAWS: function() {
-      return (
-        <span>
-          <span>Use <code className="box-code-example mhxs">{this.props.details[0].code}</code> in your </span>
-          <span>function to access methods and properties of the </span>
-          <span><a href="http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-intro.html" target="_blank">AWS SDK</a>.</span>
         </span>
       );
     },
