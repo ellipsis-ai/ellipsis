@@ -248,7 +248,7 @@ class BehaviorEditorController @Inject() (
             version.maybeResponseTemplate.getOrElse(""),
             parametersByVersion.get(version).map { params =>
               params.map { ea =>
-                BehaviorParameterData(ea.name, BehaviorParameterTypeData(ea.paramType.name), ea.question)
+                BehaviorParameterData(ea.name, Some(BehaviorParameterTypeData(ea.paramType.name)), ea.question)
               }
             }.getOrElse(Seq()),
             triggersByVersion.get(version).map { triggers =>
