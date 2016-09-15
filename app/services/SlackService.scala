@@ -1,7 +1,7 @@
 package services
 
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.bots.events.EventHandler
+import models.behaviors.events.EventHandler
 import slack.rtm.SlackRtmClient
 
 trait SlackService {

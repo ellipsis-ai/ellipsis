@@ -1,4 +1,4 @@
-import models.bots.scheduledmessage._
+import models.behaviors.scheduledmessage._
 import org.scalatestplus.play.PlaySpec
 import org.joda.time._
 

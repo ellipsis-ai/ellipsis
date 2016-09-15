@@ -2,8 +2,8 @@ package controllers
 
 import javax.inject.Inject
 
-import models.bots.SimpleTextResult
-import models.bots.events.{APIMessageContext, APIMessageEvent, EventHandler}
+import models.behaviors.SimpleTextResult
+import models.behaviors.events.{APIMessageContext, APIMessageEvent, EventHandler}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.data.Form

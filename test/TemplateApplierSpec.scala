@@ -1,4 +1,4 @@
-import models.bots.templates.TemplateApplier
+import models.behaviors.templates.TemplateApplier
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
 

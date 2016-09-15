@@ -1,7 +1,7 @@
 package mocks
 
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.bots.events.EventHandler
+import models.behaviors.events.EventHandler
 import org.scalatest.mock.MockitoSugar
 import services.SlackService
 import slack.rtm.SlackRtmClient

@@ -1,7 +1,7 @@
 import models.IDs
-import models.bots.behaviorparameter.{BehaviorParameter, TextType}
-import models.bots.behaviorversion.BehaviorVersion
-import models.bots.triggers.messagetrigger.MessageTrigger
+import models.behaviors.behaviorparameter.{BehaviorParameter, TextType}
+import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.scalatestplus.play.PlaySpec
 
 trait MessageTriggerSpec extends PlaySpec {

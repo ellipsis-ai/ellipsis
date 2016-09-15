@@ -7,7 +7,7 @@ import play.api.inject.ApplicationLifecycle
 import slack.rtm.SlackRtmClient
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.bots.events.{EventHandler, SlackMessageContext, SlackMessageEvent}
+import models.behaviors.events.{EventHandler, SlackMessageContext, SlackMessageEvent}
 
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
