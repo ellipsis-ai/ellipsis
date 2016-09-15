@@ -1,8 +1,8 @@
 define(function(require) {
   var React = require('react'),
-    Collapsible = require('./collapsible'),
-    SVGTip = require('./svg/tip'),
-    SVGWarning = require('./svg/warning');
+    Collapsible = require('../collapsible'),
+    SVGTip = require('../svg/tip'),
+    SVGWarning = require('../svg/warning');
 
   return React.createClass({
     propTypes: {
