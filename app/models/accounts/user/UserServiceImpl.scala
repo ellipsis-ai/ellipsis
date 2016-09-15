@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.linkedaccount.LinkedAccount
-import models.bots.events.{MessageContext, SlackMessageContext}
+import models.behaviors.events.{MessageContext, SlackMessageContext}
 import models.IDs
 import models.team.Team
 import org.joda.time.DateTime

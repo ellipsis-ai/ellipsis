@@ -3,8 +3,8 @@ package models.accounts.user
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import models.team.Team
-import models.bots.behavior.Behavior
-import models.bots.events.MessageContext
+import models.behaviors.behavior.Behavior
+import models.behaviors.events.MessageContext
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global

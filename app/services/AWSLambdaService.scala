@@ -1,12 +1,12 @@
 package services
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
-import models.bots.events.MessageEvent
+import models.behaviors.events.MessageEvent
 import models.Models
-import models.bots.behaviorversion.BehaviorVersion
-import models.bots.config.awsconfig.AWSConfig
-import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
-import models.bots.{BehaviorResult, ParameterWithValue}
+import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.config.awsconfig.AWSConfig
+import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
+import models.behaviors.{BehaviorResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
 

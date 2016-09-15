@@ -1,4 +1,4 @@
-import models.bots.triggers.TemplateMessageTriggerUtils
+import models.behaviors.triggers.TemplateMessageTriggerUtils
 import org.scalatestplus.play.PlaySpec
 
 class TemplateMessageTriggerUtilsSpec extends PlaySpec {

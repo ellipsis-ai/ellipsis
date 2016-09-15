@@ -3,7 +3,7 @@ package export
 import json.BehaviorVersionData
 import models.team.Team
 import models.accounts.user.User
-import models.bots.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.BehaviorVersion
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global

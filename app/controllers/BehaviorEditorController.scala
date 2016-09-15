@@ -6,9 +6,9 @@ import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
-import models.bots._
-import models.bots.behaviorparameter.BehaviorParameterType
-import models.bots.triggers.messagetrigger.MessageTrigger
+import models.behaviors._
+import models.behaviors.behaviorparameter.BehaviorParameterType
+import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
