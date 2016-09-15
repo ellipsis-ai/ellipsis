@@ -41,10 +41,25 @@ class AWSLambdaServiceImpl @Inject() (
   val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
-  def listFunctionNames: Future[Seq[String]] = {
+  def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
     val listRequest = new ListFunctionsRequest()
-    JavaFutureWrapper.wrap(client.listFunctionsAsync(listRequest)).map { result =>
-      result.getFunctions.toSeq.map(_.getFunctionName)
+    val listRequestWithMarker = maybeNextMarker.map { nextMarker =>
+      listRequest.withMarker(nextMarker)
+    }.getOrElse(listRequest)
+    JavaFutureWrapper.wrap(client.listFunctionsAsync(listRequestWithMarker)).flatMap { result =>
+      if (result.getNextMarker == null) {
+        Future.successful(List())
+      } else {
+        fetchFunctions(Some(result.getNextMarker)).map { functions =>
+          (result.getFunctions ++ functions).toList
+        }
+      }
+    }
+  }
+
+  def listFunctionNames: Future[Seq[String]] = {
+    fetchFunctions(None).map { functions =>
+      functions.map(_.getFunctionName)
     }
   }
 
