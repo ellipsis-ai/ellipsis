@@ -15,7 +15,8 @@ return React.createClass({
     onParamDelete: React.PropTypes.func.isRequired,
     onToggleHelp: React.PropTypes.func.isRequired,
     userParams: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-    systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+    systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    paramTypes: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
   },
   onChange: function(index, data) {
     this.props.onParamChange(index, data);
@@ -76,6 +77,8 @@ return React.createClass({
                   key={'UserInputDefinition' + paramIndex}
                   ref={'param' + paramIndex}
                   name={param.name}
+                  paramTypes={this.props.paramTypes}
+                  paramType={param.paramType}
                   question={param.question}
                   onChange={this.onChange.bind(this, paramIndex)}
                   onDelete={this.onDelete.bind(this, paramIndex)}

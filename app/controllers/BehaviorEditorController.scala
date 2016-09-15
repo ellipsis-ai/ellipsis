@@ -7,6 +7,7 @@ import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
 import models.bots._
+import models.bots.behaviorparameter.BehaviorParameterType
 import models.bots.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -61,6 +62,7 @@ class BehaviorEditorController @Inject() (
           teamAccess,
           Json.toJson(data).toString,
           Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
+          Json.toJson(BehaviorParameterType.allNames).toString,
           Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
           Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
           justSaved = false,
@@ -93,6 +95,7 @@ class BehaviorEditorController @Inject() (
           teamAccess,
           Json.toJson(data).toString,
           Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
+          Json.toJson(BehaviorParameterType.allNames).toString,
           Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
           Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
           maybeJustSaved.exists(identity),
@@ -245,7 +248,7 @@ class BehaviorEditorController @Inject() (
             version.maybeResponseTemplate.getOrElse(""),
             parametersByVersion.get(version).map { params =>
               params.map { ea =>
-                BehaviorParameterData(ea.name, ea.question)
+                BehaviorParameterData(ea.name, Some(BehaviorParameterTypeData(ea.paramType.name)), ea.question)
               }
             }.getOrElse(Seq()),
             triggersByVersion.get(version).map { triggers =>

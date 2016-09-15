@@ -56,6 +56,9 @@ return React.createClass({
     responseTemplate: React.PropTypes.string,
     params: React.PropTypes.arrayOf(React.PropTypes.shape({
       name: React.PropTypes.string.isRequired,
+      paramType: React.PropTypes.shape({
+        name: React.PropTypes.string
+      }),
       question: React.PropTypes.string.isRequired
     })),
     triggers: React.PropTypes.arrayOf(React.PropTypes.shape({
@@ -83,6 +86,7 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
+    paramTypes: React.PropTypes.arrayOf(React.PropTypes.string),
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
@@ -499,6 +503,14 @@ return React.createClass({
 
   /* Setters/togglers */
 
+  createNewParam: function(optionalValues) {
+    return Object.assign({
+      name: '',
+      question: '',
+      paramType: { name: 'Text' }
+    }, optionalValues);
+  },
+
   addParam: function() {
     var newParamIndex = this.getBehaviorParams().length + 1;
     while (this.getBehaviorParams().some(function(param) {
@@ -506,15 +518,12 @@ return React.createClass({
     })) {
       newParamIndex++;
     }
-    var newParams = this.getBehaviorParams().concat([{ name: 'userInput' + newParamIndex, question: '' }]);
+    var newParams = this.getBehaviorParams().concat([this.createNewParam({ name: 'userInput' + newParamIndex })]);
     this.setBehaviorProp('params', newParams, this.focusOnLastParam);
   },
 
   addParams: function(newParamNames) {
-    var newParams = this.getBehaviorParams().concat(newParamNames.map((name) => ({
-      name: name,
-      question: ''
-    })));
+    var newParams = this.getBehaviorParams().concat(newParamNames.map((name) => this.createNewParam({ name: name })));
     this.setBehaviorProp('params', newParams);
   },
 
@@ -1341,6 +1350,7 @@ return React.createClass({
                   onToggleHelp={this.toggleBoilerplateHelp}
                   userParams={this.getBehaviorParams()}
                   systemParams={this.getSystemParams()}
+                  paramTypes={this.props.paramTypes}
                 />
               </div>
 

@@ -50,7 +50,7 @@ case class SuccessResult(
   val resultType = ResultType.Success
 
   def text: String = {
-    val inputs = parametersWithValues.map { ea => (ea.parameter.name, JsString(ea.value)) }
+    val inputs = parametersWithValues.map { ea => (ea.parameter.name, ea.preparedValue) }
     TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply
   }
 }
