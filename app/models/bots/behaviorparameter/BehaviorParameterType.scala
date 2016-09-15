@@ -10,6 +10,8 @@ sealed trait BehaviorParameterType {
 
   def prepareForInvocation(text: String): JsValue
 
+  def invalidPromptFor(param: BehaviorParameter, text: String): String
+
 }
 
 class TextType extends BehaviorParameterType {
@@ -18,6 +20,8 @@ class TextType extends BehaviorParameterType {
   def isValid(text: String) = true
 
   def prepareForInvocation(text: String): JsValue = JsString(text)
+
+  def invalidPromptFor(param: BehaviorParameter, text: String) = s"`${param.name}` is invalid"
 
 }
 
@@ -36,6 +40,8 @@ class NumberType extends BehaviorParameterType {
   } catch {
     case e: NumberFormatException => JsString(text)
   }
+
+  def invalidPromptFor(param: BehaviorParameter, text: String) = s"I need a number for `${param.name}`"
 }
 
 object BehaviorParameterType {

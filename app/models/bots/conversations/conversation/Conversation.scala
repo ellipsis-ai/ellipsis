@@ -20,6 +20,7 @@ trait Conversation {
   val startedAt: DateTime
   val state: String
 
+  def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[Conversation]
   def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BehaviorResult]
 
