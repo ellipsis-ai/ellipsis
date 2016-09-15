@@ -3,8 +3,9 @@ define(function(require) {
     Collapsible = require('../collapsible'),
     SVGTip = require('../svg/tip'),
     SVGWarning = require('../svg/warning'),
-    NotificationForEnvVarMissing = require('./env_var_missing'),
-    NotificationForMissingOAuth2Application = require('./missing_oauth2_application');
+    NotificationForEnvVarMissing = require('./env_var_not_defined'),
+    NotificationForMissingOAuth2Application = require('./oauth2_config_without_application'),
+    NotificationForUnusedOAuth2Application = require('./oauth2_application_unused');
 
   return React.createClass({
     propTypes: {
@@ -36,7 +37,9 @@ define(function(require) {
         return {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
-          message: this.getNotificationForUnusedOAuth2Application()
+          message: (
+            <NotificationForUnusedOAuth2Application details={this.props.details} />
+          )
         };
       } else if (kind === "aws_unused") {
         return {
@@ -73,33 +76,6 @@ define(function(require) {
           <SVGTip />
         </span>
       );
-    },
-
-    getNotificationForUnusedOAuth2Application: function() {
-      var numApps = this.props.details.length;
-      if (numApps === 1) {
-        var firstApp = this.props.details[0];
-        return (
-          <span>
-            <span>Add <code className="box-code-example mhxs">{firstApp.code}</code> to your function to use the </span>
-            <span>API token for <b>{firstApp.name}</b>. </span>
-          </span>
-        );
-      } else {
-        return (
-          <span>
-            <span>This behavior has the following API tokens available: </span>
-            {this.props.details.map((detail, index) => {
-              return (
-                <span key={"oAuthNotificationDetail" + index}>
-                  <code className="box-code-example mhxs">{detail.code}</code>
-                  <span>{index + 1 < numApps ? ", " : ""}</span>
-                </span>
-              );
-            })}
-          </span>
-        );
-      }
     },
 
     getNotificationForUnusedAWS: function() {
