@@ -21,6 +21,7 @@ var React = require('react'),
   SectionHeading = require('./section_heading'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
+  UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
   Collapsible = require('../collapsible'),
@@ -1061,7 +1062,7 @@ return React.createClass({
   },
 
   focusOnParamIndex: function(index) {
-    this.refs.codeHeader.focusIndex(index);
+    this.refs.userInputConfiguration.focusIndex(index);
   },
 
   focusOnLastParam: function() {
@@ -1231,6 +1232,18 @@ return React.createClass({
             openDropdownName={this.getActiveDropdown()}
           />
 
+          <hr className="mtn" />
+
+          <UserInputConfiguration
+            ref="userInputConfiguration"
+            onParamChange={this.updateParamAtIndexWithParam}
+            onParamDelete={this.deleteParamAtIndex}
+            onParamAdd={this.addParam}
+            onEnterKey={this.onParamEnterKey}
+            userParams={this.getBehaviorParams()}
+            paramTypes={this.props.paramTypes}
+          />
+
           <Collapsible revealWhen={this.state.revealCodeEditor}>
             <hr className="mtn" />
           </Collapsible>
@@ -1342,10 +1355,6 @@ return React.createClass({
                 <CodeHeader
                   ref="codeHeader"
                   shouldExpandParams={this.hasUserParameters()}
-                  onParamChange={this.updateParamAtIndexWithParam}
-                  onParamDelete={this.deleteParamAtIndex}
-                  onParamAdd={this.addParam}
-                  onEnterKey={this.onParamEnterKey}
                   helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
                   onToggleHelp={this.toggleBoilerplateHelp}
                   userParams={this.getBehaviorParams()}

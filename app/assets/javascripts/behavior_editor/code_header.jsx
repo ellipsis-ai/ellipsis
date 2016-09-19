@@ -1,34 +1,16 @@
 define(function(require) {
 var React = require('react'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  HelpButton = require('../help/help_button'),
-  UserInputDefinition = require('./user_input_definition');
+  HelpButton = require('../help/help_button');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
   propTypes: {
     shouldExpandParams: React.PropTypes.bool,
     helpVisible: React.PropTypes.bool,
-    onEnterKey: React.PropTypes.func.isRequired,
-    onParamAdd: React.PropTypes.func.isRequired,
-    onParamChange: React.PropTypes.func.isRequired,
-    onParamDelete: React.PropTypes.func.isRequired,
     onToggleHelp: React.PropTypes.func.isRequired,
     userParams: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-    systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-    paramTypes: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
-  },
-  onChange: function(index, data) {
-    this.props.onParamChange(index, data);
-  },
-  onDelete: function(index) {
-    this.props.onParamDelete(index);
-  },
-  onEnterKey: function(index) {
-    this.props.onEnterKey(index);
-  },
-  focusIndex: function(index) {
-    this.refs['param' + index].focus();
+    systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
   },
   boilerplateLineNumber: function() {
     return this.props.shouldExpandParams ? this.props.userParams.length + 2 : 1;
@@ -68,33 +50,18 @@ return React.createClass({
 
         {this.props.userParams.map(function(param, paramIndex) {
           return (
-            <div key={'paramContainer' + paramIndex} className="columns columns-elastic">
+            <div key={'param' + paramIndex} className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">
-                <code className="type-disabled type-s position-absolute position-top-right pts prxs">{paramIndex + 2}</code>
+                <code className="type-disabled type-s position-absolute position-top-right prxs">{paramIndex + 2}</code>
               </div>
               <div className="column column-expand pll">
-                <UserInputDefinition
-                  key={'UserInputDefinition' + paramIndex}
-                  ref={'param' + paramIndex}
-                  name={param.name}
-                  paramTypes={this.props.paramTypes}
-                  paramType={param.paramType}
-                  question={param.question}
-                  onChange={this.onChange.bind(this, paramIndex)}
-                  onDelete={this.onDelete.bind(this, paramIndex)}
-                  onEnterKey={this.onEnterKey.bind(this, paramIndex)}
-                  id={paramIndex}
-                />
+                <div className="type-monospace type-s">{param.name},</div>
               </div>
             </div>
           );
         }, this)}
 
         <div className="columns">
-          <div className="column column-right align-r prxs mobile-align-l mbs">
-            <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add parameter</button>
-            <span className="button-symbol-placeholder" />
-          </div>
           <div className="column">
             <div className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">

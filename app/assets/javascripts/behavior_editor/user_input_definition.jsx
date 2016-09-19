@@ -4,8 +4,8 @@ var React = require('react'),
   Input = require('../form/input');
 
   var paramTypeDescriptions = {
-    "Text": "Any text",
-    "Number": "Number"
+    "Text": "Some text",
+    "Number": "A number"
   };
 
 return React.createClass({
@@ -58,60 +58,54 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="columns mbs">
-        <div className="column column-one-quarter mobile-column-full mobile-prsymbol">
-          <div className="columns columns-elastic">
-            <div className="column column-expand prn">
-              <Input
-                ref="name"
-                className="form-input-borderless type-monospace type-s"
-                placeholder="userInput"
-                value={this.props.name}
-                onChange={this.onNameChange}
-              />
-            </div>
-            <div className="column column-shrink align-b">
-              <code className="type-s type-weak">,</code>
-            </div>
+      <div>
+        <div className="columns columns-elastic">
+          <div className="column column-shrink align-m">
+            <select className="form-select form-select-s" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
+              {this.props.paramTypes.map(function(paramTypeName) {
+                return (
+                  <option value={paramTypeName} key={this.keyFor(paramTypeName)}>{this.paramTypeDisplayNameFor(paramTypeName)}</option>
+                );
+              }, this)}
+            </select>
+          </div>
+          <div className="column column-shrink align-m ptxs type-s type-weak">
+            labeled
+          </div>
+          <div className="column column-expand">
+            <Input
+              ref="name"
+              className="form-input-borderless type-monospace type-m"
+              placeholder="userInput"
+              value={this.props.name}
+              onChange={this.onNameChange}
+            />
+          </div>
+          <div className="column column-shrink display-ellipsis align-m ptxs type-s type-weak">
+            from the trigger, or…
+          </div>
+          <div className="column column-shrink">
+            <DeleteButton
+              onClick={this.onDeleteClick}
+              title={"Delete the “" + this.props.name + "” parameter"}
+            />
           </div>
         </div>
-        <div className="column column-three-quarters mobile-column-full mobile-mts">
-          <div className="columns columns-elastic">
-            <div className="column column-shrink prxs align-m type-monospace type-disabled display-ellipsis">
-              {"//"}
-            </div>
-            <div className="column column-shrink align-m">
-              <select className="form-select form-select-s form-select-borderless type-label type-weak" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
-                {this.props.paramTypes.map(function(paramTypeName) {
-                  return (
-                    <option value={paramTypeName} key={this.keyFor(paramTypeName)}>{this.paramTypeDisplayNameFor(paramTypeName)}</option>
-                  );
-                }, this)}
-              </select>
-            </div>
-            <div className="column column-shrink prxs align-m type-monospace type-disabled display-ellipsis">
-              <label htmlFor={"question" + this.props.id}
-                title="Write a question for @ellipsis to ask the user to provide this parameter."
-              >{"Q: "}</label>
-            </div>
-            <div className="column column-expand prn">
-              <Input
-                id={"question" + this.props.id}
-                ref="question"
-                placeholder="Write a question to ask the user for this parameter"
-                autoFocus={this.props.shouldGrabFocus}
-                value={this.props.question}
-                onChange={this.onQuestionChange}
-                onEnterKey={this.props.onEnterKey}
-                className="form-input-borderless type-italic"
-              />
-            </div>
-            <div className="column column-shrink">
-              <DeleteButton
-                onClick={this.onDeleteClick}
-                title={"Delete the “" + this.props.name + "” parameter"}
-              />
-            </div>
+        <div className="columns columns-elastic">
+          <div className="column column-shrink align-m ptxs type-s type-weak display-ellipsis">
+            by asking a question:
+          </div>
+          <div className="column column-expand">
+            <Input
+              id={"question" + this.props.id}
+              ref="question"
+              placeholder="Write a question to ask the user for this input"
+              autoFocus={this.props.shouldGrabFocus}
+              value={this.props.question}
+              onChange={this.onQuestionChange}
+              onEnterKey={this.props.onEnterKey}
+              className="form-input-borderless type-italic"
+            />
           </div>
         </div>
       </div>
