@@ -60,23 +60,23 @@ return React.createClass({
     return (
       <div>
         <div className="columns columns-elastic">
-          <div className="column column-expand">
-            <select className="form-select form-select-s" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
+          <div className="column column-expand align-form-input">
+            <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
               {this.props.paramTypes.map(function(paramTypeName) {
                 return (
                   <option value={paramTypeName} key={this.keyFor(paramTypeName)}>{this.paramTypeDisplayNameFor(paramTypeName)}</option>
                 );
               }, this)}
             </select>
-            <span className="display-inline-block align-m ptxs type-s type-weak mhm">labeled</span>
+            <span className="display-inline-block align-m type-s type-weak mrm">labeled</span>
             <Input
               ref="name"
-              className="form-input-borderless type-monospace type-m width-10"
+              className="form-input-borderless type-monospace type-s width-10 mrm"
               placeholder="userInput"
               value={this.props.name}
               onChange={this.onNameChange}
             />
-            <span className="display-inline-block align-m ptxs type-s type-weak mhm">
+            <span className="display-inline-block align-m type-s type-weak mrm">
               from the trigger text, or by asking a question:
             </span>
           </div>
