@@ -872,9 +872,12 @@ return React.createClass({
     var newParamName = newParam.name;
     var newParams = ImmutableObjectUtils.arrayWithNewElementAtIndex(oldParams, newParam, index);
     this.setBehaviorProp('params', newParams, () => {
-      // if there are no other params that still have the old name, replace triggers
-      if (!newParams.some((ea) => ea.name === oldParamName)) {
-        this.replaceParamNameInTriggers(oldParamName, newParamName);
+      var replaceCount = 0;
+      if (oldParamName === this.state.paramNameToUpdate) {
+        replaceCount = this.replaceTriggerParamNamesAndCount(oldParamName, newParamName);
+        if (replaceCount > 0) {
+          this.setState({ paramNameToUpdate: newParamName });
+        }
       }
     });
   },
@@ -886,21 +889,22 @@ return React.createClass({
     this.setBehaviorProp('responseTemplate', newTemplateString, callback);
   },
 
-  replaceParamNameInTriggers: function(oldName, newName) {
+  replaceTriggerParamNamesAndCount: function(oldName, newName) {
     var triggers = this.getBehaviorTriggers();
     var pattern = new RegExp(`\{${oldName}\}`);
-    var anyTriggerModified = false;
+    var numTriggersModified = 0;
     var newTriggers = triggers.map((oldTrigger) => {
       if (!oldTrigger.isRegex && pattern.test(oldTrigger.text)) {
-        anyTriggerModified = true;
+        numTriggersModified++;
         return Object.assign({}, oldTrigger, { text: oldTrigger.text.replace(pattern, `{${newName}}`) });
       } else {
         return oldTrigger;
       }
     });
-    if (anyTriggerModified) {
+    if (numTriggersModified > 0) {
       this.setBehaviorProp('triggers', newTriggers);
     }
+    return numTriggersModified;
   },
 
   updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
@@ -1131,6 +1135,18 @@ return React.createClass({
     }
   },
 
+  onParamNameFocus: function(index) {
+    this.setState({
+      paramNameToUpdate: this.getBehaviorParams()[index].name
+    });
+  },
+
+  onParamNameBlur: function() {
+    this.setState({
+      paramNameToUpdate: null
+    });
+  },
+
   resetNotificationsImmediately: function() {
     var newNotifications = this.buildNotifications();
     var newKinds = newNotifications.map(ea => ea.kind);
@@ -1186,7 +1202,8 @@ return React.createClass({
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
       redirectValue: "",
-      requiredOAuth2ApiConfigId: ""
+      requiredOAuth2ApiConfigId: "",
+      paramNameToUpdate: null
     };
   },
 
@@ -1244,6 +1261,8 @@ return React.createClass({
             onParamChange={this.updateParamAtIndexWithParam}
             onParamDelete={this.deleteParamAtIndex}
             onParamAdd={this.addParam}
+            onParamNameFocus={this.onParamNameFocus}
+            onParamNameBlur={this.onParamNameBlur}
             onEnterKey={this.onParamEnterKey}
             userParams={this.getBehaviorParams()}
             paramTypes={this.props.paramTypes}

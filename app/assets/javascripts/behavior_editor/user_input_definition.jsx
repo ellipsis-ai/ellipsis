@@ -22,6 +22,8 @@ return React.createClass({
     onChange: React.PropTypes.func.isRequired,
     onDelete: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func.isRequired,
+    onNameFocus: React.PropTypes.func.isRequired,
+    onNameBlur: React.PropTypes.func.isRequired,
     question: React.PropTypes.string.isRequired,
     shouldGrabFocus: React.PropTypes.bool
   },
@@ -75,6 +77,8 @@ return React.createClass({
               placeholder="userInput"
               value={this.props.name}
               onChange={this.onNameChange}
+              onFocus={this.props.onNameFocus}
+              onBlur={this.props.onNameBlur}
             />
             <span className="display-inline-block align-m type-s type-weak mrm">
               from the trigger text, or by asking a question:

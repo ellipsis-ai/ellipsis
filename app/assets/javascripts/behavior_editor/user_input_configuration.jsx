@@ -9,6 +9,8 @@ define(function(require) {
       onParamChange: React.PropTypes.func.isRequired,
       onParamDelete: React.PropTypes.func.isRequired,
       onParamAdd: React.PropTypes.func.isRequired,
+      onParamNameFocus: React.PropTypes.func.isRequired,
+      onParamNameBlur: React.PropTypes.func.isRequired,
       onEnterKey: React.PropTypes.func.isRequired,
       userParams: React.PropTypes.arrayOf(React.PropTypes.shape({
         name: React.PropTypes.string.isRequired,
@@ -29,6 +31,15 @@ define(function(require) {
     onEnterKey: function(index) {
       this.props.onEnterKey(index);
     },
+
+    onNameFocus: function(index) {
+      this.props.onParamNameFocus(index);
+    },
+
+    onNameBlur: function(index) {
+      this.props.onParamNameBlur(index);
+    },
+
     focusIndex: function(index) {
       this.refs['param' + index].focus();
     },
@@ -80,6 +91,8 @@ define(function(require) {
                             onChange={this.onChange.bind(this, paramIndex)}
                             onDelete={this.onDelete.bind(this, paramIndex)}
                             onEnterKey={this.onEnterKey.bind(this, paramIndex)}
+                            onNameFocus={this.onNameFocus.bind(this, paramIndex)}
+                            onNameBlur={this.onNameBlur.bind(this, paramIndex)}
                             id={paramIndex}
                           />
                         </div>
