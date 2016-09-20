@@ -175,26 +175,38 @@ class AWSLambdaServiceImpl @Inject() (
     requiredOAuth2ApiConfigs.map(accessTokenCodeFor).mkString("\n")
   }
 
-  private def nodeCodeFor(functionBody: String, params: Array[String], behaviorVersion: BehaviorVersion, maybeAwsConfig: Option[AWSConfig], requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
+  private def functionWithParams(params: Array[String], functionBody: String): String = {
+    val definitionUserParamsString = if (params.isEmpty) {
+      ""
+    } else {
+      s"""\n${params.map(ea => ea ++ ",").mkString("\n")}\n"""
+    }
+    val possibleEndOfParamsNewline = if (params.isEmpty) { "" } else { "\n" }
+    s"""function($definitionUserParamsString$CONTEXT_PARAM$possibleEndOfParamsNewline) {
+        |  $functionBody
+        |}""".stripMargin
+  }
+
+  private def nodeCodeFor(functionBody: String, params: Array[String], maybeAwsConfig: Option[AWSConfig], requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
 
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = ${behaviorVersion.functionWithParams(params)};
-      |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-      |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = function() {
-      |     callback(null, { $NO_RESPONSE_KEY: true });
-      |   };
-      |   $CONTEXT_PARAM.success = function(result) {
-      |     callback(null, { "result": result === undefined ? null : result });
-      |   };
-      |   $CONTEXT_PARAM.error = function(err) { callback(err); };
-      |   ${awsCodeFor(maybeAwsConfig)}
-      |   $CONTEXT_PARAM.accessTokens = {};
-      |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
-      |   fn($invocationParamsString);
-      |}
+    s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)};
+        |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
+        |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = function() {
+        |     callback(null, { $NO_RESPONSE_KEY: true });
+        |   };
+        |   $CONTEXT_PARAM.success = function(result) {
+        |     callback(null, { "result": result === undefined ? null : result });
+        |   };
+        |   $CONTEXT_PARAM.error = function(err) { callback(err); };
+        |   ${awsCodeFor(maybeAwsConfig)}
+        |   $CONTEXT_PARAM.accessTokens = {};
+        |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
+        |   fn($invocationParamsString);
+        |}
     """.stripMargin
   }
 
@@ -202,18 +214,18 @@ class AWSLambdaServiceImpl @Inject() (
   private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
   private def createZipWithModulesFor(
-                                       behaviorVersion: BehaviorVersion,
+                                       functionName: String,
                                        functionBody: String,
                                        params: Array[String],
                                        maybeAWSConfig: Option[AWSConfig],
                                        requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
-                                       ): Unit = {
-    val dirName = dirNameFor(behaviorVersion.functionName)
+                                     ): Unit = {
+    val dirName = dirNameFor(functionName)
     val path = Path(dirName)
     path.createDirectory()
 
     val writer = new PrintWriter(new File(s"$dirName/index.js"))
-    writer.write(nodeCodeFor(functionBody, params, behaviorVersion, maybeAWSConfig, requiredOAuth2ApiConfigs))
+    writer.write(nodeCodeFor(functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs))
     writer.close()
 
     requiredModulesIn(functionBody).foreach { moduleName =>
@@ -221,18 +233,18 @@ class AWSLambdaServiceImpl @Inject() (
       Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
     }
 
-    Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(behaviorVersion.functionName)} *")).!
+    Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(functionName)} *")).!
   }
 
   private def getZipFor(
-                         behaviorVersion: BehaviorVersion,
+                         functionName: String,
                          functionBody: String,
                          params: Array[String],
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
-                         ): ByteBuffer = {
-    createZipWithModulesFor(behaviorVersion, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs)
-    val path = Paths.get(zipFileNameFor(behaviorVersion.functionName))
+                       ): ByteBuffer = {
+    createZipWithModulesFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs)
+    val path = Paths.get(zipFileNameFor(functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
 
@@ -246,15 +258,13 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  def deployFunctionFor(
-                         behaviorVersion: BehaviorVersion,
-                         functionBody: String,
-                         params: Array[String],
-                         maybeAWSConfig: Option[AWSConfig],
-                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
-                         ): Future[Unit] = {
-    val functionName = behaviorVersion.functionName
-
+  def deployFunction(
+                      functionName: String,
+                      functionBody: String,
+                      params: Array[String],
+                      maybeAWSConfig: Option[AWSConfig],
+                      requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
+                    ): Future[Unit] = {
     // blocks
     deleteFunction(functionName)
 
@@ -263,7 +273,7 @@ class AWSLambdaServiceImpl @Inject() (
     } else {
       val functionCode =
         new FunctionCode().
-          withZipFile(getZipFor(behaviorVersion, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs))
+          withZipFile(getZipFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs))
       val createFunctionRequest =
         new CreateFunctionRequest().
           withFunctionName(functionName).
@@ -275,5 +285,15 @@ class AWSLambdaServiceImpl @Inject() (
 
       JavaFutureWrapper.wrap(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
     }
+  }
+
+  def deployFunctionFor(
+                         behaviorVersion: BehaviorVersion,
+                         functionBody: String,
+                         params: Array[String],
+                         maybeAWSConfig: Option[AWSConfig],
+                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
+                         ): Future[Unit] = {
+    deployFunction(behaviorVersion.functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs)
   }
 }
