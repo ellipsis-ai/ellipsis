@@ -872,11 +872,11 @@ return React.createClass({
     var newParamName = newParam.name;
     var newParams = ImmutableObjectUtils.arrayWithNewElementAtIndex(oldParams, newParam, index);
     this.setBehaviorProp('params', newParams, () => {
-      var replaceCount = 0;
-      if (oldParamName === this.state.paramNameToUpdate) {
-        replaceCount = this.replaceTriggerParamNamesAndCount(oldParamName, newParamName);
-        if (replaceCount > 0) {
-          this.setState({ paramNameToUpdate: newParamName });
+      var numTriggersReplaced = 0;
+      if (oldParamName === this.state.paramNameToSync) {
+        numTriggersReplaced = this.replaceTriggerParamNamesAndCount(oldParamName, newParamName);
+        if (numTriggersReplaced > 0) {
+          this.setState({ paramNameToSync: newParamName });
         }
       }
     });
@@ -1137,13 +1137,13 @@ return React.createClass({
 
   onParamNameFocus: function(index) {
     this.setState({
-      paramNameToUpdate: this.getBehaviorParams()[index].name
+      paramNameToSync: this.getBehaviorParams()[index].name
     });
   },
 
   onParamNameBlur: function() {
     this.setState({
-      paramNameToUpdate: null
+      paramNameToSync: null
     });
   },
 
@@ -1203,7 +1203,7 @@ return React.createClass({
       envVariableAdderPrompt: null,
       redirectValue: "",
       requiredOAuth2ApiConfigId: "",
-      paramNameToUpdate: null
+      paramNameToSync: null
     };
   },
 
