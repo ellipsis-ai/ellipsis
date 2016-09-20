@@ -2,13 +2,15 @@ package models.behaviors.behaviorparameter
 
 import play.api.libs.json.{JsNumber, JsString, JsValue}
 
+import scala.concurrent.Future
+
 sealed trait BehaviorParameterType {
 
   val name: String
 
-  def isValid(text: String): Boolean
+  def isValid(text: String): Future[Boolean]
 
-  def prepareForInvocation(text: String): JsValue
+  def prepareForInvocation(text: String): Future[JsValue]
 
   val invalidPromptModifier: String
 
@@ -17,9 +19,9 @@ sealed trait BehaviorParameterType {
 class TextType extends BehaviorParameterType {
   val name = BehaviorParameterType.TEXT
 
-  def isValid(text: String) = true
+  def isValid(text: String) = Future.successful(true)
 
-  def prepareForInvocation(text: String): JsValue = JsString(text)
+  def prepareForInvocation(text: String) = Future.successful(JsString(text))
 
   val invalidPromptModifier: String = "I need a valid answer"
 
@@ -28,17 +30,21 @@ class TextType extends BehaviorParameterType {
 class NumberType extends BehaviorParameterType {
   val name = BehaviorParameterType.NUMBER
 
-  def isValid(text: String): Boolean = try {
-    text.toDouble
-    true
-  } catch {
-    case e: NumberFormatException => false
+  def isValid(text: String) = Future.successful {
+    try {
+      text.toDouble
+      true
+    } catch {
+      case e: NumberFormatException => false
+    }
   }
 
-  def prepareForInvocation(text: String): JsValue = try {
-    JsNumber(BigDecimal(text))
-  } catch {
-    case e: NumberFormatException => JsString(text)
+  def prepareForInvocation(text: String) = Future.successful {
+    try {
+      JsNumber(BigDecimal(text))
+    } catch {
+      case e: NumberFormatException => JsString(text)
+    }
   }
 
   val invalidPromptModifier: String = "I need a number for the answer"
