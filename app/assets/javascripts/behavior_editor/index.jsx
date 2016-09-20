@@ -872,7 +872,10 @@ return React.createClass({
     var newParamName = newParam.name;
     var newParams = ImmutableObjectUtils.arrayWithNewElementAtIndex(oldParams, newParam, index);
     this.setBehaviorProp('params', newParams, () => {
-      this.replaceParamNameInTriggers(oldParamName, newParamName);
+      // if there are no other params that still have the old name, replace triggers
+      if (!newParams.some((ea) => ea.name === oldParamName)) {
+        this.replaceParamNameInTriggers(oldParamName, newParamName);
+      }
     });
   },
 
