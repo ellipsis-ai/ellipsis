@@ -867,7 +867,13 @@ return React.createClass({
   },
 
   updateParamAtIndexWithParam: function(index, newParam) {
-    this.setBehaviorProp('params', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorParams(), newParam, index));
+    var oldParams = this.getBehaviorParams();
+    var oldParamName = oldParams[index].name;
+    var newParamName = newParam.name;
+    var newParams = ImmutableObjectUtils.arrayWithNewElementAtIndex(oldParams, newParam, index);
+    this.setBehaviorProp('params', newParams, () => {
+      this.replaceParamNameInTriggers(oldParamName, newParamName);
+    });
   },
 
   updateTemplate: function(newTemplateString) {
@@ -875,6 +881,23 @@ return React.createClass({
       this.setState({ hasModifiedTemplate: true });
     };
     this.setBehaviorProp('responseTemplate', newTemplateString, callback);
+  },
+
+  replaceParamNameInTriggers: function(oldName, newName) {
+    var triggers = this.getBehaviorTriggers();
+    var pattern = new RegExp(`\{${oldName}\}`);
+    var anyTriggerModified = false;
+    var newTriggers = triggers.map((oldTrigger) => {
+      if (!oldTrigger.isRegex && pattern.test(oldTrigger.text)) {
+        anyTriggerModified = true;
+        return Object.assign({}, oldTrigger, { text: oldTrigger.text.replace(pattern, `{${newName}}`) });
+      } else {
+        return oldTrigger;
+      }
+    });
+    if (anyTriggerModified) {
+      this.setBehaviorProp('triggers', newTriggers);
+    }
   },
 
   updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
