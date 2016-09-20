@@ -1238,7 +1238,7 @@ return React.createClass({
             <div className="columns columns-elastic mobile-columns-float">
               <div className="column column-expand">
                 <p className="mbn">
-                  <span>You can run code to determine a result, with additional input from the user if needed, </span>
+                  <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
                   <span>or provide a simple response below.</span>
                 </p>
               </div>
