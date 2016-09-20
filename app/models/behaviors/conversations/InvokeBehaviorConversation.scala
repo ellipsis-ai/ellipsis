@@ -63,11 +63,13 @@ case class InvokeBehaviorConversation(
     for {
       updatedConversation <- info.maybeNextToCollect.map { param =>
         val potentialValue = event.context.relevantMessageText
-        if (param.paramType.isValid(potentialValue)) {
-          val collected = CollectedParameterValue(param, this, event.context.relevantMessageText)
-          dataService.collectedParameterValues.save(collected).map(_ => this)
-        } else {
-          Future.successful(this.copy(maybeInvalidValue = Some(InvalidParamValue(param, potentialValue))))
+        param.paramType.isValid(potentialValue).flatMap { isValid =>
+          if (isValid) {
+            val collected = CollectedParameterValue(param, this, event.context.relevantMessageText)
+            dataService.collectedParameterValues.save(collected).map(_ => this)
+          } else {
+            Future.successful(this.copy(maybeInvalidValue = Some(InvalidParamValue(param, potentialValue))))
+          }
         }
       }.getOrElse(Future.successful(this))
       updatedParamInfo <- paramInfo(dataService)

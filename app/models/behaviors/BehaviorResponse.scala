@@ -15,14 +15,18 @@ import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class ParameterWithValue(parameter: BehaviorParameter, invocationName: String, maybeValue: Option[String]) {
+case class ParameterValue(text: String, json: JsValue, isValid: Boolean)
 
-  def preparedValue: JsValue = maybeValue.map { value =>
-    parameter.paramType.prepareForInvocation(value)
-  }.getOrElse(JsString(""))
+case class ParameterWithValue(
+                               parameter: BehaviorParameter,
+                               invocationName: String,
+                               maybeValue: Option[ParameterValue]
+                             ) {
 
-  def hasValidValue: Boolean = maybeValue.exists(v => parameter.paramType.isValid(v))
-  def hasInvalidValue: Boolean = maybeValue.exists(v => !parameter.paramType.isValid(v))
+  val preparedValue: JsValue = maybeValue.map(_.json).getOrElse(JsString(""))
+
+  def hasValidValue: Boolean = maybeValue.exists(_.isValid)
+  def hasInvalidValue: Boolean = maybeValue.exists(v => !v.isValid)
 }
 
 case class BehaviorResponse(
@@ -62,12 +66,12 @@ case class BehaviorResponse(
           event.context.userIdForContext,
           activatedTrigger,
           dataService,
-          maybeFirstParamWithInvalidValue.map(p => InvalidParamValue(p.parameter, p.maybeValue.getOrElse("")))
+          maybeFirstParamWithInvalidValue.map(p => InvalidParamValue(p.parameter, p.maybeValue.map(_.text).getOrElse("")))
         )
         _ <- Future.sequence(parametersWithValues.map { p =>
           p.maybeValue.map { v =>
             if (p.hasValidValue) {
-              dataService.collectedParameterValues.save(CollectedParameterValue(p.parameter, convo, v))
+              dataService.collectedParameterValues.save(CollectedParameterValue(p.parameter, convo, v.text))
             } else {
               Future.successful(Unit)
             }
@@ -88,10 +92,24 @@ object BehaviorResponse {
                 activatedTrigger: MessageTrigger,
                 dataService: DataService
                 ): Future[BehaviorResponse] = {
-    dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
-      val paramsWithValues = params.zipWithIndex.map { case (ea, i) =>
-        val invocationName = AWSLambdaConstants.invocationParamFor(i)
-        ParameterWithValue(ea, invocationName, paramValues.get(invocationName))
+    for {
+      params <- dataService.behaviorParameters.allFor(behaviorVersion)
+      invocationNames <- Future.successful(params.zipWithIndex.map { case (p, i) =>
+        AWSLambdaConstants.invocationParamFor(i)
+      })
+      values <- Future.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
+        paramValues.get(invocationName).map { v =>
+          for {
+            isValid <- param.paramType.isValid(v)
+            json <- param.paramType.prepareForInvocation(v)
+          } yield {
+            Some(ParameterValue(v, json, isValid))
+          }
+        }.getOrElse(Future.successful(None))
+      })
+    } yield {
+      val paramsWithValues = params.zip(values).zip(invocationNames).map { case((param, maybeValue), invocationName) =>
+        ParameterWithValue(param, invocationName, maybeValue)
       }
       BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger)
     }
