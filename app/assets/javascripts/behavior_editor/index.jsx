@@ -257,8 +257,7 @@ return React.createClass({
   },
 
   getFirstLineNumberForCode: function() {
-    var numUserParams = this.getBehaviorParams().length;
-    return this.hasUserParameters() ? numUserParams + 4 : 2;
+    return 2;
   },
 
   getManageDropdownLabel: function() {
@@ -1354,7 +1353,6 @@ return React.createClass({
 
                 <CodeHeader
                   ref="codeHeader"
-                  shouldExpandParams={this.hasUserParameters()}
                   helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
                   onToggleHelp={this.toggleBoilerplateHelp}
                   userParams={this.getBehaviorParams()}
