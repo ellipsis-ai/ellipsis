@@ -16,8 +16,8 @@ define(function(require) {
         let detail = this.props.details[0];
         return (
           <span>
-            <span>You’ve added a parameter in your triggers. Now add it to your </span>
-            <span>function to use it in code: </span>
+            <span>You’ve specified a new input in your triggers. Add a definition for it to </span>
+            <span>use it in your code or in the response: </span>
             <button type="button"
               className="button-raw type-monospace"
               onClick={detail.onClick}
@@ -27,15 +27,15 @@ define(function(require) {
       } else {
         return (
           <span>
-            <span>You’ve added some parameters in your triggers. Now add them to your </span>
-            <span>function to use them in code: </span>
+            <span>You’ve added some new inputs in your triggers. Add definitions for them to </span>
+            <span>use them in code or in the response: </span>
             {this.props.details.map((detail, index) => (
               <span key={`unusedParamName${index}`}>
                   <button type="button"
-                    className="button-raw type-monospace"
+                    className="button-raw type-monospace mhxs"
                     onClick={detail.onClick}
                   >{detail.name}</button>
-                  <span>{index + 1 < numParams ? ", " : ""}</span>
+                  <span className="type-weak">{index + 1 < numParams ? " · " : ""}</span>
                 </span>
             ))}
           </span>

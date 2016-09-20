@@ -339,27 +339,13 @@ return React.createClass({
     this.getBehaviorParams().forEach((codeParam) => {
       delete triggerParamObj[codeParam.name];
     });
-    var triggerParamNames = Object.keys(triggerParamObj);
-    if (this.hasCode() || this.state && this.state.revealCodeEditor) {
-      return triggerParamNames.map((name) => ({
-        kind: "param_not_in_function",
-        name: name,
-        onClick: () => {
-          this.addParams([name]);
-        }
-      }));
-    } else {
-      return triggerParamNames.map((name) => ({
-        kind: "param_without_function",
-        name: name,
-        onClick: () => {
-          this.addParams(triggerParamNames);
-          if (!this.state.revealCodeEditor) {
-            this.toggleCodeEditor();
-          }
-        }
-      }));
-    }
+    return Object.keys(triggerParamObj).map((name) => ({
+      kind: "param_not_in_function",
+      name: name,
+      onClick: () => {
+        this.addParams([name]);
+      }
+    }));
   },
 
   buildNotifications: function() {
