@@ -435,10 +435,6 @@ return React.createClass({
     );
   },
 
-  getResponseHeader: function() {
-    return this.state.revealCodeEditor ? "Then respond with" : "Ellipsis will respond with";
-  },
-
   getSuccessResultTemplateHelp: function() {
     return (
       <Checklist.Item checkedWhen={this.templateIncludesSuccessResult()}>
@@ -1217,8 +1213,6 @@ return React.createClass({
             openDropdownName={this.getActiveDropdown()}
           />
 
-          <hr className="mtn" />
-
           <UserInputConfiguration
             ref="userInputConfiguration"
             onParamChange={this.updateParamAtIndexWithParam}
@@ -1255,7 +1249,7 @@ return React.createClass({
           <div className="columns">
             <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
 
-              <SectionHeading>Ellipsis will do</SectionHeading>
+              <SectionHeading>Then Ellipsis will do</SectionHeading>
 
               <Checklist disabledWhen={this.isFinishedBehavior()}>
                 <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.isFinishedBehavior()}>
@@ -1389,7 +1383,7 @@ return React.createClass({
 
             <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s">
 
-              <SectionHeading>{this.getResponseHeader()}</SectionHeading>
+              <SectionHeading>Then Ellipsis will respond with</SectionHeading>
 
               <Checklist disabledWhen={this.isFinishedBehavior()}>
                 <Checklist.Item checkedWhen={this.templateUsesMarkdown()}>

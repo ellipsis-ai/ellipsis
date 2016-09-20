@@ -2,7 +2,7 @@ define(function(require) {
   var React = require('react'),
     SectionHeading = require('./section_heading'),
     UserInputDefinition = require('./user_input_definition'),
-    ifPresent = require('../if_present');
+    Collapsible = require('../collapsible');
 
   return React.createClass({
     propTypes: {
@@ -33,45 +33,67 @@ define(function(require) {
       this.refs['param' + index].focus();
     },
 
+    hasParams: function() {
+      return this.props.userParams.length > 0;
+    },
+
     render: function() {
       return (
-        <div className="columns">
-          <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-            <SectionHeading>Collect this input</SectionHeading>
-          </div>
-          <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
-            {ifPresent(this.props.userParams, (params) => (
-              <div>
-                <div className="mbm">
-                  {params.map((param, paramIndex) => (
-                    <div key={'paramInput' + paramIndex} className="columns columns-elastic mbxl">
-                      <div className="column column-expand pll">
-                        <UserInputDefinition
-                          key={'UserInputDefinition' + paramIndex}
-                          ref={'param' + paramIndex}
-                          name={param.name}
-                          paramTypes={this.props.paramTypes}
-                          paramType={param.paramType}
-                          question={param.question}
-                          onChange={this.onChange.bind(this, paramIndex)}
-                          onDelete={this.onDelete.bind(this, paramIndex)}
-                          onEnterKey={this.onEnterKey.bind(this, paramIndex)}
-                          id={paramIndex}
-                        />
+        <div>
+          <Collapsible revealWhen={!this.hasParams()}>
+            <div className="box-help border mbxxl">
+              <div className="columns columns-elastic mobile-columns-float">
+                <div className="column column-expand">
+                  <p className="mbn">
+                    <span>You can add inputs to ask for additional information from the user, or </span>
+                    <span>to clarify what kind of input will come from the trigger.</span>
+                  </p>
+                </div>
+                <div className="column column-shrink align-m mobile-mtm">
+                  <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add inputs</button>
+                </div>
+              </div>
+            </div>
+          </Collapsible>
+
+          <Collapsible revealWhen={this.hasParams()}>
+
+            <hr className="mtn" />
+
+            <div className="columns">
+              <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
+                <SectionHeading>Ellipsis will collect this input</SectionHeading>
+              </div>
+              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+                <div>
+                  <div className="mbm">
+                    {this.props.userParams.map((param, paramIndex) => (
+                      <div key={'paramInput' + paramIndex} className="columns columns-elastic mbxl">
+                        <div className="column column-expand pll">
+                          <UserInputDefinition
+                            key={'UserInputDefinition' + paramIndex}
+                            ref={'param' + paramIndex}
+                            name={param.name}
+                            paramTypes={this.props.paramTypes}
+                            paramType={param.paramType}
+                            question={param.question}
+                            onChange={this.onChange.bind(this, paramIndex)}
+                            onDelete={this.onDelete.bind(this, paramIndex)}
+                            onEnterKey={this.onEnterKey.bind(this, paramIndex)}
+                            id={paramIndex}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="align-r prxs mobile-align-l mbs">
-                  <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add another input</button>
+                    ))}
+                  </div>
+                  <div className="align-r prxs mobile-align-l mbs">
+                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add another input
+                    </button>
+                  </div>
                 </div>
               </div>
-            ), () => (
-              <div className="mvs">
-                <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add input</button>
-              </div>
-            ))}
-        </div>
+            </div>
+          </Collapsible>
         </div>
 
       );
