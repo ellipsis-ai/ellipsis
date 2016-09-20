@@ -47,7 +47,7 @@ case class BehaviorTestReport  (
 
   def paramValues: Map[String, String] = maybeBehaviorResponse.map { behaviorResponse =>
     behaviorResponse.parametersWithValues.map { p =>
-      (p.parameter.name, p.maybeValue.getOrElse("<none>"))
+      (p.parameter.name, p.maybeValue.map(_.text).getOrElse("<none>"))
     }.toMap
   }.getOrElse(Map())
 
