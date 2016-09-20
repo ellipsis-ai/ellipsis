@@ -1,7 +1,8 @@
 define(function(require) {
   var React = require('react'),
     SectionHeading = require('./section_heading'),
-    UserInputDefinition = require('./user_input_definition');
+    UserInputDefinition = require('./user_input_definition'),
+    ifPresent = require('../if_present');
 
   return React.createClass({
     propTypes: {
@@ -39,34 +40,38 @@ define(function(require) {
             <SectionHeading>Collect this input</SectionHeading>
           </div>
           <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
-            <div className="mbm">
-              {this.props.userParams.map(function(param, paramIndex) {
-                return (
-                  <div key={'paramInput' + paramIndex} className="columns columns-elastic mbxl">
-                    <div className="column column-expand pll">
-                      <UserInputDefinition
-                        key={'UserInputDefinition' + paramIndex}
-                        ref={'param' + paramIndex}
-                        name={param.name}
-                        paramTypes={this.props.paramTypes}
-                        paramType={param.paramType}
-                        question={param.question}
-                        onChange={this.onChange.bind(this, paramIndex)}
-                        onDelete={this.onDelete.bind(this, paramIndex)}
-                        onEnterKey={this.onEnterKey.bind(this, paramIndex)}
-                        id={paramIndex}
-                      />
+            {ifPresent(this.props.userParams, (params) => (
+              <div>
+                <div className="mbm">
+                  {params.map((param, paramIndex) => (
+                    <div key={'paramInput' + paramIndex} className="columns columns-elastic mbxl">
+                      <div className="column column-expand pll">
+                        <UserInputDefinition
+                          key={'UserInputDefinition' + paramIndex}
+                          ref={'param' + paramIndex}
+                          name={param.name}
+                          paramTypes={this.props.paramTypes}
+                          paramType={param.paramType}
+                          question={param.question}
+                          onChange={this.onChange.bind(this, paramIndex)}
+                          onDelete={this.onDelete.bind(this, paramIndex)}
+                          onEnterKey={this.onEnterKey.bind(this, paramIndex)}
+                          id={paramIndex}
+                        />
+                      </div>
                     </div>
-                  </div>
-                );
-              }, this)}
-            </div>
-            <div className="columns">
-              <div className="column column-right align-r prxs mobile-align-l mbs">
-                <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add another input</button>
+                  ))}
+                </div>
+                <div className="align-r prxs mobile-align-l mbs">
+                  <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add another input</button>
+                </div>
               </div>
-            </div>
-          </div>
+            ), () => (
+              <div className="mvs">
+                <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add input</button>
+              </div>
+            ))}
+        </div>
         </div>
 
       );
