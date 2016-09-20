@@ -60,7 +60,7 @@ return React.createClass({
     return (
       <div>
         <div className="columns columns-elastic">
-          <div className="column column-shrink align-m">
+          <div className="column column-expand">
             <select className="form-select form-select-s" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
               {this.props.paramTypes.map(function(paramTypeName) {
                 return (
@@ -68,21 +68,17 @@ return React.createClass({
                 );
               }, this)}
             </select>
-          </div>
-          <div className="column column-shrink align-m ptxs type-s type-weak">
-            labeled
-          </div>
-          <div className="column column-expand">
+            <span className="display-inline-block align-m ptxs type-s type-weak mhm">labeled</span>
             <Input
               ref="name"
-              className="form-input-borderless type-monospace type-m"
+              className="form-input-borderless type-monospace type-m width-10"
               placeholder="userInput"
               value={this.props.name}
               onChange={this.onNameChange}
             />
-          </div>
-          <div className="column column-shrink display-ellipsis align-m ptxs type-s type-weak">
-            from the trigger, or…
+            <span className="display-inline-block align-m ptxs type-s type-weak mhm">
+              from the trigger text, or by asking a question:
+            </span>
           </div>
           <div className="column column-shrink">
             <DeleteButton
@@ -92,9 +88,6 @@ return React.createClass({
           </div>
         </div>
         <div className="columns columns-elastic">
-          <div className="column column-shrink align-m ptxs type-s type-weak display-ellipsis">
-            by asking a question:
-          </div>
           <div className="column column-expand">
             <Input
               id={"question" + this.props.id}
@@ -107,6 +100,7 @@ return React.createClass({
               className="form-input-borderless type-italic"
             />
           </div>
+          <div className="column column-shrink plsymbol"></div>
         </div>
       </div>
     );

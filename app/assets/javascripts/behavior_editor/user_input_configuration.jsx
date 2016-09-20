@@ -64,7 +64,6 @@ define(function(require) {
             <div className="columns">
               <div className="column column-right align-r prxs mobile-align-l mbs">
                 <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add another input</button>
-                <span className="button-symbol-placeholder" />
               </div>
             </div>
           </div>
