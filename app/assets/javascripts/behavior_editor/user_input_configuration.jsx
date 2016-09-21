@@ -19,7 +19,8 @@ define(function(require) {
           name: React.PropTypes.string.isRequired
         }).isRequired
       })).isRequired,
-      paramTypes: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+      paramTypes: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+      nonRegexTriggerTextValues: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
     },
 
     onChange: function(index, data) {
@@ -46,6 +47,11 @@ define(function(require) {
 
     hasParams: function() {
       return this.props.userParams.length > 0;
+    },
+
+    countLinkedTriggersForParamName: function(paramName) {
+      var pattern = new RegExp(`\{${paramName}\}`);
+      return this.props.nonRegexTriggerTextValues.filter((triggerText) => pattern.test(triggerText)).length;
     },
 
     render: function() {
@@ -93,6 +99,7 @@ define(function(require) {
                             onEnterKey={this.onEnterKey.bind(this, paramIndex)}
                             onNameFocus={this.onNameFocus.bind(this, paramIndex)}
                             onNameBlur={this.onNameBlur.bind(this, paramIndex)}
+                            numLinkedTriggers={this.countLinkedTriggersForParamName(param.name)}
                             id={paramIndex}
                           />
                         </div>
