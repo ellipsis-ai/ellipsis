@@ -59,7 +59,7 @@ case class BehaviorVersion(
 
   def functionName: String = id
 
-  def resultFor(parametersWithValues: Seq[ParameterWithValue], event: MessageEvent, service: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
+  def resultFor(parametersWithValues: Seq[ParameterWithValue], event: MessageEvent, service: AWSLambdaService, dataService: DataService): Future[BotResult] = {
     for {
       envVars <- dataService.environmentVariables.allFor(team)
       result <- service.invoke(this, parametersWithValues, envVars, event)
@@ -85,7 +85,7 @@ case class BehaviorVersion(
                  logResult: AWSLambdaLogResult,
                  parametersWithValues: Seq[ParameterWithValue],
                  configuration: Configuration
-               ): BehaviorResult = {
+               ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)

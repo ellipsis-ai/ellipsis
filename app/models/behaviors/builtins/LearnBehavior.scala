@@ -1,6 +1,6 @@
 package models.behaviors.builtins
 
-import models.behaviors.{BehaviorResult, SimpleTextResult}
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.MessageContext
 import services.{AWSLambdaService, DataService}
 
@@ -12,7 +12,7 @@ case class LearnBehavior(
                           dataService: DataService
                         ) extends BuiltinBehavior {
 
-  def result: Future[BehaviorResult] = {
+  def result: Future[BotResult] = {
     Future.successful(SimpleTextResult(s"I love to learn. Come ${messageContext.teachMeLinkFor(lambdaService)}."))
   }
 

@@ -1,7 +1,7 @@
 package models.behaviors.builtins
 
 import com.amazonaws.AmazonServiceException
-import models.behaviors.{BehaviorResult, SimpleTextResult}
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.MessageContext
 import services.{AWSLambdaService, DataService}
 
@@ -14,7 +14,7 @@ case class ResetBehaviorsBehavior(
                             dataService: DataService
                             ) extends BuiltinBehavior {
 
-  def result: Future[BehaviorResult] = {
+  def result: Future[BotResult] = {
     val eventualReply = try {
       for {
         maybeTeam <- dataService.teams.find(messageContext.teamId)

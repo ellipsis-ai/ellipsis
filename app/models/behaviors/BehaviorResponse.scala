@@ -40,7 +40,7 @@ case class BehaviorResponse(
     parametersWithValues.forall(_.hasValidValue)
   }
 
-  def resultForFilledOut(service: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
+  def resultForFilledOut(service: AWSLambdaService, dataService: DataService): Future[BotResult] = {
     val startTime = DateTime.now
     dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event).flatMap { result =>
       val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
@@ -54,7 +54,7 @@ case class BehaviorResponse(
     }
   }
 
-  def result(awsService: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
+  def result(awsService: AWSLambdaService, dataService: DataService): Future[BotResult] = {
     if (isFilledOut) {
       resultForFilledOut(awsService, dataService)
     } else {

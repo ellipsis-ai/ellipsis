@@ -95,7 +95,7 @@ case class InvokeBehaviorConversation(
 
   }
 
-  private def promptResultFor(event: MessageEvent, info: ParamInfo): BehaviorResult = {
+  private def promptResultFor(event: MessageEvent, info: ParamInfo): BotResult = {
     val prompt = (for {
       param <- info.maybeNextToCollect
       question <- param.maybeQuestion
@@ -107,7 +107,7 @@ case class InvokeBehaviorConversation(
     SimpleTextResult(s"$prompt$invalidValueModifier")
   }
 
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BotResult] = {
     import Conversation._
     import InvokeBehaviorConversation._
 

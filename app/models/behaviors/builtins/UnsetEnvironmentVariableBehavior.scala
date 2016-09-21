@@ -1,6 +1,6 @@
 package models.behaviors.builtins
 
-import models.behaviors.{BehaviorResult, SimpleTextResult}
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.MessageContext
 import services.{AWSLambdaService, DataService}
 
@@ -15,7 +15,7 @@ case class UnsetEnvironmentVariableBehavior(
                                            dataService: DataService
                                            ) extends BuiltinBehavior {
 
-  def result: Future[BehaviorResult] = {
+  def result: Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(messageContext.teamId)
       didDelete <- maybeTeam.map { team =>

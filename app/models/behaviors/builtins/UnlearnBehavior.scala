@@ -1,7 +1,7 @@
 package models.behaviors.builtins
 
 import com.amazonaws.AmazonServiceException
-import models.behaviors.{BehaviorResult, SimpleTextResult}
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.MessageContext
 import services.{AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
@@ -16,7 +16,7 @@ case class UnlearnBehavior(
                             dataService: DataService
                             ) extends BuiltinBehavior {
 
-  def result: Future[BehaviorResult] = {
+  def result: Future[BotResult] = {
     val eventualReply = try {
       for {
         triggers <- dataService.messageTriggers.allWithExactPattern(patternString, messageContext.teamId)

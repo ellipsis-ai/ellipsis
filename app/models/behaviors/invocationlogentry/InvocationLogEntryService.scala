@@ -1,6 +1,6 @@
 package models.behaviors.invocationlogentry
 
-import models.behaviors.BehaviorResult
+import models.behaviors.BotResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import org.joda.time.DateTime
 
@@ -12,7 +12,7 @@ trait InvocationLogEntryService {
 
   def createFor(
                  behaviorVersion: BehaviorVersion,
-                 result: BehaviorResult,
+                 result: BotResult,
                  context: String,
                  maybeUserIdForContext: Option[String],
                  runtimeInMilliseconds: Long

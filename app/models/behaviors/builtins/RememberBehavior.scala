@@ -11,7 +11,7 @@ import scala.concurrent.Future
 
 case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
-  def result: Future[BehaviorResult] = {
+  def result: Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(messageContext.teamId)
       maybeUser <- maybeTeam.map { team =>

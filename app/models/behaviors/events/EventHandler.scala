@@ -2,7 +2,7 @@ package models.behaviors.events
 
 import javax.inject._
 
-import models.behaviors.{BehaviorResponse, BehaviorResult, NoResponseResult, SimpleTextResult}
+import models.behaviors.{BehaviorResponse, BotResult, NoResponseResult, SimpleTextResult}
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import play.api.i18n.MessagesApi
@@ -18,7 +18,7 @@ class EventHandler @Inject() (
                                messages: MessagesApi
                                ) {
 
-  def startInvokeConversationFor(event: MessageEvent): Future[BehaviorResult] = {
+  def startInvokeConversationFor(event: MessageEvent): Future[BotResult] = {
     val context = event.context
     for {
       maybeTeam <- dataService.teams.find(context.teamId)
@@ -36,11 +36,11 @@ class EventHandler @Inject() (
     } yield result
   }
 
-  def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BehaviorResult] = {
+  def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
     conversation.resultFor(event, lambdaService, dataService)
   }
 
-  def handle(event: Event): Future[BehaviorResult] = {
+  def handle(event: Event): Future[BotResult] = {
     event match {
       case messageEvent: MessageEvent => {
         for {

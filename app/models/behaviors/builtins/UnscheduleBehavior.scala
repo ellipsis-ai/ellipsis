@@ -1,7 +1,7 @@
 package models.behaviors.builtins
 
 import models.behaviors.events.MessageContext
-import models.behaviors.{BehaviorResult, SimpleTextResult}
+import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,7 +14,7 @@ case class UnscheduleBehavior(
                              dataService: DataService
                              ) extends BuiltinBehavior {
 
-  def result: Future[BehaviorResult] = {
+  def result: Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(messageContext.teamId)
       didDelete <- maybeTeam.map { team =>
