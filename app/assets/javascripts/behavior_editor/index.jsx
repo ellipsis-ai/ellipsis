@@ -196,12 +196,6 @@ return React.createClass({
     }
   },
 
-  getNonRegexTriggerTextValues: function() {
-    return this.getBehaviorTriggers()
-      .filter((trigger) => !trigger.isRegex && trigger.text.length > 0)
-      .map((trigger) => trigger.text);
-  },
-
   getBehaviorConfig: function() {
     return this.getBehaviorProp('config');
   },
@@ -1292,7 +1286,9 @@ return React.createClass({
             onEnterKey={this.onParamEnterKey}
             userParams={this.getBehaviorParams()}
             paramTypes={this.props.paramTypes}
-            nonRegexTriggerTextValues={this.getNonRegexTriggerTextValues()}
+            triggers={this.getBehaviorTriggers()}
+            isFinishedBehavior={this.isFinishedBehavior()}
+            behaviorHasCode={this.state.revealCodeEditor}
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor}>
@@ -1356,8 +1352,8 @@ return React.createClass({
                 </Checklist.Item>
 
                 <Checklist.Item checkedWhen={this.hasUserParameters()} hiddenWhen={this.isFinishedBehavior() && this.hasUserParameters()}>
-                  <span>If you need more information from the user, add one or more parameters </span>
-                  <span>to your function.</span>
+                  <span>If you need more information from the user, add one or more inputs above </span>
+                  <span>and the function will receive them as parameters.</span>
                 </Checklist.Item>
 
                 <Checklist.Item hiddenWhen={!this.isFinishedBehavior() || this.hasCalledRequire()}>
