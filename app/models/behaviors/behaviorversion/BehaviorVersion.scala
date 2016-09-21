@@ -47,16 +47,6 @@ case class BehaviorVersion(
 
   def functionBody: String = maybeFunctionBody.getOrElse("")
 
-  def awsParamsFor(maybeAWSConfig: Option[AWSConfig]): Array[String] = {
-    maybeAWSConfig.map(_ => Array("AWS")).getOrElse(Array())
-  }
-
-  def functionWithParams(params: Array[String]): String = {
-    s"""function(${(params ++ Array(CONTEXT_PARAM)).mkString(", ")}) {
-        |  $functionBody
-        |}\n""".stripMargin
-  }
-
   def functionName: String = id
 
   def resultFor(parametersWithValues: Seq[ParameterWithValue], event: MessageEvent, service: AWSLambdaService, dataService: DataService): Future[BotResult] = {
