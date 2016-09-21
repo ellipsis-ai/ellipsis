@@ -880,7 +880,7 @@ return React.createClass({
     this.setBehaviorProp('params', newParams, () => {
       var numTriggersReplaced = 0;
       if (oldParamName === this.state.paramNameToSync) {
-        numTriggersReplaced = this.replaceTriggerParamNamesAndCount(oldParamName, newParamName);
+        numTriggersReplaced = this.syncParamNamesAndCount(oldParamName, newParamName);
         if (numTriggersReplaced > 0) {
           this.setState({ paramNameToSync: newParamName });
         }
@@ -895,22 +895,36 @@ return React.createClass({
     this.setBehaviorProp('responseTemplate', newTemplateString, callback);
   },
 
-  replaceTriggerParamNamesAndCount: function(oldName, newName) {
-    var triggers = this.getBehaviorTriggers();
-    var pattern = new RegExp(`\{${oldName}\}`);
+  syncParamNamesAndCount: function(oldName, newName) {
+    var pattern = new RegExp(`\{${oldName}\}`, 'g');
+    var newString = `{${newName}}`;
     var numTriggersModified = 0;
-    var newTriggers = triggers.map((oldTrigger) => {
+
+    var newTriggers = this.getBehaviorTriggers().map((oldTrigger) => {
       if (!oldTrigger.isRegex && pattern.test(oldTrigger.text)) {
         numTriggersModified++;
-        return Object.assign({}, oldTrigger, { text: oldTrigger.text.replace(pattern, `{${newName}}`) });
+        return Object.assign({}, oldTrigger, { text: oldTrigger.text.replace(pattern, newString) });
       } else {
         return oldTrigger;
       }
     });
+
+    var oldTemplate = this.getBehaviorTemplate();
+    var newTemplate = oldTemplate.replace(pattern, newString);
+    var templateModified = newTemplate !== oldTemplate;
+
+    var newProps = {};
     if (numTriggersModified > 0) {
-      this.setBehaviorProp('triggers', newTriggers);
+      newProps.triggers = newTriggers;
     }
-    return numTriggersModified;
+    if (templateModified) {
+      newProps.responseTemplate = newTemplate;
+    }
+    if (Object.keys(newProps).length > 0) {
+      this.setBehaviorProps(newProps);
+    }
+
+    return numTriggersModified + (templateModified ? 1 : 0);
   },
 
   updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
