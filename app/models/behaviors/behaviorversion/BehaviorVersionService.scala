@@ -2,10 +2,11 @@ package models.behaviors.behaviorversion
 
 import json.BehaviorVersionData
 import models.accounts.user.User
-import models.behaviors.{BehaviorResult, ParameterWithValue}
+import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
+import services.DataService
 
 import scala.concurrent.Future
 
@@ -33,7 +34,8 @@ trait BehaviorVersionService {
 
   def missingEnvironmentVariablesIn(
                                      behaviorVersion: BehaviorVersion,
-                                     environmentVariables: Seq[EnvironmentVariable]
+                                     environmentVariables: Seq[EnvironmentVariable],
+                                     dataService: DataService
                                    ): Future[Seq[String]]
 
   def maybeFunctionFor(behaviorVersion: BehaviorVersion): Future[Option[String]]
@@ -42,7 +44,7 @@ trait BehaviorVersionService {
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  event: MessageEvent
-               ): Future[BehaviorResult]
+               ): Future[BotResult]
 
   def unlearn(behaviorVersion: BehaviorVersion): Future[Unit]
 

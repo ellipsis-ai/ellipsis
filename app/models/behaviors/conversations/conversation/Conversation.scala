@@ -22,9 +22,9 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[Conversation]
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BehaviorResult]
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BotResult]
 
-  def resultFor(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BehaviorResult] = {
+  def resultFor(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BotResult] = {
     for {
       updatedConversation <- updateWith(event, lambdaService, dataService)
       result <- updatedConversation.respond(event, lambdaService, dataService)

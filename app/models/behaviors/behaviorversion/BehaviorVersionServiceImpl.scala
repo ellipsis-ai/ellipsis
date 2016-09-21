@@ -9,7 +9,7 @@ import com.google.inject.Provider
 import json.BehaviorVersionData
 import models.IDs
 import models.accounts.user.User
-import models.behaviors.{BehaviorResult, HandledErrorResult, NoCallbackTriggeredResult, NoResponseResult, ParameterWithValue, SuccessResult, SyntaxErrorResult, UnhandledErrorResult}
+import models.behaviors.{BotResult, HandledErrorResult, NoCallbackTriggeredResult, NoResponseResult, ParameterWithValue, SuccessResult, SyntaxErrorResult, UnhandledErrorResult}
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
@@ -210,17 +210,18 @@ class BehaviorVersionServiceImpl @Inject() (
     }
   }
 
-  def knownEnvironmentVariablesUsedIn(behaviorVersion: BehaviorVersion): Future[Seq[String]] = {
+  def knownEnvironmentVariablesUsedIn(behaviorVersion: BehaviorVersion, dataService: DataService): Future[Seq[String]] = {
     environmentVariablesUsedInConfigFor(behaviorVersion).map { inConfig =>
-      inConfig ++ environmentVariablesUsedInCode(behaviorVersion.functionBody)
+      inConfig ++ dataService.environmentVariables.lookForInCode(behaviorVersion.functionBody)
     }
   }
 
   def missingEnvironmentVariablesIn(
                                      behaviorVersion: BehaviorVersion,
-                                     environmentVariables: Seq[EnvironmentVariable]
+                                     environmentVariables: Seq[EnvironmentVariable],
+                                     dataService: DataService
                                    ): Future[Seq[String]] = {
-    knownEnvironmentVariablesUsedIn(behaviorVersion).map{ used =>
+    knownEnvironmentVariablesUsedIn(behaviorVersion, dataService).map{ used =>
       used diff environmentVariables.filter(_.value.trim.nonEmpty).map(_.name)
     }
   }
@@ -241,7 +242,7 @@ class BehaviorVersionServiceImpl @Inject() (
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  event: MessageEvent
-               ): Future[BehaviorResult] = {
+               ): Future[BotResult] = {
     for {
       envVars <- dataService.environmentVariables.allFor(behaviorVersion.team)
       result <- lambdaService.invoke(behaviorVersion, parametersWithValues, envVars, event)
@@ -281,7 +282,7 @@ class BehaviorVersionServiceImpl @Inject() (
                  logResult: AWSLambdaLogResult,
                  parametersWithValues: Seq[ParameterWithValue],
                  configuration: Configuration
-               ): BehaviorResult = {
+               ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)

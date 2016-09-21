@@ -1,7 +1,7 @@
 package models.behaviors.builtins
 
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.{BehaviorResult, SimpleTextResult}
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.MessageContext
 import services.{AWSLambdaService, DataService}
 
@@ -56,7 +56,7 @@ case class DisplayHelpBehavior(
     }
   }
 
-  def result: Future[BehaviorResult] = {
+  def result: Future[BotResult] = {
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
     for {
       maybeTeam <- dataService.teams.find(messageContext.teamId)

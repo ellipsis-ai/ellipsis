@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs
-import models.behaviors.BehaviorResult
+import models.behaviors.BotResult
 import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import org.joda.time.DateTime
 import services.DataService
@@ -55,7 +55,7 @@ class InvocationLogEntryServiceImpl @Inject() (
 
   def createFor(
                  behaviorVersion: BehaviorVersion,
-                 result: BehaviorResult,
+                 result: BotResult,
                  context: String,
                  maybeUserIdForContext: Option[String],
                  runtimeInMilliseconds: Long

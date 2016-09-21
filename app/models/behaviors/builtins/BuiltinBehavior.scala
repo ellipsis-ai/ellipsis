@@ -1,6 +1,6 @@
 package models.behaviors.builtins
 
-import models.behaviors.BehaviorResult
+import models.behaviors.BotResult
 import models.behaviors.events.MessageContext
 import services.{AWSLambdaService, DataService}
 
@@ -11,7 +11,7 @@ trait BuiltinBehavior {
   val lambdaService: AWSLambdaService
   val dataService: DataService
 
-  def result: Future[BehaviorResult]
+  def result: Future[BotResult]
 }
 
 object BuiltinBehavior {

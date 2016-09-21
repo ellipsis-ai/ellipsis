@@ -6,7 +6,7 @@ import models.Models
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
-import models.behaviors.{BehaviorResult, ParameterWithValue}
+import models.behaviors.{BotResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
 
@@ -26,7 +26,7 @@ trait AWSLambdaService extends AWSService {
               parametersWithValues: Seq[ParameterWithValue],
               environmentVariables: Seq[EnvironmentVariable],
               event: MessageEvent
-              ): Future[BehaviorResult]
+              ): Future[BotResult]
 
   def deleteFunction(functionName: String): Unit
   def deployFunctionFor(

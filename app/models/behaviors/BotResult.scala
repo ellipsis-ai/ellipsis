@@ -21,7 +21,7 @@ object ResultType extends Enumeration {
   val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
-sealed trait BehaviorResult {
+sealed trait BotResult {
   val resultType: ResultType.Value
   def text: String
   def fullText: String = text
@@ -32,7 +32,7 @@ sealed trait BehaviorResult {
   }
 }
 
-trait BehaviorResultWithLogResult extends BehaviorResult {
+trait BotResultWithLogResult extends BotResult {
   val maybeLogResult: Option[AWSLambdaLogResult]
   val logStatements = maybeLogResult.map(_.userDefinedLogStatements).getOrElse("")
 
@@ -45,7 +45,7 @@ case class SuccessResult(
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult]
-                          ) extends BehaviorResultWithLogResult {
+                          ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
 
@@ -55,7 +55,7 @@ case class SuccessResult(
   }
 }
 
-case class SimpleTextResult(simpleText: String) extends BehaviorResult {
+case class SimpleTextResult(simpleText: String) extends BotResult {
 
   val resultType = ResultType.ConversationPrompt
 
@@ -63,7 +63,7 @@ case class SimpleTextResult(simpleText: String) extends BehaviorResult {
 
 }
 
-case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends BehaviorResultWithLogResult {
+case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
 
   val resultType = ResultType.NoResponse
 
@@ -91,7 +91,7 @@ case class UnhandledErrorResult(
                                  behaviorVersion: BehaviorVersion,
                                  configuration: Configuration,
                                  maybeLogResult: Option[AWSLambdaLogResult]
-                               ) extends BehaviorResultWithLogResult with WithBehaviorLink {
+                               ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.UnhandledError
 
@@ -107,7 +107,7 @@ case class HandledErrorResult(
                                configuration: Configuration,
                                json: JsValue,
                                maybeLogResult: Option[AWSLambdaLogResult]
-                             ) extends BehaviorResultWithLogResult with WithBehaviorLink {
+                             ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.HandledError
 
@@ -130,7 +130,7 @@ case class SyntaxErrorResult(
                               configuration: Configuration,
                               json: JsValue,
                               maybeLogResult: Option[AWSLambdaLogResult]
-                            ) extends BehaviorResultWithLogResult with WithBehaviorLink {
+                            ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.SyntaxError
 
@@ -148,7 +148,7 @@ case class SyntaxErrorResult(
 case class NoCallbackTriggeredResult(
                                       behaviorVersion: BehaviorVersion,
                                       configuration: Configuration
-                                    ) extends BehaviorResult with WithBehaviorLink {
+                                    ) extends BotResult with WithBehaviorLink {
 
   val resultType = ResultType.NoCallbackTriggered
 
@@ -161,7 +161,7 @@ case class MissingEnvVarsResult(
                                  behaviorVersion: BehaviorVersion,
                                  configuration: Configuration,
                                  missingEnvVars: Seq[String]
-                               ) extends BehaviorResult with WithBehaviorLink {
+                               ) extends BotResult with WithBehaviorLink {
 
   val resultType = ResultType.MissingEnvVar
 
@@ -178,7 +178,7 @@ case class MissingEnvVarsResult(
 
 }
 
-class AWSDownResult extends BehaviorResult {
+class AWSDownResult extends BotResult {
 
   val resultType = ResultType.AWSDown
 
@@ -198,7 +198,7 @@ case class OAuth2TokenMissing(
                                loginToken: LoginToken,
                                cache: CacheApi,
                                configuration: Configuration
-                               ) extends BehaviorResult {
+                               ) extends BotResult {
 
   val key = IDs.next
 
@@ -230,7 +230,7 @@ case class RequiredApiNotReady(
                                 event: MessageEvent,
                                 cache: CacheApi,
                                 configuration: Configuration
-                             ) extends BehaviorResult {
+                             ) extends BotResult {
 
   val resultType = ResultType.RequiredApiNotReady
 

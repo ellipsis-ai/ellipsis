@@ -2,7 +2,7 @@ package models.behaviors.builtins
 
 import models.behaviors.events.MessageContext
 import models.behaviors.scheduledmessage.ScheduledMessage
-import models.behaviors.{BehaviorResult, SimpleTextResult}
+import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -32,7 +32,7 @@ case class ListScheduledBehavior(
      """.stripMargin
   }
 
-  def result: Future[BehaviorResult] = {
+  def result: Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(messageContext.teamId)
       scheduled <- maybeTeam.map { team =>
