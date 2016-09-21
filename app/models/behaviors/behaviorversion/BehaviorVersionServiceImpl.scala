@@ -233,7 +233,7 @@ class BehaviorVersionServiceImpl @Inject() (
         maybeAWSConfig <- dataService.awsConfigs.maybeFor(behaviorVersion)
         requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
       } yield {
-        behaviorVersion.functionWithParams(params.map(_.name).toArray)
+        lambdaService.functionWithParams(params.map(_.name).toArray, functionBody)
       }).map(Some(_))
     }.getOrElse(Future.successful(None))
   }

@@ -21,6 +21,8 @@ trait AWSLambdaService extends AWSService {
 
   def listFunctionNames: Future[Seq[String]]
 
+  def functionWithParams(params: Array[String], functionBody: String): String
+
   def invoke(
               behaviorVersion: BehaviorVersion,
               parametersWithValues: Seq[ParameterWithValue],

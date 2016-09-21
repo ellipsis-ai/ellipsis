@@ -194,16 +194,10 @@ class AWSLambdaServiceImpl @Inject() (
     requiredOAuth2ApiConfigs.map(accessTokenCodeFor).mkString("\n")
   }
 
-  private def functionWithParams(params: Array[String], functionBody: String): String = {
-    val definitionUserParamsString = if (params.isEmpty) {
-      ""
-    } else {
-      s"""\n${params.map(ea => ea ++ ",").mkString("\n")}\n"""
-    }
-    val possibleEndOfParamsNewline = if (params.isEmpty) { "" } else { "\n" }
-    s"""function($definitionUserParamsString$CONTEXT_PARAM$possibleEndOfParamsNewline) {
+  def functionWithParams(params: Array[String], functionBody: String): String = {
+    s"""function(${(params ++ Array(CONTEXT_PARAM)).mkString(", ")}) {
         |  $functionBody
-        |}""".stripMargin
+        |}\n""".stripMargin
   }
 
   private def nodeCodeFor(functionBody: String, params: Array[String], maybeAwsConfig: Option[AWSConfig], requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
