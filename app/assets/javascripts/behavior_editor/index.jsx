@@ -688,7 +688,13 @@ return React.createClass({
   },
 
   setBehaviorProp: function(key, value, callback) {
-    var newBehavior = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
+    var newProps = {};
+    newProps[key] = value;
+    this.setBehaviorProps(newProps, callback);
+  },
+
+  setBehaviorProps: function(props, callback) {
+    var newBehavior = Object.assign({}, this.state.behavior, props);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     if (this.state.justSaved) {
