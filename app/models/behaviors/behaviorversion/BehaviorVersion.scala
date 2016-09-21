@@ -52,15 +52,9 @@ case class BehaviorVersion(
   }
 
   def functionWithParams(params: Array[String]): String = {
-    val definitionUserParamsString = if (params.isEmpty) {
-      ""
-    } else {
-      s"""\n${params.map(ea => ea ++ ",").mkString("\n")}\n"""
-    }
-    val possibleEndOfParamsNewline = if (params.isEmpty) { "" } else { "\n" }
-    s"""function($definitionUserParamsString$CONTEXT_PARAM$possibleEndOfParamsNewline) {
+    s"""function(${(params ++ Array(CONTEXT_PARAM)).mkString(", ")}) {
         |  $functionBody
-        |}""".stripMargin
+        |}\n""".stripMargin
   }
 
   def functionName: String = id

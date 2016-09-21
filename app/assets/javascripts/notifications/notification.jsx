@@ -7,8 +7,7 @@ define(function(require) {
     NotificationForMissingOAuth2Application = require('./oauth2_config_without_application'),
     NotificationForUnusedOAuth2Application = require('./oauth2_application_unused'),
     NotificationForUnusedAWS = require('./aws_unused'),
-    NotificationForParamNotInFunction = require('./param_not_in_function'),
-    NotificationForParamWithoutFunction = require('./param_without_function');
+    NotificationForParamNotInFunction = require('./param_not_in_function');
 
   return React.createClass({
     propTypes: {
@@ -57,14 +56,6 @@ define(function(require) {
           icon: this.getTipIcon(),
           message: (
             <NotificationForParamNotInFunction details={this.props.details} />
-          )
-        };
-      } else if (kind === "param_without_function") {
-        return {
-          containerClass: "box-tip",
-          icon: this.getTipIcon(),
-          message: (
-            <NotificationForParamWithoutFunction details={this.props.details} />
           )
         };
       }

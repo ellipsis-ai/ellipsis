@@ -21,6 +21,7 @@ var React = require('react'),
   SectionHeading = require('./section_heading'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
+  UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
   Collapsible = require('../collapsible'),
@@ -256,8 +257,7 @@ return React.createClass({
   },
 
   getFirstLineNumberForCode: function() {
-    var numUserParams = this.getBehaviorParams().length;
-    return this.hasUserParameters() ? numUserParams + 4 : 2;
+    return 2;
   },
 
   getManageDropdownLabel: function() {
@@ -339,27 +339,13 @@ return React.createClass({
     this.getBehaviorParams().forEach((codeParam) => {
       delete triggerParamObj[codeParam.name];
     });
-    var triggerParamNames = Object.keys(triggerParamObj);
-    if (this.hasCode() || this.state && this.state.revealCodeEditor) {
-      return triggerParamNames.map((name) => ({
-        kind: "param_not_in_function",
-        name: name,
-        onClick: () => {
-          this.addParams([name]);
-        }
-      }));
-    } else {
-      return triggerParamNames.map((name) => ({
-        kind: "param_without_function",
-        name: name,
-        onClick: () => {
-          this.addParams(triggerParamNames);
-          if (!this.state.revealCodeEditor) {
-            this.toggleCodeEditor();
-          }
-        }
-      }));
-    }
+    return Object.keys(triggerParamObj).map((name) => ({
+      kind: "param_not_in_function",
+      name: name,
+      onClick: () => {
+        this.addParams([name]);
+      }
+    }));
   },
 
   buildNotifications: function() {
@@ -447,10 +433,6 @@ return React.createClass({
         </div>
       </Checklist.Item>
     );
-  },
-
-  getResponseHeader: function() {
-    return this.state.revealCodeEditor ? "Then respond with" : "Ellipsis will respond with";
   },
 
   getSuccessResultTemplateHelp: function() {
@@ -706,7 +688,13 @@ return React.createClass({
   },
 
   setBehaviorProp: function(key, value, callback) {
-    var newBehavior = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
+    var newProps = {};
+    newProps[key] = value;
+    this.setBehaviorProps(newProps, callback);
+  },
+
+  setBehaviorProps: function(props, callback) {
+    var newBehavior = Object.assign({}, this.state.behavior, props);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     if (this.state.justSaved) {
@@ -885,7 +873,19 @@ return React.createClass({
   },
 
   updateParamAtIndexWithParam: function(index, newParam) {
-    this.setBehaviorProp('params', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorParams(), newParam, index));
+    var oldParams = this.getBehaviorParams();
+    var oldParamName = oldParams[index].name;
+    var newParamName = newParam.name;
+    var newParams = ImmutableObjectUtils.arrayWithNewElementAtIndex(oldParams, newParam, index);
+    this.setBehaviorProp('params', newParams, () => {
+      var numTriggersReplaced = 0;
+      if (oldParamName === this.state.paramNameToSync) {
+        numTriggersReplaced = this.syncParamNamesAndCount(oldParamName, newParamName);
+        if (numTriggersReplaced > 0) {
+          this.setState({ paramNameToSync: newParamName });
+        }
+      }
+    });
   },
 
   updateTemplate: function(newTemplateString) {
@@ -893,6 +893,38 @@ return React.createClass({
       this.setState({ hasModifiedTemplate: true });
     };
     this.setBehaviorProp('responseTemplate', newTemplateString, callback);
+  },
+
+  syncParamNamesAndCount: function(oldName, newName) {
+    var pattern = new RegExp(`\{${oldName}\}`, 'g');
+    var newString = `{${newName}}`;
+    var numTriggersModified = 0;
+
+    var newTriggers = this.getBehaviorTriggers().map((oldTrigger) => {
+      if (!oldTrigger.isRegex && pattern.test(oldTrigger.text)) {
+        numTriggersModified++;
+        return Object.assign({}, oldTrigger, { text: oldTrigger.text.replace(pattern, newString) });
+      } else {
+        return oldTrigger;
+      }
+    });
+
+    var oldTemplate = this.getBehaviorTemplate();
+    var newTemplate = oldTemplate.replace(pattern, newString);
+    var templateModified = newTemplate !== oldTemplate;
+
+    var newProps = {};
+    if (numTriggersModified > 0) {
+      newProps.triggers = newTriggers;
+    }
+    if (templateModified) {
+      newProps.responseTemplate = newTemplate;
+    }
+    if (Object.keys(newProps).length > 0) {
+      this.setBehaviorProps(newProps);
+    }
+
+    return numTriggersModified + (templateModified ? 1 : 0);
   },
 
   updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
@@ -1061,7 +1093,7 @@ return React.createClass({
   },
 
   focusOnParamIndex: function(index) {
-    this.refs.codeHeader.focusIndex(index);
+    this.refs.userInputConfiguration.focusIndex(index);
   },
 
   focusOnLastParam: function() {
@@ -1123,6 +1155,18 @@ return React.createClass({
     }
   },
 
+  onParamNameFocus: function(index) {
+    this.setState({
+      paramNameToSync: this.getBehaviorParams()[index].name
+    });
+  },
+
+  onParamNameBlur: function() {
+    this.setState({
+      paramNameToSync: null
+    });
+  },
+
   resetNotificationsImmediately: function() {
     var newNotifications = this.buildNotifications();
     var newKinds = newNotifications.map(ea => ea.kind);
@@ -1178,7 +1222,8 @@ return React.createClass({
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
       redirectValue: "",
-      requiredOAuth2ApiConfigId: ""
+      requiredOAuth2ApiConfigId: "",
+      paramNameToSync: null
     };
   },
 
@@ -1231,6 +1276,18 @@ return React.createClass({
             openDropdownName={this.getActiveDropdown()}
           />
 
+          <UserInputConfiguration
+            ref="userInputConfiguration"
+            onParamChange={this.updateParamAtIndexWithParam}
+            onParamDelete={this.deleteParamAtIndex}
+            onParamAdd={this.addParam}
+            onParamNameFocus={this.onParamNameFocus}
+            onParamNameBlur={this.onParamNameBlur}
+            onEnterKey={this.onParamEnterKey}
+            userParams={this.getBehaviorParams()}
+            paramTypes={this.props.paramTypes}
+          />
+
           <Collapsible revealWhen={this.state.revealCodeEditor}>
             <hr className="mtn" />
           </Collapsible>
@@ -1240,7 +1297,7 @@ return React.createClass({
             <div className="columns columns-elastic mobile-columns-float">
               <div className="column column-expand">
                 <p className="mbn">
-                  <span>You can run code to determine a result, with additional input from the user if needed, </span>
+                  <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
                   <span>or provide a simple response below.</span>
                 </p>
               </div>
@@ -1257,7 +1314,7 @@ return React.createClass({
           <div className="columns">
             <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
 
-              <SectionHeading>Ellipsis will do</SectionHeading>
+              <SectionHeading>Then Ellipsis will do</SectionHeading>
 
               <Checklist disabledWhen={this.isFinishedBehavior()}>
                 <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.isFinishedBehavior()}>
@@ -1341,11 +1398,6 @@ return React.createClass({
 
                 <CodeHeader
                   ref="codeHeader"
-                  shouldExpandParams={this.hasUserParameters()}
-                  onParamChange={this.updateParamAtIndexWithParam}
-                  onParamDelete={this.deleteParamAtIndex}
-                  onParamAdd={this.addParam}
-                  onEnterKey={this.onParamEnterKey}
                   helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
                   onToggleHelp={this.toggleBoilerplateHelp}
                   userParams={this.getBehaviorParams()}
@@ -1396,7 +1448,7 @@ return React.createClass({
 
             <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s">
 
-              <SectionHeading>{this.getResponseHeader()}</SectionHeading>
+              <SectionHeading>Then Ellipsis will respond with</SectionHeading>
 
               <Checklist disabledWhen={this.isFinishedBehavior()}>
                 <Checklist.Item checkedWhen={this.templateUsesMarkdown()}>

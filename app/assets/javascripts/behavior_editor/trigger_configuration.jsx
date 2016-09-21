@@ -88,7 +88,7 @@ define(function(require) {
                 You can add multiple triggers.
               </Checklist.Item>
               <Checklist.Item checkedWhen={this.triggersUseParams()}>
-                <span>A trigger can include “fill-in-the-blank” parts, e.g. <code className="plxs">{"Call me {name}"}</code></span>
+                <span>A trigger can include “fill-in-the-blank” inputs, e.g. <code className="plxs">{"Call me {name}"}</code></span>
                 <span className="pls">
                   <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible} />
                 </span>

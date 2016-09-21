@@ -146,7 +146,7 @@ return React.createClass({
       <div className="columns columns-elastic mobile-columns-float mbm mobile-mbxl">
         <div className="column column-expand">
           <div className="columns columns-elastic">
-            <div className="column column-shrink align-m ptxs prn">
+            <div className="column column-shrink align-m prn">
               <DropdownMenu
                 openWhen={this.props.dropdownIsOpen}
                 label={this.getPrefix()}
