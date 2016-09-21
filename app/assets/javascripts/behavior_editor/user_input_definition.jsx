@@ -64,11 +64,11 @@ return React.createClass({
         <div className="columns columns-elastic">
           <div className="column column-expand align-form-input">
             <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
-              {this.props.paramTypes.map(function(paramTypeName) {
-                return (
-                  <option value={paramTypeName} key={this.keyFor(paramTypeName)}>{this.paramTypeDisplayNameFor(paramTypeName)}</option>
-                );
-              }, this)}
+              {this.props.paramTypes.map((paramTypeName) => (
+                <option value={paramTypeName} key={this.keyFor(paramTypeName)}>
+                  {this.paramTypeDisplayNameFor(paramTypeName)}
+                </option>
+              ))}
             </select>
             <span className="display-inline-block align-m type-s type-weak mrm">labeled</span>
             <Input
@@ -87,7 +87,7 @@ return React.createClass({
           <div className="column column-shrink">
             <DeleteButton
               onClick={this.onDeleteClick}
-              title={"Delete the “" + this.props.name + "” parameter"}
+              title={this.props.name ? `Delete the “${this.props.name}” input` : "Delete this input"}
             />
           </div>
         </div>

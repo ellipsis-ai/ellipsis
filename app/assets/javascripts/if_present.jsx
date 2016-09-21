@@ -26,8 +26,8 @@ define(function() {
    */
   return function(maybeValue, ifPresentCallback, optionalIfEmptyCallback) {
     var isFalsyValue = [null, undefined, false, ""].some(falsy => falsy === maybeValue);
-    var isFalsyArray = Array.isArray(maybeValue) && maybeValue.length === 0;
-    if (!isFalsyValue && !isFalsyArray) {
+    var isEmptyArray = Array.isArray(maybeValue) && maybeValue.length === 0;
+    if (!isFalsyValue && !isEmptyArray) {
       return ifPresentCallback(maybeValue);
     } else if (typeof optionalIfEmptyCallback === 'function') {
       return optionalIfEmptyCallback();
