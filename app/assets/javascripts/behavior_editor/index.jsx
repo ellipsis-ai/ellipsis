@@ -196,6 +196,12 @@ return React.createClass({
     }
   },
 
+  getNonRegexTriggerTextValues: function() {
+    return this.getBehaviorTriggers()
+      .filter((trigger) => !trigger.isRegex && trigger.text.length > 0)
+      .map((trigger) => trigger.text);
+  },
+
   getBehaviorConfig: function() {
     return this.getBehaviorProp('config');
   },
@@ -1286,6 +1292,7 @@ return React.createClass({
             onEnterKey={this.onParamEnterKey}
             userParams={this.getBehaviorParams()}
             paramTypes={this.props.paramTypes}
+            nonRegexTriggerTextValues={this.getNonRegexTriggerTextValues()}
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor}>

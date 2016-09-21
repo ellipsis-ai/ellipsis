@@ -25,6 +25,7 @@ return React.createClass({
     onNameFocus: React.PropTypes.func.isRequired,
     onNameBlur: React.PropTypes.func.isRequired,
     question: React.PropTypes.string.isRequired,
+    numLinkedTriggers: React.PropTypes.number.isRequired,
     shouldGrabFocus: React.PropTypes.bool
   },
 
@@ -58,6 +59,16 @@ return React.createClass({
     return paramTypeDescriptions[paramTypeName] || paramTypeName;
   },
 
+  getParamSource: function() {
+    if (this.props.numLinkedTriggers === 1) {
+      return "from 1 trigger above, or by asking a question:";
+    } else if (this.props.numLinkedTriggers > 1) {
+      return `from ${this.props.numLinkedTriggers} triggers above, or by asking a question:`;
+    } else {
+      return "by asking a question:";
+    }
+  },
+
   render: function() {
     return (
       <div>
@@ -81,7 +92,7 @@ return React.createClass({
               onBlur={this.props.onNameBlur}
             />
             <span className="display-inline-block align-m type-s type-weak mrm">
-              from the trigger text, or by asking a question:
+              {this.getParamSource()}
             </span>
           </div>
           <div className="column column-shrink">
