@@ -129,7 +129,7 @@ return React.createClass({
     }
   },
   cursorChanged: function cursorChanged(cm) {
-    if (this.props.onCursorChange) {
+    if (this.props.onCursorChange && this.state.isFocused) {
       this.props.onCursorChange(cm);
     }
   },
