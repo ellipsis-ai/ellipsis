@@ -874,10 +874,9 @@ return React.createClass({
   },
 
   updateTemplate: function(newTemplateString) {
-    var callback = function() {
+    this.setBehaviorProp('responseTemplate', newTemplateString, () => {
       this.setState({ hasModifiedTemplate: true });
-    };
-    this.setBehaviorProp('responseTemplate', newTemplateString, callback);
+    });
   },
 
   syncParamNamesAndCount: function(oldName, newName) {

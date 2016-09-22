@@ -304,4 +304,16 @@ describe('BehaviorEditor', () => {
       });
     });
   });
+
+  describe('updateTemplate', () => {
+    it('sets a callback to mark the template as modified', () => {
+      let editor = createEditor(editorConfig);
+      editor.setBehaviorProp = jest.fn();
+      editor.setState = jest.fn();
+      editor.updateTemplate('new template');
+      const callback = editor.setBehaviorProp.mock.calls[0][2];
+      callback();
+      expect(editor.setState).toBeCalledWith({ hasModifiedTemplate: true });
+    });
+  });
 });
