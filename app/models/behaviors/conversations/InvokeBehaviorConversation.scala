@@ -102,8 +102,8 @@ case class InvokeBehaviorConversation(
       state match {
         case COLLECT_PARAM_VALUES_STATE => promptResultFor(info)
         case DONE_STATE => {
-          BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger, dataService).flatMap { br =>
-            br.resultForFilledOut(lambdaService, dataService)
+          BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger, lambdaService, dataService).flatMap { br =>
+            br.resultForFilledOut
           }
         }
       }

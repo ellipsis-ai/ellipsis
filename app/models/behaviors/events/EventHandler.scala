@@ -22,9 +22,9 @@ class EventHandler @Inject() (
     val context = event.context
     for {
       maybeTeam <- dataService.teams.find(context.teamId)
-      maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None, dataService)
+      maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None, lambdaService, dataService)
       result <- maybeResponse.map { response =>
-        response.result(lambdaService, dataService)
+        response.result
       }.getOrElse {
         val result = if (context.isResponseExpected) {
           SimpleTextResult(context.iDontKnowHowToRespondMessageFor(lambdaService))

@@ -16,9 +16,9 @@ class BehaviorTestReportBuilder @Inject() (
 
   def buildFor(event: TestEvent, behaviorVersion: BehaviorVersion): Future[BehaviorTestReport] = {
     for {
-      maybeResponse <- BehaviorResponse.chooseFor(event, None, Some(behaviorVersion.behavior), dataService)
+      maybeResponse <- BehaviorResponse.chooseFor(event, None, Some(behaviorVersion.behavior), lambdaService, dataService)
       _ <- maybeResponse.map { behaviorResponse =>
-        behaviorResponse.result(lambdaService, dataService)
+        behaviorResponse.result
       }.getOrElse(Future.successful(Unit))
     } yield {
       BehaviorTestReport(event, behaviorVersion, maybeResponse)
