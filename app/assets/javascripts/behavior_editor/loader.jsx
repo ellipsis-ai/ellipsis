@@ -14,7 +14,7 @@ requirejs(['../common'], function() {
         justSaved: config.justSaved,
         notifications: config.notifications
       };
-      config.data.triggers = config.data.triggers.map((triggerData) => new Trigger(triggerData));
+      config.data.triggers = Trigger.triggersFromJson(config.data.triggers);
       var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(config.data, additionalData));
       ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
     }

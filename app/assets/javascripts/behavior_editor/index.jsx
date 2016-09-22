@@ -563,7 +563,7 @@ return React.createClass({
       .then((response) => response.json())
       .then((json) => {
         var behaviorVersions = json.map((version) => {
-          return Object.assign(version, { triggers: version.triggers.map((trigger) => new Trigger(trigger)) });
+          return Object.assign(version, { triggers: Trigger.triggersFromJson(version.triggers) });
         });
         this.setState({
           versions: this.state.versions.concat(behaviorVersions),

@@ -62,6 +62,10 @@ define(function() {
     clone(props) {
       return new Trigger(Object.assign({}, this, props));
     }
+
+    static triggersFromJson(jsonArray) {
+      return jsonArray.map((triggerObj) => new Trigger(triggerObj));
+    }
   }
 
   return Trigger;
