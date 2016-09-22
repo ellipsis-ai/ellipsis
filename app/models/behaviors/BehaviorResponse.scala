@@ -3,9 +3,8 @@ package models.behaviors
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.team.Team
-import models.behaviors.conversations.{InvalidParamValue, InvokeBehaviorConversation}
+import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
@@ -58,23 +57,17 @@ case class BehaviorResponse(
     if (isFilledOut) {
       resultForFilledOut(awsService, dataService)
     } else {
-      val maybeFirstParamWithInvalidValue = parametersWithValues.find(_.hasInvalidValue)
       for {
         convo <- InvokeBehaviorConversation.createFor(
           behaviorVersion,
           event.context.name,
           event.context.userIdForContext,
           activatedTrigger,
-          dataService,
-          maybeFirstParamWithInvalidValue.map(p => InvalidParamValue(p.parameter, p.maybeValue.map(_.text).getOrElse("")))
+          dataService
         )
         _ <- Future.sequence(parametersWithValues.map { p =>
           p.maybeValue.map { v =>
-            if (p.hasValidValue) {
-              dataService.collectedParameterValues.save(CollectedParameterValue(p.parameter, convo, v.text))
-            } else {
-              Future.successful(Unit)
-            }
+            dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
           }.getOrElse(Future.successful(Unit))
         })
         result <- convo.resultFor(event, awsService, dataService)

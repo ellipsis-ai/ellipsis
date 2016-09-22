@@ -47,7 +47,7 @@ object NumberType extends BehaviorParameterType {
     }
   }
 
-  val invalidPromptModifier: String = "I need a number for the answer"
+  val invalidPromptModifier: String = "I need a number"
 }
 
 object BehaviorParameterType {
