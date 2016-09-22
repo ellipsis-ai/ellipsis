@@ -16,8 +16,8 @@ sealed trait BehaviorParameterType {
 
 }
 
-class TextType extends BehaviorParameterType {
-  val name = BehaviorParameterType.TEXT
+object TextType extends BehaviorParameterType {
+  val name = "Text"
 
   def isValid(text: String) = Future.successful(true)
 
@@ -27,8 +27,8 @@ class TextType extends BehaviorParameterType {
 
 }
 
-class NumberType extends BehaviorParameterType {
-  val name = BehaviorParameterType.NUMBER
+object NumberType extends BehaviorParameterType {
+  val name = "Number"
 
   def isValid(text: String) = Future.successful {
     try {
@@ -52,19 +52,11 @@ class NumberType extends BehaviorParameterType {
 
 object BehaviorParameterType {
 
-  val TEXT = "Text"
-  val NUMBER = "Number"
-
-  val allNames = Seq(
-    TEXT,
-    NUMBER
+  val all = Seq(
+    TextType,
+    NumberType
   )
+  val allNames = all.map(_.name)
 
-  def forName(name: String): BehaviorParameterType = {
-    name match {
-      case TEXT => new TextType()
-      case NUMBER => new NumberType()
-      case _ => new TextType()
-    }
-  }
+  def forName(name: String): BehaviorParameterType = all.find(_.name == name).getOrElse(TextType)
 }
