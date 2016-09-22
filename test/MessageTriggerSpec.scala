@@ -15,7 +15,7 @@ trait MessageTriggerSpec extends PlaySpec {
                     rank: Int,
                     behaviorVersion: BehaviorVersion
                   ): BehaviorParameter = {
-    BehaviorParameter(IDs.next, name, rank, behaviorVersion, None, new TextType())
+    BehaviorParameter(IDs.next, name, rank, behaviorVersion, None, TextType)
   }
 
 }
