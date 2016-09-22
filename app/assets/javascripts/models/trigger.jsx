@@ -10,8 +10,12 @@ define(function() {
     }
 
     get paramNames() {
-      var matches = this.text.match(/\{.+?\}/g) || [];
-      return matches.map((name) => name.replace(/^\{|\}$/g, ''));
+      var names = [];
+      var matches = this.text.match(/\{.+?\}/g);
+      if (!this.isRegex && matches) {
+        names = matches.map((name) => name.replace(/^\{|\}$/g, ''));
+      }
+      return names;
     }
 
     hasNonRegexParams() {
