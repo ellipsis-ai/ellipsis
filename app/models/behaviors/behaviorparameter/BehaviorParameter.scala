@@ -28,7 +28,7 @@ case class BehaviorParameter(
     }
   }
 
-  def promptResult(maybePreviousCollectedValue: Option[CollectedParameterValue]): Future[String] = {
+  def prompt(maybePreviousCollectedValue: Option[CollectedParameterValue]): Future[String] = {
     Future.successful(s"$question${invalidValueModifierFor(maybePreviousCollectedValue)}")
   }
 
