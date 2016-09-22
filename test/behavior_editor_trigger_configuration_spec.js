@@ -1,8 +1,10 @@
 jest.unmock('../app/assets/javascripts/behavior_editor/trigger_configuration');
+jest.unmock('../app/assets/javascripts/models/trigger');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const TriggerConfiguration = require('../app/assets/javascripts/behavior_editor/trigger_configuration');
+const Trigger = require('../app/assets/javascripts/models/trigger');
 
 describe('TriggerConfiguration', () => {
   const defaultConfig = {
@@ -36,17 +38,17 @@ describe('TriggerConfiguration', () => {
 
   describe('onTriggerEnterKey', () => {
     it('focuses on the next param if there is one', () => {
-      triggerConfig.triggers = [{
+      triggerConfig.triggers = [new Trigger({
         text: "trigger1",
         requiresMention: false,
         isRegex: false,
         caseSensitive: false
-      }, {
+      }), new Trigger({
         text: "trigger2",
         requiresMention: false,
         isRegex: false,
         caseSensitive: false
-      }];
+      })];
       const editor = createEditor(triggerConfig);
       editor.focusOnTriggerIndex = jest.fn();
       editor.addTrigger = jest.fn();
@@ -56,17 +58,17 @@ describe('TriggerConfiguration', () => {
     });
 
     it('adds a trigger if this is the last one and it has text', () => {
-      triggerConfig.triggers = [{
+      triggerConfig.triggers = [new Trigger({
         text: "trigger1",
         requiresMention: false,
         isRegex: false,
         caseSensitive: false
-      }, {
+      }), new Trigger({
         text: "trigger2",
         requiresMention: false,
         isRegex: false,
         caseSensitive: false
-      }];
+      })];
       const editor = createEditor(triggerConfig);
       editor.focusOnTriggerIndex = jest.fn();
       editor.addTrigger = jest.fn();
@@ -76,17 +78,17 @@ describe('TriggerConfiguration', () => {
     });
 
     it('does nothing if this is the last one and has no text', () => {
-      triggerConfig.triggers = [{
+      triggerConfig.triggers = [new Trigger({
         text: "trigger1",
         requiresMention: false,
         isRegex: false,
         caseSensitive: false
-      }, {
+      }), new Trigger({
         text: "",
         requiresMention: false,
         isRegex: false,
         caseSensitive: false
-      }];
+      })];
       const editor = createEditor(triggerConfig);
       editor.focusOnTriggerIndex = jest.fn();
       editor.addTrigger = jest.fn();
@@ -103,22 +105,22 @@ describe('TriggerConfiguration', () => {
       expect(editor.hasPrimaryTrigger()).toBe(false);
     });
     it('returns false when the first trigger is empty', () => {
-      triggerConfig.triggers = [{
+      triggerConfig.triggers = [new Trigger({
         text: "",
         requiresMention: false,
         isRegex: false,
         caseSensitive: false
-      }];
+      })];
       const editor = createEditor(triggerConfig);
       expect(editor.hasPrimaryTrigger()).toBe(false);
     });
     it('returns true when the first trigger has text', () => {
-      triggerConfig.triggers = [{
+      triggerConfig.triggers = [new Trigger({
         text: "sudo make me a sandwich",
         requiresMention: false,
         isRegex: false,
         caseSensitive: false
-      }];
+      })];
       const editor = createEditor(triggerConfig);
       expect(editor.hasPrimaryTrigger()).toBe(true);
     });
