@@ -1,6 +1,9 @@
 package models.behaviors.behaviorparameter
 
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
+
+import scala.concurrent.Future
 
 case class BehaviorParameter(
                               id: String,
@@ -11,10 +14,22 @@ case class BehaviorParameter(
                               paramType: BehaviorParameterType
                             ) {
 
-  def question: String = maybeQuestion.getOrElse("")
+  def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
   def isComplete: Boolean = {
     maybeQuestion.isDefined
+  }
+
+  def invalidValueModifierFor(maybePreviousCollectedValue: Option[CollectedParameterValue]): String = {
+    if (maybePreviousCollectedValue.isDefined) {
+      s" (${paramType.invalidPromptModifier})"
+    } else {
+      ""
+    }
+  }
+
+  def promptResult(maybePreviousCollectedValue: Option[CollectedParameterValue]): Future[String] = {
+    Future.successful(s"$question${invalidValueModifierFor(maybePreviousCollectedValue)}")
   }
 
   def toRaw: RawBehaviorParameter = {

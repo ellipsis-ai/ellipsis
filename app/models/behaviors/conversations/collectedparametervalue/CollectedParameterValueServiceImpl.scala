@@ -3,7 +3,7 @@ package models.behaviors.conversations.collectedparametervalue
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import models.behaviors.behaviorparameter.BehaviorParameterQueries
+import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterQueries}
 import models.behaviors.conversations.conversation.{Conversation, ConversationQueries}
 import services.DataService
 import slick.driver.PostgresDriver.api._
@@ -36,10 +36,13 @@ class CollectedParameterValueServiceImpl @Inject() (
 
   type TupleType = ((RawCollectedParameterValue, BehaviorParameterQueries.TupleType), ConversationQueries.TupleType)
 
-  def tuple2ParameterValue(tuple: TupleType): CollectedParameterValue = {
+  def tuple2ParameterValue(tuple: TupleType): Future[CollectedParameterValue] = {
     val param = BehaviorParameterQueries.tuple2Parameter(tuple._1._2)
     val conversation = ConversationQueries.tuple2Conversation(tuple._2)
-    CollectedParameterValue(param, conversation, tuple._1._1.valueString)
+    val valueString = tuple._1._1.valueString
+    param.paramType.isValid(valueString).map { isValid =>
+      CollectedParameterValue(param, conversation, valueString, isValid)
+    }
   }
 
   def uncompiledAllForQuery(conversationId: Rep[String]) = {
@@ -48,12 +51,32 @@ class CollectedParameterValueServiceImpl @Inject() (
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
   def allFor(conversation: Conversation): Future[Seq[CollectedParameterValue]] = {
-    val action = allForQuery(conversation.id).result.map(_.map(tuple2ParameterValue))
-    dataService.run(action)
+    dataService.run(allForQuery(conversation.id).result).flatMap { tuples =>
+      Future.sequence(tuples.map(tuple2ParameterValue))
+    }
   }
 
-  def save(value: CollectedParameterValue): Future[CollectedParameterValue] = {
-    val raw = value.toRaw
+  def uncompiledFindQuery(parameterId: Rep[String], conversationId: Rep[String]) = {
+    joined.
+      filter { case((collected, _), _) => collected.parameterId === parameterId }.
+      filter { case((collected, _), _) => collected.conversationId === conversationId }
+  }
+  val findQuery = Compiled(uncompiledFindQuery _)
+
+  def find(parameter: BehaviorParameter, conversation: Conversation): Future[Option[CollectedParameterValue]] = {
+    dataService.run(findQuery(parameter.id, conversation.id).result).flatMap { r =>
+      r.headOption.map { tuple =>
+        tuple2ParameterValue(tuple).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    }
+  }
+
+  def ensureFor(
+                 parameter: BehaviorParameter,
+                 conversation: Conversation,
+                 valueString: String
+               ): Future[CollectedParameterValue] = {
+    val raw = RawCollectedParameterValue(parameter.id, conversation.id, valueString)
     val query = all.filter(_.parameterId === raw.parameterId).filter(_.conversationId === raw.conversationId)
     val action = query.result.flatMap { r =>
       r.headOption.map { existing =>
@@ -61,7 +84,10 @@ class CollectedParameterValueServiceImpl @Inject() (
       }.getOrElse {
         all += raw
       }
-    }.map(_ => value)
-    dataService.run(action)
+    }
+    dataService.run(action).flatMap { _ =>
+      find(parameter, conversation).map(_.get)
+    }
   }
+
 }
