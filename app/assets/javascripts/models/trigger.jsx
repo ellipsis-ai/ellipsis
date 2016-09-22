@@ -1,12 +1,30 @@
 define(function() {
   class Trigger {
     constructor(props) {
-      Object.assign(this, {
+      var initialProps = Object.assign({
         caseSensitive: false,
         isRegex: false,
         requiresMention: false,
         text: ""
       }, props);
+      Object.defineProperties(this, {
+        caseSensitive: {
+          value: initialProps.caseSensitive,
+          enumerable: true
+        },
+        isRegex: {
+          value: initialProps.isRegex,
+          enumerable: true
+        },
+        requiresMention: {
+          value: initialProps.requiresMention,
+          enumerable: true
+        },
+        text: {
+          value: initialProps.text,
+          enumerable: true
+        }
+      });
     }
 
     get paramNames() {
