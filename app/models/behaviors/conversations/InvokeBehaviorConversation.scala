@@ -41,7 +41,7 @@ case class InvokeBehaviorConversation(
     val rankedParams = params.sortBy(_.rank)
 
     def maybeNextToCollect: Option[BehaviorParameter] = {
-      rankedParams.find(ea => !collected.map(_.parameter).exists(_.id == ea.id))
+      rankedParams.find(ea => !collected.exists(_.parameter == ea))
     }
 
     def invocationMap: Map[String, String] = {
