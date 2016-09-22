@@ -86,7 +86,7 @@ case class InvokeBehaviorConversation(
 
   private def promptResultFor(info: ParamInfo): Future[BotResult] = {
     info.maybeNextToCollect.map { case(param, maybeCollected) =>
-      param.promptResult(maybeCollected)
+      param.prompt(maybeCollected)
     }.getOrElse {
       Future.successful("All done!")
     }.map { prompt =>
