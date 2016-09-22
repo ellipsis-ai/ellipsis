@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react'),
     SectionHeading = require('./section_heading'),
     UserInputDefinition = require('./user_input_definition'),
+    Checklist = require('./checklist'),
     Collapsible = require('../collapsible');
 
   return React.createClass({
@@ -20,7 +21,14 @@ define(function(require) {
         }).isRequired
       })).isRequired,
       paramTypes: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-      nonRegexTriggerTextValues: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+      triggers: React.PropTypes.arrayOf(React.PropTypes.shape({
+        caseSensitive: React.PropTypes.bool.isRequired,
+        isRegex: React.PropTypes.bool.isRequired,
+        requiresMention: React.PropTypes.bool.isRequired,
+        text: React.PropTypes.string.isRequired
+      })).isRequired,
+      isFinishedBehavior: React.PropTypes.bool.isRequired,
+      behaviorHasCode: React.PropTypes.bool.isRequired
     },
 
     onChange: function(index, data) {
@@ -49,9 +57,27 @@ define(function(require) {
       return this.props.userParams.length > 0;
     },
 
+    getNonRegexTriggerTextValues: function() {
+      return this.props.triggers
+        .filter((trigger) => !trigger.isRegex && trigger.text.length > 0)
+        .map((trigger) => trigger.text);
+    },
+
     countLinkedTriggersForParamName: function(paramName) {
       var pattern = new RegExp(`\{${paramName}\}`);
-      return this.props.nonRegexTriggerTextValues.filter((triggerText) => pattern.test(triggerText)).length;
+      return this.getNonRegexTriggerTextValues().filter((triggerText) => pattern.test(triggerText)).length;
+    },
+
+    hasLinkedTriggers: function() {
+      return this.props.userParams.some((param) => this.countLinkedTriggersForParamName(param.name));
+    },
+
+    hasRegexCapturingTriggers: function() {
+      return this.props.triggers.some((trigger) => trigger.isRegex && /\(.+?\)/.test(trigger.text));
+    },
+
+    hasInputWithQuestion: function() {
+      return this.props.userParams.some((param) => param.question.length > 0);
     },
 
     render: function() {
@@ -80,6 +106,24 @@ define(function(require) {
             <div className="columns">
               <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
                 <SectionHeading>Ellipsis will collect this input</SectionHeading>
+
+                <Checklist disabledWhen={this.props.isFinishedBehavior}>
+                  <Checklist.Item checkedWhen={this.hasInputWithQuestion()}>
+                    <span>For each input, Ellipsis can ask the user a question.</span>
+                  </Checklist.Item>
+                  <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>
+                    <span>If the behavior runs code, each input will be sent to the function as a parameter </span>
+                    <span>with the same name.</span>
+                  </Checklist.Item>
+                  <Checklist.Item checkedWhen={this.hasLinkedTriggers()}>
+                    <span>User input can also come from triggers that include matching fill-in-the-blank </span>
+                    <code>{"{labels}"}</code>
+                  </Checklist.Item>
+                  <Checklist.Item checkedWhen={this.hasRegexCapturingTriggers()}>
+                    <span>Regex triggers will send text captured in parentheses in the same order as </span>
+                    <span>the inputs are defined.</span>
+                  </Checklist.Item>
+                </Checklist>
               </div>
               <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
                 <div>
