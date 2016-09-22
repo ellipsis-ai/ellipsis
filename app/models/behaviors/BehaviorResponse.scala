@@ -32,14 +32,16 @@ case class BehaviorResponse(
                              event: MessageEvent,
                              behaviorVersion: BehaviorVersion,
                              parametersWithValues: Seq[ParameterWithValue],
-                             activatedTrigger: MessageTrigger
+                             activatedTrigger: MessageTrigger,
+                             lambdaService: AWSLambdaService,
+                             dataService: DataService
                              ) {
 
   def isFilledOut: Boolean = {
     parametersWithValues.forall(_.hasValidValue)
   }
 
-  def resultForFilledOut(service: AWSLambdaService, dataService: DataService): Future[BotResult] = {
+  def resultForFilledOut: Future[BotResult] = {
     val startTime = DateTime.now
     dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event).flatMap { result =>
       val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
@@ -53,9 +55,9 @@ case class BehaviorResponse(
     }
   }
 
-  def result(awsService: AWSLambdaService, dataService: DataService): Future[BotResult] = {
+  def result: Future[BotResult] = {
     if (isFilledOut) {
-      resultForFilledOut(awsService, dataService)
+      resultForFilledOut
     } else {
       for {
         convo <- InvokeBehaviorConversation.createFor(
@@ -70,7 +72,7 @@ case class BehaviorResponse(
             dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
           }.getOrElse(Future.successful(Unit))
         })
-        result <- convo.resultFor(event, awsService, dataService)
+        result <- convo.resultFor(event, lambdaService, dataService)
       } yield result
     }
   }
@@ -83,6 +85,7 @@ object BehaviorResponse {
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
                 activatedTrigger: MessageTrigger,
+                lambdaService: AWSLambdaService,
                 dataService: DataService
                 ): Future[BehaviorResponse] = {
     for {
@@ -104,11 +107,17 @@ object BehaviorResponse {
       val paramsWithValues = params.zip(values).zip(invocationNames).map { case((param, maybeValue), invocationName) =>
         ParameterWithValue(param, invocationName, maybeValue)
       }
-      BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger)
+      BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger, lambdaService, dataService)
     }
   }
 
-  def chooseFor(event: MessageEvent, maybeTeam: Option[Team], maybeLimitToBehavior: Option[Behavior], dataService: DataService): Future[Option[BehaviorResponse]] = {
+  def chooseFor(
+                 event: MessageEvent,
+                 maybeTeam: Option[Team],
+                 maybeLimitToBehavior: Option[Behavior],
+                 lambdaService: AWSLambdaService,
+                 dataService: DataService
+               ): Future[Option[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
         dataService.behaviors.maybeCurrentVersionFor(limitToBehavior)
@@ -124,7 +133,15 @@ object BehaviorResponse {
       maybeResponse <- maybeActivatedTrigger.map { trigger =>
         for {
           params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
-          response <- BehaviorResponse.buildFor(event, trigger.behaviorVersion, trigger.invocationParamsFor(event, params), trigger, dataService)
+          response <-
+            BehaviorResponse.buildFor(
+              event,
+              trigger.behaviorVersion,
+              trigger.invocationParamsFor(event, params),
+              trigger,
+              lambdaService,
+              dataService
+            )
         } yield Some(response)
       }.getOrElse(Future.successful(None))
     } yield maybeResponse
