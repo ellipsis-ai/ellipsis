@@ -7,8 +7,9 @@ var React = require('react'),
   Input = require('../form/input'),
   Collapsible = require('../collapsible'),
   ToggleGroup = require('../form/toggle_group'),
-  DropdownMenu = require('./dropdown_menu');
-  require('whatwg-fetch');
+  DropdownMenu = require('./dropdown_menu'),
+  Trigger = require('../models/trigger');
+require('whatwg-fetch');
 
 return React.createClass({
   mixins: [BehaviorEditorMixin],
@@ -45,15 +46,12 @@ return React.createClass({
     });
   },
   changeTrigger: function(props) {
-    var newTrigger = {
+    var newTrigger = new Trigger(Object.assign({}, {
       text: this.props.value,
       requiresMention: this.props.requiresMention,
       isRegex: this.props.isRegex,
       caseSensitive: this.props.caseSensitive
-    };
-    Object.keys(props).forEach(function(key) {
-      newTrigger[key] = props[key];
-    });
+    }, props));
     this.props.onChange(newTrigger);
     if (newTrigger.isRegex) {
       this.validateTrigger();

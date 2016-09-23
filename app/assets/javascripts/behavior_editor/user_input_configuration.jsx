@@ -3,7 +3,8 @@ define(function(require) {
     SectionHeading = require('./section_heading'),
     UserInputDefinition = require('./user_input_definition'),
     Checklist = require('./checklist'),
-    Collapsible = require('../collapsible');
+    Collapsible = require('../collapsible'),
+    Trigger = require('../models/trigger');
 
   return React.createClass({
     propTypes: {
@@ -21,12 +22,7 @@ define(function(require) {
         }).isRequired
       })).isRequired,
       paramTypes: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-      triggers: React.PropTypes.arrayOf(React.PropTypes.shape({
-        caseSensitive: React.PropTypes.bool.isRequired,
-        isRegex: React.PropTypes.bool.isRequired,
-        requiresMention: React.PropTypes.bool.isRequired,
-        text: React.PropTypes.string.isRequired
-      })).isRequired,
+      triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       behaviorHasCode: React.PropTypes.bool.isRequired
     },
@@ -57,15 +53,8 @@ define(function(require) {
       return this.props.userParams.length > 0;
     },
 
-    getNonRegexTriggerTextValues: function() {
-      return this.props.triggers
-        .filter((trigger) => !trigger.isRegex && trigger.text.length > 0)
-        .map((trigger) => trigger.text);
-    },
-
     countLinkedTriggersForParamName: function(paramName) {
-      var pattern = new RegExp(`\{${paramName}\}`);
-      return this.getNonRegexTriggerTextValues().filter((triggerText) => pattern.test(triggerText)).length;
+      return this.props.triggers.filter((trigger) => trigger.usesParamName(paramName)).length;
     },
 
     hasLinkedTriggers: function() {
@@ -73,7 +62,7 @@ define(function(require) {
     },
 
     hasRegexCapturingTriggers: function() {
-      return this.props.triggers.some((trigger) => trigger.isRegex && /\(.+?\)/.test(trigger.text));
+      return this.props.triggers.some((trigger) => trigger.hasRegexCapturingParens);
     },
 
     hasInputWithQuestion: function() {
