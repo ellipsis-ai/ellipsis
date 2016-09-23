@@ -1,7 +1,6 @@
 define(function(require) {
 var React = require('react'),
   debounce = require('javascript-debounce'),
-  BehaviorEditorMixin = require('./behavior_editor_mixin'),
   DeleteButton = require('./delete_button'),
   HelpButton = require('../help/help_button'),
   Input = require('../form/input'),
@@ -12,7 +11,6 @@ var React = require('react'),
 require('whatwg-fetch');
 
 return React.createClass({
-  mixins: [BehaviorEditorMixin],
   propTypes: {
     trigger: React.PropTypes.instanceOf(Trigger).isRequired,
     large: React.PropTypes.bool,
@@ -81,16 +79,15 @@ return React.createClass({
 
     var url = jsRoutes.controllers.BehaviorEditorController.regexValidationErrorsFor(this.props.trigger.text).url;
     fetch(url, { credentials: 'same-origin' })
-      .then(function(response) {
-        return response.json();
-      }).then(function(json) {
-        var error = json[0].length ? json[0][0] : null;
+      .then((response) => response.json())
+      .then((json) => {
+        var error = (json[0] && json[0][0]) ? json[0][0] : null;
         this.setState({
           validated: true,
           regexError: error,
           showError: !!(this.state.showError && error)
         });
-      }.bind(this)).catch(function() {
+      }).catch(() => {
         // TODO: figure out what to do if there's a request error; for now clear user-visible errors
         this.clearError();
       });
