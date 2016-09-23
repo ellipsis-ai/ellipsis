@@ -49,6 +49,10 @@ define(function() {
       return this.isRegex && /\(.+?\)/.test(this.text);
     }
 
+    hasCaseInsensitiveRegexFlagWhileCaseSensitive() {
+      return this.isRegex && this.caseSensitive && /^\(\?i\)/.test(this.text);
+    }
+
     getTextWithNewParamName(oldName, newName) {
       var pattern = new RegExp(`\{${oldName}\}`, 'g');
       var wrappedNewName = `{${newName}}`;

@@ -100,10 +100,7 @@ define(function(require) {
                     key={`BehaviorEditorTrigger${index}`}
                     id={`trigger${index}`}
                     ref={`trigger${index}`}
-                    value={trigger.text}
-                    requiresMention={trigger.requiresMention}
-                    isRegex={trigger.isRegex}
-                    caseSensitive={trigger.caseSensitive}
+                    trigger={trigger}
                     hideDelete={!this.hasMultipleTriggers()}
                     onChange={this.changeTrigger.bind(this, index)}
                     onDelete={this.deleteTrigger.bind(this, index)}
