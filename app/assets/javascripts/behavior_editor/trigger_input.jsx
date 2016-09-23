@@ -14,7 +14,7 @@ require('whatwg-fetch');
 return React.createClass({
   mixins: [BehaviorEditorMixin],
   propTypes: {
-    caseSensitive: React.PropTypes.bool.isRequired,
+    trigger: React.PropTypes.instanceOf(Trigger).isRequired,
     large: React.PropTypes.bool,
     dropdownIsOpen: React.PropTypes.bool.isRequired,
     helpVisible: React.PropTypes.bool.isRequired,
@@ -23,14 +23,11 @@ return React.createClass({
       React.PropTypes.number,
       React.PropTypes.string
     ]).isRequired,
-    isRegex: React.PropTypes.bool.isRequired,
     onChange: React.PropTypes.func.isRequired,
     onDelete: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func.isRequired,
     onHelpClick: React.PropTypes.func.isRequired,
-    onToggleDropdown: React.PropTypes.func.isRequired,
-    requiresMention: React.PropTypes.bool.isRequired,
-    value: React.PropTypes.string.isRequired
+    onToggleDropdown: React.PropTypes.func.isRequired
   },
   getInitialState: function() {
     return {
@@ -46,12 +43,7 @@ return React.createClass({
     });
   },
   changeTrigger: function(props) {
-    var newTrigger = new Trigger(Object.assign({}, {
-      text: this.props.value,
-      requiresMention: this.props.requiresMention,
-      isRegex: this.props.isRegex,
-      caseSensitive: this.props.caseSensitive
-    }, props));
+    var newTrigger = this.props.trigger.clone(props);
     this.props.onChange(newTrigger);
     if (newTrigger.isRegex) {
       this.validateTrigger();
@@ -66,33 +58,28 @@ return React.createClass({
     this.focus();
   },
   toggleCaseSensitive: function() {
-    this.onChange('caseSensitive', !this.props.caseSensitive);
+    this.onChange('caseSensitive', !this.props.trigger.caseSensitive);
   },
   toggleIsRegex: function() {
-    this.onChange('isRegex', !this.props.isRegex);
+    this.onChange('isRegex', !this.props.trigger.isRegex);
   },
-  onBlur: function(newValue) {
-    var text = newValue;
-    var changes = {};
-    if (this.props.isRegex && this.props.caseSensitive && text.indexOf("(?i)") === 0) {
-      text = text.replace(/^\(\?i\)/, '');
-      changes.caseSensitive = false;
-      changes.text = text;
-      this.changeTrigger(changes);
+  onBlur: function() {
+    if (this.props.trigger.hasCaseInsensitiveRegexFlagWhileCaseSensitive()) {
+      this.changeTrigger({
+        caseSensitive: false,
+        text: this.props.trigger.text.replace(/^\(\?i\)/, '')
+      });
       this.setState({ highlightCaseSensitivity: true });
-      var callback = function() {
-        this.setState({ highlightCaseSensitivity: false });
-      }.bind(this);
-      window.setTimeout(callback, 1000);
+      window.setTimeout(() => { this.setState({ highlightCaseSensitivity: false }); }, 1000);
     }
   },
   validateTrigger: debounce(function() {
-    if (!this.props.value) {
+    if (!this.props.trigger.text) {
       this.clearError();
       return;
     }
 
-    var url = jsRoutes.controllers.BehaviorEditorController.regexValidationErrorsFor(this.props.value).url;
+    var url = jsRoutes.controllers.BehaviorEditorController.regexValidationErrorsFor(this.props.trigger.text).url;
     fetch(url, { credentials: 'same-origin' })
       .then(function(response) {
         return response.json();
@@ -109,7 +96,7 @@ return React.createClass({
       });
   }, 500),
   isEmpty: function() {
-    return !this.props.value;
+    return !this.props.trigger.text;
   },
   toggleError: function() {
     this.setState({ showError: !this.state.showError });
@@ -121,11 +108,11 @@ return React.createClass({
 
   getPrefix: function() {
     var label;
-    if (this.props.caseSensitive && this.props.isRegex) {
+    if (this.props.trigger.caseSensitive && this.props.trigger.isRegex) {
       label = "Case-sensitive regex pattern:";
-    } else if (this.props.caseSensitive) {
+    } else if (this.props.trigger.caseSensitive) {
       label = "Case-sensitive phrase:";
-    } else if (this.props.isRegex) {
+    } else if (this.props.trigger.isRegex) {
       label = "Case-insensitive regex pattern:";
     } else {
       label = "Phrase:";
@@ -134,7 +121,7 @@ return React.createClass({
   },
 
   componentDidMount: function() {
-    if (this.props.isRegex) {
+    if (this.props.trigger.isRegex) {
       this.validateTrigger();
     }
   },
@@ -154,12 +141,12 @@ return React.createClass({
                 <DropdownMenu.Item
                   onClick={this.toggleCaseSensitive}
                   label="Case-sensitive"
-                  checkedWhen={this.props.caseSensitive}
+                  checkedWhen={this.props.trigger.caseSensitive}
                 />
                 <DropdownMenu.Item
                   onClick={this.toggleIsRegex}
                   label="Regular expression pattern"
-                  checkedWhen={this.props.isRegex}
+                  checkedWhen={this.props.trigger.isRegex}
                 />
               </DropdownMenu>
             </div>
@@ -167,12 +154,12 @@ return React.createClass({
               <Input
                 className={
                   " form-input-borderless " +
-                  (this.props.isRegex ? " type-monospace " : "") +
+                  (this.props.trigger.isRegex ? " type-monospace " : "") +
                   (this.props.large ? " form-input-large " : "")
                 }
                 id={this.props.id}
                 ref="input"
-                value={this.props.value}
+                value={this.props.trigger.text}
                 placeholder="Add a trigger phrase"
                 onChange={this.onChange.bind(this, 'text')}
                 onBlur={this.onBlur}
@@ -212,14 +199,14 @@ return React.createClass({
             <ToggleGroup.Item
               title="Ellipsis will respond to any message with this phrase"
               label="Any message"
-              activeWhen={!this.props.requiresMention}
+              activeWhen={!this.props.trigger.requiresMention}
               onClick={this.onChange.bind(this, 'requiresMention', false)}
             />
             <ToggleGroup.Item
               title="Ellipsis will only respond when mentioned, or when a message begins with three periods
               “…”."
               label="To Ellipsis"
-              activeWhen={this.props.requiresMention}
+              activeWhen={this.props.trigger.requiresMention}
               onClick={this.onChange.bind(this, 'requiresMention', true)}
             />
           </ToggleGroup>
