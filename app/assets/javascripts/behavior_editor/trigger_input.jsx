@@ -92,6 +92,31 @@ return React.createClass({
         this.clearError();
       });
   }, 500),
+
+  getHelpForRegexError: function() {
+    var isIllegalRepetitionError = /^Illegal repetition/.test(this.state.regexError);
+    var containsProbableParamName = /\{.+?\}/.test(this.state.regexError);
+    if (isIllegalRepetitionError && containsProbableParamName) {
+      return (
+        <div className="mts">
+          <p>
+            <span><b>Tip:</b> if you want to collect user input in a regex trigger, use capturing parentheses with </span>
+            <span>a wildcard. Examples:</span>
+          </p>
+          <p className="type-monospace mll">
+            <span className="box-code-example">add (\d+) plus (\d+)<br /></span>
+            <span className="box-code-example">tell (.+?) something</span>
+          </p>
+          <p>
+            <span>If there are multiple inputs, the order of parentheses will follow the order of inputs you’ve defined.</span>
+          </p>
+        </div>
+      );
+    } else {
+      return null;
+    }
+  },
+
   isEmpty: function() {
     return !this.props.trigger.text;
   },
@@ -175,7 +200,7 @@ return React.createClass({
                 </div>
               ) : ""}
               <Collapsible revealWhen={this.state.showError} className="popup display-limit-width">
-                <div className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
+                <div style={{ marginTop: -4 }} className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
                   <div className="position-absolute position-top-right ptxs prxs">
                     <HelpButton onClick={this.toggleError} toggled={true} inline={true} />
                   </div>
@@ -183,6 +208,7 @@ return React.createClass({
                     <b>This regex pattern has an error:</b>
                   </div>
                   <pre>{this.state.regexError || "\n\n\n"}</pre>
+                  <div>{this.getHelpForRegexError()}</div>
                 </div>
               </Collapsible>
             </div>
