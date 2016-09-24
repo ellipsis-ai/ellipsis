@@ -40,6 +40,9 @@ class BehaviorEditorController @Inject() (
         dataService.oauth2Applications.allFor(team).map(Some(_))
       }.getOrElse(Future.successful(None))
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
+      dataTypes <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.behaviorParameterTypes.allFor(team)
+      }.getOrElse(Future.successful(Seq()))
       result <- (for {
         team <- teamAccess.maybeTargetTeam
         envVars <- maybeEnvironmentVariables
@@ -62,7 +65,7 @@ class BehaviorEditorController @Inject() (
           teamAccess,
           Json.toJson(data).toString,
           Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
-          Json.toJson(BehaviorParameterType.allNames).toString,
+          Json.toJson(dataTypes.map(_.name)).toString,
           Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
           Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
           justSaved = false,

@@ -29,7 +29,7 @@ case class BehaviorParameter(
   }
 
   def prompt(maybePreviousCollectedValue: Option[CollectedParameterValue]): Future[String] = {
-    Future.successful(s"$question${invalidValueModifierFor(maybePreviousCollectedValue)}")
+    paramType.promptFor(this, maybePreviousCollectedValue)
   }
 
   def toRaw: RawBehaviorParameter = {

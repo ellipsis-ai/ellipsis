@@ -14,7 +14,7 @@ import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfile
 import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.behaviors.BehaviorTestReportBuilder
 import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
-import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
+import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl, BehaviorParameterTypeService, BehaviorParameterTypeServiceImpl}
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
 import models.behaviors.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigService, RequiredOAuth2ApiConfigServiceImpl}
@@ -26,6 +26,7 @@ import models.behaviors.scheduledmessage.{ScheduledMessageService, ScheduledMess
 import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
 import models.environmentvariable.{EnvironmentVariableService, EnvironmentVariableServiceImpl}
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
+import models.data.apibackeddatatype.{ApiBackedDataTypeService, ApiBackedDataTypeServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
 import play.api.i18n.MessagesApi
@@ -60,6 +61,8 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[CollectedParameterValueService].to(classOf[CollectedParameterValueServiceImpl])
     bind[ScheduledMessageService].to(classOf[ScheduledMessageServiceImpl])
     bind[InvocationLogEntryService].to(classOf[InvocationLogEntryServiceImpl])
+    bind[ApiBackedDataTypeService].to(classOf[ApiBackedDataTypeServiceImpl])
+    bind[BehaviorParameterTypeService].to(classOf[BehaviorParameterTypeServiceImpl])
 
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
