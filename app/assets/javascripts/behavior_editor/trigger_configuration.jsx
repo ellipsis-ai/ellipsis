@@ -3,17 +3,13 @@ define(function(require) {
     Checklist = require('./checklist'),
     HelpButton = require('../help/help_button'),
     SectionHeading = require('./section_heading'),
-    TriggerInput = require('./trigger_input');
+    TriggerInput = require('./trigger_input'),
+    Trigger = require('../models/trigger');
 
   return React.createClass({
     propTypes: {
       isFinishedBehavior: React.PropTypes.bool.isRequired,
-      triggers: React.PropTypes.arrayOf(React.PropTypes.shape({
-        caseSensitive: React.PropTypes.bool.isRequired,
-        isRegex: React.PropTypes.bool.isRequired,
-        requiresMention: React.PropTypes.bool.isRequired,
-        text: React.PropTypes.string.isRequired
-      })).isRequired,
+      triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
       onToggleHelp: React.PropTypes.func.isRequired,
       helpVisible: React.PropTypes.bool.isRequired,
       onTriggerAdd: React.PropTypes.func.isRequired,
@@ -32,9 +28,7 @@ define(function(require) {
     },
 
     triggersUseParams: function() {
-      return this.props.triggers.some(function(trigger) {
-        return trigger.text.match(/{.+}/);
-      });
+      return this.props.triggers.some((trigger) => trigger.hasNonRegexParams());
     },
 
     onTriggerEnterKey: function(index) {
@@ -106,10 +100,7 @@ define(function(require) {
                     key={`BehaviorEditorTrigger${index}`}
                     id={`trigger${index}`}
                     ref={`trigger${index}`}
-                    value={trigger.text}
-                    requiresMention={trigger.requiresMention}
-                    isRegex={trigger.isRegex}
-                    caseSensitive={trigger.caseSensitive}
+                    trigger={trigger}
                     hideDelete={!this.hasMultipleTriggers()}
                     onChange={this.changeTrigger.bind(this, index)}
                     onDelete={this.deleteTrigger.bind(this, index)}

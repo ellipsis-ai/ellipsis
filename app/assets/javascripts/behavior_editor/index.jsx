@@ -19,6 +19,7 @@ var React = require('react'),
   HiddenJsonInput = require('./hidden_json_input'),
   Notification = require('../notifications/notification'),
   SectionHeading = require('./section_heading'),
+  Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
   UserInputConfiguration = require('./user_input_configuration'),
@@ -62,12 +63,7 @@ return React.createClass({
       }),
       question: React.PropTypes.string.isRequired
     })),
-    triggers: React.PropTypes.arrayOf(React.PropTypes.shape({
-      text: React.PropTypes.string.isRequired,
-      requiresMention: React.PropTypes.bool,
-      isRegex: React.PropTypes.bool,
-      caseSensitive: React.PropTypes.bool
-    })),
+    triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)),
     config: React.PropTypes.shape({
       aws: React.PropTypes.shape({
         accessKeyName: React.PropTypes.string,
@@ -190,9 +186,9 @@ return React.createClass({
 
   getBehaviorTriggers: function() {
     if (this.state) {
-      return this.getBehaviorProp('triggers') || [];
+      return this.getBehaviorProp('triggers');
     } else {
-      return this.props.triggers || [];
+      return this.getInitialTriggers();
     }
   },
 
@@ -327,14 +323,10 @@ return React.createClass({
 
   buildParamNotifications: function() {
     var triggerParamObj = {};
-    this.getBehaviorTriggers().forEach((ea) => {
-      if (!ea.isRegex) {
-        var matches = ea.text.match(/\{.+?\}/g) || [];
-        matches.forEach((paramName) => {
-          var rawName = paramName.replace(/^\{|\}$/g, '');
-          triggerParamObj[rawName] = true;
-        });
-      }
+    this.getBehaviorTriggers().forEach((trigger) => {
+      trigger.paramNames.forEach((paramName) => {
+        triggerParamObj[paramName] = true;
+      });
     });
     this.getBehaviorParams().forEach((codeParam) => {
       delete triggerParamObj[codeParam.name];
@@ -376,7 +368,7 @@ return React.createClass({
     if (this.props.triggers && this.props.triggers.length > 0) {
       return this.props.triggers;
     } else {
-      return [this.getNewBlankTrigger()];
+      return [new Trigger()];
     }
   },
 
@@ -409,15 +401,6 @@ return React.createClass({
 
     var rand = Math.floor(Math.random() * responses.length);
     return "The magic 8-ball says:\n\n“" + responses[rand] + "”";
-  },
-
-  getNewBlankTrigger: function() {
-    return {
-      text: "",
-      requiresMention: false,
-      isRegex: false,
-      caseSensitive: false
-    };
   },
 
   getNotifications: function() {
@@ -510,7 +493,7 @@ return React.createClass({
   },
 
   addTrigger: function(callback) {
-    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), callback);
+    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(new Trigger()), callback);
   },
 
   cancelVersionPanel: function() {
@@ -577,15 +560,17 @@ return React.createClass({
       versionsLoadStatus: 'loading'
     });
     fetch(url, { credentials: 'same-origin' })
-      .then(function(response) {
-        return response.json();
-      }).then(function(json) {
+      .then((response) => response.json())
+      .then((json) => {
+        var behaviorVersions = json.map((version) => {
+          return Object.assign(version, { triggers: Trigger.triggersFromJson(version.triggers) });
+        });
         this.setState({
-          versions: this.state.versions.concat(json),
+          versions: this.state.versions.concat(behaviorVersions),
           versionsLoadStatus: 'loaded'
         });
         this.refs.versionsPanel.reset();
-      }.bind(this)).catch(function() {
+      }).catch(() => {
         // TODO: figure out what to do if there's a request error
         this.setState({
           versionsLoadStatus: 'error'
@@ -900,9 +885,9 @@ return React.createClass({
     var numTriggersModified = 0;
 
     var newTriggers = this.getBehaviorTriggers().map((oldTrigger) => {
-      if (!oldTrigger.isRegex && pattern.test(oldTrigger.text)) {
+      if (oldTrigger.usesParamName(oldName)) {
         numTriggersModified++;
-        return Object.assign({}, oldTrigger, { text: oldTrigger.text.replace(pattern, newString) });
+        return oldTrigger.clone({ text: oldTrigger.getTextWithNewParamName(oldName, newName) });
       } else {
         return oldTrigger;
       }
