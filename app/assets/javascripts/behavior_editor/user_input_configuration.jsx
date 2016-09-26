@@ -53,12 +53,12 @@ define(function(require) {
       return this.props.userParams.length > 0;
     },
 
-    countLinkedTriggersForParamName: function(paramName) {
-      return this.props.triggers.filter((trigger) => trigger.usesParamName(paramName)).length;
+    countLinkedTriggersForParam: function(paramName, paramIndex) {
+      return this.props.triggers.filter((trigger) => trigger.usesParamName(paramName) || trigger.capturesParamIndex(paramIndex)).length;
     },
 
     hasLinkedTriggers: function() {
-      return this.props.userParams.some((param) => this.countLinkedTriggersForParamName(param.name));
+      return this.props.userParams.some((param, index) => this.countLinkedTriggersForParam(param.name, index));
     },
 
     hasRegexCapturingTriggers: function() {
@@ -132,7 +132,7 @@ define(function(require) {
                             onEnterKey={this.onEnterKey.bind(this, paramIndex)}
                             onNameFocus={this.onNameFocus.bind(this, paramIndex)}
                             onNameBlur={this.onNameBlur.bind(this, paramIndex)}
-                            numLinkedTriggers={this.countLinkedTriggersForParamName(param.name)}
+                            numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
                             id={paramIndex}
                           />
                         </div>
