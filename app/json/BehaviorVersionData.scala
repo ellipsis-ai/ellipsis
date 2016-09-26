@@ -134,7 +134,7 @@ object BehaviorVersionData {
           params.map { ea =>
             BehaviorParameterData(ea.name, Some(BehaviorParameterTypeData(ea.paramType.name)), ea.question)
           },
-          triggers.map(ea =>
+          triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
           BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData),
