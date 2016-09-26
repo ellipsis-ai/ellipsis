@@ -13,7 +13,7 @@ import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.behavior.BehaviorService
-import models.behaviors.behaviorparameter.BehaviorParameterService
+import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterTypeService}
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
@@ -24,6 +24,7 @@ import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.behaviors.invocationtoken.InvocationTokenService
+import models.data.apibackeddatatype.{ApiBackedDataTypeService, ApiBackedDataTypeVersionService}
 import models.team.TeamService
 import org.scalatest.mock.MockitoSugar
 import slick.dbio.DBIO
@@ -57,6 +58,9 @@ class MockDataService extends DataService with MockitoSugar {
   val collectedParameterValues = mock[CollectedParameterValueService]
   val scheduledMessages = mock[ScheduledMessageService]
   val invocationLogEntries = mock[InvocationLogEntryService]
+  val apiBackedDataTypes = mock[ApiBackedDataTypeService]
+  val apiBackedDataTypeVersions = mock[ApiBackedDataTypeVersionService]
+  val behaviorParameterTypes = mock[BehaviorParameterTypeService]
 
   private def dontCallMe = throw new Exception("Don't call me")
 

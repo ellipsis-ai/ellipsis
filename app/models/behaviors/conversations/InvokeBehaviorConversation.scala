@@ -9,6 +9,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
+import play.api.libs.ws.WSClient
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -70,7 +71,7 @@ case class InvokeBehaviorConversation(
     } yield updatedConversation
   }
 
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[Conversation] = {
+  def updateWith(event: MessageEvent, dataService: DataService, lambdaService: AWSLambdaService): Future[Conversation] = {
     import Conversation._
     import InvokeBehaviorConversation._
 
@@ -84,9 +85,15 @@ case class InvokeBehaviorConversation(
 
   }
 
-  private def promptResultFor(info: ParamInfo): Future[BotResult] = {
+  private def promptResultFor(
+                               info: ParamInfo,
+                               event: MessageEvent,
+                               dataService: DataService,
+                               lambdaService: AWSLambdaService,
+                               ws: WSClient
+                             ): Future[BotResult] = {
     info.maybeNextToCollect.map { case(param, maybeCollected) =>
-      param.prompt(maybeCollected)
+      param.prompt(maybeCollected, event, dataService, lambdaService, ws)
     }.getOrElse {
       Future.successful("All done!")
     }.map { prompt =>
@@ -94,15 +101,15 @@ case class InvokeBehaviorConversation(
     }
   }
 
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BotResult] = {
+  def respond(event: MessageEvent, dataService: DataService, lambdaService: AWSLambdaService, ws: WSClient): Future[BotResult] = {
     import Conversation._
     import InvokeBehaviorConversation._
 
     paramInfo(dataService).flatMap { info =>
       state match {
-        case COLLECT_PARAM_VALUES_STATE => promptResultFor(info)
+        case COLLECT_PARAM_VALUES_STATE => promptResultFor(info, event, dataService, lambdaService, ws)
         case DONE_STATE => {
-          BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger, lambdaService, dataService).flatMap { br =>
+          BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger, dataService, lambdaService, ws).flatMap { br =>
             br.resultForFilledOut
           }
         }

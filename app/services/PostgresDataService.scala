@@ -14,7 +14,7 @@ import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.behavior.BehaviorService
-import models.behaviors.behaviorparameter.BehaviorParameterService
+import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterTypeService}
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
@@ -25,6 +25,7 @@ import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.behaviors.invocationtoken.InvocationTokenService
+import models.data.apibackeddatatype.{ApiBackedDataTypeService, ApiBackedDataTypeVersionService}
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -55,7 +56,10 @@ class PostgresDataService @Inject() (
                                       val conversationsProvider: Provider[ConversationService],
                                       val collectedParameterValuesProvider: Provider[CollectedParameterValueService],
                                       val scheduledMessagesProvider: Provider[ScheduledMessageService],
-                                      val invocationLogEntriesProvider: Provider[InvocationLogEntryService]
+                                      val invocationLogEntriesProvider: Provider[InvocationLogEntryService],
+                                      val apiBackedDataTypesProvider: Provider[ApiBackedDataTypeService],
+                                      val apiBackedDataTypeVersionsProvider: Provider[ApiBackedDataTypeVersionService],
+                                      val behaviorParameterTypesProvider: Provider[BehaviorParameterTypeService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -81,6 +85,9 @@ class PostgresDataService @Inject() (
   val collectedParameterValues = collectedParameterValuesProvider.get
   val scheduledMessages = scheduledMessagesProvider.get
   val invocationLogEntries = invocationLogEntriesProvider.get
+  val apiBackedDataTypes = apiBackedDataTypesProvider.get
+  val apiBackedDataTypeVersions = apiBackedDataTypeVersionsProvider.get
+  val behaviorParameterTypes = behaviorParameterTypesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)

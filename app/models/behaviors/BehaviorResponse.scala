@@ -9,6 +9,7 @@ import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
 import play.api.libs.json.{JsString, JsValue}
+import play.api.libs.ws.WSClient
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -33,8 +34,9 @@ case class BehaviorResponse(
                              behaviorVersion: BehaviorVersion,
                              parametersWithValues: Seq[ParameterWithValue],
                              activatedTrigger: MessageTrigger,
+                             dataService: DataService,
                              lambdaService: AWSLambdaService,
-                             dataService: DataService
+                             ws: WSClient
                              ) {
 
   def isFilledOut: Boolean = {
@@ -72,7 +74,7 @@ case class BehaviorResponse(
             dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
           }.getOrElse(Future.successful(Unit))
         })
-        result <- convo.resultFor(event, lambdaService, dataService)
+        result <- convo.resultFor(event, dataService, lambdaService, ws)
       } yield result
     }
   }
@@ -85,8 +87,9 @@ object BehaviorResponse {
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
                 activatedTrigger: MessageTrigger,
+                dataService: DataService,
                 lambdaService: AWSLambdaService,
-                dataService: DataService
+                ws: WSClient
                 ): Future[BehaviorResponse] = {
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
@@ -107,7 +110,7 @@ object BehaviorResponse {
       val paramsWithValues = params.zip(values).zip(invocationNames).map { case((param, maybeValue), invocationName) =>
         ParameterWithValue(param, invocationName, maybeValue)
       }
-      BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger, lambdaService, dataService)
+      BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger, dataService, lambdaService, ws)
     }
   }
 
@@ -115,8 +118,9 @@ object BehaviorResponse {
                  event: MessageEvent,
                  maybeTeam: Option[Team],
                  maybeLimitToBehavior: Option[Behavior],
+                 dataService: DataService,
                  lambdaService: AWSLambdaService,
-                 dataService: DataService
+                 ws: WSClient
                ): Future[Option[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
@@ -139,8 +143,9 @@ object BehaviorResponse {
               trigger.behaviorVersion,
               trigger.invocationParamsFor(event, params),
               trigger,
+              dataService,
               lambdaService,
-              dataService
+              ws
             )
         } yield Some(response)
       }.getOrElse(Future.successful(None))
