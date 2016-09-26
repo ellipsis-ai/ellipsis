@@ -45,6 +45,14 @@ define(function() {
       return !this.isRegex && pattern.test(this.text);
     }
 
+    capturesParamIndex(index) {
+      if (!this.isRegex) {
+        return false;
+      }
+      var matches = this.text.match(/^\(.+?\)|[^\\]\(.*?[^\\]\)/g);
+      return !!(matches && matches[index]);
+    }
+
     hasRegexCapturingParens() {
       return this.isRegex && /\(.+?\)/.test(this.text);
     }
