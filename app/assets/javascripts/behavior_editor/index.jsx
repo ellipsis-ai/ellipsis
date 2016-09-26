@@ -29,7 +29,8 @@ var React = require('react'),
   CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
   BrowserUtils = require('../browser_utils'),
   ImmutableObjectUtils = require('../immutable_object_utils'),
-  debounce = require('javascript-debounce');
+  debounce = require('javascript-debounce'),
+  Sort = require('../sort');
   require('codemirror/mode/markdown/markdown');
   require('whatwg-fetch');
 
@@ -233,11 +234,15 @@ return React.createClass({
   },
 
   getEnvVariables: function() {
-    return this.state.envVariables;
+    if (this.state) {
+      return this.state.envVariables;
+    } else {
+      return this.getInitialEnvVariables();
+    }
   },
 
   getEnvVariableNames: function() {
-    return this.state.envVariables.map(function(ea) {
+    return this.getEnvVariables().map(function(ea) {
       return ea.name;
     });
   },
@@ -270,8 +275,7 @@ return React.createClass({
   },
 
   buildEnvVarNotifications: function() {
-    var envVars = (this.state ? this.state.envVariables : this.props.envVariables) || [];
-    return envVars.
+    return this.getEnvVariables().
       filter((ea) => this.props.knownEnvVarsUsed.includes(ea.name)).
       filter((ea) => !ea.isAlreadySavedWithValue).
       map((ea) => ({
@@ -1186,6 +1190,10 @@ return React.createClass({
     };
   },
 
+  getInitialEnvVariables: function() {
+    return Sort.arrayAlphabeticalBy(this.props.envVariables || [], 'name');
+  },
+
   getInitialState: function() {
     var initialBehavior = this.getInitialBehavior();
     return {
@@ -1196,7 +1204,7 @@ return React.createClass({
       expandEnvVariables: false,
       justSaved: this.props.justSaved,
       isSaving: false,
-      envVariables: this.props.envVariables || [],
+      envVariables: this.getInitialEnvVariables(),
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate,
