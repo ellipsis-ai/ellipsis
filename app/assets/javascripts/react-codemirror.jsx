@@ -143,7 +143,7 @@ return React.createClass({
       <div className={
         'ReactCodeMirror ' +
         (this.state.isFocused ? ' ReactCodeMirror--focused ' : '') +
-        this.props.className
+        (this.props.className || '')
       }>
         <textarea
           ref="textarea"
