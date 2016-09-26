@@ -1403,7 +1403,7 @@ return React.createClass({
                   autocompletions={this.getCodeAutocompletions()}
                   functionParams={this.getCodeFunctionParams()}
                 />
-                <div className="position-absolute position-top-right">
+                <div className="position-absolute position-top-right position-z-popup-trigger">
                   <DropdownMenu
                     openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
                     label={this.getCodeEditorDropdownLabel()}
