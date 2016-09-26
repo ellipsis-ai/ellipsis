@@ -101,12 +101,14 @@ return React.createClass({
         <div className="mts">
           <p>
             <span><b>Tip:</b> if you want to collect user input in a regex trigger, use capturing parentheses with </span>
-            <span>a wildcard. Examples:</span>
+            <span>a wildcard pattern. Examples:</span>
           </p>
-          <p className="type-monospace mll">
-            <span className="box-code-example">add (\d+) plus (\d+)<br /></span>
-            <span className="box-code-example">tell (.+?) something</span>
-          </p>
+
+          <div className="type-monospace mhl">
+            <div className="box-code-example mbs">add (\d+) plus (\d+)</div>
+            <div className="box-code-example mbm">tell (.+?) something</div>
+          </div>
+
           <p>
             <span>If there are multiple inputs, the order of parentheses will follow the order of inputs you’ve defined.</span>
           </p>
