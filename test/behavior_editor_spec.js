@@ -1,5 +1,6 @@
 jest.unmock('../app/assets/javascripts/behavior_editor/index');
 jest.unmock('../app/assets/javascripts/models/trigger');
+jest.unmock('../app/assets/javascripts/sort');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';

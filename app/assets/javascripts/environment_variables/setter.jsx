@@ -26,23 +26,9 @@ define(function(require) {
       };
     },
 
-    getInitialVarsSorted: function() {
-      return this.props.vars.slice().sort((a, b) => {
-        var aName = a.name.toLowerCase();
-        var bName = b.name.toLowerCase();
-        if (aName < bName) {
-          return -1;
-        } else if (aName > bName) {
-          return 1;
-        } else {
-          return 0;
-        }
-      });
-    },
-
     getInitialState: function() {
       return {
-        vars: this.getInitialVarsSorted(),
+        vars: this.props.vars,
         newVars: [this.createNewVar()],
         saveError: false,
         isSaving: false
@@ -58,7 +44,7 @@ define(function(require) {
     },
 
     hasChanges: function() {
-      return this.hasChangesComparedTo(this.getInitialVarsSorted()) || this.getNewVars().some((ea) => !!ea.name);
+      return this.hasChangesComparedTo(this.props.vars) || this.getNewVars().some((ea) => !!ea.name);
     },
 
     hasChangesComparedTo: function(oldVars) {
