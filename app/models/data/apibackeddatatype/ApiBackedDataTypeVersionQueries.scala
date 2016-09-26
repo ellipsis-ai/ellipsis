@@ -6,7 +6,7 @@ import slick.driver.PostgresDriver.api._
 object ApiBackedDataTypeVersionQueries {
 
   val all = TableQuery[ApiBackedDataTypeVersionsTable]
-  val joined = all.join(ApiBackedDataTypeQueries.all).on(_.dataTypeId === _.id)
+  val joined = all.join(ApiBackedDataTypeQueries.joined).on(_.dataTypeId === _._1.id)
 
   type TupleType = (RawApiBackedDataTypeVersion, ApiBackedDataTypeQueries.TupleType)
 
@@ -15,6 +15,7 @@ object ApiBackedDataTypeVersionQueries {
     val dataType = ApiBackedDataTypeQueries.tuple2DataType(tuple._2)
     ApiBackedDataTypeVersion(
       raw.id,
+      raw.name,
       dataType,
       raw.maybeHttpMethod,
       raw.maybeUrl,

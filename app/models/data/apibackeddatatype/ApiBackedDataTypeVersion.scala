@@ -20,6 +20,7 @@ case class ApiBackedDataValue(id: String, label: String)
 
 case class ApiBackedDataTypeVersion(
                                     id: String,
+                                    name: String,
                                     dataType: ApiBackedDataType,
                                     maybeHttpMethod: Option[String],
                                     maybeUrl: Option[String],
@@ -31,7 +32,6 @@ case class ApiBackedDataTypeVersion(
   def isReady: Boolean = maybeHttpMethod.isDefined && maybeUrl.isDefined && maybeFunctionBody.isDefined
 
   val functionName = id
-  val team = dataType.team
 
   val jsonBody = maybeRequestBody.getOrElse(JsObject(Seq()))
 

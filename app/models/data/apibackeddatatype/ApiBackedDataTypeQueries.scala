@@ -12,7 +12,7 @@ object ApiBackedDataTypeQueries {
 
   def tuple2DataType(tuple: TupleType): ApiBackedDataType = {
     val raw = tuple._1
-    ApiBackedDataType(raw.id, raw.name, tuple._2, raw.maybeCurrentVersionId, raw.maybeImportedId, raw.createdAt)
+    ApiBackedDataType(raw.id, tuple._2, raw.maybeCurrentVersionId, raw.maybeImportedId, raw.createdAt)
   }
 
 }

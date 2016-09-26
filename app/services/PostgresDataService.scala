@@ -25,7 +25,7 @@ import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.behaviors.invocationtoken.InvocationTokenService
-import models.data.apibackeddatatype.ApiBackedDataTypeService
+import models.data.apibackeddatatype.{ApiBackedDataTypeService, ApiBackedDataTypeVersionService}
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -58,6 +58,7 @@ class PostgresDataService @Inject() (
                                       val scheduledMessagesProvider: Provider[ScheduledMessageService],
                                       val invocationLogEntriesProvider: Provider[InvocationLogEntryService],
                                       val apiBackedDataTypesProvider: Provider[ApiBackedDataTypeService],
+                                      val apiBackedDataTypeVersionsProvider: Provider[ApiBackedDataTypeVersionService],
                                       val behaviorParameterTypesProvider: Provider[BehaviorParameterTypeService]
                             ) extends DataService {
 
@@ -85,6 +86,7 @@ class PostgresDataService @Inject() (
   val scheduledMessages = scheduledMessagesProvider.get
   val invocationLogEntries = invocationLogEntriesProvider.get
   val apiBackedDataTypes = apiBackedDataTypesProvider.get
+  val apiBackedDataTypeVersions = apiBackedDataTypeVersionsProvider.get
   val behaviorParameterTypes = behaviorParameterTypesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)

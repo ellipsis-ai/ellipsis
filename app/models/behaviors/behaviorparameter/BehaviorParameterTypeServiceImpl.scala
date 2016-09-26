@@ -3,12 +3,8 @@ package models.behaviors.behaviorparameter
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import json.{BehaviorParameterData, BehaviorParameterTypeData}
-import models.IDs
-import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 import services.DataService
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -20,8 +16,13 @@ class BehaviorParameterTypeServiceImpl @Inject() (
   def dataService = dataServiceProvider.get
 
   def allFor(team: Team): Future[Seq[BehaviorParameterType]] = {
-    dataService.apiBackedDataTypes.allFor(team).map { dataTypes =>
-      BehaviorParameterType.allBuiltIn ++ dataTypes
+    for {
+      dataTypes <- dataService.apiBackedDataTypes.allFor(team)
+      paramTypes <- Future.sequence(dataTypes.map { dt =>
+        ApiBackedBehaviorParameterType.buildFor(dt, dataService)
+      })
+    } yield {
+      BehaviorParameterType.allBuiltIn ++ paramTypes
     }
   }
 

@@ -6,6 +6,7 @@ import models.behaviors.{BehaviorResponse, BotResult, NoResponseResult, SimpleTe
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import play.api.i18n.MessagesApi
+import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,6 +16,7 @@ import scala.concurrent.Future
 class EventHandler @Inject() (
                                lambdaService: AWSLambdaService,
                                dataService: DataService,
+                               ws: WSClient,
                                messages: MessagesApi
                                ) {
 
@@ -22,7 +24,7 @@ class EventHandler @Inject() (
     val context = event.context
     for {
       maybeTeam <- dataService.teams.find(context.teamId)
-      maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None, lambdaService, dataService)
+      maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None, dataService, lambdaService, ws)
       result <- maybeResponse.map { response =>
         response.result
       }.getOrElse {
@@ -37,7 +39,7 @@ class EventHandler @Inject() (
   }
 
   def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
-    conversation.resultFor(event, lambdaService, dataService)
+    conversation.resultFor(event, dataService, lambdaService, ws)
   }
 
   def handle(event: Event): Future[BotResult] = {

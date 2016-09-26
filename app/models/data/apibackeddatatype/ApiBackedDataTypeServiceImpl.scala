@@ -16,7 +16,6 @@ import scala.concurrent.Future
 
 case class RawApiBackedDataType(
                               id: String,
-                              name: String,
                               teamId: String,
                               maybeCurrentVersionId: Option[String],
                               maybeImportedId: Option[String],
@@ -26,13 +25,12 @@ case class RawApiBackedDataType(
 class ApiBackedDataTypesTable(tag: Tag) extends Table[RawApiBackedDataType](tag, "api_backed_data_types") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def name = column[String]("name")
   def teamId = column[String]("team_id")
   def maybeCurrentVersionId = column[Option[String]]("current_version_id")
   def maybeImportedId = column[Option[String]]("imported_id")
   def createdAt = column[DateTime]("created_at")
 
-  def * = (id, name, teamId, maybeCurrentVersionId, maybeImportedId, createdAt) <>
+  def * = (id, teamId, maybeCurrentVersionId, maybeImportedId, createdAt) <>
     ((RawApiBackedDataType.apply _).tupled, RawApiBackedDataType.unapply _)
 }
 

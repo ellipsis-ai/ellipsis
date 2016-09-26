@@ -26,12 +26,13 @@ import models.behaviors.scheduledmessage.{ScheduledMessageService, ScheduledMess
 import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
 import models.environmentvariable.{EnvironmentVariableService, EnvironmentVariableServiceImpl}
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
-import models.data.apibackeddatatype.{ApiBackedDataTypeService, ApiBackedDataTypeServiceImpl}
+import models.data.apibackeddatatype.{ApiBackedDataTypeService, ApiBackedDataTypeServiceImpl, ApiBackedDataTypeVersionService, ApiBackedDataTypeVersionServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import services._
 import net.codingwell.scalaguice.ScalaModule
+import play.api.libs.ws.WSClient
 
 class ServiceModule extends AbstractModule with ScalaModule {
 
@@ -62,6 +63,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[ScheduledMessageService].to(classOf[ScheduledMessageServiceImpl])
     bind[InvocationLogEntryService].to(classOf[InvocationLogEntryServiceImpl])
     bind[ApiBackedDataTypeService].to(classOf[ApiBackedDataTypeServiceImpl])
+    bind[ApiBackedDataTypeVersionService].to(classOf[ApiBackedDataTypeVersionServiceImpl])
     bind[BehaviorParameterTypeService].to(classOf[BehaviorParameterTypeServiceImpl])
 
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
@@ -79,9 +81,10 @@ class ServiceModule extends AbstractModule with ScalaModule {
   def providesEventHandler(
                             lambdaService: AWSLambdaService,
                             dataService: DataService,
+                            ws: WSClient,
                             messages: MessagesApi
                             ): EventHandler = {
-    new EventHandler(lambdaService, dataService, messages)
+    new EventHandler(lambdaService, dataService, ws, messages)
   }
 
 }

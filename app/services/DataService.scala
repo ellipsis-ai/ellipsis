@@ -22,7 +22,7 @@ import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
 import models.behaviors.invocationtoken.InvocationTokenService
-import models.data.apibackeddatatype.ApiBackedDataTypeService
+import models.data.apibackeddatatype.{ApiBackedDataTypeService, ApiBackedDataTypeVersionService}
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -54,6 +54,7 @@ trait DataService {
   val scheduledMessages: ScheduledMessageService
   val invocationLogEntries: InvocationLogEntryService
   val apiBackedDataTypes: ApiBackedDataTypeService
+  val apiBackedDataTypeVersions: ApiBackedDataTypeVersionService
   val behaviorParameterTypes: BehaviorParameterTypeService
 
   def run[T](action: DBIO[T]): Future[T]
