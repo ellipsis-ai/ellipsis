@@ -90,7 +90,7 @@ define(function(require) {
             </Checklist>
 
           </div>
-          <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+          <div className="column column-three-quarters mobile-column-full mobile-pln mbxxl">
             <div className="mbm">
               {this.props.triggers.map(function(trigger, index) {
                 return (

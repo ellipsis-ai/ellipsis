@@ -152,73 +152,71 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="columns columns-elastic mobile-columns-float mbm mobile-mbxl">
+      <div className="columns columns-elastic mobile-columns-float mbl mobile-mbxl">
         <div className="column column-expand">
-          <div className="columns columns-elastic">
-            <div className="column column-shrink align-m prn">
-              <DropdownMenu
-                openWhen={this.props.dropdownIsOpen}
-                label={this.getPrefix()}
-                labelClassName="button-dropdown-trigger-borderless button-s mrs type-label type-weak"
-                toggle={this.props.onToggleDropdown}
-              >
-                <DropdownMenu.Item
-                  onClick={this.toggleCaseSensitive}
-                  label="Case-sensitive"
-                  checkedWhen={this.props.trigger.caseSensitive}
-                />
-                <DropdownMenu.Item
-                  onClick={this.toggleIsRegex}
-                  label="Regular expression pattern"
-                  checkedWhen={this.props.trigger.isRegex}
-                />
-              </DropdownMenu>
-            </div>
-            <div className="column column-expand prn position-relative">
-              <Input
-                className={
-                  " form-input-borderless " +
-                  (this.props.trigger.isRegex ? " type-monospace " : "") +
-                  (this.props.large ? " form-input-large " : "")
-                }
-                id={this.props.id}
-                ref="input"
-                value={this.props.trigger.text}
-                placeholder="Add a trigger phrase"
-                onChange={this.onChange.bind(this, 'text')}
-                onBlur={this.onBlur}
-                onEnterKey={this.props.onEnterKey}
+          <div className="pls">
+            <DropdownMenu
+              openWhen={this.props.dropdownIsOpen}
+              label={this.getPrefix()}
+              labelClassName="button-dropdown-trigger-borderless button-s type-label type-weak"
+              toggle={this.props.onToggleDropdown}
+            >
+              <DropdownMenu.Item
+                onClick={this.toggleCaseSensitive}
+                label="Case-sensitive"
+                checkedWhen={this.props.trigger.caseSensitive}
               />
-              {this.state.regexError ? (
-                <div className="position-absolute position-z-above position-top-right mts mrxs fade-in">
-                  <button type="button"
-                    className="button-error button-s button-shrink"
-                    ref="errorButton"
-                    onClick={this.toggleError}
-                  >
-                    <span>{this.state.showError ? "▾" : "▸" }</span>
-                    <span> Error</span>
-                  </button>
+              <DropdownMenu.Item
+                onClick={this.toggleIsRegex}
+                label="Regular expression pattern"
+                checkedWhen={this.props.trigger.isRegex}
+              />
+            </DropdownMenu>
+          </div>
+          <div className="pll">
+            <Input
+              className={
+                " form-input-borderless " +
+                (this.props.trigger.isRegex ? " type-monospace " : "") +
+                (this.props.large ? " form-input-large " : "")
+              }
+              id={this.props.id}
+              ref="input"
+              value={this.props.trigger.text}
+              placeholder="Add a trigger phrase"
+              onChange={this.onChange.bind(this, 'text')}
+              onBlur={this.onBlur}
+              onEnterKey={this.props.onEnterKey}
+            />
+            {this.state.regexError ? (
+              <div className="position-absolute position-z-above position-top-right mts mrxs fade-in">
+                <button type="button"
+                  className="button-error button-s button-shrink"
+                  ref="errorButton"
+                  onClick={this.toggleError}
+                >
+                  <span>{this.state.showError ? "▾" : "▸" }</span>
+                  <span> Error</span>
+                </button>
+              </div>
+            ) : ""}
+            <Collapsible revealWhen={this.state.showError} className="popup display-limit-width">
+              <div style={{ marginTop: -4 }} className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
+                <div className="position-absolute position-top-right ptxs prxs">
+                  <HelpButton onClick={this.toggleError} toggled={true} inline={true} />
                 </div>
-              ) : ""}
-              <Collapsible revealWhen={this.state.showError} className="popup display-limit-width">
-                <div style={{ marginTop: -4 }} className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
-                  <div className="position-absolute position-top-right ptxs prxs">
-                    <HelpButton onClick={this.toggleError} toggled={true} inline={true} />
-                  </div>
-                  <div className="prl">
-                    <b>This regex pattern has an error:</b>
-                  </div>
-                  <pre>{this.state.regexError || "\n\n\n"}</pre>
-                  <div>{this.getHelpForRegexError()}</div>
+                <div className="prl">
+                  <b>This regex pattern has an error:</b>
                 </div>
-              </Collapsible>
-            </div>
+                <pre>{this.state.regexError || "\n\n\n"}</pre>
+                <div>{this.getHelpForRegexError()}</div>
+              </div>
+            </Collapsible>
           </div>
         </div>
         <div className={
-          "column column-shrink prn display-ellipsis mobile-pts " +
-          (this.props.large ? " ptm " : " pts ")
+          "column column-shrink align-b display-ellipsis prn mobile-pts mobile-pll " +
+          (this.props.large ? " pbm " : " pbs ")
         }>
           <ToggleGroup className="form-toggle-group-s align-m">
             <ToggleGroup.Item
@@ -236,7 +234,7 @@ return React.createClass({
             />
           </ToggleGroup>
         </div>
-        <div className="column column-shrink">
+        <div className={"column column-shrink align-b " + (this.props.large ? " pbs " : "")}>
           <DeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
         </div>
       </div>
