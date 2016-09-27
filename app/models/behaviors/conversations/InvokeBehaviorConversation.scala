@@ -2,7 +2,7 @@ package models.behaviors.conversations
 
 import models.IDs
 import models.behaviors._
-import models.behaviors.behaviorparameter.BehaviorParameter
+import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
@@ -43,8 +43,9 @@ case class InvokeBehaviorConversation(
       val tuples = rankedParams.map { ea => (ea, collected.find(_.parameter == ea)) }
 
       val eventualWithHasValidValue = Future.sequence(tuples.map { case(param, maybeCollected) =>
+        val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService)
         val eventualHasValidValue = maybeCollected.map { collected =>
-          param.paramType.isValid(collected.valueString, event, Some(conversation), param, cache, dataService)
+          param.paramType.isValid(collected.valueString, context)
         }.getOrElse(Future.successful(false))
 
         eventualHasValidValue.map { hasValidValue =>
@@ -79,7 +80,8 @@ case class InvokeBehaviorConversation(
       maybeNextToCollect <- info.maybeNextToCollect(event, this, cache, dataService)
       updatedConversation <- maybeNextToCollect.map { case(param, maybeCollected) =>
         val potentialValue = event.context.relevantMessageText
-        param.paramType.isValid(potentialValue, event, Some(this), param, cache, dataService).flatMap { isValid =>
+        val context = BehaviorParameterContext(event, Some(this), param, cache, dataService)
+        param.paramType.isValid(potentialValue, context).flatMap { isValid =>
           dataService.collectedParameterValues.ensureFor(param, this, potentialValue).map(_ => this)
         }
       }.getOrElse(Future.successful(this))
@@ -111,7 +113,8 @@ case class InvokeBehaviorConversation(
     for {
       maybeNextToCollect <- info.maybeNextToCollect(event, this, cache, dataService)
       result <- maybeNextToCollect.map { case(param, maybeCollected) =>
-        param.prompt(this, maybeCollected, event, dataService, cache)
+        val context = BehaviorParameterContext(event, Some(this), param, cache, dataService)
+        param.prompt(maybeCollected, context)
       }.getOrElse {
         Future.successful("All done!")
       }.map { prompt =>

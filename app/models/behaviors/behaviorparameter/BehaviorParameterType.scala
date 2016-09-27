@@ -4,9 +4,7 @@ import models.behaviors.SuccessResult
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
 import models.team.Team
-import play.api.cache.CacheApi
 import play.api.libs.json._
 import services.DataService
 
@@ -19,23 +17,9 @@ sealed trait BehaviorParameterType {
   val id: String
   val name: String
 
-  def isValid(
-               text: String,
-               event: MessageEvent,
-               maybeConversation: Option[Conversation],
-               parameter: BehaviorParameter,
-               cache: CacheApi,
-               dataService: DataService
-             ): Future[Boolean]
+  def isValid(text: String, context: BehaviorParameterContext): Future[Boolean]
 
-  def prepareForInvocation(
-                            text: String,
-                            event: MessageEvent,
-                            maybeConversation: Option[Conversation],
-                            parameter: BehaviorParameter,
-                            cache: CacheApi,
-                            dataService: DataService
-                          ): Future[JsValue]
+  def prepareForInvocation(text: String, context: BehaviorParameterContext): Future[JsValue]
 
   def invalidPromptModifier: String
 
@@ -48,14 +32,10 @@ sealed trait BehaviorParameterType {
   }
 
   def promptFor(
-                 parameter: BehaviorParameter,
-                 conversation: Conversation,
                  maybePreviousCollectedValue: Option[CollectedParameterValue],
-                 event: MessageEvent,
-                 dataService: DataService,
-                 cache: CacheApi
+                 context: BehaviorParameterContext
                ): Future[String] = {
-      Future.successful(s"${parameter.question}${invalidValueModifierFor(maybePreviousCollectedValue)}")
+      Future.successful(s"${context.parameter.question}${invalidValueModifierFor(maybePreviousCollectedValue)}")
     }
 
 }
@@ -67,23 +47,9 @@ trait BuiltInType extends BehaviorParameterType {
 object TextType extends BuiltInType {
   val name = "Text"
 
-  def isValid(
-               text: String,
-               event: MessageEvent,
-               maybeConversation: Option[Conversation],
-               parameter: BehaviorParameter,
-               cache: CacheApi,
-               dataService: DataService
-             ) = Future.successful(true)
+  def isValid(text: String, context: BehaviorParameterContext) = Future.successful(true)
 
-  def prepareForInvocation(
-                            text: String,
-                            event: MessageEvent,
-                            maybeConversation: Option[Conversation],
-                            parameter: BehaviorParameter,
-                            cache: CacheApi,
-                            dataService: DataService
-                          ) = Future.successful(JsString(text))
+  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful(JsString(text))
 
   val invalidPromptModifier: String = "I need a valid answer"
 
@@ -92,14 +58,7 @@ object TextType extends BuiltInType {
 object NumberType extends BuiltInType {
   val name = "Number"
 
-  def isValid(
-               text: String,
-               event: MessageEvent,
-               maybeConversation: Option[Conversation],
-               parameter: BehaviorParameter,
-               cache: CacheApi,
-               dataService: DataService
-             ) = Future.successful {
+  def isValid(text: String, context: BehaviorParameterContext) = Future.successful {
     try {
       text.toDouble
       true
@@ -108,14 +67,7 @@ object NumberType extends BuiltInType {
     }
   }
 
-  def prepareForInvocation(
-                            text: String,
-                            event: MessageEvent,
-                            maybeConversation: Option[Conversation],
-                            parameter: BehaviorParameter,
-                            cache: CacheApi,
-                            dataService: DataService
-                          ) = Future.successful {
+  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful {
     try {
       JsNumber(BigDecimal(text))
     } catch {
@@ -132,37 +84,26 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]
 
-  def isValid(
-               text: String,
-               event: MessageEvent,
-               maybeConversation: Option[Conversation],
-               parameter: BehaviorParameter,
-               cache: CacheApi,
-               dataService: DataService
-             ) = {
-    cachedValuesFor(maybeConversation, parameter, cache).map { cached =>
-      Future.successful(cachedValidValueFor(text, maybeConversation, parameter, cache).isDefined)
+  def isValid(text: String, context: BehaviorParameterContext) = {
+    cachedValuesFor(context).map { cached =>
+      Future.successful(cachedValidValueFor(text, context).isDefined)
     }.getOrElse {
-      fetchMatchFor(text, event, dataService).map { maybeMatch =>
+      fetchMatchFor(text, context).map { maybeMatch =>
         maybeMatch.isDefined
       }
     }
   }
 
-  private def cachedValuesFor(
-                               maybeConversation: Option[Conversation],
-                               parameter: BehaviorParameter,
-                               cache: CacheApi
-                             ): Option[Seq[ValidValue]] = {
+  private def cachedValuesFor(context: BehaviorParameterContext): Option[Seq[ValidValue]] = {
     for {
-      conversation <- maybeConversation
-      values <- cache.get[Seq[ValidValue]](cacheKeyFor(conversation, parameter))
+      conversation <- context.maybeConversation
+      values <- context.cache.get[Seq[ValidValue]](cacheKeyFor(conversation, context.parameter))
     } yield values
   }
 
-  private def cachedValidValueAtIndex(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi): Option[ValidValue] = {
+  private def cachedValidValueAtIndex(text: String, context: BehaviorParameterContext): Option[ValidValue] = {
     for {
-      values <- cachedValuesFor(maybeConversation, parameter, cache)
+      values <- cachedValuesFor(context)
       value <- try {
         val index = text.toInt - 1
         Some(values(index))
@@ -173,30 +114,23 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
     } yield value
   }
 
-  private def cachedValidValueForLabel(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi): Option[ValidValue] = {
+  private def cachedValidValueForLabel(text: String, context: BehaviorParameterContext): Option[ValidValue] = {
     for {
-      values <- cachedValuesFor(maybeConversation, parameter, cache)
+      values <- cachedValuesFor(context)
       value <- values.find(_.label == text)
     } yield value
   }
 
-  private def cachedValidValueFor(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi): Option[ValidValue] = {
-    cachedValidValueAtIndex(text, maybeConversation, parameter, cache).
-      orElse(cachedValidValueForLabel(text, maybeConversation, parameter, cache))
+  private def cachedValidValueFor(text: String, context: BehaviorParameterContext): Option[ValidValue] = {
+    cachedValidValueAtIndex(text, context).
+      orElse(cachedValidValueForLabel(text, context))
   }
 
-  def prepareForInvocation(
-                            text: String,
-                            event: MessageEvent,
-                            maybeConversation: Option[Conversation],
-                            parameter: BehaviorParameter,
-                            cache: CacheApi,
-                            dataService: DataService
-                          ) = {
-    val eventualMaybeMatch = cachedValidValueFor(text, maybeConversation, parameter, cache).map { validValue =>
+  def prepareForInvocation(text: String, context: BehaviorParameterContext) = {
+    val eventualMaybeMatch = cachedValidValueFor(text, context).map { validValue =>
       Future.successful(Some(validValue))
     }.getOrElse {
-      fetchMatchFor(text, event, dataService)
+      fetchMatchFor(text, context)
     }
 
     eventualMaybeMatch.map { maybeMatch =>
@@ -210,11 +144,11 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
 
   private def cacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = s"${conversation.id}-${parameter.id}"
 
-  private def fetchValidValues(event: MessageEvent, dataService: DataService): Future[Seq[ValidValue]] = {
+  private def fetchValidValues(context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
     for {
-      maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
+      maybeBehaviorVersion <- context.dataService.behaviors.maybeCurrentVersionFor(behavior)
       maybeResult <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), event).map(Some(_))
+        context.dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), context.event).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield {
       maybeResult.map {
@@ -231,25 +165,23 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
     }
   }
 
-  private def fetchMatchFor(text: String, event: MessageEvent, dataService: DataService): Future[Option[ValidValue]] = {
-    fetchValidValues(event, dataService).map { validValues =>
+  private def fetchMatchFor(text: String, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
+    fetchValidValues(context).map { validValues =>
       validValues.find { v => v.id == text || v.label.toLowerCase == text.toLowerCase }
     }
   }
 
   override def promptFor(
-                          parameter: BehaviorParameter,
-                          conversation: Conversation,
                           maybePreviousCollectedValue: Option[CollectedParameterValue],
-                          event: MessageEvent,
-                          dataService: DataService,
-                          cache: CacheApi
+                          context: BehaviorParameterContext
                         ): Future[String] = {
     for {
-      superPrompt <- super.promptFor(parameter, conversation, maybePreviousCollectedValue, event, dataService, cache)
-      validValues <- fetchValidValues(event, dataService)
+      superPrompt <- super.promptFor(maybePreviousCollectedValue, context)
+      validValues <- fetchValidValues(context)
     } yield {
-      cache.set(cacheKeyFor(conversation, parameter), validValues, 5.minutes)
+      context.maybeConversation.foreach { conversation =>
+        context.cache.set(cacheKeyFor(conversation, context.parameter), validValues, 5.minutes)
+      }
       val valuesPrompt = validValues.zipWithIndex.map { case(ea, i) =>
         s"\n\n$i. ${ea.label}"
       }.mkString

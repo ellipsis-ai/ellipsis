@@ -2,10 +2,6 @@ package models.behaviors.behaviorparameter
 
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
-import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
-import play.api.cache.CacheApi
-import services.DataService
 
 import scala.concurrent.Future
 
@@ -32,14 +28,8 @@ case class BehaviorParameter(
     }
   }
 
-  def prompt(
-              conversation: Conversation,
-              maybePreviousCollectedValue: Option[CollectedParameterValue],
-              event: MessageEvent,
-              dataService: DataService,
-              cache: CacheApi
-            ): Future[String] = {
-    paramType.promptFor(this, conversation, maybePreviousCollectedValue, event, dataService, cache)
+  def prompt(maybeCollected: Option[CollectedParameterValue], context: BehaviorParameterContext): Future[String] = {
+    paramType.promptFor(maybeCollected, context)
   }
 
   def toRaw: RawBehaviorParameter = {

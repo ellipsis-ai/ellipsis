@@ -1,7 +1,7 @@
 package models.behaviors
 
 import models.behaviors.behavior.Behavior
-import models.behaviors.behaviorparameter.BehaviorParameter
+import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 import models.behaviors.conversations.InvokeBehaviorConversation
@@ -99,10 +99,11 @@ object BehaviorResponse {
         AWSLambdaConstants.invocationParamFor(i)
       })
       values <- Future.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
+        val context = BehaviorParameterContext(event, maybeConversation, param, cache, dataService)
         paramValues.get(invocationName).map { v =>
           for {
-            isValid <- param.paramType.isValid(v, event, maybeConversation, param, cache, dataService)
-            json <- param.paramType.prepareForInvocation(v, event, maybeConversation, param, cache, dataService)
+            isValid <- param.paramType.isValid(v, context)
+            json <- param.paramType.prepareForInvocation(v, context)
           } yield {
             Some(ParameterValue(v, json, isValid))
           }
