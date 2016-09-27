@@ -19,9 +19,23 @@ sealed trait BehaviorParameterType {
   val id: String
   val name: String
 
-  def isValid(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi): Future[Boolean]
+  def isValid(
+               text: String,
+               event: MessageEvent,
+               maybeConversation: Option[Conversation],
+               parameter: BehaviorParameter,
+               cache: CacheApi,
+               dataService: DataService
+             ): Future[Boolean]
 
-  def prepareForInvocation(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi): Future[JsValue]
+  def prepareForInvocation(
+                            text: String,
+                            event: MessageEvent,
+                            maybeConversation: Option[Conversation],
+                            parameter: BehaviorParameter,
+                            cache: CacheApi,
+                            dataService: DataService
+                          ): Future[JsValue]
 
   def invalidPromptModifier: String
 
@@ -53,9 +67,23 @@ trait BuiltInType extends BehaviorParameterType {
 object TextType extends BuiltInType {
   val name = "Text"
 
-  def isValid(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi) = Future.successful(true)
+  def isValid(
+               text: String,
+               event: MessageEvent,
+               maybeConversation: Option[Conversation],
+               parameter: BehaviorParameter,
+               cache: CacheApi,
+               dataService: DataService
+             ) = Future.successful(true)
 
-  def prepareForInvocation(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi) = Future.successful(JsString(text))
+  def prepareForInvocation(
+                            text: String,
+                            event: MessageEvent,
+                            maybeConversation: Option[Conversation],
+                            parameter: BehaviorParameter,
+                            cache: CacheApi,
+                            dataService: DataService
+                          ) = Future.successful(JsString(text))
 
   val invalidPromptModifier: String = "I need a valid answer"
 
@@ -64,7 +92,14 @@ object TextType extends BuiltInType {
 object NumberType extends BuiltInType {
   val name = "Number"
 
-  def isValid(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi) = Future.successful {
+  def isValid(
+               text: String,
+               event: MessageEvent,
+               maybeConversation: Option[Conversation],
+               parameter: BehaviorParameter,
+               cache: CacheApi,
+               dataService: DataService
+             ) = Future.successful {
     try {
       text.toDouble
       true
@@ -73,7 +108,14 @@ object NumberType extends BuiltInType {
     }
   }
 
-  def prepareForInvocation(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi) = Future.successful {
+  def prepareForInvocation(
+                            text: String,
+                            event: MessageEvent,
+                            maybeConversation: Option[Conversation],
+                            parameter: BehaviorParameter,
+                            cache: CacheApi,
+                            dataService: DataService
+                          ) = Future.successful {
     try {
       JsNumber(BigDecimal(text))
     } catch {
@@ -90,12 +132,20 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]
 
-  def isValid(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi) = {
+  def isValid(
+               text: String,
+               event: MessageEvent,
+               maybeConversation: Option[Conversation],
+               parameter: BehaviorParameter,
+               cache: CacheApi,
+               dataService: DataService
+             ) = {
     cachedValuesFor(maybeConversation, parameter, cache).map { cached =>
       Future.successful(cachedValidValueFor(text, maybeConversation, parameter, cache).isDefined)
     }.getOrElse {
-      // TODO: do a real check here
-      Future.successful(false)
+      fetchMatchFor(text, event, dataService).map { maybeMatch =>
+        maybeMatch.isDefined
+      }
     }
   }
 
@@ -135,11 +185,25 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
       orElse(cachedValidValueForLabel(text, maybeConversation, parameter, cache))
   }
 
-  def prepareForInvocation(text: String, maybeConversation: Option[Conversation], parameter: BehaviorParameter, cache: CacheApi) = {
-    val value = cachedValidValueFor(text, maybeConversation, parameter, cache).map { validValue =>
-     JsObject(Map("id" -> JsString(validValue.id), "label" -> JsString(validValue.label)))
-    }.getOrElse(JsString(text))
-    Future.successful(value)
+  def prepareForInvocation(
+                            text: String,
+                            event: MessageEvent,
+                            maybeConversation: Option[Conversation],
+                            parameter: BehaviorParameter,
+                            cache: CacheApi,
+                            dataService: DataService
+                          ) = {
+    val eventualMaybeMatch = cachedValidValueFor(text, maybeConversation, parameter, cache).map { validValue =>
+      Future.successful(Some(validValue))
+    }.getOrElse {
+      fetchMatchFor(text, event, dataService)
+    }
+
+    eventualMaybeMatch.map { maybeMatch =>
+      maybeMatch.
+        map { v => JsObject(Map("id" -> JsString(v.id), "label" -> JsString(v.label))) }.
+        getOrElse(JsString(text))
+    }
   }
 
   val invalidPromptModifier: String = s"I need a $name. Use one of the numbers or labels below"
@@ -164,6 +228,12 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
         }
         case _ => Seq()
       }.getOrElse(Seq())
+    }
+  }
+
+  private def fetchMatchFor(text: String, event: MessageEvent, dataService: DataService): Future[Option[ValidValue]] = {
+    fetchValidValues(event, dataService).map { validValues =>
+      validValues.find { v => v.id == text || v.label.toLowerCase == text.toLowerCase }
     }
   }
 

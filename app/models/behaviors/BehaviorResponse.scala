@@ -101,8 +101,8 @@ object BehaviorResponse {
       values <- Future.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
         paramValues.get(invocationName).map { v =>
           for {
-            isValid <- param.paramType.isValid(v, maybeConversation, param, cache)
-            json <- param.paramType.prepareForInvocation(v, maybeConversation, param, cache)
+            isValid <- param.paramType.isValid(v, event, maybeConversation, param, cache, dataService)
+            json <- param.paramType.prepareForInvocation(v, event, maybeConversation, param, cache, dataService)
           } yield {
             Some(ParameterValue(v, json, isValid))
           }

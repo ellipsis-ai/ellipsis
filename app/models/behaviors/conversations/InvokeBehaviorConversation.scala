@@ -34,9 +34,29 @@ case class InvokeBehaviorConversation(
 
     val rankedParams = params.sortBy(_.rank)
 
-    def maybeNextToCollect: Option[(BehaviorParameter, Option[CollectedParameterValue])] = {
+    def maybeNextToCollect(
+                            event: MessageEvent,
+                            conversation: Conversation,
+                            cache: CacheApi,
+                            dataService: DataService
+                          ): Future[Option[(BehaviorParameter, Option[CollectedParameterValue])]] = {
       val tuples = rankedParams.map { ea => (ea, collected.find(_.parameter == ea)) }
-      tuples.find { case(param, maybeCollected) => !maybeCollected.exists(_.isValid) }
+
+      val eventualWithHasValidValue = Future.sequence(tuples.map { case(param, maybeCollected) =>
+        val eventualHasValidValue = maybeCollected.map { collected =>
+          param.paramType.isValid(collected.valueString, event, Some(conversation), param, cache, dataService)
+        }.getOrElse(Future.successful(false))
+
+        eventualHasValidValue.map { hasValidValue =>
+          (param, maybeCollected, hasValidValue)
+        }
+      })
+
+      eventualWithHasValidValue.map { withHasValidValue =>
+        withHasValidValue.
+          find { case (param, maybeCollected, hasValidValue) => !hasValidValue }.
+          map { case (param, maybeCollected, hasValidValue) => (param, maybeCollected) }
+      }
     }
 
     def invocationMap: Map[String, String] = {
@@ -56,14 +76,16 @@ case class InvokeBehaviorConversation(
 
   private def collectParamValueFrom(event: MessageEvent, info: ParamInfo, dataService: DataService, cache: CacheApi): Future[Conversation] = {
     for {
-      updatedConversation <- info.maybeNextToCollect.map { case(param, maybeCollected) =>
+      maybeNextToCollect <- info.maybeNextToCollect(event, this, cache, dataService)
+      updatedConversation <- maybeNextToCollect.map { case(param, maybeCollected) =>
         val potentialValue = event.context.relevantMessageText
-        param.paramType.isValid(potentialValue, Some(this), param, cache).flatMap { isValid =>
+        param.paramType.isValid(potentialValue, event, Some(this), param, cache, dataService).flatMap { isValid =>
           dataService.collectedParameterValues.ensureFor(param, this, potentialValue).map(_ => this)
         }
       }.getOrElse(Future.successful(this))
       updatedParamInfo <- paramInfo(dataService)
-      updatedConversation <- if (updatedParamInfo.maybeNextToCollect.isDefined) {
+      updatedMaybeNextToCollect <- updatedParamInfo.maybeNextToCollect(event, this, cache, dataService)
+      updatedConversation <- if (updatedMaybeNextToCollect.isDefined) {
         Future.successful(updatedConversation)
       } else {
         updatedConversation.updateStateTo(Conversation.DONE_STATE, dataService)
@@ -86,13 +108,16 @@ case class InvokeBehaviorConversation(
   }
 
   private def promptResultFor(info: ParamInfo, event: MessageEvent, dataService: DataService, cache: CacheApi): Future[BotResult] = {
-    info.maybeNextToCollect.map { case(param, maybeCollected) =>
-      param.prompt(this, maybeCollected, event, dataService, cache)
-    }.getOrElse {
-      Future.successful("All done!")
-    }.map { prompt =>
-      SimpleTextResult(prompt)
-    }
+    for {
+      maybeNextToCollect <- info.maybeNextToCollect(event, this, cache, dataService)
+      result <- maybeNextToCollect.map { case(param, maybeCollected) =>
+        param.prompt(this, maybeCollected, event, dataService, cache)
+      }.getOrElse {
+        Future.successful("All done!")
+      }.map { prompt =>
+        SimpleTextResult(prompt)
+      }
+    } yield result
   }
 
   def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi): Future[BotResult] = {
