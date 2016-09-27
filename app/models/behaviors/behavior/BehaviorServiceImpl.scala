@@ -70,6 +70,16 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def visibleForTeam(team: Team): Future[Seq[Behavior]] = {
+    for {
+      all <- allForTeam(team)
+      dataTypes <- dataService.behaviorBackedDataTypes.allFor(team)
+    } yield {
+      val invisible = dataTypes.map(_.behavior)
+      all.diff(invisible)
+    }
+  }
+
   def createFor(team: Team, maybeImportedId: Option[String]): Future[Behavior] = {
     val raw = RawBehavior(IDs.next, team.id, None, maybeImportedId, DateTime.now)
 
