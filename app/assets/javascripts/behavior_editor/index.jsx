@@ -1191,7 +1191,7 @@ return React.createClass({
   },
 
   getInitialEnvVariables: function() {
-    return Sort.arrayAlphabeticalBy(this.props.envVariables || [], 'name');
+    return Sort.arrayAlphabeticalBy(this.props.envVariables || [], (variable) => variable.name);
   },
 
   getInitialState: function() {

@@ -21,7 +21,7 @@ describe('Sort', () => {
         value: "",
         isAlreadySavedWithValue: false
       }];
-      var sorted = Sort.arrayAlphabeticalBy(array, 'name');
+      var sorted = Sort.arrayAlphabeticalBy(array, (item) => item.name);
       expect(sorted.map(ea => ea.name)).toEqual(["Alpha", "bravo", "charlie", "Delta"]);
       expect(array.map(ea => ea.name)).toEqual(["Delta", "bravo", "charlie", "Alpha"]);
     });
