@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react'),
     Formatter = require('../formatter'),
     ImmutableObjectUtils = require('../immutable_object_utils'),
+    Sort = require('../sort'),
     SVGInstalled = require('../svg/installed');
 
   return React.createClass({
@@ -108,17 +109,7 @@ define(function(require) {
     },
 
     sortVersionsByFirstTrigger: function(versions) {
-      return versions.sort(function(version1, version2) {
-        var t1 = this.getDisplayTriggerFromVersion(version1).text.toLowerCase();
-        var t2 = this.getDisplayTriggerFromVersion(version2).text.toLowerCase();
-        if (t1 < t2) {
-          return -1;
-        } else if (t1 > t2) {
-          return 1;
-        } else {
-          return 0;
-        }
-      }.bind(this));
+      return Sort.arrayAlphabeticalBy(versions, (item) => this.getDisplayTriggerFromVersion(item).text);
     },
 
     getKnowledge: function() {

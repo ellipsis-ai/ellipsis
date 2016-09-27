@@ -3,7 +3,8 @@ define(function(require) {
     Collapsible = require('../collapsible'),
     HelpButton = require('../help/help_button'),
     HelpPanel = require('../help/panel'),
-    SettingsMenu = require('../settings_menu');
+    SettingsMenu = require('../settings_menu'),
+    Sort = require('../sort');
 
   return React.createClass({
     displayName: 'ApplicationList',
@@ -29,7 +30,7 @@ define(function(require) {
     },
 
     getGroupedApplications: function() {
-      var flatApps = this.getSortedApplications();
+      var flatApps = Sort.arrayAlphabeticalBy(this.getApplications(), (item) => item.displayName);
       var groupedApps = {};
       flatApps.forEach(ea => {
         if (groupedApps[ea.apiId]) {
@@ -39,20 +40,6 @@ define(function(require) {
         }
       });
       return groupedApps;
-    },
-
-    getSortedApplications: function() {
-      return this.getApplications().sort((a, b) => {
-        const aName = a.displayName.toLowerCase();
-        const bName = b.displayName.toLowerCase();
-        if (aName < bName) {
-          return -1;
-        } else if (aName > bName) {
-          return 1;
-        } else {
-          return 0;
-        }
-      });
     },
 
     getApiNameForId: function(apiId) {
