@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterQueries}
 import models.behaviors.conversations.conversation.{Conversation, ConversationQueries}
+import play.api.cache.CacheApi
 import services.DataService
 import slick.driver.PostgresDriver.api._
 
@@ -23,15 +24,17 @@ class CollectedParameterValuesTable(tag: Tag) extends Table[RawCollectedParamete
 }
 
 class CollectedParameterValueServiceImpl @Inject() (
-                                                     dataServiceProvider: Provider[DataService]
+                                                     dataServiceProvider: Provider[DataService],
+                                                     cacheProvider: Provider[CacheApi]
                                                    ) extends CollectedParameterValueService {
 
   def dataService = dataServiceProvider.get
+  def cache = cacheProvider.get
 
   val all = TableQuery[CollectedParameterValuesTable]
   val joined =
     all.
-      join(BehaviorParameterQueries.allWithBehaviorVersion).on(_.parameterId === _._1.id).
+      join(BehaviorParameterQueries.joined).on(_.parameterId === _._1._1.id).
       join(ConversationQueries.allWithTrigger).on(_._1.conversationId === _._1.id)
 
   type TupleType = ((RawCollectedParameterValue, BehaviorParameterQueries.TupleType), ConversationQueries.TupleType)
@@ -40,7 +43,7 @@ class CollectedParameterValueServiceImpl @Inject() (
     val param = BehaviorParameterQueries.tuple2Parameter(tuple._1._2)
     val conversation = ConversationQueries.tuple2Conversation(tuple._2)
     val valueString = tuple._1._1.valueString
-    param.paramType.isValid(valueString).map { isValid =>
+    param.paramType.isValid(valueString, Some(conversation), param, cache).map { isValid =>
       CollectedParameterValue(param, conversation, valueString, isValid)
     }
   }

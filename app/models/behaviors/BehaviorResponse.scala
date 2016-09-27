@@ -5,9 +5,11 @@ import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 import models.behaviors.conversations.InvokeBehaviorConversation
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
+import play.api.cache.CacheApi
 import play.api.libs.json.{JsString, JsValue}
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
@@ -34,7 +36,8 @@ case class BehaviorResponse(
                              parametersWithValues: Seq[ParameterWithValue],
                              activatedTrigger: MessageTrigger,
                              lambdaService: AWSLambdaService,
-                             dataService: DataService
+                             dataService: DataService,
+                             cache: CacheApi
                              ) {
 
   def isFilledOut: Boolean = {
@@ -72,7 +75,7 @@ case class BehaviorResponse(
             dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
           }.getOrElse(Future.successful(Unit))
         })
-        result <- convo.resultFor(event, lambdaService, dataService)
+        result <- convo.resultFor(event, lambdaService, dataService, cache)
       } yield result
     }
   }
@@ -85,8 +88,10 @@ object BehaviorResponse {
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
                 activatedTrigger: MessageTrigger,
+                maybeConversation: Option[Conversation],
                 lambdaService: AWSLambdaService,
-                dataService: DataService
+                dataService: DataService,
+                cache: CacheApi
                 ): Future[BehaviorResponse] = {
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
@@ -96,8 +101,8 @@ object BehaviorResponse {
       values <- Future.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
         paramValues.get(invocationName).map { v =>
           for {
-            isValid <- param.paramType.isValid(v)
-            json <- param.paramType.prepareForInvocation(v)
+            isValid <- param.paramType.isValid(v, maybeConversation, param, cache)
+            json <- param.paramType.prepareForInvocation(v, maybeConversation, param, cache)
           } yield {
             Some(ParameterValue(v, json, isValid))
           }
@@ -107,7 +112,7 @@ object BehaviorResponse {
       val paramsWithValues = params.zip(values).zip(invocationNames).map { case((param, maybeValue), invocationName) =>
         ParameterWithValue(param, invocationName, maybeValue)
       }
-      BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger, lambdaService, dataService)
+      BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger, lambdaService, dataService, cache)
     }
   }
 
@@ -116,7 +121,8 @@ object BehaviorResponse {
                  maybeTeam: Option[Team],
                  maybeLimitToBehavior: Option[Behavior],
                  lambdaService: AWSLambdaService,
-                 dataService: DataService
+                 dataService: DataService,
+                 cache: CacheApi
                ): Future[Option[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
@@ -139,8 +145,10 @@ object BehaviorResponse {
               trigger.behaviorVersion,
               trigger.invocationParamsFor(event, params),
               trigger,
+              None,
               lambdaService,
-              dataService
+              dataService,
+              cache
             )
         } yield Some(response)
       }.getOrElse(Future.successful(None))

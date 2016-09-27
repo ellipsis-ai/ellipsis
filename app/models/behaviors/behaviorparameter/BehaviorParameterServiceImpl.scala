@@ -47,11 +47,14 @@ class BehaviorParameterServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  private def createFor(name: String, paramType: BehaviorParameterTypeData, maybeQuestion: Option[String], rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
-    val raw = RawBehaviorParameter(IDs.next, name, rank, behaviorVersion.id, maybeQuestion, paramType.name)
-    val action = (all += raw).map { _ =>
-      BehaviorParameter(raw.id, raw.name, raw.rank, behaviorVersion, raw.maybeQuestion, BehaviorParameterType.forName(raw.paramType))
-    }
+  private def createFor(name: String, paramTypeData: BehaviorParameterTypeData, maybeQuestion: Option[String], rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
+    val raw = RawBehaviorParameter(IDs.next, name, rank, behaviorVersion.id, maybeQuestion, paramTypeData.id)
+    val action = for {
+      maybeParamType <- DBIO.from(BehaviorParameterType.find(paramTypeData.id, behaviorVersion.team, dataService))
+      param <- (all += raw).map { _ =>
+        BehaviorParameter(raw.id, raw.name, raw.rank, behaviorVersion, raw.maybeQuestion, maybeParamType.getOrElse(TextType))
+      }
+    } yield param
     dataService.run(action)
   }
 
@@ -59,7 +62,7 @@ class BehaviorParameterServiceImpl @Inject() (
     val action = for {
       _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
       newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
-        DBIO.from(createFor(data.name, data.paramType.getOrElse(BehaviorParameterTypeData(TextType.name)), data.maybeNonEmptyQuestion, i + 1, behaviorVersion))
+        DBIO.from(createFor(data.name, data.paramType.getOrElse(BehaviorParameterTypeData.from(TextType)), data.maybeNonEmptyQuestion, i + 1, behaviorVersion))
       })
     } yield newParams
     dataService.run(action)

@@ -1,3 +1,11 @@
 package json
 
-case class BehaviorParameterTypeData(name: String)
+import models.behaviors.behaviorparameter.BehaviorParameterType
+
+case class BehaviorParameterTypeData(id: String, name: String)
+
+object BehaviorParameterTypeData {
+
+  def from(paramType: BehaviorParameterType) = BehaviorParameterTypeData(paramType.id, paramType.name)
+
+}

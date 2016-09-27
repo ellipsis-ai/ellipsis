@@ -14,7 +14,7 @@ import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfile
 import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.behaviors.BehaviorTestReportBuilder
 import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
-import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
+import models.behaviors.behaviorparameter.{BehaviorBackedDataTypeService, BehaviorBackedDataTypeServiceImpl, BehaviorParameterService, BehaviorParameterServiceImpl}
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
 import models.behaviors.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigService, RequiredOAuth2ApiConfigServiceImpl}
@@ -31,6 +31,7 @@ import play.api.Configuration
 import play.api.i18n.MessagesApi
 import services._
 import net.codingwell.scalaguice.ScalaModule
+import play.api.cache.CacheApi
 
 class ServiceModule extends AbstractModule with ScalaModule {
 
@@ -60,6 +61,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[CollectedParameterValueService].to(classOf[CollectedParameterValueServiceImpl])
     bind[ScheduledMessageService].to(classOf[ScheduledMessageServiceImpl])
     bind[InvocationLogEntryService].to(classOf[InvocationLogEntryServiceImpl])
+    bind[BehaviorBackedDataTypeService].to(classOf[BehaviorBackedDataTypeServiceImpl])
 
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
@@ -76,9 +78,10 @@ class ServiceModule extends AbstractModule with ScalaModule {
   def providesEventHandler(
                             lambdaService: AWSLambdaService,
                             dataService: DataService,
+                            cache: CacheApi,
                             messages: MessagesApi
                             ): EventHandler = {
-    new EventHandler(lambdaService, dataService, messages)
+    new EventHandler(lambdaService, dataService, cache, messages)
   }
 
 }

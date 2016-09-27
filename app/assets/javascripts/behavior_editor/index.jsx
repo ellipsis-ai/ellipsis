@@ -59,7 +59,8 @@ return React.createClass({
     params: React.PropTypes.arrayOf(React.PropTypes.shape({
       name: React.PropTypes.string.isRequired,
       paramType: React.PropTypes.shape({
-        name: React.PropTypes.string
+        id: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired
       }),
       question: React.PropTypes.string.isRequired
     })),
@@ -83,7 +84,12 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
-    paramTypes: React.PropTypes.arrayOf(React.PropTypes.string),
+    paramTypes: React.PropTypes.arrayOf(
+      React.PropTypes.shape({
+        id: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired
+      })
+    ).isRequired,
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
@@ -1389,7 +1395,6 @@ return React.createClass({
                   onToggleHelp={this.toggleBoilerplateHelp}
                   userParams={this.getBehaviorParams()}
                   systemParams={this.getSystemParams()}
-                  paramTypes={this.props.paramTypes}
                 />
               </div>
 

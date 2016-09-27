@@ -15,9 +15,15 @@ return React.createClass({
       React.PropTypes.string
     ]).isRequired,
     name: React.PropTypes.string.isRequired,
-    paramTypes: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    paramTypes: React.PropTypes.arrayOf(
+      React.PropTypes.shape({
+        id: React.PropTypes.string,
+        name: React.PropTypes.string
+      })
+    ).isRequired,
     paramType: React.PropTypes.shape({
-      name: React.PropTypes.string
+      id: React.PropTypes.string.isRequired,
+      name: React.PropTypes.string.isRequired
     }).isRequired,
     onChange: React.PropTypes.func.isRequired,
     onDelete: React.PropTypes.func.isRequired,
@@ -34,8 +40,9 @@ return React.createClass({
   },
 
   onParamTypeChange: function(event) {
-    var newTypeName = event.target.value;
-    this.props.onChange({ name: this.props.name, paramType: { name: newTypeName }, question: this.props.question });
+    var newTypeId = event.target.value;
+    var newType = this.props.paramTypes.find(ea => ea.id === newTypeId);
+    this.props.onChange({ name: this.props.name, paramType: newType, question: this.props.question });
   },
 
   onQuestionChange: function(newQuestion) {
@@ -51,8 +58,8 @@ return React.createClass({
     this.refs.name.select();
   },
 
-  keyFor: function(paramTypeName) {
-    return 'param-type-' + this.props.id + '-' + paramTypeName;
+  keyFor: function(paramType) {
+    return 'param-type-' + this.props.id + '-' + paramType.id;
   },
 
   paramTypeDisplayNameFor: function(paramTypeName) {
@@ -74,10 +81,10 @@ return React.createClass({
       <div>
         <div className="columns columns-elastic">
           <div className="column column-expand align-form-input">
-            <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.paramType.name} onChange={this.onParamTypeChange}>
-              {this.props.paramTypes.map((paramTypeName) => (
-                <option value={paramTypeName} key={this.keyFor(paramTypeName)}>
-                  {this.paramTypeDisplayNameFor(paramTypeName)}
+            <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.paramType.id} onChange={this.onParamTypeChange}>
+              {this.props.paramTypes.map((paramType) => (
+                <option value={paramType.id} key={this.keyFor(paramType)}>
+                  {this.paramTypeDisplayNameFor(paramType.name)}
                 </option>
               ))}
             </select>

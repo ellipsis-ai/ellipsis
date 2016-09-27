@@ -5,6 +5,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
+import play.api.cache.CacheApi
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,13 +22,13 @@ trait Conversation {
   val state: String
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[Conversation]
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BotResult]
+  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi): Future[Conversation]
+  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi): Future[BotResult]
 
-  def resultFor(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Future[BotResult] = {
+  def resultFor(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi): Future[BotResult] = {
     for {
-      updatedConversation <- updateWith(event, lambdaService, dataService)
-      result <- updatedConversation.respond(event, lambdaService, dataService)
+      updatedConversation <- updateWith(event, lambdaService, dataService, cache)
+      result <- updatedConversation.respond(event, lambdaService, dataService, cache)
     } yield result
   }
 

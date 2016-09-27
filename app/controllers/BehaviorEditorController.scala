@@ -40,6 +40,9 @@ class BehaviorEditorController @Inject() (
         dataService.oauth2Applications.allFor(team).map(Some(_))
       }.getOrElse(Future.successful(None))
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
+      paramTypes <- teamAccess.maybeTargetTeam.map { team =>
+        BehaviorParameterType.allFor(team, dataService)
+      }.getOrElse(Future.successful(Seq()))
       result <- (for {
         team <- teamAccess.maybeTargetTeam
         envVars <- maybeEnvironmentVariables
@@ -62,7 +65,7 @@ class BehaviorEditorController @Inject() (
           teamAccess,
           Json.toJson(data).toString,
           Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
-          Json.toJson(BehaviorParameterType.allNames).toString,
+          Json.toJson(paramTypes.map(BehaviorParameterTypeData.from)).toString,
           Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
           Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
           justSaved = false,
@@ -86,6 +89,9 @@ class BehaviorEditorController @Inject() (
         dataService.oauth2Applications.allFor(team).map(Some(_))
       }.getOrElse(Future.successful(None))
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
+      paramTypes <- teamAccess.maybeTargetTeam.map { team =>
+        BehaviorParameterType.allFor(team, dataService)
+      }.getOrElse(Future.successful(Seq()))
       result <- (for {
         data <- maybeVersionData
         envVars <- maybeEnvironmentVariables
@@ -95,7 +101,7 @@ class BehaviorEditorController @Inject() (
           teamAccess,
           Json.toJson(data).toString,
           Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
-          Json.toJson(BehaviorParameterType.allNames).toString,
+          Json.toJson(paramTypes.map(BehaviorParameterTypeData.from)).toString,
           Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
           Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
           maybeJustSaved.exists(identity),
@@ -248,7 +254,7 @@ class BehaviorEditorController @Inject() (
             version.maybeResponseTemplate.getOrElse(""),
             parametersByVersion.get(version).map { params =>
               params.map { ea =>
-                BehaviorParameterData(ea.name, Some(BehaviorParameterTypeData(ea.paramType.name)), ea.question)
+                BehaviorParameterData(ea.name, Some(BehaviorParameterTypeData.from(ea.paramType)), ea.question)
               }
             }.getOrElse(Seq()),
             triggersByVersion.get(version).map { triggers =>
