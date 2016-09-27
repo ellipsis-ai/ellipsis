@@ -117,7 +117,7 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
   private def cachedValidValueForLabel(text: String, context: BehaviorParameterContext): Option[ValidValue] = {
     for {
       values <- cachedValuesFor(context)
-      value <- values.find(_.label == text)
+      value <- values.find(_.label.toLowerCase == text.toLowerCase)
     } yield value
   }
 
