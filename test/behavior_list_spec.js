@@ -111,22 +111,6 @@ describe('BehaviorList', () => {
     });
   });
 
-  describe('sortVersionsByFirstTrigger', () => {
-    it('sorts alphabetically by first trigger, ignoring case', () => {
-      const t1 = Object.assign({}, behaviorVersionTask1);
-      t1.triggers[0].text = 'Be';
-      const t2 = Object.assign({}, behaviorVersionTask1);
-      t2.triggers[0].text = 'á winner';
-      const t3 = Object.assign({}, behaviorVersionTask1);
-      t3.triggers[0].text = 'baby';
-      const t4 = Object.assign({}, behaviorVersionTask1);
-      t4.triggers = [];
-      const list = createBehaviorList(config);
-      const sorted = list.sortVersionsByFirstTrigger([t1, t2, t3, t4]);
-      expect(sorted).toEqual([t4, t2, t3, t1]);
-    });
-  });
-
   describe('getTableRowClasses', () => {
     it('adds a border and top padding to every 3rd index', () => {
       const list = createBehaviorList(config);
