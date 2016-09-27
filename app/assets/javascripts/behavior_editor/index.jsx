@@ -127,6 +127,12 @@ return React.createClass({
     }
   },
 
+  getApiApplications: function() {
+    return this.getRequiredOAuth2ApiConfigs()
+      .filter((config) => !!config.application)
+      .map((config) => config.application);
+  },
+
   getAWSConfig: function() {
     if (this.state) {
       return this.getBehaviorConfig()['aws'];
@@ -198,10 +204,7 @@ return React.createClass({
   },
 
   getCodeAutocompletions: function() {
-    var apiTokens =
-      this.getRequiredOAuth2ApiConfigs().
-        filter((config) => !!config.application).
-        map((config) => `ellipsis.accessTokens.${config.application.keyName}`);
+    var apiTokens = this.getApiApplications().map((application) => `ellipsis.accessTokens.${application.keyName}`);
 
     var envVars = this.getEnvVariableNames().map(function(name) {
       return `ellipsis.env.${name}`;
@@ -788,12 +791,6 @@ return React.createClass({
     this.toggleActiveDropdown('codeEditorSettings');
   },
 
-  toggleEnvVariableExpansion: function() {
-    this.setState({
-      expandEnvVariables: !this.state.expandEnvVariables
-    });
-  },
-
   toggleManageBehaviorMenu: function() {
     this.toggleActiveDropdown('manageBehavior');
   },
@@ -1201,7 +1198,6 @@ return React.createClass({
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
-      expandEnvVariables: false,
       justSaved: this.props.justSaved,
       isSaving: false,
       envVariables: this.getInitialEnvVariables(),
@@ -1515,9 +1511,8 @@ return React.createClass({
           <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
             <BoilerplateParameterHelp
               envVariableNames={this.getEnvVariableNames()}
-              expandEnvVariables={this.state.expandEnvVariables}
-              onAddNew={this.onAddNewEnvVariable}
-              onExpandToggle={this.toggleEnvVariableExpansion}
+              apiAccessTokens={this.getApiApplications()}
+              onAddNewEnvVariable={this.onAddNewEnvVariable}
               onCollapseClick={this.toggleBoilerplateHelp}
             />
           </Collapsible>
