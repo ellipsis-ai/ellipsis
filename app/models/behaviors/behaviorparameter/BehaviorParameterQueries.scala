@@ -1,34 +1,38 @@
 package models.behaviors.behaviorparameter
 
-import models.accounts.user.User
-import models.behaviors.behavior.RawBehavior
-import models.behaviors.behaviorversion.{BehaviorVersionQueries, RawBehaviorVersion}
-import models.team.Team
+import models.behaviors.behaviorversion.BehaviorVersionQueries
 import slick.driver.PostgresDriver.api._
 
 object BehaviorParameterQueries {
 
   val all = TableQuery[BehaviorParametersTable]
   val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
+  val joined = allWithBehaviorVersion.joinLeft(BehaviorBackedDataTypeQueries.joined).on(_._1.paramType === _._1.id)
 
-  type TupleType = (RawBehaviorParameter, ((RawBehaviorVersion, Option[User]), (RawBehavior, Team)))
+  type TupleType = ((RawBehaviorParameter, BehaviorVersionQueries.TupleType), Option[BehaviorBackedDataTypeQueries.TupleType])
 
   def tuple2Parameter(tuple: TupleType): BehaviorParameter = {
-    val raw = tuple._1
+    val raw = tuple._1._1
+    val version = BehaviorVersionQueries.tuple2BehaviorVersion(tuple._1._2)
+    val paramType =
+      BehaviorParameterType.
+        findBuiltIn(raw.paramType).
+        orElse(tuple._2.map { behaviorBacked => BehaviorBackedDataTypeQueries.tuple2DataType(behaviorBacked) }).
+        getOrElse(TextType)
     BehaviorParameter(
       raw.id,
       raw.name,
       raw.rank,
-      BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
+      version,
       raw.maybeQuestion,
-      BehaviorParameterType.forName(raw.paramType)
+      paramType
     )
   }
 
   def uncompiledAllForQuery(behaviorVersionId: Rep[String]) = {
-    allWithBehaviorVersion.
-      filter { case(param, ((behaviorVersion, user), team)) => behaviorVersion.id === behaviorVersionId}.
-      sortBy { case(param, _) => param.rank.asc }
+    joined.
+      filter { case((param, ((behaviorVersion, _), _)), _) => behaviorVersion.id === behaviorVersionId}.
+      sortBy { case((param, ((behaviorVersion, _), _)), _) => param.rank.asc }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 

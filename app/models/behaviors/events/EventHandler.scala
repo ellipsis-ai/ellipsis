@@ -5,6 +5,7 @@ import javax.inject._
 import models.behaviors.{BehaviorResponse, BotResult, NoResponseResult, SimpleTextResult}
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
+import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import services.{AWSLambdaService, DataService}
 
@@ -15,6 +16,7 @@ import scala.concurrent.Future
 class EventHandler @Inject() (
                                lambdaService: AWSLambdaService,
                                dataService: DataService,
+                               cache: CacheApi,
                                messages: MessagesApi
                                ) {
 
@@ -22,7 +24,7 @@ class EventHandler @Inject() (
     val context = event.context
     for {
       maybeTeam <- dataService.teams.find(context.teamId)
-      maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None, lambdaService, dataService)
+      maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None, lambdaService, dataService, cache)
       result <- maybeResponse.map { response =>
         response.result
       }.getOrElse {
@@ -37,7 +39,7 @@ class EventHandler @Inject() (
   }
 
   def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
-    conversation.resultFor(event, lambdaService, dataService)
+    conversation.resultFor(event, lambdaService, dataService, cache)
   }
 
   def handle(event: Event): Future[BotResult] = {

@@ -11,7 +11,7 @@ import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.behavior.BehaviorService
-import models.behaviors.behaviorparameter.BehaviorParameterService
+import models.behaviors.behaviorparameter.{BehaviorBackedDataTypeService, BehaviorParameterService}
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
@@ -52,6 +52,7 @@ trait DataService {
   val collectedParameterValues: CollectedParameterValueService
   val scheduledMessages: ScheduledMessageService
   val invocationLogEntries: InvocationLogEntryService
+  val behaviorBackedDataTypes: BehaviorBackedDataTypeService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T

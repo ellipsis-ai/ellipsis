@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterQueries}
 import models.behaviors.conversations.conversation.{Conversation, ConversationQueries}
+import play.api.cache.CacheApi
 import services.DataService
 import slick.driver.PostgresDriver.api._
 
@@ -23,26 +24,26 @@ class CollectedParameterValuesTable(tag: Tag) extends Table[RawCollectedParamete
 }
 
 class CollectedParameterValueServiceImpl @Inject() (
-                                                     dataServiceProvider: Provider[DataService]
+                                                     dataServiceProvider: Provider[DataService],
+                                                     cacheProvider: Provider[CacheApi]
                                                    ) extends CollectedParameterValueService {
 
   def dataService = dataServiceProvider.get
+  def cache = cacheProvider.get
 
   val all = TableQuery[CollectedParameterValuesTable]
   val joined =
     all.
-      join(BehaviorParameterQueries.allWithBehaviorVersion).on(_.parameterId === _._1.id).
+      join(BehaviorParameterQueries.joined).on(_.parameterId === _._1._1.id).
       join(ConversationQueries.allWithTrigger).on(_._1.conversationId === _._1.id)
 
   type TupleType = ((RawCollectedParameterValue, BehaviorParameterQueries.TupleType), ConversationQueries.TupleType)
 
-  def tuple2ParameterValue(tuple: TupleType): Future[CollectedParameterValue] = {
+  def tuple2ParameterValue(tuple: TupleType): CollectedParameterValue = {
     val param = BehaviorParameterQueries.tuple2Parameter(tuple._1._2)
     val conversation = ConversationQueries.tuple2Conversation(tuple._2)
     val valueString = tuple._1._1.valueString
-    param.paramType.isValid(valueString).map { isValid =>
-      CollectedParameterValue(param, conversation, valueString, isValid)
-    }
+    CollectedParameterValue(param, conversation, valueString)
   }
 
   def uncompiledAllForQuery(conversationId: Rep[String]) = {
@@ -51,8 +52,8 @@ class CollectedParameterValueServiceImpl @Inject() (
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
   def allFor(conversation: Conversation): Future[Seq[CollectedParameterValue]] = {
-    dataService.run(allForQuery(conversation.id).result).flatMap { tuples =>
-      Future.sequence(tuples.map(tuple2ParameterValue))
+    dataService.run(allForQuery(conversation.id).result).map { r =>
+      r.map(tuple2ParameterValue)
     }
   }
 
@@ -64,10 +65,8 @@ class CollectedParameterValueServiceImpl @Inject() (
   val findQuery = Compiled(uncompiledFindQuery _)
 
   def find(parameter: BehaviorParameter, conversation: Conversation): Future[Option[CollectedParameterValue]] = {
-    dataService.run(findQuery(parameter.id, conversation.id).result).flatMap { r =>
-      r.headOption.map { tuple =>
-        tuple2ParameterValue(tuple).map(Some(_))
-      }.getOrElse(Future.successful(None))
+    dataService.run(findQuery(parameter.id, conversation.id).result).map { r =>
+      r.headOption.map(tuple2ParameterValue)
     }
   }
 

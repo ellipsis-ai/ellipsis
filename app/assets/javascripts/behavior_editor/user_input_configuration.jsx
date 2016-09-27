@@ -18,10 +18,16 @@ define(function(require) {
         name: React.PropTypes.string.isRequired,
         question: React.PropTypes.string.isRequired,
         paramType: React.PropTypes.shape({
+          id: React.PropTypes.string.isRequired,
           name: React.PropTypes.string.isRequired
         }).isRequired
       })).isRequired,
-      paramTypes: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+      paramTypes: React.PropTypes.arrayOf(
+        React.PropTypes.shape({
+          id: React.PropTypes.string.isRequired,
+          name: React.PropTypes.string.isRequired
+        })
+      ).isRequired,
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       behaviorHasCode: React.PropTypes.bool.isRequired
