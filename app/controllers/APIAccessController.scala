@@ -7,7 +7,7 @@ import models.accounts.user.User
 import models.IDs
 import models.accounts.linkedoauth2token.LinkedOAuth2Token
 import models.accounts.oauth2application.OAuth2Application
-import models.bots.events.{EventHandler, MessageEvent}
+import models.behaviors.events.{EventHandler, MessageEvent}
 import models.silhouette.EllipsisEnv
 import org.joda.time.DateTime
 import play.api.Configuration

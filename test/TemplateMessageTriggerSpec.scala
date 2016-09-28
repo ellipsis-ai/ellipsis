@@ -1,8 +1,7 @@
 import models.IDs
-import models.bots.behavior.Behavior
-import models.bots.behaviorparameter.BehaviorParameter
-import models.bots.behaviorversion.BehaviorVersion
-import models.bots.triggers.TemplateMessageTrigger
+import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.triggers.TemplateMessageTrigger
 import models.team.Team
 import org.joda.time.DateTime
 
@@ -66,7 +65,7 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
 
     "build an invocation parameter" in {
       val trigger = triggerFor("deploy {version}")
-      val params = Seq(BehaviorParameter(IDs.next, "version", 1, trigger.behaviorVersion, None, None))
+      val params = Seq(newParameterFor("version", 1, trigger.behaviorVersion))
       val invocationParams = trigger.invocationParamsFor("deploy ellipsis-12345", params)
       invocationParams mustBe Map("param0" -> "ellipsis-12345")
     }
@@ -74,8 +73,8 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
     "build two invocation parameters" in {
       val trigger = triggerFor("deploy {version} {subversion}")
       val params = Seq(
-        BehaviorParameter(IDs.next, "version", 1, trigger.behaviorVersion, None, None),
-        BehaviorParameter(IDs.next, "subversion", 2, trigger.behaviorVersion, None, None)
+        newParameterFor("version", 1, trigger.behaviorVersion),
+        newParameterFor("subversion", 2, trigger.behaviorVersion)
       )
       val invocationParams = trigger.invocationParamsFor("deploy ellipsis-12345 0.0.1", params)
       invocationParams mustBe Map("param0" -> "ellipsis-12345", "param1" -> "0.0.1")
@@ -84,8 +83,8 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
     "build two invocation parameters in different order" in {
       val trigger = triggerFor("deploy {version} {subversion}")
       val params = Seq(
-        BehaviorParameter(IDs.next, "subversion", 1, trigger.behaviorVersion, None, None),
-        BehaviorParameter(IDs.next, "version", 2, trigger.behaviorVersion, None, None)
+        newParameterFor("subversion", 1, trigger.behaviorVersion),
+        newParameterFor("version", 2, trigger.behaviorVersion)
       )
       val invocationParams = trigger.invocationParamsFor("deploy ellipsis-12345 0.0.1", params)
       invocationParams mustBe Map("param0" -> "0.0.1", "param1" -> "ellipsis-12345")
@@ -93,7 +92,7 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
 
     "build a multi-token invocation parameter" in {
       val trigger = triggerFor("Where is {city}?")
-      val params = Seq(BehaviorParameter(IDs.next, "city", 1, trigger.behaviorVersion, None, None))
+      val params = Seq(newParameterFor("city", 1, trigger.behaviorVersion))
       val invocationParams = trigger.invocationParamsFor("Where is San Francisco?", params)
       invocationParams mustBe Map("param0" -> "San Francisco")
     }

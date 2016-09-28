@@ -2,7 +2,7 @@ package models
 
 import java.util
 
-import models.bots.templates.SlackRenderer
+import models.behaviors.templates.SlackRenderer
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
 import org.commonmark.node.{AbstractVisitor, Image, Node}

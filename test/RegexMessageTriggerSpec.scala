@@ -1,8 +1,7 @@
 import models.IDs
-import models.bots.behavior.Behavior
-import models.bots.behaviorparameter.BehaviorParameter
-import models.bots.behaviorversion.BehaviorVersion
-import models.bots.triggers.RegexMessageTrigger
+import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.triggers.RegexMessageTrigger
 import models.team.Team
 import org.joda.time.DateTime
 
@@ -59,7 +58,7 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
 
     "build an invocation parameter" in {
       val trigger = triggerFor(oneParamPattern)
-      val params = Seq(BehaviorParameter(IDs.next, "version", 1, trigger.behaviorVersion, None, None))
+      val params = Seq(newParameterFor("version", 1, trigger.behaviorVersion))
       val invocationParams = trigger.invocationParamsFor("deploy ellipsis-12345", params)
       invocationParams mustBe Map("param0" -> "ellipsis-12345")
     }
@@ -67,8 +66,8 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
     "build two invocation parameters" in {
       val trigger = triggerFor(twoParamPattern)
       val params = Seq(
-        BehaviorParameter(IDs.next, "version", 1, trigger.behaviorVersion, None, None),
-        BehaviorParameter(IDs.next, "subversion", 2, trigger.behaviorVersion, None, None)
+        newParameterFor("version", 1, trigger.behaviorVersion),
+        newParameterFor("subversion", 2, trigger.behaviorVersion)
       )
       val invocationParams = trigger.invocationParamsFor("deploy ellipsis-12345 0.0.1", params)
       invocationParams mustBe Map("param0" -> "ellipsis-12345", "param1" -> "0.0.1")

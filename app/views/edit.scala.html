@@ -2,6 +2,7 @@
   teamAccess: models.accounts.user.UserTeamAccess,
   json: String,
   envVariablesJson: String,
+  paramTypesJson: String,
   oauth2ApplicationsJson: String,
   oauth2ApisJson: String,
   justSaved: Boolean,
@@ -28,6 +29,7 @@
           csrfToken: "@CSRF.getToken(r).map(_.value)",
           justSaved: @justSaved,
           envVariables: @Html(envVariablesJson),
+          paramTypes: @Html(paramTypesJson),
           oauth2Applications: @Html(oauth2ApplicationsJson),
           oauth2Apis: @Html(oauth2ApisJson),
           notifications: @Html(notificationsJson)

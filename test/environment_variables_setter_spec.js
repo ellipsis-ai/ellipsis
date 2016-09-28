@@ -24,32 +24,6 @@ describe('EnvironmentVariableSetter', () => {
     config = Object.assign(config, defaultConfig);
   });
 
-  describe('getInitialVarsSorted', () => {
-    it('copies the vars and sorts them by name regardless of case', () => {
-      config.vars = [{
-        name: "Delta",
-        value: "",
-        isAlreadySavedWithValue: false
-      }, {
-        name: "bravo",
-        value: "",
-        isAlreadySavedWithValue: false
-      }, {
-        name: "charlie",
-        value: "",
-        isAlreadySavedWithValue: false
-      }, {
-        name: "Alpha",
-        value: "",
-        isAlreadySavedWithValue: false
-      }];
-      var setter = createSetter(config);
-      var sortedVars = setter.getInitialVarsSorted();
-      expect(sortedVars.map(ea => ea.name)).toEqual(["Alpha", "bravo", "charlie", "Delta"]);
-      expect(setter.props.vars.map(ea => ea.name)).toEqual(["Delta","bravo","charlie","Alpha"]);
-    });
-  });
-
   describe('setNewVarIndexName', () => {
     it('sets and formats the name of a new var at a particular index', () => {
       var setter = createSetter(config);

@@ -5,7 +5,7 @@ import java.io.{File, PrintWriter}
 import json._
 import json.Formatting._
 import models.accounts.user.User
-import models.bots.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.BehaviorVersion
 import play.api.libs.json.Json
 import services.DataService
 

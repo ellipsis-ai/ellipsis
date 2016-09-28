@@ -12,25 +12,26 @@ import models.accounts.slack.profile.{SlackProfileService, SlackProfileServiceIm
 import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
 import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfileServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
-import models.bots.BehaviorTestReportBuilder
-import models.bots.behavior.{BehaviorService, BehaviorServiceImpl}
-import models.bots.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
-import models.bots.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
-import models.bots.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
-import models.bots.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigService, RequiredOAuth2ApiConfigServiceImpl}
-import models.bots.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
-import models.bots.conversations.conversation.{ConversationService, ConversationServiceImpl}
-import models.bots.events.EventHandler
-import models.bots.invocationlogentry.{InvocationLogEntryService, InvocationLogEntryServiceImpl}
-import models.bots.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
-import models.bots.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
+import models.behaviors.BehaviorTestReportBuilder
+import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
+import models.behaviors.behaviorparameter.{BehaviorBackedDataTypeService, BehaviorBackedDataTypeServiceImpl, BehaviorParameterService, BehaviorParameterServiceImpl}
+import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
+import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
+import models.behaviors.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigService, RequiredOAuth2ApiConfigServiceImpl}
+import models.behaviors.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
+import models.behaviors.conversations.conversation.{ConversationService, ConversationServiceImpl}
+import models.behaviors.events.EventHandler
+import models.behaviors.invocationlogentry.{InvocationLogEntryService, InvocationLogEntryServiceImpl}
+import models.behaviors.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
+import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
 import models.environmentvariable.{EnvironmentVariableService, EnvironmentVariableServiceImpl}
-import models.bots.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
+import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import services._
 import net.codingwell.scalaguice.ScalaModule
+import play.api.cache.CacheApi
 
 class ServiceModule extends AbstractModule with ScalaModule {
 
@@ -60,6 +61,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[CollectedParameterValueService].to(classOf[CollectedParameterValueServiceImpl])
     bind[ScheduledMessageService].to(classOf[ScheduledMessageServiceImpl])
     bind[InvocationLogEntryService].to(classOf[InvocationLogEntryServiceImpl])
+    bind[BehaviorBackedDataTypeService].to(classOf[BehaviorBackedDataTypeServiceImpl])
 
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
@@ -76,9 +78,10 @@ class ServiceModule extends AbstractModule with ScalaModule {
   def providesEventHandler(
                             lambdaService: AWSLambdaService,
                             dataService: DataService,
+                            cache: CacheApi,
                             messages: MessagesApi
                             ): EventHandler = {
-    new EventHandler(lambdaService, dataService, messages)
+    new EventHandler(lambdaService, dataService, cache, messages)
   }
 
 }

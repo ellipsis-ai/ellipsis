@@ -17,17 +17,20 @@ var React = require('react'),
   EnvVariableSetter = require('../environment_variables/setter'),
   HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
-  Notification = require('../notification'),
+  Notification = require('../notifications/notification'),
   SectionHeading = require('./section_heading'),
+  Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
+  UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
   Collapsible = require('../collapsible'),
   CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
   BrowserUtils = require('../browser_utils'),
   ImmutableObjectUtils = require('../immutable_object_utils'),
-  debounce = require('javascript-debounce');
+  debounce = require('javascript-debounce'),
+  Sort = require('../sort');
   require('codemirror/mode/markdown/markdown');
   require('whatwg-fetch');
 
@@ -56,14 +59,13 @@ return React.createClass({
     responseTemplate: React.PropTypes.string,
     params: React.PropTypes.arrayOf(React.PropTypes.shape({
       name: React.PropTypes.string.isRequired,
+      paramType: React.PropTypes.shape({
+        id: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired
+      }),
       question: React.PropTypes.string.isRequired
     })),
-    triggers: React.PropTypes.arrayOf(React.PropTypes.shape({
-      text: React.PropTypes.string.isRequired,
-      requiresMention: React.PropTypes.bool,
-      isRegex: React.PropTypes.bool,
-      caseSensitive: React.PropTypes.bool
-    })),
+    triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)),
     config: React.PropTypes.shape({
       aws: React.PropTypes.shape({
         accessKeyName: React.PropTypes.string,
@@ -83,6 +85,12 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
+    paramTypes: React.PropTypes.arrayOf(
+      React.PropTypes.shape({
+        id: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired
+      })
+    ).isRequired,
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
@@ -123,6 +131,12 @@ return React.createClass({
     } else {
       return [];
     }
+  },
+
+  getApiApplications: function() {
+    return this.getRequiredOAuth2ApiConfigs()
+      .filter((config) => !!config.application)
+      .map((config) => config.application);
   },
 
   getAWSConfig: function() {
@@ -185,9 +199,9 @@ return React.createClass({
 
   getBehaviorTriggers: function() {
     if (this.state) {
-      return this.getBehaviorProp('triggers') || [];
+      return this.getBehaviorProp('triggers');
     } else {
-      return this.props.triggers || [];
+      return this.getInitialTriggers();
     }
   },
 
@@ -196,10 +210,7 @@ return React.createClass({
   },
 
   getCodeAutocompletions: function() {
-    var apiTokens =
-      this.getRequiredOAuth2ApiConfigs().
-        filter((config) => !!config.application).
-        map((config) => `ellipsis.accessTokens.${config.application.keyName}`);
+    var apiTokens = this.getApiApplications().map((application) => `ellipsis.accessTokens.${application.keyName}`);
 
     var envVars = this.getEnvVariableNames().map(function(name) {
       return `ellipsis.env.${name}`;
@@ -232,11 +243,15 @@ return React.createClass({
   },
 
   getEnvVariables: function() {
-    return this.state.envVariables;
+    if (this.state) {
+      return this.state.envVariables;
+    } else {
+      return this.getInitialEnvVariables();
+    }
   },
 
   getEnvVariableNames: function() {
-    return this.state.envVariables.map(function(ea) {
+    return this.getEnvVariables().map(function(ea) {
       return ea.name;
     });
   },
@@ -252,8 +267,7 @@ return React.createClass({
   },
 
   getFirstLineNumberForCode: function() {
-    var numUserParams = this.getBehaviorParams().length;
-    return this.hasUserParameters() ? numUserParams + 4 : 2;
+    return 2;
   },
 
   getManageDropdownLabel: function() {
@@ -270,16 +284,14 @@ return React.createClass({
   },
 
   buildEnvVarNotifications: function() {
-    var envVars = (this.state ? this.state.envVariables : this.props.envVariables) || [];
-    return envVars.
-      filter(function(ea) { return this.props.knownEnvVarsUsed.includes(ea.name); }.bind(this)).
-      filter(function(ea) { return !ea.isAlreadySavedWithValue; }).
-      map(function(ea) {
-        return {
-          kind: "env_var_not_defined",
-          environmentVariableName: ea.name
-        };
-      });
+    return this.getEnvVariables().
+      filter((ea) => this.props.knownEnvVarsUsed.includes(ea.name)).
+      filter((ea) => !ea.isAlreadySavedWithValue).
+      map((ea) => ({
+        kind: "env_var_not_defined",
+        environmentVariableName: ea.name,
+        onClick: () => { this.showEnvVariableSetter(ea.name); }
+      }));
   },
 
   getOAuth2ApiWithId: function(apiId) {
@@ -324,30 +336,21 @@ return React.createClass({
 
   buildParamNotifications: function() {
     var triggerParamObj = {};
-    this.getBehaviorTriggers().forEach((ea) => {
-      if (!ea.isRegex) {
-        var matches = ea.text.match(/\{.+?\}/g) || [];
-        matches.forEach((paramName) => {
-          var rawName = paramName.replace(/^\{|\}$/g, '');
-          triggerParamObj[rawName] = true;
-        });
-      }
+    this.getBehaviorTriggers().forEach((trigger) => {
+      trigger.paramNames.forEach((paramName) => {
+        triggerParamObj[paramName] = true;
+      });
     });
     this.getBehaviorParams().forEach((codeParam) => {
       delete triggerParamObj[codeParam.name];
     });
-    var triggerParamNames = Object.keys(triggerParamObj);
-    if (this.hasCode() || this.state && this.state.revealCodeEditor) {
-      return triggerParamNames.map((name) => ({
-        kind: "param_not_in_function",
-        name: name
-      }));
-    } else {
-      return triggerParamNames.map((name) => ({
-        kind: "param_without_function",
-        name: name
-      }));
-    }
+    return Object.keys(triggerParamObj).map((name) => ({
+      kind: "param_not_in_function",
+      name: name,
+      onClick: () => {
+        this.addParams([name]);
+      }
+    }));
   },
 
   buildNotifications: function() {
@@ -378,7 +381,7 @@ return React.createClass({
     if (this.props.triggers && this.props.triggers.length > 0) {
       return this.props.triggers;
     } else {
-      return [this.getNewBlankTrigger()];
+      return [new Trigger()];
     }
   },
 
@@ -413,15 +416,6 @@ return React.createClass({
     return "The magic 8-ball says:\n\n“" + responses[rand] + "”";
   },
 
-  getNewBlankTrigger: function() {
-    return {
-      text: "",
-      requiresMention: false,
-      isRegex: false,
-      caseSensitive: false
-    };
-  },
-
   getNotifications: function() {
     return this.state.notifications;
   },
@@ -435,10 +429,6 @@ return React.createClass({
         </div>
       </Checklist.Item>
     );
-  },
-
-  getResponseHeader: function() {
-    return this.state.revealCodeEditor ? "Then respond with" : "Ellipsis will respond with";
   },
 
   getSuccessResultTemplateHelp: function() {
@@ -491,6 +481,14 @@ return React.createClass({
 
   /* Setters/togglers */
 
+  createNewParam: function(optionalValues) {
+    return Object.assign({
+      name: '',
+      question: '',
+      paramType: { name: 'Text' }
+    }, optionalValues);
+  },
+
   addParam: function() {
     var newParamIndex = this.getBehaviorParams().length + 1;
     while (this.getBehaviorParams().some(function(param) {
@@ -498,20 +496,17 @@ return React.createClass({
     })) {
       newParamIndex++;
     }
-    var newParams = this.getBehaviorParams().concat([{ name: 'userInput' + newParamIndex, question: '' }]);
+    var newParams = this.getBehaviorParams().concat([this.createNewParam({ name: 'userInput' + newParamIndex })]);
     this.setBehaviorProp('params', newParams, this.focusOnLastParam);
   },
 
   addParams: function(newParamNames) {
-    var newParams = this.getBehaviorParams().concat(newParamNames.map((name) => ({
-      name: name,
-      question: ''
-    })));
+    var newParams = this.getBehaviorParams().concat(newParamNames.map((name) => this.createNewParam({ name: name })));
     this.setBehaviorProp('params', newParams);
   },
 
   addTrigger: function(callback) {
-    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(this.getNewBlankTrigger()), callback);
+    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(new Trigger()), callback);
   },
 
   cancelVersionPanel: function() {
@@ -578,15 +573,17 @@ return React.createClass({
       versionsLoadStatus: 'loading'
     });
     fetch(url, { credentials: 'same-origin' })
-      .then(function(response) {
-        return response.json();
-      }).then(function(json) {
+      .then((response) => response.json())
+      .then((json) => {
+        var behaviorVersions = json.map((version) => {
+          return Object.assign(version, { triggers: Trigger.triggersFromJson(version.triggers) });
+        });
         this.setState({
-          versions: this.state.versions.concat(json),
+          versions: this.state.versions.concat(behaviorVersions),
           versionsLoadStatus: 'loaded'
         });
         this.refs.versionsPanel.reset();
-      }.bind(this)).catch(function() {
+      }).catch(() => {
         // TODO: figure out what to do if there's a request error
         this.setState({
           versionsLoadStatus: 'error'
@@ -642,22 +639,6 @@ return React.createClass({
     }
   },
 
-  onNotificationClick: function(notificationDetail) {
-    if (!notificationDetail) {
-      return;
-    }
-    if (notificationDetail.kind === 'env_var_not_defined') {
-      this.showEnvVariableSetter(notificationDetail);
-    } else if (notificationDetail.kind === 'param_without_function') {
-      this.addParams(notificationDetail.paramNames);
-      if (!this.state.revealCodeEditor) {
-        this.toggleCodeEditor();
-      }
-    } else if (notificationDetail.kind === 'param_not_in_function') {
-      this.addParams([notificationDetail.name]);
-    }
-  },
-
   onSubmit: function(maybeEvent) {
     var doSubmit = () => { this.refs.behaviorForm.submit(); };
     if (maybeEvent) {
@@ -705,7 +686,13 @@ return React.createClass({
   },
 
   setBehaviorProp: function(key, value, callback) {
-    var newBehavior = ImmutableObjectUtils.objectWithNewValueAtKey(this.state.behavior, value, key);
+    var newProps = {};
+    newProps[key] = value;
+    this.setBehaviorProps(newProps, callback);
+  },
+
+  setBehaviorProps: function(props, callback) {
+    var newBehavior = Object.assign({}, this.state.behavior, props);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     if (this.state.justSaved) {
@@ -740,12 +727,10 @@ return React.createClass({
     });
   },
 
-  showEnvVariableSetter: function(detailOrIndex) {
-    this.toggleActivePanel('envVariableSetter', true, function() {
-      if (detailOrIndex.environmentVariableName) {
-        this.refs.envVariableSetterPanel.focusOnVarName(detailOrIndex.environmentVariableName);
-      } else if (typeof(detailOrIndex) === 'number') {
-        this.refs.envVariableSetterPanel.focusOnVarIndex(detailOrIndex);
+  showEnvVariableSetter: function(nameToFocus) {
+    this.toggleActivePanel('envVariableSetter', true, () => {
+      if (nameToFocus) {
+        this.refs.envVariableSetterPanel.focusOnVarName(nameToFocus);
       }
     });
   },
@@ -810,12 +795,6 @@ return React.createClass({
 
   toggleEditorSettingsMenu: function() {
     this.toggleActiveDropdown('codeEditorSettings');
-  },
-
-  toggleEnvVariableExpansion: function() {
-    this.setState({
-      expandEnvVariables: !this.state.expandEnvVariables
-    });
   },
 
   toggleManageBehaviorMenu: function() {
@@ -886,14 +865,57 @@ return React.createClass({
   },
 
   updateParamAtIndexWithParam: function(index, newParam) {
-    this.setBehaviorProp('params', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorParams(), newParam, index));
+    var oldParams = this.getBehaviorParams();
+    var oldParamName = oldParams[index].name;
+    var newParamName = newParam.name;
+    var newParams = ImmutableObjectUtils.arrayWithNewElementAtIndex(oldParams, newParam, index);
+    this.setBehaviorProp('params', newParams, () => {
+      var numTriggersReplaced = 0;
+      if (oldParamName === this.state.paramNameToSync) {
+        numTriggersReplaced = this.syncParamNamesAndCount(oldParamName, newParamName);
+        if (numTriggersReplaced > 0) {
+          this.setState({ paramNameToSync: newParamName });
+        }
+      }
+    });
   },
 
   updateTemplate: function(newTemplateString) {
-    var callback = function() {
+    this.setBehaviorProp('responseTemplate', newTemplateString, () => {
       this.setState({ hasModifiedTemplate: true });
-    };
-    this.setBehaviorProp('responseTemplate', newTemplateString, callback);
+    });
+  },
+
+  syncParamNamesAndCount: function(oldName, newName) {
+    var pattern = new RegExp(`\{${oldName}\}`, 'g');
+    var newString = `{${newName}}`;
+    var numTriggersModified = 0;
+
+    var newTriggers = this.getBehaviorTriggers().map((oldTrigger) => {
+      if (oldTrigger.usesParamName(oldName)) {
+        numTriggersModified++;
+        return oldTrigger.clone({ text: oldTrigger.getTextWithNewParamName(oldName, newName) });
+      } else {
+        return oldTrigger;
+      }
+    });
+
+    var oldTemplate = this.getBehaviorTemplate();
+    var newTemplate = oldTemplate.replace(pattern, newString);
+    var templateModified = newTemplate !== oldTemplate;
+
+    var newProps = {};
+    if (numTriggersModified > 0) {
+      newProps.triggers = newTriggers;
+    }
+    if (templateModified) {
+      newProps.responseTemplate = newTemplate;
+    }
+    if (Object.keys(newProps).length > 0) {
+      this.setBehaviorProps(newProps);
+    }
+
+    return numTriggersModified + (templateModified ? 1 : 0);
   },
 
   updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
@@ -1062,7 +1084,7 @@ return React.createClass({
   },
 
   focusOnParamIndex: function(index) {
-    this.refs.codeHeader.focusIndex(index);
+    this.refs.userInputConfiguration.focusIndex(index);
   },
 
   focusOnLastParam: function() {
@@ -1124,6 +1146,18 @@ return React.createClass({
     }
   },
 
+  onParamNameFocus: function(index) {
+    this.setState({
+      paramNameToSync: this.getBehaviorParams()[index].name
+    });
+  },
+
+  onParamNameBlur: function() {
+    this.setState({
+      paramNameToSync: null
+    });
+  },
+
   resetNotificationsImmediately: function() {
     var newNotifications = this.buildNotifications();
     var newKinds = newNotifications.map(ea => ea.kind);
@@ -1159,6 +1193,10 @@ return React.createClass({
     };
   },
 
+  getInitialEnvVariables: function() {
+    return Sort.arrayAlphabeticalBy(this.props.envVariables || [], (variable) => variable.name);
+  },
+
   getInitialState: function() {
     var initialBehavior = this.getInitialBehavior();
     return {
@@ -1166,10 +1204,9 @@ return React.createClass({
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
-      expandEnvVariables: false,
       justSaved: this.props.justSaved,
       isSaving: false,
-      envVariables: this.props.envVariables || [],
+      envVariables: this.getInitialEnvVariables(),
       revealCodeEditor: this.shouldRevealCodeEditor(),
       magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate,
@@ -1179,7 +1216,8 @@ return React.createClass({
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
       redirectValue: "",
-      requiredOAuth2ApiConfigId: ""
+      requiredOAuth2ApiConfigId: "",
+      paramNameToSync: null
     };
   },
 
@@ -1232,6 +1270,21 @@ return React.createClass({
             openDropdownName={this.getActiveDropdown()}
           />
 
+          <UserInputConfiguration
+            ref="userInputConfiguration"
+            onParamChange={this.updateParamAtIndexWithParam}
+            onParamDelete={this.deleteParamAtIndex}
+            onParamAdd={this.addParam}
+            onParamNameFocus={this.onParamNameFocus}
+            onParamNameBlur={this.onParamNameBlur}
+            onEnterKey={this.onParamEnterKey}
+            userParams={this.getBehaviorParams()}
+            paramTypes={this.props.paramTypes}
+            triggers={this.getBehaviorTriggers()}
+            isFinishedBehavior={this.isFinishedBehavior()}
+            behaviorHasCode={this.state.revealCodeEditor}
+          />
+
           <Collapsible revealWhen={this.state.revealCodeEditor}>
             <hr className="mtn" />
           </Collapsible>
@@ -1241,7 +1294,7 @@ return React.createClass({
             <div className="columns columns-elastic mobile-columns-float">
               <div className="column column-expand">
                 <p className="mbn">
-                  <span>You can run code to determine a result, with additional input from the user if needed, </span>
+                  <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
                   <span>or provide a simple response below.</span>
                 </p>
               </div>
@@ -1258,7 +1311,7 @@ return React.createClass({
           <div className="columns">
             <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
 
-              <SectionHeading>Ellipsis will do</SectionHeading>
+              <SectionHeading>Then Ellipsis will do</SectionHeading>
 
               <Checklist disabledWhen={this.isFinishedBehavior()}>
                 <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.isFinishedBehavior()}>
@@ -1293,8 +1346,8 @@ return React.createClass({
                 </Checklist.Item>
 
                 <Checklist.Item checkedWhen={this.hasUserParameters()} hiddenWhen={this.isFinishedBehavior() && this.hasUserParameters()}>
-                  <span>If you need more information from the user, add one or more parameters </span>
-                  <span>to your function.</span>
+                  <span>If you need more information from the user, add one or more inputs above </span>
+                  <span>and the function will receive them as parameters.</span>
                 </Checklist.Item>
 
                 <Checklist.Item hiddenWhen={!this.isFinishedBehavior() || this.hasCalledRequire()}>
@@ -1342,11 +1395,6 @@ return React.createClass({
 
                 <CodeHeader
                   ref="codeHeader"
-                  shouldExpandParams={this.hasUserParameters()}
-                  onParamChange={this.updateParamAtIndexWithParam}
-                  onParamDelete={this.deleteParamAtIndex}
-                  onParamAdd={this.addParam}
-                  onEnterKey={this.onParamEnterKey}
                   helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
                   onToggleHelp={this.toggleBoilerplateHelp}
                   userParams={this.getBehaviorParams()}
@@ -1364,7 +1412,7 @@ return React.createClass({
                   autocompletions={this.getCodeAutocompletions()}
                   functionParams={this.getCodeFunctionParams()}
                 />
-                <div className="position-absolute position-top-right">
+                <div className="position-absolute position-top-right position-z-popup-trigger">
                   <DropdownMenu
                     openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
                     label={this.getCodeEditorDropdownLabel()}
@@ -1396,7 +1444,7 @@ return React.createClass({
 
             <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s">
 
-              <SectionHeading>{this.getResponseHeader()}</SectionHeading>
+              <SectionHeading>Then Ellipsis will respond with</SectionHeading>
 
               <Checklist disabledWhen={this.isFinishedBehavior()}>
                 <Checklist.Item checkedWhen={this.templateUsesMarkdown()}>
@@ -1468,9 +1516,8 @@ return React.createClass({
           <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
             <BoilerplateParameterHelp
               envVariableNames={this.getEnvVariableNames()}
-              expandEnvVariables={this.state.expandEnvVariables}
-              onAddNew={this.onAddNewEnvVariable}
-              onExpandToggle={this.toggleEnvVariableExpansion}
+              apiAccessTokens={this.getApiApplications()}
+              onAddNewEnvVariable={this.onAddNewEnvVariable}
               onCollapseClick={this.toggleBoilerplateHelp}
             />
           </Collapsible>
@@ -1528,7 +1575,6 @@ return React.createClass({
                   details={notification.details}
                   index={index}
                   kind={notification.kind}
-                  onClick={this.onNotificationClick}
                   hidden={notification.hidden}
                 />
               );

@@ -52,7 +52,7 @@ object BehaviorVersionData {
             dataService: DataService
               ): BehaviorVersionData = {
 
-    val knownEnvVarsUsed = config.knownEnvVarsUsed ++ dataService.behaviorVersions.environmentVariablesUsedInCode(functionBody)
+    val knownEnvVarsUsed = config.knownEnvVarsUsed ++ dataService.environmentVariables.lookForInCode(functionBody)
 
     BehaviorVersionData(
     teamId,
@@ -132,9 +132,9 @@ object BehaviorVersionData {
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
           params.map { ea =>
-            BehaviorParameterData(ea.name, ea.question)
+            BehaviorParameterData(ea.name, Some(BehaviorParameterTypeData.from(ea.paramType)), ea.question)
           },
-          triggers.map(ea =>
+          triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
           BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData),

@@ -30,7 +30,7 @@ class ApplicationController @Inject() (
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybeBehaviors <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.behaviors.allForTeam(team).map { behaviors =>
+        dataService.behaviors.visibleForTeam(team).map { behaviors =>
           Some(behaviors)
         }
       }.getOrElse {
@@ -56,7 +56,7 @@ class ApplicationController @Inject() (
   case class PublishedBehaviorInfo(published: Seq[BehaviorCategory], installedBehaviors: Seq[InstalledBehaviorData])
 
   private def withPublishedBehaviorInfoFor(team: Team): Future[PublishedBehaviorInfo] = {
-    dataService.behaviors.allForTeam(team).map { behaviors =>
+    dataService.behaviors.visibleForTeam(team).map { behaviors =>
       behaviors.map { ea => InstalledBehaviorData(ea.id, ea.maybeImportedId)}
     }.map { installedBehaviors =>
       val githubService = GithubService(team, ws, configuration, cache, dataService)

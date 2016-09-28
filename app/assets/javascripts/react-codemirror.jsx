@@ -129,7 +129,7 @@ return React.createClass({
     }
   },
   cursorChanged: function cursorChanged(cm) {
-    if (this.props.onCursorChange) {
+    if (this.props.onCursorChange && this.state.isFocused) {
       this.props.onCursorChange(cm);
     }
   },
@@ -143,7 +143,7 @@ return React.createClass({
       <div className={
         'ReactCodeMirror ' +
         (this.state.isFocused ? ' ReactCodeMirror--focused ' : '') +
-        this.props.className
+        (this.props.className || '')
       }>
         <textarea
           ref="textarea"

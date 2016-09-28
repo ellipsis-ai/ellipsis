@@ -1,6 +1,6 @@
 import models.accounts.user.User
 import models.IDs
-import models.bots.behavior.Behavior
+import models.behaviors.behavior.Behavior
 import models.team.Team
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import services.PostgresDataService

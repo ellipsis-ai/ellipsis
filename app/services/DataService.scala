@@ -10,18 +10,18 @@ import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
-import models.bots.behavior.BehaviorService
-import models.bots.behaviorparameter.BehaviorParameterService
-import models.bots.behaviorversion.BehaviorVersionService
-import models.bots.config.awsconfig.AWSConfigService
-import models.bots.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
-import models.bots.conversations.collectedparametervalue.CollectedParameterValueService
-import models.bots.conversations.conversation.ConversationService
-import models.bots.invocationlogentry.InvocationLogEntryService
-import models.bots.scheduledmessage.ScheduledMessageService
-import models.bots.triggers.messagetrigger.MessageTriggerService
+import models.behaviors.behavior.BehaviorService
+import models.behaviors.behaviorparameter.{BehaviorBackedDataTypeService, BehaviorParameterService}
+import models.behaviors.behaviorversion.BehaviorVersionService
+import models.behaviors.config.awsconfig.AWSConfigService
+import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
+import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
+import models.behaviors.conversations.conversation.ConversationService
+import models.behaviors.invocationlogentry.InvocationLogEntryService
+import models.behaviors.scheduledmessage.ScheduledMessageService
+import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.EnvironmentVariableService
-import models.bots.invocationtoken.InvocationTokenService
+import models.behaviors.invocationtoken.InvocationTokenService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -52,6 +52,7 @@ trait DataService {
   val collectedParameterValues: CollectedParameterValueService
   val scheduledMessages: ScheduledMessageService
   val invocationLogEntries: InvocationLogEntryService
+  val behaviorBackedDataTypes: BehaviorBackedDataTypeService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T

@@ -1,8 +1,11 @@
 jest.unmock('../app/assets/javascripts/behavior_editor/index');
+jest.unmock('../app/assets/javascripts/models/trigger');
+jest.unmock('../app/assets/javascripts/sort');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index');
+const Trigger = require('../app/assets/javascripts/models/trigger');
 
 describe('BehaviorEditor', () => {
   const defaultConfig = {
@@ -11,12 +14,12 @@ describe('BehaviorEditor', () => {
     functionBody: "onSuccess('Woot')",
     responseTemplate: "{successResult}",
     params: [],
-    triggers: [{
+    triggers: [new Trigger({
       text: "Do the tests run?",
       requiresMention: false,
       isRegex: false,
       caseSensitive: false
-    }],
+    })],
     config: {},
     knownEnvVarsUsed: [],
     csrfToken: "2",
@@ -49,17 +52,15 @@ describe('BehaviorEditor', () => {
 
   describe('getInitialTriggers', () => {
     it('returns the defined triggers', () => {
-      editorConfig.triggers = [{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }];
+      editorConfig.triggers = [new Trigger({ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false })];
       let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggers()).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
+      expect(editor.getInitialTriggers()).toEqual([new Trigger({ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false })]);
     });
 
-    it('returns getInitialTriggers when no triggers are defined', () => {
+    it('returns a single blank trigger when no triggers are defined', () => {
       delete editorConfig.triggers;
       let editor = createEditor(editorConfig);
-      editor.getNewBlankTrigger = jest.fn();
-      editor.getNewBlankTrigger.mockReturnValue({ text: '', requiresMention: false, isRegex: false, caseSensitive: false });
-      expect(editor.getInitialTriggers()).toEqual([{ text: '', requiresMention: false, isRegex: false, caseSensitive: false }]);
+      expect(editor.getInitialTriggers()).toEqual([new Trigger()]);
     });
   });
 
@@ -302,6 +303,18 @@ describe('BehaviorEditor', () => {
           kind: "c", details: "old", hidden: true
         }]
       });
+    });
+  });
+
+  describe('updateTemplate', () => {
+    it('sets a callback to mark the template as modified', () => {
+      let editor = createEditor(editorConfig);
+      editor.setBehaviorProp = jest.fn();
+      editor.setState = jest.fn();
+      editor.updateTemplate('new template');
+      const callback = editor.setBehaviorProp.mock.calls[0][2];
+      callback();
+      expect(editor.setState).toBeCalledWith({ hasModifiedTemplate: true });
     });
   });
 });

@@ -20,6 +20,25 @@ class OAuth2ApiController @Inject() (
                                       val dataService: DataService
                                     ) extends ReAuthable {
 
+  def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
+    } yield {
+      teamAccess.maybeTargetTeam.map { team =>
+        Ok(
+          views.html.listOAuth2Apis(
+            teamAccess,
+            apis
+          )
+        )
+      }.getOrElse{
+        NotFound("Team not accessible")
+      }
+    }
+  }
+
   def newApi(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     dataService.users.teamAccessFor(user, maybeTeamId).map { teamAccess =>
