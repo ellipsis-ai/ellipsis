@@ -23,7 +23,8 @@
           <input type="text" name="name" value="@ea.name" />
           <input type="submit" value="Save"/>
         </form>
-        <a href="@routes.BehaviorEditorController.edit(ea.behavior.id)">Edit behavior</a>
+        <a class="prl" href="@routes.BehaviorEditorController.edit(ea.behavior.id)">Edit behavior</a>
+        <a class="prl" href="@routes.BehaviorBackedDataTypeController.export(ea.id)">Export data type</a>
       </li>
     }
     </ul>

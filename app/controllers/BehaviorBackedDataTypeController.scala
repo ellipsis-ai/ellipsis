@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
+import export.BehaviorBackedDataTypeExporter
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
@@ -63,6 +64,16 @@ class BehaviorBackedDataTypeController @Inject() (
         } yield Redirect(routes.BehaviorBackedDataTypeController.list())
       }
     )
+  }
+
+  def export(id: String) = silhouette.SecuredAction.async { implicit request =>
+    BehaviorBackedDataTypeExporter.maybeFor(id, request.identity, dataService).map { maybeExporter =>
+      maybeExporter.map { exporter =>
+        Ok.sendFile(exporter.getZipFile)
+      }.getOrElse {
+        NotFound(s"Behavior not found: $id")
+      }
+    }
   }
 
 }
