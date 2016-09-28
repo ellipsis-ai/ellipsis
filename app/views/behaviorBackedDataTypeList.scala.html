@@ -3,6 +3,8 @@
   dataTypes: Seq[models.behaviors.behaviorparameter.BehaviorBackedDataType]
 )(implicit messages: Messages, r: RequestHeader)
 
+@import helper._
+
 @main("Data types", Some(teamAccess)) {
   <div id="content" class="content">
     <div class="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
@@ -15,7 +17,13 @@
     <ul>
     @dataTypes.map { ea =>
       <li>
-        <a href="@routes.BehaviorEditorController.edit(ea.behavior.id)">@ea.name</a>
+        <form action="@routes.BehaviorBackedDataTypeController.save" method="POST">
+          @CSRF.formField
+          <input type="hidden" name="id" value="@ea.id"/>
+          <input type="text" name="name" value="@ea.name" />
+          <input type="submit" value="Save"/>
+        </form>
+        <a href="@routes.BehaviorEditorController.edit(ea.behavior.id)">Edit behavior</a>
       </li>
     }
     </ul>
