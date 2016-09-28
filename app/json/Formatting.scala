@@ -3,7 +3,7 @@ package json
 import play.api.libs.json.Json
 
 object Formatting {
-  
+
   implicit val behaviorParameterTypeReads = Json.reads[BehaviorParameterTypeData]
   implicit val behaviorParameterTypeWrites = Json.writes[BehaviorParameterTypeData]
 
@@ -27,6 +27,9 @@ object Formatting {
 
   implicit val behaviorConfigReads = Json.reads[BehaviorConfig]
   implicit val behaviorConfigWrites = Json.writes[BehaviorConfig]
+
+  implicit val behaviorBackedDataTypeConfigReads = Json.reads[BehaviorBackedDataTypeConfig]
+  implicit val behaviorBackedDataTypeConfigWrites = Json.writes[BehaviorBackedDataTypeConfig]
 
   implicit val behaviorVersionReads = Json.reads[BehaviorVersionData]
   implicit val behaviorVersionWrites = Json.writes[BehaviorVersionData]
