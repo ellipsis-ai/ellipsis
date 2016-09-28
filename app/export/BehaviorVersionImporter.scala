@@ -14,7 +14,7 @@ case class BehaviorVersionImporter(
                                     user: User,
                                     data: BehaviorVersionData,
                                     dataService: DataService
-                                  ) {
+                                  ) extends Importer[BehaviorVersion] {
 
   def run: Future[BehaviorVersion] = {
     for {

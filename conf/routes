@@ -18,7 +18,10 @@ POST        /clone_behavior                           @controllers.BehaviorEdito
 GET         /regex_validation_errors/:pattern         @controllers.BehaviorEditorController.regexValidationErrorsFor(pattern: String)
 GET         /version_info/:behaviorId                 @controllers.BehaviorEditorController.versionInfoFor(behaviorId: String)
 POST        /test_behavior_version                    @controllers.BehaviorEditorController.test
+
 GET         /data_types                               @controllers.BehaviorBackedDataTypeController.list(teamId: Option[String] ?= None)
+POST        /save_data_type                           @controllers.BehaviorBackedDataTypeController.save
+GET         /export_data_type/:id                     @controllers.BehaviorBackedDataTypeController.export(id: String)
 
 POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
 POST        /delete_environment_variable              @controllers.EnvironmentVariablesController.delete
