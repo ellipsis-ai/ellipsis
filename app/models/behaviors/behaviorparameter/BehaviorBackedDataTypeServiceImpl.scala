@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import models.IDs
+import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.team.Team
 import services.DataService
@@ -56,6 +57,35 @@ class BehaviorBackedDataTypeServiceImpl @Inject() (
       r.map(tuple2DataType)
     }
     dataService.run(action)
+  }
+
+  def updateName(id: String, name: String): Future[Unit] = {
+    val action = all.filter(_.id === id).map(_.name).update(name).map { _ => {} }
+    dataService.run(action)
+  }
+
+  def uncompiledFindQuery(id: Rep[String]) = {
+    joined.filter(_._1.id === id)
+  }
+  val findQuery = Compiled(uncompiledFindQuery _)
+
+  def findWithoutAccessCheck(id: String): Future[Option[BehaviorBackedDataType]] = {
+    val action = findQuery(id).result.map { r =>
+      r.headOption.map(tuple2DataType)
+    }
+    dataService.run(action)
+  }
+
+  def find(id: String, user: User): Future[Option[BehaviorBackedDataType]] = {
+    findWithoutAccessCheck(id).map { maybeDataType =>
+      maybeDataType.flatMap { dataType =>
+        if (dataType.behavior.team.id == user.teamId) {
+          Some(dataType)
+        } else {
+          None
+        }
+      }
+    }
   }
 
 }
