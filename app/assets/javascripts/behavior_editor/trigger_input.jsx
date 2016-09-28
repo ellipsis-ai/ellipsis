@@ -190,11 +190,26 @@ return React.createClass({
     return (<div style={{ height: 16 }}><SVGSettings /></div>);
   },
 
+  renderErrorMessage: function() {
+    return (
+      <div style={{ marginTop: -4 }} className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
+        <div className="position-absolute position-top-right ptxs prxs">
+          <HelpButton onClick={this.toggleError} toggled={true} inline={true} />
+        </div>
+        <div className="prl">
+          <b>This regex pattern has an error:</b>
+        </div>
+        <pre>{this.state.regexError || "\n\n\n"}</pre>
+        <div>{this.getHelpForRegexError()}</div>
+      </div>
+    );
+  },
+
   render: function() {
     return (
       <div className="columns columns-elastic mobile-columns-float mbl">
         <div className="column column-expand">
-          <div className="">
+          <div>
             <label className="type-label type-weak" htmlFor={this.props.id}>{this.getPrefix()}</label>
             <DropdownMenu
               openWhen={this.props.dropdownIsOpen}
@@ -240,29 +255,20 @@ return React.createClass({
               onBlur={this.onBlur}
               onEnterKey={this.props.onEnterKey}
             />
-            {this.state.regexError ? (
-              <div className="position-absolute position-z-above position-top-right mts mrxs fade-in">
-                <button type="button"
-                  className="button-error button-s button-shrink"
-                  ref="errorButton"
-                  onClick={this.toggleError}
-                >
-                  <span>{this.state.showError ? "▾" : "▸" }</span>
-                  <span> Error</span>
-                </button>
-              </div>
-            ) : ""}
+            <div className={
+              `position-absolute position-z-above position-top-right mts mrxs
+              ${this.state.regexError ? "fade-in" : "display-none"}`
+            }>
+              <button type="button"
+                className="button-error button-s button-shrink"
+                onClick={this.toggleError}
+              >
+                <span>{this.state.showError ? "▾" : "▸" }</span>
+                <span> Error</span>
+              </button>
+            </div>
             <Collapsible revealWhen={this.state.showError} className="popup popup-demoted display-limit-width">
-              <div style={{ marginTop: -4 }} className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
-                <div className="position-absolute position-top-right ptxs prxs">
-                  <HelpButton onClick={this.toggleError} toggled={true} inline={true} />
-                </div>
-                <div className="prl">
-                  <b>This regex pattern has an error:</b>
-                </div>
-                <pre>{this.state.regexError || "\n\n\n"}</pre>
-                <div>{this.getHelpForRegexError()}</div>
-              </div>
+              {this.renderErrorMessage()}
             </Collapsible>
           </div>
         </div>
