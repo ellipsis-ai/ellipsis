@@ -156,37 +156,40 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
-          teamId <- dataService.slackBotProfiles.allForSlackTeamId(profile.teamId).map { botProfiles =>
-            botProfiles.head.teamId // Blow up if no bot profile
-          }
-          result <- if (maybeTeamId.exists(t => t != teamId)) {
-            Future.successful {
-              val redir = s"/oauth/authorize?client_id=${provider.settings.clientID}&redirect_url=${provider.settings.redirectURL}&scope=${provider.settings.authorizationParams("scope")}"
-              val url = s"https://slack.com/signin?redir=${URLEncoder.encode(redir, "UTF-8")}"
-              Redirect(url)
-            }
+          botProfiles <- dataService.slackBotProfiles.allForSlackTeamId(profile.teamId)
+          result <- if (botProfiles.isEmpty) {
+            Future.successful(Redirect(routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId)))
           } else {
-            for {
-              savedProfile <- dataService.slackProfiles.save(profile)
-              loginInfo <- Future.successful(profile.loginInfo)
-              savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
-              maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, teamId)
-              linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
-                val eventualUser = request.identity.map(Future.successful).getOrElse {
-                  dataService.users.createFor(teamId)
-                }
-                eventualUser.flatMap { user =>
-                  dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, DateTime.now))
-                }
+            val teamId = botProfiles.head.teamId
+            if (maybeTeamId.exists(t => t != teamId)) {
+              Future.successful {
+                val redir = s"/oauth/authorize?client_id=${provider.settings.clientID}&redirect_url=${provider.settings.redirectURL}&scope=${provider.settings.authorizationParams("scope")}"
+                val url = s"https://slack.com/signin?redir=${URLEncoder.encode(redir, "UTF-8")}"
+                Redirect(url)
               }
-              user <- Future.successful(linkedAccount.user)
-              result <- Future.successful {
-                maybeRedirect.map { redirect =>
-                  Redirect(validatedRedirectUri(redirect))
-                }.getOrElse(Redirect(routes.ApplicationController.index()))
-              }
-              authenticatedResult <- authenticatorResultForUserAndResult(user, result)
-            } yield authenticatedResult
+            } else {
+              for {
+                savedProfile <- dataService.slackProfiles.save(profile)
+                loginInfo <- Future.successful(profile.loginInfo)
+                savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
+                maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, teamId)
+                linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
+                  val eventualUser = request.identity.map(Future.successful).getOrElse {
+                    dataService.users.createFor(teamId)
+                  }
+                  eventualUser.flatMap { user =>
+                    dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, DateTime.now))
+                  }
+                }
+                user <- Future.successful(linkedAccount.user)
+                result <- Future.successful {
+                  maybeRedirect.map { redirect =>
+                    Redirect(validatedRedirectUri(redirect))
+                  }.getOrElse(Redirect(routes.ApplicationController.index()))
+                }
+                authenticatedResult <- authenticatorResultForUserAndResult(user, result)
+              } yield authenticatedResult
+            }
           }
         } yield result
       }
