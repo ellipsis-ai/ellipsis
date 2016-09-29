@@ -363,26 +363,17 @@ return React.createClass({
     }));
   },
 
-  getBehaviorTemplateParams: function() {
-    var matches = this.getBehaviorTemplate().toString().match(/\{.+?\}/g);
-    return matches ? matches.map((ea) => ea.replace(/^\{\s*|\s*\}$/g, '')) : [];
-  },
-
   getValidParamNamesForTemplate: function() {
     return this.getBehaviorParams().map((param) => param.name)
       .concat(this.getSystemParams())
       .concat('successResult');
   },
 
-  getVarsDefinedInTemplateLoops: function() {
-    var matches = this.getBehaviorTemplate().toString().match(/\{for\s+\S+\s+in\s+.+\}/g);
-    return matches ? matches.map((ea) => ea.replace(/^\{for\s+|\s+in\s+.+\}$/g, '')) : [];
-  },
-
   buildTemplateNotifications: function() {
-    var templateParamsUsed = this.getBehaviorTemplateParams();
+    var template = this.getBehaviorTemplate();
+    var templateParamsUsed = template.getParamsUsed();
+    var varsDefinedInForLoops = template.getVarsDefinedInTemplateLoops();
     var validParams = this.getValidParamNamesForTemplate();
-    var varsDefinedInForLoops = this.getVarsDefinedInTemplateLoops();
     var unknownTemplateParams = templateParamsUsed.filter((param) => {
       return !validParams.some((validParam) => (new RegExp(`^${validParam}\\b`)).test(param)) &&
         !varsDefinedInForLoops.some((varName) => (new RegExp(`^${varName}\\b`)).test(param)) &&
@@ -429,7 +420,7 @@ return React.createClass({
 
   getIterationTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.templateIncludesIteration()}>
+      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesIteration()}>
         Iterating through a list:<br />
         <div className="box-code-example">
           {"{for item in successResult.items}"}<br />
@@ -451,7 +442,7 @@ return React.createClass({
 
   getPathTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.templateIncludesPath()}>
+      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesPath()}>
         Properties of the result:<br />
         <div className="box-code-example">
           Name: {"{successResult.user.name}"}
@@ -462,7 +453,7 @@ return React.createClass({
 
   getSuccessResultTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.templateIncludesSuccessResult()}>
+      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesSuccessResult()}>
         The result provided to <code>ellipsis.success</code>:<br />
         <div className="box-code-example">
           The answer is {"{successResult}"}
@@ -493,7 +484,7 @@ return React.createClass({
 
   getUserParamTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.templateIncludesParam()}>
+      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesAnyParam()}>
         User-supplied parameters:<br />
         <div className="box-code-example">
         You said {this.hasUserParameters() && this.getBehaviorParams()[0].name ?
@@ -916,8 +907,6 @@ return React.createClass({
   },
 
   syncParamNamesAndCount: function(oldName, newName) {
-    var pattern = new RegExp(`\{${oldName}\}`, 'g');
-    var newString = `{${newName}}`;
     var numTriggersModified = 0;
 
     var newTriggers = this.getBehaviorTriggers().map((oldTrigger) => {
@@ -930,7 +919,7 @@ return React.createClass({
     });
 
     var oldTemplate = this.getBehaviorTemplate();
-    var newTemplate = oldTemplate.replace(pattern, newString);
+    var newTemplate = oldTemplate.replaceParamName(oldName, newName);
     var templateModified = newTemplate !== oldTemplate;
 
     var newProps = {};
@@ -1037,47 +1026,6 @@ return React.createClass({
 
   shouldRevealCodeEditor: function() {
     return !!(this.props.shouldRevealCodeEditor || this.props.functionBody);
-  },
-
-  templateIncludesIteration: function() {
-    var template = this.getBehaviorTemplate().toString();
-    return !!(template && template.match(/\{endfor\}/));
-  },
-
-  templateUsesMarkdown: function() {
-    var template = this.getBehaviorTemplate().toString();
-    /* Big ugly flaming pile of regex to try and guess at Markdown usage: */
-    var matches = [
-      '\\*.+?\\*', /* Bold/italics */
-      '_.+?_', /* Bold/italics */
-      '\\[.+?\\]\\(.+?\\)', /* Links */
-      '(\\[.+?\\]){2}', /* Links by reference */
-      '^.+\\n[=-]+', /* Underlined headers */
-      '^#+\\s+.+', /* # Headers */
-      '^\\d\\.\\s+.+', /* Numbered lists */
-      '^\\*\\s+.+', /* Bulleted lists */
-      '^>.+', /* Block quote */
-      '`.+?`', /* Code */
-      '```', /* Code block */
-      '^\\s*[-\\*]\\s*[-\\*]\\s*[-\\*]' /* Horizontal rule */
-    ];
-    var matchRegExp = new RegExp( '(' + matches.join( ')|(' ) + ')' );
-    return !!(template && template.match(matchRegExp));
-  },
-
-  templateIncludesParam: function() {
-    var template = this.getBehaviorTemplate().toString();
-    return !!(template && template.match(/\{\S+?\}/));
-  },
-
-  templateIncludesPath: function() {
-    var template = this.getBehaviorTemplate().toString();
-    return !!(template && template.match(/\{(\S+\.\S+)+?\}/));
-  },
-
-  templateIncludesSuccessResult: function() {
-    var template = this.getBehaviorTemplate().toString();
-    return !!(template && template.match(/\{successResult.*?\}/));
   },
 
   versionEqualsVersion: function(version1, version2) {
@@ -1475,7 +1423,7 @@ return React.createClass({
               <SectionHeading>Then Ellipsis will respond with</SectionHeading>
 
               <Checklist disabledWhen={this.isFinishedBehavior()}>
-                <Checklist.Item checkedWhen={this.templateUsesMarkdown()}>
+                <Checklist.Item checkedWhen={this.getBehaviorTemplate().usesMarkdown()}>
                   <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
                   <span>to format the response, add links, etc.</span>
                 </Checklist.Item>
