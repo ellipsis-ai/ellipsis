@@ -42,7 +42,7 @@ describe('BehaviorEditor', () => {
       keyName: "myOtherAwesomeOauthApp"
     }],
     notifications: [],
-    shouldRevealCodeEditor: true,
+    shouldRevealCodeEditor: true
   };
 
   let editorConfig = {};
