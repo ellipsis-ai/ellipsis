@@ -48,6 +48,13 @@ var oauth2ApplicationShape = React.PropTypes.shape({
   scope: React.PropTypes.string
 });
 
+var validTemplateKeywordPatterns = [
+  /^for\s+\S+\s+in\s+.+$/,
+  /^endfor$/,
+  /^if\s+.+$/,
+  /^endif$/
+];
+
 return React.createClass({
   displayName: 'BehaviorEditor',
   mixins: [BehaviorEditorMixin],
@@ -189,7 +196,7 @@ return React.createClass({
   },
 
   getBehaviorTemplate: function() {
-    var template = this.getBehaviorProp('responseTemplate');
+    var template = this.state ? this.getBehaviorProp('responseTemplate') : this.props.responseTemplate;
     if (!template && !this.hasModifiedTemplate()) {
       return this.getDefaultBehaviorTemplate();
     } else {
@@ -353,12 +360,44 @@ return React.createClass({
     }));
   },
 
+  getBehaviorTemplateParams: function() {
+    var matches = this.getBehaviorTemplate().match(/\{.+?\}/g);
+    return matches ? matches.map((ea) => ea.replace(/^\{\s*|\s*\}$/g, '')) : [];
+  },
+
+  getValidParamNamesForTemplate: function() {
+    return this.getBehaviorParams().map((param) => param.name)
+      .concat(this.getSystemParams())
+      .concat('successResult');
+  },
+
+  getVarsDefinedInTemplateLoops: function() {
+    var matches = this.getBehaviorTemplate().match(/\{for\s+\S+\s+in\s+.+\}/g);
+    return matches ? matches.map((ea) => ea.replace(/^\{for\s+|\s+in\s+.+\}$/g, '')) : [];
+  },
+
+  buildTemplateNotifications: function() {
+    var templateParamsUsed = this.getBehaviorTemplateParams();
+    var validParams = this.getValidParamNamesForTemplate();
+    var varsDefinedInForLoops = this.getVarsDefinedInTemplateLoops();
+    var unknownTemplateParams = templateParamsUsed.filter((param) => {
+      return !validParams.some((validParam) => (new RegExp(`^${validParam}\\b`)).test(param)) &&
+        !varsDefinedInForLoops.some((varName) => (new RegExp(`^${varName}\\b`)).test(param)) &&
+        !validTemplateKeywordPatterns.some((pattern) => pattern.test(param));
+    });
+    return unknownTemplateParams.map((paramName) => ({
+      kind: "unknown_param_in_template",
+      name: paramName
+    }));
+  },
+
   buildNotifications: function() {
     var serverNotifications = this.props.notifications || [];
     var allNotifications = serverNotifications.concat(
       this.buildEnvVarNotifications(),
       this.buildOAuthApplicationNotifications(),
-      this.buildParamNotifications()
+      this.buildParamNotifications(),
+      this.buildTemplateNotifications()
     );
 
     var notifications = {};
