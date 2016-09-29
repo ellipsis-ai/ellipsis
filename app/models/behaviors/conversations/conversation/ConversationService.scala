@@ -8,4 +8,10 @@ trait ConversationService {
 
   def findOngoingFor(userIdForContext: String, context: String): Future[Option[Conversation]]
 
+  def cancel(conversation: Conversation): Future[Unit]
+
+  def cancel(maybeConversation: Option[Conversation]): Future[Unit] = {
+    maybeConversation.map(cancel).getOrElse(Future.successful({}))
+  }
+
 }
