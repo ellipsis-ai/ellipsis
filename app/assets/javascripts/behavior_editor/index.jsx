@@ -6,6 +6,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
+  BehaviorVersion = require('../models/behavior_version'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   Checklist = require('./checklist'),
   CodeEditor = require('./code_editor'),
@@ -605,7 +606,7 @@ return React.createClass({
       .then((response) => response.json())
       .then((json) => {
         var behaviorVersions = json.map((version) => {
-          return Object.assign(version, { triggers: Trigger.triggersFromJson(version.triggers) });
+          return BehaviorVersion.fromJson(version);
         });
         this.setState({
           versions: this.state.versions.concat(behaviorVersions),
