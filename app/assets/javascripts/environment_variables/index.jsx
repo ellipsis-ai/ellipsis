@@ -2,7 +2,8 @@ define(function(require) {
   var React = require('react'),
     SettingsMenu = require('../settings_menu'),
     Setter = require('./setter'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../if_present'),
+    Sort = require('../sort');
     require('whatwg-fetch');
 
   return React.createClass({
@@ -21,7 +22,7 @@ define(function(require) {
     getInitialState: function() {
       return {
         activePanel: null,
-        environmentVariables: this.props.data.variables,
+        environmentVariables: Sort.arrayAlphabeticalBy(this.props.data.variables, (ea) => ea.name),
         justSaved: false
       };
     },

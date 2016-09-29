@@ -33,7 +33,7 @@ case class BehaviorVersionData(
 
 object BehaviorVersionData {
 
-  private def extractFunctionBodyFrom(function: String): String = {
+  def extractFunctionBodyFrom(function: String): String = {
     """(?s)^\s*function\s*\([^\)]*\)\s*\{\s*(.*)\s*\}\s*$""".r.findFirstMatchIn(function).flatMap { m =>
       m.subgroups.headOption
     }.getOrElse("")

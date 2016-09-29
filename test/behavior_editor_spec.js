@@ -25,6 +25,13 @@ describe('BehaviorEditor', () => {
     csrfToken: "2",
     justSaved: false,
     envVariables: [ { name: "HOT_DOG" } ],
+    paramTypes: [{
+      id: 'Text',
+      name: 'Text'
+    }, {
+      id: 'Number',
+      name: 'Number'
+    }],
     oAuth2Applications: [{
       applicationId: "567890",
       displayName: "My awesome oauth app",

@@ -1,6 +1,6 @@
 package models.behaviors.behaviorparameter
 
-import models.behaviors.SuccessResult
+import models.behaviors.{BotResult, SuccessResult}
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
@@ -84,6 +84,8 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]
 
+  val team = behavior.team
+
   def isValid(text: String, context: BehaviorParameterContext) = {
     cachedValuesFor(context).map { cached =>
       Future.successful(cachedValidValueFor(text, context).isDefined)
@@ -144,23 +146,29 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
 
   private def cacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = s"${conversation.id}-${parameter.id}"
 
-  private def fetchValidValues(context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
+  private def fetchValidValuesResult(context: BehaviorParameterContext): Future[Option[BotResult]] = {
     for {
       maybeBehaviorVersion <- context.dataService.behaviors.maybeCurrentVersionFor(behavior)
       maybeResult <- maybeBehaviorVersion.map { behaviorVersion =>
         context.dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), context.event).map(Some(_))
       }.getOrElse(Future.successful(None))
-    } yield {
+    } yield maybeResult
+  }
+
+  private def extractValidValues(result: SuccessResult): Seq[ValidValue] = {
+    result.result.as[Seq[JsObject]].flatMap { ea =>
+      ea.validate[ValidValue] match {
+        case JsSuccess(data, jsPath) => Some(data)
+        case e: JsError => None
+      }
+    }
+  }
+
+  private def fetchValidValues(context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
+    fetchValidValuesResult(context).map { maybeResult =>
       maybeResult.map {
-        case r: SuccessResult => {
-          r.result.as[Seq[JsObject]].flatMap { ea =>
-            ea.validate[ValidValue] match {
-              case JsSuccess(data, jsPath) => Some(data)
-              case e: JsError => None
-            }
-          }
-        }
-        case _ => Seq()
+        case r: SuccessResult => extractValidValues(r)
+        case r: BotResult => Seq()
       }.getOrElse(Seq())
     }
   }
@@ -171,22 +179,35 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
     }
   }
 
+  private def cancelAndRespondFor(response: String, context: BehaviorParameterContext): Future[String] = {
+    context.dataService.conversations.cancel(context.maybeConversation).map { _ =>
+      s"$response\n\n(Your current action has been cancelled. Try again after fixing the problem.)"
+    }
+  }
+
   override def promptFor(
                           maybePreviousCollectedValue: Option[CollectedParameterValue],
                           context: BehaviorParameterContext
                         ): Future[String] = {
     for {
       superPrompt <- super.promptFor(maybePreviousCollectedValue, context)
-      validValues <- fetchValidValues(context)
-    } yield {
-      context.maybeConversation.foreach { conversation =>
-        context.cache.set(cacheKeyFor(conversation, context.parameter), validValues, 5.minutes)
+      maybeValidValuesResult <- fetchValidValuesResult(context)
+      output <- maybeValidValuesResult.map {
+        case r: SuccessResult => {
+          val validValues = extractValidValues(r)
+          context.maybeConversation.foreach { conversation =>
+            context.cache.set(cacheKeyFor(conversation, context.parameter), validValues, 5.minutes)
+          }
+          val valuesPrompt = validValues.zipWithIndex.map { case(ea, i) =>
+            s"\n\n$i. ${ea.label}"
+          }.mkString
+          Future.successful(superPrompt ++ valuesPrompt)
+        }
+        case r: BotResult => cancelAndRespondFor(r.fullText, context)
+      }.getOrElse {
+        cancelAndRespondFor(s"This data type appears to be misconfigured: ${context.parameter.paramType.name}", context)
       }
-      val valuesPrompt = validValues.zipWithIndex.map { case(ea, i) =>
-        s"\n\n$i. ${ea.label}"
-      }.mkString
-      superPrompt ++ valuesPrompt
-    }
+    } yield output
 
   }
 

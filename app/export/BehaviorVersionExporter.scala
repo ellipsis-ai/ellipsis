@@ -1,7 +1,5 @@
 package export
 
-import java.io.{File, PrintWriter}
-
 import json._
 import json.Formatting._
 import models.accounts.user.User
@@ -11,8 +9,6 @@ import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.reflect.io.Path
-import scala.sys.process.Process
 
 case class BehaviorVersionExporter(
                                     behaviorVersion: BehaviorVersion,
@@ -20,38 +16,22 @@ case class BehaviorVersionExporter(
                                     paramsData: Seq[BehaviorParameterData],
                                     triggersData: Seq[BehaviorTriggerData],
                                     config: BehaviorConfig,
-                                    responseTemplate: String) {
+                                    responseTemplate: String
+                                  ) extends Exporter {
 
   def functionString: String = maybeFunction.getOrElse("")
   def paramsString: String = Json.prettyPrint(Json.toJson(paramsData))
   def triggersString: String = Json.prettyPrint(Json.toJson(triggersData))
   def configString: String = Json.prettyPrint(Json.toJson(config))
 
-  private def dirName = s"/tmp/exports/${behaviorVersion.id}"
-  private def zipFileName = s"$dirName.zip"
+  val exportId = behaviorVersion.id
 
-  private def writeFileFor(filename: String, content: String): Unit = {
-    val writer = new PrintWriter(new File(s"$dirName/$filename"))
-    writer.write(content)
-    writer.close()
-  }
-
-  private def createZip(): Unit = {
-    val path = Path(dirName)
-    path.createDirectory()
-
+  protected def writeFiles(): Unit = {
     writeFileFor("function.js", functionString)
     writeFileFor("triggers.json", triggersString)
     writeFileFor("params.json", paramsString)
     writeFileFor("response.md", responseTemplate)
     writeFileFor("config.json", configString)
-
-    Process(Seq("bash","-c",s"cd $dirName && zip -r $zipFileName *")).!
-  }
-
-  def getZipFile: File = {
-    createZip()
-    new File(zipFileName)
   }
 
 }

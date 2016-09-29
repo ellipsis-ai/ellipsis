@@ -61,4 +61,12 @@ class ConversationServiceImpl @Inject() (
     val action = findWithoutStateQueryFor(userIdForContext, context, Conversation.DONE_STATE).result.map(_.headOption.map(tuple2Conversation))
     dataService.run(action)
   }
+
+  def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)
+  val cancelQuery = Compiled(uncompiledCancelQuery _)
+
+  def cancel(conversation: Conversation): Future[Unit] = {
+    val action = cancelQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
+    dataService.run(action)
+  }
 }
