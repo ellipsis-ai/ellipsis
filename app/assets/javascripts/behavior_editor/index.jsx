@@ -30,7 +30,8 @@ var React = require('react'),
   BrowserUtils = require('../browser_utils'),
   ImmutableObjectUtils = require('../immutable_object_utils'),
   debounce = require('javascript-debounce'),
-  Sort = require('../sort');
+  Sort = require('../sort'),
+  Magic8Ball = require('../magic_8_ball');
   require('codemirror/mode/markdown/markdown');
   require('whatwg-fetch');
 
@@ -54,6 +55,8 @@ var validTemplateKeywordPatterns = [
   /^if\s+.+$/,
   /^endif$/
 ];
+
+var magic8BallResponse = Magic8Ball.response();
 
 return React.createClass({
   displayName: 'BehaviorEditor',
@@ -245,7 +248,7 @@ return React.createClass({
     if (this.hasCalledOnSuccess()) {
       return 'The answer is: {successResult}.';
     } else {
-      return this.state.magic8BallResponse;
+      return magic8BallResponse;
     }
   },
 
@@ -440,19 +443,6 @@ return React.createClass({
   getLastLineNumberForCode: function() {
     var numLines = this.getBehaviorFunctionBody().split('\n').length;
     return this.getFirstLineNumberForCode() + numLines;
-  },
-
-  getMagic8BallResponse: function() {
-    var responses = [
-      "Reply hazy try again",
-      "Ask again later",
-      "Better not tell you now",
-      "Cannot predict now",
-      "Concentrate and ask again"
-    ];
-
-    var rand = Math.floor(Math.random() * responses.length);
-    return "The magic 8-ball says:\n\n“" + responses[rand] + "”";
   },
 
   getNotifications: function() {
@@ -1019,7 +1009,7 @@ return React.createClass({
   },
 
   hasModifiedTemplate: function() {
-    return this.state.hasModifiedTemplate;
+    return this.state && this.state.hasModifiedTemplate;
   },
 
   hasUserParameters: function() {
@@ -1247,7 +1237,6 @@ return React.createClass({
       isSaving: false,
       envVariables: this.getInitialEnvVariables(),
       revealCodeEditor: this.shouldRevealCodeEditor(),
-      magic8BallResponse: this.getMagic8BallResponse(),
       hasModifiedTemplate: !!this.props.responseTemplate,
       notifications: this.buildNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
