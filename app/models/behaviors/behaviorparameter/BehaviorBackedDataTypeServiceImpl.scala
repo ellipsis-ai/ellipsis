@@ -88,4 +88,15 @@ class BehaviorBackedDataTypeServiceImpl @Inject() (
     }
   }
 
+  def delete(dataType: BehaviorBackedDataType, user: User): Future[Unit] = {
+    if (dataType.behavior.team.id == user.teamId) {
+      for {
+        _ <- dataService.run(all.filter(_.id === dataType.id).delete)
+        _ <- dataService.behaviors.unlearn(dataType.behavior)
+      } yield {}
+    } else {
+      Future.successful(Unit)
+    }
+  }
+
 }

@@ -16,4 +16,6 @@ trait BehaviorBackedDataTypeService {
 
   def find(id: String, user: User): Future[Option[BehaviorBackedDataType]]
 
+  def delete(dataType: BehaviorBackedDataType, user: User): Future[Unit]
+
 }
