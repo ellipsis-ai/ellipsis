@@ -109,20 +109,17 @@ return React.createClass({
             />
           </div>
         </div>
-        <div className="columns columns-elastic">
-          <div className="column column-expand">
-            <Input
-              id={"question" + this.props.id}
-              ref="question"
-              placeholder="Write a question to ask the user for this input"
-              autoFocus={this.props.shouldGrabFocus}
-              value={this.props.question}
-              onChange={this.onQuestionChange}
-              onEnterKey={this.props.onEnterKey}
-              className="form-input-borderless type-italic"
-            />
-          </div>
-          <div className="column column-shrink plsymbol"></div>
+        <div className="prsymbol">
+          <Input
+            id={"question" + this.props.id}
+            ref="question"
+            placeholder="Write a question to ask the user for this input"
+            autoFocus={this.props.shouldGrabFocus}
+            value={this.props.question}
+            onChange={this.onQuestionChange}
+            onEnterKey={this.props.onEnterKey}
+            className="form-input-borderless type-italic"
+          />
         </div>
       </div>
     );

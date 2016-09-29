@@ -125,7 +125,7 @@ define(function(require) {
                   <div className="mbm">
                     {this.props.userParams.map((param, paramIndex) => (
                       <div key={'paramInput' + paramIndex} className="columns columns-elastic mbxl">
-                        <div className="column column-expand pll">
+                        <div className="column column-expand">
                           <UserInputDefinition
                             key={'UserInputDefinition' + paramIndex}
                             ref={'param' + paramIndex}
@@ -145,7 +145,7 @@ define(function(require) {
                       </div>
                     ))}
                   </div>
-                  <div className="align-r prxs mobile-align-l mbs">
+                  <div className="align-r prsymbol mobile-align-l mbs">
                     <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add another input
                     </button>
                   </div>
