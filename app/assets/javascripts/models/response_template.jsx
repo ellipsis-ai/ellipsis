@@ -1,4 +1,11 @@
 define(function() {
+  var validTemplateKeywordPatterns = [
+    /^for\s+\S+\s+in\s+.+$/,
+    /^endfor$/,
+    /^if\s+.+$/,
+    /^endif$/
+  ];
+
   class ResponseTemplate {
     constructor(props) {
       var initialProps = Object.assign({
@@ -32,6 +39,15 @@ define(function() {
     getVarsDefinedInTemplateLoops() {
       var matches = this.text.match(/\{for\s+\S+\s+in\s+.+\}/g);
       return matches ? matches.map((ea) => ea.replace(/^\{for\s+|\s+in\s+.+\}$/g, '')) : [];
+    }
+
+    getUnknownParamsExcluding(validParams) {
+      var varsDefinedInForLoops = this.getVarsDefinedInTemplateLoops();
+      return this.getParamsUsed().filter((param) => {
+        return !validParams.some((validParam) => (new RegExp(`^${validParam}\\b`)).test(param)) &&
+          !varsDefinedInForLoops.some((varName) => (new RegExp(`^${varName}\\b`)).test(param)) &&
+          !validTemplateKeywordPatterns.some((pattern) => pattern.test(param));
+      });
     }
 
     replaceParamName(oldName, newName) {

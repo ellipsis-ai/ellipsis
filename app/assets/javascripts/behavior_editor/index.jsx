@@ -51,13 +51,6 @@ var oauth2ApplicationShape = React.PropTypes.shape({
   scope: React.PropTypes.string
 });
 
-var validTemplateKeywordPatterns = [
-  /^for\s+\S+\s+in\s+.+$/,
-  /^endfor$/,
-  /^if\s+.+$/,
-  /^endif$/
-];
-
 var magic8BallResponse = Magic8Ball.response();
 
 return React.createClass({
@@ -371,14 +364,8 @@ return React.createClass({
 
   buildTemplateNotifications: function() {
     var template = this.getBehaviorTemplate();
-    var templateParamsUsed = template.getParamsUsed();
-    var varsDefinedInForLoops = template.getVarsDefinedInTemplateLoops();
     var validParams = this.getValidParamNamesForTemplate();
-    var unknownTemplateParams = templateParamsUsed.filter((param) => {
-      return !validParams.some((validParam) => (new RegExp(`^${validParam}\\b`)).test(param)) &&
-        !varsDefinedInForLoops.some((varName) => (new RegExp(`^${varName}\\b`)).test(param)) &&
-        !validTemplateKeywordPatterns.some((pattern) => pattern.test(param));
-    });
+    var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
     return unknownTemplateParams.map((paramName) => ({
       kind: "unknown_param_in_template",
       name: paramName
