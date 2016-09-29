@@ -22,7 +22,7 @@ trait ZipImporter[T] {
     out.toString
   }
 
-  protected def importerFrom(strings: scala.collection.mutable.Map[String, String]): Importer[T]
+  protected def importerFrom(strings: Map[String, String]): Importer[T]
 
   def run: Future[T] = {
 
@@ -35,7 +35,7 @@ trait ZipImporter[T] {
       entry = zipInputStream.getNextEntry
     }
 
-    importerFrom(strings).run
+    importerFrom(strings.toMap).run
   }
 
 }

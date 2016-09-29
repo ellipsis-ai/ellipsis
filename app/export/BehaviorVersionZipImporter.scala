@@ -8,8 +8,6 @@ import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import services.DataService
 
-import scala.collection.mutable
-
 case class BehaviorVersionZipImporter(
                                        team: Team,
                                        user: User,
@@ -17,7 +15,7 @@ case class BehaviorVersionZipImporter(
                                        dataService: DataService
                                      ) extends ZipImporter[BehaviorVersion] {
 
-  def importerFrom(strings: mutable.Map[String, String]): Importer[BehaviorVersion] = {
+  def importerFrom(strings: Map[String, String]): Importer[BehaviorVersion] = {
     val data =
       BehaviorVersionData.fromStrings(
         team.id,
