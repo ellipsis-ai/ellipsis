@@ -64,6 +64,7 @@ $ postgres -V
 $ postgres -D /usr/local/var/postgres
 $ createuser ellipsis -P
 $ createdb -O ellipsis ellipsis
+$ createdb -O ellipsis ellipsis-test
 
 ```
 
