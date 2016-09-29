@@ -5,7 +5,7 @@ define(function(require) {
   return {
     fromJson: function(props) {
       return Object.assign({}, props, {
-        // responseTemplate: ResponseTemplate.fromString(props.responseTemplate),
+        responseTemplate: ResponseTemplate.fromString(props.responseTemplate),
         triggers: Trigger.triggersFromJson(props.triggers)
       });
     }

@@ -20,6 +20,21 @@ define(function() {
       return this.text;
     }
 
+    toJSON() {
+      return this.toString();
+    }
+
+    replace(pattern, newString) {
+      var newText = this.text.replace(pattern, newString);
+      if (newText !== this.text) {
+        return this.clone({
+          text: newText
+        });
+      } else {
+        return this;
+      }
+    }
+
     static fromString(string) {
       return new ResponseTemplate({ text: string });
     }

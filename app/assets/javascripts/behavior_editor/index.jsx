@@ -19,6 +19,7 @@ var React = require('react'),
   HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Notification = require('../notifications/notification'),
+  ResponseTemplate = require('../models/response_template'),
   SectionHeading = require('./section_heading'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
@@ -67,7 +68,7 @@ return React.createClass({
     teamId: React.PropTypes.string.isRequired,
     behaviorId: React.PropTypes.string,
     functionBody: React.PropTypes.string,
-    responseTemplate: React.PropTypes.string,
+    responseTemplate: React.PropTypes.instanceOf(ResponseTemplate),
     params: React.PropTypes.arrayOf(React.PropTypes.shape({
       name: React.PropTypes.string.isRequired,
       paramType: React.PropTypes.shape({
@@ -201,7 +202,7 @@ return React.createClass({
 
   getBehaviorTemplate: function() {
     var template = this.state ? this.getBehaviorProp('responseTemplate') : this.props.responseTemplate;
-    if (!template && !this.hasModifiedTemplate()) {
+    if ((!template || !template.text) && !this.hasModifiedTemplate()) {
       return this.getDefaultBehaviorTemplate();
     } else {
       return template;
@@ -246,11 +247,9 @@ return React.createClass({
   },
 
   getDefaultBehaviorTemplate: function() {
-    if (this.hasCalledOnSuccess()) {
-      return 'The answer is: {successResult}.';
-    } else {
-      return magic8BallResponse;
-    }
+    return new ResponseTemplate({
+      text: this.hasCalledOnSuccess() ? 'The answer is: {successResult}.' : magic8BallResponse
+    });
   },
 
   getEnvVariables: function() {
@@ -365,7 +364,7 @@ return React.createClass({
   },
 
   getBehaviorTemplateParams: function() {
-    var matches = this.getBehaviorTemplate().match(/\{.+?\}/g);
+    var matches = this.getBehaviorTemplate().toString().match(/\{.+?\}/g);
     return matches ? matches.map((ea) => ea.replace(/^\{\s*|\s*\}$/g, '')) : [];
   },
 
@@ -376,7 +375,7 @@ return React.createClass({
   },
 
   getVarsDefinedInTemplateLoops: function() {
-    var matches = this.getBehaviorTemplate().match(/\{for\s+\S+\s+in\s+.+\}/g);
+    var matches = this.getBehaviorTemplate().toString().match(/\{for\s+\S+\s+in\s+.+\}/g);
     return matches ? matches.map((ea) => ea.replace(/^\{for\s+|\s+in\s+.+\}$/g, '')) : [];
   },
 
@@ -677,7 +676,7 @@ return React.createClass({
     this.setState({
       isSaving: true
     }, () => {
-      if (this.getBehaviorTemplate() === this.getDefaultBehaviorTemplate()) {
+      if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
         this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), doSubmit);
       } else {
         doSubmit();
@@ -911,7 +910,7 @@ return React.createClass({
   },
 
   updateTemplate: function(newTemplateString) {
-    this.setBehaviorProp('responseTemplate', newTemplateString, () => {
+    this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }), () => {
       this.setState({ hasModifiedTemplate: true });
     });
   },
@@ -1022,7 +1021,7 @@ return React.createClass({
   },
 
   isFinishedBehavior: function() {
-    return this.isExistingBehavior() && !!(this.props.functionBody || this.props.responseTemplate);
+    return this.isExistingBehavior() && !!(this.props.functionBody || this.props.responseTemplate.text);
   },
 
   isModified: function() {
@@ -1041,12 +1040,12 @@ return React.createClass({
   },
 
   templateIncludesIteration: function() {
-    var template = this.getBehaviorTemplate();
+    var template = this.getBehaviorTemplate().toString();
     return !!(template && template.match(/\{endfor\}/));
   },
 
   templateUsesMarkdown: function() {
-    var template = this.getBehaviorTemplate();
+    var template = this.getBehaviorTemplate().toString();
     /* Big ugly flaming pile of regex to try and guess at Markdown usage: */
     var matches = [
       '\\*.+?\\*', /* Bold/italics */
@@ -1067,17 +1066,17 @@ return React.createClass({
   },
 
   templateIncludesParam: function() {
-    var template = this.getBehaviorTemplate();
+    var template = this.getBehaviorTemplate().toString();
     return !!(template && template.match(/\{\S+?\}/));
   },
 
   templateIncludesPath: function() {
-    var template = this.getBehaviorTemplate();
+    var template = this.getBehaviorTemplate().toString();
     return !!(template && template.match(/\{(\S+\.\S+)+?\}/));
   },
 
   templateIncludesSuccessResult: function() {
-    var template = this.getBehaviorTemplate();
+    var template = this.getBehaviorTemplate().toString();
     return !!(template && template.match(/\{successResult.*?\}/));
   },
 
@@ -1238,7 +1237,7 @@ return React.createClass({
       isSaving: false,
       envVariables: this.getInitialEnvVariables(),
       revealCodeEditor: this.shouldRevealCodeEditor(),
-      hasModifiedTemplate: !!this.props.responseTemplate,
+      hasModifiedTemplate: !!(this.props.responseTemplate && this.props.responseTemplate.text),
       notifications: this.buildNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null,
@@ -1490,7 +1489,7 @@ return React.createClass({
 
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
               <div className="position-relative CodeMirror-container-no-gutter">
-                <Codemirror value={this.getBehaviorTemplate()}
+                <Codemirror value={this.getBehaviorTemplate().toString()}
                   onChange={this.updateTemplate}
                   onCursorChange={this.ensureCursorVisible}
                   options={{
