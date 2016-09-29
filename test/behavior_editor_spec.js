@@ -1,18 +1,20 @@
 jest.unmock('../app/assets/javascripts/behavior_editor/index');
 jest.unmock('../app/assets/javascripts/models/trigger');
+jest.unmock('../app/assets/javascripts/models/response_template');
 jest.unmock('../app/assets/javascripts/sort');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index');
 const Trigger = require('../app/assets/javascripts/models/trigger');
+const ResponseTemplate = require('../app/assets/javascripts/models/response_template');
 
 describe('BehaviorEditor', () => {
   const defaultConfig = {
     teamId: "A",
     behaviorId: "1",
     functionBody: "onSuccess('Woot')",
-    responseTemplate: "{successResult}",
+    responseTemplate: ResponseTemplate.fromString("{successResult}"),
     params: [],
     triggers: [new Trigger({
       text: "Do the tests run?",
@@ -102,40 +104,40 @@ describe('BehaviorEditor', () => {
 
   describe('getBehaviorTemplate', () => {
     it('returns the template the defined template when it’s non-empty', () => {
-      editorConfig.responseTemplate = 'clowncar';
+      editorConfig.responseTemplate = ResponseTemplate.fromString('clowncar');
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTemplate()).toEqual('clowncar');
+      expect(editor.getBehaviorTemplate().toString()).toEqual('clowncar');
     });
 
     it('returns a default template when no template is defined', () => {
       delete editorConfig.responseTemplate;
       let editor = createEditor(editorConfig);
       editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue('default');
-      expect(editor.getBehaviorTemplate()).toEqual('default');
+      editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
+      expect(editor.getBehaviorTemplate().toString()).toEqual('default');
     });
 
     it('returns a default template when the template is blank', () => {
-      editorConfig.responseTemplate = '';
+      editorConfig.responseTemplate = ResponseTemplate.fromString('');
       let editor = createEditor(editorConfig);
       editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue('default');
-      expect(editor.getBehaviorTemplate()).toBeTruthy('default');
+      editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
+      expect(editor.getBehaviorTemplate().toString()).toEqual('default');
     });
 
     it('returns the original template when it has been modified', () => {
-      editorConfig.responseTemplate = '';
+      editorConfig.responseTemplate = ResponseTemplate.fromString('');
       let editor = createEditor(editorConfig);
       editor.hasModifiedTemplate = jest.fn();
       editor.hasModifiedTemplate.mockReturnValue(true);
-      expect(editor.getBehaviorTemplate()).toEqual('');
+      expect(editor.getBehaviorTemplate().toString()).toEqual('');
     });
 
     it('submits default template when that\'s all there is', () => {
-      editorConfig.responseTemplate = '';
+      editorConfig.responseTemplate = ResponseTemplate.fromString('');
       let editor = createEditor(editorConfig);
       editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue('default');
+      editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
       editor.refs.behaviorForm.submit = jest.fn();
       editor.setBehaviorProp = jest.fn((key, value, callback) => callback());
       const event = {
@@ -145,7 +147,7 @@ describe('BehaviorEditor', () => {
       expect(event.preventDefault.mock.calls.length).toBe(1);
       expect(editor.setBehaviorProp.mock.calls.length).toBe(1);
       expect(editor.setBehaviorProp.mock.calls[0][0]).toBe('responseTemplate');
-      expect(editor.setBehaviorProp.mock.calls[0][1]).toBe('default');
+      expect(editor.setBehaviorProp.mock.calls[0][1].toString()).toEqual('default');
       expect(editor.refs.behaviorForm.submit.mock.calls.length).toBe(1);
 
     });

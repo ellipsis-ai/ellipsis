@@ -6,6 +6,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorEditorMixin = require('./behavior_editor_mixin'),
+  BehaviorVersion = require('../models/behavior_version'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   Checklist = require('./checklist'),
   CodeEditor = require('./code_editor'),
@@ -18,6 +19,7 @@ var React = require('react'),
   HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Notification = require('../notifications/notification'),
+  ResponseTemplate = require('../models/response_template'),
   SectionHeading = require('./section_heading'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
@@ -49,13 +51,6 @@ var oauth2ApplicationShape = React.PropTypes.shape({
   scope: React.PropTypes.string
 });
 
-var validTemplateKeywordPatterns = [
-  /^for\s+\S+\s+in\s+.+$/,
-  /^endfor$/,
-  /^if\s+.+$/,
-  /^endif$/
-];
-
 var magic8BallResponse = Magic8Ball.response();
 
 return React.createClass({
@@ -66,7 +61,7 @@ return React.createClass({
     teamId: React.PropTypes.string.isRequired,
     behaviorId: React.PropTypes.string,
     functionBody: React.PropTypes.string,
-    responseTemplate: React.PropTypes.string,
+    responseTemplate: React.PropTypes.instanceOf(ResponseTemplate),
     params: React.PropTypes.arrayOf(React.PropTypes.shape({
       name: React.PropTypes.string.isRequired,
       paramType: React.PropTypes.shape({
@@ -200,7 +195,7 @@ return React.createClass({
 
   getBehaviorTemplate: function() {
     var template = this.state ? this.getBehaviorProp('responseTemplate') : this.props.responseTemplate;
-    if (!template && !this.hasModifiedTemplate()) {
+    if ((!template || !template.text) && !this.hasModifiedTemplate()) {
       return this.getDefaultBehaviorTemplate();
     } else {
       return template;
@@ -245,11 +240,9 @@ return React.createClass({
   },
 
   getDefaultBehaviorTemplate: function() {
-    if (this.hasCalledOnSuccess()) {
-      return 'The answer is: {successResult}.';
-    } else {
-      return magic8BallResponse;
-    }
+    return new ResponseTemplate({
+      text: this.hasCalledOnSuccess() ? 'The answer is: {successResult}.' : magic8BallResponse
+    });
   },
 
   getEnvVariables: function() {
@@ -363,31 +356,16 @@ return React.createClass({
     }));
   },
 
-  getBehaviorTemplateParams: function() {
-    var matches = this.getBehaviorTemplate().match(/\{.+?\}/g);
-    return matches ? matches.map((ea) => ea.replace(/^\{\s*|\s*\}$/g, '')) : [];
-  },
-
   getValidParamNamesForTemplate: function() {
     return this.getBehaviorParams().map((param) => param.name)
       .concat(this.getSystemParams())
       .concat('successResult');
   },
 
-  getVarsDefinedInTemplateLoops: function() {
-    var matches = this.getBehaviorTemplate().match(/\{for\s+\S+\s+in\s+.+\}/g);
-    return matches ? matches.map((ea) => ea.replace(/^\{for\s+|\s+in\s+.+\}$/g, '')) : [];
-  },
-
   buildTemplateNotifications: function() {
-    var templateParamsUsed = this.getBehaviorTemplateParams();
+    var template = this.getBehaviorTemplate();
     var validParams = this.getValidParamNamesForTemplate();
-    var varsDefinedInForLoops = this.getVarsDefinedInTemplateLoops();
-    var unknownTemplateParams = templateParamsUsed.filter((param) => {
-      return !validParams.some((validParam) => (new RegExp(`^${validParam}\\b`)).test(param)) &&
-        !varsDefinedInForLoops.some((varName) => (new RegExp(`^${varName}\\b`)).test(param)) &&
-        !validTemplateKeywordPatterns.some((pattern) => pattern.test(param));
-    });
+    var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
     return unknownTemplateParams.map((paramName) => ({
       kind: "unknown_param_in_template",
       name: paramName
@@ -429,7 +407,7 @@ return React.createClass({
 
   getIterationTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.templateIncludesIteration()}>
+      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesIteration()}>
         Iterating through a list:<br />
         <div className="box-code-example">
           {"{for item in successResult.items}"}<br />
@@ -451,7 +429,7 @@ return React.createClass({
 
   getPathTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.templateIncludesPath()}>
+      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesPath()}>
         Properties of the result:<br />
         <div className="box-code-example">
           Name: {"{successResult.user.name}"}
@@ -462,7 +440,7 @@ return React.createClass({
 
   getSuccessResultTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.templateIncludesSuccessResult()}>
+      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesSuccessResult()}>
         The result provided to <code>ellipsis.success</code>:<br />
         <div className="box-code-example">
           The answer is {"{successResult}"}
@@ -493,7 +471,7 @@ return React.createClass({
 
   getUserParamTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.templateIncludesParam()}>
+      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesAnyParam()}>
         User-supplied parameters:<br />
         <div className="box-code-example">
         You said {this.hasUserParameters() && this.getBehaviorParams()[0].name ?
@@ -605,7 +583,7 @@ return React.createClass({
       .then((response) => response.json())
       .then((json) => {
         var behaviorVersions = json.map((version) => {
-          return Object.assign(version, { triggers: Trigger.triggersFromJson(version.triggers) });
+          return BehaviorVersion.fromJson(version);
         });
         this.setState({
           versions: this.state.versions.concat(behaviorVersions),
@@ -676,7 +654,7 @@ return React.createClass({
     this.setState({
       isSaving: true
     }, () => {
-      if (this.getBehaviorTemplate() === this.getDefaultBehaviorTemplate()) {
+      if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
         this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), doSubmit);
       } else {
         doSubmit();
@@ -910,14 +888,12 @@ return React.createClass({
   },
 
   updateTemplate: function(newTemplateString) {
-    this.setBehaviorProp('responseTemplate', newTemplateString, () => {
+    this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }), () => {
       this.setState({ hasModifiedTemplate: true });
     });
   },
 
   syncParamNamesAndCount: function(oldName, newName) {
-    var pattern = new RegExp(`\{${oldName}\}`, 'g');
-    var newString = `{${newName}}`;
     var numTriggersModified = 0;
 
     var newTriggers = this.getBehaviorTriggers().map((oldTrigger) => {
@@ -930,7 +906,7 @@ return React.createClass({
     });
 
     var oldTemplate = this.getBehaviorTemplate();
-    var newTemplate = oldTemplate.replace(pattern, newString);
+    var newTemplate = oldTemplate.replaceParamName(oldName, newName);
     var templateModified = newTemplate !== oldTemplate;
 
     var newProps = {};
@@ -1021,7 +997,7 @@ return React.createClass({
   },
 
   isFinishedBehavior: function() {
-    return this.isExistingBehavior() && !!(this.props.functionBody || this.props.responseTemplate);
+    return this.isExistingBehavior() && !!(this.props.functionBody || this.props.responseTemplate.text);
   },
 
   isModified: function() {
@@ -1037,47 +1013,6 @@ return React.createClass({
 
   shouldRevealCodeEditor: function() {
     return !!(this.props.shouldRevealCodeEditor || this.props.functionBody);
-  },
-
-  templateIncludesIteration: function() {
-    var template = this.getBehaviorTemplate();
-    return !!(template && template.match(/\{endfor\}/));
-  },
-
-  templateUsesMarkdown: function() {
-    var template = this.getBehaviorTemplate();
-    /* Big ugly flaming pile of regex to try and guess at Markdown usage: */
-    var matches = [
-      '\\*.+?\\*', /* Bold/italics */
-      '_.+?_', /* Bold/italics */
-      '\\[.+?\\]\\(.+?\\)', /* Links */
-      '(\\[.+?\\]){2}', /* Links by reference */
-      '^.+\\n[=-]+', /* Underlined headers */
-      '^#+\\s+.+', /* # Headers */
-      '^\\d\\.\\s+.+', /* Numbered lists */
-      '^\\*\\s+.+', /* Bulleted lists */
-      '^>.+', /* Block quote */
-      '`.+?`', /* Code */
-      '```', /* Code block */
-      '^\\s*[-\\*]\\s*[-\\*]\\s*[-\\*]' /* Horizontal rule */
-    ];
-    var matchRegExp = new RegExp( '(' + matches.join( ')|(' ) + ')' );
-    return !!(template && template.match(matchRegExp));
-  },
-
-  templateIncludesParam: function() {
-    var template = this.getBehaviorTemplate();
-    return !!(template && template.match(/\{\S+?\}/));
-  },
-
-  templateIncludesPath: function() {
-    var template = this.getBehaviorTemplate();
-    return !!(template && template.match(/\{(\S+\.\S+)+?\}/));
-  },
-
-  templateIncludesSuccessResult: function() {
-    var template = this.getBehaviorTemplate();
-    return !!(template && template.match(/\{successResult.*?\}/));
   },
 
   versionEqualsVersion: function(version1, version2) {
@@ -1237,7 +1172,7 @@ return React.createClass({
       isSaving: false,
       envVariables: this.getInitialEnvVariables(),
       revealCodeEditor: this.shouldRevealCodeEditor(),
-      hasModifiedTemplate: !!this.props.responseTemplate,
+      hasModifiedTemplate: !!(this.props.responseTemplate && this.props.responseTemplate.text),
       notifications: this.buildNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null,
@@ -1475,7 +1410,7 @@ return React.createClass({
               <SectionHeading>Then Ellipsis will respond with</SectionHeading>
 
               <Checklist disabledWhen={this.isFinishedBehavior()}>
-                <Checklist.Item checkedWhen={this.templateUsesMarkdown()}>
+                <Checklist.Item checkedWhen={this.getBehaviorTemplate().usesMarkdown()}>
                   <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
                   <span>to format the response, add links, etc.</span>
                 </Checklist.Item>
@@ -1489,7 +1424,7 @@ return React.createClass({
 
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
               <div className="position-relative CodeMirror-container-no-gutter">
-                <Codemirror value={this.getBehaviorTemplate()}
+                <Codemirror value={this.getBehaviorTemplate().toString()}
                   onChange={this.updateTemplate}
                   onCursorChange={this.ensureCursorVisible}
                   options={{
