@@ -126,4 +126,25 @@ class BehaviorBackedDataTypeController @Inject() (
 
   }
 
+  private val deleteForm = Form("id" -> nonEmptyText)
+
+  def delete = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    deleteForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      dataTypeId => {
+        for {
+          maybeDataType <- dataService.behaviorBackedDataTypes.find(dataTypeId, user)
+          _ <- maybeDataType.map { dataType =>
+            dataService.behaviorBackedDataTypes.delete(dataType, user)
+          }.getOrElse(Future.successful({}))
+        } yield {
+          Redirect(routes.BehaviorBackedDataTypeController.list(maybeDataType.map(_.team.id)))
+        }
+      }
+    )
+  }
+
 }

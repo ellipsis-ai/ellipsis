@@ -84,6 +84,8 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]
 
+  val team = behavior.team
+
   def isValid(text: String, context: BehaviorParameterContext) = {
     cachedValuesFor(context).map { cached =>
       Future.successful(cachedValidValueFor(text, context).isDefined)
