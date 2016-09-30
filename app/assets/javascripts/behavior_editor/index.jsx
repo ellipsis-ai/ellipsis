@@ -492,7 +492,7 @@ return React.createClass({
     return Object.assign({
       name: '',
       question: '',
-      paramType: { name: 'Text' }
+      paramType: this.props.paramTypes[0]
     }, optionalValues);
   },
 
