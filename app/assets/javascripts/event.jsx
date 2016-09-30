@@ -35,6 +35,18 @@ define(function() {
     static keyPressIncludedShift(event) {
       return event.shiftKey;
     }
+
+    static keyPressWasSaveShortcut(event) {
+      var sKeyWhich = 83;
+      if (/^Mac/.test(navigator.platform)) {
+        return event.metaKey && !event.altKey && !event.shiftKey && !event.ctrlKey && event.which === sKeyWhich;
+      } else if (/^Win/.test(navigator.platform)) {
+        return event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey && event.which === sKeyWhich;
+      } else {
+        // On non Windows/Mac platforms, don't do anything rash
+        return false;
+      }
+    }
   }
 
   return Event;
