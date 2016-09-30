@@ -9,6 +9,8 @@ const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index'
 const Trigger = require('../app/assets/javascripts/models/trigger');
 const ResponseTemplate = require('../app/assets/javascripts/models/response_template');
 
+jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
+
 describe('BehaviorEditor', () => {
   const defaultConfig = {
     teamId: "A",
