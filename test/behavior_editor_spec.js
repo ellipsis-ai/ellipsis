@@ -328,4 +328,28 @@ describe('BehaviorEditor', () => {
       expect(editor.setState).toBeCalledWith({ hasModifiedTemplate: true });
     });
   });
+
+  describe('render', () => {
+    it("renders the normal editor when there's no dataType property", () => {
+      editorConfig.dataType = null;
+      let editor = createEditor(editorConfig);
+      editor.renderDataTypeBehavior = jest.fn();
+      editor.renderNormalBehavior = jest.fn();
+      editor.render();
+      expect(editor.renderDataTypeBehavior).not.toBeCalled();
+      expect(editor.renderNormalBehavior).toBeCalled();
+    });
+    it("renders the data type editor when there's a dataType property", () => {
+      editorConfig.dataType = {
+        id: '1',
+        name: 'My pretend data type'
+      };
+      let editor = createEditor(editorConfig);
+      editor.renderDataTypeBehavior = jest.fn();
+      editor.renderNormalBehavior = jest.fn();
+      editor.render();
+      expect(editor.renderDataTypeBehavior).toBeCalled();
+      expect(editor.renderNormalBehavior).not.toBeCalled();
+    });
+  });
 });
