@@ -1,10 +1,9 @@
 define(function(require) {
 var React = require('react'),
-  BehaviorEditorMixin = require('./behavior_editor_mixin'),
-  CSS = require('../css');
+  CSS = require('../css'),
+  Event = require('../event');
 
 var BehaviorEditorDropdownMenu = React.createClass({
-  mixins: [BehaviorEditorMixin],
   propTypes: {
     children: React.PropTypes.node.isRequired,
     labelClassName: React.PropTypes.string,
@@ -41,12 +40,12 @@ var BehaviorEditorDropdownMenu = React.createClass({
   },
 
   onKeyDown: function(event) {
-    if (this.eventKeyPressWasEnter(event) || this.eventKeyPressWasSpace(event)) {
+    if (Event.keyPressWasEnter(event) || Event.keyPressWasSpace(event)) {
       this.toggle();
-    } else if (this.eventKeyPressWasUp(event) && this.props.onUpArrow) {
+    } else if (Event.keyPressWasUp(event) && this.props.onUpArrow) {
       this.props.onUpArrow();
       event.preventDefault();
-    } else if (this.eventKeyPressWasDown(event) && this.props.onDownArrow) {
+    } else if (Event.keyPressWasDown(event) && this.props.onDownArrow) {
       this.props.onDownArrow();
       event.preventDefault();
     }
@@ -116,7 +115,6 @@ var BehaviorEditorDropdownMenu = React.createClass({
 });
 
 BehaviorEditorDropdownMenu.Item = React.createClass({
-  mixins: [BehaviorEditorMixin],
   propTypes: {
     checkedWhen: React.PropTypes.bool,
     label: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
@@ -153,7 +151,7 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
   },
 
   onKeyPress: function(event) {
-    if (this.eventKeyPressWasEnter(event) || this.eventKeyPressWasSpace(event)) {
+    if (Event.keyPressWasEnter(event) || Event.keyPressWasSpace(event)) {
       this.onMouseUp();
     }
   },

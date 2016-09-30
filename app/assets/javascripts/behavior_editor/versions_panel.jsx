@@ -1,10 +1,8 @@
 define(function(require) {
 var React = require('react'),
-  BehaviorEditorMixin = require('./behavior_editor_mixin'),
   Formatter = require('../formatter');
 
 return React.createClass({
-  mixins: [BehaviorEditorMixin],
   propTypes: {
     menuToggle: React.PropTypes.func.isRequired,
     onCancelClick: React.PropTypes.func.isRequired,

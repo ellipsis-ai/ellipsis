@@ -5,7 +5,6 @@ var React = require('react'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
-  BehaviorEditorMixin = require('./behavior_editor_mixin'),
   BehaviorVersion = require('../models/behavior_version'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   Checklist = require('./checklist'),
@@ -30,6 +29,7 @@ var React = require('react'),
   Collapsible = require('../collapsible'),
   CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
   BrowserUtils = require('../browser_utils'),
+  Event = require('../event'),
   ImmutableObjectUtils = require('../immutable_object_utils'),
   debounce = require('javascript-debounce'),
   Sort = require('../sort'),
@@ -55,7 +55,6 @@ var magic8BallResponse = Magic8Ball.response();
 
 return React.createClass({
   displayName: 'BehaviorEditor',
-  mixins: [BehaviorEditorMixin],
 
   propTypes: {
     teamId: React.PropTypes.string.isRequired,
@@ -654,7 +653,7 @@ return React.createClass({
   },
 
   onDocumentKeyDown: function(event) {
-    var pressedEsc = this.eventKeyPressWasEsc(event);
+    var pressedEsc = Event.keyPressWasEsc(event);
     if (pressedEsc) {
       this.handleEscKey(event);
     }

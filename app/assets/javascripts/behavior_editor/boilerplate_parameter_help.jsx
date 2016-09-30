@@ -1,11 +1,9 @@
 define(function(require) {
 var React = require('react'),
-  BehaviorEditorMixin = require('./behavior_editor_mixin'),
   Collapsible = require('../collapsible'),
   HelpPanel = require('../help/panel');
 
 return React.createClass({
-  mixins: [BehaviorEditorMixin],
   propTypes: {
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
     apiAccessTokens: React.PropTypes.arrayOf(React.PropTypes.object),
