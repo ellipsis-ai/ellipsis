@@ -12,7 +12,8 @@ requirejs(['../common'], function() {
         oauth2Applications: config.oauth2Applications,
         oauth2Apis: config.oauth2Apis,
         justSaved: config.justSaved,
-        notifications: config.notifications
+        notifications: config.notifications,
+        dataType: config.dataType
       };
       var behaviorEditorProps = BehaviorVersion.fromJson(Object.assign({}, config.data, additionalData));
       var myBehaviorEditor = React.createElement(BehaviorEditor, behaviorEditorProps);
