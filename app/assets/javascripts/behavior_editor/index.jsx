@@ -1361,7 +1361,7 @@ return React.createClass({
 
         <CodeFooter
           lineNumber={this.getLastLineNumberForCode()}
-          onCodeDelete={this.confirmDeleteCode}
+          onCodeDelete={this.isDataTypeBehavior() ? null : this.confirmDeleteCode}
         />
       </div>
     );
