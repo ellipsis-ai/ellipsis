@@ -42,6 +42,9 @@ define(function() {
         return event.metaKey && !event.altKey && !event.shiftKey && !event.ctrlKey && event.which === sKeyWhich;
       } else if (/^Win/.test(navigator.platform)) {
         return event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey && event.which === sKeyWhich;
+      } else {
+        // On non Windows/Mac platforms, don't do anything rash
+        return false;
       }
     }
   }
