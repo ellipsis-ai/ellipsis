@@ -266,7 +266,9 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
   override def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
     context.dataService.behaviorBackedDataTypes.usesSearch(this).flatMap { usesSearch =>
       if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
-        context.cache.set(searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter), event.context.relevantMessageText)
+        val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
+        val searchQuery = event.context.relevantMessageText
+        context.cache.set(key, searchQuery, 5.minutes)
         Future.successful({})
       } else {
         super.handleCollected(event, context)
