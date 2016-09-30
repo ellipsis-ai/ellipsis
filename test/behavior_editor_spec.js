@@ -9,6 +9,8 @@ const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index'
 const Trigger = require('../app/assets/javascripts/models/trigger');
 const ResponseTemplate = require('../app/assets/javascripts/models/response_template');
 
+jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
+
 describe('BehaviorEditor', () => {
   const defaultConfig = {
     teamId: "A",
@@ -324,6 +326,30 @@ describe('BehaviorEditor', () => {
       const callback = editor.setBehaviorProp.mock.calls[0][2];
       callback();
       expect(editor.setState).toBeCalledWith({ hasModifiedTemplate: true });
+    });
+  });
+
+  describe('render', () => {
+    it("renders the normal editor when there's no dataType property", () => {
+      editorConfig.dataType = null;
+      let editor = createEditor(editorConfig);
+      editor.renderDataTypeBehavior = jest.fn();
+      editor.renderNormalBehavior = jest.fn();
+      editor.render();
+      expect(editor.renderDataTypeBehavior).not.toBeCalled();
+      expect(editor.renderNormalBehavior).toBeCalled();
+    });
+    it("renders the data type editor when there's a dataType property", () => {
+      editorConfig.dataType = {
+        id: '1',
+        name: 'My pretend data type'
+      };
+      let editor = createEditor(editorConfig);
+      editor.renderDataTypeBehavior = jest.fn();
+      editor.renderNormalBehavior = jest.fn();
+      editor.render();
+      expect(editor.renderDataTypeBehavior).toBeCalled();
+      expect(editor.renderNormalBehavior).not.toBeCalled();
     });
   });
 });

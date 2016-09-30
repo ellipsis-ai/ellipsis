@@ -7,6 +7,8 @@ object Formatting {
   implicit val behaviorParameterTypeReads = Json.reads[BehaviorParameterTypeData]
   implicit val behaviorParameterTypeWrites = Json.writes[BehaviorParameterTypeData]
 
+  implicit val behaviorBackedDataTypeDataForBehaviorWrites = Json.writes[BehaviorBackedDataTypeDataForBehavior]
+
   implicit val behaviorParameterReads = Json.reads[BehaviorParameterData]
   implicit val behaviorParameterWrites = Json.writes[BehaviorParameterData]
 

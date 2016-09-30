@@ -1,5 +1,6 @@
 define(function(require) {
-var React = require('react');
+var React = require('react'),
+  ifPresent = require('../if_present');
 
 return React.createClass({
   propTypes: {
@@ -7,7 +8,7 @@ return React.createClass({
       React.PropTypes.number,
       React.PropTypes.string
     ]).isRequired,
-    onCodeDelete: React.PropTypes.func.isRequired
+    onCodeDelete: React.PropTypes.func
   },
   render: function() {
     return (
@@ -22,7 +23,9 @@ return React.createClass({
                 <code className="type-weak type-s">{"}"}</code>
               </div>
               <div className="column column-shrink prxs align-r">
-                <button type="button" className="button-s" onClick={this.props.onCodeDelete}>Remove code</button>
+                {ifPresent(this.props.onCodeDelete, (onCodeDelete) => (
+                  <button type="button" className="button-s" onClick={onCodeDelete}>Remove code</button>
+                ))}
               </div>
             </div>
           </div>

@@ -102,7 +102,11 @@ return React.createClass({
       name: React.PropTypes.string.isRequired
     })),
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
-    shouldRevealCodeEditor: React.PropTypes.bool
+    shouldRevealCodeEditor: React.PropTypes.bool,
+    dataType: React.PropTypes.shape({
+      id: React.PropTypes.string.isRequired,
+      name: React.PropTypes.string.isRequired
+    })
   },
 
 
@@ -195,7 +199,7 @@ return React.createClass({
 
   getBehaviorTemplate: function() {
     var template = this.state ? this.getBehaviorProp('responseTemplate') : this.props.responseTemplate;
-    if ((!template || !template.text) && !this.hasModifiedTemplate()) {
+    if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
       return this.getDefaultBehaviorTemplate();
     } else {
       return template;
@@ -282,8 +286,16 @@ return React.createClass({
     );
   },
 
+  getPageHeading: function() {
+    return this.isDataTypeBehavior() ? "Edit data type" : "Edit behavior";
+  },
+
   getRedirectValue: function() {
     return this.state.redirectValue;
+  },
+
+  getFormAction: function() {
+    return jsRoutes.controllers.BehaviorEditorController.save().url;
   },
 
   buildEnvVarNotifications: function() {
@@ -400,8 +412,10 @@ return React.createClass({
   getInitialTriggers: function() {
     if (this.props.triggers && this.props.triggers.length > 0) {
       return this.props.triggers;
-    } else {
+    } else if (!this.isDataTypeBehavior()) {
       return [new Trigger()];
+    } else {
+      return [];
     }
   },
 
@@ -992,6 +1006,10 @@ return React.createClass({
     return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
 
+  isDataTypeBehavior: function() {
+    return !!this.props.dataType;
+  },
+
   isExistingBehavior: function() {
     return !!this.props.behaviorId;
   },
@@ -1184,272 +1202,174 @@ return React.createClass({
     };
   },
 
-  render: function() {
+  renderPageHeading: function() {
     return (
-
-      <div>
-
       <div className="bg-light">
         <div className="container pbm">
           <h3 className="mvn ptxxl type-weak display-ellipsis">
-            <span>Edit behavior</span>
+            <span>{this.getPageHeading()}</span>
             <span className="type-italic">{this.getBehaviorStatusText()}</span>
           </h3>
 
-            {/*
-             <form ref="testBehaviorForm" action="/test_behavior_version" method="POST">
-               <CsrfTokenHiddenInput value={this.props.csrfToken} />
-               <input type="text" name="message" />
-               <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-               <input type="submit" />
-             </form>
-            */}
+          {/*
+           <form ref="testBehaviorForm" action="/test_behavior_version" method="POST">
+           <CsrfTokenHiddenInput value={this.props.csrfToken} />
+           <input type="text" name="message" />
+           <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+           <input type="submit" />
+           </form>
+           */}
         </div>
       </div>
+    );
+  },
 
-      <form action="/save_behavior" method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
-
-        <CsrfTokenHiddenInput
-          value={this.props.csrfToken}
-          />
-        <HiddenJsonInput
-          value={JSON.stringify(this.state.behavior)}
-        />
+  renderHiddenFormValues: function() {
+    return (
+      <div>
+        <CsrfTokenHiddenInput value={this.props.csrfToken} />
+        <HiddenJsonInput value={JSON.stringify(this.state.behavior)} />
         <input type="hidden" name="redirect" value={this.getRedirectValue()} />
         <input type="hidden" name="requiredOAuth2ApiConfigId" value={this.state.requiredOAuth2ApiConfigId} />
+      </div>
+    );
+  },
 
-        {/* Start of container */}
-        <div className="container ptxl pbxxxl">
+  renderNormalBehaviorFunctionHelp: function() {
+    return (
+      <div>
+        <SectionHeading>Then Ellipsis will do</SectionHeading>
 
-          <TriggerConfiguration
-            isFinishedBehavior={this.isFinishedBehavior()}
-            triggers={this.getBehaviorTriggers()}
-            onToggleHelp={this.toggleTriggerHelp}
-            helpVisible={this.getActivePanel() === 'helpForTriggerParameters'}
-            onTriggerAdd={this.addTrigger}
-            onTriggerChange={this.updateTriggerAtIndexWithTrigger}
-            onTriggerDelete={this.deleteTriggerAtIndex}
-            onTriggerDropdownToggle={this.toggleActiveDropdown}
-            openDropdownName={this.getActiveDropdown()}
-          />
+        <Checklist disabledWhen={this.isFinishedBehavior()}>
+          <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.isFinishedBehavior()}>
+            <span>Write a node.js function. You can <code>require()</code> any </span>
+            <span><a href="https://www.npmjs.com/" target="_blank">NPM package</a>.</span>
+          </Checklist.Item>
 
-          <UserInputConfiguration
-            ref="userInputConfiguration"
-            onParamChange={this.updateParamAtIndexWithParam}
-            onParamDelete={this.deleteParamAtIndex}
-            onParamAdd={this.addParam}
-            onParamNameFocus={this.onParamNameFocus}
-            onParamNameBlur={this.onParamNameBlur}
-            onEnterKey={this.onParamEnterKey}
-            userParams={this.getBehaviorParams()}
-            paramTypes={this.props.paramTypes}
-            triggers={this.getBehaviorTriggers()}
-            isFinishedBehavior={this.isFinishedBehavior()}
-            behaviorHasCode={this.state.revealCodeEditor}
-          />
+          <Checklist.Item checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.isFinishedBehavior()}>
+            <span>End the function by calling </span>
+            <code className="type-bold">ellipsis.success(<span className="type-regular">…</span>)</code>
+            <span> with text or data to include in the response. </span>
+            <button type="button" className="button-raw link button-s" onClick={this.toggleBoilerplateHelp}>Examples</button>
+          </Checklist.Item>
 
-          <Collapsible revealWhen={this.state.revealCodeEditor}>
-            <hr className="mtn" />
-          </Collapsible>
+          <Checklist.Item checkedWhen={this.hasCalledOnError()} hiddenWhen={this.isFinishedBehavior()}>
+            <span>To end with an error message, call </span>
+            <code className="type-bold">ellipsis.error(<span className="type-regular">…</span>)</code>
+            <span> with a string. </span>
+            <button type="button" className="button-raw link button-s" onClick={this.toggleBoilerplateHelp}>Example</button>
+          </Checklist.Item>
 
-          <Collapsible revealWhen={!this.state.revealCodeEditor}>
-            <div className="box-help border mbxxl">
-            <div className="columns columns-elastic mobile-columns-float">
-              <div className="column column-expand">
-                <p className="mbn">
-                  <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
-                  <span>or provide a simple response below.</span>
-                </p>
-              </div>
-              <div className="column column-shrink align-m mobile-mtm">
-                <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
-                  Add code
-                </button>
-              </div>
-            </div>
-            </div>
-          </Collapsible>
+          <Checklist.Item checkedWhen={this.hasCalledNoResponse()} hiddenWhen={this.isFinishedBehavior()}>
+            <span>To end with no response, call <code className="type-bold">ellipsis.noResponse()</code>.</span>
+          </Checklist.Item>
 
-          <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
-          <div className="columns">
-            <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
-
-              <SectionHeading>Then Ellipsis will do</SectionHeading>
-
-              <Checklist disabledWhen={this.isFinishedBehavior()}>
-                <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.isFinishedBehavior()}>
-                  <span>Write a node.js function. You can <code>require()</code> any </span>
-                  <span><a href="https://www.npmjs.com/" target="_blank">NPM package</a>.</span>
-                </Checklist.Item>
-
-                <Checklist.Item checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.isFinishedBehavior()}>
-                  <span>End the function by calling </span>
-                  <code className="type-bold">ellipsis.success(<span className="type-regular">…</span>)</code>
-                  <span> with text or data to include in the response. </span>
-                  <button type="button" className="button-raw link button-s" onClick={this.toggleBoilerplateHelp}>Examples</button>
-                </Checklist.Item>
-
-                <Checklist.Item checkedWhen={this.hasCalledOnError()} hiddenWhen={this.isFinishedBehavior()}>
-                  <span>To end with an error message, call </span>
-                  <code className="type-bold">ellipsis.error(<span className="type-regular">…</span>)</code>
-                  <span> with a string. </span>
-                  <button type="button" className="button-raw link button-s" onClick={this.toggleBoilerplateHelp}>Example</button>
-                </Checklist.Item>
-
-                <Checklist.Item checkedWhen={this.hasCalledNoResponse()} hiddenWhen={this.isFinishedBehavior()}>
-                  <span>To end with no response, call <code className="type-bold">ellipsis.noResponse()</code>.</span>
-                </Checklist.Item>
-
-                <Checklist.Item hiddenWhen={!this.isFinishedBehavior()}>
-                  <span>Call <code>ellipsis.success(…)</code>, <code>ellipsis.error(…)</code> and/or <code>ellipsis.noResponse()</code> </span>
-                  <span>to end your function. </span>
-                  <span className="pls">
+          <Checklist.Item hiddenWhen={!this.isFinishedBehavior()}>
+            <span>Call <code>ellipsis.success(…)</code>, <code>ellipsis.error(…)</code> and/or <code>ellipsis.noResponse()</code> </span>
+            <span>to end your function. </span>
+            <span className="pls">
                     <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.getActivePanel() === 'helpForBoilerplateParameters'} />
                   </span>
-                </Checklist.Item>
+          </Checklist.Item>
 
-                <Checklist.Item checkedWhen={this.hasUserParameters()} hiddenWhen={this.isFinishedBehavior() && this.hasUserParameters()}>
-                  <span>If you need more information from the user, add one or more inputs above </span>
-                  <span>and the function will receive them as parameters.</span>
-                </Checklist.Item>
+          <Checklist.Item checkedWhen={this.hasUserParameters()} hiddenWhen={this.isFinishedBehavior() && this.hasUserParameters()}>
+            <span>If you need more information from the user, add one or more inputs above </span>
+            <span>and the function will receive them as parameters.</span>
+          </Checklist.Item>
 
-                <Checklist.Item hiddenWhen={!this.isFinishedBehavior() || this.hasCalledRequire()}>
-                  <span>Use <code>require(…)</code> to load any NPM package.</span>
-                </Checklist.Item>
+          <Checklist.Item hiddenWhen={!this.isFinishedBehavior() || this.hasCalledRequire()}>
+            <span>Use <code>require(…)</code> to load any NPM package.</span>
+          </Checklist.Item>
 
-              </Checklist>
+        </Checklist>
+      </div>
+    );
+  },
 
-            </div>
-
-            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
-              <div className="border-top border-left border-right border-radius-top pts">
-                <div className="ptxs type-s">
-                  <div className="phm mbm">
-                    <APISelectorMenu
-                      openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
-                      onAWSClick={this.toggleAWSConfig}
-                      awsCheckedWhen={!!this.getAWSConfig()}
-                      toggle={this.toggleAPISelectorMenu}
-                      allOAuth2Applications={this.getAllOAuth2Applications()}
-                      requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
-                      onAddOAuth2Application={this.onAddOAuth2Application}
-                      onRemoveOAuth2Application={this.onRemoveOAuth2Application}
-                      onNewOAuth2Application={this.onNewOAuth2Application}
-                      getOAuth2ApiWithId={this.getOAuth2ApiWithId}
-                      />
-                  </div>
-
-                  <Collapsible revealWhen={!!this.getAWSConfig()}>
-                    <div className="phm pbs mbs border-bottom">
-                      <AWSConfig
-                        envVariableNames={this.getEnvVariableNames()}
-                        accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                        secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                        regionName={this.getAWSConfigProperty('regionName')}
-                        onAddNew={this.onAWSAddNewEnvVariable}
-                        onChange={this.onAWSConfigChange}
-                        onRemoveAWSConfig={this.toggleAWSConfig}
-                        onToggleHelp={this.toggleAWSHelp}
-                        helpVisible={this.getActivePanel() === 'helpForAWS'}
-                      />
-                    </div>
-                  </Collapsible>
-                </div>
-
-                <CodeHeader
-                  ref="codeHeader"
-                  helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
-                  onToggleHelp={this.toggleBoilerplateHelp}
-                  userParams={this.getBehaviorParams()}
-                  systemParams={this.getSystemParams()}
-                />
-              </div>
-
-              <div className="position-relative">
-                <CodeEditor
-                  value={this.getBehaviorFunctionBody()}
-                  onChange={this.updateCode}
-                  onCursorChange={this.ensureCursorVisible}
-                  firstLineNumber={this.getFirstLineNumberForCode()}
-                  lineWrapping={this.state.codeEditorUseLineWrapping}
-                  autocompletions={this.getCodeAutocompletions()}
-                  functionParams={this.getCodeFunctionParams()}
-                />
-                <div className="position-absolute position-top-right position-z-popup-trigger">
-                  <DropdownMenu
-                    openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
-                    label={this.getCodeEditorDropdownLabel()}
-                    labelClassName="button-dropdown-trigger-symbol"
-                    menuClassName="popup-dropdown-menu-right"
-                    toggle={this.toggleEditorSettingsMenu}
-                  >
-                    <DropdownMenu.Item
-                      onClick={this.toggleCodeEditorLineWrapping}
-                      checkedWhen={this.state.codeEditorUseLineWrapping}
-                      label="Enable line wrap"
-                    />
-                  </DropdownMenu>
-                </div>
-              </div>
-
-              <CodeFooter
-                lineNumber={this.getLastLineNumberForCode()}
-                onCodeDelete={this.confirmDeleteCode}
+  renderCodeEditor: function() {
+    return (
+      <div>
+        <div className="border-top border-left border-right border-radius-top pts">
+          <div className="ptxs type-s">
+            <div className="phm mbm">
+              <APISelectorMenu
+                openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
+                onAWSClick={this.toggleAWSConfig}
+                awsCheckedWhen={!!this.getAWSConfig()}
+                toggle={this.toggleAPISelectorMenu}
+                allOAuth2Applications={this.getAllOAuth2Applications()}
+                requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
+                onAddOAuth2Application={this.onAddOAuth2Application}
+                onRemoveOAuth2Application={this.onRemoveOAuth2Application}
+                onNewOAuth2Application={this.onNewOAuth2Application}
+                getOAuth2ApiWithId={this.getOAuth2ApiWithId}
               />
-
-            </div>
-          </div>
-
-          <hr className="mtn" />
-          </Collapsible>
-
-          <div className="columns">
-
-            <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s">
-
-              <SectionHeading>Then Ellipsis will respond with</SectionHeading>
-
-              <Checklist disabledWhen={this.isFinishedBehavior()}>
-                <Checklist.Item checkedWhen={this.getBehaviorTemplate().usesMarkdown()}>
-                  <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
-                  <span>to format the response, add links, etc.</span>
-                </Checklist.Item>
-                {this.state.revealCodeEditor ? "" : (
-                  <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
-                )}
-              </Checklist>
-
-              {this.getTemplateDataHelp()}
             </div>
 
-            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
-              <div className="position-relative CodeMirror-container-no-gutter">
-                <Codemirror value={this.getBehaviorTemplate().toString()}
-                  onChange={this.updateTemplate}
-                  onCursorChange={this.ensureCursorVisible}
-                  options={{
-                    mode: {
-                      name: "markdown",
-                      /* Use CommonMark-appropriate settings */
-                      fencedCodeBlocks: true,
-                      underscoresBreakWords: false
-                    },
-                    gutters: ['CodeMirror-no-gutter'],
-                    indentUnit: 4,
-                    indentWithTabs: true,
-                    lineWrapping: true,
-                    lineNumbers: false,
-                    smartIndent: true,
-                    tabSize: 4,
-                    viewportMargin: Infinity,
-                    placeholder: "The result is {successResult}"
-                  }}
+            <Collapsible revealWhen={!!this.getAWSConfig()}>
+              <div className="phm pbs mbs border-bottom">
+                <AWSConfig
+                  envVariableNames={this.getEnvVariableNames()}
+                  accessKeyName={this.getAWSConfigProperty('accessKeyName')}
+                  secretKeyName={this.getAWSConfigProperty('secretKeyName')}
+                  regionName={this.getAWSConfigProperty('regionName')}
+                  onAddNew={this.onAWSAddNewEnvVariable}
+                  onChange={this.onAWSConfigChange}
+                  onRemoveAWSConfig={this.toggleAWSConfig}
+                  onToggleHelp={this.toggleAWSHelp}
+                  helpVisible={this.getActivePanel() === 'helpForAWS'}
                 />
               </div>
-            </div>
+            </Collapsible>
           </div>
-        </div> {/* End of container */}
 
+          <CodeHeader
+            ref="codeHeader"
+            helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
+            onToggleHelp={this.toggleBoilerplateHelp}
+            userParams={this.getBehaviorParams()}
+            systemParams={this.getSystemParams()}
+          />
+        </div>
+
+        <div className="position-relative">
+          <CodeEditor
+            value={this.getBehaviorFunctionBody()}
+            onChange={this.updateCode}
+            onCursorChange={this.ensureCursorVisible}
+            firstLineNumber={this.getFirstLineNumberForCode()}
+            lineWrapping={this.state.codeEditorUseLineWrapping}
+            autocompletions={this.getCodeAutocompletions()}
+            functionParams={this.getCodeFunctionParams()}
+          />
+          <div className="position-absolute position-top-right position-z-popup-trigger">
+            <DropdownMenu
+              openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
+              label={this.getCodeEditorDropdownLabel()}
+              labelClassName="button-dropdown-trigger-symbol"
+              menuClassName="popup-dropdown-menu-right"
+              toggle={this.toggleEditorSettingsMenu}
+            >
+              <DropdownMenu.Item
+                onClick={this.toggleCodeEditorLineWrapping}
+                checkedWhen={this.state.codeEditorUseLineWrapping}
+                label="Enable line wrap"
+              />
+            </DropdownMenu>
+          </div>
+        </div>
+
+        <CodeFooter
+          lineNumber={this.getLastLineNumberForCode()}
+          onCodeDelete={this.isDataTypeBehavior() ? null : this.confirmDeleteCode}
+        />
+      </div>
+    );
+  },
+
+  renderFooter: function() {
+    return (
+      <div>
         <div className={"bg-scrim position-z-almost-front position-fixed-full " + (this.hasModalPanel() ? "fade-in" : "display-none")}></div>
         <footer ref="footer" className={"position-fixed-bottom position-z-front border-top " +
           (this.isModified() ? "bg-white" : "bg-light-translucent")}
@@ -1583,20 +1503,194 @@ return React.createClass({
           </Collapsible>
 
         </footer>
+      </div>
+    );
+  },
+
+  renderHiddenForms: function() {
+    return (
+      <div>
+        <form className="pbxxxl" ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
+          <CsrfTokenHiddenInput value={this.props.csrfToken} />
+          <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+        </form>
+
+        <form className="pbxxxl" ref="cloneBehaviorForm" action="/clone_behavior" method="POST">
+          <CsrfTokenHiddenInput value={this.props.csrfToken} />
+          <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+        </form>
+      </div>
+    );
+  },
+
+  renderNormalBehavior: function() {
+    return (
+
+      <div>
+        {this.renderPageHeading()}
+
+      <form action={this.getFormAction()} method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
+
+        {this.renderHiddenFormValues()}
+
+        {/* Start of container */}
+        <div className="container ptxl pbxxxl">
+
+          <TriggerConfiguration
+            isFinishedBehavior={this.isFinishedBehavior()}
+            triggers={this.getBehaviorTriggers()}
+            onToggleHelp={this.toggleTriggerHelp}
+            helpVisible={this.getActivePanel() === 'helpForTriggerParameters'}
+            onTriggerAdd={this.addTrigger}
+            onTriggerChange={this.updateTriggerAtIndexWithTrigger}
+            onTriggerDelete={this.deleteTriggerAtIndex}
+            onTriggerDropdownToggle={this.toggleActiveDropdown}
+            openDropdownName={this.getActiveDropdown()}
+          />
+
+          <UserInputConfiguration
+            ref="userInputConfiguration"
+            onParamChange={this.updateParamAtIndexWithParam}
+            onParamDelete={this.deleteParamAtIndex}
+            onParamAdd={this.addParam}
+            onParamNameFocus={this.onParamNameFocus}
+            onParamNameBlur={this.onParamNameBlur}
+            onEnterKey={this.onParamEnterKey}
+            userParams={this.getBehaviorParams()}
+            paramTypes={this.props.paramTypes}
+            triggers={this.getBehaviorTriggers()}
+            isFinishedBehavior={this.isFinishedBehavior()}
+            behaviorHasCode={this.state.revealCodeEditor}
+          />
+
+          <Collapsible revealWhen={this.state.revealCodeEditor}>
+            <hr className="mtn" />
+          </Collapsible>
+
+          <Collapsible revealWhen={!this.state.revealCodeEditor}>
+            <div className="box-help border mbxxl">
+            <div className="columns columns-elastic mobile-columns-float">
+              <div className="column column-expand">
+                <p className="mbn">
+                  <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
+                  <span>or provide a simple response below.</span>
+                </p>
+              </div>
+              <div className="column column-shrink align-m mobile-mtm">
+                <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
+                  Add code
+                </button>
+              </div>
+            </div>
+            </div>
+          </Collapsible>
+
+          <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
+            <div className="columns">
+              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+                {this.renderNormalBehaviorFunctionHelp()}
+              </div>
+
+              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+                {this.renderCodeEditor()}
+              </div>
+            </div>
+
+            <hr className="mtn" />
+          </Collapsible>
+
+          <div className="columns">
+
+            <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s">
+
+              <SectionHeading>Then Ellipsis will respond with</SectionHeading>
+
+              <Checklist disabledWhen={this.isFinishedBehavior()}>
+                <Checklist.Item checkedWhen={this.getBehaviorTemplate().usesMarkdown()}>
+                  <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
+                  <span>to format the response, add links, etc.</span>
+                </Checklist.Item>
+                {this.state.revealCodeEditor ? "" : (
+                  <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
+                )}
+              </Checklist>
+
+              {this.getTemplateDataHelp()}
+            </div>
+
+            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
+              <div className="position-relative CodeMirror-container-no-gutter">
+                <Codemirror value={this.getBehaviorTemplate().toString()}
+                  onChange={this.updateTemplate}
+                  onCursorChange={this.ensureCursorVisible}
+                  options={{
+                    mode: {
+                      name: "markdown",
+                      /* Use CommonMark-appropriate settings */
+                      fencedCodeBlocks: true,
+                      underscoresBreakWords: false
+                    },
+                    gutters: ['CodeMirror-no-gutter'],
+                    indentUnit: 4,
+                    indentWithTabs: true,
+                    lineWrapping: true,
+                    lineNumbers: false,
+                    smartIndent: true,
+                    tabSize: 4,
+                    viewportMargin: Infinity,
+                    placeholder: "The result is {successResult}"
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div> {/* End of container */}
+
+        {this.renderFooter()}
 
       </form>
-      <form className="pbxxxl" ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
-        <CsrfTokenHiddenInput value={this.props.csrfToken} />
-        <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-      </form>
 
-      <form className="pbxxxl" ref="cloneBehaviorForm" action="/clone_behavior" method="POST">
-        <CsrfTokenHiddenInput value={this.props.csrfToken} />
-        <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-      </form>
+        {this.renderHiddenForms()}
 
       </div>
     );
+  },
+
+  renderDataTypeBehavior: function() {
+    return (
+      <div>
+        {this.renderPageHeading()}
+
+        <form action={this.getFormAction()} method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
+          {this.renderHiddenFormValues()}
+
+          <div className="container ptxl pbxxxl">
+            <div className="columns">
+              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+
+                <SectionHeading>Run code to generate a list</SectionHeading>
+
+              </div>
+
+              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+                {this.renderCodeEditor()}
+              </div>
+            </div>
+          </div>
+
+          {this.renderFooter()}
+        </form>
+
+      </div>
+    );
+  },
+
+  render: function() {
+    if (this.isDataTypeBehavior()) {
+      return this.renderDataTypeBehavior();
+    } else {
+      return this.renderNormalBehavior();
+    }
   }
 });
 

@@ -6,13 +6,15 @@
   oauth2ApplicationsJson: String,
   oauth2ApisJson: String,
   justSaved: Boolean,
-  notificationsJson: String
-    )(implicit messages: Messages, r: RequestHeader)
+  notificationsJson: String,
+  dataTypeJson: String
+)(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
 
-@main("Ellipsis behavior editor", Some(teamAccess)) {
+@main("Edit behavior", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
+    routes.javascript.BehaviorEditorController.save,
     routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
     routes.javascript.BehaviorEditorController.versionInfoFor,
     routes.javascript.EnvironmentVariablesController.submit,
@@ -32,7 +34,8 @@
           paramTypes: @Html(paramTypesJson),
           oauth2Applications: @Html(oauth2ApplicationsJson),
           oauth2Apis: @Html(oauth2ApisJson),
-          notifications: @Html(notificationsJson)
+          notifications: @Html(notificationsJson),
+          dataType: @Html(dataTypeJson)
         };
       </script>
       <script data-main='@RemoteAssets.getUrl("javascripts/behavior_editor/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
