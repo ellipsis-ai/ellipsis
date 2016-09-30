@@ -1,12 +1,13 @@
 package models.behaviors.behaviorparameter
 
-import models.behaviors.{BotResult, SuccessResult}
+import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.MessageEvent
 import models.team.Team
 import play.api.libs.json._
-import services.DataService
+import services.{AWSLambdaConstants, DataService}
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,8 +36,15 @@ sealed trait BehaviorParameterType {
                  maybePreviousCollectedValue: Option[CollectedParameterValue],
                  context: BehaviorParameterContext
                ): Future[String] = {
-      Future.successful(s"${context.parameter.question}${invalidValueModifierFor(maybePreviousCollectedValue)}")
-    }
+    Future.successful(s"${context.parameter.question}${invalidValueModifierFor(maybePreviousCollectedValue)}")
+  }
+
+  def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
+    val potentialValue = event.context.relevantMessageText
+    context.maybeConversation.map { conversation =>
+      context.dataService.collectedParameterValues.ensureFor(context.parameter, conversation, potentialValue).map(_ => {})
+    }.getOrElse(Future.successful({}))
+  }
 
 }
 
@@ -99,7 +107,7 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
   private def cachedValuesFor(context: BehaviorParameterContext): Option[Seq[ValidValue]] = {
     for {
       conversation <- context.maybeConversation
-      values <- context.cache.get[Seq[ValidValue]](cacheKeyFor(conversation, context.parameter))
+      values <- context.cache.get[Seq[ValidValue]](valuesListCacheKeyFor(conversation, context.parameter))
     } yield values
   }
 
@@ -144,13 +152,23 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
 
   val invalidPromptModifier: String = s"I need a $name. Use one of the numbers or labels below"
 
-  private def cacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = s"${conversation.id}-${parameter.id}"
+  private def valuesListCacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = {
+    s"values-list-${conversation.id}-${parameter.id}"
+  }
 
-  private def fetchValidValuesResult(context: BehaviorParameterContext): Future[Option[BotResult]] = {
+  private def searchQueryCacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = {
+    s"search-query-${conversation.id}-${parameter.id}"
+  }
+
+  private def fetchValidValuesResult(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Option[BotResult]] = {
+    val paramsWithValues = maybeSearchQuery.map { searchQuery =>
+      val value = ParameterValue(searchQuery, JsString(searchQuery), isValid=true)
+      Seq(ParameterWithValue(context.parameter, AWSLambdaConstants.invocationParamFor(0), Some(value)))
+    }.getOrElse(Seq())
     for {
       maybeBehaviorVersion <- context.dataService.behaviors.maybeCurrentVersionFor(behavior)
       maybeResult <- maybeBehaviorVersion.map { behaviorVersion =>
-        context.dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), context.event).map(Some(_))
+        context.dataService.behaviorVersions.resultFor(behaviorVersion, paramsWithValues, context.event).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield maybeResult
   }
@@ -165,7 +183,7 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
   }
 
   private def fetchValidValues(context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
-    fetchValidValuesResult(context).map { maybeResult =>
+    fetchValidValuesResult(None, context).map { maybeResult =>
       maybeResult.map {
         case r: SuccessResult => extractValidValues(r)
         case r: BotResult => Seq()
@@ -185,18 +203,19 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
     }
   }
 
-  override def promptFor(
-                          maybePreviousCollectedValue: Option[CollectedParameterValue],
-                          context: BehaviorParameterContext
-                        ): Future[String] = {
+  private def promptForListAllCase(
+                                    maybeSearchQuery: Option[String],
+                                    maybePreviousCollectedValue: Option[CollectedParameterValue],
+                                    context: BehaviorParameterContext
+                                  ): Future[String] = {
     for {
       superPrompt <- super.promptFor(maybePreviousCollectedValue, context)
-      maybeValidValuesResult <- fetchValidValuesResult(context)
+      maybeValidValuesResult <- fetchValidValuesResult(maybeSearchQuery, context)
       output <- maybeValidValuesResult.map {
         case r: SuccessResult => {
           val validValues = extractValidValues(r)
           context.maybeConversation.foreach { conversation =>
-            context.cache.set(cacheKeyFor(conversation, context.parameter), validValues, 5.minutes)
+            context.cache.set(valuesListCacheKeyFor(conversation, context.parameter), validValues, 5.minutes)
           }
           val valuesPrompt = validValues.zipWithIndex.map { case(ea, i) =>
             s"\n\n$i. ${ea.label}"
@@ -209,6 +228,52 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
       }
     } yield output
 
+  }
+
+  private def maybeCachedSearchQueryFor(context: BehaviorParameterContext): Option[String] = {
+    context.maybeConversation.map { conversation =>
+      context.cache.get[String](searchQueryCacheKeyFor(conversation, context.parameter))
+    }.getOrElse(None)
+  }
+
+  private def promptForSearchCase(
+                                   maybePreviousCollectedValue: Option[CollectedParameterValue],
+                                   context: BehaviorParameterContext
+                                 ): Future[String] = {
+
+    maybeCachedSearchQueryFor(context).map { searchQuery =>
+      promptForListAllCase(Some(searchQuery), maybePreviousCollectedValue, context)
+    }.getOrElse {
+      super.promptFor(maybePreviousCollectedValue, context).map { superPrompt =>
+        superPrompt ++ " Enter a search query:"
+      }
+    }
+  }
+
+  override def promptFor(
+                           maybePreviousCollectedValue: Option[CollectedParameterValue],
+                           context: BehaviorParameterContext
+                         ): Future[String] = {
+    context.dataService.behaviorBackedDataTypes.usesSearch(this).flatMap { usesSearch =>
+      if (usesSearch) {
+        promptForSearchCase(maybePreviousCollectedValue, context)
+      } else {
+        promptForListAllCase(None, maybePreviousCollectedValue, context)
+      }
+    }
+  }
+
+  override def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
+    context.dataService.behaviorBackedDataTypes.usesSearch(this).flatMap { usesSearch =>
+      if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
+        val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
+        val searchQuery = event.context.relevantMessageText
+        context.cache.set(key, searchQuery, 5.minutes)
+        Future.successful({})
+      } else {
+        super.handleCollected(event, context)
+      }
+    }
   }
 
 }
