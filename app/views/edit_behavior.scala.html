@@ -11,7 +11,7 @@
 
 @import play.filters.csrf._
 
-@main("Ellipsis behavior editor", Some(teamAccess)) {
+@main("Edit behavior", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
     routes.javascript.BehaviorEditorController.versionInfoFor,
