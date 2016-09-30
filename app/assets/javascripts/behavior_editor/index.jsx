@@ -653,9 +653,13 @@ return React.createClass({
   },
 
   onDocumentKeyDown: function(event) {
-    var pressedEsc = Event.keyPressWasEsc(event);
-    if (pressedEsc) {
+    if (Event.keyPressWasEsc(event)) {
       this.handleEscKey(event);
+    } else if (Event.keyPressWasSaveShortcut(event)) {
+      event.preventDefault();
+      if (this.isModified()) {
+        this.onSubmit();
+      }
     }
   },
 
