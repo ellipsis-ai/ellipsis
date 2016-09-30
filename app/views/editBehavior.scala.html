@@ -6,8 +6,9 @@
   oauth2ApplicationsJson: String,
   oauth2ApisJson: String,
   justSaved: Boolean,
-  notificationsJson: String
-    )(implicit messages: Messages, r: RequestHeader)
+  notificationsJson: String,
+  dataTypeJson: String
+)(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
 
@@ -32,7 +33,8 @@
           paramTypes: @Html(paramTypesJson),
           oauth2Applications: @Html(oauth2ApplicationsJson),
           oauth2Apis: @Html(oauth2ApisJson),
-          notifications: @Html(notificationsJson)
+          notifications: @Html(notificationsJson),
+          dataType: @Html(dataTypeJson)
         };
       </script>
       <script data-main='@RemoteAssets.getUrl("javascripts/behavior_editor/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>

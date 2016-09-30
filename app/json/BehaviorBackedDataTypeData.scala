@@ -1,6 +1,7 @@
 package json
 
 import models.team.Team
+import models.behaviors.behaviorparameter.BehaviorBackedDataType
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 
@@ -83,5 +84,13 @@ object BehaviorBackedDataTypeData {
       createdAt = None,
       dataService
     )
+  }
+}
+
+case class BehaviorBackedDataTypeDataForBehavior(id: String, name: String)
+
+object BehaviorBackedDataTypeDataForBehavior {
+  def from(dataType: BehaviorBackedDataType): BehaviorBackedDataTypeDataForBehavior = {
+    BehaviorBackedDataTypeDataForBehavior(dataType.id, dataType.name)
   }
 }

@@ -69,7 +69,8 @@ class BehaviorEditorController @Inject() (
           Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
           Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
           justSaved = false,
-          notificationsJson = Json.toJson(Array[String]()).toString
+          notificationsJson = Json.toJson(Array[String]()).toString,
+          "null"
         )))
       }).getOrElse {
         reAuthFor(request, maybeTeamId)
@@ -92,6 +93,9 @@ class BehaviorEditorController @Inject() (
       paramTypes <- teamAccess.maybeTargetTeam.map { team =>
         BehaviorParameterType.allFor(team, dataService)
       }.getOrElse(Future.successful(Seq()))
+      dataTypes <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.behaviorBackedDataTypes.allFor(team)
+      }.getOrElse(Future.successful(Seq()))
       result <- (for {
         data <- maybeVersionData
         envVars <- maybeEnvironmentVariables
@@ -105,7 +109,8 @@ class BehaviorEditorController @Inject() (
           Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
           Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
           maybeJustSaved.exists(identity),
-          notificationsJson = Json.toJson(Array[String]()).toString
+          notificationsJson = Json.toJson(Array[String]()).toString,
+          Json.toJson(dataTypes.find(_.behavior.id == id).map(BehaviorBackedDataTypeDataForBehavior.from)).toString
         )))
       }).getOrElse {
         val response = NotFound(
