@@ -61,7 +61,7 @@ class BehaviorEditorController @Inject() (
           None,
           dataService
         )
-        Future.successful(Ok(views.html.edit_behavior(
+        Future.successful(Ok(views.html.editBehavior(
           teamAccess,
           Json.toJson(data).toString,
           Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
@@ -97,7 +97,7 @@ class BehaviorEditorController @Inject() (
         envVars <- maybeEnvironmentVariables
         oauth2Applications <- maybeOAuth2Applications
       } yield {
-        Future.successful(Ok(views.html.edit_behavior(
+        Future.successful(Ok(views.html.editBehavior(
           teamAccess,
           Json.toJson(data).toString,
           Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
