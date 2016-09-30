@@ -41,7 +41,7 @@ define(function() {
       if (/^Mac/.test(navigator.platform)) {
         return event.metaKey && !event.altKey && !event.shiftKey && !event.ctrlKey && event.which === sKeyWhich;
       } else if (/^Win/.test(navigator.platform)) {
-        return event.ctrlKey && !event.altKey && !event.shiftKey && !event.ctrlKey && event.which === sKeyWhich;
+        return event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey && event.which === sKeyWhich;
       }
     }
   }
