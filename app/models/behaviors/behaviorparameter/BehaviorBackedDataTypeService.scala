@@ -18,4 +18,6 @@ trait BehaviorBackedDataTypeService {
 
   def delete(dataType: BehaviorBackedDataType, user: User): Future[Unit]
 
+  def usesSearch(dataType: BehaviorBackedDataType): Future[Boolean]
+
 }

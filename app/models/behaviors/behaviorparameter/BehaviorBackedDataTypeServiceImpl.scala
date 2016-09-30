@@ -99,4 +99,15 @@ class BehaviorBackedDataTypeServiceImpl @Inject() (
     }
   }
 
+  def usesSearch(dataType: BehaviorBackedDataType): Future[Boolean] = {
+    for {
+      maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionFor(dataType.behavior)
+      params <- maybeCurrentVersion.map { version =>
+        dataService.behaviorParameters.allFor(version)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      params.exists(_.name == BehaviorBackedDataTypeQueries.SEARCH_QUERY_PARAM)
+    }
+  }
+
 }

@@ -16,4 +16,6 @@ object BehaviorBackedDataTypeQueries {
     BehaviorBackedDataType(raw.id, raw.name, BehaviorQueries.tuple2Behavior(tuple._2))
   }
 
+  val SEARCH_QUERY_PARAM = "searchQuery"
+
 }
