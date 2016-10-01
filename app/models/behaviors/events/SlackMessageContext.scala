@@ -44,17 +44,30 @@ case class SlackMessageContext(
 
   lazy val isResponseExpected: Boolean = includesBotMention
 
+  private def messageSegmentsFor(formattedText: String): Seq[String] = {
+    if (formattedText.length < SlackMessageContext.MAX_MESSAGE_LENGTH) {
+      Seq(formattedText)
+    } else {
+      val largestPossibleSegment = formattedText.substring(0, SlackMessageContext.MAX_MESSAGE_LENGTH)
+      val lastNewlineIndex = Math.max(largestPossibleSegment.lastIndexOf('\n'), largestPossibleSegment.lastIndexOf('\r'))
+      val lastIndex = if (lastNewlineIndex < 0) { SlackMessageContext.MAX_MESSAGE_LENGTH - 1 } else { lastNewlineIndex }
+      Seq(formattedText.substring(0, lastIndex)) ++ messageSegmentsFor(formattedText.substring(lastIndex + 1))
+    }
+  }
+
   def sendMessage(unformattedText: String, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
     val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
-    // The Slack API considers sending an empty message to be an error rather than a no-op
-    if (formattedText.nonEmpty) {
-      val apiClient = client.apiClient
-      val maybeDMChannel = if (forcePrivate) {
-        apiClient.listIms.find(_.user == message.user).map(_.id)
-      } else {
-        None
+    val apiClient = client.apiClient
+    val maybeDMChannel = if (forcePrivate) {
+      apiClient.listIms.find(_.user == message.user).map(_.id)
+    } else {
+      None
+    }
+    messageSegmentsFor(formattedText).foreach { ea =>
+      // The Slack API considers sending an empty message to be an error rather than a no-op
+      if (ea.nonEmpty) {
+        apiClient.postChatMessage(maybeDMChannel.getOrElse(message.channel), ea, asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
       }
-      apiClient.postChatMessage(maybeDMChannel.getOrElse(message.channel), formattedText, asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
     }
   }
 
@@ -91,4 +104,9 @@ object SlackMessageContext {
 
   def mentionRegexFor(botId: String): Regex = s"""<@$botId>""".r
   def toBotRegexFor(botId: String): Regex = s"""^<@$botId>:?\\s*""".r
+
+  // From Slack docs:
+  //
+  // "For best results, message bodies should contain no more than a few thousand characters."
+  val MAX_MESSAGE_LENGTH = 2000
 }
