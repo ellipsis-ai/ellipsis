@@ -4,6 +4,7 @@ define(function(require) {
     UserInputDefinition = require('./user_input_definition'),
     Checklist = require('./checklist'),
     Collapsible = require('../collapsible'),
+    Param = require('../models/param'),
     Trigger = require('../models/trigger');
 
   return React.createClass({
@@ -14,14 +15,7 @@ define(function(require) {
       onParamNameFocus: React.PropTypes.func.isRequired,
       onParamNameBlur: React.PropTypes.func.isRequired,
       onEnterKey: React.PropTypes.func.isRequired,
-      userParams: React.PropTypes.arrayOf(React.PropTypes.shape({
-        name: React.PropTypes.string.isRequired,
-        question: React.PropTypes.string.isRequired,
-        paramType: React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          name: React.PropTypes.string.isRequired
-        }).isRequired
-      })).isRequired,
+      userParams: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired,
       paramTypes: React.PropTypes.arrayOf(
         React.PropTypes.shape({
           id: React.PropTypes.string.isRequired,
@@ -129,10 +123,8 @@ define(function(require) {
                           <UserInputDefinition
                             key={'UserInputDefinition' + paramIndex}
                             ref={'param' + paramIndex}
-                            name={param.name}
+                            param={param}
                             paramTypes={this.props.paramTypes}
-                            paramType={param.paramType}
-                            question={param.question}
                             onChange={this.onChange.bind(this, paramIndex)}
                             onDelete={this.onDelete.bind(this, paramIndex)}
                             onEnterKey={this.onEnterKey.bind(this, paramIndex)}
