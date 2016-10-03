@@ -8,6 +8,7 @@ define(function(require) {
     NotificationForUnusedOAuth2Application = require('./oauth2_application_unused'),
     NotificationForUnusedAWS = require('./aws_unused'),
     NotificationForParamNotInFunction = require('./param_not_in_function'),
+    NotificationForInvalidParamInTrigger = require('./invalid_param_in_trigger'),
     NotificationForUnknownParamInTemplate = require('./unknown_param_in_template');
 
   return React.createClass({
@@ -65,6 +66,14 @@ define(function(require) {
           icon: this.getWarningIcon(),
           message: (
             <NotificationForUnknownParamInTemplate details={this.props.details} />
+          )
+        };
+      } else if (kind === "invalid_param_in_trigger") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForInvalidParamInTrigger details={this.props.details} />
           )
         };
       }

@@ -352,13 +352,22 @@ return React.createClass({
     this.getBehaviorParams().forEach((codeParam) => {
       delete triggerParamObj[codeParam.name];
     });
-    return Object.keys(triggerParamObj).map((name) => ({
-      kind: "param_not_in_function",
-      name: name,
-      onClick: () => {
-        this.addParams([name]);
+    return Object.keys(triggerParamObj).map((name) => {
+      if (Param.isValidName(name)) {
+        return {
+          kind: "param_not_in_function",
+          name: name,
+          onClick: () => {
+            this.addParams([name]);
+          }
+        };
+      } else {
+        return {
+          kind: "invalid_param_in_trigger",
+          name: name
+        };
       }
-    }));
+    });
   },
 
   getValidParamNamesForTemplate: function() {

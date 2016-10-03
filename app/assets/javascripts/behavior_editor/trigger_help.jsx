@@ -31,8 +31,8 @@ return React.createClass({
           </li>
 
           <li>
-            <span>Input labels must begin with a letter, and otherwise may only include </span>
-            <span>letters, numbers, and underscores (_).</span>
+            <span>Input labels can only contain non-accented letters, numbers, dollar signs, or underscores, and </span>
+            <span>may not begin with a number.</span>
           </li>
 
           <li>
