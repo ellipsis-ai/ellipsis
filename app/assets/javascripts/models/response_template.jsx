@@ -6,6 +6,10 @@ define(function() {
     /^endif$/
   ];
 
+  function stringStartsWithVarName(string, varName) {
+    return string.split('.')[0].trim() === varName;
+  }
+
   class ResponseTemplate {
     constructor(props) {
       var initialProps = Object.assign({
@@ -44,14 +48,14 @@ define(function() {
     getUnknownParamsExcluding(validParams) {
       var varsDefinedInForLoops = this.getVarsDefinedInTemplateLoops();
       return this.getParamsUsed().filter((param) => {
-        return !validParams.some((validParam) => (new RegExp(`^${validParam}\\b`)).test(param)) &&
-          !varsDefinedInForLoops.some((varName) => (new RegExp(`^${varName}\\b`)).test(param)) &&
+        return !validParams.some((validParam) => stringStartsWithVarName(param, validParam)) &&
+          !varsDefinedInForLoops.some((varName) => stringStartsWithVarName(param, varName)) &&
           !validTemplateKeywordPatterns.some((pattern) => pattern.test(param));
       });
     }
 
     replaceParamName(oldName, newName) {
-      var newText = this.text.replace(new RegExp(`\\{${oldName}\\}`, 'g'), `{${newName}}`);
+      var newText = this.text.split(`{${oldName}}`).join(`{${newName}}`);
       if (newText !== this.text) {
         return this.clone({
           text: newText

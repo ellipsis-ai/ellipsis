@@ -18,6 +18,7 @@ var React = require('react'),
   HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Notification = require('../notifications/notification'),
+  Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
   SectionHeading = require('./section_heading'),
   Trigger = require('../models/trigger'),
@@ -61,14 +62,7 @@ return React.createClass({
     behaviorId: React.PropTypes.string,
     functionBody: React.PropTypes.string,
     responseTemplate: React.PropTypes.instanceOf(ResponseTemplate),
-    params: React.PropTypes.arrayOf(React.PropTypes.shape({
-      name: React.PropTypes.string.isRequired,
-      paramType: React.PropTypes.shape({
-        id: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired
-      }),
-      question: React.PropTypes.string.isRequired
-    })),
+    params: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)),
     triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)),
     config: React.PropTypes.shape({
       aws: React.PropTypes.shape({
@@ -358,13 +352,22 @@ return React.createClass({
     this.getBehaviorParams().forEach((codeParam) => {
       delete triggerParamObj[codeParam.name];
     });
-    return Object.keys(triggerParamObj).map((name) => ({
-      kind: "param_not_in_function",
-      name: name,
-      onClick: () => {
-        this.addParams([name]);
+    return Object.keys(triggerParamObj).map((name) => {
+      if (Param.isValidName(name)) {
+        return {
+          kind: "param_not_in_function",
+          name: name,
+          onClick: () => {
+            this.addParams([name]);
+          }
+        };
+      } else {
+        return {
+          kind: "invalid_param_in_trigger",
+          name: name
+        };
       }
-    }));
+    });
   },
 
   getValidParamNamesForTemplate: function() {
@@ -502,11 +505,7 @@ return React.createClass({
   /* Setters/togglers */
 
   createNewParam: function(optionalValues) {
-    return Object.assign({
-      name: '',
-      question: '',
-      paramType: this.props.paramTypes[0]
-    }, optionalValues);
+    return new Param({ paramType: this.props.paramTypes[0] }, optionalValues);
   },
 
   addParam: function() {
