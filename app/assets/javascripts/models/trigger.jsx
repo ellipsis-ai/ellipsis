@@ -29,7 +29,7 @@ define(function() {
 
     get paramNames() {
       var names = [];
-      var matches = this.text.match(/\{\S+?\}/g);
+      var matches = this.text.match(/\{.+?\}/g);
       if (!this.isRegex && matches) {
         names = matches.map((name) => name.replace(/^\{|\}$/g, ''));
       }
@@ -37,7 +37,7 @@ define(function() {
     }
 
     hasNonRegexParams() {
-      return !this.isRegex && /\{\S+?\}/.test(this.text);
+      return !this.isRegex && /\{.+?\}/.test(this.text);
     }
 
     usesParamName(name) {

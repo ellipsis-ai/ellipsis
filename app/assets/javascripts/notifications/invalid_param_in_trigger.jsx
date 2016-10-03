@@ -16,17 +16,17 @@ define(function(require) {
         return (
           <span>
             <span><code className="type-bold">{`{${detail.name}}`}</code> is not a valid input label. </span>
-            <span>Input labels can only include non-accented letters, numbers, dollar signs, or underscores, and can’t start with a number.</span>
+            <span>Input labels should only include non-accented letters, numbers, dollar signs, or underscores, and can’t have spaces or start with numbers.</span>
           </span>
         );
       } else {
         return (
           <span>
-            <span>Input labels can only include non-accented letters, numbers, dollar signs, or underscores, and can’t start with a number. </span>
+            <span>Input labels can only include non-accented letters, numbers, dollar signs, or underscores, and can’t have spaces or start with numbers. </span>
             <span>These are not valid labels: </span>
             {this.props.details.map((detail, index) => (
-              <span>
-                <code className="mhxs" key={`invalidParamName${index}`}>{`{${detail.name}}`}</code>
+              <span key={`invalidParamName${index}`}>
+                <code className="mhxs">{`{${detail.name}}`}</code>
                 <span className="type-weak">{index + 1 < numParams ? " · " : ""}</span>
               </span>
             ))}
