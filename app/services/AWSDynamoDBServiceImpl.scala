@@ -5,7 +5,7 @@ import com.amazonaws.services.dynamodbv2.model._
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsValue
-import utils.JavaFutureWrapper
+import utils.JavaFutureConverter
 import collection.JavaConverters._
 
 import scala.concurrent.Future
@@ -33,7 +33,7 @@ class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extend
         withTableName(ITEMS_TABLE_NAME).
         withItem(itemMap)
 
-    JavaFutureWrapper.wrap(client.putItemAsync(request)).map(_ => Unit)
+    JavaFutureConverter.javaToScala(client.putItemAsync(request)).map(_ => Unit)
   }
 
   def getItem(itemId: String, itemType: String, team: Team): Future[Option[String]] = {
@@ -42,7 +42,7 @@ class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extend
         withTableName(ITEMS_TABLE_NAME).
         withKey(Map(ITEM_PRIMARY_KEY -> new AttributeValue(primaryKeyFor(itemId, itemType, team))).asJava)
 
-    JavaFutureWrapper.wrap(client.getItemAsync(request)).map { result =>
+    JavaFutureConverter.javaToScala(client.getItemAsync(request)).map { result =>
       result.getItem.asScala.get(ITEM).map(_.getS)
     }
   }

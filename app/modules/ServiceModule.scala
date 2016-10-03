@@ -64,6 +64,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BehaviorBackedDataTypeService].to(classOf[BehaviorBackedDataTypeServiceImpl])
 
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
+    bind(classOf[AWSLogsService]).to(classOf[AWSLogsServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).to(classOf[SlackServiceImpl]).asEagerSingleton()
     bind(classOf[BehaviorTestReportBuilder]).asEagerSingleton()
