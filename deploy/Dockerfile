@@ -8,6 +8,6 @@ ADD stage /
 WORKDIR /opt/docker
 RUN ["chown", "-R", "daemon", "."]
 USER daemon
-ENTRYPOINT ["bin/ellipsis", "-Dconfig.resource=docker.conf"]
+ENTRYPOINT ["bin/ellipsis", "-Dconfig.resource=production.conf"]
 CMD []
 EXPOSE 9000

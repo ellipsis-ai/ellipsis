@@ -8,6 +8,7 @@ else
     echo "running 'activator run'"
 fi
 
+JAVA_OPTS='-Dconfig.file=conf/development.conf' \
 API_BASE_URL='' \
 AWS_ACCESS_KEY= \
 AWS_SECRET_KEY='' \
