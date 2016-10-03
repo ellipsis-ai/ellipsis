@@ -29,7 +29,7 @@ define(function() {
 
     get paramNames() {
       var names = [];
-      var matches = this.text.match(/\{.+?\}/g);
+      var matches = this.text.match(/\{\S+?\}/g);
       if (!this.isRegex && matches) {
         names = matches.map((name) => name.replace(/^\{|\}$/g, ''));
       }
@@ -37,12 +37,11 @@ define(function() {
     }
 
     hasNonRegexParams() {
-      return !this.isRegex && /\{.+?\}/.test(this.text);
+      return !this.isRegex && /\{\S+?\}/.test(this.text);
     }
 
     usesParamName(name) {
-      var pattern = new RegExp(`\{${name}\}`);
-      return !this.isRegex && pattern.test(this.text);
+      return !this.isRegex && this.text.includes(`{${name}}`);
     }
 
     capturesParamIndex(index) {
@@ -62,10 +61,8 @@ define(function() {
     }
 
     getTextWithNewParamName(oldName, newName) {
-      var pattern = new RegExp(`\{${oldName}\}`, 'g');
-      var wrappedNewName = `{${newName}}`;
       if (!this.isRegex) {
-        return this.text.replace(pattern, wrappedNewName);
+        return this.text.split(`{${oldName}}`).join(`{${newName}}`);
       } else {
         return this.text;
       }
