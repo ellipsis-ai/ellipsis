@@ -6,9 +6,9 @@ define(function(require) {
   return {
     fromJson: function(props) {
       return Object.assign({}, props, {
-        params: Param.paramsFromJason(props.params),
-        responseTemplate: ResponseTemplate.fromString(props.responseTemplate),
-        triggers: Trigger.triggersFromJson(props.triggers)
+        params: Param.paramsFromJson(props.params || []),
+        responseTemplate: ResponseTemplate.fromString(props.responseTemplate || ''),
+        triggers: Trigger.triggersFromJson(props.triggers || [])
       });
     }
   };

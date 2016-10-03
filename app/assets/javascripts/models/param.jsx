@@ -38,7 +38,7 @@ define(function() {
       return new Param(Object.assign({}, this, props));
     }
 
-    static paramsFromJason(jsonArray) {
+    static paramsFromJson(jsonArray) {
       return jsonArray.map((triggerObj) => new Param(triggerObj));
     }
 
