@@ -7,10 +7,7 @@ define(function() {
   ];
 
   function stringStartsWithVarName(string, varName) {
-    var validStart = string.indexOf(varName) === 0;
-    var endOfString = string.substr(varName.length);
-    var validEnd = !endOfString || endOfString.indexOf('.') === 0;
-    return validStart && validEnd;
+    return string.split('.')[0].trim() === varName;
   }
 
   class ResponseTemplate {
