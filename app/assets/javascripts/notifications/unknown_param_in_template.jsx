@@ -22,7 +22,7 @@ define(function(require) {
             <span>The response contains unknown variable names: </span>
             {this.props.details.map((detail, index) => (
               <span key={`unknownParamName${index}`}>
-                <code className="mhxs">{detail.name}</code>
+                <code className="mhxs type-bold">{detail.name}</code>
                 <span className="type-weak">{index + 1 < numParams ? " · " : ""}</span>
               </span>
             ))}
