@@ -32,7 +32,7 @@ return React.createClass({
   },
 
   onNameChange: function(newName) {
-    this.props.onChange(this.props.param.clone({ name: newName }));
+    this.props.onChange(this.props.param.clone({ name: Param.formatName(newName) }));
   },
 
   onParamTypeChange: function(event) {
