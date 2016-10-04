@@ -12,7 +12,8 @@ trait OAuth2ApiService {
 
   def createFor(
                  name: String,
-                 authorizationUrl: String,
+                 grantType: OAuth2GrantType,
+                 maybeAuthorizationUrl: Option[String],
                  accessTokenUrl: String,
                  maybeNewApplicationUrl: Option[String],
                  maybeScopeDocumentationUrl: Option[String]

@@ -69,6 +69,7 @@ class AWSLambdaServiceImpl @Inject() (
   private def contextParamDataFor(
                                    environmentVariables: Seq[EnvironmentVariable],
                                    userInfo: UserInfo,
+                                   teamInfo: TeamInfo,
                                    token: InvocationToken
                                    ): Seq[(String, JsObject)] = {
     Seq(CONTEXT_PARAM -> JsObject(Seq(
@@ -77,7 +78,8 @@ class AWSLambdaServiceImpl @Inject() (
       ENV_KEY -> JsObject(environmentVariables.map { ea =>
         ea.name -> JsString(ea.value)
       }),
-      USER_INFO_KEY -> userInfo.toJson
+      USER_INFO_KEY -> userInfo.toJson,
+      TEAM_INFO_KEY -> teamInfo.toJson
     )))
   }
 
@@ -100,27 +102,31 @@ class AWSLambdaServiceImpl @Inject() (
       result <- notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
         Future.successful(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, configuration))
       }.getOrElse {
-        missingOAuth2Applications.headOption.map { firstMissingOAuth2App =>
+        val (missingOAuth2ApplicationsRequiringAuth, otherMissingOAuth2Applications) =
+          missingOAuth2Applications.partition(_.api.grantType.requiresAuth)
+        missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
           event.context.ensureUser(dataService).flatMap { user =>
             dataService.loginTokens.createFor(user).map { loginToken =>
               OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
             }
           }
         }.getOrElse {
-          val payloadJson = JsObject(
-            payloadData ++ contextParamDataFor(environmentVariables, userInfo, token)
-          )
-          val invokeRequest =
-            new InvokeRequest().
-              withLogType(LogType.Tail).
-              withFunctionName(functionName).
-              withInvocationType(InvocationType.RequestResponse).
-              withPayload(payloadJson.toString())
-          JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recover {
-            case e: java.util.concurrent.ExecutionException => {
-              e.getMessage match {
-                case amazonServiceExceptionRegex() => new AWSDownResult()
-                case _ => throw e
+          TeamInfo.forOAuth2Apps(otherMissingOAuth2Applications, team, ws).flatMap { teamInfo =>
+            val payloadJson = JsObject(
+              payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, token)
+            )
+            val invokeRequest =
+              new InvokeRequest().
+                withLogType(LogType.Tail).
+                withFunctionName(functionName).
+                withInvocationType(InvocationType.RequestResponse).
+                withPayload(payloadJson.toString())
+            JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recover {
+              case e: java.util.concurrent.ExecutionException => {
+                e.getMessage match {
+                  case amazonServiceExceptionRegex() => new AWSDownResult()
+                  case _ => throw e
+                }
               }
             }
           }
@@ -188,7 +194,8 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def accessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
     app.maybeApplication.map { application =>
-      s"""$CONTEXT_PARAM.accessTokens.${application.keyName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${application.name}").oauthToken;"""
+      val infoKey =  if (application.api.grantType.requiresAuth) { "userInfo" } else { "teamInfo" }
+      s"""$CONTEXT_PARAM.accessTokens.${application.keyName} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem == "${application.name}").oauthToken;"""
     }.getOrElse("")
   }
 

@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
-import models.accounts.oauth2api.OAuth2Api
+import models.accounts.oauth2api.{OAuth2Api, OAuth2GrantType}
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
@@ -43,7 +43,7 @@ class OAuth2ApiController @Inject() (
     val user = request.identity
     dataService.users.teamAccessFor(user, maybeTeamId).map { teamAccess =>
       teamAccess.maybeTargetTeam.map { _ =>
-        Ok(views.html.oAuth2Api(teamAccess, None))
+        Ok(views.html.oAuth2Api(teamAccess, None, OAuth2GrantType.values))
       }.getOrElse {
         NotFound("Team not accessible")
       }
@@ -57,7 +57,7 @@ class OAuth2ApiController @Inject() (
       maybeApi <- dataService.oauth2Apis.find(apiId)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.oAuth2Api(teamAccess, maybeApi))
+        Ok(views.html.oAuth2Api(teamAccess, maybeApi, OAuth2GrantType.values))
       }.getOrElse {
         NotFound("Team not accessible")
       }
@@ -67,7 +67,8 @@ class OAuth2ApiController @Inject() (
   case class OAuth2ApiInfo(
                             maybeId: Option[String],
                             name: String,
-                            authorizationUrl: String,
+                            grantType: String,
+                            maybeAuthorizationUrl: Option[String],
                             accessTokenUrl: String,
                             maybeNewApplicationUrl: Option[String],
                             maybeScopeDocumentationUrl: Option[String],
@@ -79,7 +80,8 @@ class OAuth2ApiController @Inject() (
     mapping(
       "id" -> optional(nonEmptyText),
       "name" -> nonEmptyText,
-      "authorizationUrl" -> nonEmptyText,
+      "grantType" -> nonEmptyText,
+      "authorizationUrl" -> optional(nonEmptyText),
       "accessTokenUrl" -> nonEmptyText,
       "newApplicationUrl" -> optional(nonEmptyText),
       "scopeDocumentationUrl" -> optional(nonEmptyText),
@@ -101,7 +103,8 @@ class OAuth2ApiController @Inject() (
           api <- dataService.oauth2Apis.save(maybeExistingApi.map { existing =>
             existing.copy(
               name = info.name,
-              authorizationUrl = info.authorizationUrl,
+              grantType = OAuth2GrantType.definitelyFind(info.grantType),
+              maybeAuthorizationUrl = info.maybeAuthorizationUrl,
               accessTokenUrl = info.accessTokenUrl,
               maybeNewApplicationUrl = info.maybeNewApplicationUrl,
               maybeScopeDocumentationUrl = info.maybeScopeDocumentationUrl
@@ -110,7 +113,8 @@ class OAuth2ApiController @Inject() (
             OAuth2Api(
               IDs.next,
               info.name,
-              info.authorizationUrl,
+              OAuth2GrantType.definitelyFind(info.grantType),
+              info.maybeAuthorizationUrl,
               info.accessTokenUrl,
               info.maybeNewApplicationUrl,
               info.maybeScopeDocumentationUrl,

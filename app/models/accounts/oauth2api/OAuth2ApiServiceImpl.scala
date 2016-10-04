@@ -11,15 +11,22 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class OAuth2ApisTable(tag: Tag) extends Table[OAuth2Api](tag, "oauth2_apis") {
+
+  implicit val grantTypeColumnType = MappedColumnType.base[OAuth2GrantType, String](
+    { gt => gt.toString },
+    { str => OAuth2GrantType.definitelyFind(str) }
+  )
+
   def id = column[String]("id")
   def name = column[String]("name")
-  def authorizationUrl = column[String]("authorization_url")
+  def grantType = column[OAuth2GrantType]("grant_type")
+  def maybeAuthorizationUrl = column[Option[String]]("authorization_url")
   def accessTokenUrl = column[String]("access_token_url")
   def maybeNewApplicationUrl = column[Option[String]]("new_application_url")
   def maybeScopeDocumentationUrl = column[Option[String]]("scope_documentation_url")
   def maybeTeamId = column[Option[String]]("team_id")
 
-  def * = (id, name, authorizationUrl, accessTokenUrl, maybeNewApplicationUrl, maybeScopeDocumentationUrl, maybeTeamId) <>
+  def * = (id, name, grantType, maybeAuthorizationUrl, accessTokenUrl, maybeNewApplicationUrl, maybeScopeDocumentationUrl, maybeTeamId) <>
     ((OAuth2Api.apply _).tupled, OAuth2Api.unapply _)
 
 }
@@ -43,12 +50,13 @@ class OAuth2ApiServiceImpl @Inject() (
 
   def createFor(
                  name: String,
-                 authorizationUrl: String,
+                 grantType: OAuth2GrantType,
+                 maybeAuthorizationUrl: Option[String],
                  accessTokenUrl: String,
                  maybeNewApplicationUrl: Option[String],
                  maybeScopeDocumentationUrl: Option[String]
                ): Future[OAuth2Api] = {
-    val api = OAuth2Api(IDs.next, name, authorizationUrl, accessTokenUrl, maybeNewApplicationUrl, maybeScopeDocumentationUrl, None)
+    val api = OAuth2Api(IDs.next, name, grantType, maybeAuthorizationUrl, accessTokenUrl, maybeNewApplicationUrl, maybeScopeDocumentationUrl, None)
     dataService.run((all += api).map(_ => api))
   }
 

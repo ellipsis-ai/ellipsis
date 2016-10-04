@@ -94,9 +94,14 @@ class APIAccessController @Inject() (
             }).getOrElse {
               val state = IDs.next
               val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None).absoluteURL(secure = true)
-              val redirect = application.authorizationRequestFor(state, redirectParam, ws).uri.toString
-              val sessionState = Seq(Some("oauth-state" -> state), maybeInvocationId.map(id => "invocation-id" -> id)).flatten
-              Future.successful(Redirect(redirect).withSession(sessionState: _*))
+              val maybeRedirect = application.maybeAuthorizationRequestFor(state, redirectParam, ws).map { r =>
+                r.uri.toString
+              }
+              val result = maybeRedirect.map { redirect =>
+                val sessionState = Seq(Some("oauth-state" -> state), maybeInvocationId.map(id => "invocation-id" -> id)).flatten
+                Redirect(redirect).withSession(sessionState: _*)
+              }.getOrElse(BadRequest("Doesn't use authorization code"))
+              Future.successful(result)
             }
           } else {
             reAuthFor(request, maybeApplication.map(_.teamId))

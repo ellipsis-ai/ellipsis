@@ -1,6 +1,7 @@
 @(
   teamAccess: models.accounts.user.UserTeamAccess,
-  maybeApi: Option[models.accounts.oauth2api.OAuth2Api]
+  maybeApi: Option[models.accounts.oauth2api.OAuth2Api],
+  grantTypes: Seq[models.accounts.oauth2api.OAuth2GrantType]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
@@ -20,7 +21,18 @@
           <input type="hidden" name="id" value="@api.id"/>
         }
         @oAuth2Field("Name of the external system", "name", maybeApi.map(_.name))
-        @oAuth2Field("Authorization URL", "authorizationUrl", maybeApi.map(_.authorizationUrl))
+        <div class="columns">
+          <div class="column column-one-third align-r">Grant type:</div>
+          <div class="column column-one-half">
+            <select name="grantType">
+              @grantTypes.map { ea =>
+                <option value="@ea.toString" @(if(maybeApi.exists(_.grantType.toString == ea.toString)) { "selected=selected" }) >@ea.toString</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        @oAuth2Field("Authorization URL", "authorizationUrl", maybeApi.flatMap(_.maybeAuthorizationUrl))
         @oAuth2Field("Access token URL", "accessTokenUrl", maybeApi.map(_.accessTokenUrl))
         @oAuth2Field("Where to add a new application", "newApplicationUrl", maybeApi.flatMap(_.maybeNewApplicationUrl))
         @oAuth2Field("Where to learn about scopes", "scopeDocumentationUrl", maybeApi.flatMap(_.maybeScopeDocumentationUrl))
