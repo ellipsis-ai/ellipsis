@@ -357,4 +357,19 @@ describe('BehaviorEditor', () => {
       expect(editor.renderNormalBehavior).not.toBeCalled();
     });
   });
+
+  describe('createNewParam', () => {
+    it("creates a new parameter with the parameter type set to the first possible one", () => {
+      let editor = createEditor(editorConfig);
+      let newParam = editor.createNewParam();
+      expect(newParam.paramType).toEqual(editorConfig.paramTypes[0]);
+    });
+
+    it("creates a new parameter with other attributes as desired", () => {
+      let editor = createEditor(editorConfig);
+      let newParam = editor.createNewParam({ name: "clownCar", question: "how did twitter propel itself?" });
+      expect(newParam.name).toEqual("clownCar");
+      expect(newParam.question).toEqual("how did twitter propel itself?");
+    });
+  });
 });

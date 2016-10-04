@@ -505,7 +505,7 @@ return React.createClass({
   /* Setters/togglers */
 
   createNewParam: function(optionalValues) {
-    return new Param({ paramType: this.props.paramTypes[0] }, optionalValues);
+    return new Param(Object.assign({ paramType: this.props.paramTypes[0] }, optionalValues));
   },
 
   addParam: function() {
