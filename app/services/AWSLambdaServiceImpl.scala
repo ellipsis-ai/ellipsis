@@ -266,13 +266,13 @@ class AWSLambdaServiceImpl @Inject() (
   def deleteFunction(functionName: String): Future[Unit] = {
     val deleteFunctionRequest =
       new DeleteFunctionRequest().withFunctionName(functionName)
-    val eventuallyDeleteFunction = JavaFutureConverter.javaToScala(try {
-        client.deleteFunctionAsync(deleteFunctionRequest)
+    val eventuallyDeleteFunction = Future {
+      try {
+        client.deleteFunction(deleteFunctionRequest)
       } catch {
-        case e: ResourceNotFoundException =>
-          JavaFutureConverter.scalaToJava(Future.successful({})) // we expect this when creating the first time
+        case e: ResourceNotFoundException => // we expect this when creating the first time
       }
-    )
+    }
     val eventuallyDeleteLogGroup = logsService.deleteGroupForLambdaFunctionNamed(functionName)
     for {
       _ <- eventuallyDeleteFunction
