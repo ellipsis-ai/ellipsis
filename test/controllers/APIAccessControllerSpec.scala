@@ -3,7 +3,7 @@ package controllers
 import com.mohiva.play.silhouette.test._
 import models.IDs
 import models.accounts.logintoken.LoginToken
-import models.accounts.oauth2api.OAuth2Api
+import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.team.Team
@@ -71,7 +71,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
         val expectedRedirectParam = routes.APIAccessController.linkCustomOAuth2Service(oauth2App.id, None, None, None).absoluteURL(secure = true)
         redirectLocation(result).map { redirectLocation =>
           //noinspection UnitInMap
-          redirectLocation must startWith(oauth2App.authorizationUrl)
+          redirectLocation must startWith(oauth2App.maybeAuthorizationUrl.get)
         }.getOrElse {
           assert(false, "Redirect location must contain authorization URL")
         }
@@ -85,7 +85,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
 
     lazy val authorizationUrl = "https://authorize.me/oauth2/authorize"
     lazy val oauth2ApiId = IDs.next
-    lazy val oauth2Api = OAuth2Api(oauth2ApiId, "", authorizationUrl, "", None, None, None)
+    lazy val oauth2Api = OAuth2Api(oauth2ApiId, "", AuthorizationCode, Some(authorizationUrl), "", None, None, None)
     lazy val oauth2AppId = IDs.next
     lazy val oauth2App = OAuth2Application(oauth2AppId, "", oauth2Api, IDs.next, IDs.next, None, teamId)
 
