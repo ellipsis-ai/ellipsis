@@ -4,6 +4,9 @@ import models.accounts.oauth2api.OAuth2Api
 import org.apache.commons.lang.WordUtils
 import play.api.libs.ws.{WSClient, WSRequest}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 case class OAuth2Application(
                               id: String,
                               name: String,
@@ -14,19 +17,37 @@ case class OAuth2Application(
                               teamId: String
                             ) {
 
-  val authorizationUrl = api.authorizationUrl
+  val maybeAuthorizationUrl = api.maybeAuthorizationUrl
   val accessTokenUrl = api.accessTokenUrl
   val scopeString = maybeScope.getOrElse("")
 
-  def authorizationRequestFor(state: String, redirectUrl: String, ws: WSClient): WSRequest = {
-    ws.url(authorizationUrl).withQueryString(
+  def maybeAuthorizationRequestFor(state: String, redirectUrl: String, ws: WSClient): Option[WSRequest] = {
+    maybeAuthorizationUrl.map { authorizationUrl =>
+      ws.url(authorizationUrl).withQueryString(
+        "client_id" -> clientId,
+        "redirect_uri" -> redirectUrl,
+        "scope" -> scopeString,
+        "state" -> state,
+        "access_type" -> "offline",
+        "response_type" -> "code"
+      )
+    }
+  }
+
+  private def clientCredentialsTokenRequestFor(ws: WSClient): WSRequest = {
+    ws.url(accessTokenUrl).withQueryString(
       "client_id" -> clientId,
-      "redirect_uri" -> redirectUrl,
-      "scope" -> scopeString,
-      "state" -> state,
-      "access_type" -> "offline",
-      "response_type" -> "code"
-    )
+      "client_secret" -> clientSecret,
+      "grant_type" -> "client_credentials",
+      "scope" -> scopeString
+    ).withMethod("POST")
+  }
+
+  def getClientCredentialsTokenFor(ws: WSClient): Future[Option[String]] = {
+    clientCredentialsTokenRequestFor(ws).execute().map { response =>
+      val json = response.json
+      (json \ "access_token").asOpt[String]
+    }
   }
 
   def accessTokenRequestFor(code: String, redirectUrl: String, ws: WSClient): WSRequest = {

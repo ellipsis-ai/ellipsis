@@ -39,8 +39,8 @@ class LinkedOAuth2TokensTable(tag: Tag) extends Table[RawLinkedOAuth2Token](tag,
 }
 
 class LinkedOAuth2TokenServiceImpl @Inject() (
-                                             dataServiceProvider: Provider[DataService],
-                                             wSClient: WSClient
+                                               dataServiceProvider: Provider[DataService],
+                                               ws: WSClient
                                            ) extends LinkedOAuth2TokenService {
 
   def dataService = dataServiceProvider.get
@@ -77,7 +77,7 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   private def refreshIfNecessary(linkedOAuth2Token: LinkedOAuth2Token): Future[LinkedOAuth2Token] = {
     val eventualMaybeNewInstance = if (linkedOAuth2Token.isExpired) {
       linkedOAuth2Token.maybeRefreshToken.map { token =>
-        val tokenResponse = linkedOAuth2Token.application.refreshTokenRequestFor(token, wSClient).
+        val tokenResponse = linkedOAuth2Token.application.refreshTokenRequestFor(token, ws).
           withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
           post(Results.EmptyContent())
 
