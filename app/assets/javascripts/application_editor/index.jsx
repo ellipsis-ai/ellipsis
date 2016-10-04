@@ -16,6 +16,7 @@ define(function(require) {
       recommendedScope: React.PropTypes.string,
       requiredOAuth2ApiConfigId: React.PropTypes.string,
       applicationName: React.PropTypes.string,
+      requiresAuth: React.PropTypes.bool,
       applicationClientId: React.PropTypes.string,
       applicationClientSecret: React.PropTypes.string,
       applicationScope: React.PropTypes.string,
@@ -307,6 +308,20 @@ define(function(require) {
       );
     },
 
+    renderCallbackUrl: function() {
+      if (this.props.requiresAuth) {
+        return (
+          <li>
+            <div>Copy and paste this for the <b>callback URL</b> (sometimes called <b>redirect URL</b>):</div>
+            <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl"
+                   value={this.getCallbackUrl()} onFocus={this.onFocusExample}/>
+          </li>
+        );
+      } else {
+        return null;
+      }
+    },
+
     renderConfigureApplication: function() {
       return (
         <div>
@@ -358,10 +373,7 @@ define(function(require) {
                 </h4>
                 <ul className="type-s list-space-l mvl">
                   <li>You can set the name and description to whatever you like.</li>
-                  <li>
-                    <div>Copy and paste this for the <b>callback URL</b> (sometimes called <b>redirect URL</b>):</div>
-                    <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getCallbackUrl()} onFocus={this.onFocusExample} />
-                  </li>
+                  {this.renderCallbackUrl()}
                   <li>
                     <div>If there is a homepage, application or other URL option, you can set it to:</div>
                     <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getMainUrl()} onFocus={this.onFocusExample} />
@@ -411,6 +423,9 @@ define(function(require) {
                   <span className="position-hanging-indent">4</span>
                   <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
                 </h4>
+                <p className="type-s">
+                  This may not be necessary for some APIs.
+                </p>
                 {ifPresent(this.getApplicationApiScopeDocumentationUrl(), url => (
                   <p className="type-s">
                     <span>Use the <a href={url} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
