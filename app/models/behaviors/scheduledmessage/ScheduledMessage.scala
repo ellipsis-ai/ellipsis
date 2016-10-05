@@ -81,13 +81,15 @@ case class ScheduledMessage(
       val message = Message("ts", channelName, profile.userId, text, None)
       val context = SlackMessageContext(client, profile, message)
       for {
-        result <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
+        results <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
         _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(DateTime.now))
       } yield {
-        if (result.hasText) {
-          scheduleInfoResult.sendIn(context)
+        results.foreach { result =>
+          if (result.hasText) {
+            scheduleInfoResult.sendIn(context)
+          }
+          result.sendIn(context)
         }
-        result.sendIn(context)
       }
     }.getOrElse(Future.successful(Unit))
   }
