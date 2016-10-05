@@ -136,13 +136,32 @@ object BehaviorResponse {
           dataService.messageTriggers.allActiveFor(team)
         }.getOrElse(Future.successful(Seq()))
       }
-      activatedTriggers <- Future.successful {
+      activatedTriggerLists <- Future.successful {
         triggers.
           filter(_.isActivatedBy(event)).
           groupBy(_.behaviorVersion).
-          flatMap(_._2.headOption).
+          values.
           toSeq
       }
+      activatedTriggerListsWithParamCounts <- Future.sequence(
+        activatedTriggerLists.map { list =>
+          Future.sequence(list.map { trigger =>
+            for {
+              params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
+            } yield {
+              (trigger, trigger.invocationParamsFor(event, params).size)
+            }
+          })
+        }
+      )
+      // we want to chose activated triggers with more params first
+      activatedTriggers <- Future.successful(activatedTriggerListsWithParamCounts.flatMap { list =>
+        list.
+          sortBy { case(_, paramCount) => paramCount }.
+          map { case(trigger, _) => trigger }.
+          reverse.
+          headOption
+      })
       responses <- Future.sequence(activatedTriggers.map { trigger =>
         for {
           params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
