@@ -11,7 +11,15 @@ define(function(require) {
   return React.createClass({
     displayName: 'ApplicationEditor',
     propTypes: {
-      apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      apis: React.PropTypes.arrayOf(React.PropTypes.shape({
+        apiId: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired,
+        requiresAuth: React.PropTypes.bool.isRequired,
+        newApplicationUrl: React.PropTypes.string,
+        scopeDocumentationUrl: React.PropTypes.string,
+        iconImageUrl: React.PropTypes.string,
+        logoImageUrl: React.PropTypes.string
+      })).isRequired,
       applicationApiId: React.PropTypes.string,
       recommendedScope: React.PropTypes.string,
       requiredOAuth2ApiConfigId: React.PropTypes.string,
@@ -293,16 +301,23 @@ define(function(require) {
           </p>
 
           <div className="mvxl">
-            {this.props.apis.map(function(api, index) {
-              return (
-                <button type="button" key={"apiTypeButton" + index} className="button-l mrl mbl" onClick={this.setApplicationApi.bind(this, api)}>
-                  {ifPresent(api.imageUrl, url => (
-                    <img src={url} width="24" height="24" className="mrm align-m mbxs" />
-                  ))}
-                  <span className="type-black">{api.name}</span>
-                </button>
-              );
-            }, this)}
+            {this.props.apis.map((api, index) => (
+              <button type="button" key={"apiTypeButton" + index}
+                className="button-l mrl mbl"
+                onClick={this.setApplicationApi.bind(this, api)}
+              >
+                {ifPresent(api.logoImageUrl, url => (
+                  <img src={url} height="32" className="align-m" />
+                ), () => (
+                  <span>
+                    {ifPresent(api.iconImageUrl, url => (
+                      <img src={url} width="24" height="24" className="mrm align-m mbxs" />
+                    ))}
+                    <span className="type-black">{api.name}</span>
+                  </span>
+                ))}
+              </button>
+            ))}
           </div>
         </div>
       );

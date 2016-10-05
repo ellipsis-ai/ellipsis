@@ -9,15 +9,26 @@ case class OAuth2ApiData(
                           requiresAuth: Boolean,
                           newApplicationUrl: Option[String],
                           scopeDocumentationUrl: Option[String],
-                          imageUrl: Option[String]
+                          iconImageUrl: Option[String],
+                          logoImageUrl: Option[String]
                         )
 
 object OAuth2ApiData {
-  private def maybeImageUrlFor(apiName: String): Option[String] = {
+  private def maybeIconImageUrlFor(apiName: String): Option[String] = {
     if (apiName.toLowerCase.contains("github")) {
       Some(getUrl("images/logos/GitHub-Mark-64px.png"))
     } else if (apiName.toLowerCase.contains("todoist")) {
-      Some(getUrl("images/logos/todoist.png"))
+      Some(getUrl("images/logos/todoist_icon.png"))
+    } else {
+      None
+    }
+  }
+
+  private def maybeLogoImageUrlFor(apiName: String): Option[String] = {
+    if (apiName.toLowerCase.contains("todoist")) {
+      Some(getUrl("images/logos/todoist_logo.png"))
+    } else if (apiName.toLowerCase.contains("yelp")) {
+      Some(getUrl("images/logos/yelp.png"))
     } else {
       None
     }
@@ -30,7 +41,8 @@ object OAuth2ApiData {
       api.grantType.requiresAuth,
       api.maybeNewApplicationUrl,
       api.maybeScopeDocumentationUrl,
-      this.maybeImageUrlFor(api.name)
+      this.maybeIconImageUrlFor(api.name),
+      this.maybeLogoImageUrlFor(api.name)
     )
   }
 }
