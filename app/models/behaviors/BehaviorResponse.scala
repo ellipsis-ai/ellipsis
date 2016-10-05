@@ -117,14 +117,14 @@ object BehaviorResponse {
     }
   }
 
-  def chooseFor(
+  def allFor(
                  event: MessageEvent,
                  maybeTeam: Option[Team],
                  maybeLimitToBehavior: Option[Behavior],
                  lambdaService: AWSLambdaService,
                  dataService: DataService,
                  cache: CacheApi
-               ): Future[Option[BehaviorResponse]] = {
+               ): Future[Seq[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
         dataService.behaviors.maybeCurrentVersionFor(limitToBehavior)
@@ -136,8 +136,14 @@ object BehaviorResponse {
           dataService.messageTriggers.allActiveFor(team)
         }.getOrElse(Future.successful(Seq()))
       }
-      maybeActivatedTrigger <- Future.successful(triggers.find(_.isActivatedBy(event)))
-      maybeResponse <- maybeActivatedTrigger.map { trigger =>
+      activatedTriggers <- Future.successful {
+        triggers.
+          filter(_.isActivatedBy(event)).
+          groupBy(_.behaviorVersion).
+          flatMap(_._2.headOption).
+          toSeq
+      }
+      responses <- Future.sequence(activatedTriggers.map { trigger =>
         for {
           params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
           response <-
@@ -151,8 +157,8 @@ object BehaviorResponse {
               dataService,
               cache
             )
-        } yield Some(response)
-      }.getOrElse(Future.successful(None))
-    } yield maybeResponse
+        } yield response
+      })
+    } yield responses
   }
 }
