@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react');
 
   return React.createClass({
+    displayName: 'NotificationForEnvVarMissing',
     propTypes: {
       details: React.PropTypes.arrayOf(React.PropTypes.shape({
         kind: React.PropTypes.string.isRequired,

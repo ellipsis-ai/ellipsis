@@ -2,10 +2,11 @@ define(function(require) {
   var React = require('react');
 
   return React.createClass({
+    displayName: 'NotificationForUnusedAWS',
     propTypes: {
-      details: React.PropTypes.shape({
+      details: React.PropTypes.arrayOf(React.PropTypes.shape({
         code: React.PropTypes.string.isRequired
-      }).isRequired
+      })).isRequired
     },
 
     render: function() {

@@ -1378,17 +1378,9 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={!this.hasModalPanel()}>
-            {this.getNotifications().map(function(notification, index) {
-              return (
-                <Notification
-                  key={"notification" + index}
-                  details={notification.details}
-                  index={index}
-                  kind={notification.kind}
-                  hidden={notification.hidden}
-                />
-              );
-            }, this)}
+            {this.getNotifications().map((notification, index) => (
+              <Notification key={"notification" + index} notification={notification} />
+            ))}
             <div className="container ptm">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
