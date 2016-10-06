@@ -6,6 +6,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorVersion = require('../models/behavior_version'),
+  BehaviorTester = require('./behavior_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   Checklist = require('./checklist'),
   CodeEditor = require('./code_editor'),
@@ -801,6 +802,10 @@ return React.createClass({
     this.toggleActivePanel('helpForAWS');
   },
 
+  toggleBehaviorTester: function() {
+    this.toggleActivePanel('behaviorTester');
+  },
+
   toggleBoilerplateHelp: function() {
     this.toggleActivePanel('helpForBoilerplateParameters');
   },
@@ -1188,15 +1193,6 @@ return React.createClass({
             <span>{this.getPageHeading()}</span>
             <span className="type-italic">{this.getBehaviorStatusText()}</span>
           </h3>
-
-          {/*
-           <form ref="testBehaviorForm" action="/test_behavior_version" method="POST">
-           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-           <input type="text" name="message" />
-           <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-           <input type="submit" />
-           </form>
-           */}
         </div>
       </div>
     );
@@ -1377,7 +1373,16 @@ return React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={!this.hasModalPanel()}>
+          <Collapsible ref="behaviorTester" revealWhen={this.getActivePanel() === 'behaviorTester'}>
+            <BehaviorTester
+              triggers={this.getBehaviorTriggers()}
+              behaviorId={this.props.behaviorId}
+              csrfToken={this.props.csrfToken}
+              onDone={this.toggleBehaviorTester}
+            />
+          </Collapsible>
+
+          <Collapsible revealWhen={!this.hasModalPanel() && this.getActivePanel() !== 'behaviorTester'}>
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
@@ -1396,10 +1401,11 @@ return React.createClass({
                       <span className="button-activated-label">Saving…</span>
                     </span>
                   </button>
-                  <button className="mbm" type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>
+                  <button className="mrs mbm" type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </button>
+                  <button className="mrs mbm" type="button" onClick={this.toggleBehaviorTester}>Test…</button>
                 </div>
                 <div className="column column-shrink align-r pbm">
                   {this.isExistingBehavior() ? (
