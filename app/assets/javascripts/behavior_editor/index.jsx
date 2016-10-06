@@ -9,6 +9,7 @@ var React = require('react'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   Checklist = require('./checklist'),
   CodeEditor = require('./code_editor'),
+  CodeEditorHelp = require('./code_editor_help'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('./confirm_action_panel'),
@@ -237,8 +238,9 @@ return React.createClass({
   },
 
   getDefaultBehaviorTemplate: function() {
+    var isUsingCode = this.state ? this.state.revealCodeEditor : this.shouldRevealCodeEditor();
     return new ResponseTemplate({
-      text: this.hasCalledOnSuccess() ? 'The answer is: {successResult}.' : magic8BallResponse
+      text: isUsingCode ? 'The answer is: {successResult}.' : magic8BallResponse
     });
   },
 
@@ -960,31 +962,6 @@ return React.createClass({
 
   /* Booleans */
 
-  hasCalledOnError: function() {
-    var code = this.getBehaviorFunctionBody();
-    return /\bonError\(\s*\S.+?\)/.test(code) ||
-      /\bellipsis\.error\(\s*\S.+?\)/.test(code);
-  },
-
-  hasCalledNoResponse: function() {
-    return /\bellipsis\.noResponse\(\)/.test(this.getBehaviorFunctionBody());
-  },
-
-  hasCalledOnSuccess: function() {
-    var code = this.getBehaviorFunctionBody();
-    return /\bonSuccess\([\s\S]*?\)/.test(code) ||
-      /\bellipsis\.success\([\s\S]*?\)/.test(code);
-  },
-
-  hasCalledRequire: function() {
-    var code = this.getBehaviorFunctionBody();
-    return /\brequire\(\s*\S.+?\)/.test(code);
-  },
-
-  hasCode: function() {
-    return /\S/.test(this.getBehaviorFunctionBody());
-  },
-
   hasUsedAWSObject: function() {
     var code = this.getBehaviorFunctionBody();
     return /\bellipsis\.AWS\b/.test(code);
@@ -1233,57 +1210,6 @@ return React.createClass({
         <HiddenJsonInput value={JSON.stringify(this.state.behavior)} />
         <input type="hidden" name="redirect" value={this.getRedirectValue()} />
         <input type="hidden" name="requiredOAuth2ApiConfigId" value={this.state.requiredOAuth2ApiConfigId} />
-      </div>
-    );
-  },
-
-  renderNormalBehaviorFunctionHelp: function() {
-    return (
-      <div>
-        <SectionHeading>Then Ellipsis will do</SectionHeading>
-
-        <Checklist disabledWhen={this.isFinishedBehavior()}>
-          <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.isFinishedBehavior()}>
-            <span>Write a node.js function. You can <code>require()</code> any </span>
-            <span><a href="https://www.npmjs.com/" target="_blank">NPM package</a>.</span>
-          </Checklist.Item>
-
-          <Checklist.Item checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.isFinishedBehavior()}>
-            <span>End the function by calling </span>
-            <code className="type-bold">ellipsis.success(<span className="type-regular">…</span>)</code>
-            <span> with text or data to include in the response. </span>
-            <button type="button" className="button-raw link button-s" onClick={this.toggleBoilerplateHelp}>Examples</button>
-          </Checklist.Item>
-
-          <Checklist.Item checkedWhen={this.hasCalledOnError()} hiddenWhen={this.isFinishedBehavior()}>
-            <span>To end with an error message, call </span>
-            <code className="type-bold">ellipsis.error(<span className="type-regular">…</span>)</code>
-            <span> with a string. </span>
-            <button type="button" className="button-raw link button-s" onClick={this.toggleBoilerplateHelp}>Example</button>
-          </Checklist.Item>
-
-          <Checklist.Item checkedWhen={this.hasCalledNoResponse()} hiddenWhen={this.isFinishedBehavior()}>
-            <span>To end with no response, call <code className="type-bold">ellipsis.noResponse()</code>.</span>
-          </Checklist.Item>
-
-          <Checklist.Item hiddenWhen={!this.isFinishedBehavior()}>
-            <span>Call <code>ellipsis.success(…)</code>, <code>ellipsis.error(…)</code> and/or <code>ellipsis.noResponse()</code> </span>
-            <span>to end your function. </span>
-            <span className="pls">
-                    <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.getActivePanel() === 'helpForBoilerplateParameters'} />
-                  </span>
-          </Checklist.Item>
-
-          <Checklist.Item checkedWhen={this.hasUserParameters()} hiddenWhen={this.isFinishedBehavior() && this.hasUserParameters()}>
-            <span>If you need more information from the user, add one or more inputs above </span>
-            <span>and the function will receive them as parameters.</span>
-          </Checklist.Item>
-
-          <Checklist.Item hiddenWhen={!this.isFinishedBehavior() || this.hasCalledRequire()}>
-            <span>Use <code>require(…)</code> to load any NPM package.</span>
-          </Checklist.Item>
-
-        </Checklist>
       </div>
     );
   },
@@ -1590,7 +1516,13 @@ return React.createClass({
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
             <div className="columns">
               <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
-                {this.renderNormalBehaviorFunctionHelp()}
+                <CodeEditorHelp
+                  isFinishedBehavior={this.isFinishedBehavior()}
+                  functionBody={this.getBehaviorFunctionBody()}
+                  onToggleHelp={this.toggleBoilerplateHelp}
+                  helpIsActive={this.getActivePanel() === 'helpForBoilerplateParameters'}
+                  hasUserParameters={this.hasUserParameters()}
+                />
               </div>
 
               <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
