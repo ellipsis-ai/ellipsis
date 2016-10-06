@@ -21,12 +21,4 @@ describe('ImmutableObjectUtils', () => {
       expect(newArray).toEqual(['a', 'b']);
     });
   });
-
-  describe('objectWithNewValueAtKey', () => {
-    it('copies an object before modifying a property of it', () => {
-      const newObj = ImmutableObjectUtils.objectWithNewValueAtKey(obj, 1, 'a');
-      expect(obj).toEqual({ a: 0, b: { c: 1 } });
-      expect(newObj).toEqual({ a: 1, b: { c: 1 } });
-    });
-  });
 });

@@ -482,7 +482,7 @@ return React.createClass({
   },
 
   getTimestampedBehavior: function(behavior) {
-    return ImmutableObjectUtils.objectWithNewValueAtKey(behavior, 'createdAt', Date.now());
+    return Object.assign({}, behavior, { createdAt: Date.now() });
   },
 
   getUserParamTemplateHelp: function() {
