@@ -4,7 +4,6 @@ var ImmutableObjectUtils = require('../app/assets/javascripts/immutable_object_u
 
 describe('ImmutableObjectUtils', () => {
   const array = ['a', 'b', 'c'];
-  const obj = { a: 0, b: { c: 1 } };
 
   describe('arrayWithNewElementAtIndex', () => {
     it('copies an array before modifying it', () => {
