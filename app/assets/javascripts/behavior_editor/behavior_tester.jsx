@@ -107,7 +107,7 @@ define(function(require) {
         );
       } else if (this.state.testMessage && this.state.hasTested) {
         return (
-          <span className="type-pink">— no match</span>
+          <span className="type-pink">— no match for “{this.state.testMessage}”</span>
         );
       }
     },
@@ -132,10 +132,17 @@ define(function(require) {
       return (
         <div className="box-action">
           <div className="container phn">
-            {ifPresent(this.props.triggers, this.renderTriggerTester, this.renderNoTriggers)}
+            <div className="columns">
+              <div className="column column-one-quarter mobile-column-full">
+                <h4 className="type-weak">Test the behavior</h4>
+              </div>
+              <div className="column column-three-quarters pll mobile-pln mobile-column-full">
+                {ifPresent(this.props.triggers, this.renderTriggerTester, this.renderNoTriggers)}
 
-            <div className="mvxl">
-              <button type="button" onClick={this.props.onDone}>Done</button>
+                <div className="mvxl">
+                  <button type="button" onClick={this.props.onDone}>Done</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -147,7 +154,8 @@ define(function(require) {
         <div>
 
           <p>
-            Type a message to test if it matches any of the triggers for your behavior.
+            Type a message to test whether it matches any of the triggers and, if so, what
+            user input is collected.
           </p>
 
           <div className="mbxl">
