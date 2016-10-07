@@ -23,7 +23,8 @@ define(function(require) {
         highlightedTriggerText: null,
         paramValues: {},
         isTesting: false,
-        hasTested: false
+        hasTested: false,
+        errorOccurred: false
       };
     },
 
@@ -38,7 +39,8 @@ define(function(require) {
         testMessage: value,
         highlightedTriggerText: null,
         paramValues: {},
-        hasTested: false
+        hasTested: false,
+        errorOccurred: false
       });
       if (value) {
         this.validateMessage();
@@ -71,11 +73,18 @@ define(function(require) {
             highlightedTriggerText: json.activatedTrigger === "\<no match\>" ? null : json.activatedTrigger,
             paramValues: json.paramValues,
             isTesting: false,
-            hasTested: true
+            hasTested: true,
+            errorOccurred: false
           });
         })
-        .catch((error) => {
-          console.log(error);
+        .catch(() => {
+          this.setState({
+            highlightedTriggerText: null,
+            paramValues: {},
+            isTesting: false,
+            hasTested: false,
+            errorOccurred: true
+          });
         });
     },
 
@@ -105,6 +114,10 @@ define(function(require) {
         return (
           <span className="type-green">— successful match</span>
         );
+      } else if (this.state.errorOccurred) {
+        return (
+          <span className="type-pink">— an error occurred; try again</span>
+        );
       } else if (this.state.testMessage && this.state.hasTested) {
         return (
           <span className="type-pink">— no match for “{this.state.testMessage}”</span>
@@ -114,7 +127,8 @@ define(function(require) {
 
     getParamTestingStatus: function() {
       var numParamValues = Object.keys(this.state.paramValues)
-        .filter((paramName) => this.state.paramValues[paramName] !== '\<none\>').length;
+        .filter((paramName) => this.state.paramValues[paramName] !== '\<none\>')
+        .length;
       if (this.state.isTesting || numParamValues === 0 || this.props.params.length === 0) {
         return "";
       } else if (numParamValues === 1) {
