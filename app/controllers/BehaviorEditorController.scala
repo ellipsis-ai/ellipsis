@@ -78,7 +78,7 @@ class BehaviorEditorController @Inject() (
     } yield result
   }
 
-  def edit(id: String, maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
+  def edit(id: String, maybeJustSaved: Option[Boolean], maybeJson: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       maybeVersionData <- BehaviorVersionData.maybeFor(id, user, dataService)
@@ -101,17 +101,21 @@ class BehaviorEditorController @Inject() (
         envVars <- maybeEnvironmentVariables
         oauth2Applications <- maybeOAuth2Applications
       } yield {
-        Future.successful(Ok(views.html.editBehavior(
-          teamAccess,
-          Json.toJson(data).toString,
-          Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
-          Json.toJson(paramTypes.map(BehaviorParameterTypeData.from)).toString,
-          Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
-          Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
-          maybeJustSaved.exists(identity),
-          notificationsJson = Json.toJson(Array[String]()).toString,
-          Json.toJson(dataTypes.find(_.behavior.id == id).map(BehaviorBackedDataTypeDataForBehavior.from)).toString
-        )))
+        if (maybeJson.exists(isJson => isJson)) {
+          Future.successful(Ok(Json.toJson(data)))
+        } else {
+          Future.successful(Ok(views.html.editBehavior(
+            teamAccess,
+            Json.toJson(data).toString,
+            Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
+            Json.toJson(paramTypes.map(BehaviorParameterTypeData.from)).toString,
+            Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
+            Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
+            maybeJustSaved.exists(identity),
+            notificationsJson = Json.toJson(Array[String]()).toString,
+            Json.toJson(dataTypes.find(_.behavior.id == id).map(BehaviorBackedDataTypeDataForBehavior.from)).toString
+          )))
+        }
       }).getOrElse {
         val response = NotFound(
           views.html.notFound(
@@ -174,7 +178,7 @@ class BehaviorEditorController @Inject() (
                 if (info.maybeRedirect.contains("newOAuth2Application")) {
                   Redirect(routes.OAuth2ApplicationController.newApp(maybeRequiredOAuth2ApiConfig.map(_.id), Some(data.teamId), Some(behavior.id)))
                 } else {
-                  Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
+                  Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true), json = Some(request.headers.get("x-requested-with").contains("XMLHttpRequest"))))
                 }
               }.getOrElse {
                 NotFound(
