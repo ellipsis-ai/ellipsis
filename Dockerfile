@@ -45,7 +45,16 @@ RUN chown ellipsis:ellipsis /home/ellipsis/code
 RUN echo "export PATH=$PATH:/opt/activator/bin" >> /home/ellipsis/.bashrc
 RUN echo "export _JAVA_OPTIONS='-Duser.home=/home/ellipsis/code'" >> /home/ellipsis/.bashrc
 
+# Curl
+RUN apt-get update && apt-get install -y curl && apt-get install -y git
+
 # Change user, launch bash
 USER ellipsis
 WORKDIR /home/ellipsis
-CMD ["/bin/bash"]
+
+# Activator
+RUN curl -O http://downloads.typesafe.com/typesafe-activator/1.3.10/typesafe-activator-1.3.10.zip
+RUN unzip typesafe-activator-1.3.10.zip -d /home/ellipsis && rm typesafe-activator-1.3.10.zip
+ENV PATH $PATH:/home/ellipsis/activator-dist-1.3.10/bin
+
+WORKDIR /home/ellipsis/code

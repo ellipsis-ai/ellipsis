@@ -1,13 +1,5 @@
 #!/bin/bash
 
-command=run
-
-if [[ -n "$1" ]]; then
-    command=$1
-else
-    echo "running 'activator run'"
-fi
-
 API_BASE_URL='' \
 AWS_ACCESS_KEY= \
 AWS_SECRET_KEY='' \
@@ -17,4 +9,4 @@ ELLIPSIS_DB_PASSWORD='' \
 SLACK_CLIENT_ID='' \
 SLACK_CLIENT_SECRET= \
 SLACK_REDIRECT_URL=$API_BASE_URL/authenticate/slack \
-activator $command
+activator "$@"

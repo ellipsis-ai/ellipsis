@@ -67,3 +67,6 @@ updateOptions := updateOptions.value.withCachedResolution(true)
 BabelKeys.options := WebJs.JS.Object(
   "presets" -> List("react", "es2015")
 )
+
+
+fork in run := true
