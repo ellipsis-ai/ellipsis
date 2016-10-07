@@ -53,8 +53,8 @@ USER ellipsis
 WORKDIR /home/ellipsis
 
 # Activator
-RUN curl -O http://downloads.typesafe.com/typesafe-activator/1.3.10/typesafe-activator-1.3.10.zip
-RUN unzip typesafe-activator-1.3.10.zip -d /home/ellipsis && rm typesafe-activator-1.3.10.zip
-ENV PATH $PATH:/home/ellipsis/activator-dist-1.3.10/bin
+# RUN curl -O http://downloads.typesafe.com/typesafe-activator/1.3.10/typesafe-activator-1.3.10.zip
+# RUN unzip typesafe-activator-1.3.10.zip -d /home/ellipsis && rm typesafe-activator-1.3.10.zip
+# ENV PATH $PATH:/home/ellipsis/activator-dist-1.3.10/bin
 
 WORKDIR /home/ellipsis/code
