@@ -70,7 +70,7 @@ define(function(require) {
         .then((json) => {
           console.log(json);
           this.setState({
-            highlightedTriggerText: json.activatedTrigger === "\<no match\>" ? null : json.activatedTrigger,
+            highlightedTriggerText: json.activatedTrigger || null,
             paramValues: json.paramValues,
             isTesting: false,
             hasTested: true,
@@ -93,16 +93,11 @@ define(function(require) {
     },
 
     getValueForParamName: function(name) {
-      var value = this.state.paramValues[name];
-      if (value && value !== '<none>') {
-        return (
-          <span>{value}</span>
-        );
-      } else {
-        return (
-          <span className="type-disabled">None</span>
-        );
-      }
+      return ifPresent(this.state.paramValues[name], (value) => (
+        <span>{value}</span>
+      ), () => (
+        <span className="type-disabled">None</span>
+      ));
     },
 
     getTriggerTestingStatus: function() {
@@ -126,9 +121,7 @@ define(function(require) {
     },
 
     getParamTestingStatus: function() {
-      var numParamValues = Object.keys(this.state.paramValues)
-        .filter((paramName) => this.state.paramValues[paramName] !== '\<none\>')
-        .length;
+      var numParamValues = Object.keys(this.state.paramValues).length;
       if (this.state.isTesting || numParamValues === 0 || this.props.params.length === 0) {
         return "";
       } else if (numParamValues === 1) {

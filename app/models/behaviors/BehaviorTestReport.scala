@@ -30,9 +30,9 @@ case class TestEvent(context: TestMessageContext) extends MessageEvent
 
 case class BehaviorTestReportOutput(
                                      message: String,
-                                     activatedTrigger: String,
-                                     paramValues: Map[String, String],
-                                     responseMessage: String
+                                     activatedTrigger: Option[String],
+                                     paramValues: Map[String, Option[String]],
+                                     responseMessage: Option[String]
                                      )
 
 case class BehaviorTestReport  (
@@ -45,9 +45,9 @@ case class BehaviorTestReport  (
 
   def messages: Array[String] = event.context.messageBuffer.toArray
 
-  def paramValues: Map[String, String] = maybeBehaviorResponse.map { behaviorResponse =>
+  def paramValues: Map[String, Option[String]] = maybeBehaviorResponse.map { behaviorResponse =>
     behaviorResponse.parametersWithValues.map { p =>
-      (p.parameter.name, p.maybeValue.map(_.text).getOrElse("<none>"))
+      (p.parameter.name, p.maybeValue.map(value => Some(value.text)).getOrElse(None))
     }.toMap
   }.getOrElse(Map())
 
@@ -56,9 +56,9 @@ case class BehaviorTestReport  (
   def json: JsValue = {
     val data = BehaviorTestReportOutput(
       event.context.fullMessageText,
-      maybeActivatedTrigger.map(_.pattern).getOrElse("<no match>"),
+      maybeActivatedTrigger.map(trigger => Some(trigger.pattern)).getOrElse(None),
       paramValues,
-      messages.headOption.getOrElse("<no response>")
+      messages.headOption
     )
     Json.toJson(data)
   }
