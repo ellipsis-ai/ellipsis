@@ -46,11 +46,22 @@ define(function(require) {
 
     getAPISelectorLabelForApp: function(app) {
       var api = this.props.getOAuth2ApiWithId(app.apiId);
-      if (api && api.imageUrl) {
+      if (api && api.iconImageUrl) {
         return (
           <div className="columns columns-elastic">
             <div className="column column-shrink prs align-m">
-              <img src={api.imageUrl} width="24" height="24"/>
+              <img src={api.iconImageUrl} width="24" height="24"/>
+            </div>
+            <div className="column column-expand align-m">
+              {app.displayName}
+            </div>
+          </div>
+        );
+      } else if (api && api.logoImageUrl) {
+        return (
+          <div className="columns columns-elastic">
+            <div className="column column-shrink prs align-m">
+              <img src={api.logoImageUrl} height="18" />
             </div>
             <div className="column column-expand align-m">
               {app.displayName}

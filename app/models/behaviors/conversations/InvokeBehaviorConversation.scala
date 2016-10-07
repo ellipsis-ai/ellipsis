@@ -79,11 +79,8 @@ case class InvokeBehaviorConversation(
     for {
       maybeNextToCollect <- info.maybeNextToCollect(event, this, cache, dataService)
       updatedConversation <- maybeNextToCollect.map { case(param, maybeCollected) =>
-        val potentialValue = event.context.relevantMessageText
         val context = BehaviorParameterContext(event, Some(this), param, cache, dataService)
-        param.paramType.isValid(potentialValue, context).flatMap { isValid =>
-          dataService.collectedParameterValues.ensureFor(param, this, potentialValue).map(_ => this)
-        }
+        param.paramType.handleCollected(event, context).map(_ => this)
       }.getOrElse(Future.successful(this))
       updatedParamInfo <- paramInfo(dataService)
       updatedMaybeNextToCollect <- updatedParamInfo.maybeNextToCollect(event, this, cache, dataService)

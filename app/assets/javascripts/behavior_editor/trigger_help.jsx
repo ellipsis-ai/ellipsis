@@ -31,37 +31,51 @@ return React.createClass({
           </li>
 
           <li>
-            <span>Input labels must begin with a letter, and otherwise may only include </span>
-            <span>letters, numbers, and underscores (_).</span>
+            <span>Input labels can only contain non-accented letters, numbers, dollar signs, or underscores, and </span>
+            <span>may not begin with a number.</span>
           </li>
 
           <li>
             <span>If your behavior runs code, any inputs you’ve defined will become parameters in your function. </span>
-            <span>The function will receive whatever the user typed.</span>
+            <span>The parameter will contain whatever the user typed.</span>
           </li>
         </ul>
 
-        <h5>Trigger options</h5>
-        <p>The way triggers are interpreted can be changed with certain options.</p>
+        <h5>Speak when spoken to?</h5>
+        <p>
+          <span>Use the <b>Any message/To Ellipsis</b> option to control whether Ellipsis responds </span>
+          <span>to any message containing a phrase in a channel, or only when the message mentions Ellipsis </span>
+          <span>by name.</span>
+        </p>
+        <p>
+          <span><b>Shortcut:</b> Start a message with three periods or the </span>
+          <span>ellipsis symbol <b>…</b> to mention Ellipsis.</span>
+        </p>
 
+        <h5>Trigger phrase interpretation</h5>
         <ul className="list-space-s">
           <li>
-            <span><b className="type-m">Any message</b> — if selected, Ellipsis will respond when a phrase </span>
-            <span>is used at any time in any channel Ellipsis participates in.</span>
+            <span><b>Normal phrase (ignore case)</b> — by default, Ellipsis looks for </span>
+            <span>a phrase ignoring differences in letter case.</span>
           </li>
           <li>
-            <span><b className="type-m">To Ellipsis</b> — if selected, Ellipsis will only respond when </span>
-            <span>someone mentions @Ellipsis in a message, sends a direct message to Ellipsis, or begins a message </span>
-            <span>with three periods (“<b>…</b>”).</span>
+            <span><b>Case-sensitive phrase</b> — Match phrases only when </span>
+            <span>the letter case is exactly the same.</span>
           </li>
           <li>
-            <span><b className="type-m">Case-sensitive</b> — if checked, Ellipsis will only respond </span>
-            <span>if uppercase and lowercase letters match exactly. If unchecked, letter case is ignored.</span>
+            <span><b>Regular expression (ignore case)</b> — Interpret a trigger as a </span>
+            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_blank">regular expression pattern</a>
+            <span>, ignoring differences in letter case.</span>
           </li>
           <li>
-            <span><b className="type-m">Regular expression pattern</b> — if checked, this trigger will </span>
-            <span>be interpreted as a regular expression pattern (regex) instead of normal text. Use regex capturing parentheses </span>
-            <span>to collect user input instead of the <code>{"{paramName}"}</code> style.</span>
+            <p>
+              <span><b>Regular expression (case-sensitive)</b> — same as above, but letter case </span>
+              <span>must match exactly.</span>
+            </p>
+            <p>
+              <span><b>Note:</b> To include “fill-in-the-blank” inputs in regular expressions, use capturing parentheses </span>
+              <span>and character classes instead of the <code>{"{name}"}</code> style, e.g. <code className="box-code-example">add (\d+) plus (\d+)</code></span>
+            </p>
           </li>
         </ul>
 

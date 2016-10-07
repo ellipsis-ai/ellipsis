@@ -1,11 +1,19 @@
-jest.unmock('../app/assets/javascripts/behavior_editor/index');
-jest.unmock('../app/assets/javascripts/models/trigger');
-jest.unmock('../app/assets/javascripts/sort');
+jest
+  .unmock('../app/assets/javascripts/behavior_editor/index')
+  .unmock('../app/assets/javascripts/models/behavior_version')
+  .unmock('../app/assets/javascripts/models/param')
+  .unmock('../app/assets/javascripts/models/response_template')
+  .unmock('../app/assets/javascripts/models/trigger')
+  .unmock('../app/assets/javascripts/sort');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index');
+const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
+const ResponseTemplate = require('../app/assets/javascripts/models/response_template');
 const Trigger = require('../app/assets/javascripts/models/trigger');
+
+jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
 
 describe('BehaviorEditor', () => {
   const defaultConfig = {
@@ -14,17 +22,24 @@ describe('BehaviorEditor', () => {
     functionBody: "onSuccess('Woot')",
     responseTemplate: "{successResult}",
     params: [],
-    triggers: [new Trigger({
+    triggers: [{
       text: "Do the tests run?",
       requiresMention: false,
       isRegex: false,
       caseSensitive: false
-    })],
+    }],
     config: {},
     knownEnvVarsUsed: [],
     csrfToken: "2",
     justSaved: false,
     envVariables: [ { name: "HOT_DOG" } ],
+    paramTypes: [{
+      id: 'Text',
+      name: 'Text'
+    }, {
+      id: 'Number',
+      name: 'Number'
+    }],
     oAuth2Applications: [{
       applicationId: "567890",
       displayName: "My awesome oauth app",
@@ -38,23 +53,24 @@ describe('BehaviorEditor', () => {
     shouldRevealCodeEditor: true
   };
 
-  let editorConfig = {};
+  let editorConfig;
 
   beforeEach(function() {
-    editorConfig = Object.assign(editorConfig, defaultConfig);
+    editorConfig = Object.assign({}, defaultConfig);
   });
 
   function createEditor(config) {
+    const behaviorVersionConfig = BehaviorVersion.fromJson(config);
     return TestUtils.renderIntoDocument(
-      <BehaviorEditor {...config} />
+      <BehaviorEditor {...behaviorVersionConfig} />
     );
   }
 
   describe('getInitialTriggers', () => {
     it('returns the defined triggers', () => {
-      editorConfig.triggers = [new Trigger({ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false })];
+      editorConfig.triggers = [{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }];
       let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggers()).toEqual([new Trigger({ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false })]);
+      expect(editor.getInitialTriggers()).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
     });
 
     it('returns a single blank trigger when no triggers are defined', () => {
@@ -81,9 +97,9 @@ describe('BehaviorEditor', () => {
 
   describe('getBehaviorParams', () => {
     it('returns the defined parameters', () => {
-      editorConfig.params = [{ name: 'clown', question: 'what drives the car?' }];
+      editorConfig.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0] }];
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorParams()).toEqual([{ name: 'clown', question: 'what drives the car?' }]);
+      expect(editor.getBehaviorParams()).toEqual([{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0] }]);
     });
 
     it('returns an array even when no params are defined', () => {
@@ -97,23 +113,23 @@ describe('BehaviorEditor', () => {
     it('returns the template the defined template when it’s non-empty', () => {
       editorConfig.responseTemplate = 'clowncar';
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTemplate()).toEqual('clowncar');
+      expect(editor.getBehaviorTemplate().toString()).toEqual('clowncar');
     });
 
     it('returns a default template when no template is defined', () => {
       delete editorConfig.responseTemplate;
       let editor = createEditor(editorConfig);
       editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue('default');
-      expect(editor.getBehaviorTemplate()).toEqual('default');
+      editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
+      expect(editor.getBehaviorTemplate().toString()).toEqual('default');
     });
 
     it('returns a default template when the template is blank', () => {
       editorConfig.responseTemplate = '';
       let editor = createEditor(editorConfig);
       editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue('default');
-      expect(editor.getBehaviorTemplate()).toBeTruthy('default');
+      editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
+      expect(editor.getBehaviorTemplate().toString()).toEqual('default');
     });
 
     it('returns the original template when it has been modified', () => {
@@ -121,14 +137,14 @@ describe('BehaviorEditor', () => {
       let editor = createEditor(editorConfig);
       editor.hasModifiedTemplate = jest.fn();
       editor.hasModifiedTemplate.mockReturnValue(true);
-      expect(editor.getBehaviorTemplate()).toEqual('');
+      expect(editor.getBehaviorTemplate().toString()).toEqual('');
     });
 
     it('submits default template when that\'s all there is', () => {
       editorConfig.responseTemplate = '';
       let editor = createEditor(editorConfig);
       editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue('default');
+      editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
       editor.refs.behaviorForm.submit = jest.fn();
       editor.setBehaviorProp = jest.fn((key, value, callback) => callback());
       const event = {
@@ -138,7 +154,7 @@ describe('BehaviorEditor', () => {
       expect(event.preventDefault.mock.calls.length).toBe(1);
       expect(editor.setBehaviorProp.mock.calls.length).toBe(1);
       expect(editor.setBehaviorProp.mock.calls[0][0]).toBe('responseTemplate');
-      expect(editor.setBehaviorProp.mock.calls[0][1]).toBe('default');
+      expect(editor.setBehaviorProp.mock.calls[0][1].toString()).toEqual('default');
       expect(editor.refs.behaviorForm.submit.mock.calls.length).toBe(1);
 
     });
@@ -147,9 +163,9 @@ describe('BehaviorEditor', () => {
   describe('onParamEnterKey', () => {
     it('focuses on the next param if there is one', () => {
       editorConfig.params = [{
-        name: 'param1', question: 'What am I?'
+        name: 'param1', question: 'What am I?', paramType: editorConfig.paramTypes[0]
       }, {
-        name: 'param2', question: 'Who are you?'
+        name: 'param2', question: 'Who are you?', paramType: editorConfig.paramTypes[0]
       }];
       const editor = createEditor(editorConfig);
       editor.focusOnParamIndex = jest.fn();
@@ -161,9 +177,9 @@ describe('BehaviorEditor', () => {
 
     it('adds a param if this is the last one and it has a question', () => {
       editorConfig.params = [{
-        name: 'param1', question: 'What am I?'
+        name: 'param1', question: 'What am I?', paramType: editorConfig.paramTypes[0]
       }, {
-        name: 'param2', question: 'Who are you?'
+        name: 'param2', question: 'Who are you?', paramType: editorConfig.paramTypes[0]
       }];
       const editor = createEditor(editorConfig);
       editor.focusOnParamIndex = jest.fn();
@@ -175,9 +191,9 @@ describe('BehaviorEditor', () => {
 
     it('does nothing if this is the last one and has no question', () => {
       editorConfig.params = [{
-        name: 'param1', question: 'What am I?'
+        name: 'param1', question: 'What am I?', paramType: editorConfig.paramTypes[0]
       }, {
-        name: 'param2', question: ''
+        name: 'param2', question: '', paramType: editorConfig.paramTypes[0]
       }];
       const editor = createEditor(editorConfig);
       editor.focusOnParamIndex = jest.fn();
@@ -185,93 +201,6 @@ describe('BehaviorEditor', () => {
       editor.onParamEnterKey(1);
       expect(editor.focusOnParamIndex.mock.calls.length).toBe(0);
       expect(editor.addParam.mock.calls.length).toBe(0);
-    });
-  });
-
-  describe('hasCalledOnError', () => {
-    it('returns true when the code includes onError called with a string', () => {
-      editorConfig.functionBody = 'var f = "b";\nonError("this is an error");';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledOnError()).toBe(true);
-    });
-    it('returns false when the code includes onError called with nothing', () => {
-      editorConfig.functionBody = "var f = 'b';\nonError();";
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledOnError()).toBe(false);
-    });
-    it('returns true when the code includes ellipsis.error called with a string', () => {
-      editorConfig.functionBody = 'var f = "b";\nellipsis.error("this is an error");';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledOnError()).toBe(true);
-    });
-    it('returns false when the code includes ellipsis.error called with nothing', () => {
-      editorConfig.functionBody = "var f = 'b';\nellipsis.error();";
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledOnError()).toBe(false);
-    });
-    it('returns false when the code doesn’t include onError', () => {
-      editorConfig.functionBody = 'var f = "b";';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledOnError()).toBe(false);
-    });
-  });
-
-  describe('hasCalledOnSuccess', () => {
-    it('returns true when the code includes onSuccess called with something', () => {
-      editorConfig.functionBody = 'var f = "b";\nonSuccess(f);';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledOnSuccess()).toBe(true);
-    });
-    it('returns true when the code includes onSuccess called with nothing', () => {
-      editorConfig.functionBody = 'var f = "b";\nonSuccess();';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledOnSuccess()).toBe(true);
-    });
-    it('returns true when the code includes ellipsis.success called with something', () => {
-      editorConfig.functionBody = 'var f = "b";\nellipsis.success(f);';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledOnSuccess()).toBe(true);
-    });
-    it('returns true when the code includes ellipsis.success called with nothing', () => {
-      editorConfig.functionBody = 'var f = "b";\nellipsis.success();';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledOnSuccess()).toBe(true);
-    });
-    it('returns false when the code doesn’t include onSuccess', () => {
-      editorConfig.functionBody = 'var f = "b";';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledOnSuccess()).toBe(false);
-    });
-  });
-
-  describe('hasCalledNoResponse', () => {
-    it('returns true when the code includes noResponse with nothing', () => {
-      editorConfig.functionBody = 'var f = "b";\nellipsis.noResponse();';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledNoResponse()).toBe(true);
-    });
-    it('returns false when the code doesn’t include noResponse', () => {
-      editorConfig.functionBody = 'var f = "b";';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledNoResponse()).toBe(false);
-    });
-  });
-
-  describe('hasCalledRequire', () => {
-    it('returns true when the code calls require with something', () => {
-      editorConfig.functionBody = 'var Intl = require("intl");\nIntl.NumberFormat().format();';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledRequire()).toBe(true);
-    });
-    it('returns false when the code calls require with nothing', () => {
-      editorConfig.functionBody = 'var Intl = require();\nIntl.NumberFormat().format();';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledRequire()).toBe(false);
-    });
-    it('returns false when the code doesn’t call require', () => {
-      editorConfig.functionBody = 'var f = "b";';
-      const editor = createEditor(editorConfig);
-      expect(editor.hasCalledRequire()).toBe(false);
     });
   });
 
@@ -315,6 +244,45 @@ describe('BehaviorEditor', () => {
       const callback = editor.setBehaviorProp.mock.calls[0][2];
       callback();
       expect(editor.setState).toBeCalledWith({ hasModifiedTemplate: true });
+    });
+  });
+
+  describe('render', () => {
+    it("renders the normal editor when there's no dataType property", () => {
+      editorConfig.dataType = null;
+      let editor = createEditor(editorConfig);
+      editor.renderDataTypeBehavior = jest.fn();
+      editor.renderNormalBehavior = jest.fn();
+      editor.render();
+      expect(editor.renderDataTypeBehavior).not.toBeCalled();
+      expect(editor.renderNormalBehavior).toBeCalled();
+    });
+    it("renders the data type editor when there's a dataType property", () => {
+      editorConfig.dataType = {
+        id: '1',
+        name: 'My pretend data type'
+      };
+      let editor = createEditor(editorConfig);
+      editor.renderDataTypeBehavior = jest.fn();
+      editor.renderNormalBehavior = jest.fn();
+      editor.render();
+      expect(editor.renderDataTypeBehavior).toBeCalled();
+      expect(editor.renderNormalBehavior).not.toBeCalled();
+    });
+  });
+
+  describe('createNewParam', () => {
+    it("creates a new parameter with the parameter type set to the first possible one", () => {
+      let editor = createEditor(editorConfig);
+      let newParam = editor.createNewParam();
+      expect(newParam.paramType).toEqual(editorConfig.paramTypes[0]);
+    });
+
+    it("creates a new parameter with other attributes as desired", () => {
+      let editor = createEditor(editorConfig);
+      let newParam = editor.createNewParam({ name: "clownCar", question: "how did twitter propel itself?" });
+      expect(newParam.name).toEqual("clownCar");
+      expect(newParam.question).toEqual("how did twitter propel itself?");
     });
   });
 });

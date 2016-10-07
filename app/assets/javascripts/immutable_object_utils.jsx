@@ -12,19 +12,6 @@ define(function() {
       var newArray = array.slice();
       newArray.splice(index, 1);
       return newArray;
-    },
-
-    // Create a copy of an object before modifying a property
-    objectWithNewValueAtKey: function(obj, newValue, keyToChange) {
-      var newObj = {};
-      Object.keys(obj).forEach(function(key) {
-        if (key === keyToChange) {
-          newObj[key] = newValue;
-        } else {
-          newObj[key] = obj[key];
-        }
-      });
-      return newObj;
     }
   };
 });

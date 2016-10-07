@@ -22,6 +22,7 @@
         mainUrl: "@routes.ApplicationController.index().absoluteURL(secure = true)",
         applicationId: "@application.id",
         applicationName: "@application.name",
+        requiresAuth: @application.api.grantType.requiresAuth,
         applicationClientId: "@application.clientId",
         applicationClientSecret: "@application.clientSecret",
         applicationScope: "@application.maybeScope",

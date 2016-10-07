@@ -9,6 +9,7 @@ import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
+import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.Action
 import services.{DataService, SlackService}
@@ -88,13 +89,13 @@ class APIController @Inject() (
               APIMessageEvent(APIMessageContext(slackClient, botProfile, info.channel, info.message))
             })
           result <- maybeEvent.map { event =>
-            eventHandler.handle(event).map { result =>
+            eventHandler.handle(event).map { results =>
               maybeSlackProfile.foreach { slackProfile =>
                 val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:")
                 introResult.sendIn(event.context)
               }
-              result.sendIn(event.context)
-              Ok(result.fullText)
+              results.foreach(_.sendIn(event.context))
+              Ok(Json.toJson(results.map(_.fullText)))
             }
           }.getOrElse(Future.successful(NotFound("")))
         } yield result

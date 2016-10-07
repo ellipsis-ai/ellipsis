@@ -54,8 +54,8 @@ class SlackServiceImpl @Inject() (
       if (message.user != selfId) {
         val p = Promise[Unit]()
         val event = SlackMessageEvent(SlackMessageContext(client, profile, message))
-        val handleMessage = eventHandler.handle(event).map { result =>
-          result.sendIn(event.context)
+        val handleMessage = eventHandler.handle(event).map { results =>
+          results.foreach(_.sendIn(event.context))
         }
         p.completeWith(handleMessage)
         val indicateTyping = Future {

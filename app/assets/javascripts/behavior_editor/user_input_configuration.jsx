@@ -4,6 +4,7 @@ define(function(require) {
     UserInputDefinition = require('./user_input_definition'),
     Checklist = require('./checklist'),
     Collapsible = require('../collapsible'),
+    Param = require('../models/param'),
     Trigger = require('../models/trigger');
 
   return React.createClass({
@@ -14,14 +15,7 @@ define(function(require) {
       onParamNameFocus: React.PropTypes.func.isRequired,
       onParamNameBlur: React.PropTypes.func.isRequired,
       onEnterKey: React.PropTypes.func.isRequired,
-      userParams: React.PropTypes.arrayOf(React.PropTypes.shape({
-        name: React.PropTypes.string.isRequired,
-        question: React.PropTypes.string.isRequired,
-        paramType: React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          name: React.PropTypes.string.isRequired
-        }).isRequired
-      })).isRequired,
+      userParams: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired,
       paramTypes: React.PropTypes.arrayOf(
         React.PropTypes.shape({
           id: React.PropTypes.string.isRequired,
@@ -125,14 +119,12 @@ define(function(require) {
                   <div className="mbm">
                     {this.props.userParams.map((param, paramIndex) => (
                       <div key={'paramInput' + paramIndex} className="columns columns-elastic mbxl">
-                        <div className="column column-expand pll">
+                        <div className="column column-expand">
                           <UserInputDefinition
                             key={'UserInputDefinition' + paramIndex}
                             ref={'param' + paramIndex}
-                            name={param.name}
+                            param={param}
                             paramTypes={this.props.paramTypes}
-                            paramType={param.paramType}
-                            question={param.question}
                             onChange={this.onChange.bind(this, paramIndex)}
                             onDelete={this.onDelete.bind(this, paramIndex)}
                             onEnterKey={this.onEnterKey.bind(this, paramIndex)}
@@ -145,7 +137,7 @@ define(function(require) {
                       </div>
                     ))}
                   </div>
-                  <div className="align-r prxs mobile-align-l mbs">
+                  <div className="align-r prsymbol mobile-align-l mbs">
                     <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add another input
                     </button>
                   </div>

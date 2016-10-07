@@ -1,0 +1,50 @@
+package mocks
+
+import javax.inject.Inject
+
+import com.amazonaws.services.lambda.AWSLambdaAsyncClient
+import models.Models
+import models.behaviors.{BotResult, ParameterWithValue}
+import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.config.awsconfig.AWSConfig
+import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
+import models.behaviors.events.MessageEvent
+import models.environmentvariable.EnvironmentVariable
+import org.scalatest.mock.MockitoSugar
+import play.api.Configuration
+import play.api.libs.ws.WSClient
+import services.{AWSLambdaService, AWSLogsService, DataService}
+
+import scala.concurrent.Future
+
+class MockAWSLambdaService @Inject() (
+                                       val configuration: Configuration,
+                                       val models: Models,
+                                       val ws: WSClient,
+                                       val dataService: DataService,
+                                       val logsService: AWSLogsService
+                                     ) extends AWSLambdaService with MockitoSugar {
+
+  override val client: AWSLambdaAsyncClient = mock[AWSLambdaAsyncClient]
+
+  override def listFunctionNames: Future[Seq[String]] = Future.successful(Seq())
+
+  override def deleteFunction(functionName: String): Future[Unit] = Future.successful({})
+
+  override def deployFunctionFor(
+                                  behaviorVersion: BehaviorVersion,
+                                  functionBody: String,
+                                  params: Array[String],
+                                  maybeAWSConfig: Option[AWSConfig],
+                                  requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
+                                ): Future[Unit] = Future.successful({})
+
+  override def invoke(
+                       behaviorVersion: BehaviorVersion,
+                       parametersWithValues: Seq[ParameterWithValue],
+                       environmentVariables: Seq[EnvironmentVariable],
+                       event: MessageEvent
+                     ): Future[BotResult] = Future.successful(mock[BotResult])
+
+  override def functionWithParams(params: Array[String], functionBody: String): String = ""
+}

@@ -30,7 +30,7 @@ trait AWSLambdaService extends AWSService {
               event: MessageEvent
               ): Future[BotResult]
 
-  def deleteFunction(functionName: String): Unit
+  def deleteFunction(functionName: String): Future[Unit]
   def deployFunctionFor(
                          behaviorVersion: BehaviorVersion,
                          functionBody: String,

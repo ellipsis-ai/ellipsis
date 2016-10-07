@@ -1,7 +1,9 @@
 package models.behaviors
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
+import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
 import services.DataService
@@ -49,4 +51,32 @@ object UserInfo {
       UserInfo(maybeUser, links)
     }
   }
+
+}
+
+case class TeamInfo(team: Team, links: Seq[LinkedInfo]) {
+
+  def toJson: JsObject = {
+    val parts: Seq[(String, JsValue)] = Seq(
+      "links" -> JsArray(links.map(_.toJson))
+    )
+    JsObject(parts)
+  }
+
+}
+
+object TeamInfo {
+
+  def forOAuth2Apps(apps: Seq[OAuth2Application], team: Team, ws: WSClient): Future[TeamInfo] = {
+    Future.sequence(apps.map { ea =>
+      ea.getClientCredentialsTokenFor(ws).map { maybeToken =>
+        maybeToken.map { token =>
+          LinkedInfo(ea.name, token)
+        }
+      }
+    }).map { linkMaybes =>
+      TeamInfo(team, linkMaybes.flatten)
+    }
+  }
+
 }

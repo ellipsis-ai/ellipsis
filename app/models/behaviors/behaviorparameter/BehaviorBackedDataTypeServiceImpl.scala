@@ -88,4 +88,26 @@ class BehaviorBackedDataTypeServiceImpl @Inject() (
     }
   }
 
+  def delete(dataType: BehaviorBackedDataType, user: User): Future[Unit] = {
+    if (dataType.behavior.team.id == user.teamId) {
+      for {
+        _ <- dataService.run(all.filter(_.id === dataType.id).delete)
+        _ <- dataService.behaviors.unlearn(dataType.behavior)
+      } yield {}
+    } else {
+      Future.successful(Unit)
+    }
+  }
+
+  def usesSearch(dataType: BehaviorBackedDataType): Future[Boolean] = {
+    for {
+      maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionFor(dataType.behavior)
+      params <- maybeCurrentVersion.map { version =>
+        dataService.behaviorParameters.allFor(version)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      params.exists(_.name == BehaviorBackedDataTypeQueries.SEARCH_QUERY_PARAM)
+    }
+  }
+
 }

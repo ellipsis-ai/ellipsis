@@ -7,14 +7,18 @@ define(function(require) {
     NotificationForMissingOAuth2Application = require('./oauth2_config_without_application'),
     NotificationForUnusedOAuth2Application = require('./oauth2_application_unused'),
     NotificationForUnusedAWS = require('./aws_unused'),
-    NotificationForParamNotInFunction = require('./param_not_in_function');
+    NotificationForParamNotInFunction = require('./param_not_in_function'),
+    NotificationForInvalidParamInTrigger = require('./invalid_param_in_trigger'),
+    NotificationForUnknownParamInTemplate = require('./unknown_param_in_template');
 
   return React.createClass({
+    displayName: 'Notification',
     propTypes: {
-      details: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      kind: React.PropTypes.string.isRequired,
-      index: React.PropTypes.number.isRequired,
-      hidden: React.PropTypes.bool
+      notification: React.PropTypes.shape({
+        details: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+        kind: React.PropTypes.string.isRequired,
+        hidden: React.PropTypes.bool
+      }).isRequired
     },
 
     getNotificationForKind: function(kind) {
@@ -23,7 +27,7 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForEnvVarMissing details={this.props.details} />
+            <NotificationForEnvVarMissing details={this.props.notification.details} />
           )
         };
       } else if (kind === "oauth2_config_without_application") {
@@ -31,7 +35,7 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForMissingOAuth2Application details={this.props.details} />
+            <NotificationForMissingOAuth2Application details={this.props.notification.details} />
           )
         };
       } else if (kind === "oauth2_application_unused") {
@@ -39,7 +43,7 @@ define(function(require) {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
           message: (
-            <NotificationForUnusedOAuth2Application details={this.props.details} />
+            <NotificationForUnusedOAuth2Application details={this.props.notification.details} />
           )
         };
       } else if (kind === "aws_unused") {
@@ -47,7 +51,7 @@ define(function(require) {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
           message: (
-            <NotificationForUnusedAWS details={this.props.details} />
+            <NotificationForUnusedAWS details={this.props.notification.details} />
           )
         };
       } else if (kind === "param_not_in_function") {
@@ -55,7 +59,23 @@ define(function(require) {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
           message: (
-            <NotificationForParamNotInFunction details={this.props.details} />
+            <NotificationForParamNotInFunction details={this.props.notification.details} />
+          )
+        };
+      } else if (kind === "unknown_param_in_template") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForUnknownParamInTemplate details={this.props.notification.details} />
+          )
+        };
+      } else if (kind === "invalid_param_in_trigger") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForInvalidParamInTrigger details={this.props.notification.details} />
           )
         };
       }
@@ -78,9 +98,9 @@ define(function(require) {
     },
 
     render: function() {
-      var notification = this.getNotificationForKind(this.props.kind);
+      var notification = this.getNotificationForKind(this.props.notification.kind);
       return (
-        <Collapsible revealWhen={!this.props.hidden} animateInitialRender={true}>
+        <Collapsible revealWhen={!this.props.notification.hidden} animateInitialRender={true}>
           <div className={"type-s phn position-z-above " + notification.containerClass} style={{ marginTop: -1 }}>
             <div className="container">
               {notification.icon}

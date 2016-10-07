@@ -2,8 +2,8 @@
 
 requirejs(['../common'], function() {
   requirejs(
-    ['core-js', 'react', 'react-dom', './behavior_editor/index', './models/trigger'],
-    function(Core, React, ReactDOM, BehaviorEditor, Trigger) {
+    ['core-js', 'react', 'react-dom', './behavior_editor/index', './models/behavior_version'],
+    function(Core, React, ReactDOM, BehaviorEditor, BehaviorVersion) {
       var config = Object.assign({}, BehaviorEditorConfiguration);
       var additionalData = {
         csrfToken: config.csrfToken,
@@ -12,10 +12,11 @@ requirejs(['../common'], function() {
         oauth2Applications: config.oauth2Applications,
         oauth2Apis: config.oauth2Apis,
         justSaved: config.justSaved,
-        notifications: config.notifications
+        notifications: config.notifications,
+        dataType: config.dataType
       };
-      config.data.triggers = Trigger.triggersFromJson(config.data.triggers);
-      var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign(config.data, additionalData));
+      var behaviorEditorProps = BehaviorVersion.fromJson(Object.assign({}, config.data, additionalData));
+      var myBehaviorEditor = React.createElement(BehaviorEditor, behaviorEditorProps);
       ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
     }
   );

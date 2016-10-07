@@ -11,11 +11,20 @@ define(function(require) {
   return React.createClass({
     displayName: 'ApplicationEditor',
     propTypes: {
-      apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      apis: React.PropTypes.arrayOf(React.PropTypes.shape({
+        apiId: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired,
+        requiresAuth: React.PropTypes.bool.isRequired,
+        newApplicationUrl: React.PropTypes.string,
+        scopeDocumentationUrl: React.PropTypes.string,
+        iconImageUrl: React.PropTypes.string,
+        logoImageUrl: React.PropTypes.string
+      })).isRequired,
       applicationApiId: React.PropTypes.string,
       recommendedScope: React.PropTypes.string,
       requiredOAuth2ApiConfigId: React.PropTypes.string,
       applicationName: React.PropTypes.string,
+      requiresAuth: React.PropTypes.bool,
       applicationClientId: React.PropTypes.string,
       applicationClientSecret: React.PropTypes.string,
       applicationScope: React.PropTypes.string,
@@ -292,19 +301,40 @@ define(function(require) {
           </p>
 
           <div className="mvxl">
-            {this.props.apis.map(function(api, index) {
-              return (
-                <button type="button" key={"apiTypeButton" + index} className="button-l mrl mbl" onClick={this.setApplicationApi.bind(this, api)}>
-                  {ifPresent(api.imageUrl, url => (
-                    <img src={url} width="24" height="24" className="mrm align-m mbxs" />
-                  ))}
-                  <span className="type-black">{api.name}</span>
-                </button>
-              );
-            }, this)}
+            {this.props.apis.map((api, index) => (
+              <button type="button" key={"apiTypeButton" + index}
+                className="button-l mrl mbl"
+                onClick={this.setApplicationApi.bind(this, api)}
+              >
+                {ifPresent(api.logoImageUrl, url => (
+                  <img src={url} height="32" className="align-m" />
+                ), () => (
+                  <span>
+                    {ifPresent(api.iconImageUrl, url => (
+                      <img src={url} width="24" height="24" className="mrm align-m mbxs" />
+                    ))}
+                    <span className="type-black">{api.name}</span>
+                  </span>
+                ))}
+              </button>
+            ))}
           </div>
         </div>
       );
+    },
+
+    renderCallbackUrl: function() {
+      if (this.props.requiresAuth) {
+        return (
+          <li>
+            <div>Copy and paste this for the <b>callback URL</b> (sometimes called <b>redirect URL</b>):</div>
+            <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl"
+                   value={this.getCallbackUrl()} onFocus={this.onFocusExample}/>
+          </li>
+        );
+      } else {
+        return null;
+      }
     },
 
     renderConfigureApplication: function() {
@@ -358,10 +388,7 @@ define(function(require) {
                 </h4>
                 <ul className="type-s list-space-l mvl">
                   <li>You can set the name and description to whatever you like.</li>
-                  <li>
-                    <div>Copy and paste this for the <b>callback URL</b> (sometimes called <b>redirect URL</b>):</div>
-                    <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getCallbackUrl()} onFocus={this.onFocusExample} />
-                  </li>
+                  {this.renderCallbackUrl()}
                   <li>
                     <div>If there is a homepage, application or other URL option, you can set it to:</div>
                     <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getMainUrl()} onFocus={this.onFocusExample} />
@@ -411,6 +438,9 @@ define(function(require) {
                   <span className="position-hanging-indent">4</span>
                   <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
                 </h4>
+                <p className="type-s">
+                  This may not be necessary for some APIs.
+                </p>
                 {ifPresent(this.getApplicationApiScopeDocumentationUrl(), url => (
                   <p className="type-s">
                     <span>Use the <a href={url} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>

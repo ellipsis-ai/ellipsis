@@ -65,7 +65,7 @@ class BehaviorImportExportController @Inject() (
           for {
             maybeTeam <- dataService.teams.find(info.teamId, request.identity)
             maybeImporter <- Future.successful(maybeTeam.map { team =>
-              BehaviorVersionZipImporter(team, request.identity, lambdaService, zipFile.ref.file, dataService)
+              BehaviorVersionZipImporter(team, request.identity, zipFile.ref.file, dataService)
             })
             maybeBehaviorVersion <- maybeImporter.map { importer =>
               importer.run.map(Some(_))

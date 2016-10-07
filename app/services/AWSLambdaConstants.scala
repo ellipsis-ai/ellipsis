@@ -8,6 +8,7 @@ object AWSLambdaConstants {
   val INVOCATION_TIMEOUT_SECONDS = 10
   val TOKEN_KEY = "token"
   val USER_INFO_KEY = "userInfo"
+  val TEAM_INFO_KEY = "teamInfo"
   val ENV_KEY = "env"
   val API_BASE_URL_KEY = "apiBaseUrl"
   val RESULT_KEY = "successResult"

@@ -20,45 +20,42 @@ class EventHandler @Inject() (
                                messages: MessagesApi
                                ) {
 
-  def startInvokeConversationFor(event: MessageEvent): Future[BotResult] = {
+  def startInvokeConversationFor(event: MessageEvent): Future[Seq[BotResult]] = {
     val context = event.context
     for {
       maybeTeam <- dataService.teams.find(context.teamId)
-      maybeResponse <- BehaviorResponse.chooseFor(event, maybeTeam, None, lambdaService, dataService, cache)
-      result <- maybeResponse.map { response =>
-        response.result
-      }.getOrElse {
-        val result = if (context.isResponseExpected) {
-          SimpleTextResult(context.iDontKnowHowToRespondMessageFor(lambdaService))
-        } else {
-          NoResponseResult(None)
-        }
-        Future.successful(result)
+      responses <- BehaviorResponse.allFor(event, maybeTeam, None, lambdaService, dataService, cache)
+      results <- Future.sequence(responses.map(_.result))
+    } yield {
+      if (results.isEmpty && context.isResponseExpected) {
+        Seq(SimpleTextResult(context.iDontKnowHowToRespondMessageFor(lambdaService)))
+      } else {
+        results
       }
-    } yield result
+    }
   }
 
   def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
     conversation.resultFor(event, lambdaService, dataService, cache)
   }
 
-  def handle(event: Event): Future[BotResult] = {
+  def handle(event: Event): Future[Seq[BotResult]] = {
     event match {
       case messageEvent: MessageEvent => {
         for {
           maybeConversation <- event.context.maybeOngoingConversation(dataService)
-          result <- maybeConversation.map { conversation =>
-            handleInConversation(conversation, messageEvent)
+          results <- maybeConversation.map { conversation =>
+            handleInConversation(conversation, messageEvent).map(Seq(_))
           }.getOrElse {
             BuiltinBehavior.maybeFrom(messageEvent.context, lambdaService, dataService).map { builtin =>
-              builtin.result
+              builtin.result.map(Seq(_))
             }.getOrElse {
               startInvokeConversationFor(messageEvent)
             }
           }
-        } yield result
+        } yield results
       }
-      case _ => Future.successful(NoResponseResult(None))
+      case _ => Future.successful(Seq(NoResponseResult(None)))
     }
 
   }

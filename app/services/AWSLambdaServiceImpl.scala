@@ -21,20 +21,22 @@ import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import sun.misc.BASE64Decoder
-import utils.JavaFutureWrapper
+import utils.JavaFutureConverter
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.concurrent.Future
 import scala.reflect.io.Path
 import sys.process._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
 class AWSLambdaServiceImpl @Inject() (
                                        val configuration: Configuration,
                                        val models: Models,
                                        val ws: WSClient,
                                        val cache: CacheApi,
-                                       val dataService: DataService
+                                       val dataService: DataService,
+                                       val logsService: AWSLogsService
                                        ) extends AWSLambdaService {
 
   import AWSLambdaConstants._
@@ -47,7 +49,7 @@ class AWSLambdaServiceImpl @Inject() (
     val listRequestWithMarker = maybeNextMarker.map { nextMarker =>
       listRequest.withMarker(nextMarker)
     }.getOrElse(listRequest)
-    JavaFutureWrapper.wrap(client.listFunctionsAsync(listRequestWithMarker)).flatMap { result =>
+    JavaFutureConverter.javaToScala(client.listFunctionsAsync(listRequestWithMarker)).flatMap { result =>
       if (result.getNextMarker == null) {
         Future.successful(List())
       } else {
@@ -67,6 +69,7 @@ class AWSLambdaServiceImpl @Inject() (
   private def contextParamDataFor(
                                    environmentVariables: Seq[EnvironmentVariable],
                                    userInfo: UserInfo,
+                                   teamInfo: TeamInfo,
                                    token: InvocationToken
                                    ): Seq[(String, JsObject)] = {
     Seq(CONTEXT_PARAM -> JsObject(Seq(
@@ -75,7 +78,8 @@ class AWSLambdaServiceImpl @Inject() (
       ENV_KEY -> JsObject(environmentVariables.map { ea =>
         ea.name -> JsString(ea.value)
       }),
-      USER_INFO_KEY -> userInfo.toJson
+      USER_INFO_KEY -> userInfo.toJson,
+      TEAM_INFO_KEY -> teamInfo.toJson
     )))
   }
 
@@ -98,27 +102,31 @@ class AWSLambdaServiceImpl @Inject() (
       result <- notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
         Future.successful(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, configuration))
       }.getOrElse {
-        missingOAuth2Applications.headOption.map { firstMissingOAuth2App =>
+        val (missingOAuth2ApplicationsRequiringAuth, otherMissingOAuth2Applications) =
+          missingOAuth2Applications.partition(_.api.grantType.requiresAuth)
+        missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
           event.context.ensureUser(dataService).flatMap { user =>
             dataService.loginTokens.createFor(user).map { loginToken =>
               OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
             }
           }
         }.getOrElse {
-          val payloadJson = JsObject(
-            payloadData ++ contextParamDataFor(environmentVariables, userInfo, token)
-          )
-          val invokeRequest =
-            new InvokeRequest().
-              withLogType(LogType.Tail).
-              withFunctionName(functionName).
-              withInvocationType(InvocationType.RequestResponse).
-              withPayload(payloadJson.toString())
-          JavaFutureWrapper.wrap(client.invokeAsync(invokeRequest)).map(successFn).recover {
-            case e: java.util.concurrent.ExecutionException => {
-              e.getMessage match {
-                case amazonServiceExceptionRegex() => new AWSDownResult()
-                case _ => throw e
+          TeamInfo.forOAuth2Apps(otherMissingOAuth2Applications, team, ws).flatMap { teamInfo =>
+            val payloadJson = JsObject(
+              payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, token)
+            )
+            val invokeRequest =
+              new InvokeRequest().
+                withLogType(LogType.Tail).
+                withFunctionName(functionName).
+                withInvocationType(InvocationType.RequestResponse).
+                withPayload(payloadJson.toString())
+            JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recover {
+              case e: java.util.concurrent.ExecutionException => {
+                e.getMessage match {
+                  case amazonServiceExceptionRegex() => new AWSDownResult()
+                  case _ => throw e
+                }
               }
             }
           }
@@ -186,7 +194,8 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def accessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
     app.maybeApplication.map { application =>
-      s"""$CONTEXT_PARAM.accessTokens.${application.keyName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${application.name}").oauthToken;"""
+      val infoKey =  if (application.api.grantType.requiresAuth) { "userInfo" } else { "teamInfo" }
+      s"""$CONTEXT_PARAM.accessTokens.${application.keyName} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem == "${application.name}").oauthToken;"""
     }.getOrElse("")
   }
 
@@ -261,14 +270,21 @@ class AWSLambdaServiceImpl @Inject() (
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
 
-  def deleteFunction(functionName: String): Unit = {
+  def deleteFunction(functionName: String): Future[Unit] = {
     val deleteFunctionRequest =
       new DeleteFunctionRequest().withFunctionName(functionName)
-    try {
-      client.deleteFunction(deleteFunctionRequest)
-    } catch {
-      case e: ResourceNotFoundException => Unit // we expect this when creating the first time
+    val eventuallyDeleteFunction = Future {
+      try {
+        client.deleteFunction(deleteFunctionRequest)
+      } catch {
+        case e: ResourceNotFoundException => // we expect this when creating the first time
+      }
     }
+    val eventuallyDeleteLogGroup = logsService.deleteGroupForLambdaFunctionNamed(functionName)
+    for {
+      _ <- eventuallyDeleteFunction
+      _ <- eventuallyDeleteLogGroup
+    } yield {}
   }
 
   def deployFunction(
@@ -278,25 +294,26 @@ class AWSLambdaServiceImpl @Inject() (
                       maybeAWSConfig: Option[AWSConfig],
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
                     ): Future[Unit] = {
-    // blocks
-    deleteFunction(functionName)
 
-    if (functionBody.trim.isEmpty) {
-      Future.successful(Unit)
-    } else {
-      val functionCode =
-        new FunctionCode().
-          withZipFile(getZipFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs))
-      val createFunctionRequest =
-        new CreateFunctionRequest().
-          withFunctionName(functionName).
-          withCode(functionCode).
-          withRole(configuration.getString("aws.role").get).
-          withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
-          withHandler("index.handler").
-          withTimeout(INVOCATION_TIMEOUT_SECONDS)
+    deleteFunction(functionName).andThen {
+      case Failure(t) => Future.successful(Unit)
+      case Success(v) => if (functionBody.trim.isEmpty) {
+        Future.successful(Unit)
+      } else {
+        val functionCode =
+          new FunctionCode().
+            withZipFile(getZipFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs))
+        val createFunctionRequest =
+          new CreateFunctionRequest().
+            withFunctionName(functionName).
+            withCode(functionCode).
+            withRole(configuration.getString("aws.role").get).
+            withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs43).
+            withHandler("index.handler").
+            withTimeout(INVOCATION_TIMEOUT_SECONDS)
 
-      JavaFutureWrapper.wrap(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
+        JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
+      }
     }
   }
 

@@ -41,8 +41,7 @@ define(function() {
     }
 
     usesParamName(name) {
-      var pattern = new RegExp(`\{${name}\}`);
-      return !this.isRegex && pattern.test(this.text);
+      return !this.isRegex && this.text.includes(`{${name}}`);
     }
 
     capturesParamIndex(index) {
@@ -62,10 +61,8 @@ define(function() {
     }
 
     getTextWithNewParamName(oldName, newName) {
-      var pattern = new RegExp(`\{${oldName}\}`, 'g');
-      var wrappedNewName = `{${newName}}`;
       if (!this.isRegex) {
-        return this.text.replace(pattern, wrappedNewName);
+        return this.text.split(`{${oldName}}`).join(`{${newName}}`);
       } else {
         return this.text;
       }
