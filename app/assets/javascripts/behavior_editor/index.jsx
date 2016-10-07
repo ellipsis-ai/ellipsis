@@ -803,7 +803,11 @@ return React.createClass({
   },
 
   toggleBehaviorTester: function() {
-    this.toggleActivePanel('behaviorTester');
+    this.toggleActivePanel('behaviorTester', false, () => {
+      if (this.getActivePanel() === 'behaviorTester') {
+        this.refs.behaviorTester.focus();
+      }
+    });
   },
 
   toggleBoilerplateHelp: function() {
@@ -1373,9 +1377,11 @@ return React.createClass({
             />
           </Collapsible>
 
-          <Collapsible ref="behaviorTester" revealWhen={this.getActivePanel() === 'behaviorTester'}>
+          <Collapsible revealWhen={this.getActivePanel() === 'behaviorTester'}>
             <BehaviorTester
+              ref="behaviorTester"
               triggers={this.getBehaviorTriggers()}
+              params={this.getBehaviorParams()}
               behaviorId={this.props.behaviorId}
               csrfToken={this.props.csrfToken}
               onDone={this.toggleBehaviorTester}

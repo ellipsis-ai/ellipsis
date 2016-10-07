@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react'),
     ifPresent = require('../if_present'),
     Input = require('../form/input'),
+    Param = require('../models/param'),
     Trigger = require('../models/trigger'),
     debounce = require('javascript-debounce');
   require('whatwg-fetch');
@@ -10,6 +11,7 @@ define(function(require) {
     displayName: 'BehaviorTester',
     propTypes: {
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
+      params: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired,
       behaviorId: React.PropTypes.string.isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired
@@ -18,7 +20,10 @@ define(function(require) {
     getInitialState: function() {
       return {
         testMessage: '',
-        highlightedIndex: null
+        highlightedTriggerText: null,
+        paramValues: {},
+        isTesting: false,
+        hasTested: false
       };
     },
 
@@ -29,15 +34,21 @@ define(function(require) {
     },
 
     onChangeTestMessage: function(value) {
-      this.setState({ testMessage: value });
-      this.clearHighlightedTrigger();
+      this.setState({
+        testMessage: value,
+        highlightedTriggerText: null,
+        paramValues: {},
+        hasTested: false
+      });
       if (value) {
         this.validateMessage();
       }
     },
 
     validateMessage: debounce(function() {
-      this.sendValidationRequest();
+      this.setState({
+        isTesting: true
+      }, this.sendValidationRequest);
     }, 500),
 
     sendValidationRequest: function() {
@@ -45,39 +56,76 @@ define(function(require) {
       formData.append('message', this.state.testMessage);
       formData.append('behaviorId', this.props.behaviorId);
       fetch(jsRoutes.controllers.BehaviorEditorController.test().url, {
-          credentials: 'same-origin',
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Csrf-Token': this.props.csrfToken
-          },
-          body: formData
-        })
+        credentials: 'same-origin',
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Csrf-Token': this.props.csrfToken
+        },
+        body: formData
+      })
         .then((response) => response.json())
         .then((json) => {
           console.log(json);
-          if (json.activatedTrigger === "\<no match\>") {
-            this.clearHighlightedTrigger();
-          } else {
-            this.highlightTriggerWithText(json.activatedTrigger);
-          }
+          this.setState({
+            highlightedTriggerText: json.activatedTrigger === "\<no match\>" ? null : json.activatedTrigger,
+            paramValues: json.paramValues,
+            isTesting: false,
+            hasTested: true
+          });
         })
         .catch((error) => {
           console.log(error);
         });
     },
 
-    highlightTriggerWithText: function(triggerText) {
-      var index = this.props.triggers.findIndex((trigger) => trigger.text === triggerText);
-      if (index >= 0) {
-        this.setState({ highlightedIndex: index });
+    focus: function() {
+      this.refs.testMessage.focus();
+    },
+
+    getValueForParamName: function(name) {
+      var value = this.state.paramValues[name];
+      if (value && value !== '<none>') {
+        return (
+          <span>{value}</span>
+        );
       } else {
-        this.clearHighlightedTrigger();
+        return (
+          <span className="type-disabled">None</span>
+        );
       }
     },
 
-    clearHighlightedTrigger: function() {
-      this.setState({ highlightedIndex: null });
+    getTriggerTestingStatus: function() {
+      if (this.state.isTesting) {
+        return (
+          <span className="type-weak type-italic pulse">— testing “{this.state.testMessage}”…</span>
+        );
+      } else if (this.state.highlightedTriggerText) {
+        return (
+          <span className="type-green">— successful match</span>
+        );
+      } else if (this.state.testMessage && this.state.hasTested) {
+        return (
+          <span className="type-pink">— no match</span>
+        );
+      }
+    },
+
+    getParamTestingStatus: function() {
+      var numParamValues = Object.keys(this.state.paramValues)
+        .filter((paramName) => this.state.paramValues[paramName] !== '\<none\>').length;
+      if (this.state.isTesting || numParamValues === 0 || this.props.params.length === 0) {
+        return "";
+      } else if (numParamValues === 1) {
+        return (
+          <span className="type-green">— 1 value collected</span>
+        );
+      } else if (numParamValues > 1) {
+        return (
+          <span className="type-green">— {numParamValues} values collected</span>
+        );
+      }
     },
 
     render: function() {
@@ -103,20 +151,29 @@ define(function(require) {
           </p>
 
           <div className="mbxl">
-            <Input autoFocus={true} value={this.state.testMessage} onChange={this.onChangeTestMessage} />
+            <Input ref="testMessage" value={this.state.testMessage} onChange={this.onChangeTestMessage}/>
           </div>
 
-          <h5>Triggers</h5>
-          <div className="border-top">
+          <h4 className="mbs">
+            <span>Triggers </span>
+            <span>{this.getTriggerTestingStatus()}</span>
+          </h4>
+          <div className="border-top mbxl">
             {triggers.map(this.renderTrigger)}
           </div>
+
+          <h4 className="mbxs">
+            <span>User input </span>
+            <span>{this.getParamTestingStatus()}</span>
+          </h4>
+          {ifPresent(this.props.params, this.renderParams, this.renderNoParams)}
         </div>
       );
     },
 
     renderTrigger: function(trigger, index) {
-      var highlighted = this.state.highlightedIndex === index;
-      var className = "pvxs border-bottom " +
+      var highlighted = this.state.highlightedTriggerText === trigger.text;
+      var className = "pvs border-bottom " +
         (trigger.isRegex ? " type-monospace " : "") +
         (highlighted ? " type-bold type-green " : "");
       return (
@@ -129,8 +186,29 @@ define(function(require) {
     renderNoTriggers: function() {
       return (
         <div>
-          <p>This behavior does not have any triggers. Add one or more triggers before testing.</p>
+          <p>This behavior does not have any triggers. Add at least one trigger before testing.</p>
         </div>
+      );
+    },
+
+    renderParams: function(params) {
+      return (
+        <div className="columns columns-elastic">
+          <div className="column-group">
+            {params.map((param, index) => (
+              <div key={`param${index}`} className="column-row">
+                <div className="column column-shrink type-monospace type-weak prs pvxs">{param.name}:</div>
+                <div className="column column-expand pvxs">{this.getValueForParamName(param.name)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    },
+
+    renderNoParams: function() {
+      return (
+        <p>No user input has been defined.</p>
       );
     }
   });
