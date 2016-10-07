@@ -92,6 +92,10 @@ define(function(require) {
       this.refs.testMessage.focus();
     },
 
+    getTriggers: function() {
+      return this.props.triggers.filter((trigger) => !!trigger.text);
+    },
+
     getValueForParamName: function(name) {
       return ifPresent(this.state.paramValues[name], (value) => (
         <span>{value}</span>
@@ -144,7 +148,7 @@ define(function(require) {
                 <h4 className="type-weak">Test the behavior</h4>
               </div>
               <div className="column column-three-quarters pll mobile-pln mobile-column-full">
-                {ifPresent(this.props.triggers, this.renderTriggerTester, this.renderNoTriggers)}
+                {ifPresent(this.getTriggers(), this.renderTriggerTester, this.renderNoTriggers)}
 
                 <div className="mvxl">
                   <button type="button" onClick={this.props.onDone}>Done</button>
