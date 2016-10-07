@@ -99,7 +99,8 @@ return React.createClass({
     dataType: React.PropTypes.shape({
       id: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
-    })
+    }),
+    onSave: React.PropTypes.func.isRequired
   },
 
 
@@ -203,7 +204,7 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('triggers');
     } else {
-      return this.getInitialTriggers();
+      return this.getInitialTriggersFromProps(this.props);
     }
   },
 
@@ -412,9 +413,9 @@ return React.createClass({
     });
   },
 
-  getInitialTriggers: function() {
-    if (this.props.triggers && this.props.triggers.length > 0) {
-      return this.props.triggers;
+  getInitialTriggersFromProps: function(props) {
+    if (props.triggers && props.triggers.length > 0) {
+      return props.triggers;
     } else if (!this.isDataTypeBehavior()) {
       return [new Trigger()];
     } else {
@@ -663,8 +664,25 @@ return React.createClass({
     }
   },
 
+  backgroundSave: function() {
+    var form = new FormData(this.refs.behaviorForm);
+    fetch(this.getFormAction(), {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Csrf-Token': this.props.csrfToken,
+        'x-requested-with': 'XMLHttpRequest'
+      },
+      body: form
+    }).then((response) => response.json())
+      .then((json) => {
+        this.props.onSave(json, true);
+      })
+      .catch((error) => console.log(error));
+  },
+
   onSubmit: function(maybeEvent) {
-    var doSubmit = () => { this.refs.behaviorForm.submit(); };
     if (maybeEvent) {
       maybeEvent.preventDefault();
     }
@@ -672,9 +690,9 @@ return React.createClass({
       isSaving: true
     }, () => {
       if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
-        this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), doSubmit);
+        this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), this.backgroundSave);
       } else {
-        doSubmit();
+        this.backgroundSave();
       }
     });
   },
@@ -945,7 +963,7 @@ return React.createClass({
   },
 
   undoChanges: function() {
-    var newBehavior = this.getInitialBehavior();
+    var newBehavior = this.getInitialBehaviorFromProps(this.props);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     this.setState({
@@ -997,7 +1015,7 @@ return React.createClass({
   },
 
   isModified: function() {
-    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialBehavior());
+    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialBehaviorFromProps(this.props));
     var previewingVersions = this.getActivePanel() === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
   },
@@ -1140,16 +1158,16 @@ return React.createClass({
     window.document.addEventListener('focus', this.handleModalFocus, true);
   },
 
-  getInitialBehavior: function() {
+  getInitialBehaviorFromProps: function(props) {
     return {
-      teamId: this.props.teamId,
-      behaviorId: this.props.behaviorId,
-      functionBody: this.props.functionBody,
-      responseTemplate: this.props.responseTemplate,
-      params: this.props.params,
-      triggers: this.getInitialTriggers(),
-      config: this.props.config,
-      knownEnvVarsUsed: this.props.knownEnvVarsUsed
+      teamId: props.teamId,
+      behaviorId: props.behaviorId,
+      functionBody: props.functionBody,
+      responseTemplate: props.responseTemplate,
+      params: props.params,
+      triggers: this.getInitialTriggersFromProps(props),
+      config: props.config,
+      knownEnvVarsUsed: props.knownEnvVarsUsed
     };
   },
 
@@ -1158,7 +1176,7 @@ return React.createClass({
   },
 
   getInitialState: function() {
-    var initialBehavior = this.getInitialBehavior();
+    var initialBehavior = this.getInitialBehaviorFromProps(this.props);
     return {
       behavior: initialBehavior,
       activeDropdown: null,
@@ -1178,6 +1196,18 @@ return React.createClass({
       requiredOAuth2ApiConfigId: "",
       paramNameToSync: null
     };
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    var newBehaviorVersion = this.getInitialBehaviorFromProps(nextProps);
+    this.setState({
+      isSaving: false,
+      justSaved: true,
+      behavior: newBehaviorVersion,
+      versions: [this.getTimestampedBehavior(newBehaviorVersion)],
+      versionsLoadStatus: null
+    });
+    console.log(nextProps);
   },
 
   renderPageHeading: function() {
@@ -1386,7 +1416,7 @@ return React.createClass({
                 <div className="column column-expand mobile-column-auto">
                   <button type="submit"
                     className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
-                    disabled={!this.isModified()}
+                    disabled={!this.isModified() || this.state.isSaving}
                   >
                     <span className="button-labels">
                       <span className="button-normal-label">
@@ -1396,7 +1426,7 @@ return React.createClass({
                       <span className="button-activated-label">Saving…</span>
                     </span>
                   </button>
-                  <button className="mbm" type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>
+                  <button className="mbm" type="button" disabled={!this.isModified() || this.state.isSaving} onClick={this.confirmUndo}>
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </button>

@@ -50,7 +50,8 @@ describe('BehaviorEditor', () => {
       keyName: "myOtherAwesomeOauthApp"
     }],
     notifications: [],
-    shouldRevealCodeEditor: true
+    shouldRevealCodeEditor: true,
+    onSave: jest.fn()
   };
 
   let editorConfig;
@@ -66,17 +67,17 @@ describe('BehaviorEditor', () => {
     );
   }
 
-  describe('getInitialTriggers', () => {
+  describe('getInitialTriggersFromProps', () => {
     it('returns the defined triggers', () => {
       editorConfig.triggers = [{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }];
       let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggers()).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
+      expect(editor.getInitialTriggersFromProps(editor.props)).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
     });
 
     it('returns a single blank trigger when no triggers are defined', () => {
       delete editorConfig.triggers;
       let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggers()).toEqual([new Trigger()]);
+      expect(editor.getInitialTriggersFromProps(editor.props)).toEqual([new Trigger()]);
     });
   });
 
@@ -145,7 +146,7 @@ describe('BehaviorEditor', () => {
       let editor = createEditor(editorConfig);
       editor.getDefaultBehaviorTemplate = jest.fn();
       editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
-      editor.refs.behaviorForm.submit = jest.fn();
+      editor.backgroundSave = jest.fn();
       editor.setBehaviorProp = jest.fn((key, value, callback) => callback());
       const event = {
         preventDefault: jest.fn()
@@ -155,7 +156,7 @@ describe('BehaviorEditor', () => {
       expect(editor.setBehaviorProp.mock.calls.length).toBe(1);
       expect(editor.setBehaviorProp.mock.calls[0][0]).toBe('responseTemplate');
       expect(editor.setBehaviorProp.mock.calls[0][1].toString()).toEqual('default');
-      expect(editor.refs.behaviorForm.submit.mock.calls.length).toBe(1);
+      expect(editor.backgroundSave.mock.calls.length).toBe(1);
 
     });
   });

@@ -101,7 +101,7 @@ class BehaviorEditorController @Inject() (
         envVars <- maybeEnvironmentVariables
         oauth2Applications <- maybeOAuth2Applications
       } yield {
-        if (maybeJson.exists(isJson => isJson)) {
+        if (maybeJson.exists(identity)) {
           Future.successful(Ok(Json.toJson(data)))
         } else {
           Future.successful(Ok(views.html.editBehavior(
