@@ -51,12 +51,6 @@ $ ls -lFa /Library/Java/JavaVirtualMachines
 $ brew install node
 ```
 
-Set an env variable so that your local Play server can access the DB:
-```bash
-$ echo 'export ELLIPSIS_DB_PASSWORD=yourpasswordhere' >> ~/.bashrc
-$ source ~/.bashrc
-```
-
 #### Install ngrok and run it for port 9000 (`ngrok http 9000`)
 Download link is https://ngrok.com/download
 Suggested installation location: /usr/local/bin
@@ -112,4 +106,4 @@ $ ./actw
 ```bash
 $ ./actw -jvm-debug 9999 run
 ```
-You can now use any Java debugger to attach to 9999. 
+You can now use any Java debugger to attach to 9999.
