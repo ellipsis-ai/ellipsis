@@ -1441,13 +1441,10 @@ return React.createClass({
                     labels={[{
                       text: 'Save changes',
                       mobileText: 'Save',
-                      displayWhen: !this.isSaving() && !this.state.justSaved
-                    }, {
-                      text: 'Saving…',
-                      displayWhen: this.isSaving()
+                      displayWhen: !this.state.justSaved
                     }, {
                       text: 'Saved',
-                      displayWhen: this.state.justSaved && !this.isSaving()
+                      displayWhen: this.state.justSaved
                     }]}
                     className="button-primary mrs mbm"
                     disabledWhen={!this.isModified() || this.isSaving()}
