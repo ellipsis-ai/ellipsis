@@ -51,28 +51,6 @@ $ ls -lFa /Library/Java/JavaVirtualMachines
 $ brew install node
 ```
 
-#### Install and Run Memcached
-```bash
-$ brew install memcached
-$ brew services start memcached
-```
-
-#### Install and Run Postgres
-```bash
-$ brew install postgresql
-$ postgres -V
-$ postgres -D /usr/local/var/postgres
-$ createuser ellipsis -P
-$ createdb -O ellipsis ellipsis
-
-```
-
-Set an env variable so that your local Play server can access the DB:
-```bash
-$ echo 'export ELLIPSIS_DB_PASSWORD=yourpasswordhere' >> ~/.bashrc
-$ source ~/.bashrc
-```
-
 #### Install ngrok and run it for port 9000 (`ngrok http 9000`)
 Download link is https://ngrok.com/download
 Suggested installation location: /usr/local/bin
@@ -98,14 +76,15 @@ $ git clone git@github.com:ellipsis-ai/ellipsis.git
 ```bash
 $ npm install
 ```
-#### Configure the run_app script
+
+#### Configure the Activator wrapper script
 ```bash
-$ cp ./run_app.template ./run_app
+$ cp ./actw.template ./actw
 ```
-Now edit ./run_app and fill in the env. variables values
+Now edit ./actw and fill in the env. variables values
 When you are done make run_app executable with:
 ```bash
-$ chmod 755 ./run_app
+$ chmod 755 ./actw
 ```
 Now you can run the app
 
@@ -114,5 +93,17 @@ The app is run using Activator the run_app script is just a wrapper that invokes
 Activator with the necessary env. variables.
 
 ```bash
-$ ./run_app
+$ ./actw help
+$ ./actw run
 ```
+
+#### Run the console
+```bash
+$ ./actw
+```
+
+#### Debug the app
+```bash
+$ ./actw -jvm-debug 9999 run
+```
+You can now use any Java debugger to attach to 9999.
