@@ -33,10 +33,8 @@ define(function(require) {
       this.adjustMinWidthIfNecessary();
     },
 
-    componentDidUpdate: function(prevProps, prevState) {
-      if (prevProps.labels !== this.props.labels) {
-        this.adjustMinWidthIfNecessary();
-      }
+    componentDidUpdate: function() {
+      this.adjustMinWidthIfNecessary();
     },
 
     getMaxLabelWidth: function() {
@@ -72,9 +70,14 @@ define(function(require) {
       ));
     },
 
+    focus: function() {
+      this.refs.button.focus();
+    },
+
     render: function() {
       return (
         <button
+          ref="button"
           type={this.props.type || "button"}
           className={this.props.className || ""}
           disabled={this.props.disabledWhen || false}

@@ -28,6 +28,7 @@ var React = require('react'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
+  SVGWarning = require('../svg/warning'),
   Collapsible = require('../collapsible'),
   CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
   BrowserUtils = require('../browser_utils'),
@@ -180,16 +181,6 @@ return React.createClass({
 
   getBehaviorProp: function(key) {
     return this.state.behavior[key];
-  },
-
-  getBehaviorStatusText: function() {
-    if (this.state.justSaved) {
-      return (<span className="type-green fade-in"> — saved successfully</span>);
-    } else if (this.isModified()) {
-      return (<span className="type-pink fade-in"> — unsaved changes</span>);
-    } else {
-      return (<span>&nbsp;</span>);
-    }
   },
 
   getBehaviorTemplate: function() {
@@ -660,9 +651,21 @@ return React.createClass({
     } else if (Event.keyPressWasSaveShortcut(event)) {
       event.preventDefault();
       if (this.isModified()) {
+        this.refs.saveButton.focus();
         this.onSubmit();
       }
     }
+  },
+
+  onSaveError: function() {
+    // Set a timeout on showing an error in case the animation to show the
+    // saving message hasn't finished yet
+    window.setTimeout(() => {
+      this.setState({
+        activePanel: null,
+        error: "not_saved"
+      });
+    }, 500);
   },
 
   backgroundSave: function() {
@@ -678,10 +681,14 @@ return React.createClass({
       body: form
     }).then((response) => response.json())
       .then((json) => {
-        this.props.onSave(json, true);
+        if (json.behaviorId) {
+          this.props.onSave(json, true);
+        } else {
+          this.onSaveError();
+        }
       })
       .catch((error) => {
-        console.log(error);
+        this.onSaveError(error);
       });
   },
 
@@ -689,15 +696,13 @@ return React.createClass({
     if (maybeEvent) {
       maybeEvent.preventDefault();
     }
-    this.setState({
-      isSaving: true
-    }, () => {
-      if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
-        this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), this.backgroundSave);
-      } else {
-        this.backgroundSave();
-      }
-    });
+    this.setState({ error: null });
+    this.toggleActivePanel('saving', true);
+    if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
+      this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), this.backgroundSave);
+    } else {
+      this.backgroundSave();
+    }
   },
 
   showVersionIndex: function(versionIndex, optionalCallback) {
@@ -1023,6 +1028,10 @@ return React.createClass({
     return !currentMatchesInitial && !previewingVersions;
   },
 
+  isSaving: function() {
+    return this.getActivePanel() === 'saving';
+  },
+
   shouldFilterCurrentVersion: function() {
     var firstTwoVersions = this.getVersions().slice(0, 2);
     return firstTwoVersions.length === 2 && this.versionEqualsVersion(firstTwoVersions[0], firstTwoVersions[1]);
@@ -1186,7 +1195,6 @@ return React.createClass({
       activePanel: null,
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
-      isSaving: false,
       envVariables: this.getInitialEnvVariables(),
       revealCodeEditor: this.shouldRevealCodeEditor(),
       hasModifiedTemplate: !!(this.props.responseTemplate && this.props.responseTemplate.text),
@@ -1197,20 +1205,21 @@ return React.createClass({
       envVariableAdderPrompt: null,
       redirectValue: "",
       requiredOAuth2ApiConfigId: "",
-      paramNameToSync: null
+      paramNameToSync: null,
+      error: null
     };
   },
 
   componentWillReceiveProps: function(nextProps) {
     var newBehaviorVersion = this.getInitialBehaviorFromProps(nextProps);
     this.setState({
-      isSaving: false,
+      activePanel: null,
       justSaved: true,
       behavior: newBehaviorVersion,
       versions: [this.getTimestampedBehavior(newBehaviorVersion)],
-      versionsLoadStatus: null
+      versionsLoadStatus: null,
+      error: null
     });
-    console.log(nextProps);
   },
 
   renderPageHeading: function() {
@@ -1219,7 +1228,6 @@ return React.createClass({
         <div className="container pbm">
           <h3 className="mvn ptxxl type-weak display-ellipsis">
             <span>{this.getPageHeading()}</span>
-            <span className="type-italic">{this.getBehaviorStatusText()}</span>
           </h3>
 
           {/*
@@ -1410,6 +1418,16 @@ return React.createClass({
             />
           </Collapsible>
 
+          <Collapsible ref="saving" revealWhen={this.isSaving()}>
+            <div className="box-action">
+              <div className="container phn">
+                <p className="align-c">
+                  <b className="pulse">Saving changes…</b>
+                </p>
+              </div>
+            </div>
+          </Collapsible>
+
           <Collapsible revealWhen={!this.hasModalPanel()}>
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
@@ -1418,25 +1436,29 @@ return React.createClass({
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
                   <DynamicLabelButton
+                    ref="saveButton"
                     type="submit"
                     labels={[{
                       text: 'Save changes',
                       mobileText: 'Save',
-                      displayWhen: !this.state.isSaving && !this.state.justSaved
+                      displayWhen: !this.isSaving() && !this.state.justSaved
                     }, {
                       text: 'Saving…',
-                      displayWhen: this.state.isSaving
+                      displayWhen: this.isSaving()
                     }, {
-                      text: 'Saved ✓',
-                      displayWhen: this.state.justSaved && !this.state.isSaving
+                      text: 'Saved',
+                      displayWhen: this.state.justSaved && !this.isSaving()
                     }]}
                     className="button-primary mrs mbm"
-                    disabledWhen={!this.isModified() || this.state.isSaving}
+                    disabledWhen={!this.isModified() || this.isSaving()}
                   />
-                  <button className="mbm" type="button" disabled={!this.isModified() || this.state.isSaving} onClick={this.confirmUndo}>
+                  <button className="mrl mbm" type="button" disabled={!this.isModified() || this.isSaving()} onClick={this.confirmUndo}>
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </button>
+                  <div className="display-inline-block align-button mbm type-bold type-italic">
+                    {this.renderFooterStatus()}
+                  </div>
                 </div>
                 <div className="column column-shrink align-r pbm">
                   {this.isExistingBehavior() ? (
@@ -1461,6 +1483,27 @@ return React.createClass({
         </footer>
       </div>
     );
+  },
+
+  renderFooterStatus: function() {
+    if (this.state.justSaved && !this.isSaving()) {
+      return (
+        <span className="fade-in type-green">All changes saved</span>
+      );
+    } else if (this.state.error === 'not_saved') {
+      return (
+        <span className="fade-in type-pink">
+          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+          <span>Error saving changes — please try again</span>
+        </span>
+      );
+    } else if (this.isModified()) {
+      return (
+        <span className="fade-in type-pink">Unsaved changes</span>
+      );
+    } else {
+      return "";
+    }
   },
 
   renderHiddenForms: function() {
