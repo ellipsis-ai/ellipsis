@@ -13,6 +13,7 @@ var React = require('react'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('./confirm_action_panel'),
+  DynamicLabelButton = require('../form/dynamic_label_button'),
   DropdownMenu = require('./dropdown_menu'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
@@ -679,7 +680,9 @@ return React.createClass({
       .then((json) => {
         this.props.onSave(json, true);
       })
-      .catch((error) => console.log(error));
+      .catch((error) => {
+        console.log(error);
+      });
   },
 
   onSubmit: function(maybeEvent) {
@@ -1414,18 +1417,22 @@ return React.createClass({
             <div className="container ptm">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
-                  <button type="submit"
-                    className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
-                    disabled={!this.isModified() || this.state.isSaving}
-                  >
-                    <span className="button-labels">
-                      <span className="button-normal-label">
-                        <span className="mobile-display-none">Save changes</span>
-                        <span className="mobile-display-only">Save</span>
-                      </span>
-                      <span className="button-activated-label">Saving…</span>
-                    </span>
-                  </button>
+                  <DynamicLabelButton
+                    type="submit"
+                    labels={[{
+                      text: 'Save changes',
+                      mobileText: 'Save',
+                      displayWhen: !this.state.isSaving && !this.state.justSaved
+                    }, {
+                      text: 'Saving…',
+                      displayWhen: this.state.isSaving
+                    }, {
+                      text: 'Saved ✓',
+                      displayWhen: this.state.justSaved && !this.state.isSaving
+                    }]}
+                    className="button-primary mrs mbm"
+                    disabledWhen={!this.isModified() || this.state.isSaving}
+                  />
                   <button className="mbm" type="button" disabled={!this.isModified() || this.state.isSaving} onClick={this.confirmUndo}>
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
