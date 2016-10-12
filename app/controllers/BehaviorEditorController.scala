@@ -55,7 +55,11 @@ class BehaviorEditorController @Inject() (
 
     BehaviorEditorData.buildForEdit(user, id, maybeJustSaved, dataService).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.html.editBehavior(editorData)))
+        if (maybeJson.contains(true)) {
+          Future.successful(Ok(Json.toJson(editorData.behaviorVersion)))
+        } else {
+          Future.successful(Ok(views.html.editBehavior(editorData)))
+        }
       }.getOrElse {
         dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
           val response = NotFound(
@@ -121,7 +125,7 @@ class BehaviorEditorController @Inject() (
                 if (info.maybeRedirect.contains("newOAuth2Application")) {
                   Redirect(routes.OAuth2ApplicationController.newApp(maybeRequiredOAuth2ApiConfig.map(_.id), Some(data.teamId), Some(behavior.id)))
                 } else {
-                  Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true), json = Some(request.headers.get("x-requested-with").contains("XMLHttpRequest"))))
+                  Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true), json = Some(request.accepts("application/json"))))
                 }
               }.getOrElse {
                 NotFound(
