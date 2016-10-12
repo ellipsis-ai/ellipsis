@@ -5,6 +5,8 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
+import play.api.libs.json.{JsBoolean, JsObject}
+import play.api.libs.ws.WSClient
 import services.DataService
 import slack.api.SlackApiClient
 import slack.models.Message
@@ -96,6 +98,21 @@ case class SlackMessageContext(
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
     super.ensureUser(dataService).flatMap { user =>
       dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)
+    }
+  }
+
+  override def detailsFor(ws: WSClient, dataService: DataService): Future[JsObject] = {
+    Future {
+      client.apiClient.getUserInfo(userIdForContext)
+    }.map { user =>
+      JsObject(
+        Seq(
+          "isPrimaryOwner" -> JsBoolean(user.is_primary_owner.getOrElse(false)),
+          "isOwner" -> JsBoolean(user.is_owner.getOrElse(false)),
+          "isRestricted" -> JsBoolean(user.is_restricted.getOrElse(false)),
+          "isUltraRestricted" -> JsBoolean(user.is_ultra_restricted.getOrElse(false))
+        )
+      )
     }
   }
 }
