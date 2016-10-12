@@ -7,7 +7,7 @@ GET         /                                         @controllers.ApplicationCo
 GET         /intro                                    @controllers.ApplicationController.intro(teamId: Option[String] ?= None)
 GET         /install_behaviors                        @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None)
 GET         /new_behavior                             @controllers.BehaviorEditorController.newBehavior(teamId: Option[String] ?= None)
-GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None, json: Option[Boolean] ?= None)
+GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
 GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
 GET         /import_behavior_zip                      @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)
 POST        /import_behavior_zip                      @controllers.BehaviorImportExportController.doImportZip
