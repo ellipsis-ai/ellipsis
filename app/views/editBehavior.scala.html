@@ -1,18 +1,12 @@
 @(
-  teamAccess: models.accounts.user.UserTeamAccess,
-  json: String,
-  envVariablesJson: String,
-  paramTypesJson: String,
-  oauth2ApplicationsJson: String,
-  oauth2ApisJson: String,
-  justSaved: Boolean,
-  notificationsJson: String,
-  dataTypeJson: String
+  data: json.BehaviorEditorData
 )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
+@import play.api.libs.json._
+@import json.Formatting._
 
-@main("Edit behavior", Some(teamAccess)) {
+@main("Edit behavior", Some(data.teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.save,
     routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
@@ -26,16 +20,16 @@
       <script src='@RemoteAssets.getUrl("lib/jshint/dist/jshint.js")'></script>
       <script>
         var BehaviorEditorConfiguration = {
-          data: @Html(json),
+          data: @Html(Json.toJson(data.behaviorVersion).toString),
           containerId: 'editorContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
-          justSaved: @justSaved,
-          envVariables: @Html(envVariablesJson),
-          paramTypes: @Html(paramTypesJson),
-          oauth2Applications: @Html(oauth2ApplicationsJson),
-          oauth2Apis: @Html(oauth2ApisJson),
-          notifications: @Html(notificationsJson),
-          dataType: @Html(dataTypeJson)
+          justSaved: @data.justSaved,
+          envVariables: @Html(Json.toJson(data.environmentVariables).toString),
+          paramTypes: @Html(Json.toJson(data.paramTypes).toString),
+          oauth2Applications: @Html(Json.toJson(data.oauth2Applications).toString),
+          oauth2Apis: @Html(Json.toJson(data.oauth2Apis).toString),
+          notifications: [],
+          dataType: @Html(Json.toJson(data.dataType).toString)
         };
       </script>
       <script data-main='@RemoteAssets.getUrl("javascripts/behavior_editor/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
