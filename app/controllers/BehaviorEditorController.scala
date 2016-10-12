@@ -50,16 +50,11 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  def edit(id: String, maybeJustSaved: Option[Boolean], maybeJson: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
+  def edit(id: String, maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-
     BehaviorEditorData.buildForEdit(user, id, maybeJustSaved, dataService).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
-        if (maybeJson.contains(true)) {
-          Future.successful(Ok(Json.toJson(editorData.behaviorVersion)))
-        } else {
-          Future.successful(Ok(views.html.editBehavior(editorData)))
-        }
+        Future.successful(Ok(views.html.editBehavior(editorData)))
       }.getOrElse {
         dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
           val response = NotFound(
@@ -120,12 +115,17 @@ class BehaviorEditorController @Inject() (
                   dataService.requiredOAuth2ApiConfigs.allFor(config.api, version).map(_.headOption)
                 }
               }.getOrElse(Future.successful(None))
+              maybeBehaviorVersionData <- maybeBehavior.map { behavior =>
+                BehaviorVersionData.maybeFor(behavior.id, user, dataService)
+              }.getOrElse(Future.successful(None))
             } yield {
               maybeBehavior.map { behavior =>
                 if (info.maybeRedirect.contains("newOAuth2Application")) {
                   Redirect(routes.OAuth2ApplicationController.newApp(maybeRequiredOAuth2ApiConfig.map(_.id), Some(data.teamId), Some(behavior.id)))
+                } else if (request.headers.get("Accept").contains("application/json")) {
+                  Ok(Json.toJson(maybeBehaviorVersionData.map(versionData => versionData)))
                 } else {
-                  Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true), json = Some(request.accepts("application/json"))))
+                  Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
                 }
               }.getOrElse {
                 NotFound(
