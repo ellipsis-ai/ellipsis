@@ -4,6 +4,7 @@ import models.accounts.user.{User, UserTeamAccess}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import models.behaviors.behaviorparameter.BehaviorParameterType
+import models.team.Team
 import services.DataService
 
 import scala.concurrent.Future
@@ -21,24 +22,52 @@ case class BehaviorEditorData(
 
 object BehaviorEditorData {
 
+  def buildForEdit(
+                    user: User,
+                    behaviorId: String,
+                    maybeJustSaved: Option[Boolean],
+                    dataService: DataService
+                  ): Future[Option[BehaviorEditorData]] = {
+
+    for {
+      maybeBehaviorVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService)
+      maybeTeam <- maybeBehaviorVersionData.map { data =>
+        dataService.teams.find(data.teamId, user)
+      }.getOrElse(Future.successful(None))
+      maybeEditorData <- (for {
+        data <- maybeBehaviorVersionData
+        team <- maybeTeam
+      } yield {
+        buildFor(user, Some(data), team, maybeJustSaved, dataService).map(Some(_))
+      }).getOrElse(Future.successful(None))
+    } yield maybeEditorData
+  }
+
+  def buildForNew(
+                  user: User,
+                  maybeTeamId: Option[String],
+                  dataService: DataService
+                 ): Future[Option[BehaviorEditorData]] = {
+
+    val teamId = maybeTeamId.getOrElse(user.teamId)
+    dataService.teams.find(teamId, user).flatMap { maybeTeam =>
+      maybeTeam.map { team =>
+        buildFor(user, None, team, None, dataService).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    }
+  }
+
   def buildFor(
                 user: User,
-                maybeBehaviorId: Option[String],
-                maybeTeamId: Option[String],
+                maybeBehaviorVersionData: Option[BehaviorVersionData],
+                team: Team,
                 maybeJustSaved: Option[Boolean],
                 dataService: DataService
-              ): Future[Option[BehaviorEditorData]] = {
+              ): Future[BehaviorEditorData] = {
     for {
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      maybeExistingVersionData <- maybeBehaviorId.map { id =>
-        BehaviorVersionData.maybeFor(id, user, dataService)
-      }.getOrElse(Future.successful(None))
-      maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.environmentVariables.allFor(team).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.oauth2Applications.allFor(team).map(Some(_))
-      }.getOrElse(Future.successful(None))
+      teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
+      environmentVariables <- dataService.environmentVariables.allFor(team)
+      oAuth2Applications <- dataService.oauth2Applications.allFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       paramTypes <- teamAccess.maybeTargetTeam.map { team =>
         BehaviorParameterType.allFor(team, dataService)
@@ -47,40 +76,34 @@ object BehaviorEditorData {
         dataService.behaviorBackedDataTypes.allFor(team)
       }.getOrElse(Future.successful(Seq()))
     } yield {
-      for {
-        team <- teamAccess.maybeTargetTeam
-        envVars <- maybeEnvironmentVariables
-        oauth2Applications <- maybeOAuth2Applications
-      } yield {
-        val versionData = maybeExistingVersionData.getOrElse {
-          BehaviorVersionData.buildFor(
-            team.id,
-            None,
-            "",
-            "",
-            Seq(),
-            Seq(),
-            BehaviorConfig(None, None, None),
-            None,
-            None,
-            None,
-            dataService
-          )
-        }
-        val maybeDataTypeForBehavior = maybeBehaviorId.flatMap { id =>
-          dataTypes.find(_.behavior.id == id)
-        }
-        BehaviorEditorData(
-          teamAccess,
-          versionData,
-          envVars.map(EnvironmentVariableData.withoutValueFor),
-          paramTypes.map(BehaviorParameterTypeData.from),
-          oauth2Applications.map(OAuth2ApplicationData.from),
-          oauth2Apis.map(OAuth2ApiData.from),
-          maybeDataTypeForBehavior.map(BehaviorBackedDataTypeDataForBehavior.from),
-          maybeJustSaved.exists(identity)
+      val versionData = maybeBehaviorVersionData.getOrElse {
+        BehaviorVersionData.buildFor(
+          team.id,
+          None,
+          "",
+          "",
+          Seq(),
+          Seq(),
+          BehaviorConfig(None, None, None),
+          None,
+          None,
+          None,
+          dataService
         )
       }
+      val maybeDataTypeForBehavior = maybeBehaviorVersionData.flatMap { data =>
+        dataTypes.find(_.behavior.id == data.behaviorId)
+      }
+      BehaviorEditorData(
+        teamAccess,
+        versionData,
+        environmentVariables.map(EnvironmentVariableData.withoutValueFor),
+        paramTypes.map(BehaviorParameterTypeData.from),
+        oAuth2Applications.map(OAuth2ApplicationData.from),
+        oauth2Apis.map(OAuth2ApiData.from),
+        maybeDataTypeForBehavior.map(BehaviorBackedDataTypeDataForBehavior.from),
+        maybeJustSaved.exists(identity)
+      )
     }
   }
 
