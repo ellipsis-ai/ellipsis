@@ -688,17 +688,25 @@ return React.createClass({
       });
   },
 
+  checkDataAndCallback: function(callback) {
+    if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
+      this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), callback);
+    } else {
+      callback();
+    }
+  },
+
   onSubmit: function(maybeEvent) {
     if (maybeEvent) {
       maybeEvent.preventDefault();
     }
     this.setState({ error: null });
     this.toggleActivePanel('saving', true);
-    if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
-      this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), this.backgroundSave);
-    } else {
-      this.backgroundSave();
-    }
+    this.checkDataAndCallback(this.backgroundSave);
+  },
+
+  submitForm: function() {
+    this.refs.behaviorForm.submit();
   },
 
   showVersionIndex: function(versionIndex, optionalCallback) {
@@ -1121,7 +1129,7 @@ return React.createClass({
     this.setState({
       redirectValue: "newOAuth2Application",
       requiredOAuth2ApiConfigId: requiredOAuth2ApiConfigId || ""
-    }, () => { this.onSubmit(); });
+    }, () => { this.checkDataAndCallback(this.submitForm); });
   },
 
   onParamEnterKey: function(index) {
