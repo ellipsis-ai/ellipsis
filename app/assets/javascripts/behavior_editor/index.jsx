@@ -658,14 +658,10 @@ return React.createClass({
   },
 
   onSaveError: function() {
-    // Set a timeout on showing an error in case the animation to show the
-    // saving message hasn't finished yet
-    window.setTimeout(() => {
-      this.setState({
-        activePanel: null,
-        error: "not_saved"
-      });
-    }, 500);
+    this.setState({
+      activePanel: null,
+      error: "not_saved"
+    });
   },
 
   backgroundSave: function() {
