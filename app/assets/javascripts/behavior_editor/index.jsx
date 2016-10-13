@@ -1488,6 +1488,7 @@ return React.createClass({
                       text: 'Save and test…',
                       displayWhen: this.isModified()
                     }]}
+                    disabledWhen={!this.isExistingBehavior() && !this.isModified()}
                     className="mrl mbm" onClick={this.checkIfModifiedAndTest}
                   />
                   <div className="display-inline-block align-button mbm type-bold type-italic">

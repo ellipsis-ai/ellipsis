@@ -12,7 +12,7 @@ define(function(require) {
     propTypes: {
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
       params: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired,
-      behaviorId: React.PropTypes.string.isRequired,
+      behaviorId: React.PropTypes.string,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired
     },
@@ -34,6 +34,10 @@ define(function(require) {
       }
     },
 
+    isSavedBehavior: function() {
+      return !!this.props.behaviorId;
+    },
+
     onChangeTestMessage: function(value) {
       this.setState({
         testMessage: value,
@@ -42,7 +46,7 @@ define(function(require) {
         hasTested: false,
         errorOccurred: false
       });
-      if (value) {
+      if (value && this.isSavedBehavior()) {
         this.validateMessage();
       }
     },
