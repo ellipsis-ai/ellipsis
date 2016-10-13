@@ -704,6 +704,10 @@ return React.createClass({
     }
   },
 
+  onSaveClick: function() {
+    this.onSaveBehavior();
+  },
+
   onSaveBehavior: function(optionalCallback) {
     this.setState({ error: null });
     this.toggleActivePanel('saving', true);
@@ -1252,7 +1256,7 @@ return React.createClass({
       versionsLoadStatus: null,
       error: null
     });
-    if (nextProps.onLoad) {
+    if (typeof(nextProps.onLoad) === 'function') {
       nextProps.onLoad();
     }
     if (newBehaviorVersion.behaviorId) {
@@ -1477,7 +1481,7 @@ return React.createClass({
                 <div className="column column-expand mobile-column-auto">
                   <DynamicLabelButton
                     ref="saveButton"
-                    onClick={this.onSaveBehavior}
+                    onClick={this.onSaveClick}
                     labels={[{
                       text: 'Save changes',
                       mobileText: 'Save',
