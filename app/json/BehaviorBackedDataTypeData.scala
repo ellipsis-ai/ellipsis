@@ -35,6 +35,7 @@ case class BehaviorBackedDataTypeData(
       BehaviorConfig(None, config.aws, config.requiredOAuth2ApiConfigs),
       None,
       None,
+      dataTypeId.map(id => BehaviorBackedDataTypeDataForBehavior(id, config.name)),
       createdAt,
       dataService
     )
