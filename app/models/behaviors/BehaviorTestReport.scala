@@ -4,6 +4,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageContext, MessageEvent}
 import play.api.libs.json._
+import play.api.libs.functional.syntax._
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,9 +31,9 @@ case class TestEvent(context: TestMessageContext) extends MessageEvent
 
 case class BehaviorTestReportOutput(
                                      message: String,
-                                     activatedTrigger: String,
-                                     paramValues: Map[String, String],
-                                     responseMessage: String
+                                     activatedTrigger: Option[String],
+                                     paramValues: Map[String, Option[String]],
+                                     responseMessage: Option[String]
                                      )
 
 case class BehaviorTestReport  (
@@ -45,20 +46,26 @@ case class BehaviorTestReport  (
 
   def messages: Array[String] = event.context.messageBuffer.toArray
 
-  def paramValues: Map[String, String] = maybeBehaviorResponse.map { behaviorResponse =>
+  def paramValues: Map[String, Option[String]] = maybeBehaviorResponse.map { behaviorResponse =>
     behaviorResponse.parametersWithValues.map { p =>
-      (p.parameter.name, p.maybeValue.map(_.text).getOrElse("<none>"))
+      (p.parameter.name, p.maybeValue.map(_.text))
     }.toMap
   }.getOrElse(Map())
 
-  implicit val outputWrites = Json.writes[BehaviorTestReportOutput]
+  // Manual JSON writer so that None values become null rather than omitted
+  implicit val outputWrites: Writes[BehaviorTestReportOutput] = (
+    (__ \ "message").write[String] and
+      (__ \ "activatedTrigger").write[Option[String]] and
+      (__ \ "paramValues").write[Map[String, Option[String]]] and
+      (__ \ "responseMessage").write[Option[String]]
+  )(unlift(BehaviorTestReportOutput.unapply))
 
   def json: JsValue = {
     val data = BehaviorTestReportOutput(
       event.context.fullMessageText,
-      maybeActivatedTrigger.map(_.pattern).getOrElse("<no match>"),
+      maybeActivatedTrigger.map(_.pattern),
       paramValues,
-      messages.headOption.getOrElse("<no response>")
+      messages.headOption
     )
     Json.toJson(data)
   }

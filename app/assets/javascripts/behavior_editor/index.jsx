@@ -6,6 +6,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorVersion = require('../models/behavior_version'),
+  BehaviorTester = require('./behavior_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   Checklist = require('./checklist'),
   CodeEditor = require('./code_editor'),
@@ -102,7 +103,8 @@ return React.createClass({
       id: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
     }),
-    onSave: React.PropTypes.func.isRequired
+    onSave: React.PropTypes.func.isRequired,
+    onLoad: React.PropTypes.func
   },
 
 
@@ -652,7 +654,7 @@ return React.createClass({
       event.preventDefault();
       if (this.isModified()) {
         this.refs.saveButton.focus();
-        this.onSubmit();
+        this.onSaveBehavior();
       }
     }
   },
@@ -664,7 +666,7 @@ return React.createClass({
     });
   },
 
-  backgroundSave: function() {
+  backgroundSave: function(optionalCallback) {
     var form = new FormData(this.refs.behaviorForm);
     fetch(this.getFormAction(), {
       credentials: 'same-origin',
@@ -678,7 +680,8 @@ return React.createClass({
     }).then((response) => response.json())
       .then((json) => {
         if (json.behaviorId) {
-          this.props.onSave(json, true);
+          let newProps = Object.assign({}, json, { onLoad: optionalCallback });
+          this.props.onSave(newProps, true);
         } else {
           this.onSaveError();
         }
@@ -696,13 +699,10 @@ return React.createClass({
     }
   },
 
-  onSubmit: function(maybeEvent) {
-    if (maybeEvent) {
-      maybeEvent.preventDefault();
-    }
+  onSaveBehavior: function(optionalCallback) {
     this.setState({ error: null });
     this.toggleActivePanel('saving', true);
-    this.checkDataAndCallback(this.backgroundSave);
+    this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
   },
 
   submitForm: function() {
@@ -829,6 +829,24 @@ return React.createClass({
 
   toggleAWSHelp: function() {
     this.toggleActivePanel('helpForAWS');
+  },
+
+  checkIfModifiedAndTest: function() {
+    if (this.isModified()) {
+      this.onSaveBehavior(() => {
+        this.toggleBehaviorTester();
+      });
+    } else {
+      this.toggleBehaviorTester();
+    }
+  },
+
+  toggleBehaviorTester: function() {
+    this.toggleActivePanel('behaviorTester', true, () => {
+      if (this.getActivePanel() === 'behaviorTester') {
+        this.refs.behaviorTester.focus();
+      }
+    });
   },
 
   toggleBoilerplateHelp: function() {
@@ -1224,6 +1242,9 @@ return React.createClass({
       versionsLoadStatus: null,
       error: null
     });
+    if (nextProps.onLoad) {
+      nextProps.onLoad();
+    }
   },
 
   renderPageHeading: function() {
@@ -1233,15 +1254,6 @@ return React.createClass({
           <h3 className="mvn ptxxl type-weak display-ellipsis">
             <span>{this.getPageHeading()}</span>
           </h3>
-
-          {/*
-           <form ref="testBehaviorForm" action="/test_behavior_version" method="POST">
-           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-           <input type="text" name="message" />
-           <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-           <input type="submit" />
-           </form>
-           */}
         </div>
       </div>
     );
@@ -1422,6 +1434,17 @@ return React.createClass({
             />
           </Collapsible>
 
+          <Collapsible revealWhen={this.getActivePanel() === 'behaviorTester'}>
+            <BehaviorTester
+              ref="behaviorTester"
+              triggers={this.getBehaviorTriggers()}
+              params={this.getBehaviorParams()}
+              behaviorId={this.props.behaviorId}
+              csrfToken={this.props.csrfToken}
+              onDone={this.toggleBehaviorTester}
+            />
+          </Collapsible>
+
           <Collapsible ref="saving" revealWhen={this.isSaving()}>
             <div className="box-action">
               <div className="container phn">
@@ -1441,7 +1464,7 @@ return React.createClass({
                 <div className="column column-expand mobile-column-auto">
                   <DynamicLabelButton
                     ref="saveButton"
-                    type="submit"
+                    onClick={this.onSaveBehavior}
                     labels={[{
                       text: 'Save changes',
                       mobileText: 'Save',
@@ -1453,10 +1476,21 @@ return React.createClass({
                     className="button-primary mrs mbm"
                     disabledWhen={!this.isModified() || this.isSaving()}
                   />
-                  <button className="mrl mbm" type="button" disabled={!this.isModified() || this.isSaving()} onClick={this.confirmUndo}>
+                  <button className="mrs mbm" type="button" disabled={!this.isModified() || this.isSaving()} onClick={this.confirmUndo}>
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </button>
+                  <DynamicLabelButton
+                    labels={[{
+                      text: 'Test…',
+                      displayWhen: !this.isModified()
+                    }, {
+                      text: 'Save and test…',
+                      displayWhen: this.isModified()
+                    }]}
+                    disabledWhen={!this.isExistingBehavior() && !this.isModified()}
+                    className="mrl mbm" onClick={this.checkIfModifiedAndTest}
+                  />
                   <div className="display-inline-block align-button mbm type-bold type-italic">
                     {this.renderFooterStatus()}
                   </div>
@@ -1529,7 +1563,7 @@ return React.createClass({
       <div>
         {this.renderPageHeading()}
 
-      <form action={this.getFormAction()} method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
+      <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
         {this.renderHiddenFormValues()}
 
@@ -1667,7 +1701,7 @@ return React.createClass({
       <div>
         {this.renderPageHeading()}
 
-        <form action={this.getFormAction()} method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
+        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
 
           <div className="container ptxl pbxxxl">

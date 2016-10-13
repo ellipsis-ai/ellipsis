@@ -140,24 +140,22 @@ describe('BehaviorEditor', () => {
       editor.hasModifiedTemplate.mockReturnValue(true);
       expect(editor.getBehaviorTemplate().toString()).toEqual('');
     });
+  });
 
-    it('submits default template when that\'s all there is', () => {
+  describe('checkDataAndCallback', () => {
+    it('sets the default template when that\'s all there is', () => {
       editorConfig.responseTemplate = '';
       let editor = createEditor(editorConfig);
+      let defaultTemplate = ResponseTemplate.fromString('default');
       editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
-      editor.backgroundSave = jest.fn();
-      editor.setBehaviorProp = jest.fn((key, value, callback) => callback());
-      const event = {
-        preventDefault: jest.fn()
-      };
-      editor.onSubmit(event);
-      expect(event.preventDefault.mock.calls.length).toBe(1);
-      expect(editor.setBehaviorProp.mock.calls.length).toBe(1);
-      expect(editor.setBehaviorProp.mock.calls[0][0]).toBe('responseTemplate');
-      expect(editor.setBehaviorProp.mock.calls[0][1].toString()).toEqual('default');
-      expect(editor.backgroundSave.mock.calls.length).toBe(1);
-
+      editor.getDefaultBehaviorTemplate.mockReturnValue(defaultTemplate);
+      editor.setBehaviorProp = jest.fn();
+      let callback = jest.fn();
+      editor.checkDataAndCallback(callback);
+      let mock = editor.setBehaviorProp.mock;
+      expect(mock.calls.length).toBe(1);
+      let firstCallArgs = mock.calls[0];
+      expect(firstCallArgs).toEqual(['responseTemplate', defaultTemplate, callback]);
     });
   });
 
