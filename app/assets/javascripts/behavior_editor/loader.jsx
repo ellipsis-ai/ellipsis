@@ -15,7 +15,6 @@ requirejs(['../common'], function() {
         notifications: config.notifications,
         onSave: reload
       };
-      debugger;
 
       function reload(newData, justSaved) {
         var combinedData = Object.assign({}, newData, additionalData);
