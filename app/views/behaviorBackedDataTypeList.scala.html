@@ -17,19 +17,7 @@
     <ul>
     @dataTypes.map { ea =>
       <li>
-        <form action="@routes.BehaviorBackedDataTypeController.save" method="POST">
-          @CSRF.formField
-          <input type="hidden" name="id" value="@ea.id"/>
-          <input type="text" name="name" value="@ea.name" />
-          <input type="submit" value="Save"/>
-        </form>
-        <a class="prl" href="@routes.BehaviorEditorController.edit(ea.behavior.id)">Edit behavior</a>
-        <a class="prl" href="@routes.BehaviorBackedDataTypeController.export(ea.id)">Export data type</a>
-        <form action="@routes.BehaviorBackedDataTypeController.delete" method="POST">
-          @CSRF.formField
-          <input type="hidden" name="id" value="@ea.id"/>
-          <input type="submit" value="Delete"/>
-        </form>
+        <a class="prl" href="@routes.BehaviorEditorController.edit(ea.behavior.id)">@ea.name</a>
       </li>
     }
     </ul>
