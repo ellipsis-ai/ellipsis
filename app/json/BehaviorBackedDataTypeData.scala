@@ -32,7 +32,7 @@ case class BehaviorBackedDataTypeData(
       "",
       Seq(),
       Seq(),
-      BehaviorConfig(None, config.aws, config.requiredOAuth2ApiConfigs),
+      BehaviorConfig(None, config.aws, config.requiredOAuth2ApiConfigs, Some(config.name)),
       None,
       None,
       dataTypeId.map(id => BehaviorBackedDataTypeDataForBehavior(id, config.name)),

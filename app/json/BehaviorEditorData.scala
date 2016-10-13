@@ -84,7 +84,7 @@ object BehaviorEditorData {
           "",
           Seq(),
           Seq(),
-          BehaviorConfig(None, None, None),
+          BehaviorConfig(None, None, None, None),
           None,
           None,
           None,
