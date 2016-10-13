@@ -1672,6 +1672,29 @@ return React.createClass({
     );
   },
 
+  renderDataTypeNameInput: function() {
+    return (
+      <div className="container ptxl pbxxxl">
+        <div className="columns">
+          <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
+            <SectionHeading>Data type name</SectionHeading>
+          </div>
+          <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+            <div className="mbm">
+              <Input
+                className="form-input-borderless form-input-large"
+                ref="input"
+                value={this.getDataType().name}
+                placeholder="Give data type a name"
+                onChange={this.updateDataTypeName}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  },
+
   renderDataTypeBehavior: function() {
     return (
       <div>
@@ -1680,24 +1703,7 @@ return React.createClass({
         <form action={this.getFormAction()} method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
           {this.renderHiddenFormValues()}
 
-          <div className="container ptxl pbxxxl">
-            <div className="columns">
-              <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-                <SectionHeading>Data type name</SectionHeading>
-              </div>
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
-                <div className="mbm">
-                  <Input
-                    className="form-input-borderless form-input-large"
-                    ref="input"
-                    value={this.getDataType().name}
-                    placeholder="Give data type a name"
-                    onChange={this.updateDataTypeName}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          {this.renderDataTypeNameInput()}
 
           <div className="container ptxl pbxxxl">
             <div className="columns">
