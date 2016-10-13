@@ -29,9 +29,9 @@ class BehaviorEditorController @Inject() (
                                            val testReportBuilder: BehaviorTestReportBuilder
                                          ) extends ReAuthable {
 
-  def newBehavior(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  private def newBehavior(isForDataType: Boolean, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    BehaviorEditorData.buildForNew(user, maybeTeamId, dataService).flatMap { maybeEditorData =>
+    BehaviorEditorData.buildForNew(user, maybeTeamId, isForDataType, dataService).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
         Future.successful(Ok(views.html.editBehavior(editorData)))
       }.getOrElse {
@@ -49,6 +49,10 @@ class BehaviorEditorController @Inject() (
       }
     }
   }
+
+  def newForNormalBehavior(maybeTeamId: Option[String]) = newBehavior(isForDataType = false, maybeTeamId)
+
+  def newForDataType(maybeTeamId: Option[String]) = newBehavior(isForDataType = true, maybeTeamId)
 
   def edit(id: String, maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
@@ -107,8 +111,17 @@ class BehaviorEditorController @Inject() (
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
                 dataService.behaviorVersions.createFor(behavior, Some(user), data).map(Some(_))
               }.getOrElse(Future.successful(None))
-              _ <- data.dataType.map { dataType =>
-                dataService.behaviorBackedDataTypes.updateName(dataType.id, dataType.name)
+              _ <- maybeBehavior.flatMap { behavior =>
+                data.dataType.map { dataType =>
+                  (for {
+                    id <- dataType.id
+                    name <- dataType.name
+                  } yield {
+                    dataService.behaviorBackedDataTypes.updateName(id, name).map(Some(_))
+                  }).getOrElse {
+                    dataService.behaviorBackedDataTypes.createFor(dataType.name.getOrElse(""), behavior)
+                  }
+                }
               }.getOrElse(Future.successful({}))
               maybePreviousRequiredOAuth2ApiConfig <- info.maybeRequiredOAuth2ApiConfigId.map { id =>
                 dataService.requiredOAuth2ApiConfigs.find(id)
@@ -232,7 +245,7 @@ class BehaviorEditorController @Inject() (
             behavior.maybeImportedId,
             None,
             maybeDataType.map { dataType =>
-              BehaviorBackedDataTypeDataForBehavior(dataType.id, dataType.name)
+              BehaviorBackedDataTypeDataForBehavior(Some(dataType.id), Some(dataType.name))
             },
             Some(version.createdAt),
             dataService

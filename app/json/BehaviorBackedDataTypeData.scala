@@ -35,7 +35,7 @@ case class BehaviorBackedDataTypeData(
       BehaviorConfig(None, config.aws, config.requiredOAuth2ApiConfigs, Some(config.name)),
       None,
       None,
-      dataTypeId.map(id => BehaviorBackedDataTypeDataForBehavior(id, config.name)),
+      Some(BehaviorBackedDataTypeDataForBehavior(dataTypeId, Some(config.name))),
       createdAt,
       dataService
     )
@@ -88,10 +88,13 @@ object BehaviorBackedDataTypeData {
   }
 }
 
-case class BehaviorBackedDataTypeDataForBehavior(id: String, name: String)
+case class BehaviorBackedDataTypeDataForBehavior(
+                                                  id: Option[String],
+                                                  name: Option[String]
+                                                )
 
 object BehaviorBackedDataTypeDataForBehavior {
   def from(dataType: BehaviorBackedDataType): BehaviorBackedDataTypeDataForBehavior = {
-    BehaviorBackedDataTypeDataForBehavior(dataType.id, dataType.name)
+    BehaviorBackedDataTypeDataForBehavior(Some(dataType.id), Some(dataType.name))
   }
 }

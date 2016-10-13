@@ -101,8 +101,8 @@ return React.createClass({
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool,
     dataType: React.PropTypes.shape({
-      id: React.PropTypes.string.isRequired,
-      name: React.PropTypes.string.isRequired
+      id: React.PropTypes.string,
+      name: React.PropTypes.string
     }),
     onSave: React.PropTypes.func.isRequired,
     onLoad: React.PropTypes.func
@@ -1726,7 +1726,7 @@ return React.createClass({
               <Input
                 className="form-input-borderless form-input-large"
                 ref="input"
-                value={this.getDataType().name}
+                value={this.getDataType().name || ""}
                 placeholder="Give data type a name"
                 onChange={this.updateDataTypeName}
               />
