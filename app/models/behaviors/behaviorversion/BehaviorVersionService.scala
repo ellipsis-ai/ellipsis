@@ -40,6 +40,8 @@ trait BehaviorVersionService {
 
   def maybeFunctionFor(behaviorVersion: BehaviorVersion): Future[Option[String]]
 
+  def maybePreviousFor(behaviorVersion: BehaviorVersion): Future[Option[BehaviorVersion]]
+
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
