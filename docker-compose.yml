@@ -1,0 +1,38 @@
+version: '2'
+services:
+  web:
+    build: .
+    volumes:
+      - .:/home/ellipsis/code
+    command: /bin/bash
+    tty: true
+    stdin_open: true
+    links:
+      - memcached
+      - postgres
+    # - activator_cache
+    # volumes_from:
+    #   - activator_cache
+    # ports:
+    #   - "9000:9000"
+    # command: /home/ellipsis/code/actw run
+
+  # activator_cache:
+  #   volumes:
+  #     - /root/.ivy2
+  #     - /root/.sbt
+  #   image: busybox
+  #   command: /bin/sh
+  #   stdin_open: true
+  memcached:
+    image: memcached
+  postgres:
+    image: postgres
+    volumes:
+      - ~/db/pgdata:/pgdata
+      - ./db/setup_new_db.sql:/docker-entrypoint-initdb.d/setup_new_db.sql
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=ellipsis
+      - PGDATA=/pgdata

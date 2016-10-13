@@ -14,6 +14,7 @@ var React = require('react'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('./confirm_action_panel'),
+  DynamicLabelButton = require('../form/dynamic_label_button'),
   DropdownMenu = require('./dropdown_menu'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
@@ -28,6 +29,7 @@ var React = require('react'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
+  SVGWarning = require('../svg/warning'),
   Collapsible = require('../collapsible'),
   CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
   BrowserUtils = require('../browser_utils'),
@@ -100,7 +102,8 @@ return React.createClass({
     dataType: React.PropTypes.shape({
       id: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
-    })
+    }),
+    onSave: React.PropTypes.func.isRequired
   },
 
 
@@ -181,16 +184,6 @@ return React.createClass({
     return this.state.behavior[key];
   },
 
-  getBehaviorStatusText: function() {
-    if (this.state.justSaved) {
-      return (<span className="type-green fade-in"> — saved successfully</span>);
-    } else if (this.isModified()) {
-      return (<span className="type-pink fade-in"> — unsaved changes</span>);
-    } else {
-      return (<span>&nbsp;</span>);
-    }
-  },
-
   getBehaviorTemplate: function() {
     var template = this.state ? this.getBehaviorProp('responseTemplate') : this.props.responseTemplate;
     if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
@@ -204,7 +197,7 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('triggers');
     } else {
-      return this.getInitialTriggers();
+      return this.getInitialTriggersFromProps(this.props);
     }
   },
 
@@ -413,9 +406,9 @@ return React.createClass({
     });
   },
 
-  getInitialTriggers: function() {
-    if (this.props.triggers && this.props.triggers.length > 0) {
-      return this.props.triggers;
+  getInitialTriggersFromProps: function(props) {
+    if (props.triggers && props.triggers.length > 0) {
+      return props.triggers;
     } else if (!this.isDataTypeBehavior()) {
       return [new Trigger()];
     } else {
@@ -659,25 +652,62 @@ return React.createClass({
     } else if (Event.keyPressWasSaveShortcut(event)) {
       event.preventDefault();
       if (this.isModified()) {
+        this.refs.saveButton.focus();
         this.onSubmit();
       }
     }
   },
 
+  onSaveError: function() {
+    this.setState({
+      activePanel: null,
+      error: "not_saved"
+    });
+  },
+
+  backgroundSave: function() {
+    var form = new FormData(this.refs.behaviorForm);
+    fetch(this.getFormAction(), {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Csrf-Token': this.props.csrfToken,
+        'x-requested-with': 'XMLHttpRequest'
+      },
+      body: form
+    }).then((response) => response.json())
+      .then((json) => {
+        if (json.behaviorId) {
+          this.props.onSave(json, true);
+        } else {
+          this.onSaveError();
+        }
+      })
+      .catch((error) => {
+        this.onSaveError(error);
+      });
+  },
+
+  checkDataAndCallback: function(callback) {
+    if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
+      this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), callback);
+    } else {
+      callback();
+    }
+  },
+
   onSubmit: function(maybeEvent) {
-    var doSubmit = () => { this.refs.behaviorForm.submit(); };
     if (maybeEvent) {
       maybeEvent.preventDefault();
     }
-    this.setState({
-      isSaving: true
-    }, () => {
-      if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
-        this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), doSubmit);
-      } else {
-        doSubmit();
-      }
-    });
+    this.setState({ error: null });
+    this.toggleActivePanel('saving', true);
+    this.checkDataAndCallback(this.backgroundSave);
+  },
+
+  submitForm: function() {
+    this.refs.behaviorForm.submit();
   },
 
   showVersionIndex: function(versionIndex, optionalCallback) {
@@ -954,7 +984,7 @@ return React.createClass({
   },
 
   undoChanges: function() {
-    var newBehavior = this.getInitialBehavior();
+    var newBehavior = this.getInitialBehaviorFromProps(this.props);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     this.setState({
@@ -1006,9 +1036,13 @@ return React.createClass({
   },
 
   isModified: function() {
-    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialBehavior());
+    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialBehaviorFromProps(this.props));
     var previewingVersions = this.getActivePanel() === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
+  },
+
+  isSaving: function() {
+    return this.getActivePanel() === 'saving';
   },
 
   shouldFilterCurrentVersion: function() {
@@ -1104,7 +1138,7 @@ return React.createClass({
     this.setState({
       redirectValue: "newOAuth2Application",
       requiredOAuth2ApiConfigId: requiredOAuth2ApiConfigId || ""
-    }, () => { this.onSubmit(); });
+    }, () => { this.checkDataAndCallback(this.submitForm); });
   },
 
   onParamEnterKey: function(index) {
@@ -1149,16 +1183,16 @@ return React.createClass({
     window.document.addEventListener('focus', this.handleModalFocus, true);
   },
 
-  getInitialBehavior: function() {
+  getInitialBehaviorFromProps: function(props) {
     return {
-      teamId: this.props.teamId,
-      behaviorId: this.props.behaviorId,
-      functionBody: this.props.functionBody,
-      responseTemplate: this.props.responseTemplate,
-      params: this.props.params,
-      triggers: this.getInitialTriggers(),
-      config: this.props.config,
-      knownEnvVarsUsed: this.props.knownEnvVarsUsed
+      teamId: props.teamId,
+      behaviorId: props.behaviorId,
+      functionBody: props.functionBody,
+      responseTemplate: props.responseTemplate,
+      params: props.params,
+      triggers: this.getInitialTriggersFromProps(props),
+      config: props.config,
+      knownEnvVarsUsed: props.knownEnvVarsUsed
     };
   },
 
@@ -1167,14 +1201,13 @@ return React.createClass({
   },
 
   getInitialState: function() {
-    var initialBehavior = this.getInitialBehavior();
+    var initialBehavior = this.getInitialBehaviorFromProps(this.props);
     return {
       behavior: initialBehavior,
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
-      isSaving: false,
       envVariables: this.getInitialEnvVariables(),
       revealCodeEditor: this.shouldRevealCodeEditor(),
       hasModifiedTemplate: !!(this.props.responseTemplate && this.props.responseTemplate.text),
@@ -1185,8 +1218,21 @@ return React.createClass({
       envVariableAdderPrompt: null,
       redirectValue: "",
       requiredOAuth2ApiConfigId: "",
-      paramNameToSync: null
+      paramNameToSync: null,
+      error: null
     };
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    var newBehaviorVersion = this.getInitialBehaviorFromProps(nextProps);
+    this.setState({
+      activePanel: null,
+      justSaved: true,
+      behavior: newBehaviorVersion,
+      versions: [this.getTimestampedBehavior(newBehaviorVersion)],
+      versionsLoadStatus: null,
+      error: null
+    });
   },
 
   renderPageHeading: function() {
@@ -1195,7 +1241,6 @@ return React.createClass({
         <div className="container pbm">
           <h3 className="mvn ptxxl type-weak display-ellipsis">
             <span>{this.getPageHeading()}</span>
-            <span className="type-italic">{this.getBehaviorStatusText()}</span>
           </h3>
         </div>
       </div>
@@ -1388,6 +1433,16 @@ return React.createClass({
             />
           </Collapsible>
 
+          <Collapsible ref="saving" revealWhen={this.isSaving()}>
+            <div className="box-action">
+              <div className="container phn">
+                <p className="align-c">
+                  <b className="pulse">Saving changes…</b>
+                </p>
+              </div>
+            </div>
+          </Collapsible>
+
           <Collapsible revealWhen={!this.hasModalPanel() && this.getActivePanel() !== 'behaviorTester'}>
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
@@ -1395,23 +1450,28 @@ return React.createClass({
             <div className="container ptm">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
-                  <button type="submit"
-                    className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
-                    disabled={!this.isModified()}
-                  >
-                    <span className="button-labels">
-                      <span className="button-normal-label">
-                        <span className="mobile-display-none">Save changes</span>
-                        <span className="mobile-display-only">Save</span>
-                      </span>
-                      <span className="button-activated-label">Saving…</span>
-                    </span>
-                  </button>
-                  <button className="mrs mbm" type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>
+                  <DynamicLabelButton
+                    ref="saveButton"
+                    type="submit"
+                    labels={[{
+                      text: 'Save changes',
+                      mobileText: 'Save',
+                      displayWhen: !this.state.justSaved
+                    }, {
+                      text: 'Saved',
+                      displayWhen: this.state.justSaved
+                    }]}
+                    className="button-primary mrs mbm"
+                    disabledWhen={!this.isModified() || this.isSaving()}
+                  />
+                  <button className="mrs mbm" type="button" disabled={!this.isModified() || this.isSaving()} onClick={this.confirmUndo}>
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </button>
-                  <button className="mrs mbm" type="button" onClick={this.toggleBehaviorTester}>Test…</button>
+                  <button className="mrl mbm" type="button" onClick={this.toggleBehaviorTester}>Test…</button>
+                  <div className="display-inline-block align-button mbm type-bold type-italic">
+                    {this.renderFooterStatus()}
+                  </div>
                 </div>
                 <div className="column column-shrink align-r pbm">
                   {this.isExistingBehavior() ? (
@@ -1436,6 +1496,27 @@ return React.createClass({
         </footer>
       </div>
     );
+  },
+
+  renderFooterStatus: function() {
+    if (this.state.justSaved && !this.isSaving()) {
+      return (
+        <span className="fade-in type-green">All changes saved</span>
+      );
+    } else if (this.state.error === 'not_saved') {
+      return (
+        <span className="fade-in type-pink">
+          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+          <span>Error saving changes — please try again</span>
+        </span>
+      );
+    } else if (this.isModified()) {
+      return (
+        <span className="fade-in type-pink">Unsaved changes</span>
+      );
+    } else {
+      return "";
+    }
   },
 
   renderHiddenForms: function() {
