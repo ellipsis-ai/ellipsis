@@ -173,7 +173,7 @@ class AWSLambdaServiceImpl @Inject() (
   val alreadyIncludedModules = Array("aws-sdk", "dynamodb-doc")
 
   private def requiredModulesIn(code: String): Array[String] = {
-    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules)
+    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules).sorted
   }
 
   private def awsCodeFor(maybeAwsConfig: Option[AWSConfig]): String = {
@@ -235,12 +235,27 @@ class AWSLambdaServiceImpl @Inject() (
   private def dirNameFor(functionName: String) = s"/tmp/$functionName"
   private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
+  case class PreviousFunctionInfo(functionName: String, functionBody: String) {
+    val requiredModules = requiredModulesIn(functionBody)
+    val dirName = dirNameFor(functionName)
+
+    def canCopyModules(neededModules: Array[String]): Boolean = {
+      requiredModules.sameElements(neededModules) &&
+        Files.exists(Paths.get(dirName))
+    }
+
+    def copyModulesInto(destinationDirName: String) = {
+      Process(Seq("bash","-c",s"cp -r $dirName/node_modules $destinationDirName/"), None, "HOME" -> "/tmp").!
+    }
+  }
+
   private def createZipWithModulesFor(
                                        functionName: String,
                                        functionBody: String,
                                        params: Array[String],
                                        maybeAWSConfig: Option[AWSConfig],
-                                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
+                                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                                       maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
                                      ): Unit = {
     val dirName = dirNameFor(functionName)
     val path = Path(dirName)
@@ -250,12 +265,23 @@ class AWSLambdaServiceImpl @Inject() (
     writer.write(nodeCodeFor(functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs))
     writer.close()
 
-    requiredModulesIn(functionBody).foreach { moduleName =>
-      // NPM wants to write a lockfile in $HOME; this makes it work for daemons
-      Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
+    val requiredModules = requiredModulesIn(functionBody)
+    val shouldInstallModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
+      if (previousFunctionInfo.canCopyModules(requiredModules)) {
+        previousFunctionInfo.copyModulesInto(dirName)
+        false
+      } else {
+        true
+      }
+    }
+    if (shouldInstallModules) {
+      requiredModules.foreach { moduleName =>
+        // NPM wants to write a lockfile in $HOME; this makes it work for daemons
+        Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
+      }
     }
 
-    Process(Seq("bash","-c",s"cd $dirName && zip -r ${zipFileNameFor(functionName)} *")).!
+    Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
   }
 
   private def getZipFor(
@@ -263,9 +289,10 @@ class AWSLambdaServiceImpl @Inject() (
                          functionBody: String,
                          params: Array[String],
                          maybeAWSConfig: Option[AWSConfig],
-                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
+                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                         maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
                        ): ByteBuffer = {
-    createZipWithModulesFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs)
+    createZipWithModulesFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, maybePreviousFunctionInfo)
     val path = Paths.get(zipFileNameFor(functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -292,7 +319,8 @@ class AWSLambdaServiceImpl @Inject() (
                       functionBody: String,
                       params: Array[String],
                       maybeAWSConfig: Option[AWSConfig],
-                      requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
+                      requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                      maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
                     ): Future[Unit] = {
 
     deleteFunction(functionName).andThen {
@@ -302,7 +330,7 @@ class AWSLambdaServiceImpl @Inject() (
       } else {
         val functionCode =
           new FunctionCode().
-            withZipFile(getZipFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs))
+            withZipFile(getZipFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, maybePreviousFunctionInfo))
         val createFunctionRequest =
           new CreateFunctionRequest().
             withFunctionName(functionName).
@@ -324,6 +352,12 @@ class AWSLambdaServiceImpl @Inject() (
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
                          ): Future[Unit] = {
-    deployFunction(behaviorVersion.functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs)
+    dataService.behaviorVersions.maybePreviousFor(behaviorVersion).map { maybePrevious =>
+      val maybePreviousFunctionInfo = maybePrevious.map { version =>
+        PreviousFunctionInfo(version.functionName, version.functionBody)
+      }
+      deployFunction(behaviorVersion.functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, maybePreviousFunctionInfo)
+    }
+
   }
 }

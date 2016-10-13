@@ -238,6 +238,17 @@ class BehaviorVersionServiceImpl @Inject() (
     }.getOrElse(Future.successful(None))
   }
 
+  def maybePreviousFor(behaviorVersion: BehaviorVersion): Future[Option[BehaviorVersion]] = {
+    allFor(behaviorVersion.behavior).map { versions =>
+      val index = versions.indexWhere(_.id == behaviorVersion.id)
+      if (index == versions.size - 1) {
+        None
+      } else {
+        Some(versions(index + 1))
+      }
+    }
+  }
+
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
