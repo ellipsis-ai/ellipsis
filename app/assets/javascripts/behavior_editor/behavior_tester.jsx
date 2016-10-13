@@ -68,7 +68,6 @@ define(function(require) {
       })
         .then((response) => response.json())
         .then((json) => {
-          console.log(json);
           this.setState({
             highlightedTriggerText: json.activatedTrigger || null,
             paramValues: json.paramValues,
