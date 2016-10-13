@@ -135,7 +135,7 @@ object BehaviorVersionData {
           requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
         }
         val maybeDataType = dataTypes.find(_.behavior.id == behavior.id).map { dataType =>
-          BehaviorBackedDataTypeDataForBehavior(dataType.id, dataType.name)
+          BehaviorBackedDataTypeDataForBehavior(Some(dataType.id), Some(dataType.name))
         }
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
@@ -148,7 +148,7 @@ object BehaviorVersionData {
           triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
-          BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData, maybeDataType.map(_.name)),
+          BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData, maybeDataType.flatMap(_.name)),
           behavior.maybeImportedId,
           githubUrl = None,
           maybeDataType,
