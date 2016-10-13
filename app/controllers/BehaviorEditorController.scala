@@ -115,14 +115,22 @@ class BehaviorEditorController @Inject() (
                   dataService.requiredOAuth2ApiConfigs.allFor(config.api, version).map(_.headOption)
                 }
               }.getOrElse(Future.successful(None))
+              maybeBehaviorVersionData <- maybeBehavior.map { behavior =>
+                BehaviorVersionData.maybeFor(behavior.id, user, dataService)
+              }.getOrElse(Future.successful(None))
             } yield {
-              maybeBehavior.map { behavior =>
+              (for {
+                behavior <- maybeBehavior
+                behaviorVersionData <- maybeBehaviorVersionData
+              } yield {
                 if (info.maybeRedirect.contains("newOAuth2Application")) {
                   Redirect(routes.OAuth2ApplicationController.newApp(maybeRequiredOAuth2ApiConfig.map(_.id), Some(data.teamId), Some(behavior.id)))
+                } else if (request.accepts("application/json")) {
+                  Ok(Json.toJson(behaviorVersionData))
                 } else {
                   Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
                 }
-              }.getOrElse {
+              }).getOrElse {
                 NotFound(
                   views.html.notFound(
                     Some(teamAccess),
