@@ -198,6 +198,9 @@ class BehaviorEditorController @Inject() (
           (version, apps)
         }
       }).map(_.toMap)
+      dataTypes <- maybeBehavior.map { behavior =>
+        dataService.behaviorBackedDataTypes.allFor(behavior.team)
+      }.getOrElse(Future.successful(Seq()))
     } yield {
       maybeBehavior.map { behavior =>
         val versionsData = versions.map { version =>
@@ -209,6 +212,7 @@ class BehaviorEditorController @Inject() (
           val maybeRequiredOAuth2ApiConfigsData = requiredOAuth2ApiConfigsByVersion.get(version).map { configs =>
             configs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
           }
+          val maybeDataType = dataTypes.find(_.behavior.id == behavior.id)
           BehaviorVersionData.buildFor(
             version.team.id,
             Some(behavior.id),
@@ -224,10 +228,12 @@ class BehaviorEditorController @Inject() (
                 BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
               }
             }.getOrElse(Seq()),
-            BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData),
+            BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData, maybeDataType.map(_.name)),
             behavior.maybeImportedId,
             None,
-            None,
+            maybeDataType.map { dataType =>
+              BehaviorBackedDataTypeDataForBehavior(dataType.id, dataType.name)
+            },
             Some(version.createdAt),
             dataService
           )

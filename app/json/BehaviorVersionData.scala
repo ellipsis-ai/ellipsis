@@ -148,7 +148,7 @@ object BehaviorVersionData {
           triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
-          BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData),
+          BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData, maybeDataType.map(_.name)),
           behavior.maybeImportedId,
           githubUrl = None,
           maybeDataType,

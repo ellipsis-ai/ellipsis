@@ -729,7 +729,8 @@ return React.createClass({
         params: version.params,
         triggers: version.triggers,
         config: version.config,
-        knownEnvVarsUsed: version.knownEnvVarsUsed
+        knownEnvVarsUsed: version.knownEnvVarsUsed,
+        dataType: version.dataType
       },
       revealCodeEditor: !!version.functionBody,
       justSaved: false
