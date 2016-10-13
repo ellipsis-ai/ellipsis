@@ -48,7 +48,7 @@ case class BehaviorTestReport  (
 
   def paramValues: Map[String, Option[String]] = maybeBehaviorResponse.map { behaviorResponse =>
     behaviorResponse.parametersWithValues.map { p =>
-      (p.parameter.name, p.maybeValue.map(value => Some(value.text)).getOrElse(None))
+      (p.parameter.name, p.maybeValue.map(_.text))
     }.toMap
   }.getOrElse(Map())
 
@@ -63,7 +63,7 @@ case class BehaviorTestReport  (
   def json: JsValue = {
     val data = BehaviorTestReportOutput(
       event.context.fullMessageText,
-      maybeActivatedTrigger.map(trigger => Some(trigger.pattern)).getOrElse(None),
+      maybeActivatedTrigger.map(_.pattern),
       paramValues,
       messages.headOption
     )
