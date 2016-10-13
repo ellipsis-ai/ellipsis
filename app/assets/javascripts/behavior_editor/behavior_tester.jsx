@@ -92,7 +92,9 @@ define(function(require) {
     },
 
     focus: function() {
-      this.refs.testMessage.focus();
+      if (this.refs.testMessage) {
+        this.refs.testMessage.focus();
+      }
     },
 
     getTriggers: function() {
@@ -152,10 +154,6 @@ define(function(require) {
               </div>
               <div className="column column-three-quarters pll mobile-pln mobile-column-full">
                 {ifPresent(this.getTriggers(), this.renderTriggerTester, this.renderNoTriggers)}
-
-                <div className="mvxl">
-                  <button type="button" onClick={this.props.onDone}>Done</button>
-                </div>
               </div>
             </div>
           </div>
@@ -189,6 +187,10 @@ define(function(require) {
             <span>{this.getParamTestingStatus()}</span>
           </h4>
           {ifPresent(this.props.params, this.renderParams, this.renderNoParams)}
+
+          <div className="mvxl">
+            <button type="button" onClick={this.props.onDone}>Done</button>
+          </div>
         </div>
       );
     },
@@ -209,6 +211,10 @@ define(function(require) {
       return (
         <div>
           <p>This behavior does not have any triggers. Add at least one trigger before testing.</p>
+
+          <div className="mvxl">
+            <button type="button" onClick={this.props.onDone}>OK</button>
+          </div>
         </div>
       );
     },
