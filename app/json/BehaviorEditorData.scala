@@ -92,7 +92,9 @@ object BehaviorEditorData {
         )
       }
       val maybeDataTypeForBehavior = maybeBehaviorVersionData.flatMap { data =>
-        dataTypes.find(_.behavior.id == data.behaviorId)
+        dataTypes.find { dataType =>
+          data.behaviorId.contains(dataType.behavior.id)
+        }
       }
       BehaviorEditorData(
         teamAccess,
