@@ -4,6 +4,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageContext, MessageEvent}
 import play.api.libs.json._
+import play.api.libs.functional.syntax._
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,7 +52,13 @@ case class BehaviorTestReport  (
     }.toMap
   }.getOrElse(Map())
 
-  implicit val outputWrites = Json.writes[BehaviorTestReportOutput]
+  // Manual JSON writer so that None values become null rather than omitted
+  implicit val outputWrites: Writes[BehaviorTestReportOutput] = (
+    (__ \ "message").write[String] and
+      (__ \ "activatedTrigger").write[Option[String]] and
+      (__ \ "paramValues").write[Map[String, Option[String]]] and
+      (__ \ "responseMessage").write[Option[String]]
+  )(unlift(BehaviorTestReportOutput.unapply))
 
   def json: JsValue = {
     val data = BehaviorTestReportOutput(
