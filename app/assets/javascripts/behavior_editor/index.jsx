@@ -1245,6 +1245,9 @@ return React.createClass({
     if (nextProps.onLoad) {
       nextProps.onLoad();
     }
+    if (newBehaviorVersion.behaviorId) {
+      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newBehaviorVersion.behaviorId).url);
+    }
   },
 
   renderPageHeading: function() {
