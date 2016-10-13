@@ -103,7 +103,8 @@ return React.createClass({
       id: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
     }),
-    onSave: React.PropTypes.func.isRequired
+    onSave: React.PropTypes.func.isRequired,
+    onLoad: React.PropTypes.func
   },
 
 
@@ -653,7 +654,7 @@ return React.createClass({
       event.preventDefault();
       if (this.isModified()) {
         this.refs.saveButton.focus();
-        this.onSubmit();
+        this.onSaveBehavior();
       }
     }
   },
@@ -665,7 +666,7 @@ return React.createClass({
     });
   },
 
-  backgroundSave: function() {
+  backgroundSave: function(optionalCallback) {
     var form = new FormData(this.refs.behaviorForm);
     fetch(this.getFormAction(), {
       credentials: 'same-origin',
@@ -679,7 +680,8 @@ return React.createClass({
     }).then((response) => response.json())
       .then((json) => {
         if (json.behaviorId) {
-          this.props.onSave(json, true);
+          let newProps = Object.assign({}, json, { onLoad: optionalCallback });
+          this.props.onSave(newProps, true);
         } else {
           this.onSaveError();
         }
@@ -697,13 +699,10 @@ return React.createClass({
     }
   },
 
-  onSubmit: function(maybeEvent) {
-    if (maybeEvent) {
-      maybeEvent.preventDefault();
-    }
+  onSaveBehavior: function(optionalCallback) {
     this.setState({ error: null });
     this.toggleActivePanel('saving', true);
-    this.checkDataAndCallback(this.backgroundSave);
+    this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
   },
 
   submitForm: function() {
@@ -832,8 +831,18 @@ return React.createClass({
     this.toggleActivePanel('helpForAWS');
   },
 
+  checkIfModifiedAndTest: function() {
+    if (this.isModified()) {
+      this.onSaveBehavior(() => {
+        this.toggleBehaviorTester();
+      });
+    } else {
+      this.toggleBehaviorTester();
+    }
+  },
+
   toggleBehaviorTester: function() {
-    this.toggleActivePanel('behaviorTester', false, () => {
+    this.toggleActivePanel('behaviorTester', true, () => {
       if (this.getActivePanel() === 'behaviorTester') {
         this.refs.behaviorTester.focus();
       }
@@ -1225,7 +1234,7 @@ return React.createClass({
 
   componentWillReceiveProps: function(nextProps) {
     var newBehaviorVersion = this.getInitialBehaviorFromProps(nextProps);
-    this.setState({
+    var newState = Object.assign({
       activePanel: null,
       justSaved: true,
       behavior: newBehaviorVersion,
@@ -1233,6 +1242,10 @@ return React.createClass({
       versionsLoadStatus: null,
       error: null
     });
+    this.setState(newState);
+    if (nextProps.onLoad) {
+      nextProps.onLoad();
+    }
   },
 
   renderPageHeading: function() {
@@ -1443,7 +1456,7 @@ return React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={!this.hasModalPanel() && this.getActivePanel() !== 'behaviorTester'}>
+          <Collapsible revealWhen={!this.hasModalPanel()}>
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
@@ -1452,7 +1465,7 @@ return React.createClass({
                 <div className="column column-expand mobile-column-auto">
                   <DynamicLabelButton
                     ref="saveButton"
-                    type="submit"
+                    onClick={this.onSaveBehavior}
                     labels={[{
                       text: 'Save changes',
                       mobileText: 'Save',
@@ -1468,7 +1481,16 @@ return React.createClass({
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </button>
-                  <button className="mrl mbm" type="button" onClick={this.toggleBehaviorTester}>Test…</button>
+                  <DynamicLabelButton
+                    labels={[{
+                      text: 'Test…',
+                      displayWhen: !this.isModified()
+                    }, {
+                      text: 'Save and test…',
+                      displayWhen: this.isModified()
+                    }]}
+                    className="mrl mbm" onClick={this.checkIfModifiedAndTest}
+                  />
                   <div className="display-inline-block align-button mbm type-bold type-italic">
                     {this.renderFooterStatus()}
                   </div>
@@ -1541,7 +1563,7 @@ return React.createClass({
       <div>
         {this.renderPageHeading()}
 
-      <form action={this.getFormAction()} method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
+      <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
         {this.renderHiddenFormValues()}
 
@@ -1679,7 +1701,7 @@ return React.createClass({
       <div>
         {this.renderPageHeading()}
 
-        <form action={this.getFormAction()} method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
+        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
 
           <div className="container ptxl pbxxxl">
