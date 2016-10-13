@@ -1234,7 +1234,7 @@ return React.createClass({
 
   componentWillReceiveProps: function(nextProps) {
     var newBehaviorVersion = this.getInitialBehaviorFromProps(nextProps);
-    var newState = Object.assign({
+    this.setState({
       activePanel: null,
       justSaved: true,
       behavior: newBehaviorVersion,
@@ -1242,7 +1242,6 @@ return React.createClass({
       versionsLoadStatus: null,
       error: null
     });
-    this.setState(newState);
     if (nextProps.onLoad) {
       nextProps.onLoad();
     }
