@@ -29,7 +29,6 @@
           oauth2Applications: @Html(Json.toJson(data.oauth2Applications).toString),
           oauth2Apis: @Html(Json.toJson(data.oauth2Apis).toString),
           notifications: [],
-          dataType: @Html(Json.toJson(data.dataType).toString)
         };
       </script>
       <script data-main='@RemoteAssets.getUrl("javascripts/behavior_editor/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>

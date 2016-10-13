@@ -13,9 +13,9 @@ requirejs(['../common'], function() {
         oauth2Apis: config.oauth2Apis,
         justSaved: config.justSaved,
         notifications: config.notifications,
-        dataType: config.dataType,
         onSave: reload
       };
+      debugger;
 
       function reload(newData, justSaved) {
         var combinedData = Object.assign({}, newData, additionalData);

@@ -107,6 +107,9 @@ class BehaviorEditorController @Inject() (
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
                 dataService.behaviorVersions.createFor(behavior, Some(user), data).map(Some(_))
               }.getOrElse(Future.successful(None))
+              _ <- data.dataType.map { dataType =>
+                dataService.behaviorBackedDataTypes.updateName(dataType.id, dataType.name)
+              }.getOrElse(Future.successful({}))
               maybePreviousRequiredOAuth2ApiConfig <- info.maybeRequiredOAuth2ApiConfigId.map { id =>
                 dataService.requiredOAuth2ApiConfigs.find(id)
               }.getOrElse(Future.successful(None))
@@ -223,6 +226,7 @@ class BehaviorEditorController @Inject() (
             }.getOrElse(Seq()),
             BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData),
             behavior.maybeImportedId,
+            None,
             None,
             Some(version.createdAt),
             dataService

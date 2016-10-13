@@ -18,6 +18,7 @@ var React = require('react'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
   HiddenJsonInput = require('./hidden_json_input'),
+  Input = require('../form/input'),
   Notification = require('../notifications/notification'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
@@ -227,6 +228,10 @@ return React.createClass({
   getCodeFunctionParams: function() {
     var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
     return userParams.concat(this.getSystemParams());
+  },
+
+  getDataType: function() {
+    return this.getBehaviorProp("dataType");
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -881,6 +886,10 @@ return React.createClass({
     });
   },
 
+  updateDataTypeName: function(newName) {
+    this.setBehaviorProp('dataType', Object.assign({}, this.getDataType(), { name: newName }));
+  },
+
   updateEnvVariables: function(envVars, options) {
     var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
     var data = {
@@ -1183,7 +1192,8 @@ return React.createClass({
       params: props.params,
       triggers: this.getInitialTriggersFromProps(props),
       config: props.config,
-      knownEnvVarsUsed: props.knownEnvVarsUsed
+      knownEnvVarsUsed: props.knownEnvVarsUsed,
+      dataType: props.dataType
     };
   },
 
@@ -1669,6 +1679,25 @@ return React.createClass({
 
         <form action={this.getFormAction()} method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
           {this.renderHiddenFormValues()}
+
+          <div className="container ptxl pbxxxl">
+            <div className="columns">
+              <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
+                <SectionHeading>Data type name</SectionHeading>
+              </div>
+              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+                <div className="mbm">
+                  <Input
+                    className="form-input-borderless form-input-large"
+                    ref="input"
+                    value={this.getDataType().name}
+                    placeholder="Give data type a name"
+                    onChange={this.updateDataTypeName}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="container ptxl pbxxxl">
             <div className="columns">
