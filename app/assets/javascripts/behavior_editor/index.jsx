@@ -1696,13 +1696,13 @@ return React.createClass({
                   <ToggleGroup className="form-toggle-group-s align-m">
                     <ToggleGroup.Item
                       title="Ellipsis will respond wherever you talk to it"
-                      label="Respond anywhere"
+                      label="Respond normally"
                       activeWhen={!this.shouldForcePrivateResponse()}
                       onClick={this.unsetForcePrivateResponse}
                     />
                     <ToggleGroup.Item
                       title="Ellipsis will always respond in a private message"
-                      label="Always respond privately"
+                      label="Respond privately"
                       activeWhen={this.shouldForcePrivateResponse()}
                       onClick={this.setForcePrivateResponse}
                     />
