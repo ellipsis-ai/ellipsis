@@ -57,7 +57,7 @@ case class SlackMessageContext(
     }
   }
 
-  def sendMessage(unformattedText: String, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
+  def sendMessage(unformattedText: String, forcePrivate: Boolean, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
     val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
     val apiClient = client.apiClient
     val maybeDMChannel = if (forcePrivate) {
@@ -68,6 +68,9 @@ case class SlackMessageContext(
     messageSegmentsFor(formattedText).foreach { ea =>
       // The Slack API considers sending an empty message to be an error rather than a no-op
       if (ea.nonEmpty) {
+        if (maybeDMChannel.isDefined && !maybeDMChannel.contains(message.channel)) {
+          apiClient.postChatMessage(message.channel, s"<@${message.user}> I've sent you a private message :sleuth_or_spy:", asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
+        }
         apiClient.postChatMessage(maybeDMChannel.getOrElse(message.channel), ea, asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
       }
     }
