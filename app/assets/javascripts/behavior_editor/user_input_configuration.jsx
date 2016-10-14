@@ -58,15 +58,13 @@ define(function(require) {
     },
 
     hasLinkedTriggers: function() {
-      return this.props.userParams.some((param, index) => this.countLinkedTriggersForParam(param.name, index));
+      return this.props.userParams.some((param) => {
+        return this.props.triggers.some((trigger) => trigger.usesParamName(param.name));
+      });
     },
 
     hasRegexCapturingTriggers: function() {
-      return this.props.triggers.some((trigger) => trigger.hasRegexCapturingParens);
-    },
-
-    hasInputWithQuestion: function() {
-      return this.props.userParams.some((param) => param.question.length > 0);
+      return this.props.triggers.some((trigger) => trigger.hasRegexCapturingParens());
     },
 
     render: function() {
@@ -97,9 +95,6 @@ define(function(require) {
                 <SectionHeading>Ellipsis will collect this input</SectionHeading>
 
                 <Checklist disabledWhen={this.props.isFinishedBehavior}>
-                  <Checklist.Item checkedWhen={this.hasInputWithQuestion()}>
-                    <span>For each input, Ellipsis can ask the user a question.</span>
-                  </Checklist.Item>
                   <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>
                     <span>If the behavior runs code, each input will be sent to the function as a parameter </span>
                     <span>with the same name.</span>
