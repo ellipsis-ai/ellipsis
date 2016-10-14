@@ -43,16 +43,16 @@ case class UserInfo(
   implicit val messageInfoWrites = Json.writes[MessageInfo]
 
   def toJson: JsObject = {
-    var parts: Seq[(String, JsValue)] = Seq(
+    val linkParts: Seq[(String, JsValue)] = Seq(
       "links" -> JsArray(links.map(_.toJson))
     )
     val messageInfoPart = maybeMessageInfo.map { info =>
       Seq("messageInfo" -> Json.toJson(info))
     }.getOrElse(Seq())
-    maybeUser.foreach { user =>
-      parts = parts ++ Seq("ellipsisUserId" -> JsString(user.id)) ++ messageInfoPart
-    }
-    JsObject(parts)
+    val userParts = maybeUser.map { user =>
+      Seq("ellipsisUserId" -> JsString(user.id))
+    }.getOrElse(Seq())
+    JsObject(userParts ++ linkParts ++ messageInfoPart)
   }
 }
 
