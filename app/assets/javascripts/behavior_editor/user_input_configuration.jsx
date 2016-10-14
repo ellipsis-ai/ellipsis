@@ -137,8 +137,9 @@ define(function(require) {
                       </div>
                     ))}
                   </div>
-                  <div className="align-r prsymbol mobile-align-l mbs">
-                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add another input
+                  <div>
+                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>
+                      Add another input
                     </button>
                   </div>
                 </div>
