@@ -25,6 +25,7 @@ case class BehaviorVersion(
                             maybeShortName: Option[String],
                             maybeFunctionBody: Option[String],
                             maybeResponseTemplate: Option[String],
+                            forcePrivateResponse: Boolean,
                             maybeAuthor: Option[User],
                             createdAt: DateTime
                           ) {
@@ -81,7 +82,7 @@ case class BehaviorVersion(
     val json = Json.parse(jsonString)
     val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(successResult, parametersWithValues, maybeResponseTemplate, logResultOption)
+      SuccessResult(successResult, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
         NoResponseResult(logResultOption)
@@ -100,7 +101,17 @@ case class BehaviorVersion(
   }
 
   def toRaw: RawBehaviorVersion = {
-    RawBehaviorVersion(id, behavior.id, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, maybeAuthor.map(_.id), createdAt)
+    RawBehaviorVersion(
+      id,
+      behavior.id,
+      maybeDescription,
+      maybeShortName,
+      maybeFunctionBody,
+      maybeResponseTemplate,
+      forcePrivateResponse,
+      maybeAuthor.map(_.id),
+      createdAt
+    )
   }
 
 }

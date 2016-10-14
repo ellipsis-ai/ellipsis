@@ -29,7 +29,7 @@ case class ResetBehaviorsBehavior(
       case e: AmazonServiceException => Future.successful("Got an error from AWS")
     }
     eventualReply.map { reply =>
-      SimpleTextResult(reply)
+      SimpleTextResult(reply, forcePrivateResponse = false)
     }
   }
 

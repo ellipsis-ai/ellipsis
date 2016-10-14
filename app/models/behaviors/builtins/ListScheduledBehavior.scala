@@ -45,7 +45,7 @@ case class ListScheduledBehavior(
         responseForMessages(scheduled)
       }
 
-      SimpleTextResult(responseText)
+      SimpleTextResult(responseText, forcePrivateResponse = false)
     }
   }
 

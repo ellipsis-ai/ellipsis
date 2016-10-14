@@ -29,6 +29,7 @@ case class RawBehaviorVersion(
                                maybeShortName: Option[String],
                                maybeFunctionBody: Option[String],
                                maybeResponseTemplate: Option[String],
+                               forcePrivateResponse: Boolean,
                                maybeAuthorId: Option[String],
                                createdAt: DateTime
                              )
@@ -41,11 +42,12 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def maybeShortName = column[Option[String]]("short_name")
   def maybeFunctionBody = column[Option[String]]("code")
   def maybeResponseTemplate = column[Option[String]]("response_template")
+  def forcePrivateResponse = column[Boolean]("private_response")
   def maybeAuthorId = column[Option[String]]("author_id")
   def createdAt = column[DateTime]("created_at")
 
   def * =
-    (id, behaviorId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, maybeAuthorId, createdAt) <>
+    (id, behaviorId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -103,10 +105,10 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def createFor(behavior: Behavior, maybeUser: Option[User]): Future[BehaviorVersion] = {
-    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, maybeUser.map(_.id), DateTime.now)
+    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), DateTime.now)
 
     val action = (all += raw).map { _ =>
-      BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, maybeUser, raw.createdAt)
+      BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)
     }
     dataService.run(action)
   }
@@ -122,7 +124,8 @@ class BehaviorVersionServiceImpl @Inject() (
       for {
         updated <- DBIO.from(save(behaviorVersion.copy(
           maybeFunctionBody = Some(data.functionBody),
-          maybeResponseTemplate = Some(data.responseTemplate)
+          maybeResponseTemplate = Some(data.responseTemplate),
+          forcePrivateResponse = data.config.forcePrivateResponse.exists(identity)
         )))
         maybeAWSConfig <- data.awsConfig.map { c =>
           DBIO.from(dataService.awsConfigs.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName)).map(Some(_))
@@ -299,7 +302,7 @@ class BehaviorVersionServiceImpl @Inject() (
     val json = Json.parse(jsonString)
     val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(successResult, parametersWithValues, behaviorVersion.maybeResponseTemplate, logResultOption)
+      SuccessResult(successResult, parametersWithValues, behaviorVersion.maybeResponseTemplate, logResultOption, behaviorVersion.forcePrivateResponse)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
         NoResponseResult(logResultOption)

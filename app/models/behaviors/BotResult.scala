@@ -23,12 +23,13 @@ object ResultType extends Enumeration {
 
 sealed trait BotResult {
   val resultType: ResultType.Value
+  val forcePrivateResponse: Boolean
   def text: String
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
 
-  def sendIn(context: MessageContext, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
-    context.sendMessage(fullText, forcePrivate, maybeShouldUnfurl)
+  def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+    context.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl)
   }
 }
 
@@ -44,7 +45,8 @@ case class SuccessResult(
                           result: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
-                          maybeLogResult: Option[AWSLambdaLogResult]
+                          maybeLogResult: Option[AWSLambdaLogResult],
+                          forcePrivateResponse: Boolean
                           ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
@@ -55,7 +57,7 @@ case class SuccessResult(
   }
 }
 
-case class SimpleTextResult(simpleText: String) extends BotResult {
+case class SimpleTextResult(simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
 
   val resultType = ResultType.ConversationPrompt
 
@@ -66,10 +68,11 @@ case class SimpleTextResult(simpleText: String) extends BotResult {
 case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
 
   val resultType = ResultType.NoResponse
+  val forcePrivateResponse = false // N/A
 
   def text: String = ""
 
-  override def sendIn(context: MessageContext, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+  override def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
     // do nothing
   }
 
@@ -79,6 +82,7 @@ trait WithBehaviorLink {
 
   val behaviorVersion: BehaviorVersion
   val configuration: Configuration
+  val forcePrivateResponse = behaviorVersion.forcePrivateResponse
 
   def link: String = behaviorVersion.editLinkFor(configuration)
 
@@ -181,6 +185,7 @@ case class MissingEnvVarsResult(
 class AWSDownResult extends BotResult {
 
   val resultType = ResultType.AWSDown
+  val forcePrivateResponse = false
 
   def text: String = {
     """
@@ -204,6 +209,8 @@ case class OAuth2TokenMissing(
 
   val resultType = ResultType.OAuth2TokenMissing
 
+  val forcePrivateResponse = true
+
   def authLink: String = {
     val baseUrl = configuration.getString("application.apiBaseUrl").get
     val redirectPath = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key))
@@ -219,9 +226,9 @@ case class OAuth2TokenMissing(
        |""".stripMargin
   }
 
-  override def sendIn(context: MessageContext, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+  override def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(context, forcePrivate = true, Some(false))
+    super.sendIn(context, maybeShouldUnfurl)
   }
 }
 
@@ -233,6 +240,7 @@ case class RequiredApiNotReady(
                              ) extends BotResult {
 
   val resultType = ResultType.RequiredApiNotReady
+  val forcePrivateResponse = true
 
   def configLink: String = required.behaviorVersion.editLinkFor(configuration)
   def configText: String = {

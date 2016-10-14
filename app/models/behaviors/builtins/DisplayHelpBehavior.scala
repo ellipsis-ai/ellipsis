@@ -89,7 +89,7 @@ case class DisplayHelpBehavior(
           |
           |$endingString
           |""".stripMargin
-      SimpleTextResult(text)
+      SimpleTextResult(text, forcePrivateResponse = false)
     }
   }
 
