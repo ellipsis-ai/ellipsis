@@ -15,6 +15,7 @@ var React = require('react'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('./confirm_action_panel'),
   DataTypeNameInput = require('./data_type_name_input'),
+  DataTypeResultConfig = require('./data_type_result_config'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   DropdownMenu = require('./dropdown_menu'),
   EnvVariableAdder = require('../environment_variables/adder'),
@@ -919,6 +920,15 @@ return React.createClass({
     this.setBehaviorProp('dataType', Object.assign({}, this.getDataType(), { name: newName }));
   },
 
+  updateDataTypeResultConfig: function(shouldUseSearch) {
+    if (shouldUseSearch) {
+      var searchQueryParam = this.createNewParam({ name: 'searchQuery' });
+      this.setBehaviorProp('params', [searchQueryParam]);
+    } else {
+      this.setBehaviorProp('params', []);
+    }
+  },
+
   updateEnvVariables: function(envVars, options) {
     var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
     var data = {
@@ -1058,6 +1068,10 @@ return React.createClass({
 
   hasUserParameters: function() {
     return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
+  },
+
+  hasUserParameterNamed: function(paramName) {
+    return this.getBehaviorParams().some((param) => param.name === paramName);
   },
 
   isDataTypeBehavior: function() {
@@ -1757,6 +1771,11 @@ return React.createClass({
           <DataTypeNameInput
             name={this.getDataType().name}
             onChange={this.updateDataTypeName}
+          />
+
+          <DataTypeResultConfig
+            usesSearch={this.hasUserParameterNamed('searchQuery')}
+            onChange={this.updateDataTypeResultConfig}
           />
 
           <div className="container ptxl pbxxxl">
