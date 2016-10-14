@@ -24,6 +24,7 @@ var React = require('react'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
   SectionHeading = require('./section_heading'),
+  ToggleGroup = require('../form/toggle_group'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
@@ -81,7 +82,8 @@ return React.createClass({
           recommendedScope: React.PropTypes.string,
           application: oauth2ApplicationShape
         })
-      )
+      ),
+      forcePrivateResponse: React.PropTypes.bool
     }),
     knownEnvVarsUsed: React.PropTypes.arrayOf(React.PropTypes.string),
     csrfToken: React.PropTypes.string.isRequired,
@@ -205,6 +207,10 @@ return React.createClass({
 
   getBehaviorConfig: function() {
     return this.getBehaviorProp('config');
+  },
+
+  shouldForcePrivateResponse: function() {
+    return !!this.getBehaviorConfig().forcePrivateResponse;
   },
 
   getCodeAutocompletions: function() {
@@ -966,6 +972,14 @@ return React.createClass({
     });
   },
 
+  setForcePrivateResponse: function() {
+    this.setConfigProperty('forcePrivateResponse', true);
+  },
+
+  unsetForcePrivateResponse: function() {
+    this.setConfigProperty('forcePrivateResponse', false);
+  },
+
   updateTemplate: function(newTemplateString) {
     this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }), () => {
       this.setState({ hasModifiedTemplate: true });
@@ -1677,7 +1691,24 @@ return React.createClass({
             </div>
 
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
-              <div className="position-relative CodeMirror-container-no-gutter">
+              <div className="border border-radius pts">
+                <div className="phm mbm">
+                  <ToggleGroup className="form-toggle-group-s align-m">
+                    <ToggleGroup.Item
+                      title="Ellipsis will respond wherever you talk to it"
+                      label="Respond anywhere"
+                      activeWhen={!this.shouldForcePrivateResponse()}
+                      onClick={this.unsetForcePrivateResponse}
+                    />
+                    <ToggleGroup.Item
+                      title="Ellipsis will always respond in a private message"
+                      label="Always respond privately"
+                      activeWhen={this.shouldForcePrivateResponse()}
+                      onClick={this.setForcePrivateResponse}
+                    />
+                  </ToggleGroup>
+                </div>
+              <div className="position-relative CodeMirror-container-no-gutter phm pbm">
                 <Codemirror value={this.getBehaviorTemplate().toString()}
                   onChange={this.updateTemplate}
                   onCursorChange={this.ensureCursorVisible}
@@ -1699,6 +1730,7 @@ return React.createClass({
                     placeholder: "The result is {successResult}"
                   }}
                 />
+              </div>
               </div>
             </div>
           </div>
