@@ -28,7 +28,7 @@ class EventHandler @Inject() (
       results <- Future.sequence(responses.map(_.result))
     } yield {
       if (results.isEmpty && context.isResponseExpected) {
-        Seq(SimpleTextResult(context.iDontKnowHowToRespondMessageFor(lambdaService)))
+        Seq(SimpleTextResult(context.iDontKnowHowToRespondMessageFor(lambdaService), forcePrivateResponse = false))
       } else {
         results
       }

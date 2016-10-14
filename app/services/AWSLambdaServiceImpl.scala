@@ -147,7 +147,7 @@ class AWSLambdaServiceImpl @Inject() (
       result <- if (missingEnvVars.nonEmpty) {
         Future.successful(MissingEnvVarsResult(behaviorVersion, configuration, missingEnvVars))
       } else if (behaviorVersion.functionBody.isEmpty) {
-        Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None))
+        Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
       } else {
         invokeFunction(
           behaviorVersion.functionName,

@@ -115,7 +115,7 @@ case class InvokeBehaviorConversation(
       }.getOrElse {
         Future.successful("All done!")
       }.map { prompt =>
-        SimpleTextResult(prompt)
+        SimpleTextResult(prompt, behaviorVersion.forcePrivateResponse)
       }
     } yield result
   }

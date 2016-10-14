@@ -34,7 +34,7 @@ case class ScheduleBehavior(
         scheduledMessage.successResponse
       }.getOrElse(s"Sorry, I don't know how to schedule `$recurrence`")
 
-      SimpleTextResult(responseText)
+      SimpleTextResult(responseText, forcePrivateResponse = false)
     }
   }
 

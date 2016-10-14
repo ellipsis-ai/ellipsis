@@ -4,7 +4,7 @@ import models.team.Team
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.DateTime
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.SimpleTextResult
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.{SlackMessageContext, SlackMessageEvent}
 import services.{DataService, SlackService}
 import slack.models.Message
@@ -32,13 +32,13 @@ case class ScheduledMessage(
      """.stripMargin
   }
 
-  def scheduleInfoResult = SimpleTextResult(
+  def scheduleInfoResultFor(result: BotResult) = SimpleTextResult(
     s"""I've been asked to run `$text` ${recurrence.displayString.trim}.
         |
        |For more details on what is scheduled, try `@ellipsis: scheduled`.
         |
        |Here goes:
-     """.stripMargin)
+     """.stripMargin, result.forcePrivateResponse)
 
   def listResponse: String = {
     s"""`$text` ${recurrence.displayString.trim}
@@ -86,7 +86,7 @@ case class ScheduledMessage(
       } yield {
         results.foreach { result =>
           if (result.hasText) {
-            scheduleInfoResult.sendIn(context)
+            scheduleInfoResultFor(result).sendIn(context)
           }
           result.sendIn(context)
         }

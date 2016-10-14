@@ -241,7 +241,7 @@ class BehaviorEditorController @Inject() (
                 BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
               }
             }.getOrElse(Seq()),
-            BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData, maybeDataType.map(_.name)),
+            BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData, Some(version.forcePrivateResponse), maybeDataType.map(_.name)),
             behavior.maybeImportedId,
             None,
             maybeDataType.map { dataType =>

@@ -23,7 +23,7 @@ case class SetEnvironmentVariableBehavior(
         dataService.environmentVariables.ensureFor(name, Some(value), team)
       }.getOrElse(Future.successful(None))
     } yield {
-      SimpleTextResult(s"OK, saved $name!")
+      SimpleTextResult(s"OK, saved $name!", forcePrivateResponse = false)
     }
   }
 
