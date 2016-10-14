@@ -15,7 +15,7 @@ define(function(require) {
         <div className="container ptxl pbxxxl">
           <div className="columns">
             <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-              <SectionHeading>Data type name</SectionHeading>
+              <SectionHeading>Name of data type</SectionHeading>
             </div>
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
               <div className="mbm">
