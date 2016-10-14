@@ -1691,24 +1691,23 @@ return React.createClass({
             </div>
 
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
-              <div className="border border-radius pts">
-                <div className="phm mbm">
-                  <ToggleGroup className="form-toggle-group-s align-m">
-                    <ToggleGroup.Item
-                      title="Ellipsis will respond wherever you talk to it"
-                      label="Respond normally"
-                      activeWhen={!this.shouldForcePrivateResponse()}
-                      onClick={this.unsetForcePrivateResponse}
-                    />
-                    <ToggleGroup.Item
-                      title="Ellipsis will always respond in a private message"
-                      label="Respond privately"
-                      activeWhen={this.shouldForcePrivateResponse()}
-                      onClick={this.setForcePrivateResponse}
-                    />
-                  </ToggleGroup>
-                </div>
-              <div className="position-relative CodeMirror-container-no-gutter phm pbm">
+              <div className="border-top border-left border-right border-radius-top pas">
+                <ToggleGroup className="form-toggle-group-s align-m">
+                  <ToggleGroup.Item
+                    title="Ellipsis will respond wherever you talk to it"
+                    label="Respond normally"
+                    activeWhen={!this.shouldForcePrivateResponse()}
+                    onClick={this.unsetForcePrivateResponse}
+                  />
+                  <ToggleGroup.Item
+                    title="Ellipsis will always respond in a private message"
+                    label="Respond privately"
+                    activeWhen={this.shouldForcePrivateResponse()}
+                    onClick={this.setForcePrivateResponse}
+                  />
+                </ToggleGroup>
+              </div>
+              <div className="position-relative CodeMirror-container-no-gutter pbm">
                 <Codemirror value={this.getBehaviorTemplate().toString()}
                   onChange={this.updateTemplate}
                   onCursorChange={this.ensureCursorVisible}
@@ -1730,7 +1729,6 @@ return React.createClass({
                     placeholder: "The result is {successResult}"
                   }}
                 />
-              </div>
               </div>
             </div>
           </div>
