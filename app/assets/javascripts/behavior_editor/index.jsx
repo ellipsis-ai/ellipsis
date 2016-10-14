@@ -14,12 +14,12 @@ var React = require('react'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('./confirm_action_panel'),
+  DataTypeNameInput = require('./data_type_name_input'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   DropdownMenu = require('./dropdown_menu'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
   HiddenJsonInput = require('./hidden_json_input'),
-  Input = require('../form/input'),
   Notification = require('../notifications/notification'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
@@ -1714,29 +1714,6 @@ return React.createClass({
     );
   },
 
-  renderDataTypeNameInput: function() {
-    return (
-      <div className="container ptxl pbxxxl">
-        <div className="columns">
-          <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-            <SectionHeading>Data type name</SectionHeading>
-          </div>
-          <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
-            <div className="mbm">
-              <Input
-                className="form-input-borderless form-input-large"
-                ref="input"
-                value={this.getDataType().name || ""}
-                placeholder="Give data type a name"
-                onChange={this.updateDataTypeName}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  },
-
   renderDataTypeBehavior: function() {
     return (
       <div>
@@ -1745,7 +1722,10 @@ return React.createClass({
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
 
-          {this.renderDataTypeNameInput()}
+          <DataTypeNameInput
+            name={this.getDataType().name}
+            onChange={this.updateDataTypeName}
+          />
 
           <div className="container ptxl pbxxxl">
             <div className="columns">
