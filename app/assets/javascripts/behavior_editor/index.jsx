@@ -1,14 +1,12 @@
 define((require) => {
 var React = require('react'),
   ReactDOM = require('react-dom'),
-  Codemirror = require('../react-codemirror'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorVersion = require('../models/behavior_version'),
   BehaviorTester = require('./behavior_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
-  Checklist = require('./checklist'),
   CodeEditor = require('./code_editor'),
   CodeEditorHelp = require('./code_editor_help'),
   CodeFooter = require('./code_footer'),
@@ -24,8 +22,8 @@ var React = require('react'),
   Notification = require('../notifications/notification'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
+  ResponseTemplateConfiguration = require('./response_template_configuration'),
   SectionHeading = require('./section_heading'),
-  ToggleGroup = require('../form/toggle_group'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
@@ -429,19 +427,6 @@ return React.createClass({
     }
   },
 
-  getIterationTemplateHelp: function() {
-    return (
-      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesIteration()}>
-        Iterating through a list:<br />
-        <div className="box-code-example">
-          {"{for item in successResult.items}"}<br />
-          &nbsp;* {"{item}"}<br />
-          {"{endfor}"}
-        </div>
-      </Checklist.Item>
-    );
-  },
-
   getLastLineNumberForCode: function() {
     var numLines = this.getBehaviorFunctionBody().split('\n').length;
     return this.getFirstLineNumberForCode() + numLines;
@@ -451,59 +436,8 @@ return React.createClass({
     return this.state.notifications;
   },
 
-  getPathTemplateHelp: function() {
-    return (
-      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesPath()}>
-        Properties of the result:<br />
-        <div className="box-code-example">
-          Name: {"{successResult.user.name}"}
-        </div>
-      </Checklist.Item>
-    );
-  },
-
-  getSuccessResultTemplateHelp: function() {
-    return (
-      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesSuccessResult()}>
-        The result provided to <code>ellipsis.success</code>:<br />
-        <div className="box-code-example">
-          The answer is {"{successResult}"}
-        </div>
-      </Checklist.Item>
-    );
-  },
-
-  getTemplateDataHelp: function() {
-    if (this.state.revealCodeEditor) {
-      return (
-        <div>
-          <span>You can include data in your response.<br /></span>
-          <Checklist className="mtxs" disabledWhen={this.isFinishedBehavior()}>
-            {this.getUserParamTemplateHelp()}
-            {this.getSuccessResultTemplateHelp()}
-            {this.getPathTemplateHelp()}
-            {this.getIterationTemplateHelp()}
-          </Checklist>
-        </div>
-      );
-    }
-  },
-
   getTimestampedBehavior: function(behavior) {
     return Object.assign({}, behavior, { createdAt: Date.now() });
-  },
-
-  getUserParamTemplateHelp: function() {
-    return (
-      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesAnyParam()}>
-        User-supplied parameters:<br />
-        <div className="box-code-example">
-        You said {this.hasUserParameters() && this.getBehaviorParams()[0].name ?
-          "{" + this.getBehaviorParams()[0].name + "}" :
-          "{exampleParamName}"}
-        </div>
-      </Checklist.Item>
-    );
   },
 
   getVersions: function() {
@@ -982,12 +916,8 @@ return React.createClass({
     });
   },
 
-  setForcePrivateResponse: function() {
-    this.setConfigProperty('forcePrivateResponse', true);
-  },
-
-  unsetForcePrivateResponse: function() {
-    this.setConfigProperty('forcePrivateResponse', false);
+  updateForcePrivateResponse: function(newValue) {
+    this.setConfigProperty('forcePrivateResponse', newValue);
   },
 
   updateTemplate: function(newTemplateString) {
@@ -1685,67 +1615,17 @@ return React.createClass({
             <hr className="mtn" />
           </Collapsible>
 
-          <div className="columns">
+          <ResponseTemplateConfiguration
+            template={this.getBehaviorTemplate()}
+            onChangeTemplate={this.updateTemplate}
+            isFinishedBehavior={this.isFinishedBehavior()}
+            behaviorUsesCode={!!this.state.revealCodeEditor}
+            shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
+            onChangeForcePrivateResponse={this.updateForcePrivateResponse}
+            onCursorChange={this.ensureCursorVisible}
+            userParams={this.getBehaviorParams()}
+          />
 
-            <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s">
-
-              <SectionHeading>Then Ellipsis will respond with</SectionHeading>
-
-              <Checklist disabledWhen={this.isFinishedBehavior()}>
-                <Checklist.Item checkedWhen={this.getBehaviorTemplate().usesMarkdown()}>
-                  <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
-                  <span>to format the response, add links, etc.</span>
-                </Checklist.Item>
-                {this.state.revealCodeEditor ? "" : (
-                  <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
-                )}
-              </Checklist>
-
-              {this.getTemplateDataHelp()}
-            </div>
-
-            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
-              <div className="border-top border-left border-right border-radius-top pas">
-                <ToggleGroup className="form-toggle-group-s align-m">
-                  <ToggleGroup.Item
-                    title="Ellipsis will respond wherever you talk to it"
-                    label="Respond normally"
-                    activeWhen={!this.shouldForcePrivateResponse()}
-                    onClick={this.unsetForcePrivateResponse}
-                  />
-                  <ToggleGroup.Item
-                    title="Ellipsis will always respond in a private message"
-                    label="Respond privately"
-                    activeWhen={this.shouldForcePrivateResponse()}
-                    onClick={this.setForcePrivateResponse}
-                  />
-                </ToggleGroup>
-              </div>
-              <div className="position-relative CodeMirror-container-no-gutter pbm">
-                <Codemirror value={this.getBehaviorTemplate().toString()}
-                  onChange={this.updateTemplate}
-                  onCursorChange={this.ensureCursorVisible}
-                  options={{
-                    mode: {
-                      name: "markdown",
-                      /* Use CommonMark-appropriate settings */
-                      fencedCodeBlocks: true,
-                      underscoresBreakWords: false
-                    },
-                    gutters: ['CodeMirror-no-gutter'],
-                    indentUnit: 4,
-                    indentWithTabs: true,
-                    lineWrapping: true,
-                    lineNumbers: false,
-                    smartIndent: true,
-                    tabSize: 4,
-                    viewportMargin: Infinity,
-                    placeholder: "The result is {successResult}"
-                  }}
-                />
-              </div>
-            </div>
-          </div>
         </div> {/* End of container */}
 
         {this.renderFooter()}
