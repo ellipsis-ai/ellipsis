@@ -141,10 +141,11 @@ class BehaviorEditorController @Inject() (
               } yield {
                 if (info.maybeRedirect.contains("newOAuth2Application")) {
                   Redirect(routes.OAuth2ApplicationController.newApp(maybeRequiredOAuth2ApiConfig.map(_.id), Some(data.teamId), Some(behavior.id)))
-                } else if (request.accepts("application/json")) {
-                  Ok(Json.toJson(behaviorVersionData))
                 } else {
-                  Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
+                  render {
+                    case Accepts.Html() => Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
+                    case Accepts.Json() => Ok(Json.toJson(behaviorVersionData))
+                  }
                 }
               }).getOrElse {
                 NotFound(
