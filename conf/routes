@@ -21,7 +21,6 @@ GET         /version_info/:behaviorId                 @controllers.BehaviorEdito
 POST        /test_behavior_version                    @controllers.BehaviorEditorController.test
 
 GET         /data_types                               @controllers.BehaviorBackedDataTypeController.list(teamId: Option[String] ?= None)
-POST        /delete_data_type                         @controllers.BehaviorBackedDataTypeController.delete
 
 POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
 POST        /delete_environment_variable              @controllers.EnvironmentVariablesController.delete

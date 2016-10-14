@@ -59,6 +59,18 @@ class BehaviorBackedDataTypeServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledForBehaviorQuery(behaviorId: Rep[String]) = {
+    joined.filter(_._2._1.id === behaviorId)
+  }
+  val forBehaviorQuery = Compiled(uncompiledForBehaviorQuery _)
+
+  def maybeFor(behavior: Behavior): Future[Option[BehaviorBackedDataType]] = {
+    val action = forBehaviorQuery(behavior.id).result.map { r =>
+      r.headOption.map(tuple2DataType)
+    }
+    dataService.run(action)
+  }
+
   def updateName(id: String, name: String): Future[Unit] = {
     val action = all.filter(_.id === id).map(_.name).update(name).map { _ => {} }
     dataService.run(action)
@@ -88,15 +100,11 @@ class BehaviorBackedDataTypeServiceImpl @Inject() (
     }
   }
 
-  def delete(dataType: BehaviorBackedDataType, user: User): Future[Unit] = {
-    if (dataType.behavior.team.id == user.teamId) {
-      for {
-        _ <- dataService.run(all.filter(_.id === dataType.id).delete)
-        _ <- dataService.behaviors.unlearn(dataType.behavior)
-      } yield {}
-    } else {
-      Future.successful(Unit)
-    }
+  def delete(dataType: BehaviorBackedDataType): Future[Unit] = {
+    for {
+      _ <- dataService.run(all.filter(_.id === dataType.id).delete)
+      _ <- dataService.behaviors.unlearn(dataType.behavior)
+    } yield {}
   }
 
   def usesSearch(dataType: BehaviorBackedDataType): Future[Boolean] = {
