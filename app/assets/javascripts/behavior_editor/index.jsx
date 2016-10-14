@@ -1764,6 +1764,8 @@ return React.createClass({
           {this.renderFooter()}
         </form>
 
+        {this.renderHiddenForms()}
+
       </div>
     );
   },

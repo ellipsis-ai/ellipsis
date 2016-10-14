@@ -104,6 +104,11 @@ class BehaviorServiceImpl @Inject() (
     for {
       versions <- dataService.behaviorVersions.allFor(behavior)
       _ <- Future.sequence(versions.map(v => dataService.behaviorVersions.unlearn(v)))
+      _ <- dataService.behaviorBackedDataTypes.maybeFor(behavior).flatMap { maybeDataType =>
+        maybeDataType.map { dataType =>
+          dataService.behaviorBackedDataTypes.delete(dataType).map(_ => {})
+        }.getOrElse(Future.successful({}))
+      }
       _ <- delete(behavior)
     } yield {}
   }
