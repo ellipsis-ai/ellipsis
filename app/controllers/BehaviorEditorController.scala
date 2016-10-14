@@ -245,7 +245,7 @@ class BehaviorEditorController @Inject() (
             behavior.maybeImportedId,
             None,
             maybeDataType.map { dataType =>
-              BehaviorBackedDataTypeDataForBehavior(Some(dataType.id), Some(dataType.name))
+              BehaviorBackedDataTypeData(Some(dataType.id), Some(dataType.name))
             },
             Some(version.createdAt),
             dataService

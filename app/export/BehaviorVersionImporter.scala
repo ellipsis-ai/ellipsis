@@ -20,8 +20,13 @@ case class BehaviorVersionImporter(
     for {
       behavior <- dataService.behaviors.createFor(team, data.config.publishedId)
       version <- dataService.behaviorVersions.createFor(behavior, Some(user), data)
+      maybeDataType <- (for {
+        dt <- data.dataType
+        name <- dt.name
+      } yield {
+        dataService.behaviorBackedDataTypes.createFor(name, behavior).map(Some(_))
+      }).getOrElse(Future.successful(None))
     } yield version
-
   }
 
 }

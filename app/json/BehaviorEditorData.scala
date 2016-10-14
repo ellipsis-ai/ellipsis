@@ -16,7 +16,7 @@ case class BehaviorEditorData(
                                paramTypes: Seq[BehaviorParameterTypeData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
-                               dataType: Option[BehaviorBackedDataTypeDataForBehavior],
+                               dataType: Option[BehaviorBackedDataTypeData],
                                justSaved: Boolean
                               )
 
@@ -80,7 +80,7 @@ object BehaviorEditorData {
     } yield {
       val versionData = maybeBehaviorVersionData.getOrElse {
         val maybeDataType = if (isForNewDataType) {
-          Some(BehaviorBackedDataTypeDataForBehavior(None, None))
+          Some(BehaviorBackedDataTypeData(None, None))
         } else {
           None
         }
@@ -111,7 +111,7 @@ object BehaviorEditorData {
         paramTypes.map(BehaviorParameterTypeData.from),
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
-        maybeDataTypeForBehavior.map(BehaviorBackedDataTypeDataForBehavior.from),
+        maybeDataTypeForBehavior.map(BehaviorBackedDataTypeData.from),
         maybeJustSaved.exists(identity)
       )
     }
