@@ -18,7 +18,7 @@ POST        /delete_behavior                          @controllers.BehaviorEdito
 POST        /clone_behavior                           @controllers.BehaviorEditorController.duplicate
 GET         /regex_validation_errors/:pattern         @controllers.BehaviorEditorController.regexValidationErrorsFor(pattern: String)
 GET         /version_info/:behaviorId                 @controllers.BehaviorEditorController.versionInfoFor(behaviorId: String)
-POST        /test_behavior_version                    @controllers.BehaviorEditorController.test
+POST        /test_behavior_version                    @controllers.BehaviorEditorController.testTriggers
 
 GET         /data_types                               @controllers.BehaviorBackedDataTypeController.list(teamId: Option[String] ?= None)
 

@@ -46,12 +46,10 @@ class TeamServiceImpl @Inject() (
     for {
       maybeToken <- dataService.invocationTokens.find(tokenId)
       maybeTeam <- maybeToken.map { token =>
-        if (token.isExpired || token.isUsed) {
+        if (token.isExpired) {
           Future.successful(None)
         } else {
-          dataService.invocationTokens.use(token).flatMap { _ =>
-            find(token.teamId)
-          }
+          find(token.teamId)
         }
       }.getOrElse(Future.successful(None))
     } yield maybeTeam

@@ -100,7 +100,7 @@ case class UnhandledErrorResult(
   val resultType = ResultType.UnhandledError
 
   def text: String = {
-    val prompt = s"\nWe hit an error in ${linkToBehaviorFor("one of your behaviors")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
+    val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your behaviors")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
     Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated)).flatten.mkString(":\n\n")
   }
 
@@ -123,9 +123,9 @@ case class HandledErrorResult(
 
   def text: String = {
     val detail = (json \ "errorMessage").toOption.map(processedResultFor).map { msg =>
-      s":\n\n$msg"
+      s":\n\n```$msg```"
     }.getOrElse("")
-    s"$ERROR_CALLBACK triggered in ${linkToBehaviorFor("one of your behaviors")}$detail"
+    s"I encountered an error in ${linkToBehaviorFor("one of your behaviors")}$detail"
   }
 }
 

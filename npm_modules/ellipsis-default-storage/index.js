@@ -41,11 +41,12 @@ module.exports = {
     getItem: function (args) {
         var missing = findMissingArgs(["itemId", "itemType", "ellipsis"], args);
         if (missing.length > 0) {
-            onError("Missing values for: " + missing.join(", "));
+            if (args.onError) {
+                args.onError("Missing values for: " + missing.join(", "));
+            }
         } else {
-            request.
-                get(
-                args.ellipsis.apiBaseUrl + "/get_item/" + args.itemId + "/" + args.itemType + "/" + args.ellipsis.token,
+            request.get(
+                args.ellipsis.apiBaseUrl + "/get_item/" + encodeURIComponent(args.itemId) + "/" + encodeURIComponent(args.itemType) + "/" + encodeURIComponent(args.ellipsis.token),
                 function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         if (args.onSuccess) {
@@ -53,7 +54,7 @@ module.exports = {
                         }
                     } else {
                         if (args.onError) {
-                            args.onError(error);
+                            args.onError(error || `An error occurred with response code ${response.statusCode}`);
                         }
                     }
                 }
