@@ -34,7 +34,8 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
             qaExtractor.possibleAnswerContent,
             Seq(),
             triggerData,
-            BehaviorConfig(None, None, None),
+            BehaviorConfig(None, None, None, None, None),
+            None,
             None,
             None,
             None,
@@ -51,7 +52,7 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
     } yield {
       maybeBehaviorVersion.map { behaviorVersion =>
         val link = behaviorVersion.editLinkFor(lambdaService.configuration)
-        SimpleTextResult(s"OK, I compiled recent messages into [a new behavior]($link)")
+        SimpleTextResult(s"OK, I compiled recent messages into [a new behavior]($link)", forcePrivateResponse = false)
       }.getOrElse{
         NoResponseResult(None)
       }

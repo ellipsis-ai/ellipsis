@@ -29,100 +29,50 @@ class BehaviorEditorController @Inject() (
                                            val testReportBuilder: BehaviorTestReportBuilder
                                          ) extends ReAuthable {
 
-  def newBehavior(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  private def newBehavior(isForDataType: Boolean, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    for {
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.environmentVariables.allFor(team).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.oauth2Applications.allFor(team).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
-      paramTypes <- teamAccess.maybeTargetTeam.map { team =>
-        BehaviorParameterType.allFor(team, dataService)
-      }.getOrElse(Future.successful(Seq()))
-      result <- (for {
-        team <- teamAccess.maybeTargetTeam
-        envVars <- maybeEnvironmentVariables
-        oauth2Applications <- maybeOAuth2Applications
-      } yield {
-        val data = BehaviorVersionData.buildFor(
-          team.id,
-          None,
-          "",
-          "",
-          Seq(),
-          Seq(),
-          BehaviorConfig(None, None, None),
-          None,
-          None,
-          None,
-          dataService
-        )
-        Future.successful(Ok(views.html.editBehavior(
-          teamAccess,
-          Json.toJson(data).toString,
-          Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
-          Json.toJson(paramTypes.map(BehaviorParameterTypeData.from)).toString,
-          Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
-          Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
-          justSaved = false,
-          notificationsJson = Json.toJson(Array[String]()).toString,
-          "null"
-        )))
-      }).getOrElse {
-        reAuthFor(request, maybeTeamId)
+    BehaviorEditorData.buildForNew(user, maybeTeamId, isForDataType, dataService).flatMap { maybeEditorData =>
+      maybeEditorData.map { editorData =>
+        Future.successful(Ok(views.html.editBehavior(editorData)))
+      }.getOrElse {
+        dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
+          val response = NotFound(
+            views.html.notFound(
+              Some(teamAccess),
+              Some("Behavior not found"),
+              Some("The behavior you are trying to access could not be found."),
+              Some(reAuthLinkFor(request, None))
+            ))
+
+          withAuthDiscarded(request, response)
+        }
       }
-    } yield result
+    }
   }
+
+  def newForNormalBehavior(maybeTeamId: Option[String]) = newBehavior(isForDataType = false, maybeTeamId)
+
+  def newForDataType(maybeTeamId: Option[String]) = newBehavior(isForDataType = true, maybeTeamId)
 
   def edit(id: String, maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    for {
-      maybeVersionData <- BehaviorVersionData.maybeFor(id, user, dataService)
-      teamAccess <- dataService.users.teamAccessFor(user, maybeVersionData.map(_.teamId))
-      maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.environmentVariables.allFor(team).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      maybeOAuth2Applications <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.oauth2Applications.allFor(team).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
-      paramTypes <- teamAccess.maybeTargetTeam.map { team =>
-        BehaviorParameterType.allFor(team, dataService)
-      }.getOrElse(Future.successful(Seq()))
-      dataTypes <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.behaviorBackedDataTypes.allFor(team)
-      }.getOrElse(Future.successful(Seq()))
-      result <- (for {
-        data <- maybeVersionData
-        envVars <- maybeEnvironmentVariables
-        oauth2Applications <- maybeOAuth2Applications
-      } yield {
-        Future.successful(Ok(views.html.editBehavior(
-          teamAccess,
-          Json.toJson(data).toString,
-          Json.toJson(envVars.map(EnvironmentVariableData.withoutValueFor)).toString,
-          Json.toJson(paramTypes.map(BehaviorParameterTypeData.from)).toString,
-          Json.toJson(oauth2Applications.map(OAuth2ApplicationData.from)).toString,
-          Json.toJson(oauth2Apis.map(OAuth2ApiData.from)).toString,
-          maybeJustSaved.exists(identity),
-          notificationsJson = Json.toJson(Array[String]()).toString,
-          Json.toJson(dataTypes.find(_.behavior.id == id).map(BehaviorBackedDataTypeDataForBehavior.from)).toString
-        )))
-      }).getOrElse {
-        val response = NotFound(
-          views.html.notFound(
-            Some(teamAccess),
-            Some("Behavior not found"),
-            Some("The behavior you are trying to access could not be found."),
-            Some(reAuthLinkFor(request, None))
-          ))
-        withAuthDiscarded(request, response)
+    BehaviorEditorData.buildForEdit(user, id, maybeJustSaved, dataService).flatMap { maybeEditorData =>
+      maybeEditorData.map { editorData =>
+        Future.successful(Ok(views.html.editBehavior(editorData)))
+      }.getOrElse {
+        dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
+          val response = NotFound(
+            views.html.notFound(
+              Some(teamAccess),
+              Some("Behavior not found"),
+              Some("The behavior you are trying to access could not be found."),
+              Some(reAuthLinkFor(request, None))
+            ))
+
+          withAuthDiscarded(request, response)
+        }
       }
-    } yield result
+    }
   }
 
   case class SaveBehaviorInfo(
@@ -161,6 +111,18 @@ class BehaviorEditorController @Inject() (
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
                 dataService.behaviorVersions.createFor(behavior, Some(user), data).map(Some(_))
               }.getOrElse(Future.successful(None))
+              _ <- maybeBehavior.flatMap { behavior =>
+                data.dataType.map { dataType =>
+                  (for {
+                    id <- dataType.id
+                    name <- dataType.name
+                  } yield {
+                    dataService.behaviorBackedDataTypes.updateName(id, name).map(Some(_))
+                  }).getOrElse {
+                    dataService.behaviorBackedDataTypes.createFor(dataType.name.getOrElse(""), behavior)
+                  }
+                }
+              }.getOrElse(Future.successful({}))
               maybePreviousRequiredOAuth2ApiConfig <- info.maybeRequiredOAuth2ApiConfigId.map { id =>
                 dataService.requiredOAuth2ApiConfigs.find(id)
               }.getOrElse(Future.successful(None))
@@ -169,14 +131,23 @@ class BehaviorEditorController @Inject() (
                   dataService.requiredOAuth2ApiConfigs.allFor(config.api, version).map(_.headOption)
                 }
               }.getOrElse(Future.successful(None))
+              maybeBehaviorVersionData <- maybeBehavior.map { behavior =>
+                BehaviorVersionData.maybeFor(behavior.id, user, dataService)
+              }.getOrElse(Future.successful(None))
             } yield {
-              maybeBehavior.map { behavior =>
+              (for {
+                behavior <- maybeBehavior
+                behaviorVersionData <- maybeBehaviorVersionData
+              } yield {
                 if (info.maybeRedirect.contains("newOAuth2Application")) {
                   Redirect(routes.OAuth2ApplicationController.newApp(maybeRequiredOAuth2ApiConfig.map(_.id), Some(data.teamId), Some(behavior.id)))
                 } else {
-                  Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
+                  render {
+                    case Accepts.Html() => Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
+                    case Accepts.Json() => Ok(Json.toJson(behaviorVersionData))
+                  }
                 }
-              }.getOrElse {
+              }).getOrElse {
                 NotFound(
                   views.html.notFound(
                     Some(teamAccess),
@@ -241,6 +212,9 @@ class BehaviorEditorController @Inject() (
           (version, apps)
         }
       }).map(_.toMap)
+      dataTypes <- maybeBehavior.map { behavior =>
+        dataService.behaviorBackedDataTypes.allFor(behavior.team)
+      }.getOrElse(Future.successful(Seq()))
     } yield {
       maybeBehavior.map { behavior =>
         val versionsData = versions.map { version =>
@@ -252,6 +226,7 @@ class BehaviorEditorController @Inject() (
           val maybeRequiredOAuth2ApiConfigsData = requiredOAuth2ApiConfigsByVersion.get(version).map { configs =>
             configs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
           }
+          val maybeDataType = dataTypes.find(_.behavior.id == behavior.id)
           BehaviorVersionData.buildFor(
             version.team.id,
             Some(behavior.id),
@@ -267,9 +242,12 @@ class BehaviorEditorController @Inject() (
                 BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
               }
             }.getOrElse(Seq()),
-            BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData),
+            BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData, Some(version.forcePrivateResponse), maybeDataType.map(_.name)),
             behavior.maybeImportedId,
             None,
+            maybeDataType.map { dataType =>
+              BehaviorBackedDataTypeData(Some(dataType.id), Some(dataType.name))
+            },
             Some(version.createdAt),
             dataService
           )

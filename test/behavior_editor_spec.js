@@ -50,7 +50,8 @@ describe('BehaviorEditor', () => {
       keyName: "myOtherAwesomeOauthApp"
     }],
     notifications: [],
-    shouldRevealCodeEditor: true
+    shouldRevealCodeEditor: true,
+    onSave: jest.fn()
   };
 
   let editorConfig;
@@ -66,17 +67,17 @@ describe('BehaviorEditor', () => {
     );
   }
 
-  describe('getInitialTriggers', () => {
+  describe('getInitialTriggersFromProps', () => {
     it('returns the defined triggers', () => {
       editorConfig.triggers = [{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }];
       let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggers()).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
+      expect(editor.getInitialTriggersFromProps(editor.props)).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
     });
 
     it('returns a single blank trigger when no triggers are defined', () => {
       delete editorConfig.triggers;
       let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggers()).toEqual([new Trigger()]);
+      expect(editor.getInitialTriggersFromProps(editor.props)).toEqual([new Trigger()]);
     });
   });
 
@@ -139,24 +140,22 @@ describe('BehaviorEditor', () => {
       editor.hasModifiedTemplate.mockReturnValue(true);
       expect(editor.getBehaviorTemplate().toString()).toEqual('');
     });
+  });
 
-    it('submits default template when that\'s all there is', () => {
+  describe('checkDataAndCallback', () => {
+    it('sets the default template when that\'s all there is', () => {
       editorConfig.responseTemplate = '';
       let editor = createEditor(editorConfig);
+      let defaultTemplate = ResponseTemplate.fromString('default');
       editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
-      editor.refs.behaviorForm.submit = jest.fn();
-      editor.setBehaviorProp = jest.fn((key, value, callback) => callback());
-      const event = {
-        preventDefault: jest.fn()
-      };
-      editor.onSubmit(event);
-      expect(event.preventDefault.mock.calls.length).toBe(1);
-      expect(editor.setBehaviorProp.mock.calls.length).toBe(1);
-      expect(editor.setBehaviorProp.mock.calls[0][0]).toBe('responseTemplate');
-      expect(editor.setBehaviorProp.mock.calls[0][1].toString()).toEqual('default');
-      expect(editor.refs.behaviorForm.submit.mock.calls.length).toBe(1);
-
+      editor.getDefaultBehaviorTemplate.mockReturnValue(defaultTemplate);
+      editor.setBehaviorProp = jest.fn();
+      let callback = jest.fn();
+      editor.checkDataAndCallback(callback);
+      let mock = editor.setBehaviorProp.mock;
+      expect(mock.calls.length).toBe(1);
+      let firstCallArgs = mock.calls[0];
+      expect(firstCallArgs).toEqual(['responseTemplate', defaultTemplate, callback]);
     });
   });
 

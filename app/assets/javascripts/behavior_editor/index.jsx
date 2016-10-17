@@ -1,18 +1,20 @@
 define((require) => {
 var React = require('react'),
   ReactDOM = require('react-dom'),
-  Codemirror = require('../react-codemirror'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorVersion = require('../models/behavior_version'),
+  BehaviorTester = require('./behavior_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
-  Checklist = require('./checklist'),
   CodeEditor = require('./code_editor'),
   CodeEditorHelp = require('./code_editor_help'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('./confirm_action_panel'),
+  DataTypeNameInput = require('./data_type_name_input'),
+  DataTypeResultConfig = require('./data_type_result_config'),
+  DynamicLabelButton = require('../form/dynamic_label_button'),
   DropdownMenu = require('./dropdown_menu'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
@@ -20,6 +22,7 @@ var React = require('react'),
   Notification = require('../notifications/notification'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
+  ResponseTemplateConfiguration = require('./response_template_configuration'),
   SectionHeading = require('./section_heading'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
@@ -27,6 +30,7 @@ var React = require('react'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
+  SVGWarning = require('../svg/warning'),
   Collapsible = require('../collapsible'),
   CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
   BrowserUtils = require('../browser_utils'),
@@ -77,7 +81,8 @@ return React.createClass({
           recommendedScope: React.PropTypes.string,
           application: oauth2ApplicationShape
         })
-      )
+      ),
+      forcePrivateResponse: React.PropTypes.bool
     }),
     knownEnvVarsUsed: React.PropTypes.arrayOf(React.PropTypes.string),
     csrfToken: React.PropTypes.string.isRequired,
@@ -97,9 +102,11 @@ return React.createClass({
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool,
     dataType: React.PropTypes.shape({
-      id: React.PropTypes.string.isRequired,
-      name: React.PropTypes.string.isRequired
-    })
+      id: React.PropTypes.string,
+      name: React.PropTypes.string
+    }),
+    onSave: React.PropTypes.func.isRequired,
+    onLoad: React.PropTypes.func
   },
 
 
@@ -180,16 +187,6 @@ return React.createClass({
     return this.state.behavior[key];
   },
 
-  getBehaviorStatusText: function() {
-    if (this.state.justSaved) {
-      return (<span className="type-green fade-in"> — saved successfully</span>);
-    } else if (this.isModified()) {
-      return (<span className="type-pink fade-in"> — unsaved changes</span>);
-    } else {
-      return (<span>&nbsp;</span>);
-    }
-  },
-
   getBehaviorTemplate: function() {
     var template = this.state ? this.getBehaviorProp('responseTemplate') : this.props.responseTemplate;
     if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
@@ -203,12 +200,16 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('triggers');
     } else {
-      return this.getInitialTriggers();
+      return this.getInitialTriggersFromProps(this.props);
     }
   },
 
   getBehaviorConfig: function() {
     return this.getBehaviorProp('config');
+  },
+
+  shouldForcePrivateResponse: function() {
+    return !!this.getBehaviorConfig().forcePrivateResponse;
   },
 
   getCodeAutocompletions: function() {
@@ -234,6 +235,10 @@ return React.createClass({
   getCodeFunctionParams: function() {
     var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
     return userParams.concat(this.getSystemParams());
+  },
+
+  getDataType: function() {
+    return this.getBehaviorProp("dataType");
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -412,27 +417,14 @@ return React.createClass({
     });
   },
 
-  getInitialTriggers: function() {
-    if (this.props.triggers && this.props.triggers.length > 0) {
-      return this.props.triggers;
+  getInitialTriggersFromProps: function(props) {
+    if (props.triggers && props.triggers.length > 0) {
+      return props.triggers;
     } else if (!this.isDataTypeBehavior()) {
       return [new Trigger()];
     } else {
       return [];
     }
-  },
-
-  getIterationTemplateHelp: function() {
-    return (
-      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesIteration()}>
-        Iterating through a list:<br />
-        <div className="box-code-example">
-          {"{for item in successResult.items}"}<br />
-          &nbsp;* {"{item}"}<br />
-          {"{endfor}"}
-        </div>
-      </Checklist.Item>
-    );
   },
 
   getLastLineNumberForCode: function() {
@@ -444,59 +436,8 @@ return React.createClass({
     return this.state.notifications;
   },
 
-  getPathTemplateHelp: function() {
-    return (
-      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesPath()}>
-        Properties of the result:<br />
-        <div className="box-code-example">
-          Name: {"{successResult.user.name}"}
-        </div>
-      </Checklist.Item>
-    );
-  },
-
-  getSuccessResultTemplateHelp: function() {
-    return (
-      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesSuccessResult()}>
-        The result provided to <code>ellipsis.success</code>:<br />
-        <div className="box-code-example">
-          The answer is {"{successResult}"}
-        </div>
-      </Checklist.Item>
-    );
-  },
-
-  getTemplateDataHelp: function() {
-    if (this.state.revealCodeEditor) {
-      return (
-        <div>
-          <span>You can include data in your response.<br /></span>
-          <Checklist className="mtxs" disabledWhen={this.isFinishedBehavior()}>
-            {this.getUserParamTemplateHelp()}
-            {this.getSuccessResultTemplateHelp()}
-            {this.getPathTemplateHelp()}
-            {this.getIterationTemplateHelp()}
-          </Checklist>
-        </div>
-      );
-    }
-  },
-
   getTimestampedBehavior: function(behavior) {
     return Object.assign({}, behavior, { createdAt: Date.now() });
-  },
-
-  getUserParamTemplateHelp: function() {
-    return (
-      <Checklist.Item checkedWhen={this.getBehaviorTemplate().includesAnyParam()}>
-        User-supplied parameters:<br />
-        <div className="box-code-example">
-        You said {this.hasUserParameters() && this.getBehaviorParams()[0].name ?
-          "{" + this.getBehaviorParams()[0].name + "}" :
-          "{exampleParamName}"}
-        </div>
-      </Checklist.Item>
-    );
   },
 
   getVersions: function() {
@@ -658,25 +599,64 @@ return React.createClass({
     } else if (Event.keyPressWasSaveShortcut(event)) {
       event.preventDefault();
       if (this.isModified()) {
-        this.onSubmit();
+        this.refs.saveButton.focus();
+        this.onSaveBehavior();
       }
     }
   },
 
-  onSubmit: function(maybeEvent) {
-    var doSubmit = () => { this.refs.behaviorForm.submit(); };
-    if (maybeEvent) {
-      maybeEvent.preventDefault();
-    }
+  onSaveError: function() {
     this.setState({
-      isSaving: true
-    }, () => {
-      if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
-        this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), doSubmit);
-      } else {
-        doSubmit();
-      }
+      activePanel: null,
+      error: "not_saved"
     });
+  },
+
+  backgroundSave: function(optionalCallback) {
+    var form = new FormData(this.refs.behaviorForm);
+    fetch(this.getFormAction(), {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Csrf-Token': this.props.csrfToken,
+        'x-requested-with': 'XMLHttpRequest'
+      },
+      body: form
+    }).then((response) => response.json())
+      .then((json) => {
+        if (json.behaviorId) {
+          let newProps = Object.assign({}, json, { onLoad: optionalCallback });
+          this.props.onSave(newProps, true);
+        } else {
+          this.onSaveError();
+        }
+      })
+      .catch((error) => {
+        this.onSaveError(error);
+      });
+  },
+
+  checkDataAndCallback: function(callback) {
+    if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
+      this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), callback);
+    } else {
+      callback();
+    }
+  },
+
+  onSaveClick: function() {
+    this.onSaveBehavior();
+  },
+
+  onSaveBehavior: function(optionalCallback) {
+    this.setState({ error: null });
+    this.toggleActivePanel('saving', true);
+    this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
+  },
+
+  submitForm: function() {
+    this.refs.behaviorForm.submit();
   },
 
   showVersionIndex: function(versionIndex, optionalCallback) {
@@ -690,7 +670,8 @@ return React.createClass({
         params: version.params,
         triggers: version.triggers,
         config: version.config,
-        knownEnvVarsUsed: version.knownEnvVarsUsed
+        knownEnvVarsUsed: version.knownEnvVarsUsed,
+        dataType: version.dataType
       },
       revealCodeEditor: !!version.functionBody,
       justSaved: false
@@ -801,6 +782,24 @@ return React.createClass({
     this.toggleActivePanel('helpForAWS');
   },
 
+  checkIfModifiedAndTest: function() {
+    if (this.isModified()) {
+      this.onSaveBehavior(() => {
+        this.toggleBehaviorTester();
+      });
+    } else {
+      this.toggleBehaviorTester();
+    }
+  },
+
+  toggleBehaviorTester: function() {
+    this.toggleActivePanel('behaviorTester', true, () => {
+      if (this.getActivePanel() === 'behaviorTester') {
+        this.refs.behaviorTester.focus();
+      }
+    });
+  },
+
   toggleBoilerplateHelp: function() {
     this.toggleActivePanel('helpForBoilerplateParameters');
   },
@@ -849,6 +848,19 @@ return React.createClass({
         this.refs.envVariableAdderPanel.onSaveError();
       }
     });
+  },
+
+  updateDataTypeName: function(newName) {
+    this.setBehaviorProp('dataType', Object.assign({}, this.getDataType(), { name: newName }));
+  },
+
+  updateDataTypeResultConfig: function(shouldUseSearch) {
+    if (shouldUseSearch) {
+      var searchQueryParam = this.createNewParam({ name: 'searchQuery' });
+      this.setBehaviorProp('params', [searchQueryParam]);
+    } else {
+      this.setBehaviorProp('params', []);
+    }
   },
 
   updateEnvVariables: function(envVars, options) {
@@ -904,6 +916,10 @@ return React.createClass({
     });
   },
 
+  updateForcePrivateResponse: function(newValue) {
+    this.setConfigProperty('forcePrivateResponse', newValue);
+  },
+
   updateTemplate: function(newTemplateString) {
     this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }), () => {
       this.setState({ hasModifiedTemplate: true });
@@ -945,7 +961,7 @@ return React.createClass({
   },
 
   undoChanges: function() {
-    var newBehavior = this.getInitialBehavior();
+    var newBehavior = this.getInitialBehaviorFromProps(this.props);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     this.setState({
@@ -984,6 +1000,10 @@ return React.createClass({
     return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
 
+  hasUserParameterNamed: function(paramName) {
+    return this.getBehaviorParams().some((param) => param.name === paramName);
+  },
+
   isDataTypeBehavior: function() {
     return !!this.props.dataType;
   },
@@ -997,9 +1017,13 @@ return React.createClass({
   },
 
   isModified: function() {
-    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialBehavior());
+    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialBehaviorFromProps(this.props));
     var previewingVersions = this.getActivePanel() === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
+  },
+
+  isSaving: function() {
+    return this.getActivePanel() === 'saving';
   },
 
   shouldFilterCurrentVersion: function() {
@@ -1095,7 +1119,7 @@ return React.createClass({
     this.setState({
       redirectValue: "newOAuth2Application",
       requiredOAuth2ApiConfigId: requiredOAuth2ApiConfigId || ""
-    }, () => { this.onSubmit(); });
+    }, () => { this.checkDataAndCallback(this.submitForm); });
   },
 
   onParamEnterKey: function(index) {
@@ -1140,16 +1164,17 @@ return React.createClass({
     window.document.addEventListener('focus', this.handleModalFocus, true);
   },
 
-  getInitialBehavior: function() {
+  getInitialBehaviorFromProps: function(props) {
     return {
-      teamId: this.props.teamId,
-      behaviorId: this.props.behaviorId,
-      functionBody: this.props.functionBody,
-      responseTemplate: this.props.responseTemplate,
-      params: this.props.params,
-      triggers: this.getInitialTriggers(),
-      config: this.props.config,
-      knownEnvVarsUsed: this.props.knownEnvVarsUsed
+      teamId: props.teamId,
+      behaviorId: props.behaviorId,
+      functionBody: props.functionBody,
+      responseTemplate: props.responseTemplate,
+      params: props.params,
+      triggers: this.getInitialTriggersFromProps(props),
+      config: props.config,
+      knownEnvVarsUsed: props.knownEnvVarsUsed,
+      dataType: props.dataType
     };
   },
 
@@ -1158,14 +1183,13 @@ return React.createClass({
   },
 
   getInitialState: function() {
-    var initialBehavior = this.getInitialBehavior();
+    var initialBehavior = this.getInitialBehaviorFromProps(this.props);
     return {
       behavior: initialBehavior,
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
-      isSaving: false,
       envVariables: this.getInitialEnvVariables(),
       revealCodeEditor: this.shouldRevealCodeEditor(),
       hasModifiedTemplate: !!(this.props.responseTemplate && this.props.responseTemplate.text),
@@ -1176,8 +1200,27 @@ return React.createClass({
       envVariableAdderPrompt: null,
       redirectValue: "",
       requiredOAuth2ApiConfigId: "",
-      paramNameToSync: null
+      paramNameToSync: null,
+      error: null
     };
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    var newBehaviorVersion = this.getInitialBehaviorFromProps(nextProps);
+    this.setState({
+      activePanel: null,
+      justSaved: true,
+      behavior: newBehaviorVersion,
+      versions: [this.getTimestampedBehavior(newBehaviorVersion)],
+      versionsLoadStatus: null,
+      error: null
+    });
+    if (typeof(nextProps.onLoad) === 'function') {
+      nextProps.onLoad();
+    }
+    if (newBehaviorVersion.behaviorId) {
+      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newBehaviorVersion.behaviorId).url);
+    }
   },
 
   renderPageHeading: function() {
@@ -1186,17 +1229,7 @@ return React.createClass({
         <div className="container pbm">
           <h3 className="mvn ptxxl type-weak display-ellipsis">
             <span>{this.getPageHeading()}</span>
-            <span className="type-italic">{this.getBehaviorStatusText()}</span>
           </h3>
-
-          {/*
-           <form ref="testBehaviorForm" action="/test_behavior_version" method="POST">
-           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-           <input type="text" name="message" />
-           <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
-           <input type="submit" />
-           </form>
-           */}
         </div>
       </div>
     );
@@ -1377,6 +1410,27 @@ return React.createClass({
             />
           </Collapsible>
 
+          <Collapsible revealWhen={this.getActivePanel() === 'behaviorTester'}>
+            <BehaviorTester
+              ref="behaviorTester"
+              triggers={this.getBehaviorTriggers()}
+              params={this.getBehaviorParams()}
+              behaviorId={this.props.behaviorId}
+              csrfToken={this.props.csrfToken}
+              onDone={this.toggleBehaviorTester}
+            />
+          </Collapsible>
+
+          <Collapsible ref="saving" revealWhen={this.isSaving()}>
+            <div className="box-action">
+              <div className="container phn">
+                <p className="align-c">
+                  <b className="pulse">Saving changes…</b>
+                </p>
+              </div>
+            </div>
+          </Collapsible>
+
           <Collapsible revealWhen={!this.hasModalPanel()}>
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
@@ -1384,22 +1438,38 @@ return React.createClass({
             <div className="container ptm">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
-                  <button type="submit"
-                    className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
-                    disabled={!this.isModified()}
-                  >
-                    <span className="button-labels">
-                      <span className="button-normal-label">
-                        <span className="mobile-display-none">Save changes</span>
-                        <span className="mobile-display-only">Save</span>
-                      </span>
-                      <span className="button-activated-label">Saving…</span>
-                    </span>
-                  </button>
-                  <button className="mbm" type="button" disabled={!this.isModified()} onClick={this.confirmUndo}>
+                  <DynamicLabelButton
+                    ref="saveButton"
+                    onClick={this.onSaveClick}
+                    labels={[{
+                      text: 'Save changes',
+                      mobileText: 'Save',
+                      displayWhen: !this.state.justSaved
+                    }, {
+                      text: 'Saved',
+                      displayWhen: this.state.justSaved
+                    }]}
+                    className="button-primary mrs mbm"
+                    disabledWhen={!this.isModified() || this.isSaving()}
+                  />
+                  <button className="mrs mbm" type="button" disabled={!this.isModified() || this.isSaving()} onClick={this.confirmUndo}>
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </button>
+                  <DynamicLabelButton
+                    labels={[{
+                      text: 'Test…',
+                      displayWhen: !this.isModified()
+                    }, {
+                      text: 'Save and test…',
+                      displayWhen: this.isModified()
+                    }]}
+                    disabledWhen={!this.isExistingBehavior() && !this.isModified()}
+                    className="mrl mbm" onClick={this.checkIfModifiedAndTest}
+                  />
+                  <div className="display-inline-block align-button mbm type-bold type-italic">
+                    {this.renderFooterStatus()}
+                  </div>
                 </div>
                 <div className="column column-shrink align-r pbm">
                   {this.isExistingBehavior() ? (
@@ -1426,6 +1496,27 @@ return React.createClass({
     );
   },
 
+  renderFooterStatus: function() {
+    if (this.state.justSaved && !this.isSaving()) {
+      return (
+        <span className="fade-in type-green">All changes saved</span>
+      );
+    } else if (this.state.error === 'not_saved') {
+      return (
+        <span className="fade-in type-pink">
+          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+          <span>Error saving changes — please try again</span>
+        </span>
+      );
+    } else if (this.isModified()) {
+      return (
+        <span className="fade-in type-pink">Unsaved changes</span>
+      );
+    } else {
+      return "";
+    }
+  },
+
   renderHiddenForms: function() {
     return (
       <div>
@@ -1448,7 +1539,7 @@ return React.createClass({
       <div>
         {this.renderPageHeading()}
 
-      <form action={this.getFormAction()} method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
+      <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
         {this.renderHiddenFormValues()}
 
@@ -1524,51 +1615,17 @@ return React.createClass({
             <hr className="mtn" />
           </Collapsible>
 
-          <div className="columns">
+          <ResponseTemplateConfiguration
+            template={this.getBehaviorTemplate()}
+            onChangeTemplate={this.updateTemplate}
+            isFinishedBehavior={this.isFinishedBehavior()}
+            behaviorUsesCode={!!this.state.revealCodeEditor}
+            shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
+            onChangeForcePrivateResponse={this.updateForcePrivateResponse}
+            onCursorChange={this.ensureCursorVisible}
+            userParams={this.getBehaviorParams()}
+          />
 
-            <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s">
-
-              <SectionHeading>Then Ellipsis will respond with</SectionHeading>
-
-              <Checklist disabledWhen={this.isFinishedBehavior()}>
-                <Checklist.Item checkedWhen={this.getBehaviorTemplate().usesMarkdown()}>
-                  <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
-                  <span>to format the response, add links, etc.</span>
-                </Checklist.Item>
-                {this.state.revealCodeEditor ? "" : (
-                  <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
-                )}
-              </Checklist>
-
-              {this.getTemplateDataHelp()}
-            </div>
-
-            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
-              <div className="position-relative CodeMirror-container-no-gutter">
-                <Codemirror value={this.getBehaviorTemplate().toString()}
-                  onChange={this.updateTemplate}
-                  onCursorChange={this.ensureCursorVisible}
-                  options={{
-                    mode: {
-                      name: "markdown",
-                      /* Use CommonMark-appropriate settings */
-                      fencedCodeBlocks: true,
-                      underscoresBreakWords: false
-                    },
-                    gutters: ['CodeMirror-no-gutter'],
-                    indentUnit: 4,
-                    indentWithTabs: true,
-                    lineWrapping: true,
-                    lineNumbers: false,
-                    smartIndent: true,
-                    tabSize: 4,
-                    viewportMargin: Infinity,
-                    placeholder: "The result is {successResult}"
-                  }}
-                />
-              </div>
-            </div>
-          </div>
         </div> {/* End of container */}
 
         {this.renderFooter()}
@@ -1586,8 +1643,18 @@ return React.createClass({
       <div>
         {this.renderPageHeading()}
 
-        <form action={this.getFormAction()} method="POST" ref="behaviorForm" onSubmit={this.onSubmit}>
+        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
+
+          <DataTypeNameInput
+            name={this.getDataType().name}
+            onChange={this.updateDataTypeName}
+          />
+
+          <DataTypeResultConfig
+            usesSearch={this.hasUserParameterNamed('searchQuery')}
+            onChange={this.updateDataTypeResultConfig}
+          />
 
           <div className="container ptxl pbxxxl">
             <div className="columns">
@@ -1605,6 +1672,8 @@ return React.createClass({
 
           {this.renderFooter()}
         </form>
+
+        {this.renderHiddenForms()}
 
       </div>
     );

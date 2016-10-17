@@ -207,7 +207,7 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="columns columns-elastic mobile-columns-float mbl">
+      <div className="columns columns-elastic mobile-columns-float mbxl">
         <div className="column column-expand">
           <div>
             <label className="type-label type-weak" htmlFor={this.props.id}>{this.getPrefix()}</label>

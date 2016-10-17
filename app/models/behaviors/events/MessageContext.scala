@@ -2,8 +2,9 @@ package models.behaviors.events
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
-import models.behaviors.UserInfo
+import models.behaviors.{MessageInfo, UserInfo}
 import models.behaviors.conversations.conversation.Conversation
+import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
 
@@ -21,7 +22,7 @@ trait MessageContext extends Context {
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.BehaviorEditorController.newBehavior(Some(teamId))
+      val path = controllers.routes.BehaviorEditorController.newForNormalBehavior(Some(teamId))
       s"$baseUrl$path"
     }.get
     s"[teach me something new]($newBehaviorLink)"
@@ -52,7 +53,15 @@ trait MessageContext extends Context {
   val isResponseExpected: Boolean
 
   def userInfo(ws: WSClient, dataService: DataService): Future[UserInfo] = {
-    UserInfo.forLoginInfo(LoginInfo(name, userIdForContext), teamId, ws, dataService)
+    UserInfo.buildFor(this, teamId, ws, dataService)
+  }
+
+  def messageInfo(ws: WSClient, dataService: DataService): Future[MessageInfo] = {
+    MessageInfo.buildFor(this, ws, dataService)
+  }
+
+  def detailsFor(ws: WSClient, dataService: DataService): Future[JsObject] = {
+    Future.successful(JsObject(Seq()))
   }
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)

@@ -6,7 +6,8 @@
 GET         /                                         @controllers.ApplicationController.index(teamId: Option[String] ?= None)
 GET         /intro                                    @controllers.ApplicationController.intro(teamId: Option[String] ?= None)
 GET         /install_behaviors                        @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None)
-GET         /new_behavior                             @controllers.BehaviorEditorController.newBehavior(teamId: Option[String] ?= None)
+GET         /new_behavior                             @controllers.BehaviorEditorController.newForNormalBehavior(teamId: Option[String] ?= None)
+GET         /new_data_type                            @controllers.BehaviorEditorController.newForDataType(teamId: Option[String] ?= None)
 GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
 GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
 GET         /import_behavior_zip                      @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)
@@ -20,11 +21,6 @@ GET         /version_info/:behaviorId                 @controllers.BehaviorEdito
 POST        /test_behavior_version                    @controllers.BehaviorEditorController.test
 
 GET         /data_types                               @controllers.BehaviorBackedDataTypeController.list(teamId: Option[String] ?= None)
-POST        /save_data_type                           @controllers.BehaviorBackedDataTypeController.save
-GET         /export_data_type/:id                     @controllers.BehaviorBackedDataTypeController.export(id: String)
-GET         /import_data_type_zip                     @controllers.BehaviorBackedDataTypeController.importZip(teamId: Option[String] ?= None)
-POST        /import_data_type_zip                     @controllers.BehaviorBackedDataTypeController.doImportZip
-POST        /delete_data_type                         @controllers.BehaviorBackedDataTypeController.delete
 
 POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
 POST        /delete_environment_variable              @controllers.EnvironmentVariablesController.delete

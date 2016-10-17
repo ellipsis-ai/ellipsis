@@ -21,6 +21,12 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
     animateInitialRender: React.PropTypes.bool
   },
 
+  getInitialState: function() {
+    return {
+      isAnimating: false
+    };
+  },
+
   animationDurationSeconds: function() {
     return this.props.animationDuration || 0.25;
   },
@@ -64,10 +70,14 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
   },
 
   collapse: function() {
-    this.removeTransition();
-    this.setCurrentHeight();
-    this.setOverflow('hidden');
-    this.after(this.doCollapse);
+    this.setState({
+      isAnimating: true
+    }, () => {
+      this.removeTransition();
+      this.setCurrentHeight();
+      this.setOverflow('hidden');
+      this.after(this.doCollapse);
+    });
   },
   doCollapse: function() {
     this.addTransition();
@@ -76,18 +86,28 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
   },
   finishCollapse: function() {
     this.setHidden();
+    this.setState({
+      isAnimating: false
+    });
   },
 
   reveal: function() {
-    this.setVisible();
-    this.addTransition();
-    this.setCurrentHeight();
-    this.afterAnimation(this.afterReveal);
+    this.setState({
+      isAnimating: true
+    }, () => {
+      this.setVisible();
+      this.addTransition();
+      this.setCurrentHeight();
+      this.afterAnimation(this.afterReveal);
+    });
   },
   afterReveal: function() {
     this.removeTransition();
     this.setAutoHeight();
     this.setOverflow('visible');
+    this.setState({
+      isAnimating: false
+    });
   },
 
   componentDidMount: function() {
@@ -106,7 +126,11 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
     if (prevProps.revealWhen === this.props.revealWhen) {
       return;
     }
-    if (this.props.revealWhen) {
+    if (this.state.isAnimating) {
+      window.setTimeout(() => {
+        this.componentDidUpdate(prevProps);
+      }, this.animationDurationSeconds() * 1000);
+    } else if (this.props.revealWhen) {
       this.reveal();
     } else {
       this.collapse();

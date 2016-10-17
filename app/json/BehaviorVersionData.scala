@@ -22,6 +22,7 @@ case class BehaviorVersionData(
                                 importedId: Option[String],
                                 githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
+                                dataType: Option[BehaviorBackedDataTypeData],
                                 createdAt: Option[DateTime]
                                 ) {
   val awsConfig: Option[AWSConfigData] = config.aws
@@ -39,33 +40,36 @@ object BehaviorVersionData {
     }.getOrElse("")
   }
 
-  def buildFor(teamId: String,
-            behaviorId: Option[String],
-            functionBody: String,
-            responseTemplate: String,
-            params: Seq[BehaviorParameterData],
-            triggers: Seq[BehaviorTriggerData],
-            config: BehaviorConfig,
-            importedId: Option[String],
-            githubUrl: Option[String],
-            createdAt: Option[DateTime],
-            dataService: DataService
+  def buildFor(
+                teamId: String,
+                behaviorId: Option[String],
+                functionBody: String,
+                responseTemplate: String,
+                params: Seq[BehaviorParameterData],
+                triggers: Seq[BehaviorTriggerData],
+                config: BehaviorConfig,
+                importedId: Option[String],
+                githubUrl: Option[String],
+                maybeDataType: Option[BehaviorBackedDataTypeData],
+                createdAt: Option[DateTime],
+                dataService: DataService
               ): BehaviorVersionData = {
 
     val knownEnvVarsUsed = config.knownEnvVarsUsed ++ dataService.environmentVariables.lookForInCode(functionBody)
 
     BehaviorVersionData(
-    teamId,
-    behaviorId,
-    functionBody,
-    responseTemplate,
-    params,
-    triggers,
-    config,
-    importedId,
-    githubUrl,
-    knownEnvVarsUsed,
-    createdAt
+      teamId,
+      behaviorId,
+      functionBody,
+      responseTemplate,
+      params,
+      triggers,
+      config,
+      importedId,
+      githubUrl,
+      knownEnvVarsUsed,
+      maybeDataType,
+      createdAt
     )
   }
 
@@ -75,10 +79,14 @@ object BehaviorVersionData {
                    response: String,
                    params: String,
                    triggers: String,
-                   config: String,
+                   configString: String,
                    maybeGithubUrl: Option[String],
                    dataService: DataService
                    ): BehaviorVersionData = {
+    val config = Json.parse(configString).validate[BehaviorConfig].get
+    val maybeDataType = config.dataTypeName.map { name =>
+      BehaviorBackedDataTypeData(None, Some(name))
+    }
     BehaviorVersionData.buildFor(
       teamId,
       None,
@@ -86,9 +94,10 @@ object BehaviorVersionData {
       response,
       Json.parse(params).validate[Seq[BehaviorParameterData]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
-      Json.parse(config).validate[BehaviorConfig].get,
+      config,
       importedId = None,
       maybeGithubUrl,
+      maybeDataType,
       createdAt = None,
       dataService
     )
@@ -112,6 +121,9 @@ object BehaviorVersionData {
       maybeRequiredOAuth2ApiConfigs <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(Future.successful(None))
+      dataTypes <- maybeBehavior.map { behavior =>
+        dataService.behaviorBackedDataTypes.allFor(behavior.team)
+      }.getOrElse(Future.successful(Seq()))
     } yield {
       for {
         behavior <- maybeBehavior
@@ -126,6 +138,10 @@ object BehaviorVersionData {
         val maybeRequiredOAuth2ApiConfigData = maybeRequiredOAuth2ApiConfigs.map { requiredOAuth2ApiConfigs =>
           requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
         }
+        val maybeDataType = dataTypes.find(_.behavior.id == behavior.id).map { dataType =>
+          BehaviorBackedDataTypeData(Some(dataType.id), Some(dataType.name))
+        }
+        val config = BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData, Some(behaviorVersion.forcePrivateResponse), maybeDataType.flatMap(_.name))
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           Some(behavior.id),
@@ -137,9 +153,10 @@ object BehaviorVersionData {
           triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
-          BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData),
+          config,
           behavior.maybeImportedId,
           githubUrl = None,
+          maybeDataType,
           Some(behaviorVersion.createdAt),
           dataService
         )

@@ -78,9 +78,6 @@ define(function(require) {
               <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.props.isFinishedBehavior}>
                 Write a question or phrase people should use to trigger a response.
               </Checklist.Item>
-              <Checklist.Item checkedWhen={this.hasMultipleTriggers()} hiddenWhen={this.props.isFinishedBehavior && this.hasMultipleTriggers()}>
-                You can add multiple triggers.
-              </Checklist.Item>
               <Checklist.Item checkedWhen={this.triggersUseParams()}>
                 <span>A trigger can include “fill-in-the-blank” inputs, e.g. <code className="plxs">{"Call me {name}"}</code></span>
                 <span className="pls">
@@ -112,7 +109,7 @@ define(function(require) {
                 );
               }, this)}
             </div>
-            <div className="prsymbol mobile-prn align-r mobile-align-l">
+            <div>
               <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
             </div>
           </div>

@@ -13,11 +13,20 @@ requirejs(['../common'], function() {
         oauth2Apis: config.oauth2Apis,
         justSaved: config.justSaved,
         notifications: config.notifications,
-        dataType: config.dataType
+        onSave: reload
       };
-      var behaviorEditorProps = BehaviorVersion.fromJson(Object.assign({}, config.data, additionalData));
-      var myBehaviorEditor = React.createElement(BehaviorEditor, behaviorEditorProps);
-      ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
+
+      function reload(newData, justSaved) {
+        var combinedData = Object.assign({}, newData, additionalData);
+        if (justSaved) {
+          combinedData.justSaved = true;
+        }
+        var behaviorEditorProps = BehaviorVersion.fromJson(combinedData);
+        var myBehaviorEditor = React.createElement(BehaviorEditor, behaviorEditorProps);
+        ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
+      }
+
+      reload(config.data, false);
     }
   );
 });

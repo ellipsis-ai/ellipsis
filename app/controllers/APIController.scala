@@ -90,11 +90,13 @@ class APIController @Inject() (
             })
           result <- maybeEvent.map { event =>
             eventHandler.handle(event).map { results =>
-              maybeSlackProfile.foreach { slackProfile =>
-                val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:")
-                introResult.sendIn(event.context)
+              results.foreach { result =>
+                maybeSlackProfile.foreach { slackProfile =>
+                  val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
+                  introResult.sendIn(event.context)
+                }
+                result.sendIn(event.context)
               }
-              results.foreach(_.sendIn(event.context))
               Ok(Json.toJson(results.map(_.fullText)))
             }
           }.getOrElse(Future.successful(NotFound("")))
