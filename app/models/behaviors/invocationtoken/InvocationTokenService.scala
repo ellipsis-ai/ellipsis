@@ -9,6 +9,4 @@ trait InvocationTokenService {
 
   def createFor(team: Team): Future[InvocationToken]
 
-  def use(token: InvocationToken): Future[InvocationToken]
-
 }
