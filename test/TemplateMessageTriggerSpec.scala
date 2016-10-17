@@ -38,9 +38,12 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
     }
 
     "handle regex chars" in {
-      val trigger = triggerFor("how much is ${amount} CAD in USD?")
-      matches(trigger, "how much is $100 CAD in USD?") mustBe true
-      matches(trigger, "how much is $100 CAD in US") mustBe false
+      val trigger1 = triggerFor("how much is ${amount} CAD in USD?")
+      val trigger2 = triggerFor("w(.*)t+f")
+      matches(trigger1, "how much is $100 CAD in USD?") mustBe true
+      matches(trigger1, "how much is $100 CAD in US") mustBe false
+      matches(trigger2, "w(.*)t+f") mustBe true
+      matches(trigger2, "whattf") mustBe false
     }
 
     "not be activated without a required param" in {
