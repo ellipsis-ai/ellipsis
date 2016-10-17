@@ -6,11 +6,11 @@ import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
-import models.behaviors._
-import models.behaviors.behaviorparameter.BehaviorParameterType
+import models.behaviors.testing.{TestEvent, TestMessageContext, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
+import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -26,7 +26,7 @@ class BehaviorEditorController @Inject() (
                                            val configuration: Configuration,
                                            val dataService: DataService,
                                            val lambdaService: AWSLambdaService,
-                                           val testReportBuilder: BehaviorTestReportBuilder
+                                           val cache: CacheApi
                                          ) extends ReAuthable {
 
   private def newBehavior(isForDataType: Boolean, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -268,7 +268,7 @@ class BehaviorEditorController @Inject() (
     )(TestBehaviorInfo.apply)(TestBehaviorInfo.unapply)
   )
 
-  def test = silhouette.SecuredAction.async { implicit request =>
+  def testTriggers = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     testForm.bindFromRequest.fold(
       formWithErrors => {
@@ -282,7 +282,7 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
             val context = TestMessageContext(info.message, includesBotMention = true)
-            testReportBuilder.buildFor(TestEvent(context), behaviorVersion).map(Some(_))
+            TriggerTester(lambdaService, dataService, cache).test(TestEvent(context), behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 
         } yield {
