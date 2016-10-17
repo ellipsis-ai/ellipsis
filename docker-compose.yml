@@ -47,7 +47,7 @@ services:
     image: postgres
     volumes:
       - ~/db/pgdata:/pgdata
-      - ./db/setup_new_db.sql:/docker-entrypoint-initdb.d/setup_new_db.sql
+      - ./deploy/dev/db/setup_new_db.sql:/docker-entrypoint-initdb.d/setup_new_db.sql
     ports:
       - "5432:5432"
     environment:
