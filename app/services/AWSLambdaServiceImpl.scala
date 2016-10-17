@@ -223,7 +223,7 @@ class AWSLambdaServiceImpl @Inject() (
         |   $CONTEXT_PARAM.success = function(result) {
         |     callback(null, { "result": result === undefined ? null : result });
         |   };
-        |   $CONTEXT_PARAM.error = function(err) { callback(err); };
+        |   $CONTEXT_PARAM.error = function(err) { callback(err || "(No error message or an empty error message was provided.)"); };
         |   ${awsCodeFor(maybeAwsConfig)}
         |   $CONTEXT_PARAM.accessTokens = {};
         |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
