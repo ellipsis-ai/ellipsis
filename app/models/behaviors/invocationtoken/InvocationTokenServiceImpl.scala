@@ -17,10 +17,9 @@ class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invoc
 
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
-  def isUsed = column[Boolean]("is_used")
   def createdAt = column[DateTime]("created_at")
 
-  def * = (id, teamId, isUsed, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
+  def * = (id, teamId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
 }
 
 class InvocationTokenServiceImpl @Inject() (
@@ -41,15 +40,8 @@ class InvocationTokenServiceImpl @Inject() (
   }
 
   def createFor(team: Team): Future[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, team.id, isUsed = false, DateTime.now)
+    val newInstance = InvocationToken(IDs.next, team.id, DateTime.now)
     dataService.run((all += newInstance).map(_ => newInstance))
-  }
-
-  def use(token: InvocationToken): Future[InvocationToken] = {
-    val action = all.filter(_.id === token.id).map(_.isUsed).update(true).map { _ =>
-      token.copy(isUsed = true)
-    }
-    dataService.run(action)
   }
 
 }
