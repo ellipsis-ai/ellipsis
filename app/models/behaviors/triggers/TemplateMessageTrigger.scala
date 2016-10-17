@@ -49,7 +49,7 @@ case class TemplateMessageTrigger(
 object TemplateMessageTriggerUtils {
 
   // need to deal with \\ first
-  val specialCharacters = Seq("\\", "$", "?", "-", "[", "]")
+  val specialCharacters = Seq("\\", "^", "$", "?", "-", "[", "]", "(", ")", "+", "*", ".")
 
   def escapeRegexCharactersIn(text: String): String = {
     specialCharacters.foldLeft(text)((str, char) => str.replace(char, s"\\$char"))
