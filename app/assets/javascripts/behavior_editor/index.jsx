@@ -6,6 +6,7 @@ var React = require('react'),
   AWSHelp = require('./aws_help'),
   BehaviorVersion = require('../models/behavior_version'),
   BehaviorTester = require('./behavior_tester'),
+  DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   CodeEditor = require('./code_editor'),
   CodeEditorHelp = require('./code_editor_help'),
@@ -783,21 +784,30 @@ return React.createClass({
   },
 
   checkIfModifiedAndTest: function() {
+    const ref = this.isDataTypeBehavior() ? 'dataTypeTester' : 'behaviorTester';
     if (this.isModified()) {
       this.onSaveBehavior(() => {
-        this.toggleBehaviorTester();
+        this.toggleTester(ref);
       });
     } else {
-      this.toggleBehaviorTester();
+      this.toggleTester(ref);
     }
   },
 
-  toggleBehaviorTester: function() {
-    this.toggleActivePanel('behaviorTester', true, () => {
-      if (this.getActivePanel() === 'behaviorTester') {
-        this.refs.behaviorTester.focus();
+  toggleTester: function(ref) {
+    this.toggleActivePanel(ref, true, () => {
+      if (this.getActivePanel() === ref) {
+        this.refs[ref].focus();
       }
     });
+  },
+
+  toggleBehaviorTester: function() {
+    this.toggleTester('behaviorTester');
+  },
+
+  toggleDataTypeTester: function() {
+    this.toggleTester('dataTypeTester');
   },
 
   toggleBoilerplateHelp: function() {
@@ -1418,6 +1428,15 @@ return React.createClass({
               behaviorId={this.props.behaviorId}
               csrfToken={this.props.csrfToken}
               onDone={this.toggleBehaviorTester}
+            />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.getActivePanel() === 'dataTypeTester'}>
+            <DataTypeTester
+              ref="dataTypeTester"
+              behaviorId={this.props.behaviorId}
+              csrfToken={this.props.csrfToken}
+              onDone={this.toggleDataTypeTester}
             />
           </Collapsible>
 
