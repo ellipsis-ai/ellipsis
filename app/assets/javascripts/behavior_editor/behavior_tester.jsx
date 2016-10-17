@@ -61,7 +61,7 @@ define(function(require) {
       var formData = new FormData();
       formData.append('message', this.state.testMessage);
       formData.append('behaviorId', this.props.behaviorId);
-      fetch(jsRoutes.controllers.BehaviorEditorController.test().url, {
+      fetch(jsRoutes.controllers.BehaviorEditorController.testTriggers().url, {
         credentials: 'same-origin',
         method: 'POST',
         headers: {
