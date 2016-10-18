@@ -58,10 +58,8 @@ case class UserInfo(
 
 object UserInfo {
 
-  def buildFor(context: MessageContext, teamId: String, ws: WSClient, dataService: DataService): Future[UserInfo] = {
+  def buildFor(maybeUser: Option[User], context: MessageContext, ws: WSClient, dataService: DataService): Future[UserInfo] = {
     for {
-      maybeLinkedAccount <- dataService.linkedAccounts.find(context.loginInfo, teamId)
-      maybeUser <- Future.successful(maybeLinkedAccount.map(_.user))
       linkedTokens <- maybeUser.map { user =>
         dataService.linkedOAuth2Tokens.allForUser(user, ws)
       }.getOrElse(Future.successful(Seq()))
@@ -72,6 +70,14 @@ object UserInfo {
     } yield {
       UserInfo(maybeUser, links, Some(messageInfo))
     }
+  }
+
+  def buildFor(context: MessageContext, teamId: String, ws: WSClient, dataService: DataService): Future[UserInfo] = {
+    for {
+      maybeLinkedAccount <- dataService.linkedAccounts.find(context.loginInfo, teamId)
+      maybeUser <- Future.successful(maybeLinkedAccount.map(_.user))
+      info <- buildFor(maybeUser, context, ws, dataService)
+    } yield info
   }
 
 }

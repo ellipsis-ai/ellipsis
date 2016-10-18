@@ -9,14 +9,14 @@ case class TemplateApplier(
                             ) {
 
   def apply: String = {
-    maybeResponseTemplate.map { responseTemplate =>
+    maybeResponseTemplate.filter(_.trim.nonEmpty).map { responseTemplate =>
       new TemplateParser().parseBlockFrom(responseTemplate).map { block =>
         val stringBuilder: StringBuilder = new StringBuilder()
         val renderer = MarkdownRenderer(stringBuilder, result, inputs)
         renderer.visit(block)
         stringBuilder.mkString
       }.getOrElse("")
-    }.getOrElse("")
+    }.getOrElse(Json.prettyPrint(result.getOrElse(JsString(""))))
   }
 
 }

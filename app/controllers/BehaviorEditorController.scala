@@ -6,7 +6,8 @@ import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
-import models.behaviors.testing.{TestEvent, TestMessageContext, TriggerTester}
+import models.behaviors.BehaviorResponse
+import models.behaviors.testing.{InvocationTester, TestEvent, TestMessageContext, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -15,7 +16,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -259,18 +260,18 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  case class TestBehaviorInfo(behaviorId: String, message: String)
+  case class TestTriggersInfo(behaviorId: String, message: String)
 
-  private val testForm = Form(
+  private val testTriggersForm = Form(
     mapping(
       "behaviorId" -> nonEmptyText,
       "message" -> nonEmptyText
-    )(TestBehaviorInfo.apply)(TestBehaviorInfo.unapply)
+    )(TestTriggersInfo.apply)(TestTriggersInfo.unapply)
   )
 
   def testTriggers = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    testForm.bindFromRequest.fold(
+    testTriggersForm.bindFromRequest.fold(
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
@@ -281,7 +282,7 @@ class BehaviorEditorController @Inject() (
             dataService.behaviors.maybeCurrentVersionFor(behavior)
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-            val context = TestMessageContext(info.message, includesBotMention = true)
+            val context = TestMessageContext(user, behaviorVersion.team, info.message, includesBotMention = true)
             TriggerTester(lambdaService, dataService, cache).test(TestEvent(context), behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 
@@ -291,6 +292,60 @@ class BehaviorEditorController @Inject() (
           }.getOrElse {
             NotFound(s"Behavior not found: ${info.behaviorId}")
           }
+        }
+      }
+    )
+  }
+
+  case class TestInvocationInfo(behaviorId: String, paramValuesJson: String)
+
+  private val testInvocationForm = Form(
+    mapping(
+      "behaviorId" -> nonEmptyText,
+      "paramValuesJson" -> nonEmptyText
+    )(TestInvocationInfo.apply)(TestInvocationInfo.unapply)
+  )
+
+  def testInvocation = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    testInvocationForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val json = Json.parse(info.paramValuesJson)
+        json.validate[Array[String]] match {
+          case JsSuccess(paramValues, jsPath) => {
+            for {
+              maybeBehavior <- dataService.behaviors.find(info.behaviorId, user)
+              maybeBehaviorVersion <- maybeBehavior.map { behavior =>
+                dataService.behaviors.maybeCurrentVersionFor(behavior)
+              }.getOrElse(Future.successful(None))
+              maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
+                for {
+                  params <- dataService.behaviorParameters.allFor(behaviorVersion)
+                  event <- Future.successful {
+                    val context = TestMessageContext(user, behaviorVersion.team, "", includesBotMention = true)
+                    TestEvent(context)
+                  }
+                  invocationParamValues <- Future.successful {
+                    paramValues.zipWithIndex.map { case (value, i) =>
+                      (AWSLambdaConstants.invocationParamFor(i), value)
+                    }.toMap
+                  }
+                  parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache)
+                  report <- InvocationTester(lambdaService, dataService).test(event, behaviorVersion, parametersWithValues)
+                } yield Some(report)
+              }.getOrElse(Future.successful(None))
+            } yield {
+              maybeReport.map { report =>
+                Ok(report.json)
+              }.getOrElse {
+                NotFound(s"Behavior not found: ${info.behaviorId}")
+              }
+            }
+          }
+          case JsError(err) => Future.successful(BadRequest(""))
         }
       }
     )
