@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    Input = require('../form/input'),
     debounce = require('javascript-debounce');
   require('whatwg-fetch');
 
@@ -7,12 +8,14 @@ define(function(require) {
     displayName: 'DataTypeTester',
     propTypes: {
       behaviorId: React.PropTypes.string.isRequired,
+      isSearch: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
       return {
+        searchQuery: '',
         result: ''
       };
     },
@@ -31,6 +34,12 @@ define(function(require) {
       }
     },
 
+    onChangeSearchQuery: function(value) {
+      this.setState({
+        searchQuery: value
+      });
+    },
+
     onClick: function() {
       if (this.isSavedBehavior()) {
         this.updateResult();
@@ -46,7 +55,7 @@ define(function(require) {
     fetchResult: function() {
       var formData = new FormData();
       formData.append('behaviorId', this.props.behaviorId);
-      formData.append('paramValuesJson', '[]');
+      formData.append('paramValuesJson', JSON.stringify([this.state.searchQuery]));
       fetch(jsRoutes.controllers.BehaviorEditorController.testInvocation().url, {
         credentials: 'same-origin',
         method: 'POST',
@@ -86,11 +95,26 @@ define(function(require) {
       );
     },
 
+    renderSearchQuery: function() {
+      if (this.props.isSearch) {
+        return (
+          <div className="columns pvm">
+            <div className="column column-one-half">
+              <Input placeholder="Search query:" ref="searchQuery" value={this.state.searchQuery} onChange={this.onChangeSearchQuery}/>
+            </div>
+          </div>
+        );
+      } else {
+        return null;
+      }
+    },
+
     renderTester: function() {
       return (
         <div>
 
           <div className="mvxl">
+            {this.renderSearchQuery()}
             <button type="button" onClick={this.onClick}>Test</button>
           </div>
 
@@ -107,51 +131,7 @@ define(function(require) {
           </div>
         </div>
       );
-    },
-
-    renderTrigger: function(trigger, index) {
-      var highlighted = this.state.highlightedTriggerText === trigger.text;
-      var className = "pvs border-bottom " +
-        (trigger.isRegex ? " type-monospace " : "") +
-        (highlighted ? " type-bold type-green " : "");
-      return (
-        <div ref={`trigger${index}`} key={`trigger${index}`} className={className}>
-          {trigger.text} {highlighted ? "✓" : ""}
-        </div>
-      );
-    },
-
-    renderNoTriggers: function() {
-      return (
-        <div>
-          <p>This behavior does not have any triggers. Add at least one trigger before testing.</p>
-
-          <div className="mvxl">
-            <button type="button" onClick={this.props.onDone}>OK</button>
-          </div>
-        </div>
-      );
-    },
-
-    renderParams: function(params) {
-      return (
-        <div className="columns columns-elastic">
-          <div className="column-group">
-            {params.map((param, index) => (
-              <div key={`param${index}`} className="column-row">
-                <div className="column column-shrink type-monospace type-weak prs pvxs">{param.name}:</div>
-                <div className="column column-expand pvxs">{this.getValueForParamName(param.name)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    },
-
-    renderNoParams: function() {
-      return (
-        <p>No user input has been defined.</p>
-      );
     }
+
   });
 });

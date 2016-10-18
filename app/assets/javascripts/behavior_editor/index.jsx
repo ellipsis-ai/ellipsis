@@ -1018,6 +1018,10 @@ return React.createClass({
     return !!this.props.dataType;
   },
 
+  isSearchDataTypeBehavior: function() {
+    return this.isDataTypeBehavior() && this.hasUserParameterNamed('searchQuery');
+  },
+
   isExistingBehavior: function() {
     return !!this.props.behaviorId;
   },
@@ -1435,6 +1439,7 @@ return React.createClass({
             <DataTypeTester
               ref="dataTypeTester"
               behaviorId={this.props.behaviorId}
+              isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
               onDone={this.toggleDataTypeTester}
             />

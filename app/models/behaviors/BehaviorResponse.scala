@@ -83,16 +83,14 @@ case class BehaviorResponse(
 
 object BehaviorResponse {
 
-  def buildFor(
-                event: MessageEvent,
-                behaviorVersion: BehaviorVersion,
-                paramValues: Map[String, String],
-                activatedTrigger: MessageTrigger,
-                maybeConversation: Option[Conversation],
-                lambdaService: AWSLambdaService,
-                dataService: DataService,
-                cache: CacheApi
-                ): Future[BehaviorResponse] = {
+  def parametersWithValuesFor(
+                               event: MessageEvent,
+                               behaviorVersion: BehaviorVersion,
+                               paramValues: Map[String, String],
+                               maybeConversation: Option[Conversation],
+                               dataService: DataService,
+                               cache: CacheApi
+                             ): Future[Seq[ParameterWithValue]] = {
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
       invocationNames <- Future.successful(params.zipWithIndex.map { case (p, i) =>
@@ -109,10 +107,22 @@ object BehaviorResponse {
           }
         }.getOrElse(Future.successful(None))
       })
-    } yield {
-      val paramsWithValues = params.zip(values).zip(invocationNames).map { case((param, maybeValue), invocationName) =>
+    } yield params.zip(values).zip(invocationNames).map { case((param, maybeValue), invocationName) =>
         ParameterWithValue(param, invocationName, maybeValue)
       }
+  }
+
+  def buildFor(
+                event: MessageEvent,
+                behaviorVersion: BehaviorVersion,
+                paramValues: Map[String, String],
+                activatedTrigger: MessageTrigger,
+                maybeConversation: Option[Conversation],
+                lambdaService: AWSLambdaService,
+                dataService: DataService,
+                cache: CacheApi
+                ): Future[BehaviorResponse] = {
+    parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cache).map { paramsWithValues =>
       BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger, lambdaService, dataService, cache)
     }
   }

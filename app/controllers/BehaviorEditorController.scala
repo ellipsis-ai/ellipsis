@@ -6,6 +6,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
+import models.behaviors.BehaviorResponse
 import models.behaviors.testing.{InvocationTester, TestEvent, TestMessageContext, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
@@ -15,7 +16,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -312,22 +313,39 @@ class BehaviorEditorController @Inject() (
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       info => {
-        for {
-          maybeBehavior <- dataService.behaviors.find(info.behaviorId, user)
-          maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-            dataService.behaviors.maybeCurrentVersionFor(behavior)
-          }.getOrElse(Future.successful(None))
-          maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-            val context = TestMessageContext(user, behaviorVersion.team, "", includesBotMention = true)
-            InvocationTester(lambdaService, dataService, cache).test(TestEvent(context), behaviorVersion, Seq()).map(Some(_))
-          }.getOrElse(Future.successful(None))
-
-        } yield {
-          maybeReport.map { report =>
-            Ok(report.json)
-          }.getOrElse {
-            NotFound(s"Behavior not found: ${info.behaviorId}")
+        val json = Json.parse(info.paramValuesJson)
+        json.validate[Array[String]] match {
+          case JsSuccess(paramValues, jsPath) => {
+            for {
+              maybeBehavior <- dataService.behaviors.find(info.behaviorId, user)
+              maybeBehaviorVersion <- maybeBehavior.map { behavior =>
+                dataService.behaviors.maybeCurrentVersionFor(behavior)
+              }.getOrElse(Future.successful(None))
+              maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
+                for {
+                  params <- dataService.behaviorParameters.allFor(behaviorVersion)
+                  event <- Future.successful {
+                    val context = TestMessageContext(user, behaviorVersion.team, "", includesBotMention = true)
+                    TestEvent(context)
+                  }
+                  invocationParamValues <- Future.successful {
+                    paramValues.zipWithIndex.map { case (value, i) =>
+                      (AWSLambdaConstants.invocationParamFor(i), value)
+                    }.toMap
+                  }
+                  parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache)
+                  report <- InvocationTester(lambdaService, dataService).test(event, behaviorVersion, parametersWithValues)
+                } yield Some(report)
+              }.getOrElse(Future.successful(None))
+            } yield {
+              maybeReport.map { report =>
+                Ok(report.json)
+              }.getOrElse {
+                NotFound(s"Behavior not found: ${info.behaviorId}")
+              }
+            }
           }
+          case JsError(err) => Future.successful(BadRequest(""))
         }
       }
     )
