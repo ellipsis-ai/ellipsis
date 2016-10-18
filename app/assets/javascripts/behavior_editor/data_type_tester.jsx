@@ -2,7 +2,8 @@ define(function(require) {
   var React = require('react'),
     Input = require('../form/input'),
     debounce = require('javascript-debounce'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../if_present'),
+    Collapsible = require('../collapsible');
   require('whatwg-fetch');
 
   return React.createClass({
@@ -76,8 +77,7 @@ define(function(require) {
     updateResultImmediately: function() {
       if (this.isSavedBehavior()) {
         this.setState({
-          isTesting: true,
-          result: ''
+          isTesting: true
         }, this.fetchResult);
       }
     },
@@ -117,14 +117,32 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="box-action">
-          <div className="container phn">
-            <div className="columns">
-              <div className="column column-one-quarter mobile-column-full">
-                <h4 className="type-weak">Test the data type</h4>
+        <div>
+          <div className="box-help">
+            <div className="container phn">
+              <div className="columns">
+                <div className="column column-one-quarter mobile-column-full"></div>
+                <div className="column column-three-quarters pll mobile-pln mobile-column-full">
+                  <Collapsible revealWhen={!!(this.getResult() && !this.state.isTesting)}>
+                    {this.renderResult()}
+                  </Collapsible>
+                  <h4 className="mtl">
+                    <span>Test result </span>
+                    {this.renderResultStatus()}
+                  </h4>
+                </div>
               </div>
-              <div className="column column-three-quarters pll mobile-pln mobile-column-full">
-                {this.renderTester()}
+            </div>
+          </div>
+          <div className="box-action">
+            <div className="container phn">
+              <div className="columns mtl">
+                <div className="column column-one-quarter mobile-column-full">
+                  <h4 className="type-weak">Test the data type</h4>
+                </div>
+                <div className="column column-three-quarters pll mobile-pln mobile-column-full">
+                  {this.renderTester()}
+                </div>
               </div>
             </div>
           </div>
@@ -166,7 +184,7 @@ define(function(require) {
         );
       } else {
         return (
-          <span>&nbsp;</span>
+          <span className="type-weak">— No result</span>
         );
       }
     },
@@ -181,9 +199,7 @@ define(function(require) {
           <pre className="box-code-example">{this.getResult()}</pre>
         );
       } else {
-        return (
-          <div className="type-weak">No result</div>
-        );
+        return null;
       }
     },
 
@@ -209,19 +225,19 @@ define(function(require) {
                 </div>
               ))}
             </div>
-            {ifPresent(result, () => result.map((item, index) => (
-              <div className="column-row">
-                <div className="column column-shrink pvxs border-top type-monospace">{item.id}</div>
-                <div className="column column-expand pvxs border-top type-monospace">{item.label}</div>
-                {propertyNames.map((name, index) => (
-                  <div key={`item${index}-propName${index}`} className="column column-shrink pvxs border-top">
-                    {item[name] || null}
+            {ifPresent(result, () => result.map((item, itemIndex) => (
+              <div className="column-row" key={`item${itemIndex}`}>
+                <div className="column column-shrink pvxs border-top"><pre className="box-code-example display-inline-block">{item.id}</pre></div>
+                <div className="column column-expand pvxs border-top"><pre className="box-code-example display-inline-block">{item.label}</pre></div>
+                {propertyNames.map((name, propNameIndex) => (
+                  <div key={`item${itemIndex}-propName${propNameIndex}`} className="column column-shrink pvxs border-top">
+                    <pre className="box-code-example display-inline-block">{item[name] || null}</pre>
                   </div>
                 ))}
               </div>
             )), () => (
               <div className="column-row">
-                <div className="column column-shrink pvxs border-top">—</div>
+                <div className="column column-shrink pvxs border-top"></div>
                 <div className="column column-expand pvxs border-top type-italic">No items were returned.</div>
               </div>
             ))}
@@ -234,7 +250,7 @@ define(function(require) {
       if (this.props.isSearch) {
         return (
           <p>
-            Type a search query and click Test to run your code and check the result.
+            Type a search query, then click Test to run your code and check the result.
           </p>
         );
       } else {
@@ -253,22 +269,13 @@ define(function(require) {
             {this.renderIntro()}
             <div className="columns">
               {this.renderSearchQuery()}
-              <div className="column column-one-quarter">
-                <button type="button" onClick={this.onClick}>Test</button>
+              <div className="column column-one-half">
+                <button className="mrs" type="button" onClick={this.onClick}>Test</button>
+                <button type="button" onClick={this.onDone}>Done</button>
               </div>
             </div>
           </div>
 
-          <h4>
-            <span>Result </span>
-            {this.renderResultStatus()}
-          </h4>
-
-          {this.renderResult()}
-
-          <div className="mvxl">
-            <button type="button" onClick={this.onDone}>Done</button>
-          </div>
         </div>
       );
     }
