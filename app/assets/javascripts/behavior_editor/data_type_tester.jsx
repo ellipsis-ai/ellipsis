@@ -66,6 +66,13 @@ define(function(require) {
       this.updateResultImmediately();
     },
 
+    onDone: function() {
+      this.setState({
+        result: ''
+      });
+      this.props.onDone();
+    },
+
     updateResultImmediately: function() {
       if (this.isSavedBehavior()) {
         this.setState({
@@ -260,7 +267,7 @@ define(function(require) {
           {this.renderResult()}
 
           <div className="mvxl">
-            <button type="button" onClick={this.props.onDone}>Done</button>
+            <button type="button" onClick={this.onDone}>Done</button>
           </div>
         </div>
       );
