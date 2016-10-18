@@ -25,6 +25,17 @@ define(function(require) {
       return this.state.result;
     },
 
+    isValidResult: function() {
+      try {
+        const json = JSON.parse(this.getResult());
+        return Array.isArray(json) && json.every((ea) => {
+            return typeof ea === "object" && Object.keys(ea).includes('id') && Object.keys(ea).includes('label');
+          });
+      } catch(e) {
+        return false;
+      }
+    },
+
     isSavedBehavior: function() {
       return !!this.props.behaviorId;
     },
@@ -121,16 +132,28 @@ define(function(require) {
       }
     },
 
+    renderResultHeading: function() {
+      if (this.isValidResult()) {
+        return (
+          <span className="type-bold type-green">Valid result ✓</span>
+        );
+      } else {
+        return (
+          <span className="type-bold type-pink">Invalid result: must be an array of objects, each with a <code>id</code> and <code>label</code> key.</span>
+        );
+      }
+    },
+
     renderResult: function() {
       if (this.state.isTesting) {
         return (
           <span className="type-weak type-italic pulse">— testing…</span>
         );
-      } else {
+      } else if (this.getResult()) {
         return (
           <div>
             <h4 className="mbxs">
-              <span>Result</span>
+              {this.renderResultHeading()}
             </h4>
 
             <div>
@@ -138,6 +161,8 @@ define(function(require) {
             </div>
           </div>
         );
+      } else {
+        return null;
       }
     },
 
