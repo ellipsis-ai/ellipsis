@@ -16,7 +16,8 @@ define(function(require) {
     getInitialState: function() {
       return {
         searchQuery: '',
-        result: ''
+        result: '',
+        isTesting: false
       };
     },
 
@@ -41,15 +42,20 @@ define(function(require) {
     },
 
     onClick: function() {
-      if (this.isSavedBehavior()) {
-        this.updateResult();
-      }
+      this.updateResult();
+    },
+
+    onEnterKey: function() {
+      this.refs.searchQuery.blur();
+      this.updateResult();
     },
 
     updateResult: debounce(function() {
-      this.setState({
-        isTesting: true
-      }, this.fetchResult);
+      if (this.isSavedBehavior()) {
+        this.setState({
+          isTesting: true
+        }, this.fetchResult);
+      }
     }, 500),
 
     fetchResult: function() {
@@ -68,12 +74,14 @@ define(function(require) {
         .then((response) => response.json())
         .then((json) => {
           this.setState({
-            result: json.fullText
+            result: json.fullText,
+            isTesting: false
           });
         })
         .catch(() => {
           this.setState({
-            errorOccurred: true
+            errorOccurred: true,
+            isTesting: false
           });
         });
     },
@@ -98,10 +106,14 @@ define(function(require) {
     renderSearchQuery: function() {
       if (this.props.isSearch) {
         return (
-          <div className="columns pvm">
-            <div className="column column-one-half">
-              <Input placeholder="Search query:" ref="searchQuery" value={this.state.searchQuery} onChange={this.onChangeSearchQuery}/>
-            </div>
+          <div className="column column-one-half">
+            <Input
+              placeholder="Search query:"
+              ref="searchQuery"
+              value={this.state.searchQuery}
+              onChange={this.onChangeSearchQuery}
+              onEnterKey={this.onEnterKey}
+            />
           </div>
         );
       } else {
@@ -109,22 +121,38 @@ define(function(require) {
       }
     },
 
+    renderResult: function() {
+      if (this.state.isTesting) {
+        return (
+          <span className="type-weak type-italic pulse">— testing…</span>
+        );
+      } else {
+        return (
+          <div>
+            <h4 className="mbxs">
+              <span>Result</span>
+            </h4>
+
+            <div>
+              {this.getResult()}
+            </div>
+          </div>
+        );
+      }
+    },
+
     renderTester: function() {
       return (
         <div>
 
-          <div className="mvxl">
+          <div className="mvxl columns">
             {this.renderSearchQuery()}
-            <button type="button" onClick={this.onClick}>Test</button>
+            <div className="column column-one-quarter">
+              <button type="button" onClick={this.onClick}>Test</button>
+            </div>
           </div>
 
-          <h4 className="mbxs">
-            <span>Result</span>
-          </h4>
-
-          <div>
-           {this.getResult()}
-          </div>
+          {this.renderResult()}
 
           <div className="mvxl">
             <button type="button" onClick={this.props.onDone}>Done</button>
