@@ -215,35 +215,41 @@ define(function(require) {
         });
       });
       var propertyNames = Object.keys(propertyNameMap);
-      return (
-        <div className="columns columns-elastic">
-          <div className="column-group">
-            <div className="column-row type-s type-monospace">
-              <div className="column column-shrink pvxs">id</div>
-              <div className="column column-shrink pvxs">label</div>
-              {propertyNames.map((name, index) => (
-                <div key={`propName${index}`} className="column column-shrink pvxs">{name}</div>
-              ))}
-            </div>
-            {ifPresent(result, () => result.map((item, itemIndex) => (
-              <div className="column-row" key={`item${itemIndex}`}>
-                <div className="column column-shrink pvxs border-top"><pre className="box-code-example display-inline-block">{item.id}</pre></div>
-                <div className="column column-shrink pvxs border-top"><pre className="box-code-example display-inline-block">{item.label}</pre></div>
-                {propertyNames.map((name, propNameIndex) => (
-                  <div key={`item${itemIndex}-propName${propNameIndex}`} className="column column-shrink pvxs border-top">
-                    {this.renderItemValue(item[name])}
-                  </div>
+      if (result.length > 0) {
+        return (
+          <div className="columns columns-elastic">
+            <div className="column-group">
+              <div className="column-row type-s type-monospace">
+                <div className="column column-shrink pvxs">id</div>
+                <div className="column column-shrink pvxs">label</div>
+                {propertyNames.map((name, index) => (
+                  <div key={`propName${index}`} className="column column-shrink pvxs">{name}</div>
                 ))}
               </div>
-            )), () => (
-              <div className="column-row">
-                <div className="column column-shrink pvxs border-top"></div>
-                <div className="column column-shrink pvxs border-top type-italic">No items were returned.</div>
-              </div>
-            ))}
+              {result.map((item, itemIndex) => (
+                <div className="column-row" key={`item${itemIndex}`}>
+                  <div className="column column-shrink pvxs border-top">
+                    <pre className="box-code-example display-inline-block">{item.id}</pre>
+                  </div>
+                  <div className="column column-shrink pvxs border-top">
+                    <pre className="box-code-example display-inline-block">{item.label}</pre>
+                  </div>
+                  {propertyNames.map((name, propNameIndex) => (
+                    <div key={`item${itemIndex}-propName${propNameIndex}`}
+                      className="column column-shrink pvxs border-top">
+                      {this.renderItemValue(item[name])}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      );
+        );
+      } else {
+        return (
+          <div className="type-italic">An empty array was returned.</div>
+        );
+      }
     },
 
     renderItemValue: function(value) {
