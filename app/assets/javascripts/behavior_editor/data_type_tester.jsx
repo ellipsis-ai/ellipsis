@@ -2,7 +2,6 @@ define(function(require) {
   var React = require('react'),
     Input = require('../form/input'),
     debounce = require('javascript-debounce'),
-    ifPresent = require('../if_present'),
     Collapsible = require('../collapsible');
   require('whatwg-fetch');
 
@@ -201,20 +200,18 @@ define(function(require) {
           <pre className="box-code-example">{this.getResult()}</pre>
         );
       } else {
-        return null;
+        return (
+          <div/>
+        );
       }
     },
 
     renderValidResultTableWith: function(result) {
-      var propertyNameMap = {};
-      result.forEach((item) => {
-        Object.keys(item).forEach((key) => {
-          if (key !== 'id' && key !== 'label') {
-            propertyNameMap[key] = true;
-          }
-        });
+      var hasOtherData = result.some((item) => {
+        return Object.keys(item).filter((key) => {
+          return key !== 'id' && key !== 'label';
+        }).length > 0;
       });
-      var propertyNames = Object.keys(propertyNameMap);
       if (result.length > 0) {
         return (
           <div className="columns columns-elastic">
@@ -222,9 +219,9 @@ define(function(require) {
               <div className="column-row type-s type-monospace">
                 <div className="column column-shrink pvxs">id</div>
                 <div className="column column-shrink pvxs">label</div>
-                {propertyNames.map((name, index) => (
-                  <div key={`propName${index}`} className="column column-shrink pvxs">{name}</div>
-                ))}
+                <div className="column column-expand pvxs">
+                  {hasOtherData ? "Other properties" : ""}
+                </div>
               </div>
               {result.map((item, itemIndex) => (
                 <div className="column-row" key={`item${itemIndex}`}>
@@ -234,12 +231,9 @@ define(function(require) {
                   <div className="column column-shrink pvxs border-top">
                     <pre className="box-code-example display-inline-block">{item.label}</pre>
                   </div>
-                  {propertyNames.map((name, propNameIndex) => (
-                    <div key={`item${itemIndex}-propName${propNameIndex}`}
-                      className="column column-shrink pvxs border-top">
-                      {this.renderItemValue(item[name])}
-                    </div>
-                  ))}
+                  <div className="column column-expand pvxs border-top">
+                    {hasOtherData ? this.renderOtherDataForItem(item) : null}
+                  </div>
                 </div>
               ))}
             </div>
@@ -252,20 +246,13 @@ define(function(require) {
       }
     },
 
-    renderItemValue: function(value) {
-      if (typeof(value) === 'undefined') {
-        return (
-          <pre className="type-xs paxs type-weak">undefined</pre>
-        );
-      } else if (typeof(value) === 'string') {
-        return (
-          <pre className="box-code-example display-inline-block">{value}</pre>
-        );
-      } else {
-        return (
-          <pre className="type-xs paxs">{String(value)}</pre>
-        );
-      }
+    renderOtherDataForItem: function(item) {
+      var copy = Object.assign({}, item);
+      delete copy.id;
+      delete copy.label;
+      return (
+        <div className="box-code-example display-limit-width display-ellipsis type-monospace">{JSON.stringify(copy, null, 1)}</div>
+      );
     },
 
     renderIntro: function() {
