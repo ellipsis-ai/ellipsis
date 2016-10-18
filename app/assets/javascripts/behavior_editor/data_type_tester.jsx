@@ -1,7 +1,8 @@
 define(function(require) {
   var React = require('react'),
     Input = require('../form/input'),
-    debounce = require('javascript-debounce');
+    debounce = require('javascript-debounce'),
+    ifPresent = require('../if_present');
   require('whatwg-fetch');
 
   return React.createClass({
@@ -25,15 +26,19 @@ define(function(require) {
       return this.state.result;
     },
 
-    isValidResult: function() {
+    getParsedResult: function() {
       try {
-        const json = JSON.parse(this.getResult());
-        return Array.isArray(json) && json.every((ea) => {
-            return typeof ea === "object" && Object.keys(ea).includes('id') && Object.keys(ea).includes('label');
-          });
+        return JSON.parse(this.getResult());
       } catch(e) {
-        return false;
+        return null;
       }
+    },
+
+    isValidResult: function() {
+      var result = this.getParsedResult();
+      return Array.isArray(result) && result.every((ea) => {
+        return typeof ea === "object" && Object.keys(ea).includes('id') && Object.keys(ea).includes('label');
+      });
     },
 
     isSavedBehavior: function() {
@@ -41,8 +46,8 @@ define(function(require) {
     },
 
     focus: function() {
-      if (this.refs.testMessage) {
-        this.refs.testMessage.focus();
+      if (this.refs.searchQuery) {
+        this.refs.searchQuery.focus();
       }
     },
 
@@ -58,15 +63,20 @@ define(function(require) {
 
     onEnterKey: function() {
       this.refs.searchQuery.blur();
-      this.updateResult();
+      this.updateResultImmediately();
+    },
+
+    updateResultImmediately: function() {
+      if (this.isSavedBehavior()) {
+        this.setState({
+          isTesting: true,
+          result: ''
+        }, this.fetchResult);
+      }
     },
 
     updateResult: debounce(function() {
-      if (this.isSavedBehavior()) {
-        this.setState({
-          isTesting: true
-        }, this.fetchResult);
-      }
+      this.updateResultImmediately();
     }, 500),
 
     fetchResult: function() {
@@ -91,6 +101,7 @@ define(function(require) {
         })
         .catch(() => {
           this.setState({
+            result: '',
             errorOccurred: true,
             isTesting: false
           });
@@ -119,7 +130,7 @@ define(function(require) {
         return (
           <div className="column column-one-half">
             <Input
-              placeholder="Search query:"
+              placeholder="Search query"
               ref="searchQuery"
               value={this.state.searchQuery}
               onChange={this.onChangeSearchQuery}
@@ -132,50 +143,119 @@ define(function(require) {
       }
     },
 
-    renderResultHeading: function() {
-      if (this.isValidResult()) {
+    renderResultStatus: function() {
+      if (this.state.isTesting) {
         return (
-          <span className="type-bold type-green">Valid result ✓</span>
+          <span className="type-weak pulse">— Testing</span>
+        );
+      } else if (this.isValidResult()) {
+        var numMatches = this.getParsedResult().length;
+        return (
+          <span className="type-green">— Valid {numMatches === 1 ? '(1 item)' : `(${numMatches} items)`} ✓</span>
+        );
+      } else if (this.getResult()) {
+        return (
+          <span className="type-pink">— Invalid: must be an array of objects, each with an <code className="type-black">id</code> and <code className="type-black">label</code> property.</span>
         );
       } else {
         return (
-          <span className="type-bold type-pink">Invalid result: must be an array of objects, each with a <code>id</code> and <code>label</code> key.</span>
+          <span>&nbsp;</span>
         );
       }
     },
 
     renderResult: function() {
-      if (this.state.isTesting) {
+      var isValidResult = this.isValidResult();
+      var resultString = this.getResult();
+      if (isValidResult) {
+        return this.renderValidResultTableWith(this.getParsedResult());
+      } else if (resultString) {
         return (
-          <span className="type-weak type-italic pulse">— testing…</span>
-        );
-      } else if (this.getResult()) {
-        return (
-          <div>
-            <h4 className="mbxs">
-              {this.renderResultHeading()}
-            </h4>
-
-            <div>
-              {this.getResult()}
-            </div>
-          </div>
+          <pre className="box-code-example">{this.getResult()}</pre>
         );
       } else {
-        return null;
+        return (
+          <div className="type-weak">No result</div>
+        );
+      }
+    },
+
+    renderValidResultTableWith: function(result) {
+      var propertyNameMap = {};
+      result.forEach((item) => {
+        Object.keys(item).forEach((key) => {
+          if (key !== 'id' && key !== 'label') {
+            propertyNameMap[key] = true;
+          }
+        });
+      });
+      var propertyNames = Object.keys(propertyNameMap);
+      return (
+        <div className="columns columns-elastic">
+          <div className="column-group">
+            <div className="column-row">
+              <div className="column column-shrink pvxs type-bold">ID</div>
+              <div className="column column-expand pvxs type-bold">Label</div>
+              {propertyNames.map((name, index) => (
+                <div key={`propName${index}`} className="column column-shrink pvxs type-bold">
+                  {name}
+                </div>
+              ))}
+            </div>
+            {ifPresent(result, () => result.map((item, index) => (
+              <div className="column-row">
+                <div className="column column-shrink pvxs border-top type-monospace">{item.id}</div>
+                <div className="column column-expand pvxs border-top type-monospace">{item.label}</div>
+                {propertyNames.map((name, index) => (
+                  <div key={`item${index}-propName${index}`} className="column column-shrink pvxs border-top">
+                    {item[name] || null}
+                  </div>
+                ))}
+              </div>
+            )), () => (
+              <div className="column-row">
+                <div className="column column-shrink pvxs border-top">—</div>
+                <div className="column column-expand pvxs border-top type-italic">No items were returned.</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    },
+
+    renderIntro: function() {
+      if (this.props.isSearch) {
+        return (
+          <p>
+            Type a search query and click Test to run your code and check the result.
+          </p>
+        );
+      } else {
+        return (
+          <p>
+            Click Test to run your code and check the result.
+          </p>
+        );
       }
     },
 
     renderTester: function() {
       return (
         <div>
-
-          <div className="mvxl columns">
-            {this.renderSearchQuery()}
-            <div className="column column-one-quarter">
-              <button type="button" onClick={this.onClick}>Test</button>
+          <div className="mbxl">
+            {this.renderIntro()}
+            <div className="columns">
+              {this.renderSearchQuery()}
+              <div className="column column-one-quarter">
+                <button type="button" onClick={this.onClick}>Test</button>
+              </div>
             </div>
           </div>
+
+          <h4>
+            <span>Result </span>
+            {this.renderResultStatus()}
+          </h4>
 
           {this.renderResult()}
 
