@@ -5,8 +5,14 @@
 @import play.filters.csrf._
 @import play.api.libs.json._
 @import json.Formatting._
-
-@main("Edit behavior", Some(data.teamAccess)) {
+@titleForBehaviorData(behaviorData: json.BehaviorEditorData) = @{
+  if (behaviorData.dataType.isDefined) {
+    "Edit data type"
+  } else {
+    "Edit behavior"
+  }
+}
+@main(titleForBehaviorData(data), Some(data.teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.edit,
     routes.javascript.BehaviorEditorController.save,

@@ -280,7 +280,7 @@ return React.createClass({
   getManageDropdownLabel: function() {
     return (
       <span>
-        <span className="mobile-display-none">Manage behavior</span>
+        <span className="mobile-display-none">{this.isDataTypeBehavior() ? "Manage data type" : "Manage behavior"}</span>
         <span className="mobile-display-only">Manage</span>
       </span>
     );
