@@ -5,6 +5,8 @@ define(function(require) {
     Collapsible = require('../collapsible');
   require('whatwg-fetch');
 
+  var MAX_RESULTS_TO_SHOW = 10;
+
   return React.createClass({
     displayName: 'DataTypeTester',
     propTypes: {
@@ -212,31 +214,42 @@ define(function(require) {
           return key !== 'id' && key !== 'label';
         }).length > 0;
       });
+      var overflowResults = result.length - MAX_RESULTS_TO_SHOW;
       if (result.length > 0) {
         return (
-          <div className="columns columns-elastic">
-            <div className="column-group">
-              <div className="column-row type-s type-monospace">
-                <div className="column column-shrink pvxs">id</div>
-                <div className="column column-shrink pvxs">label</div>
-                <div className="column column-expand pvxs">
-                  {hasOtherData ? "Other properties" : ""}
+          <div>
+            <div className="columns columns-elastic">
+              <div className="column-group">
+                <div className="column-row type-s type-monospace">
+                  <div className="column column-shrink pbxs">id</div>
+                  <div className="column column-shrink pbxs">label</div>
+                  <div className="column column-expand pbxs">
+                    {hasOtherData ? "Other properties" : ""}
+                  </div>
                 </div>
+                {result.slice(0, MAX_RESULTS_TO_SHOW).map((item, itemIndex) => (
+                  <div className="column-row" key={`item${itemIndex}`}>
+                    <div className="column column-shrink pbxs">
+                      <pre className="box-code-example display-inline-block">{item.id}</pre>
+                    </div>
+                    <div className="column column-shrink pbxs">
+                      <pre className="box-code-example display-inline-block">{item.label}</pre>
+                    </div>
+                    <div className="column column-expand pbxs">
+                      {hasOtherData ? this.renderOtherDataForItem(item) : null}
+                    </div>
+                  </div>
+                ))}
               </div>
-              {result.map((item, itemIndex) => (
-                <div className="column-row" key={`item${itemIndex}`}>
-                  <div className="column column-shrink pvxs border-top">
-                    <pre className="box-code-example display-inline-block">{item.id}</pre>
-                  </div>
-                  <div className="column column-shrink pvxs border-top">
-                    <pre className="box-code-example display-inline-block">{item.label}</pre>
-                  </div>
-                  <div className="column column-expand pvxs border-top">
-                    {hasOtherData ? this.renderOtherDataForItem(item) : null}
-                  </div>
-                </div>
-              ))}
             </div>
+            {overflowResults > 0 ? (
+              <div className="ptxs type-italic type-s type-weak">
+                {overflowResults === 1 ?
+                  "1 more item not shown" :
+                  `${overflowResults} more items not shown`
+                }
+              </div>
+            ) : null}
           </div>
         );
       } else {
