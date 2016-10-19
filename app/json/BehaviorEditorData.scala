@@ -74,6 +74,7 @@ object BehaviorEditorData {
       paramTypes <- teamAccess.maybeTargetTeam.map { team =>
         BehaviorParameterType.allFor(team, dataService)
       }.getOrElse(Future.successful(Seq()))
+      paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
       dataTypes <- teamAccess.maybeTargetTeam.map { team =>
         dataService.behaviorBackedDataTypes.allFor(team)
       }.getOrElse(Future.successful(Seq()))
@@ -108,7 +109,7 @@ object BehaviorEditorData {
         teamAccess,
         versionData,
         environmentVariables.map(EnvironmentVariableData.withoutValueFor),
-        paramTypes.map(BehaviorParameterTypeData.from),
+        paramTypeData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
         maybeDataTypeForBehavior.map(BehaviorBackedDataTypeData.from),

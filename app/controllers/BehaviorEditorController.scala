@@ -76,6 +76,27 @@ class BehaviorEditorController @Inject() (
     }
   }
 
+  def editForDataType(dataTypeId: String) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    dataService.behaviorBackedDataTypes.find(dataTypeId, user).flatMap { maybeDataType =>
+      maybeDataType.map { dataType =>
+        Future.successful(Redirect(routes.BehaviorEditorController.edit(dataType.behavior.id)))
+      }.getOrElse {
+        dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
+          val response = NotFound(
+            views.html.notFound(
+              Some(teamAccess),
+              Some("Data type not found"),
+              Some("The data type you are trying to access could not be found."),
+              Some(reAuthLinkFor(request, None))
+            ))
+
+          withAuthDiscarded(request, response)
+        }
+      }
+    }
+  }
+
   case class SaveBehaviorInfo(
                                dataJson: String,
                                maybeRedirect: Option[String],
@@ -216,6 +237,14 @@ class BehaviorEditorController @Inject() (
       dataTypes <- maybeBehavior.map { behavior =>
         dataService.behaviorBackedDataTypes.allFor(behavior.team)
       }.getOrElse(Future.successful(Seq()))
+      paramTypes <- Future.successful(parametersByVersion.flatMap { case(_, params) =>
+        params.map(_.paramType)
+      }.toSeq.distinct)
+      paramTypeDataByParamTypes <- Future.sequence(paramTypes.map { paramType =>
+        BehaviorParameterTypeData.from(paramType, dataService).map { data =>
+          (paramType, data)
+        }
+      }).map(_.toMap)
     } yield {
       maybeBehavior.map { behavior =>
         val versionsData = versions.map { version =>
@@ -235,7 +264,7 @@ class BehaviorEditorController @Inject() (
             version.maybeResponseTemplate.getOrElse(""),
             parametersByVersion.get(version).map { params =>
               params.map { ea =>
-                BehaviorParameterData(ea.name, Some(BehaviorParameterTypeData.from(ea.paramType)), ea.question)
+                BehaviorParameterData(ea.name, paramTypeDataByParamTypes.get(ea.paramType), ea.question)
               }
             }.getOrElse(Seq()),
             triggersByVersion.get(version).map { triggers =>

@@ -112,6 +112,14 @@ object BehaviorVersionData {
       maybeParameters <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.behaviorParameters.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(Future.successful(None))
+      paramTypes <- Future.successful(maybeParameters.map { params =>
+        params.map(_.paramType).distinct
+      }.getOrElse(Seq()))
+      paramTypeDataByParamTypes <- Future.sequence(paramTypes.map { paramType =>
+        BehaviorParameterTypeData.from(paramType, dataService).map { data =>
+          (paramType, data)
+        }
+      }).map(_.toMap)
       maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.messageTriggers.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(Future.successful(None))
@@ -148,7 +156,7 @@ object BehaviorVersionData {
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
           params.map { ea =>
-            BehaviorParameterData(ea.name, Some(BehaviorParameterTypeData.from(ea.paramType)), ea.question)
+            BehaviorParameterData(ea.name, paramTypeDataByParamTypes.get(ea.paramType), ea.question)
           },
           triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)

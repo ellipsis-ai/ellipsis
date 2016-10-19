@@ -9,6 +9,7 @@
 @main("Edit behavior", Some(data.teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.edit,
+    routes.javascript.BehaviorEditorController.editForDataType,
     routes.javascript.BehaviorEditorController.save,
     routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
     routes.javascript.BehaviorEditorController.versionInfoFor,
