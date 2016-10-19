@@ -62,7 +62,10 @@ class BehaviorParameterServiceImpl @Inject() (
     val action = for {
       _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
       newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
-        DBIO.from(createFor(data.name, data.paramType.getOrElse(BehaviorParameterTypeData.from(TextType)), data.maybeNonEmptyQuestion, i + 1, behaviorVersion))
+        DBIO.from(for {
+          paramTypeData <- data.paramType.map(Future.successful).getOrElse(BehaviorParameterTypeData.from(TextType, dataService))
+          param <- createFor(data.name, paramTypeData, data.maybeNonEmptyQuestion, i + 1, behaviorVersion)
+        } yield param)
       })
     } yield newParams
     dataService.run(action)

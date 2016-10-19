@@ -92,7 +92,8 @@ return React.createClass({
     paramTypes: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         id: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired
+        name: React.PropTypes.string.isRequired,
+        needsConfig: React.PropTypes.bool.isRequired
       })
     ).isRequired,
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
@@ -349,6 +350,23 @@ return React.createClass({
     return notifications;
   },
 
+  getParamTypesNeedingConfiguration: function() {
+    const paramTypes = Array.from(new Set(this.getBehaviorParams().map(ea => ea.paramType)));
+    return paramTypes.filter(ea => ea.needsConfig);
+  },
+
+  buildDataTypeNotifications: function() {
+    var notifications = [];
+    this.getParamTypesNeedingConfiguration().forEach(ea => {
+      notifications.push({
+        kind: "data_type_needs_config",
+        name: ea.name,
+        link: jsRoutes.controllers.BehaviorEditorController.editForDataType(ea.id).url
+      });
+    });
+    return notifications;
+  },
+
   buildParamNotifications: function() {
     var triggerParamObj = {};
     this.getBehaviorTriggers().forEach((trigger) => {
@@ -398,6 +416,7 @@ return React.createClass({
     var allNotifications = serverNotifications.concat(
       this.buildEnvVarNotifications(),
       this.buildOAuthApplicationNotifications(),
+      this.buildDataTypeNotifications(),
       this.buildParamNotifications(),
       this.buildTemplateNotifications()
     );

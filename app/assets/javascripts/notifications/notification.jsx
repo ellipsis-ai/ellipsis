@@ -5,6 +5,7 @@ define(function(require) {
     SVGWarning = require('../svg/warning'),
     NotificationForEnvVarMissing = require('./env_var_not_defined'),
     NotificationForMissingOAuth2Application = require('./oauth2_config_without_application'),
+    NotificationForDataTypeNeedsConfig = require('./data_type_needs_config'),
     NotificationForUnusedOAuth2Application = require('./oauth2_application_unused'),
     NotificationForUnusedAWS = require('./aws_unused'),
     NotificationForParamNotInFunction = require('./param_not_in_function'),
@@ -36,6 +37,14 @@ define(function(require) {
           icon: this.getWarningIcon(),
           message: (
             <NotificationForMissingOAuth2Application details={this.props.notification.details} />
+          )
+        };
+      } else if (kind === 'data_type_needs_config') {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForDataTypeNeedsConfig details={this.props.notification.details} />
           )
         };
       } else if (kind === "oauth2_application_unused") {

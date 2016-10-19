@@ -17,6 +17,7 @@ sealed trait BehaviorParameterType {
 
   val id: String
   val name: String
+  def needsConfig(dataService: DataService): Future[Boolean]
 
   def isValid(text: String, context: BehaviorParameterContext): Future[Boolean]
 
@@ -50,6 +51,7 @@ sealed trait BehaviorParameterType {
 
 trait BuiltInType extends BehaviorParameterType {
   lazy val id = name
+  def needsConfig(dataService: DataService) = Future.successful(false)
 }
 
 object TextType extends BuiltInType {
@@ -88,6 +90,15 @@ object NumberType extends BuiltInType {
 
 
 case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) extends BehaviorParameterType {
+
+  def needsConfig(dataService: DataService) = {
+    for {
+      maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
+      requiredApiConfigs <- maybeCurrentVersion.map { currentVersion =>
+        dataService.requiredOAuth2ApiConfigs.allFor(currentVersion)
+      }.getOrElse(Future.successful(Seq()))
+    } yield !requiredApiConfigs.forall(_.isReady)
+  }
 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]
