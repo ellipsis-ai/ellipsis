@@ -22,9 +22,11 @@ define(function(require) {
         testMessage: '',
         highlightedTriggerText: null,
         paramValues: {},
-        isTesting: false,
+        isTestingTriggers: false,
+        isTestingResult: false,
         hasTested: false,
-        errorOccurred: false
+        errorOccurred: false,
+        result: ''
       };
     },
 
@@ -53,7 +55,7 @@ define(function(require) {
 
     validateMessage: debounce(function() {
       this.setState({
-        isTesting: true
+        isTestingTriggers: true
       }, this.sendValidationRequest);
     }, 500),
 
@@ -75,7 +77,7 @@ define(function(require) {
           this.setState({
             highlightedTriggerText: json.activatedTrigger,
             paramValues: json.paramValues,
-            isTesting: false,
+            isTestingTriggers: false,
             hasTested: true,
             errorOccurred: false
           });
@@ -84,9 +86,39 @@ define(function(require) {
           this.setState({
             highlightedTriggerText: null,
             paramValues: {},
-            isTesting: false,
+            isTestingTriggers: false,
             hasTested: false,
             errorOccurred: true
+          });
+        });
+    },
+
+    fetchResult: function() {
+      var formData = new FormData();
+      formData.append('behaviorId', this.props.behaviorId);
+      formData.append('paramValuesJson', JSON.stringify(Object.keys(this.state.paramValues).map((k) => this.state.paramValues[k])));
+      fetch(jsRoutes.controllers.BehaviorEditorController.testInvocation().url, {
+        credentials: 'same-origin',
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Csrf-Token': this.props.csrfToken
+        },
+        body: formData
+      })
+        .then((response) => response.json())
+        .then((json) => {
+          console.log(json.fullText);
+          this.setState({
+            result: json.fullText,
+            isTestingResult: false
+          });
+        })
+        .catch(() => {
+          this.setState({
+            result: '',
+            errorOccurred: true,
+            isTestingResult: false
           });
         });
     },
@@ -110,7 +142,7 @@ define(function(require) {
     },
 
     getTriggerTestingStatus: function() {
-      if (this.state.isTesting) {
+      if (this.state.isTestingTriggers) {
         return (
           <span className="type-weak type-italic pulse">— testing “{this.state.testMessage}”…</span>
         );
@@ -131,7 +163,7 @@ define(function(require) {
 
     getParamTestingStatus: function() {
       var numParamValues = Object.keys(this.state.paramValues).length;
-      if (this.state.isTesting || numParamValues === 0 || this.props.params.length === 0) {
+      if (this.state.isTestingTriggers || numParamValues === 0 || this.props.params.length === 0) {
         return "";
       } else if (numParamValues === 1) {
         return (
@@ -189,6 +221,7 @@ define(function(require) {
           {ifPresent(this.props.params, this.renderParams, this.renderNoParams)}
 
           <div className="mvxl">
+            <button className="mrs" type="button" onClick={this.fetchResult}>Test response</button>
             <button type="button" onClick={this.props.onDone}>Done</button>
           </div>
         </div>
