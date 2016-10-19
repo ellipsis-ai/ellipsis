@@ -199,7 +199,9 @@ return React.createClass({
         <div className="prl">
           <b>This regex pattern has an error:</b>
         </div>
-        <pre>{this.state.regexError || "\n\n\n"}</pre>
+        <div className="display-overflow-scroll">
+          <pre>{this.state.regexError || "\n\n\n"}</pre>
+        </div>
         <div>{this.getHelpForRegexError()}</div>
       </div>
     );

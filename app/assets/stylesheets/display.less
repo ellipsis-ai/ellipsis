@@ -33,7 +33,13 @@
 
 .display-limit-width {
   display: block;
-  width: 100%;
-  max-width: 100%;
+  width: 0;
+  min-width: 100%;
   box-sizing: border-box;
+}
+
+.display-overflow-scroll {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
