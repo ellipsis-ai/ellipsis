@@ -19,6 +19,7 @@ var React = require('react'),
   DropdownMenu = require('./dropdown_menu'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
+  FixedFooter = require('../fixed_footer'),
   HiddenJsonInput = require('./hidden_json_input'),
   Notification = require('../notifications/notification'),
   Param = require('../models/param'),
@@ -1097,7 +1098,7 @@ return React.createClass({
       return;
     }
     var cursorBottom = editor.cursorCoords(false).bottom;
-    BrowserUtils.ensureYPosInView(cursorBottom, this.refs.footer.clientHeight);
+    BrowserUtils.ensureYPosInView(cursorBottom, this.refs.footer.getHeight());
   },
 
   focusOnParamIndex: function(index) {
@@ -1364,9 +1365,7 @@ return React.createClass({
     return (
       <div>
         <div className={"bg-scrim position-z-almost-front position-fixed-full " + (this.hasModalPanel() ? "fade-in" : "display-none")}></div>
-        <footer ref="footer" className={"position-fixed-bottom position-z-front border-top " +
-          (this.isModified() ? "bg-white" : "bg-light-translucent")}
-        >
+        <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
           <Collapsible ref="confirmUndo" revealWhen={this.getActivePanel() === 'confirmUndo'}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
@@ -1534,7 +1533,7 @@ return React.createClass({
             </div>
           </Collapsible>
 
-        </footer>
+        </FixedFooter>
       </div>
     );
   },
