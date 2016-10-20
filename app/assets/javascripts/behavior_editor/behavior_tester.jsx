@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    BehaviorTest = require('./behavior_test'),
     Collapsible = require('../collapsible'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     ifPresent = require('../if_present'),
@@ -7,7 +8,6 @@ define(function(require) {
     Param = require('../models/param'),
     Trigger = require('../models/trigger'),
     debounce = require('javascript-debounce');
-  require('whatwg-fetch');
 
   return React.createClass({
     displayName: 'BehaviorTester',
@@ -41,10 +41,6 @@ define(function(require) {
       }
     },
 
-    isSavedBehavior: function() {
-      return !!this.props.behaviorId;
-    },
-
     onChangeTestMessage: function(value) {
       this.setState({
         testMessage: value,
@@ -54,7 +50,7 @@ define(function(require) {
         triggerErrorOccurred: false,
         resultErrorOccurred: false
       });
-      if (value && this.isSavedBehavior()) {
+      if (value) {
         this.validateMessage();
       }
     },
@@ -79,20 +75,11 @@ define(function(require) {
     }, 500),
 
     sendValidationRequest: function() {
-      var formData = new FormData();
-      formData.append('message', this.state.testMessage);
-      formData.append('behaviorId', this.props.behaviorId);
-      fetch(jsRoutes.controllers.BehaviorEditorController.testTriggers().url, {
-        credentials: 'same-origin',
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Csrf-Token': this.props.csrfToken
-        },
-        body: formData
-      })
-        .then((response) => response.json())
-        .then((json) => {
+      BehaviorTest.testTriggers({
+        behaviorId: this.props.behaviorId,
+        csrfToken: this.props.csrfToken,
+        message: this.state.testMessage,
+        onSuccess: (json) => {
           this.setState({
             highlightedTriggerText: json.activatedTrigger,
             paramValues: json.paramValues,
@@ -100,8 +87,8 @@ define(function(require) {
             hasTestedTriggers: true,
             triggerErrorOccurred: false
           });
-        })
-        .catch(() => {
+        },
+        onError: () => {
           this.setState({
             highlightedTriggerText: null,
             paramValues: {},
@@ -109,7 +96,8 @@ define(function(require) {
             hasTestedTriggers: false,
             triggerErrorOccurred: true
           });
-        });
+        }
+      });
     },
 
     missingParametersResult: function(missingParamNames) {
@@ -134,36 +122,25 @@ define(function(require) {
         resultMissingParamNames: [],
         resultErrorOccurred: false
       });
-      var formData = new FormData();
-      var jsonParams = JSON.stringify(
-        this.state.paramValues
-      );
-      formData.append('behaviorId', this.props.behaviorId);
-      formData.append('paramValuesJson', jsonParams);
-      fetch(jsRoutes.controllers.BehaviorEditorController.testInvocation().url, {
-        credentials: 'same-origin',
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Csrf-Token': this.props.csrfToken
-        },
-        body: formData
-      })
-        .then((response) => response.json())
-        .then((json) => {
+      BehaviorTest.testInvocation({
+        behaviorId: this.props.behaviorId,
+        paramValues: this.state.paramValues,
+        csrfToken: this.props.csrfToken,
+        onSuccess: (json) => {
           this.setState({
             result: json.result ? json.result.fullText : '',
             resultMissingParamNames: json.missingParamNames || [],
             isTestingResult: false,
             hasTestedResult: true
           });
-        })
-        .catch(() => {
+        },
+        onError: () => {
           this.setState({
             resultErrorOccurred: true,
             isTestingResult: false
           });
-        });
+        }
+      });
     },
 
     focus: function() {
@@ -181,7 +158,7 @@ define(function(require) {
     },
 
     hasResult: function() {
-      return !!this.state.result || this.state.resultMissingParamNames.length > 0;
+      return !!this.getResult() || this.state.resultMissingParamNames.length > 0;
     },
 
     getValueForParamName: function(name) {
@@ -247,7 +224,7 @@ define(function(require) {
                   <div className="column column-three-quarters pll mobile-pln mobile-column-full">
 
                     <h4>Response</h4>
-                    {ifPresent(this.state.result, (result) => (
+                    {ifPresent(this.getResult(), (result) => (
                       <div className="display-overflow-scroll border border-blue pas bg-blue-lightest"
                         style={{
                           maxHeight: "10.25em",
@@ -387,28 +364,41 @@ define(function(require) {
       } else {
         return (
           <span>
-            {ifPresent(this.state.highlightedTriggerText && this.state.testMessage, (message) => (
-              <span>— Use <b>{message}</b> </span>
-            ), () => (
-              <span>— Simulate any trigger </span>
-            ))}
-            {ifPresent(this.props.params, () => {
-              var numParamValues = this.countNonEmptyParamsProvided();
-              if (numParamValues === 0) {
-                return (
-                  <span className="type-weak">(with no user input collected)</span>
-                );
-              } else if (numParamValues === 1) {
-                return (
-                  <span className="type-weak">(with 1 user input collected)</span>
-                );
-              } else {
-                return (
-                  <span className="type-weak">(with {numParamValues} user inputs collected)</span>
-                );
-              }
-            })}
+            {this.renderResultStatusTriggerText()}
+            {this.renderResultStatusParamText()}
           </span>
+        );
+      }
+    },
+
+    renderResultStatusTriggerText: function() {
+      if (this.state.highlightedTriggerText && this.state.testMessage) {
+        return (
+          <span>— Use <b>{this.state.testMessage}</b> </span>
+        );
+      } else {
+        return (
+          <span>— Simulate any trigger </span>
+        );
+      }
+    },
+
+    renderResultStatusParamText: function() {
+      var numParams = this.props.params.length;
+      var numParamValues = this.countNonEmptyParamsProvided();
+      if (numParams === 0) {
+        return null;
+      } else if (numParamValues === 0) {
+        return (
+          <span className="type-weak">(with no user input collected)</span>
+        );
+      } else if (numParamValues === 1) {
+        return (
+          <span className="type-weak">(with 1 user input collected)</span>
+        );
+      } else {
+        return (
+          <span className="type-weak">(with {numParamValues} user inputs collected)</span>
         );
       }
     }

@@ -1,9 +1,8 @@
 define(function(require) {
   var React = require('react'),
+    BehaviorTest = require('./behavior_test'),
     Input = require('../form/input'),
-    debounce = require('javascript-debounce'),
     Collapsible = require('../collapsible');
-  require('whatwg-fetch');
 
   var MAX_RESULTS_TO_SHOW = 10;
 
@@ -44,10 +43,6 @@ define(function(require) {
       });
     },
 
-    isSavedBehavior: function() {
-      return !!this.props.behaviorId;
-    },
-
     focus: function() {
       if (this.refs.searchQuery) {
         this.refs.searchQuery.focus();
@@ -66,7 +61,9 @@ define(function(require) {
 
     onEnterKey: function() {
       this.refs.searchQuery.blur();
-      this.updateResultImmediately();
+      if (!this.state.isTesting) {
+        this.updateResult();
+      }
     },
 
     onDone: function() {
@@ -74,18 +71,12 @@ define(function(require) {
       this.setState(this.getInitialState());
     },
 
-    updateResultImmediately: function() {
-      if (this.isSavedBehavior()) {
-        this.setState({
-          hasTested: true,
-          isTesting: true
-        }, this.fetchResult);
-      }
+    updateResult: function() {
+      this.setState({
+        hasTested: true,
+        isTesting: true
+      }, this.fetchResult);
     },
-
-    updateResult: debounce(function() {
-      this.updateResultImmediately();
-    }, 250),
 
     params: function() {
       if (this.state.searchQuery) {
@@ -96,32 +87,24 @@ define(function(require) {
     },
 
     fetchResult: function() {
-      var formData = new FormData();
-      formData.append('behaviorId', this.props.behaviorId);
-      formData.append('paramValuesJson', JSON.stringify(this.params()));
-      fetch(jsRoutes.controllers.BehaviorEditorController.testInvocation().url, {
-        credentials: 'same-origin',
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Csrf-Token': this.props.csrfToken
-        },
-        body: formData
-      })
-        .then((response) => response.json())
-        .then((json) => {
+      BehaviorTest.testInvocation({
+        behaviorId: this.props.behaviorId,
+        csrfToken: this.props.csrfToken,
+        paramValues: this.params(),
+        onSuccess: (json) => {
           this.setState({
             result: json.result.fullText,
             isTesting: false
           });
-        })
-        .catch(() => {
+        },
+        onError: () => {
           this.setState({
             result: '',
             errorOccurred: true,
             isTesting: false
           });
-        });
+        }
+      });
     },
 
     render: function() {
@@ -299,7 +282,10 @@ define(function(require) {
             <div className="columns columns-elastic">
               <div className="column column-expand">
                 {this.renderSearchQuery()}
-                <button className="button-primary mbs" type="button" onClick={this.onClick}>Test</button>
+                <button className="button-primary mbs" type="button"
+                  onClick={this.onClick}
+                  disabled={this.state.isTesting || (this.props.isSearch && !this.state.searchQuery)}
+                >Test</button>
               </div>
               <div className="column column-shrink align-b">
                 <button className="mbs" type="button" onClick={this.onDone}>Done</button>
