@@ -102,6 +102,14 @@ define(function(require) {
         });
     },
 
+    missingParametersResult: function(missingParamNames) {
+      if (missingParamNames.length === 1) {
+        return `The behavior will ask for a value for ${missingParamNames[0]}`;
+      } else {
+        return `The behavior will ask for values for these parameters: ${missingParamNames.join(", ")}`;
+      }
+    },
+
     fetchResult: function() {
       this.setState({
         isTestingResult: true,
@@ -110,7 +118,7 @@ define(function(require) {
       });
       var formData = new FormData();
       var jsonParams = JSON.stringify(
-        Object.keys(this.state.paramValues).map((k) => this.state.paramValues[k])
+        this.state.paramValues
       );
       formData.append('behaviorId', this.props.behaviorId);
       formData.append('paramValuesJson', jsonParams);
@@ -126,7 +134,7 @@ define(function(require) {
         .then((response) => response.json())
         .then((json) => {
           this.setState({
-            result: json.fullText,
+            result: json.result ? json.result.fullText : this.missingParametersResult(json.missingParamNames),
             isTestingResult: false,
             hasTestedResult: true
           });

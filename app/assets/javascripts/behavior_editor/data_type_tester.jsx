@@ -87,10 +87,18 @@ define(function(require) {
       this.updateResultImmediately();
     }, 250),
 
+    params: function() {
+      if (this.state.searchQuery) {
+        return { searchQuery: this.state.searchQuery };
+      } else {
+        return {};
+      }
+    },
+
     fetchResult: function() {
       var formData = new FormData();
       formData.append('behaviorId', this.props.behaviorId);
-      formData.append('paramValuesJson', JSON.stringify([this.state.searchQuery]));
+      formData.append('paramValuesJson', JSON.stringify(this.params()));
       fetch(jsRoutes.controllers.BehaviorEditorController.testInvocation().url, {
         credentials: 'same-origin',
         method: 'POST',
@@ -103,7 +111,7 @@ define(function(require) {
         .then((response) => response.json())
         .then((json) => {
           this.setState({
-            result: json.fullText,
+            result: json.result.fullText,
             isTesting: false
           });
         })
