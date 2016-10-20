@@ -1,8 +1,13 @@
 define(function(require) {
   require('whatwg-fetch');
 
-  var testInvocationUrl = jsRoutes.controllers.BehaviorEditorController.testInvocation().url;
-  var testTriggersUrl = jsRoutes.controllers.BehaviorEditorController.testTriggers().url;
+  function testInvocationUrl() {
+    return jsRoutes.controllers.BehaviorEditorController.testInvocation().url;
+  }
+
+  function testTriggersUrl() {
+    return jsRoutes.controllers.BehaviorEditorController.testTriggers().url;
+  }
 
   var commonRequiredParams = [
     'behaviorId',
@@ -39,14 +44,14 @@ define(function(require) {
       checkParamsFor(params, commonRequiredParams.concat('paramValues'));
       var formData = new FormData();
       formData.append('paramValuesJson', JSON.stringify(params.paramValues));
-      request(testInvocationUrl, params, formData);
+      request(testInvocationUrl(), params, formData);
     },
 
     testTriggers: function(params) {
       checkParamsFor(params, commonRequiredParams.concat('message'));
       var formData = new FormData();
       formData.append('message', params.message);
-      request(testTriggersUrl, params, formData);
+      request(testTriggersUrl(), params, formData);
     }
   };
 });
