@@ -257,7 +257,11 @@ define(function(require) {
           </p>
 
           <div className="mbxl">
-            <Input ref="testMessage" value={this.state.testMessage} onChange={this.onChangeTestMessage}/>
+            <Input ref="testMessage"
+              value={this.state.testMessage}
+              onChange={this.onChangeTestMessage}
+              placeholder="Enter message"
+            />
           </div>
 
           <h4 className="mbxs">
@@ -274,13 +278,17 @@ define(function(require) {
           </h4>
           {ifPresent(this.props.params, this.renderParams, this.renderNoParams)}
 
-          <div className="mvxl">
-            <button className="mrs" type="button" onClick={this.onDone}>Done</button>
-            <button className="mrs" type="button"
-              onClick={this.fetchResult}
-              disabled={!this.state.highlightedTriggerText || this.state.isTestingResult}
-            >Test response</button>
-            <span className="align-button">{this.renderResultStatus()}</span>
+          <div className="columns columns-elastic mvxl">
+            <div className="column column-expand">
+              <button className="mrs button-primary" type="button"
+                onClick={this.fetchResult}
+                disabled={!this.state.highlightedTriggerText || this.state.isTestingResult}
+              >Test response</button>
+              <span className="align-button">{this.renderResultStatus()}</span>
+            </div>
+            <div className="column column-shrink">
+              <button className="mrs" type="button" onClick={this.onDone}>Done</button>
+            </div>
           </div>
         </div>
       );

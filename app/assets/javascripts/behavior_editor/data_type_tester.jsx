@@ -164,15 +164,14 @@ define(function(require) {
     renderSearchQuery: function() {
       if (this.props.isSearch) {
         return (
-          <div className="column column-one-half prs">
-            <Input
-              placeholder="Search query"
-              ref="searchQuery"
-              value={this.state.searchQuery}
-              onChange={this.onChangeSearchQuery}
-              onEnterKey={this.onEnterKey}
-            />
-          </div>
+          <Input
+            className="width-20 mrs mbs"
+            placeholder="Search query"
+            ref="searchQuery"
+            value={this.state.searchQuery}
+            onChange={this.onChangeSearchQuery}
+            onEnterKey={this.onEnterKey}
+          />
         );
       } else {
         return null;
@@ -297,11 +296,13 @@ define(function(require) {
         <div>
           <div className="mbxl">
             {this.renderIntro()}
-            <div className="columns">
-              {this.renderSearchQuery()}
-              <div className="column column-one-half">
-                <button className="mrs" type="button" onClick={this.onClick}>Test</button>
-                <button type="button" onClick={this.onDone}>Done</button>
+            <div className="columns columns-elastic">
+              <div className="column column-expand">
+                {this.renderSearchQuery()}
+                <button className="button-primary mbs" type="button" onClick={this.onClick}>Test</button>
+              </div>
+              <div className="column column-shrink align-b">
+                <button className="mbs" type="button" onClick={this.onDone}>Done</button>
               </div>
             </div>
           </div>
