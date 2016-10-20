@@ -190,7 +190,10 @@ define(function(require) {
     },
 
     getParamTestingStatus: function() {
-      var numParamValues = Object.keys(this.state.paramValues).length;
+      var nonEmptyParams = Object.keys(this.state.paramValues).filter((paramName) => {
+        return this.state.paramValues[paramName] != null;
+      });
+      var numParamValues = nonEmptyParams.length;
       if (this.state.isTestingTriggers || numParamValues === 0 || this.props.params.length === 0) {
         return "";
       } else if (numParamValues === 1) {
@@ -215,9 +218,9 @@ define(function(require) {
                   <div className="column column-three-quarters pll mobile-pln mobile-column-full">
 
                     <h4>Response</h4>
-                    <div className="display-overflow-scroll box-code-example"
+                    <div className="display-overflow-scroll border border-blue pas bg-blue-lightest"
                       style={{
-                        maxHeight: "9.5em",
+                        maxHeight: "10.25em",
                         overflow: "auto"
                       }}
                     >
