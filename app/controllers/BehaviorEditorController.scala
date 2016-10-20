@@ -343,7 +343,7 @@ class BehaviorEditorController @Inject() (
       },
       info => {
         val json = Json.parse(info.paramValuesJson)
-        json.validate[Array[String]] match {
+        json.validate[Map[String, String]] match {
           case JsSuccess(paramValues, jsPath) => {
             for {
               maybeBehavior <- dataService.behaviors.find(info.behaviorId, user)
@@ -351,20 +351,7 @@ class BehaviorEditorController @Inject() (
                 dataService.behaviors.maybeCurrentVersionFor(behavior)
               }.getOrElse(Future.successful(None))
               maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-                for {
-                  params <- dataService.behaviorParameters.allFor(behaviorVersion)
-                  event <- Future.successful {
-                    val context = TestMessageContext(user, behaviorVersion.team, "", includesBotMention = true)
-                    TestEvent(context)
-                  }
-                  invocationParamValues <- Future.successful {
-                    paramValues.zipWithIndex.map { case (value, i) =>
-                      (AWSLambdaConstants.invocationParamFor(i), value)
-                    }.toMap
-                  }
-                  parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache)
-                  report <- InvocationTester(lambdaService, dataService).test(event, behaviorVersion, parametersWithValues)
-                } yield Some(report)
+                InvocationTester(user, behaviorVersion, paramValues, lambdaService, dataService, cache).run.map(Some(_))
               }.getOrElse(Future.successful(None))
             } yield {
               maybeReport.map { report =>
