@@ -35,10 +35,12 @@ describe('BehaviorEditor', () => {
     envVariables: [ { name: "HOT_DOG" } ],
     paramTypes: [{
       id: 'Text',
-      name: 'Text'
+      name: 'Text',
+      needsConfig: false
     }, {
       id: 'Number',
-      name: 'Number'
+      name: 'Number',
+      needsConfig: false
     }],
     oAuth2Applications: [{
       applicationId: "567890",
