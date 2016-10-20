@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     Collapsible = require('../collapsible'),
+    DynamicLabelButton = require('../form/dynamic_label_button'),
     ifPresent = require('../if_present'),
     Input = require('../form/input'),
     Param = require('../models/param'),
@@ -29,7 +30,8 @@ define(function(require) {
         hasTestedResult: false,
         triggerErrorOccurred: false,
         resultErrorOccurred: false,
-        result: ''
+        result: '',
+        resultMissingParamNames: []
       };
     },
 
@@ -55,6 +57,14 @@ define(function(require) {
       if (value && this.isSavedBehavior()) {
         this.validateMessage();
       }
+    },
+
+    onChangeParamValue: function(name, value) {
+      var newParamValues = Object.assign({}, this.state.paramValues);
+      newParamValues[name] = value;
+      this.setState({
+        paramValues: newParamValues
+      });
     },
 
     onDone: function() {
@@ -104,9 +114,16 @@ define(function(require) {
 
     missingParametersResult: function(missingParamNames) {
       if (missingParamNames.length === 1) {
-        return `The behavior will ask for a value for ${missingParamNames[0]}`;
+        return (
+          <div>Ellipsis will ask the user for a value for <code className="type-bold mlxs">{missingParamNames[0]}</code>.</div>
+        );
       } else {
-        return `The behavior will ask for values for these parameters: ${missingParamNames.join(", ")}`;
+        return (
+          <div>
+            <span>Ellipsis will ask the user for values for these inputs: </span>
+            <code className="type-bold mlxs">{missingParamNames.join(", ")}</code>
+          </div>
+        );
       }
     },
 
@@ -114,6 +131,7 @@ define(function(require) {
       this.setState({
         isTestingResult: true,
         result: '',
+        resultMissingParamNames: [],
         resultErrorOccurred: false
       });
       var formData = new FormData();
@@ -134,7 +152,8 @@ define(function(require) {
         .then((response) => response.json())
         .then((json) => {
           this.setState({
-            result: json.result ? json.result.fullText : this.missingParametersResult(json.missingParamNames),
+            result: json.result ? json.result.fullText : '',
+            resultMissingParamNames: json.missingParamNames || [],
             isTestingResult: false,
             hasTestedResult: true
           });
@@ -161,12 +180,19 @@ define(function(require) {
       return this.state.result;
     },
 
+    hasResult: function() {
+      return !!this.state.result || this.state.resultMissingParamNames.length > 0;
+    },
+
     getValueForParamName: function(name) {
-      return ifPresent(this.state.paramValues[name], (value) => (
-        <span>{value}</span>
-      ), () => (
-        <span className="type-disabled">None</span>
-      ));
+      return (
+        <Input
+          className="form-input-borderless"
+          value={this.state.paramValues[name] || ''}
+          onChange={this.onChangeParamValue.bind(this, name)}
+          placeholder="None"
+        />
+      );
     },
 
     getTriggerTestingStatus: function() {
@@ -189,11 +215,14 @@ define(function(require) {
       }
     },
 
-    getParamTestingStatus: function() {
-      var nonEmptyParams = Object.keys(this.state.paramValues).filter((paramName) => {
+    countNonEmptyParamsProvided: function() {
+      return Object.keys(this.state.paramValues).filter((paramName) => {
         return this.state.paramValues[paramName] != null;
-      });
-      var numParamValues = nonEmptyParams.length;
+      }).length;
+    },
+
+    getParamTestingStatus: function() {
+      var numParamValues = this.countNonEmptyParamsProvided();
       if (this.state.isTestingTriggers || numParamValues === 0 || this.props.params.length === 0) {
         return "";
       } else if (numParamValues === 1) {
@@ -210,7 +239,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <Collapsible revealWhen={!!(this.getResult() && !this.state.isTestingResult)}>
+          <Collapsible revealWhen={this.hasResult() && !this.state.isTestingResult}>
             <div className="box-help">
               <div className="container phn">
                 <div className="columns">
@@ -218,14 +247,17 @@ define(function(require) {
                   <div className="column column-three-quarters pll mobile-pln mobile-column-full">
 
                     <h4>Response</h4>
-                    <div className="display-overflow-scroll border border-blue pas bg-blue-lightest"
-                      style={{
-                        maxHeight: "10.25em",
-                        overflow: "auto"
-                      }}
-                    >
-                      <pre>{this.state.result}</pre>
-                    </div>
+                    {ifPresent(this.state.result, (result) => (
+                      <div className="display-overflow-scroll border border-blue pas bg-blue-lightest"
+                        style={{
+                          maxHeight: "10.25em",
+                          overflow: "auto"
+                        }}
+                      >
+                        <pre>{result}</pre>
+                      </div>
+                    ))}
+                    {ifPresent(this.state.resultMissingParamNames, this.missingParametersResult)}
                   </div>
                 </div>
               </div>
@@ -257,14 +289,18 @@ define(function(require) {
           </p>
 
           <div className="mbxl">
-            <Input ref="testMessage" value={this.state.testMessage} onChange={this.onChangeTestMessage}/>
+            <Input ref="testMessage"
+              value={this.state.testMessage}
+              onChange={this.onChangeTestMessage}
+              placeholder="Enter message"
+            />
           </div>
 
           <h4 className="mbxs">
             <span>Triggers </span>
             <span>{this.getTriggerTestingStatus()}</span>
           </h4>
-          <div className="border-top mbxl type-s">
+          <div className="mbxl type-s">
             {triggers.map(this.renderTrigger)}
           </div>
 
@@ -274,13 +310,25 @@ define(function(require) {
           </h4>
           {ifPresent(this.props.params, this.renderParams, this.renderNoParams)}
 
-          <div className="mvxl">
-            <button className="mrs" type="button" onClick={this.onDone}>Done</button>
-            <button className="mrs" type="button"
-              onClick={this.fetchResult}
-              disabled={!this.state.highlightedTriggerText || this.state.isTestingResult}
-            >Test response</button>
-            <span className="align-button">{this.renderResultStatus()}</span>
+          <div className="columns columns-elastic mvxl">
+            <div className="column column-expand">
+              <DynamicLabelButton
+                className="mrs button-primary"
+                onClick={this.fetchResult}
+                disabledWhen={this.state.isTestingResult}
+                labels={[{
+                  text: 'Test response',
+                  displayWhen: !this.state.isTestingResult
+                }, {
+                  text: 'Testing',
+                  displayWhen: this.state.isTestingResult
+                }]}
+              />
+              <span className="align-button">{this.renderResultStatus()}</span>
+            </div>
+            <div className="column column-shrink">
+              <button className="mrs" type="button" onClick={this.onDone}>Done</button>
+            </div>
           </div>
         </div>
       );
@@ -288,7 +336,7 @@ define(function(require) {
 
     renderTrigger: function(trigger, index) {
       var highlighted = this.state.highlightedTriggerText === trigger.text;
-      var className = "pvxs border-bottom " +
+      var className = "pvxs " +
         (trigger.isRegex ? " type-monospace " : "") +
         (highlighted ? " type-bold type-green " : "");
       return (
@@ -316,8 +364,8 @@ define(function(require) {
           <div className="column-group">
             {params.map((param, index) => (
               <div key={`param${index}`} className="column-row">
-                <div className="column column-shrink type-monospace type-weak prs pvxs">{param.name}:</div>
-                <div className="column column-expand pvxs">{this.getValueForParamName(param.name)}</div>
+                <div className="column column-shrink type-monospace type-weak type-s prs pts">{param.name}:</div>
+                <div className="column column-expand">{this.getValueForParamName(param.name)}</div>
               </div>
             ))}
           </div>
@@ -332,21 +380,35 @@ define(function(require) {
     },
 
     renderResultStatus: function() {
-      if (this.state.isTestingResult) {
+      if (this.state.resultErrorOccurred) {
         return (
-          <span className="type-weak pulse">— Testing <b>{this.state.testMessage}</b></span>
-        );
-      } else if (this.state.resultErrorOccurred) {
-        return (
-          <span className="type-pink">— An error occurred testing <b>{this.state.testMessage}</b></span>
-        );
-      } else if (this.state.highlightedTriggerText) {
-        return (
-          <span>— Use <b>{this.state.testMessage}</b></span>
+          <span className="type-pink">— An error occurred while testing <b>{this.state.testMessage}</b></span>
         );
       } else {
         return (
-          <span>— Requires a matched trigger</span>
+          <span>
+            {ifPresent(this.state.highlightedTriggerText && this.state.testMessage, (message) => (
+              <span>— Use <b>{message}</b> </span>
+            ), () => (
+              <span>— Simulate any trigger </span>
+            ))}
+            {ifPresent(this.props.params, () => {
+              var numParamValues = this.countNonEmptyParamsProvided();
+              if (numParamValues === 0) {
+                return (
+                  <span className="type-weak">(with no user input collected)</span>
+                );
+              } else if (numParamValues === 1) {
+                return (
+                  <span className="type-weak">(with 1 user input collected)</span>
+                );
+              } else {
+                return (
+                  <span className="type-weak">(with {numParamValues} user inputs collected)</span>
+                );
+              }
+            })}
+          </span>
         );
       }
     }
