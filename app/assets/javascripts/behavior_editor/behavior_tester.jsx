@@ -285,7 +285,7 @@ define(function(require) {
             <span>Triggers </span>
             <span>{this.getTriggerTestingStatus()}</span>
           </h4>
-          <div className="border-top mbxl type-s">
+          <div className="mbxl type-s">
             {triggers.map(this.renderTrigger)}
           </div>
 
@@ -313,7 +313,7 @@ define(function(require) {
 
     renderTrigger: function(trigger, index) {
       var highlighted = this.state.highlightedTriggerText === trigger.text;
-      var className = "pvxs border-bottom " +
+      var className = "pvxs " +
         (trigger.isRegex ? " type-monospace " : "") +
         (highlighted ? " type-bold type-green " : "");
       return (
