@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     Collapsible = require('../collapsible'),
+    DynamicLabelButton = require('../form/dynamic_label_button'),
     ifPresent = require('../if_present'),
     Input = require('../form/input'),
     Param = require('../models/param'),
@@ -56,6 +57,14 @@ define(function(require) {
       if (value && this.isSavedBehavior()) {
         this.validateMessage();
       }
+    },
+
+    onChangeParamValue: function(name, value) {
+      var newParamValues = Object.assign({}, this.state.paramValues);
+      newParamValues[name] = value;
+      this.setState({
+        paramValues: newParamValues
+      });
     },
 
     onDone: function() {
@@ -176,11 +185,14 @@ define(function(require) {
     },
 
     getValueForParamName: function(name) {
-      return ifPresent(this.state.paramValues[name], (value) => (
-        <span>{value}</span>
-      ), () => (
-        <span className="type-disabled">None</span>
-      ));
+      return (
+        <Input
+          className="form-input-borderless"
+          value={this.state.paramValues[name] || ''}
+          onChange={this.onChangeParamValue.bind(this, name)}
+          placeholder="None"
+        />
+      );
     },
 
     getTriggerTestingStatus: function() {
@@ -203,11 +215,14 @@ define(function(require) {
       }
     },
 
-    getParamTestingStatus: function() {
-      var nonEmptyParams = Object.keys(this.state.paramValues).filter((paramName) => {
+    countNonEmptyParamsProvided: function() {
+      return Object.keys(this.state.paramValues).filter((paramName) => {
         return this.state.paramValues[paramName] != null;
-      });
-      var numParamValues = nonEmptyParams.length;
+      }).length;
+    },
+
+    getParamTestingStatus: function() {
+      var numParamValues = this.countNonEmptyParamsProvided();
       if (this.state.isTestingTriggers || numParamValues === 0 || this.props.params.length === 0) {
         return "";
       } else if (numParamValues === 1) {
@@ -297,10 +312,18 @@ define(function(require) {
 
           <div className="columns columns-elastic mvxl">
             <div className="column column-expand">
-              <button className="mrs button-primary" type="button"
+              <DynamicLabelButton
+                className="mrs button-primary"
                 onClick={this.fetchResult}
-                disabled={!this.state.highlightedTriggerText || this.state.isTestingResult}
-              >Test response</button>
+                disabledWhen={this.state.isTestingResult}
+                labels={[{
+                  text: 'Test response',
+                  displayWhen: !this.state.isTestingResult
+                }, {
+                  text: 'Testing',
+                  displayWhen: this.state.isTestingResult
+                }]}
+              />
               <span className="align-button">{this.renderResultStatus()}</span>
             </div>
             <div className="column column-shrink">
@@ -341,8 +364,8 @@ define(function(require) {
           <div className="column-group">
             {params.map((param, index) => (
               <div key={`param${index}`} className="column-row">
-                <div className="column column-shrink type-monospace type-weak prs pvxs">{param.name}:</div>
-                <div className="column column-expand pvxs">{this.getValueForParamName(param.name)}</div>
+                <div className="column column-shrink type-monospace type-weak type-s prs pts">{param.name}:</div>
+                <div className="column column-expand">{this.getValueForParamName(param.name)}</div>
               </div>
             ))}
           </div>
@@ -357,21 +380,35 @@ define(function(require) {
     },
 
     renderResultStatus: function() {
-      if (this.state.isTestingResult) {
+      if (this.state.resultErrorOccurred) {
         return (
-          <span className="type-weak pulse">— Testing <b>{this.state.testMessage}</b></span>
-        );
-      } else if (this.state.resultErrorOccurred) {
-        return (
-          <span className="type-pink">— An error occurred testing <b>{this.state.testMessage}</b></span>
-        );
-      } else if (this.state.highlightedTriggerText) {
-        return (
-          <span>— Use <b>{this.state.testMessage}</b></span>
+          <span className="type-pink">— An error occurred while testing <b>{this.state.testMessage}</b></span>
         );
       } else {
         return (
-          <span>— Requires a matched trigger</span>
+          <span>
+            {ifPresent(this.state.highlightedTriggerText && this.state.testMessage, (message) => (
+              <span>— Use <b>{message}</b> </span>
+            ), () => (
+              <span>— Simulate any trigger </span>
+            ))}
+            {ifPresent(this.props.params, () => {
+              var numParamValues = this.countNonEmptyParamsProvided();
+              if (numParamValues === 0) {
+                return (
+                  <span className="type-weak">(with no user input collected)</span>
+                );
+              } else if (numParamValues === 1) {
+                return (
+                  <span className="type-weak">(with 1 user input collected)</span>
+                );
+              } else {
+                return (
+                  <span className="type-weak">(with {numParamValues} user inputs collected)</span>
+                );
+              }
+            })}
+          </span>
         );
       }
     }
