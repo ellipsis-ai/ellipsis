@@ -8,7 +8,6 @@ define(function(require) {
     Param = require('../models/param'),
     Trigger = require('../models/trigger'),
     debounce = require('javascript-debounce');
-  require('whatwg-fetch');
 
   return React.createClass({
     displayName: 'BehaviorTester',

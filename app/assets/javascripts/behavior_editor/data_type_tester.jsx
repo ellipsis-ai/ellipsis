@@ -4,7 +4,6 @@ define(function(require) {
     Input = require('../form/input'),
     debounce = require('javascript-debounce'),
     Collapsible = require('../collapsible');
-  require('whatwg-fetch');
 
   var MAX_RESULTS_TO_SHOW = 10;
 
