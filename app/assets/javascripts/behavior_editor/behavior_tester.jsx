@@ -130,7 +130,10 @@ define(function(require) {
     },
 
     getParamTestingStatus: function() {
-      var numParamValues = Object.keys(this.state.paramValues).length;
+      var nonEmptyParams = Object.keys(this.state.paramValues).filter((paramName) => {
+        return this.state.paramValues[paramName] != null;
+      });
+      var numParamValues = nonEmptyParams.length;
       if (this.state.isTesting || numParamValues === 0 || this.props.params.length === 0) {
         return "";
       } else if (numParamValues === 1) {
