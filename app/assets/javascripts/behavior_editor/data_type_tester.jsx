@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    BehaviorTest = require('./behavior_test'),
     Input = require('../form/input'),
     debounce = require('javascript-debounce'),
     Collapsible = require('../collapsible');
@@ -96,32 +97,24 @@ define(function(require) {
     },
 
     fetchResult: function() {
-      var formData = new FormData();
-      formData.append('behaviorId', this.props.behaviorId);
-      formData.append('paramValuesJson', JSON.stringify(this.params()));
-      fetch(jsRoutes.controllers.BehaviorEditorController.testInvocation().url, {
-        credentials: 'same-origin',
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Csrf-Token': this.props.csrfToken
-        },
-        body: formData
-      })
-        .then((response) => response.json())
-        .then((json) => {
+      BehaviorTest.testInvocation({
+        behaviorId: this.props.behaviorId,
+        csrfToken: this.props.csrfToken,
+        paramValues: this.params(),
+        onSuccess: (json) => {
           this.setState({
             result: json.result.fullText,
             isTesting: false
           });
-        })
-        .catch(() => {
+        },
+        onError: () => {
           this.setState({
             result: '',
             errorOccurred: true,
             isTesting: false
           });
-        });
+        }
+      });
     },
 
     render: function() {

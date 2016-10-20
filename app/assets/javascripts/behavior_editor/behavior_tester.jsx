@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    BehaviorTest = require('./behavior_test'),
     Collapsible = require('../collapsible'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     ifPresent = require('../if_present'),
@@ -79,20 +80,11 @@ define(function(require) {
     }, 500),
 
     sendValidationRequest: function() {
-      var formData = new FormData();
-      formData.append('message', this.state.testMessage);
-      formData.append('behaviorId', this.props.behaviorId);
-      fetch(jsRoutes.controllers.BehaviorEditorController.testTriggers().url, {
-        credentials: 'same-origin',
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Csrf-Token': this.props.csrfToken
-        },
-        body: formData
-      })
-        .then((response) => response.json())
-        .then((json) => {
+      BehaviorTest.testTriggers({
+        behaviorId: this.props.behaviorId,
+        csrfToken: this.props.csrfToken,
+        message: this.state.testMessage,
+        onSuccess: (json) => {
           this.setState({
             highlightedTriggerText: json.activatedTrigger,
             paramValues: json.paramValues,
@@ -100,8 +92,8 @@ define(function(require) {
             hasTestedTriggers: true,
             triggerErrorOccurred: false
           });
-        })
-        .catch(() => {
+        },
+        onError: () => {
           this.setState({
             highlightedTriggerText: null,
             paramValues: {},
@@ -109,7 +101,8 @@ define(function(require) {
             hasTestedTriggers: false,
             triggerErrorOccurred: true
           });
-        });
+        }
+      });
     },
 
     missingParametersResult: function(missingParamNames) {
@@ -134,36 +127,25 @@ define(function(require) {
         resultMissingParamNames: [],
         resultErrorOccurred: false
       });
-      var formData = new FormData();
-      var jsonParams = JSON.stringify(
-        this.state.paramValues
-      );
-      formData.append('behaviorId', this.props.behaviorId);
-      formData.append('paramValuesJson', jsonParams);
-      fetch(jsRoutes.controllers.BehaviorEditorController.testInvocation().url, {
-        credentials: 'same-origin',
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Csrf-Token': this.props.csrfToken
-        },
-        body: formData
-      })
-        .then((response) => response.json())
-        .then((json) => {
+      BehaviorTest.testInvocation({
+        behaviorId: this.props.behaviorId,
+        paramValues: this.state.paramValues,
+        csrfToken: this.props.csrfToken,
+        onSuccess: (json) => {
           this.setState({
             result: json.result ? json.result.fullText : '',
             resultMissingParamNames: json.missingParamNames || [],
             isTestingResult: false,
             hasTestedResult: true
           });
-        })
-        .catch(() => {
+        },
+        onError: () => {
           this.setState({
             resultErrorOccurred: true,
             isTestingResult: false
           });
-        });
+        }
+      });
     },
 
     focus: function() {
