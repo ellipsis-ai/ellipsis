@@ -362,7 +362,7 @@ return React.createClass({
       notifications.push({
         kind: "data_type_needs_config",
         name: ea.name,
-        link: jsRoutes.controllers.BehaviorEditorController.edi(ea.id).url
+        link: jsRoutes.controllers.BehaviorEditorController.edit(ea.id).url
       });
     });
     return notifications;
