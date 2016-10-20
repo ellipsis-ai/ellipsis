@@ -6,7 +6,7 @@
 @import play.api.libs.json._
 @import json.Formatting._
 @titleForBehaviorData(behaviorData: json.BehaviorEditorData) = @{
-  if (behaviorData.dataType.isDefined) {
+  if (behaviorData.isForDataType) {
     "Edit data type"
   } else {
     "Edit behavior"
@@ -15,7 +15,6 @@
 @main(titleForBehaviorData(data), Some(data.teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.edit,
-    routes.javascript.BehaviorEditorController.editForDataType,
     routes.javascript.BehaviorEditorController.save,
     routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
     routes.javascript.BehaviorEditorController.versionInfoFor,

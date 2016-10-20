@@ -10,7 +10,7 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
   def triggerFor(pattern: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): RegexMessageTrigger = {
     val team = Team(IDs.next, "Team!")
     val versionId = IDs.next
-    val behavior = Behavior(IDs.next, team, Some(versionId), None, DateTime.now)
+    val behavior = Behavior(IDs.next, team, Some(versionId), None, None, DateTime.now)
     val behaviorVersion = BehaviorVersion(versionId, behavior, None, None, None, None, forcePrivateResponse = false, None, DateTime.now)
     RegexMessageTrigger(IDs.next, behaviorVersion, pattern, requiresBotMention, isCaseSensitive)
   }

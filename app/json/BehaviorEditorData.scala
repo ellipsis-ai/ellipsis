@@ -16,9 +16,12 @@ case class BehaviorEditorData(
                                paramTypes: Seq[BehaviorParameterTypeData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
-                               dataType: Option[BehaviorBackedDataTypeData],
                                justSaved: Boolean
-                              )
+                              ) {
+
+  def isForDataType: Boolean = behaviorVersion.config.dataTypeName.isDefined
+
+}
 
 object BehaviorEditorData {
 
@@ -75,16 +78,9 @@ object BehaviorEditorData {
         BehaviorParameterType.allFor(team, dataService)
       }.getOrElse(Future.successful(Seq()))
       paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
-      dataTypes <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.behaviorBackedDataTypes.allFor(team)
-      }.getOrElse(Future.successful(Seq()))
     } yield {
+      val maybeDataTypeName = if (isForNewDataType) { Some("") } else { None }
       val versionData = maybeBehaviorVersionData.getOrElse {
-        val maybeDataType = if (isForNewDataType) {
-          Some(BehaviorBackedDataTypeData(None, None))
-        } else {
-          None
-        }
         BehaviorVersionData.buildFor(
           team.id,
           None,
@@ -92,18 +88,12 @@ object BehaviorEditorData {
           "",
           Seq(),
           Seq(),
-          BehaviorConfig(None, None, None, None, None),
+          BehaviorConfig(None, None, None, None, maybeDataTypeName),
           None,
           None,
-          maybeDataType,
           None,
           dataService
         )
-      }
-      val maybeDataTypeForBehavior = maybeBehaviorVersionData.flatMap { data =>
-        dataTypes.find { dataType =>
-          data.behaviorId.contains(dataType.behavior.id)
-        }
       }
       BehaviorEditorData(
         teamAccess,
@@ -112,7 +102,6 @@ object BehaviorEditorData {
         paramTypeData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
-        maybeDataTypeForBehavior.map(BehaviorBackedDataTypeData.from),
         maybeJustSaved.exists(identity)
       )
     }

@@ -9,7 +9,6 @@ GET         /install_behaviors                        @controllers.ApplicationCo
 GET         /new_behavior                             @controllers.BehaviorEditorController.newForNormalBehavior(teamId: Option[String] ?= None)
 GET         /new_data_type                            @controllers.BehaviorEditorController.newForDataType(teamId: Option[String] ?= None)
 GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
-GET         /edit_for_data_type/:id                   @controllers.BehaviorEditorController.editForDataType(id: String)
 GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
 GET         /import_behavior_zip                      @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)
 POST        /import_behavior_zip                      @controllers.BehaviorImportExportController.doImportZip

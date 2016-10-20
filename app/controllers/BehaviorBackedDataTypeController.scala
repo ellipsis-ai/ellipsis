@@ -21,7 +21,7 @@ class BehaviorBackedDataTypeController @Inject() (
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       dataTypes <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.behaviorBackedDataTypes.allFor(team)
+        dataService.behaviors.dataTypesForTeam(team)
       }.getOrElse(Future.successful(Seq()))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>

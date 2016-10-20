@@ -1,6 +1,6 @@
 @(
   teamAccess: models.accounts.user.UserTeamAccess,
-  dataTypes: Seq[models.behaviors.behaviorparameter.BehaviorBackedDataType]
+  dataTypes: Seq[models.behaviors.behavior.Behavior]
 )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
@@ -17,7 +17,7 @@
     <ul>
     @dataTypes.map { ea =>
       <li>
-        <a class="prl" href="@routes.BehaviorEditorController.edit(ea.behavior.id)">@ea.name</a>
+        <a class="prl" href="@routes.BehaviorEditorController.edit(ea.id)">@ea.maybeDataTypeName.get</a>
       </li>
     }
     </ul>

@@ -13,7 +13,7 @@ import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
 import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfileServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
-import models.behaviors.behaviorparameter.{BehaviorBackedDataTypeService, BehaviorBackedDataTypeServiceImpl, BehaviorParameterService, BehaviorParameterServiceImpl}
+import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
 import models.behaviors.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigService, RequiredOAuth2ApiConfigServiceImpl}
@@ -60,7 +60,6 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[CollectedParameterValueService].to(classOf[CollectedParameterValueServiceImpl])
     bind[ScheduledMessageService].to(classOf[ScheduledMessageServiceImpl])
     bind[InvocationLogEntryService].to(classOf[InvocationLogEntryServiceImpl])
-    bind[BehaviorBackedDataTypeService].to(classOf[BehaviorBackedDataTypeServiceImpl])
 
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[AWSLogsService]).to(classOf[AWSLogsServiceImpl])

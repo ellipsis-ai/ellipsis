@@ -8,13 +8,16 @@ object BehaviorQueries {
   def all = TableQuery[BehaviorsTable]
   def allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
 
-  def tuple2Behavior(tuple: (RawBehavior, Team)): Behavior = {
+  type TupleType = (RawBehavior, Team)
+
+  def tuple2Behavior(tuple: TupleType): Behavior = {
     val raw = tuple._1
     Behavior(
       raw.id,
       tuple._2,
       raw.maybeCurrentVersionId,
       raw.maybeImportedId,
+      raw.maybeDataTypeName,
       raw.createdAt
     )
   }
@@ -32,5 +35,7 @@ object BehaviorQueries {
 
   def uncompiledFindRawQuery(id: Rep[String]) = all.filter(_.id === id)
   val findRawQueryFor = Compiled(uncompiledFindRawQuery _)
+
+  val SEARCH_QUERY_PARAM = "searchQuery"
 
 }

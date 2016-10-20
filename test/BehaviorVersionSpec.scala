@@ -21,7 +21,7 @@ class BehaviorVersionSpec extends PlaySpec with DBMixin with OneAppPerSuite {
       withEmptyDB(dataService, { db =>
         val team = runNow(dataService.teams.save(Team(IDs.next, "")))
         val user = runNow(dataService.users.save(User(IDs.next, team.id, None)))
-        val behavior = runNow(dataService.behaviors.createFor(team, None))
+        val behavior = runNow(dataService.behaviors.createFor(team, None, None))
         val firstVersion = runNow(dataService.behaviorVersions.createFor(behavior, Some(user)))
         reloadBehavior(db, behavior).maybeCurrentVersionId mustBe Some(firstVersion.id)
         val secondVersion = runNow(dataService.behaviorVersions.createFor(behavior, Some(user)))

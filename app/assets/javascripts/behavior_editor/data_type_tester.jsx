@@ -9,7 +9,7 @@ define(function(require) {
   return React.createClass({
     displayName: 'DataTypeTester',
     propTypes: {
-      behaviorId: React.PropTypes.string.isRequired,
+      behaviorId: React.PropTypes.string,
       isSearch: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired

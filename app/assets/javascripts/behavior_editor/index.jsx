@@ -104,10 +104,6 @@ return React.createClass({
     })),
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool,
-    dataType: React.PropTypes.shape({
-      id: React.PropTypes.string,
-      name: React.PropTypes.string
-    }),
     onSave: React.PropTypes.func.isRequired,
     onLoad: React.PropTypes.func
   },
@@ -208,7 +204,15 @@ return React.createClass({
   },
 
   getBehaviorConfig: function() {
-    return this.getBehaviorProp('config');
+    if (this.state) {
+      return this.getBehaviorProp('config');
+    } else {
+      return this.props.config;
+    }
+  },
+
+  getDataTypeName: function() {
+    return this.getBehaviorConfig().dataTypeName;
   },
 
   shouldForcePrivateResponse: function() {
@@ -238,10 +242,6 @@ return React.createClass({
   getCodeFunctionParams: function() {
     var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
     return userParams.concat(this.getSystemParams());
-  },
-
-  getDataType: function() {
-    return this.getBehaviorProp("dataType");
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -362,7 +362,7 @@ return React.createClass({
       notifications.push({
         kind: "data_type_needs_config",
         name: ea.name,
-        link: jsRoutes.controllers.BehaviorEditorController.editForDataType(ea.id).url
+        link: jsRoutes.controllers.BehaviorEditorController.edit(ea.id).url
       });
     });
     return notifications;
@@ -692,7 +692,6 @@ return React.createClass({
         triggers: version.triggers,
         config: version.config,
         knownEnvVarsUsed: version.knownEnvVarsUsed,
-        dataType: version.dataType
       },
       revealCodeEditor: !!version.functionBody,
       justSaved: false
@@ -881,7 +880,7 @@ return React.createClass({
   },
 
   updateDataTypeName: function(newName) {
-    this.setBehaviorProp('dataType', Object.assign({}, this.getDataType(), { name: newName }));
+    this.setBehaviorProp('config', Object.assign({}, this.getBehaviorConfig(), { dataTypeName: newName }));
   },
 
   updateDataTypeResultConfig: function(shouldUseSearch) {
@@ -1035,7 +1034,8 @@ return React.createClass({
   },
 
   isDataTypeBehavior: function() {
-    return !!this.props.dataType;
+    const name = this.getDataTypeName()
+    return name !== null && name !== undefined;
   },
 
   isSearchDataTypeBehavior: function() {
@@ -1207,8 +1207,7 @@ return React.createClass({
       params: props.params,
       triggers: this.getInitialTriggersFromProps(props),
       config: props.config,
-      knownEnvVarsUsed: props.knownEnvVarsUsed,
-      dataType: props.dataType
+      knownEnvVarsUsed: props.knownEnvVarsUsed
     };
   },
 
@@ -1689,7 +1688,7 @@ return React.createClass({
           {this.renderHiddenFormValues()}
 
           <DataTypeNameInput
-            name={this.getDataType().name}
+            name={this.getDataTypeName()}
             onChange={this.updateDataTypeName}
           />
 
