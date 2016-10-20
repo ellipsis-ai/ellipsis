@@ -210,9 +210,9 @@ define(function(require) {
                   <div className="column column-three-quarters pll mobile-pln mobile-column-full">
 
                     <h4>Response</h4>
-                    <div className="display-overflow-scroll box-code-example"
+                    <div className="display-overflow-scroll border border-blue pas bg-blue-lightest"
                       style={{
-                        maxHeight: "9.5em",
+                        maxHeight: "10.25em",
                         overflow: "auto"
                       }}
                     >
