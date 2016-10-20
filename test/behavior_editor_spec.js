@@ -249,8 +249,8 @@ describe('BehaviorEditor', () => {
   });
 
   describe('render', () => {
-    it("renders the normal editor when there's no dataType property", () => {
-      editorConfig.dataType = null;
+    it("renders the normal editor when there's no dataTypeName property", () => {
+      editorConfig.config.dataTypeName = null;
       let editor = createEditor(editorConfig);
       editor.renderDataTypeBehavior = jest.fn();
       editor.renderNormalBehavior = jest.fn();
@@ -258,11 +258,8 @@ describe('BehaviorEditor', () => {
       expect(editor.renderDataTypeBehavior).not.toBeCalled();
       expect(editor.renderNormalBehavior).toBeCalled();
     });
-    it("renders the data type editor when there's a dataType property", () => {
-      editorConfig.dataType = {
-        id: '1',
-        name: 'My pretend data type'
-      };
+    it("renders the data type editor when there's a dataTypeName property", () => {
+      editorConfig.config.dataTypeName = 'My pretend data type';
       let editor = createEditor(editorConfig);
       editor.renderDataTypeBehavior = jest.fn();
       editor.renderNormalBehavior = jest.fn();
