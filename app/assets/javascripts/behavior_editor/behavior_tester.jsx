@@ -162,7 +162,7 @@ define(function(require) {
     },
 
     hasResult: function() {
-      return !!this.state.result || this.state.resultMissingParamNames.length > 0;
+      return !!this.getResult() || this.state.resultMissingParamNames.length > 0;
     },
 
     getValueForParamName: function(name) {
@@ -228,7 +228,7 @@ define(function(require) {
                   <div className="column column-three-quarters pll mobile-pln mobile-column-full">
 
                     <h4>Response</h4>
-                    {ifPresent(this.state.result, (result) => (
+                    {ifPresent(this.getResult(), (result) => (
                       <div className="display-overflow-scroll border border-blue pas bg-blue-lightest"
                         style={{
                           maxHeight: "10.25em",
@@ -368,28 +368,41 @@ define(function(require) {
       } else {
         return (
           <span>
-            {ifPresent(this.state.highlightedTriggerText && this.state.testMessage, (message) => (
-              <span>— Use <b>{message}</b> </span>
-            ), () => (
-              <span>— Simulate any trigger </span>
-            ))}
-            {ifPresent(this.props.params, () => {
-              var numParamValues = this.countNonEmptyParamsProvided();
-              if (numParamValues === 0) {
-                return (
-                  <span className="type-weak">(with no user input collected)</span>
-                );
-              } else if (numParamValues === 1) {
-                return (
-                  <span className="type-weak">(with 1 user input collected)</span>
-                );
-              } else {
-                return (
-                  <span className="type-weak">(with {numParamValues} user inputs collected)</span>
-                );
-              }
-            })}
+            {this.renderResultStatusTriggerText()}
+            {this.renderResultStatusParamText()}
           </span>
+        );
+      }
+    },
+
+    renderResultStatusTriggerText: function() {
+      if (this.state.highlightedTriggerText && this.state.testMessage) {
+        return (
+          <span>— Use <b>{this.state.testMessage}</b> </span>
+        );
+      } else {
+        return (
+          <span>— Simulate any trigger </span>
+        );
+      }
+    },
+
+    renderResultStatusParamText: function() {
+      var numParams = this.props.params.length;
+      var numParamValues = this.countNonEmptyParamsProvided();
+      if (numParams === 0) {
+        return null;
+      } else if (numParamValues === 0) {
+        return (
+          <span className="type-weak">(with no user input collected)</span>
+        );
+      } else if (numParamValues === 1) {
+        return (
+          <span className="type-weak">(with 1 user input collected)</span>
+        );
+      } else {
+        return (
+          <span className="type-weak">(with {numParamValues} user inputs collected)</span>
         );
       }
     }
