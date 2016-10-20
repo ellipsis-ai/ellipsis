@@ -89,7 +89,10 @@ object NumberType extends BuiltInType {
 }
 
 
-case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) extends BehaviorParameterType {
+case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterType {
+
+  val id = behavior.id
+  val name = behavior.maybeDataTypeName.getOrElse("Unnamed data type")
 
   def needsConfig(dataService: DataService) = {
     for {
@@ -265,7 +268,7 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
                            maybePreviousCollectedValue: Option[CollectedParameterValue],
                            context: BehaviorParameterContext
                          ): Future[String] = {
-    context.dataService.behaviorBackedDataTypes.usesSearch(this).flatMap { usesSearch =>
+    context.dataService.behaviors.hasSearchParam(this.behavior).flatMap { usesSearch =>
       if (usesSearch) {
         promptForSearchCase(maybePreviousCollectedValue, context)
       } else {
@@ -275,7 +278,7 @@ case class BehaviorBackedDataType(id: String, name: String, behavior: Behavior) 
   }
 
   override def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
-    context.dataService.behaviorBackedDataTypes.usesSearch(this).flatMap { usesSearch =>
+    context.dataService.behaviors.hasSearchParam(this.behavior).flatMap { usesSearch =>
       if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
         val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
         val searchQuery = event.context.relevantMessageText
@@ -299,8 +302,8 @@ object BehaviorParameterType {
   def findBuiltIn(id: String): Option[BehaviorParameterType] = allBuiltin.find(_.id == id)
 
   def allFor(team: Team, dataService: DataService): Future[Seq[BehaviorParameterType]] = {
-    dataService.behaviorBackedDataTypes.allFor(team).map { behaviorBacked =>
-      allBuiltin ++ behaviorBacked
+    dataService.behaviors.dataTypesForTeam(team).map { behaviorBacked =>
+      allBuiltin ++ behaviorBacked.map(BehaviorBackedDataType.apply)
     }
   }
 

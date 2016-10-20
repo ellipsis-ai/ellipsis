@@ -4,6 +4,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 trait BehaviorService {
@@ -14,9 +15,23 @@ trait BehaviorService {
 
   def allForTeam(team: Team): Future[Seq[Behavior]]
 
-  def regularForTeam(team: Team): Future[Seq[Behavior]]
+  def regularForTeam(team: Team): Future[Seq[Behavior]] = {
+    allForTeam(team).map { all =>
+      all.filter(_.maybeDataTypeName.isEmpty)
+    }
+  }
 
-  def createFor(team: Team, maybeImportedId: Option[String]): Future[Behavior]
+  def dataTypesForTeam(team: Team): Future[Seq[Behavior]] = {
+    allForTeam(team).map { all =>
+      all.filter(_.maybeDataTypeName.isDefined)
+    }
+  }
+
+  def createFor(team: Team, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
+
+  def updateDataTypeNameFor(behavior: Behavior, maybeName: Option[String]): Future[Behavior]
+
+  def hasSearchParam(behavior: Behavior): Future[Boolean]
 
   def delete(behavior: Behavior): Future[Behavior]
 

@@ -1,5 +1,6 @@
 package models.behaviors.behaviorparameter
 
+import models.behaviors.behavior.BehaviorQueries
 import models.behaviors.behaviorversion.BehaviorVersionQueries
 import slick.driver.PostgresDriver.api._
 
@@ -7,9 +8,9 @@ object BehaviorParameterQueries {
 
   val all = TableQuery[BehaviorParametersTable]
   val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
-  val joined = allWithBehaviorVersion.joinLeft(BehaviorBackedDataTypeQueries.joined).on(_._1.paramType === _._1.id)
+  val joined = allWithBehaviorVersion.joinLeft(BehaviorQueries.allWithTeam).on(_._1.paramType === _._1.id)
 
-  type TupleType = ((RawBehaviorParameter, BehaviorVersionQueries.TupleType), Option[BehaviorBackedDataTypeQueries.TupleType])
+  type TupleType = ((RawBehaviorParameter, BehaviorVersionQueries.TupleType), Option[BehaviorQueries.TupleType])
 
   def tuple2Parameter(tuple: TupleType): BehaviorParameter = {
     val raw = tuple._1._1
@@ -17,7 +18,7 @@ object BehaviorParameterQueries {
     val paramType =
       BehaviorParameterType.
         findBuiltIn(raw.paramType).
-        orElse(tuple._2.map { behaviorBacked => BehaviorBackedDataTypeQueries.tuple2DataType(behaviorBacked) }).
+        orElse(tuple._2.map { dataTypeBehavior => BehaviorBackedDataType(BehaviorQueries.tuple2Behavior(dataTypeBehavior)) }).
         getOrElse(TextType)
     BehaviorParameter(
       raw.id,

@@ -21,6 +21,7 @@ case class RawBehavior(
                         teamId: String,
                         maybeCurrentVersionId: Option[String],
                         maybeImportedId: Option[String],
+                        maybeDataTypeName: Option[String],
                         createdAt: DateTime
                       )
 
@@ -30,9 +31,10 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
   def teamId = column[String]("team_id")
   def maybeCurrentVersionId = column[Option[String]]("current_version_id")
   def maybeImportedId = column[Option[String]]("imported_id")
+  def maybeDataTypeName = column[Option[String]]("data_type_name")
   def createdAt = column[DateTime]("created_at")
 
-  def * = (id, teamId, maybeCurrentVersionId, maybeImportedId, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
+  def * = (id, teamId, maybeCurrentVersionId, maybeImportedId, maybeDataTypeName, createdAt) <> ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
 class BehaviorServiceImpl @Inject() (
@@ -70,24 +72,35 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def regularForTeam(team: Team): Future[Seq[Behavior]] = {
-    for {
-      all <- allForTeam(team)
-      dataTypes <- dataService.behaviorBackedDataTypes.allFor(team)
-    } yield {
-      val invisible = dataTypes.map(_.behavior)
-      all.diff(invisible)
-    }
-  }
-
-  def createFor(team: Team, maybeImportedId: Option[String]): Future[Behavior] = {
-    val raw = RawBehavior(IDs.next, team.id, None, maybeImportedId, DateTime.now)
+  def createFor(team: Team, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
+    val raw = RawBehavior(IDs.next, team.id, None, maybeImportedId, maybeDataTypeName, DateTime.now)
 
     val action = (all += raw).map { _ =>
-      Behavior(raw.id, team, raw.maybeCurrentVersionId, raw.maybeImportedId, raw.createdAt)
+      Behavior(raw.id, team, raw.maybeCurrentVersionId, raw.maybeImportedId, raw.maybeDataTypeName, raw.createdAt)
     }
 
     dataService.run(action)
+  }
+
+  def updateDataTypeNameFor(behavior: Behavior, maybeName: Option[String]): Future[Behavior] = {
+    val action =
+      all.
+        filter(_.id === behavior.id).
+        map(_.maybeDataTypeName).
+        update(maybeName).
+        map(_ => behavior.copy(maybeDataTypeName = maybeName))
+    dataService.run(action)
+  }
+
+  def hasSearchParam(behavior: Behavior): Future[Boolean] = {
+    for {
+      maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
+      params <- maybeCurrentVersion.map { version =>
+        dataService.behaviorParameters.allFor(version)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      params.exists(_.name == BehaviorQueries.SEARCH_QUERY_PARAM)
+    }
   }
 
   def delete(behavior: Behavior): Future[Behavior] = {
@@ -104,11 +117,6 @@ class BehaviorServiceImpl @Inject() (
     for {
       versions <- dataService.behaviorVersions.allFor(behavior)
       _ <- Future.sequence(versions.map(v => dataService.behaviorVersions.unlearn(v)))
-      _ <- dataService.behaviorBackedDataTypes.maybeFor(behavior).flatMap { maybeDataType =>
-        maybeDataType.map { dataType =>
-          dataService.behaviorBackedDataTypes.delete(dataType).map(_ => {})
-        }.getOrElse(Future.successful({}))
-      }
       _ <- delete(behavior)
     } yield {}
   }

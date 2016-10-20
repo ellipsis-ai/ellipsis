@@ -8,11 +8,12 @@ case class Behavior(
                      team: Team,
                      maybeCurrentVersionId: Option[String],
                      maybeImportedId: Option[String],
+                     maybeDataTypeName: Option[String],
                      createdAt: DateTime
                    ) {
 
   def toRaw: RawBehavior = {
-    RawBehavior(id, team.id, maybeCurrentVersionId, maybeImportedId, createdAt)
+    RawBehavior(id, team.id, maybeCurrentVersionId, maybeImportedId, maybeDataTypeName, createdAt)
   }
 
 }

@@ -76,27 +76,6 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  def editForDataType(dataTypeId: String) = silhouette.SecuredAction.async { implicit request =>
-    val user = request.identity
-    dataService.behaviorBackedDataTypes.find(dataTypeId, user).flatMap { maybeDataType =>
-      maybeDataType.map { dataType =>
-        Future.successful(Redirect(routes.BehaviorEditorController.edit(dataType.behavior.id)))
-      }.getOrElse {
-        dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
-          val response = NotFound(
-            views.html.notFound(
-              Some(teamAccess),
-              Some("Data type not found"),
-              Some("The data type you are trying to access could not be found."),
-              Some(reAuthLinkFor(request, None))
-            ))
-
-          withAuthDiscarded(request, response)
-        }
-      }
-    }
-  }
-
   case class SaveBehaviorInfo(
                                dataJson: String,
                                maybeRedirect: Option[String],
@@ -121,28 +100,24 @@ class BehaviorEditorController @Inject() (
         val json = Json.parse(info.dataJson)
         json.validate[BehaviorVersionData] match {
           case JsSuccess(data, jsPath) => {
+            val maybeDataTypeName = data.config.dataTypeName
             for {
               teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
               maybeBehavior <- data.behaviorId.map { behaviorId =>
                 dataService.behaviors.find(behaviorId, user)
               }.getOrElse {
                 teamAccess.maybeTargetTeam.map { team =>
-                  dataService.behaviors.createFor(team, None).map(Some(_))
+                  dataService.behaviors.createFor(team, None, maybeDataTypeName).map(Some(_))
                 }.getOrElse(Future.successful(None))
               }
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
                 dataService.behaviorVersions.createFor(behavior, Some(user), data).map(Some(_))
               }.getOrElse(Future.successful(None))
-              _ <- maybeBehavior.flatMap { behavior =>
-                data.dataType.map { dataType =>
-                  (for {
-                    id <- dataType.id
-                    name <- dataType.name
-                  } yield {
-                    dataService.behaviorBackedDataTypes.updateName(id, name).map(Some(_))
-                  }).getOrElse {
-                    dataService.behaviorBackedDataTypes.createFor(dataType.name.getOrElse(""), behavior)
-                  }
+              _ <- maybeBehavior.map { behavior =>
+                if (behavior.maybeDataTypeName != maybeDataTypeName) {
+                  dataService.behaviors.updateDataTypeNameFor(behavior, maybeDataTypeName)
+                } else {
+                  Future.successful({})
                 }
               }.getOrElse(Future.successful({}))
               maybePreviousRequiredOAuth2ApiConfig <- info.maybeRequiredOAuth2ApiConfigId.map { id =>
@@ -234,9 +209,6 @@ class BehaviorEditorController @Inject() (
           (version, apps)
         }
       }).map(_.toMap)
-      dataTypes <- maybeBehavior.map { behavior =>
-        dataService.behaviorBackedDataTypes.allFor(behavior.team)
-      }.getOrElse(Future.successful(Seq()))
       paramTypes <- Future.successful(parametersByVersion.flatMap { case(_, params) =>
         params.map(_.paramType)
       }.toSeq.distinct)
@@ -256,7 +228,6 @@ class BehaviorEditorController @Inject() (
           val maybeRequiredOAuth2ApiConfigsData = requiredOAuth2ApiConfigsByVersion.get(version).map { configs =>
             configs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
           }
-          val maybeDataType = dataTypes.find(_.behavior.id == behavior.id)
           BehaviorVersionData.buildFor(
             version.team.id,
             Some(behavior.id),
@@ -272,12 +243,9 @@ class BehaviorEditorController @Inject() (
                 BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
               }
             }.getOrElse(Seq()),
-            BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData, Some(version.forcePrivateResponse), maybeDataType.map(_.name)),
+            BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData, Some(version.forcePrivateResponse), behavior.maybeDataTypeName),
             behavior.maybeImportedId,
             None,
-            maybeDataType.map { dataType =>
-              BehaviorBackedDataTypeData(Some(dataType.id), Some(dataType.name))
-            },
             Some(version.createdAt),
             dataService
           )

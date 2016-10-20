@@ -22,7 +22,6 @@ case class BehaviorVersionData(
                                 importedId: Option[String],
                                 githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
-                                dataType: Option[BehaviorBackedDataTypeData],
                                 createdAt: Option[DateTime]
                                 ) {
   val awsConfig: Option[AWSConfigData] = config.aws
@@ -50,7 +49,6 @@ object BehaviorVersionData {
                 config: BehaviorConfig,
                 importedId: Option[String],
                 githubUrl: Option[String],
-                maybeDataType: Option[BehaviorBackedDataTypeData],
                 createdAt: Option[DateTime],
                 dataService: DataService
               ): BehaviorVersionData = {
@@ -68,7 +66,6 @@ object BehaviorVersionData {
       importedId,
       githubUrl,
       knownEnvVarsUsed,
-      maybeDataType,
       createdAt
     )
   }
@@ -84,9 +81,6 @@ object BehaviorVersionData {
                    dataService: DataService
                    ): BehaviorVersionData = {
     val config = Json.parse(configString).validate[BehaviorConfig].get
-    val maybeDataType = config.dataTypeName.map { name =>
-      BehaviorBackedDataTypeData(None, Some(name))
-    }
     BehaviorVersionData.buildFor(
       teamId,
       None,
@@ -97,7 +91,6 @@ object BehaviorVersionData {
       config,
       importedId = None,
       maybeGithubUrl,
-      maybeDataType,
       createdAt = None,
       dataService
     )
@@ -129,9 +122,6 @@ object BehaviorVersionData {
       maybeRequiredOAuth2ApiConfigs <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(Future.successful(None))
-      dataTypes <- maybeBehavior.map { behavior =>
-        dataService.behaviorBackedDataTypes.allFor(behavior.team)
-      }.getOrElse(Future.successful(Seq()))
     } yield {
       for {
         behavior <- maybeBehavior
@@ -146,10 +136,7 @@ object BehaviorVersionData {
         val maybeRequiredOAuth2ApiConfigData = maybeRequiredOAuth2ApiConfigs.map { requiredOAuth2ApiConfigs =>
           requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
         }
-        val maybeDataType = dataTypes.find(_.behavior.id == behavior.id).map { dataType =>
-          BehaviorBackedDataTypeData(Some(dataType.id), Some(dataType.name))
-        }
-        val config = BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData, Some(behaviorVersion.forcePrivateResponse), maybeDataType.flatMap(_.name))
+        val config = BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData, Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           Some(behavior.id),
@@ -164,7 +151,6 @@ object BehaviorVersionData {
           config,
           behavior.maybeImportedId,
           githubUrl = None,
-          maybeDataType,
           Some(behaviorVersion.createdAt),
           dataService
         )
