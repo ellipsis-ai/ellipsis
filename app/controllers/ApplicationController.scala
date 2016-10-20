@@ -55,21 +55,21 @@ class ApplicationController @Inject() (
 
   case class PublishedBehaviorInfo(published: Seq[BehaviorCategory], installedBehaviors: Seq[InstalledBehaviorData])
 
-  private def withPublishedBehaviorInfoFor(team: Team): Future[PublishedBehaviorInfo] = {
+  private def withPublishedBehaviorInfoFor(team: Team, maybeBranch: Option[String]): Future[PublishedBehaviorInfo] = {
     dataService.behaviors.regularForTeam(team).map { behaviors =>
       behaviors.map { ea => InstalledBehaviorData(ea.id, ea.maybeImportedId)}
     }.map { installedBehaviors =>
-      val githubService = GithubService(team, ws, configuration, cache, dataService)
+      val githubService = GithubService(team, ws, configuration, cache, dataService, maybeBranch)
       PublishedBehaviorInfo(githubService.publishedBehaviorCategories, installedBehaviors)
     }
   }
 
-  def intro(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def intro(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
-        withPublishedBehaviorInfoFor(team).map(Some(_))
+        withPublishedBehaviorInfoFor(team, maybeBranch).map(Some(_))
       }.getOrElse(Future.successful(None))
       result <- (for {
         team <- teamAccess.maybeTargetTeam
@@ -90,12 +90,12 @@ class ApplicationController @Inject() (
     } yield result
   }
 
-  def installBehaviors(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def installBehaviors(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
-        withPublishedBehaviorInfoFor(team).map(Some(_))
+        withPublishedBehaviorInfoFor(team, maybeBranch).map(Some(_))
       }.getOrElse(Future.successful(None))
       result <- (for {
         team <- teamAccess.maybeTargetTeam
