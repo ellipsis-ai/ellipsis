@@ -41,10 +41,6 @@ define(function(require) {
       }
     },
 
-    isSavedBehavior: function() {
-      return !!this.props.behaviorId;
-    },
-
     onChangeTestMessage: function(value) {
       this.setState({
         testMessage: value,
@@ -54,7 +50,7 @@ define(function(require) {
         triggerErrorOccurred: false,
         resultErrorOccurred: false
       });
-      if (value && this.isSavedBehavior()) {
+      if (value) {
         this.validateMessage();
       }
     },

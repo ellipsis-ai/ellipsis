@@ -44,10 +44,6 @@ define(function(require) {
       });
     },
 
-    isSavedBehavior: function() {
-      return !!this.props.behaviorId;
-    },
-
     focus: function() {
       if (this.refs.searchQuery) {
         this.refs.searchQuery.focus();
@@ -75,12 +71,10 @@ define(function(require) {
     },
 
     updateResultImmediately: function() {
-      if (this.isSavedBehavior()) {
-        this.setState({
-          hasTested: true,
-          isTesting: true
-        }, this.fetchResult);
-      }
+      this.setState({
+        hasTested: true,
+        isTesting: true
+      }, this.fetchResult);
     },
 
     updateResult: debounce(function() {
