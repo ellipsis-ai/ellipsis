@@ -14,7 +14,7 @@ trait BehaviorService {
 
   def allForTeam(team: Team): Future[Seq[Behavior]]
 
-  def visibleForTeam(team: Team): Future[Seq[Behavior]]
+  def regularForTeam(team: Team): Future[Seq[Behavior]]
 
   def createFor(team: Team, maybeImportedId: Option[String]): Future[Behavior]
 

@@ -70,7 +70,7 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def visibleForTeam(team: Team): Future[Seq[Behavior]] = {
+  def regularForTeam(team: Team): Future[Seq[Behavior]] = {
     for {
       all <- allForTeam(team)
       dataTypes <- dataService.behaviorBackedDataTypes.allFor(team)
