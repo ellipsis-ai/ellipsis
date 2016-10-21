@@ -48,9 +48,11 @@ class BehaviorParameterServiceImpl @Inject() (
   }
 
   private def createFor(name: String, paramTypeData: BehaviorParameterTypeData, maybeQuestion: Option[String], rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
-    val raw = RawBehaviorParameter(IDs.next, name, rank, behaviorVersion.id, maybeQuestion, paramTypeData.id)
     val action = for {
       maybeParamType <- DBIO.from(BehaviorParameterType.find(paramTypeData.id, behaviorVersion.team, dataService))
+      raw <- DBIO.successful {
+        RawBehaviorParameter(IDs.next, name, rank, behaviorVersion.id, maybeQuestion, maybeParamType.map(_.id).getOrElse(TextType.id))
+      }
       param <- (all += raw).map { _ =>
         BehaviorParameter(raw.id, raw.name, raw.rank, behaviorVersion, raw.maybeQuestion, maybeParamType.getOrElse(TextType))
       }

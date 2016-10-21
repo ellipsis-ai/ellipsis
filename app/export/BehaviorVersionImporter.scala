@@ -28,9 +28,9 @@ case class BehaviorVersionImporter(
           dataTypeVersionData <- Future.successful {
             data.params.flatMap(_.paramType.flatMap(_.behavior))
           }
-          prereqs <- Future.successful(dataTypeVersionData.map { versionData =>
+          prereqs <- Future.sequence(dataTypeVersionData.map { versionData =>
             BehaviorVersionImporter(team, user, versionData, dataService).run
-          })
+          }).map(_.flatten)
           behavior <- dataService.behaviors.createFor(team, data.config.publishedId, data.config.dataTypeName)
           version <- dataService.behaviorVersions.createFor(behavior, Some(user), data)
         } yield Some(version)
