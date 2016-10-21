@@ -691,7 +691,7 @@ return React.createClass({
         params: version.params,
         triggers: version.triggers,
         config: version.config,
-        knownEnvVarsUsed: version.knownEnvVarsUsed,
+        knownEnvVarsUsed: version.knownEnvVarsUsed
       },
       revealCodeEditor: !!version.functionBody,
       justSaved: false
@@ -1034,7 +1034,7 @@ return React.createClass({
   },
 
   isDataTypeBehavior: function() {
-    const name = this.getDataTypeName()
+    const name = this.getDataTypeName();
     return name !== null && name !== undefined;
   },
 
