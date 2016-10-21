@@ -127,7 +127,9 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
             readme <- fetchTextFor(readmeUrl)
             behaviors <- fetchBehaviorsFor(categoryUrl, categoryPath)
           } yield {
-            BehaviorCategory(categoryPath, readme, behaviors)
+            val (regular, dataTypes) = behaviors.partition(_.config.dataTypeName.isEmpty)
+            val regularWithDataTypesAttached = regular.map(_.copyWithAttachedDataTypesFrom(dataTypes))
+            BehaviorCategory(categoryPath, readme, regularWithDataTypesAttached)
           }).map(Some(_))
         }).getOrElse(Future.successful(None))
     }

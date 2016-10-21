@@ -29,6 +29,10 @@ case class BehaviorVersionData(
   def copyForTeam(team: Team): BehaviorVersionData = {
     copy(teamId = team.id)
   }
+
+  def copyWithAttachedDataTypesFrom(dataTypes: Seq[BehaviorVersionData]): BehaviorVersionData = {
+    copy(params = params.map(_.copyWithAttachedDataTypeFrom(dataTypes)))
+  }
 }
 
 object BehaviorVersionData {

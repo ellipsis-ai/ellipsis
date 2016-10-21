@@ -1,11 +1,23 @@
 package json
 
-import play.api.libs.json.Json
+import play.api.libs.json.{JsPath, Json, Reads, Writes}
+import play.api.libs.functional.syntax._
 
 object Formatting {
 
-  implicit val behaviorParameterTypeReads = Json.reads[BehaviorParameterTypeData]
-  implicit val behaviorParameterTypeWrites = Json.writes[BehaviorParameterTypeData]
+  implicit lazy val behaviorParameterTypeReads: Reads[BehaviorParameterTypeData] = (
+    (JsPath \ "id").read[String] and
+      (JsPath \ "name").read[String] and
+      (JsPath \ "needsConfig").readNullable[Boolean] and
+      (JsPath \ "behavior").lazyReadNullable(behaviorVersionReads)
+    )(BehaviorParameterTypeData.apply _)
+
+  implicit lazy val behaviorParameterTypeWrites: Writes[BehaviorParameterTypeData] = (
+    (JsPath \ "id").write[String] and
+      (JsPath \ "name").write[String] and
+      (JsPath \ "needsConfig").writeNullable[Boolean] and
+      (JsPath \ "behavior").lazyWriteNullable(behaviorVersionWrites)
+    )(unlift(BehaviorParameterTypeData.unapply))
 
   implicit val behaviorParameterReads = Json.reads[BehaviorParameterData]
   implicit val behaviorParameterWrites = Json.writes[BehaviorParameterData]
@@ -28,8 +40,8 @@ object Formatting {
   implicit val behaviorConfigReads = Json.reads[BehaviorConfig]
   implicit val behaviorConfigWrites = Json.writes[BehaviorConfig]
 
-  implicit val behaviorVersionReads = Json.reads[BehaviorVersionData]
-  implicit val behaviorVersionWrites = Json.writes[BehaviorVersionData]
+  lazy implicit val behaviorVersionReads = Json.reads[BehaviorVersionData]
+  lazy implicit val behaviorVersionWrites = Json.writes[BehaviorVersionData]
 
   implicit val behaviorReads = Json.reads[BehaviorData]
   implicit val behaviorWrites = Json.writes[BehaviorData]
