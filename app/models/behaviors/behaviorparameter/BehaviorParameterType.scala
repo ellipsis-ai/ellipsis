@@ -308,7 +308,12 @@ object BehaviorParameterType {
   }
 
   def find(id: String, team: Team, dataService: DataService): Future[Option[BehaviorParameterType]] = {
-    allFor(team, dataService).map { all => all.find(_.id == id) }
+    allFor(team, dataService).map { all =>
+      all.find {
+        case paramType: BehaviorBackedDataType => paramType.id == id || paramType.behavior.maybeImportedId.contains(id)
+        case paramType: BehaviorParameterType => paramType.id == id
+      }
+    }
   }
 
 }

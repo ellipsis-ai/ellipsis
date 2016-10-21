@@ -108,7 +108,7 @@ class BehaviorImportExportController @Inject() (
                 BehaviorVersionImporter(team, user, data, dataService)
               })
               maybeBehaviorVersion <- maybeImporter.map { importer =>
-                importer.run.map(Some(_))
+                importer.run
               }.getOrElse(Future.successful(None))
             } yield {
               maybeBehaviorVersion.map { behaviorVersion =>

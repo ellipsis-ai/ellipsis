@@ -67,6 +67,13 @@ class BehaviorServiceImpl @Inject() (
     }
   }
 
+  def findWithImportedId(id: String): Future[Option[Behavior]] = {
+    val action = findWithImportedIdQuery(id).result.map { r =>
+      r.headOption.map(tuple2Behavior)
+    }
+    dataService.run(action)
+  }
+
   def allForTeam(team: Team): Future[Seq[Behavior]] = {
     val action = allForTeamQuery(team.id).result.map { tuples => tuples.map(tuple2Behavior) }
     dataService.run(action)

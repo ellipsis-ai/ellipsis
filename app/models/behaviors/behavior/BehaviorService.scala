@@ -13,6 +13,8 @@ trait BehaviorService {
 
   def find(id: String, user: User): Future[Option[Behavior]]
 
+  def findWithImportedId(id: String): Future[Option[Behavior]]
+
   def allForTeam(team: Team): Future[Seq[Behavior]]
 
   def regularForTeam(team: Team): Future[Seq[Behavior]] = {

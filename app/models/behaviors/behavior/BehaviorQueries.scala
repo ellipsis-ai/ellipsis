@@ -36,6 +36,11 @@ object BehaviorQueries {
   def uncompiledFindRawQuery(id: Rep[String]) = all.filter(_.id === id)
   val findRawQueryFor = Compiled(uncompiledFindRawQuery _)
 
+  def uncompiledFindWithImportedIdQuery(id: Rep[String]) = {
+    allWithTeam.filter { case(behavior, team) => behavior.maybeImportedId === id}
+  }
+  val findWithImportedIdQuery = Compiled(uncompiledFindWithImportedIdQuery _)
+
   val SEARCH_QUERY_PARAM = "searchQuery"
 
 }

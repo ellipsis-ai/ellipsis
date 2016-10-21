@@ -356,7 +356,7 @@ class BehaviorEditorController @Inject() (
             data <- maybeVersionData
           } yield BehaviorVersionImporter(team, user, data, dataService))
           maybeCloned <- maybeImporter.map { importer =>
-            importer.run.map(Some(_))
+            importer.run
           }.getOrElse(Future.successful(None))
         } yield maybeCloned.map { cloned =>
           Redirect(routes.BehaviorEditorController.edit(cloned.behavior.id))

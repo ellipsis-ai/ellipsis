@@ -4,4 +4,8 @@ case class BehaviorParameterData(name: String, paramType: Option[BehaviorParamet
 
   val maybeNonEmptyQuestion: Option[String] = Option(question).filter(_.nonEmpty)
 
+  def copyWithAttachedDataTypeFrom(dataTypes: Seq[BehaviorVersionData]): BehaviorParameterData = {
+    copy(paramType = paramType.map(_.copyWithAttachedDataTypeFrom(dataTypes)))
+  }
+
 }
