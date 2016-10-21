@@ -13,9 +13,9 @@ case class BehaviorVersionZipImporter(
                                        user: User,
                                        zipFile: File,
                                        dataService: DataService
-                                     ) extends ZipImporter[BehaviorVersion] {
+                                     ) extends ZipImporter[Option[BehaviorVersion]] {
 
-  def importerFrom(strings: Map[String, String]): Importer[BehaviorVersion] = {
+  def importerFrom(strings: Map[String, String]): Importer[Option[BehaviorVersion]] = {
     val data =
       BehaviorVersionData.fromStrings(
         team.id,
