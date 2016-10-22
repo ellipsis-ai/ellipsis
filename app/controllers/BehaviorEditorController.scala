@@ -6,7 +6,6 @@ import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
-import models.behaviors.BehaviorResponse
 import models.behaviors.testing.{InvocationTester, TestEvent, TestMessageContext, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
@@ -16,7 +15,8 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import services.{AWSLambdaConstants, AWSLambdaService, DataService}
+import play.api.libs.ws.WSClient
+import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -27,7 +27,8 @@ class BehaviorEditorController @Inject() (
                                            val configuration: Configuration,
                                            val dataService: DataService,
                                            val lambdaService: AWSLambdaService,
-                                           val cache: CacheApi
+                                           val cache: CacheApi,
+                                           val ws: WSClient
                                          ) extends ReAuthable {
 
   private def newBehavior(isForDataType: Boolean, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -280,7 +281,7 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
             val context = TestMessageContext(user, behaviorVersion.team, info.message, includesBotMention = true)
-            TriggerTester(lambdaService, dataService, cache).test(TestEvent(context), behaviorVersion).map(Some(_))
+            TriggerTester(lambdaService, dataService, cache, ws, configuration).test(TestEvent(context), behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 
         } yield {

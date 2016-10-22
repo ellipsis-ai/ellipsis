@@ -9,7 +9,9 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
+import play.api.Configuration
 import play.api.cache.CacheApi
+import play.api.libs.ws.WSClient
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -120,7 +122,14 @@ case class InvokeBehaviorConversation(
     } yield result
   }
 
-  def respond(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi): Future[BotResult] = {
+  def respond(
+               event: MessageEvent,
+               lambdaService: AWSLambdaService,
+               dataService: DataService,
+               cache: CacheApi,
+               ws: WSClient,
+               configuration: Configuration
+             ): Future[BotResult] = {
     import Conversation._
     import InvokeBehaviorConversation._
 
@@ -128,7 +137,7 @@ case class InvokeBehaviorConversation(
       state match {
         case COLLECT_PARAM_VALUES_STATE => promptResultFor(info, event, dataService, cache)
         case DONE_STATE => {
-          BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger, Some(this), lambdaService, dataService, cache).flatMap { br =>
+          BehaviorResponse.buildFor(event, behaviorVersion, info.invocationMap, trigger, Some(this), lambdaService, dataService, cache, ws, configuration).flatMap { br =>
             br.resultForFilledOut
           }
         }

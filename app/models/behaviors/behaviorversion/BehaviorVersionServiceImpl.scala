@@ -9,13 +9,15 @@ import com.google.inject.Provider
 import json.BehaviorVersionData
 import models.IDs
 import models.accounts.user.User
-import models.behaviors.{BotResult, HandledErrorResult, NoCallbackTriggeredResult, NoResponseResult, ParameterWithValue, SuccessResult, SyntaxErrorResult, UnhandledErrorResult}
+import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
 import org.joda.time.DateTime
 import play.api.Configuration
+import play.api.cache.CacheApi
 import play.api.libs.json.{JsValue, Json}
+import play.api.libs.ws.WSClient
 import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
 import slick.driver.PostgresDriver.api._
 
@@ -53,7 +55,10 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 
 class BehaviorVersionServiceImpl @Inject() (
                                       dataServiceProvider: Provider[DataService],
-                                      lambdaServiceProvider: Provider[AWSLambdaService]
+                                      lambdaServiceProvider: Provider[AWSLambdaService],
+                                      ws: WSClient,
+                                      configuration: Configuration,
+                                      cache: CacheApi
                                     ) extends BehaviorVersionService {
 
   def dataService = dataServiceProvider.get
@@ -252,6 +257,35 @@ class BehaviorVersionServiceImpl @Inject() (
     }
   }
 
+  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: MessageEvent): Future[Option[BotResult]] = {
+    for {
+      environmentVariables <- dataService.environmentVariables.allFor(behaviorVersion.team)
+      missingEnvVars <- dataService.behaviorVersions.missingEnvironmentVariablesIn(behaviorVersion, environmentVariables, dataService)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
+      userInfo <- event.context.userInfo(ws, dataService)
+      notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
+      missingOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
+        !userInfo.links.exists(_.externalSystem == app.name)
+      })
+      maybeResult <- if (missingEnvVars.nonEmpty) {
+        Future.successful(Some(MissingEnvVarsResult(behaviorVersion, configuration, missingEnvVars)))
+      } else {
+        notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
+          Future.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, configuration)))
+        }.getOrElse {
+          val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
+          missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
+            event.context.ensureUser(dataService).flatMap { user =>
+              dataService.loginTokens.createFor(user).map { loginToken =>
+                OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
+              }
+            }.map(Some(_))
+          }.getOrElse(Future.successful(None))
+        }
+      }
+    } yield maybeResult
+  }
+
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
@@ -259,7 +293,11 @@ class BehaviorVersionServiceImpl @Inject() (
                ): Future[BotResult] = {
     for {
       envVars <- dataService.environmentVariables.allFor(behaviorVersion.team)
-      result <- lambdaService.invoke(behaviorVersion, parametersWithValues, envVars, event)
+      result <- maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeResult =>
+        maybeResult.map(Future.successful).getOrElse {
+          lambdaService.invoke(behaviorVersion, parametersWithValues, envVars, event)
+        }
+      }
     } yield result
   }
 
