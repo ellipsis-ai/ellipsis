@@ -4,19 +4,14 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
 import models.accounts.user.User
-import models.behaviors.events.MessageEvent
 import models.behaviors._
 import models.behaviors.behavior.Behavior
-import models.behaviors.config.awsconfig.AWSConfig
 import models.team.Team
 import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json}
 import play.api.Configuration
 import services.AWSLambdaConstants._
-import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import services.AWSLambdaLogResult
 
 case class BehaviorVersion(
                             id: String,
@@ -49,13 +44,6 @@ case class BehaviorVersion(
   def functionBody: String = maybeFunctionBody.getOrElse("")
 
   def functionName: String = id
-
-  def resultFor(parametersWithValues: Seq[ParameterWithValue], event: MessageEvent, service: AWSLambdaService, dataService: DataService): Future[BotResult] = {
-    for {
-      envVars <- dataService.environmentVariables.allFor(team)
-      result <- service.invoke(this, parametersWithValues, envVars, event)
-    } yield result
-  }
 
   def isCurrentVersion: Boolean = behavior.maybeCurrentVersionId.contains(id)
 

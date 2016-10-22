@@ -42,6 +42,8 @@ trait BehaviorVersionService {
 
   def maybePreviousFor(behaviorVersion: BehaviorVersion): Future[Option[BehaviorVersion]]
 
+  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: MessageEvent): Future[Option[BotResult]]
+
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],

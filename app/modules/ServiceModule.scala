@@ -31,6 +31,7 @@ import play.api.i18n.MessagesApi
 import services._
 import net.codingwell.scalaguice.ScalaModule
 import play.api.cache.CacheApi
+import play.api.libs.ws.WSClient
 
 class ServiceModule extends AbstractModule with ScalaModule {
 
@@ -77,9 +78,11 @@ class ServiceModule extends AbstractModule with ScalaModule {
                             lambdaService: AWSLambdaService,
                             dataService: DataService,
                             cache: CacheApi,
-                            messages: MessagesApi
+                            messages: MessagesApi,
+                            ws: WSClient,
+                            configuration: Configuration
                             ): EventHandler = {
-    new EventHandler(lambdaService, dataService, cache, messages)
+    new EventHandler(lambdaService, dataService, cache, messages, ws, configuration)
   }
 
 }

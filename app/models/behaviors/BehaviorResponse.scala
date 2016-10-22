@@ -9,8 +9,10 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
+import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsString, JsValue}
+import play.api.libs.ws.WSClient
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -37,7 +39,9 @@ case class BehaviorResponse(
                              activatedTrigger: MessageTrigger,
                              lambdaService: AWSLambdaService,
                              dataService: DataService,
-                             cache: CacheApi
+                             cache: CacheApi,
+                             ws: WSClient,
+                             configuration: Configuration
                              ) {
 
   def isFilledOut: Boolean = {
@@ -59,24 +63,28 @@ case class BehaviorResponse(
   }
 
   def result: Future[BotResult] = {
-    if (isFilledOut) {
-      resultForFilledOut
-    } else {
-      for {
-        convo <- InvokeBehaviorConversation.createFor(
-          behaviorVersion,
-          event.context.name,
-          event.context.userIdForContext,
-          activatedTrigger,
-          dataService
-        )
-        _ <- Future.sequence(parametersWithValues.map { p =>
-          p.maybeValue.map { v =>
-            dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
-          }.getOrElse(Future.successful(Unit))
-        })
-        result <- convo.resultFor(event, lambdaService, dataService, cache)
-      } yield result
+    dataService.behaviorVersions.maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeNotReadyResult =>
+      maybeNotReadyResult.map(Future.successful).getOrElse {
+        if (isFilledOut) {
+          resultForFilledOut
+        } else {
+          for {
+            convo <- InvokeBehaviorConversation.createFor(
+              behaviorVersion,
+              event.context.name,
+              event.context.userIdForContext,
+              activatedTrigger,
+              dataService
+            )
+            _ <- Future.sequence(parametersWithValues.map { p =>
+              p.maybeValue.map { v =>
+                dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
+              }.getOrElse(Future.successful(Unit))
+            })
+            result <- convo.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+          } yield result
+        }
+      }
     }
   }
 }
@@ -120,10 +128,12 @@ object BehaviorResponse {
                 maybeConversation: Option[Conversation],
                 lambdaService: AWSLambdaService,
                 dataService: DataService,
-                cache: CacheApi
+                cache: CacheApi,
+                ws: WSClient,
+                configuration: Configuration
                 ): Future[BehaviorResponse] = {
     parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cache).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger, lambdaService, dataService, cache)
+      BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger, lambdaService, dataService, cache, ws, configuration)
     }
   }
 
@@ -133,7 +143,9 @@ object BehaviorResponse {
                  maybeLimitToBehavior: Option[Behavior],
                  lambdaService: AWSLambdaService,
                  dataService: DataService,
-                 cache: CacheApi
+                 cache: CacheApi,
+                 ws: WSClient,
+                 configuration: Configuration
                ): Future[Seq[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
@@ -184,7 +196,9 @@ object BehaviorResponse {
               None,
               lambdaService,
               dataService,
-              cache
+              cache,
+              ws,
+              configuration
             )
         } yield response
       })

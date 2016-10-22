@@ -95,38 +95,28 @@ class AWSLambdaServiceImpl @Inject() (
     for {
       token <- dataService.invocationTokens.createFor(team)
       userInfo <- event.context.userInfo(ws, dataService)
-      notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
-      missingOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
-        !userInfo.links.exists(_.externalSystem == app.name)
-      })
-      result <- notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-        Future.successful(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, configuration))
-      }.getOrElse {
-        val (missingOAuth2ApplicationsRequiringAuth, otherMissingOAuth2Applications) =
-          missingOAuth2Applications.partition(_.api.grantType.requiresAuth)
-        missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
-          event.context.ensureUser(dataService).flatMap { user =>
-            dataService.loginTokens.createFor(user).map { loginToken =>
-              OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
-            }
-          }
-        }.getOrElse {
-          TeamInfo.forOAuth2Apps(otherMissingOAuth2Applications, team, ws).flatMap { teamInfo =>
-            val payloadJson = JsObject(
-              payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, token)
-            )
-            val invokeRequest =
-              new InvokeRequest().
-                withLogType(LogType.Tail).
-                withFunctionName(functionName).
-                withInvocationType(InvocationType.RequestResponse).
-                withPayload(payloadJson.toString())
-            JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recover {
-              case e: java.util.concurrent.ExecutionException => {
-                e.getMessage match {
-                  case amazonServiceExceptionRegex() => new AWSDownResult()
-                  case _ => throw e
-                }
+      result <- {
+        val oauth2ApplicationsNeedingRefresh =
+          requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
+            filter { app =>
+              !userInfo.links.exists(_.externalSystem == app.name)
+            }.
+            filterNot(_.api.grantType.requiresAuth)
+        TeamInfo.forOAuth2Apps(oauth2ApplicationsNeedingRefresh, team, ws).flatMap { teamInfo =>
+          val payloadJson = JsObject(
+            payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, token)
+          )
+          val invokeRequest =
+            new InvokeRequest().
+              withLogType(LogType.Tail).
+              withFunctionName(functionName).
+              withInvocationType(InvocationType.RequestResponse).
+              withPayload(payloadJson.toString())
+          JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recover {
+            case e: java.util.concurrent.ExecutionException => {
+              e.getMessage match {
+                case amazonServiceExceptionRegex() => new AWSDownResult()
+                case _ => throw e
               }
             }
           }
@@ -142,11 +132,8 @@ class AWSLambdaServiceImpl @Inject() (
               event: MessageEvent
               ): Future[BotResult] = {
     for {
-      missingEnvVars <- dataService.behaviorVersions.missingEnvironmentVariablesIn(behaviorVersion, environmentVariables, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
-      result <- if (missingEnvVars.nonEmpty) {
-        Future.successful(MissingEnvVarsResult(behaviorVersion, configuration, missingEnvVars))
-      } else if (behaviorVersion.functionBody.isEmpty) {
+      result <- if (behaviorVersion.functionBody.isEmpty) {
         Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
       } else {
         invokeFunction(
