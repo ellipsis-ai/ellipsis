@@ -19,7 +19,7 @@ case class BehaviorVersionImporter(
   def run: Future[Option[BehaviorVersion]] = {
     for {
       maybeExisting <- data.config.publishedId.map { publishedId =>
-        dataService.behaviors.findWithImportedId(publishedId)
+        dataService.behaviors.findWithImportedId(publishedId, team)
       }.getOrElse(Future.successful(None))
       version <- maybeExisting.map { existing =>
         Future.successful(None)
