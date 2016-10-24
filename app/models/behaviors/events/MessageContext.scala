@@ -48,6 +48,7 @@ trait MessageContext extends Context {
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]]
 
   val name: String
+  val conversationContext: String = name
   def userIdForContext: String
   val teamId: String
   val isResponseExpected: Boolean

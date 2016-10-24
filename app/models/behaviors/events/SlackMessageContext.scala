@@ -28,6 +28,7 @@ case class SlackMessageContext(
 
   lazy val botId: String = client.state.self.id
   lazy val name: String = Conversation.SLACK_CONTEXT
+  override val conversationContext = Conversation.SLACK_CONTEXT ++ "#" ++ message.channel
   lazy val userIdForContext: String = message.user
 
   lazy val isDirectMessage: Boolean = {
@@ -95,7 +96,7 @@ case class SlackMessageContext(
   }
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(message.user, Conversation.SLACK_CONTEXT)
+    dataService.conversations.findOngoingFor(message.user, conversationContext)
   }
 
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
