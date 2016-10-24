@@ -96,6 +96,8 @@ case class MarkdownRenderer(
           case bool: JsBoolean => {
             if (bool.value) {
               visit(conditional.body)
+            } else {
+              conditional.maybeElseBody.foreach(visit)
             }
           }
           case nonBoolean => stringBuilder.append(s"**$dotString is not a boolean** (${nonBoolean.toString})")

@@ -96,7 +96,7 @@ class TemplateParserSpec extends PlaySpec {
     "parse a conditional" in {
       val result = parse("{if foo.isBar}foo is a bar{endif}")
       result mustBe Block(Seq(
-        Conditional(pathFor("foo", "isBar"), Block(Seq(Text("foo is a bar")))))
+        Conditional(pathFor("foo", "isBar"), Block(Seq(Text("foo is a bar"))), None))
       )
     }
 
@@ -110,9 +110,22 @@ class TemplateParserSpec extends PlaySpec {
               pathFor("shouldDisplay"),
               Block(Seq(
                 Text("foo is a bar")
-              ))
+              )),
+              None
             )
-          ))
+          )),
+          None
+        ))
+      )
+    }
+
+    "parse a conditional with an else clause" in {
+      val result = parse("{if foo.isBar}foo is a bar{else}foo is not a bar{endif}")
+      result mustBe Block(Seq(
+        Conditional(
+          pathFor("foo", "isBar"),
+          Block(Seq(Text("foo is a bar"))),
+          Some(Block(Seq(Text("foo is not a bar"))))
         ))
       )
     }

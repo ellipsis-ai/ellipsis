@@ -214,6 +214,30 @@ class TemplateApplierSpec extends PlaySpec {
       applier.apply.trim mustBe "2 is even\n\n\n\n4 is even"
     }
 
+    "apply for a true conditional with an else clause" in {
+      val resultJson = Json.toJson(Map("shouldDisplay" -> true))
+      val applier = TemplateApplier(Some(
+        """{if successResult.shouldDisplay}
+          |displayed
+          |{else}
+          |not displayed
+          |{endif}
+        """.stripMargin), JsDefined(resultJson))
+      applier.apply.trim mustBe "displayed"
+    }
+
+    "apply for a false conditional with an else clause" in {
+      val resultJson = Json.toJson(Map("shouldDisplay" -> false))
+      val applier = TemplateApplier(Some(
+        """{if successResult.shouldDisplay}
+          |displayed
+          |{else}
+          |not displayed
+          |{endif}
+        """.stripMargin), JsDefined(resultJson))
+      applier.apply.trim mustBe "not displayed"
+    }
+
   }
 
 }
