@@ -3,6 +3,7 @@ define(function() {
     /^for\s+\S+\s+in\s+.+$/,
     /^endfor$/,
     /^if\s+.+$/,
+    /^else$/,
     /^endif$/
   ];
 
