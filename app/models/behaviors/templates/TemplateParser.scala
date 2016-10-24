@@ -8,7 +8,7 @@ class TemplateParser extends RegexParsers with JavaTokenParsers {
 
   override def skipWhitespace = false
 
-  val reserved: Parser[String] = "endfor" | "endif"
+  val reserved: Parser[String] = "endfor" | "endif" | "else"
 
   def text: Parser[Text] = """[^\{]+""".r ^^ { s => Text(s) }
 
@@ -26,8 +26,8 @@ class TemplateParser extends RegexParsers with JavaTokenParsers {
       Iteration(itemIdentifier, listPath, block)
   }
 
-  def conditional: Parser[Conditional] = """\{\s*if\s+""".r ~> path ~ """\s*\}\s*""".r ~ block <~ """\{\s*endif\s*\}""".r ^^ {
-    case condition ~ _ ~ block => Conditional(condition, block)
+  def conditional: Parser[Conditional] = """\{\s*if\s+""".r ~> path ~ """\s*\}\s*""".r ~ block ~ (("""\{\s*else\s*\}\s*""".r ~> block)?) <~ """\{\s*endif\s*\}""".r ^^ {
+    case condition ~ _ ~ block ~ maybeElseBlock => Conditional(condition, block, maybeElseBlock)
   }
 
   def parseBlockFrom(text: String): ParseResult[Block] = parse(block, text)
