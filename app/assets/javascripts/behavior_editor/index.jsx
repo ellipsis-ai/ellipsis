@@ -317,7 +317,7 @@ return React.createClass({
   getOAuth2ApplicationsRequiringAuth: function() {
     return this.getApiApplications().filter(ea => {
       return !this.props.linkedOAuth2ApplicationIds.includes(ea.applicationId);
-    })
+    });
   },
 
   buildOAuthApplicationNotifications: function() {
