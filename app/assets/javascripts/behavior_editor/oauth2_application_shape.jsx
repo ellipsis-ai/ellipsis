@@ -1,4 +1,4 @@
-define(function() {
+define(function(require) {
   var React = require('react');
 
   return React.PropTypes.shape({
