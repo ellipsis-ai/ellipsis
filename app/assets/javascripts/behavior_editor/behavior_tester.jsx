@@ -7,7 +7,9 @@ define(function(require) {
     Input = require('../form/input'),
     Param = require('../models/param'),
     Trigger = require('../models/trigger'),
-    debounce = require('javascript-debounce');
+    debounce = require('javascript-debounce'),
+    oauth2ApplicationShape = require('./oauth2_application_shape'),
+    TesterAuthRequired = require('./tester_auth_required');
 
   return React.createClass({
     displayName: 'BehaviorTester',
@@ -16,7 +18,8 @@ define(function(require) {
       params: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired,
       behaviorId: React.PropTypes.string,
       csrfToken: React.PropTypes.string.isRequired,
-      onDone: React.PropTypes.func.isRequired
+      onDone: React.PropTypes.func.isRequired,
+      appsRequiringAuth: React.PropTypes.arrayOf(oauth2ApplicationShape).isRequired
     },
 
     getInitialState: function() {
@@ -247,13 +250,24 @@ define(function(require) {
                   <h4 className="type-weak">Test the behavior</h4>
                 </div>
                 <div className="column column-three-quarters pll mobile-pln mobile-column-full">
-                  {ifPresent(this.getTriggers(), this.renderTriggerTester, this.renderNoTriggers)}
+                  {this.renderContent()}
                 </div>
               </div>
             </div>
           </div>
         </div>
       );
+    },
+
+    renderContent: function() {
+      var apps = this.props.appsRequiringAuth;
+      if (apps.length > 0) {
+        return (
+          <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
+        );
+      } else {
+        return ifPresent(this.getTriggers(), this.renderTriggerTester, this.renderNoTriggers);
+      }
     },
 
     renderTriggerTester: function(triggers) {

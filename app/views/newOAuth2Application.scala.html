@@ -22,7 +22,7 @@
         csrfToken: "@CSRF.getToken(r).map(_.value)",
         teamId: "@teamAccess.maybeTargetTeam.map(_.id)",
         apis: @Html(Json.toJson(apis).toString),
-        callbackUrl: "@routes.APIAccessController.linkCustomOAuth2Service(applicationId, None, None, None).absoluteURL(secure = true)",
+        callbackUrl: "@routes.APIAccessController.linkCustomOAuth2Service(applicationId, None, None, None, None).absoluteURL(secure = true)",
         mainUrl: "@routes.ApplicationController.index().absoluteURL(secure = true)",
         applicationId: "@applicationId",
         applicationApiId: "@maybeApiId.getOrElse("")",
