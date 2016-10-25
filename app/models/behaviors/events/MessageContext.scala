@@ -2,6 +2,7 @@ package models.behaviors.events
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.{MessageInfo, UserInfo}
 import models.behaviors.conversations.conversation.Conversation
 import play.api.libs.json.JsObject
@@ -49,6 +50,7 @@ trait MessageContext extends Context {
 
   val name: String
   val conversationContext: String = name
+  def conversationContextFor(behaviorVersion: BehaviorVersion) = conversationContext
   def userIdForContext: String
   val teamId: String
   val isResponseExpected: Boolean

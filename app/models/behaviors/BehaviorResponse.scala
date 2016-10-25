@@ -71,7 +71,7 @@ case class BehaviorResponse(
           for {
             convo <- InvokeBehaviorConversation.createFor(
               behaviorVersion,
-              event.context.conversationContext,
+              event.context.conversationContextFor(behaviorVersion),
               event.context.userIdForContext,
               activatedTrigger,
               dataService

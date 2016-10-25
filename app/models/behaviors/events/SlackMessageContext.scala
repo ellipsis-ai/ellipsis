@@ -4,6 +4,7 @@ import models.SlackMessageFormatter
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import play.api.libs.json.{JsBoolean, JsObject, JsString}
 import play.api.libs.ws.WSClient
@@ -28,7 +29,16 @@ case class SlackMessageContext(
 
   lazy val botId: String = client.state.self.id
   lazy val name: String = Conversation.SLACK_CONTEXT
-  override val conversationContext = Conversation.SLACK_CONTEXT ++ "#" ++ message.channel
+  def conversationContextForChannel(channel: String) = Conversation.SLACK_CONTEXT ++ "#" ++ channel
+  override val conversationContext = conversationContextForChannel(message.channel)
+  override def conversationContextFor(behaviorVersion: BehaviorVersion): String = {
+    val maybeChannel = if (behaviorVersion.forcePrivateResponse) {
+      maybeDMChannel
+    } else {
+      None
+    }
+    conversationContextForChannel(maybeChannel.getOrElse(message.channel))
+  }
   lazy val userIdForContext: String = message.user
 
   lazy val isDirectMessage: Boolean = {
@@ -58,21 +68,23 @@ case class SlackMessageContext(
     }
   }
 
+  def maybeDMChannel = client.apiClient.listIms.find(_.user == message.user).map(_.id)
+
   def sendMessage(unformattedText: String, forcePrivate: Boolean, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
     val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
     val apiClient = client.apiClient
-    val maybeDMChannel = if (forcePrivate) {
-      apiClient.listIms.find(_.user == message.user).map(_.id)
+    val maybeDMChannelToUse = if (forcePrivate) {
+      maybeDMChannel
     } else {
       None
     }
     messageSegmentsFor(formattedText).foreach { ea =>
       // The Slack API considers sending an empty message to be an error rather than a no-op
       if (ea.nonEmpty) {
-        if (maybeDMChannel.isDefined && !maybeDMChannel.contains(message.channel)) {
+        if (maybeDMChannelToUse.isDefined && !maybeDMChannelToUse.contains(message.channel)) {
           apiClient.postChatMessage(message.channel, s"<@${message.user}> I've sent you a private message :sleuth_or_spy:", asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
         }
-        apiClient.postChatMessage(maybeDMChannel.getOrElse(message.channel), ea, asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
+        apiClient.postChatMessage(maybeDMChannelToUse.getOrElse(message.channel), ea, asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
       }
     }
   }
