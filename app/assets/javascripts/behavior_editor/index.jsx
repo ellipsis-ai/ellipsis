@@ -13,6 +13,7 @@ var React = require('react'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('./confirm_action_panel'),
+  DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
   DataTypeNameInput = require('./data_type_name_input'),
   DataTypeResultConfig = require('./data_type_result_config'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
@@ -1704,6 +1705,11 @@ return React.createClass({
               <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
 
                 <SectionHeading>Run code to generate a list</SectionHeading>
+
+                <DataTypeCodeEditorHelp
+                  functionBody={this.getBehaviorFunctionBody()}
+                  usesSearch={this.hasUserParameterNamed('searchQuery')}
+                />
 
               </div>
 

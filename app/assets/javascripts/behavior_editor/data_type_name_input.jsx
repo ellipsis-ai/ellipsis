@@ -12,12 +12,12 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="container ptxl pbxxxl">
+        <div className="container ptxl">
           <div className="columns">
-            <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
+            <div className="column column-one-quarter mobile-column-full mts mbl mobile-mbs">
               <SectionHeading>Name of data type</SectionHeading>
             </div>
-            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbl">
               <div className="mbm">
                 <Input
                   className="form-input-borderless form-input-large"

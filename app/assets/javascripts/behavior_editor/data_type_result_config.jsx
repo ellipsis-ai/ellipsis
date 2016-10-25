@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     SectionHeading = require('./section_heading'),
+    Checklist = require('./checklist'),
     ToggleGroup = require('../form/toggle_group');
 
   return React.createClass({
@@ -24,6 +25,16 @@ define(function(require) {
           <div className="columns">
             <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
               <SectionHeading>How to prompt the user</SectionHeading>
+              <Checklist disabledWhen={false}>
+                <Checklist.Item checkedWhen={!this.props.usesSearch}>
+                  <span>Use <code className="type-bold">Select from a list</code> when there are few choices.</span>
+                  <span>The user will just pick from the whole list.</span>
+                </Checklist.Item>
+                <Checklist.Item checkedWhen={this.props.usesSearch}>
+                  <span>Use <code className="type-bold">Search for a match</code> when there are many choices.</span>
+                  <span>The user will type in a search query and presented with matches to choose from.</span>
+                </Checklist.Item>
+              </Checklist>
             </div>
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
               <div className="mbm">
