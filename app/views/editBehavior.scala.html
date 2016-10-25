@@ -21,7 +21,8 @@
     routes.javascript.BehaviorEditorController.testTriggers,
     routes.javascript.BehaviorEditorController.testInvocation,
     routes.javascript.EnvironmentVariablesController.submit,
-    routes.javascript.OAuth2ApplicationController.newApp
+    routes.javascript.OAuth2ApplicationController.newApp,
+    routes.javascript.APIAccessController.linkCustomOAuth2Service
   )
   <div id="content" class="content">
     <div>
@@ -37,6 +38,7 @@
           paramTypes: @Html(Json.toJson(data.paramTypes).toString),
           oauth2Applications: @Html(Json.toJson(data.oauth2Applications).toString),
           oauth2Apis: @Html(Json.toJson(data.oauth2Apis).toString),
+          linkedOAuth2ApplicationIds: @Html(Json.toJson(data.linkedOAuth2ApplicationIds).toString),
           notifications: [],
         };
       </script>

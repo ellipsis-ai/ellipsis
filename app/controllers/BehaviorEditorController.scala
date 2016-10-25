@@ -33,7 +33,7 @@ class BehaviorEditorController @Inject() (
 
   private def newBehavior(isForDataType: Boolean, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    BehaviorEditorData.buildForNew(user, maybeTeamId, isForDataType, dataService).flatMap { maybeEditorData =>
+    BehaviorEditorData.buildForNew(user, maybeTeamId, isForDataType, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
         Future.successful(Ok(views.html.editBehavior(editorData)))
       }.getOrElse {
@@ -58,7 +58,7 @@ class BehaviorEditorController @Inject() (
 
   def edit(id: String, maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    BehaviorEditorData.buildForEdit(user, id, maybeJustSaved, dataService).flatMap { maybeEditorData =>
+    BehaviorEditorData.buildForEdit(user, id, maybeJustSaved, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
         Future.successful(Ok(views.html.editBehavior(editorData)))
       }.getOrElse {

@@ -40,7 +40,8 @@ var React = require('react'),
   ImmutableObjectUtils = require('../immutable_object_utils'),
   debounce = require('javascript-debounce'),
   Sort = require('../sort'),
-  Magic8Ball = require('../magic_8_ball');
+  Magic8Ball = require('../magic_8_ball'),
+  oauth2ApplicationShape = require('./oauth2_application_shape');
   require('codemirror/mode/markdown/markdown');
   require('whatwg-fetch');
 
@@ -49,14 +50,6 @@ var AWSEnvVariableStrings = {
   secretKeyName: "AWS Secret Key",
   regionName: "AWS Region"
 };
-
-var oauth2ApplicationShape = React.PropTypes.shape({
-  apiId: React.PropTypes.string.isRequired,
-  applicationId: React.PropTypes.string.isRequired,
-  displayName: React.PropTypes.string,
-  keyName: React.PropTypes.string,
-  scope: React.PropTypes.string
-});
 
 var magic8BallResponse = Magic8Ball.response();
 
@@ -102,6 +95,7 @@ return React.createClass({
       apiId: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
     })),
+    linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool,
     onSave: React.PropTypes.func.isRequired,
@@ -317,6 +311,12 @@ return React.createClass({
 
   getRequiredOAuth2ApiConfigsWithNoApplication: function() {
     return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application);
+  },
+
+  getOAuth2ApplicationsRequiringAuth: function() {
+    return this.getApiApplications().filter(ea => {
+      return !this.props.linkedOAuth2ApplicationIds.includes(ea.applicationId);
+    })
   },
 
   buildOAuthApplicationNotifications: function() {
@@ -1449,6 +1449,7 @@ return React.createClass({
               behaviorId={this.props.behaviorId}
               csrfToken={this.props.csrfToken}
               onDone={this.toggleBehaviorTester}
+              appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
             />
           </Collapsible>
 
@@ -1459,6 +1460,7 @@ return React.createClass({
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
               onDone={this.toggleDataTypeTester}
+              appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
             />
           </Collapsible>
 

@@ -58,7 +58,8 @@ class APIAccessController @Inject() (
                                applicationId: String,
                                codeOpt: Option[String],
                                stateOpt: Option[String],
-                               maybeInvocationId: Option[String]
+                               maybeInvocationId: Option[String],
+                               maybeRedirectAfterAuth: Option[String]
                                ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
@@ -72,7 +73,7 @@ class APIAccessController @Inject() (
               oauthState <- request.session.get("oauth-state")
             } yield {
               if (state == oauthState) {
-                val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId).absoluteURL(secure = true)
+                val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId, maybeRedirectAfterAuth).absoluteURL(secure = true)
                 getToken(code, application, user, redirect).flatMap { maybeLinkedToken =>
                   maybeLinkedToken.
                     map { _ =>
@@ -84,7 +85,10 @@ class APIAccessController @Inject() (
                           }
                         }
                       }.getOrElse {
-                        Future.successful(Redirect(routes.APIAccessController.authenticated(s"You are now authenticated and can try again.")))
+                        val redirect = maybeRedirectAfterAuth.getOrElse {
+                          routes.APIAccessController.authenticated(s"You are now authenticated and can try again.").toString
+                        }
+                        Future.successful(Redirect(redirect))
                       }
                     }.getOrElse(Future.successful(BadRequest("boom")))
                 }
@@ -93,7 +97,7 @@ class APIAccessController @Inject() (
               }
             }).getOrElse {
               val state = IDs.next
-              val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None).absoluteURL(secure = true)
+              val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, maybeRedirectAfterAuth).absoluteURL(secure = true)
               val maybeRedirect = application.maybeAuthorizationRequestFor(state, redirectParam, ws).map { r =>
                 r.uri.toString
               }

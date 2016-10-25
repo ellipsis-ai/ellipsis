@@ -1,0 +1,45 @@
+define(function(require) {
+  var React = require('react'),
+    oauth2ApplicationShape = require('./oauth2_application_shape');
+
+  return React.createClass({
+    propTypes: {
+      behaviorId: React.PropTypes.string.isRequired,
+      appsRequiringAuth: React.PropTypes.arrayOf(oauth2ApplicationShape).isRequired
+    },
+
+    renderAuthRequiredFor: function (app) {
+      return (
+        <a
+          href={jsRoutes.controllers.APIAccessController.linkCustomOAuth2Service(app.applicationId, null, null, null, jsRoutes.controllers.BehaviorEditorController.edit(this.props.behaviorId).url).url}>{app.displayName}</a>
+      );
+    },
+
+    render: function () {
+      var apps = this.props.appsRequiringAuth;
+      var numApps = apps.length;
+      if (numApps === 1) {
+        return (
+          <div>
+            <p>You need to authenticate with the following API in order to test: {this.renderAuthRequiredFor(apps[0])}</p>
+          </div>
+        );
+      } else {
+        return (
+          <div>
+            <p>You need to authenticate with the following APIs in order to test:</p>
+            {apps.map((ea, index) => {
+              return (
+                <span className="phxs">
+                    <span>{this.renderAuthRequiredFor(ea)}</span>
+                    <span>{index + 1 < numApps ? ", " : ""}</span>
+                  </span>
+              );
+            })}
+          </div>
+        );
+      }
+    }
+  });
+
+});

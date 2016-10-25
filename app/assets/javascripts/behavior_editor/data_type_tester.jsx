@@ -2,7 +2,9 @@ define(function(require) {
   var React = require('react'),
     BehaviorTest = require('./behavior_test'),
     Input = require('../form/input'),
-    Collapsible = require('../collapsible');
+    Collapsible = require('../collapsible'),
+    oauth2ApplicationShape = require('./oauth2_application_shape'),
+    TesterAuthRequired = require('./tester_auth_required');
 
   var MAX_RESULTS_TO_SHOW = 10;
 
@@ -12,7 +14,8 @@ define(function(require) {
       behaviorId: React.PropTypes.string,
       isSearch: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
-      onDone: React.PropTypes.func.isRequired
+      onDone: React.PropTypes.func.isRequired,
+      appsRequiringAuth: React.PropTypes.arrayOf(oauth2ApplicationShape).isRequired
     },
 
     getInitialState: function() {
@@ -135,13 +138,24 @@ define(function(require) {
                   <h4 className="type-weak">Test the data type</h4>
                 </div>
                 <div className="column column-three-quarters pll mobile-pln mobile-column-full">
-                  {this.renderTester()}
+                  {this.renderContent()}
                 </div>
               </div>
             </div>
           </div>
         </div>
       );
+    },
+
+    renderContent: function() {
+      var apps = this.props.appsRequiringAuth;
+      if (apps.length > 0) {
+        return (
+          <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
+        );
+      } else {
+        return this.renderTester();
+      }
     },
 
     renderSearchQuery: function() {

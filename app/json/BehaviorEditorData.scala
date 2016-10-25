@@ -5,6 +5,7 @@ import models.accounts.user.{User, UserTeamAccess}
 import scala.concurrent.ExecutionContext.Implicits.global
 import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.team.Team
+import play.api.libs.ws.WSClient
 import services.DataService
 
 import scala.concurrent.Future
@@ -16,6 +17,7 @@ case class BehaviorEditorData(
                                paramTypes: Seq[BehaviorParameterTypeData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
+                               linkedOAuth2ApplicationIds: Seq[String],
                                justSaved: Boolean
                               ) {
 
@@ -29,7 +31,8 @@ object BehaviorEditorData {
                     user: User,
                     behaviorId: String,
                     maybeJustSaved: Option[Boolean],
-                    dataService: DataService
+                    dataService: DataService,
+                    ws: WSClient
                   ): Future[Option[BehaviorEditorData]] = {
 
     for {
@@ -41,7 +44,7 @@ object BehaviorEditorData {
         data <- maybeBehaviorVersionData
         team <- maybeTeam
       } yield {
-        buildFor(user, Some(data), team, maybeJustSaved, isForNewDataType = false, dataService).map(Some(_))
+        buildFor(user, Some(data), team, maybeJustSaved, isForNewDataType = false, dataService, ws).map(Some(_))
       }).getOrElse(Future.successful(None))
     } yield maybeEditorData
   }
@@ -50,13 +53,14 @@ object BehaviorEditorData {
                   user: User,
                   maybeTeamId: Option[String],
                   isForNewDataType: Boolean,
-                  dataService: DataService
+                  dataService: DataService,
+                  ws: WSClient
                  ): Future[Option[BehaviorEditorData]] = {
 
     val teamId = maybeTeamId.getOrElse(user.teamId)
     dataService.teams.find(teamId, user).flatMap { maybeTeam =>
       maybeTeam.map { team =>
-        buildFor(user, None, team, None, isForNewDataType, dataService).map(Some(_))
+        buildFor(user, None, team, None, isForNewDataType, dataService, ws).map(Some(_))
       }.getOrElse(Future.successful(None))
     }
   }
@@ -67,13 +71,15 @@ object BehaviorEditorData {
                 team: Team,
                 maybeJustSaved: Option[Boolean],
                 isForNewDataType: Boolean,
-                dataService: DataService
+                dataService: DataService,
+                ws: WSClient
               ): Future[BehaviorEditorData] = {
     for {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
       environmentVariables <- dataService.environmentVariables.allFor(team)
       oAuth2Applications <- dataService.oauth2Applications.allFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
+      linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUser(user, ws)
       paramTypes <- teamAccess.maybeTargetTeam.map { team =>
         BehaviorParameterType.allFor(team, dataService)
       }.getOrElse(Future.successful(Seq()))
@@ -102,6 +108,7 @@ object BehaviorEditorData {
         paramTypeData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
+        linkedOAuth2Tokens.map(_.application.id),
         maybeJustSaved.exists(identity)
       )
     }
