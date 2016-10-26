@@ -6,6 +6,7 @@ case class InvocationLogEntry(
                                id: String,
                                behaviorVersionId: String,
                                resultType: String,
+                               messageText: String,
                                resultText: String,
                                context: String,
                                maybeUserIdForContext: Option[String],

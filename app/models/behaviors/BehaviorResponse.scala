@@ -55,7 +55,7 @@ case class BehaviorResponse(
       dataService.invocationLogEntries.createFor(
         behaviorVersion,
         result,
-        event.context.name,
+        event,
         Some(event.context.userIdForContext),
         runtimeInMilliseconds
       ).map(_ => result)

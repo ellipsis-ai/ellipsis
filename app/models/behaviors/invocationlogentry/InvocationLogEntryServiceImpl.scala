@@ -7,6 +7,7 @@ import com.google.inject.Provider
 import models.IDs
 import models.behaviors.BotResult
 import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
+import models.behaviors.events.MessageEvent
 import org.joda.time.DateTime
 import services.DataService
 import slick.driver.PostgresDriver.api._
@@ -19,13 +20,14 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[InvocationLogEntry](tag,
   def id = column[String]("id", O.PrimaryKey)
   def behaviorVersionId = column[String]("behavior_version_id")
   def resultType = column[String]("result_type")
+  def messageText = column[String]("message_text")
   def resultText = column[String]("result_text")
   def context = column[String]("context")
   def maybeUserIdForContext = column[Option[String]]("user_id_for_context")
   def runtimeInMilliseconds = column[Long]("runtime_in_milliseconds")
   def createdAt = column[DateTime]("created_at")
 
-  def * = (id, behaviorVersionId, resultType, resultText, context, maybeUserIdForContext, runtimeInMilliseconds, createdAt) <>
+  def * = (id, behaviorVersionId, resultType, messageText, resultText, context, maybeUserIdForContext, runtimeInMilliseconds, createdAt) <>
     ((InvocationLogEntry.apply _).tupled, InvocationLogEntry.unapply _)
 }
 
@@ -56,7 +58,7 @@ class InvocationLogEntryServiceImpl @Inject() (
   def createFor(
                  behaviorVersion: BehaviorVersion,
                  result: BotResult,
-                 context: String,
+                 event: MessageEvent,
                  maybeUserIdForContext: Option[String],
                  runtimeInMilliseconds: Long
                ): Future[InvocationLogEntry] = {
@@ -65,8 +67,9 @@ class InvocationLogEntryServiceImpl @Inject() (
         IDs.next,
         behaviorVersion.id,
         result.resultType.toString,
+        event.context.fullMessageText,
         result.fullText,
-        context,
+        event.context.name,
         maybeUserIdForContext,
         runtimeInMilliseconds,
         DateTime.now
