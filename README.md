@@ -1,6 +1,7 @@
-### Pre-requisites
+#### Get your AWS development Account
+Annotate the AWS_KEY and AWS_SECRET
 
-#### Setup AWS account for development
+#### Setup AWS cli on your Mac
 ```bash
 $ sudo pip install awscli
 ```
@@ -12,18 +13,23 @@ If you need to upgrade awscli with pip use:
 ```bash
 $ sudo pip install --upgrade awscli
 ```
-
 Test awscli by typing:
 ```bash
 $ aws help
 ```
-
 Configure awscli by running:
 ```bash
 $ aws configure --profile ellipsis_dev
 ```
 And follow the instructions.
 For more info go to: http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-quick-configuration
+
+You can now running the aws cli using the --profile option.
+For example:
+
+```bash
+$ aws s3 ls --profile ellipsis_dev
+```
 
 #### Install brew
 ```bash
@@ -36,6 +42,7 @@ $ brew update
 $ brew update
 $ brew cask install java
 ```
+
 Check java is working:
 ```bash
 $ java -version
@@ -45,6 +52,12 @@ FYI On the Mac jdk is installed in:
 ```bash
 $ ls -lFa /Library/Java/JavaVirtualMachines
 ```
+
+#### Install Activator
+Download link is https://www.lightbend.com/activator/download
+add the Activator bin folder to your path
+https://downloads.typesafe.com/typesafe-activator/1.3.10/typesafe-activator-1.3.10.zip
+
 
 #### Install Node
 ```bash
@@ -59,13 +72,9 @@ Run ngrok using:
 $ ngrok http 9000
 ```
 
-#### Install Activator
-Download link is https://www.lightbend.com/activator/download
-add the Activator bin folder to your path
-https://downloads.typesafe.com/typesafe-activator/1.3.10/typesafe-activator-1.3.10.zip
-
 #### Create a Slack App
-Copy the App id and secret somewhere
+Copy the App id and secret somewhere.
+Configure the redirect url using the ngrok url.
 
 #### Get the source code from Github
 ```bash
@@ -74,6 +83,7 @@ $ git clone git@github.com:ellipsis-ai/ellipsis.git
 
 #### Install npm packages
 ```bash
+$ cd ./ellipsis
 $ npm install
 ```
 
@@ -86,7 +96,40 @@ When you are done make run_app executable with:
 ```bash
 $ chmod 755 ./actw
 ```
-Now you can run the app
+
+#### Install docker for Mac
+https://docs.docker.com/engine/installation/mac/
+
+#### Run docker-compose
+In this step you will start a Docker container running Postgres on port 5432.
+Before you do that you want to make sure you do not have any Postgres instance
+running on the same port. Just do:
+
+```bash
+$ ps aux | grep postgres
+```
+Stop the Postgres instance if running.
+
+Now you can run Docker Compose:
+
+```bash
+$ cd ./ellipsis
+$ docker-compose up
+```
+You should now have a postgres instance running on port 5432.
+You can verify that by running:
+
+```bash
+$ PGPASSWORD=ellipsis psql -h 127.0.0.1 -p 5432 ellipsis ellipsis
+```
+
+You should also have Elasticsearch running on port 9200 and Kibana on port 5601
+
+http://localhost:9200
+http://localhost:9200/_plugin/head/
+http://localhost:5601
+http://localhost:5601/app/sense
+
 
 #### Run the app
 The app is run using Activator the run_app script is just a wrapper that invokes

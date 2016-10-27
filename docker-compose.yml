@@ -10,6 +10,7 @@ services:
     links:
       - memcached
       - postgres
+      - elasticsearch
     # - activator_cache
     # volumes_from:
     #   - activator_cache
@@ -26,11 +27,27 @@ services:
   #   stdin_open: true
   memcached:
     image: memcached
+  elasticsearch:
+    build: ./docker_files/elasticsearch/
+    # image: elasticsearch:2.3
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - ~/db/esdata:/usr/share/elasticsearch/data
+  kibana:
+    build: ./docker_files/kibana/
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    links:
+      - elasticsearch
   postgres:
     image: postgres
     volumes:
       - ~/db/pgdata:/pgdata
-      - ./db/setup_new_db.sql:/docker-entrypoint-initdb.d/setup_new_db.sql
+      - ./deploy/dev/db/setup_new_db.sql:/docker-entrypoint-initdb.d/setup_new_db.sql
     ports:
       - "5432:5432"
     environment:
