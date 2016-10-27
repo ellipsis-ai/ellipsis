@@ -135,6 +135,10 @@ define(function(require) {
       return this.state.shouldRevealApplicationUrl;
     },
 
+    shouldRevealCallbackUrl: function() {
+      return this.props.requiresAuth || !!(this.state.applicationApi && this.state.applicationApi.requiresAuth);
+    },
+
     getApplicationClientId: function() {
       return this.state.applicationClientId;
     },
@@ -324,7 +328,7 @@ define(function(require) {
     },
 
     renderCallbackUrl: function() {
-      if (this.props.requiresAuth) {
+      if (this.shouldRevealCallbackUrl()) {
         return (
           <li>
             <div>Copy and paste this for the <b>callback URL</b> (sometimes called <b>redirect URL</b>):</div>
