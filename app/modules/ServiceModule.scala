@@ -1,6 +1,7 @@
 package modules
 
 import com.google.inject.{AbstractModule, Provides}
+import data.OAuth2ApiPopulator
 import models.Models
 import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
@@ -66,6 +67,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind(classOf[AWSLogsService]).to(classOf[AWSLogsServiceImpl])
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).to(classOf[SlackServiceImpl]).asEagerSingleton()
+    bind(classOf[OAuth2ApiPopulator]).asEagerSingleton()
   }
 
   @Provides
