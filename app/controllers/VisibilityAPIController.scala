@@ -18,7 +18,13 @@ class VisibilityAPIController @Inject() (
                                  val dataService: DataService
                                ) extends EllipsisController {
 
-  case class InvocationCount(date: String, teamName: String, count: Int)
+  case class InvocationCount(
+                              date: String,
+                              teamName: String,
+                              totalCount: Int,
+                              uniqueBehaviorCount: Int,
+                              uniqueUserCount: Int
+                            )
 
   implicit val invocationCountWrites = Json.writes[InvocationCount]
 
@@ -30,17 +36,27 @@ class VisibilityAPIController @Inject() (
       isAdmin <- maybeTeam.map { team =>
         dataService.teams.isAdmin(team)
       }.getOrElse(Future.successful(false))
-      counts <- dataService.invocationLogEntries.countsByDay
+      totalCounts <- dataService.invocationLogEntries.countsByDay
+      uniqueBehaviorCounts <- dataService.invocationLogEntries.uniqueInvokedBehaviorCountsByDay
+      uniqueUserCounts <- dataService.invocationLogEntries.uniqueInvokingUserCountsByDay
       teamsById <- dataService.teams.allTeams.map(_.groupBy(_.id))
     } yield {
       if (isAdmin) {
         Ok(
           Json.toJson(
-            counts.toArray.
+            totalCounts.toArray.
               sortBy(_._1.toDate).reverse.
-              map { case(date, teamId, count) =>
+              map { case(date, teamId, totalCount) =>
                 val teamName = teamsById.get(teamId).flatMap(_.headOption).map(_.name).getOrElse("<no team>")
-                InvocationCount(date.toString(dateFormatter), teamName, count)
+                val uniqueBehaviorCount =
+                  uniqueBehaviorCounts.
+                    filter { case(d, tid, bCount) => date == d && teamId == tid }.
+                    headOption.map(_._3).getOrElse(0)
+                val uniqueUserCount =
+                  uniqueUserCounts.
+                    filter { case(d, tid, bCount) => date == d && teamId == tid }.
+                    headOption.map(_._3).getOrElse(0)
+                InvocationCount(date.toString(dateFormatter), teamName, totalCount, uniqueBehaviorCount, uniqueUserCount)
               }
           )
         )
