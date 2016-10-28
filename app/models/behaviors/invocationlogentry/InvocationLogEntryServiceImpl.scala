@@ -55,6 +55,36 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uniqueInvokingUserCountsByDay: Future[Seq[(DateTime, String, Int)]] = {
+    val action = allWithVersion.
+      map { case(entry, ((version, _), (behavior, team))) =>
+        (truncateDate("day", entry.createdAt), team.id, entry.maybeUserIdForContext.getOrElse("None"))
+      }.
+      groupBy { case(date, teamId, userId) => (date, teamId, userId)}.
+      map { case((date, teamId, userId), q) =>
+        (date, teamId, userId, 1)
+      }.
+      groupBy { case(date, teamId, _, _) => (date, teamId) }.
+      map { case((date, teamId), q) => (date, teamId, q.map(_._4).sum.getOrElse(0)) }.
+      result
+    dataService.run(action)
+  }
+
+  def uniqueInvokedBehaviorCountsByDay: Future[Seq[(DateTime, String, Int)]] = {
+    val action = allWithVersion.
+      map { case(entry, ((version, _), (behavior, team))) =>
+        (truncateDate("day", entry.createdAt), team.id, behavior.id)
+      }.
+      groupBy { case(date, teamId, behaviorId) => (date, teamId, behaviorId)}.
+      map { case((date, teamId, behaviorId), q) =>
+        (date, teamId, behaviorId, 1)
+      }.
+      groupBy { case(date, teamId, _, _) => (date, teamId) }.
+      map { case((date, teamId), q) => (date, teamId, q.map(_._4).sum.getOrElse(0)) }.
+      result
+    dataService.run(action)
+  }
+
   def createFor(
                  behaviorVersion: BehaviorVersion,
                  result: BotResult,

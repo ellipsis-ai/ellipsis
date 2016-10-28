@@ -11,6 +11,10 @@ trait InvocationLogEntryService {
 
   def countsByDay: Future[Seq[(DateTime, String, Int)]]
 
+  def uniqueInvokingUserCountsByDay: Future[Seq[(DateTime, String, Int)]]
+
+  def uniqueInvokedBehaviorCountsByDay: Future[Seq[(DateTime, String, Int)]]
+
   def createFor(
                  behaviorVersion: BehaviorVersion,
                  result: BotResult,
