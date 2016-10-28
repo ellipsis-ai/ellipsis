@@ -3,6 +3,7 @@ package models.behaviors.builtins
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.MessageContext
+import models.behaviors.triggers.messagetrigger.MessageTrigger
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,6 +16,13 @@ case class DisplayHelpBehavior(
                                 dataService: DataService
                               ) extends BuiltinBehavior {
 
+  private def triggerStringFor(messageTrigger: MessageTrigger): String = {
+    if (messageTrigger.requiresBotMention)
+      s"`…${messageTrigger.pattern}`"
+    else
+      s"`${messageTrigger.pattern}`"
+  }
+
   private def helpStringFor(behaviorVersions: Seq[BehaviorVersion], prompt: String, matchString: String): Future[String] = {
     Future.sequence(behaviorVersions.map { ea =>
       dataService.messageTriggers.allFor(ea)
@@ -24,11 +32,9 @@ case class DisplayHelpBehavior(
         val nonRegexTriggers = triggers.filter({ ea => !ea.shouldTreatAsRegex })
         val namedTriggers =
           if (nonRegexTriggers.isEmpty)
-            s"`${triggers.head.pattern}`"
+            triggerStringFor(triggers.head)
           else
-            nonRegexTriggers.map { ea =>
-              s"`${ea.pattern}`"
-            }.mkString(" or ")
+            nonRegexTriggers.map(triggerStringFor).mkString(" or ")
 
         val regexTriggerCount =
           if (nonRegexTriggers.isEmpty)
