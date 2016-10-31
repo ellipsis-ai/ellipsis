@@ -96,7 +96,7 @@ define(function(require) {
 
                 <Checklist disabledWhen={this.props.isFinishedBehavior}>
                   <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>
-                    <span>If the behavior runs code, each input will be sent to the function as a parameter </span>
+                    <span>If the skill runs code, each input will be sent to the function as a parameter </span>
                     <span>with the same name.</span>
                   </Checklist.Item>
                   <Checklist.Item checkedWhen={this.hasLinkedTriggers()}>

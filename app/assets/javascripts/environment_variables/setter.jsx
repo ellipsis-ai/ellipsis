@@ -191,7 +191,7 @@ define(function(require) {
         <div>
             <p>
               <span>Set environment variables to hold secure information like access keys for other services </span>
-              <span>that may be used by multiple behaviors.</span>
+              <span>that may be used by multiple skills.</span>
             </p>
 
             <div className="columns">

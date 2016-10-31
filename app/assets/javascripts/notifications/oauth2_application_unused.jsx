@@ -24,7 +24,7 @@ define(function(require) {
       } else {
         return (
           <span>
-            <span>This behavior has the following API tokens available: </span>
+            <span>This skill has the following API tokens available: </span>
             {this.props.details.map((detail, index) => {
               return (
                 <span key={"oAuthNotificationDetail" + index}>

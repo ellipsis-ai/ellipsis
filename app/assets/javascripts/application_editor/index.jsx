@@ -299,7 +299,7 @@ define(function(require) {
       return (
         <div>
           <p className="mtm">
-            <span>Choose an API you would like to integrate with Ellipsis. This will allow your behaviors to read </span>
+            <span>Choose an API you would like to integrate with Ellipsis. This will allow your skills to read </span>
             <span>and/or write data from that product. You can create multiple applications for a single API, each </span>
             <span>with a different level of access.</span>
           </p>
@@ -344,7 +344,7 @@ define(function(require) {
     renderConfigureApplication: function() {
       return (
         <div>
-          <p className="mtm mbxl">Configure a new {this.getApplicationApiName()} application so your behaviors can access data from a {this.getApplicationApiName()} account.</p>
+          <p className="mtm mbxl">Configure a new {this.getApplicationApiName()} application so your skills can access data from a {this.getApplicationApiName()} account.</p>
 
           <div>
             <h4 className="mbn position-relative">

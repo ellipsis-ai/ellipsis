@@ -27,7 +27,7 @@ define(function(require) {
         var firstDetail = this.props.details[0];
         return (
           <span>
-            <span>This behavior requires an environment variable named </span>
+            <span>This skill requires an environment variable named </span>
             {this.getButtonForEnvVar(firstDetail)}
             <span className="mlxs"> to work properly.</span>
           </span>
@@ -35,7 +35,7 @@ define(function(require) {
       } else {
         return (
           <span>
-            <span>This behavior requires the following environment variables to work properly: </span>
+            <span>This skill requires the following environment variables to work properly: </span>
             {this.props.details.map(function(detail, index) {
               return (
                 <span key={"notificationDetail" + index}>

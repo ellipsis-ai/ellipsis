@@ -9,7 +9,7 @@ return React.createClass({
   render: function() {
     return (
       <HelpPanel
-        heading="Ellipsis listens for “trigger” phrases to activate behaviors"
+        heading="Ellipsis listens for “trigger” phrases to activate skills"
         onCollapseClick={this.props.onCollapseClick}
       >
         <p>
@@ -20,7 +20,7 @@ return React.createClass({
         <h5>Fill-in-the-blank inputs</h5>
         <p>
           <span>Triggers may include “fill-in-the-blank” inputs to allow for dynamic </span>
-          <span>text, and which Ellipsis will send to the behavior for processing </span>
+          <span>text, and which Ellipsis will send to the skill for processing </span>
           <span>(as parameters for code) or to repeat back in the response.</span>
         </p>
 
@@ -36,7 +36,7 @@ return React.createClass({
           </li>
 
           <li>
-            <span>If your behavior runs code, any inputs you’ve defined will become parameters in your function. </span>
+            <span>If your skill runs code, any inputs you’ve defined will become parameters in your function. </span>
             <span>The parameter will contain whatever the user typed.</span>
           </li>
         </ul>

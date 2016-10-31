@@ -27,7 +27,7 @@ define(function(require) {
       var text = firstTrigger && firstTrigger.text ? firstTrigger.text : "";
       var label = text ?
         (<span className="link type-monospace">{this.getTriggerTextFromTrigger(firstTrigger)}</span>) :
-        (<span className="link type-italic">(New behavior)</span>);
+        (<span className="link type-italic">(New skill)</span>);
       return {
         index: firstTriggerIndex,
         label: label,
@@ -203,7 +203,7 @@ define(function(require) {
       } else {
         return (
           <p className="type-l pvxl">
-          Ellipsis doesn’t know any behaviors yet. Try installing some of the ones
+          Ellipsis doesn’t know any skills yet. Try installing some of the ones
           published by Ellipsis, or create a new one yourself.
           </p>
         );

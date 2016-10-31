@@ -277,14 +277,14 @@ return React.createClass({
   getManageDropdownLabel: function() {
     return (
       <span>
-        <span className="mobile-display-none">{this.isDataTypeBehavior() ? "Manage data type" : "Manage behavior"}</span>
+        <span className="mobile-display-none">{this.isDataTypeBehavior() ? "Manage data type" : "Manage skill"}</span>
         <span className="mobile-display-only">Manage</span>
       </span>
     );
   },
 
   getPageHeading: function() {
-    return this.isDataTypeBehavior() ? "Edit data type" : "Edit behavior";
+    return this.isDataTypeBehavior() ? "Edit data type" : "Edit skill";
   },
 
   getRedirectValue: function() {
@@ -1374,7 +1374,7 @@ return React.createClass({
 
           <Collapsible ref="confirmDeleteBehavior" revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
-              <p>Are you sure you want to delete this behavior?</p>
+              <p>Are you sure you want to delete this skill?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
@@ -1525,9 +1525,9 @@ return React.createClass({
                       toggle={this.toggleManageBehaviorMenu}
                     >
                       <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
-                      <DropdownMenu.Item onClick={this.exportVersion} label="Export this behavior" />
-                      <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this behavior" />
-                      <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete behavior" />
+                      <DropdownMenu.Item onClick={this.exportVersion} label="Export this skill" />
+                      <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this skill" />
+                      <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete skill" />
                     </DropdownMenu>
                   ) : null}
                 </div>
