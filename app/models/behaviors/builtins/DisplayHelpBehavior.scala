@@ -2,7 +2,7 @@ package models.behaviors.builtins
 
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.{BotResult, SimpleTextResult}
-import models.behaviors.events.MessageContext
+import models.behaviors.events.{MessageContext, SlackMessageContext}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import services.{AWSLambdaService, DataService}
 
@@ -23,41 +23,54 @@ case class DisplayHelpBehavior(
       s"`${messageTrigger.pattern}`"
   }
 
+  private def helpStringFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
+    for {
+      triggers <- dataService.messageTriggers.allFor(behaviorVersion)
+      authorNames <- messageContext match {
+        case c: SlackMessageContext => dataService.behaviors.authorNamesFor(behaviorVersion.behavior, c)
+        case _ => Future.successful(Seq())
+      }
+    } yield {
+      val nonRegexTriggers = triggers.filter({ ea => !ea.shouldTreatAsRegex })
+      val namedTriggers =
+        if (nonRegexTriggers.isEmpty)
+          triggerStringFor(triggers.head)
+        else
+          nonRegexTriggers.map(triggerStringFor).mkString(" ")
+
+      val regexTriggerCount =
+        if (nonRegexTriggers.isEmpty)
+          triggers.tail.count({ ea => ea.shouldTreatAsRegex })
+        else
+          triggers.count({ ea => ea.shouldTreatAsRegex })
+
+      val regexTriggerString =
+        if (regexTriggerCount == 1)
+          s" _(also matches another pattern)_"
+        else if (regexTriggerCount > 1)
+          s" _(also matches $regexTriggerCount other patterns)_"
+        else
+          s""
+
+      val triggersString = namedTriggers + regexTriggerString
+      if (triggersString.isEmpty) {
+        None
+      } else {
+        val link = behaviorVersion.editLinkFor(lambdaService.configuration)
+        val authorsString = "" // "by " ++ authorNames.map(n => s"<@$n>").mkString(", ")
+        Some(s"\n$triggersString [✎]($link) $authorsString ")
+      }
+    }
+  }
+
   private def helpStringFor(behaviorVersions: Seq[BehaviorVersion], prompt: String, matchString: String): Future[String] = {
     Future.sequence(behaviorVersions.map { ea =>
-      dataService.messageTriggers.allFor(ea)
-    }).map(_.flatten).map { triggersForBehaviorVersions =>
-      val grouped = triggersForBehaviorVersions.groupBy(_.behaviorVersion)
-      val behaviorStrings = grouped.map { case(behavior, triggers) =>
-        val nonRegexTriggers = triggers.filter({ ea => !ea.shouldTreatAsRegex })
-        val namedTriggers =
-          if (nonRegexTriggers.isEmpty)
-            triggerStringFor(triggers.head)
-          else
-            nonRegexTriggers.map(triggerStringFor).mkString(" ")
-
-        val regexTriggerCount =
-          if (nonRegexTriggers.isEmpty)
-            triggers.tail.count({ ea => ea.shouldTreatAsRegex })
-          else
-            triggers.count({ ea => ea.shouldTreatAsRegex })
-
-        val regexTriggerString =
-          if (regexTriggerCount == 1)
-            s" _(also matches another pattern)_"
-          else if (regexTriggerCount > 1)
-            s" _(also matches $regexTriggerCount other patterns)_"
-          else
-            s""
-
-        val triggersString = namedTriggers + regexTriggerString
-        val link = behavior.editLinkFor(lambdaService.configuration)
-        s"\n$triggersString [✎]($link)  "
-      }
+      helpStringFor(ea)
+    }).map(_.flatten).map { behaviorStrings =>
       if (behaviorStrings.isEmpty) {
         ""
       } else {
-        s"$prompt$matchString  \n${behaviorStrings.toSeq.sortBy(_.toLowerCase).mkString("")}"
+        s"$prompt$matchString  \n${behaviorStrings.sortBy(_.toLowerCase).mkString("")}"
       }
     }
   }
