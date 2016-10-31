@@ -18,7 +18,7 @@ case class ListScheduledBehavior(
   lazy val noMessagesResponse: String =
     """You haven't yet scheduled anything. To do so, try something like:
       |
-      |@ellipsis: schedule `some ellipsis behavior` every day at 3pm
+      |@ellipsis: schedule `some ellipsis skill` every day at 3pm
     """.stripMargin
 
   def responseForMessages(messages: Seq[ScheduledMessage]): String = {
@@ -28,7 +28,7 @@ case class ListScheduledBehavior(
        |
        |You can unschedule by typing something like:
        |
-       |@ellipsis: unschedule `some ellipsis behavior`
+       |@ellipsis: unschedule `some ellipsis skill`
      """.stripMargin
   }
 

@@ -50,7 +50,7 @@ define(function(require) {
               className="button-raw link button-s"
               onClick={this.onAddOAuth2Application.bind(this, detail, matchingApplication)}>
 
-              Add {matchingApplication.displayName} to this behavior
+              Add {matchingApplication.displayName} to this skill
 
             </button>
           </span>
@@ -63,7 +63,7 @@ define(function(require) {
               className="button-raw link button-s"
               onClick={this.onNewOAuth2Application.bind(this, detail, detail.requiredApiConfig.id)}>
 
-              Configure the {detail.name} API for this behavior
+              Configure the {detail.name} API for this skill
 
             </button>
           </span>
@@ -85,14 +85,14 @@ define(function(require) {
         var detail = this.props.details[0];
         return (
           <span>
-            <span>This behavior needs to be configured to use the <b>{detail.name}</b> API {this.recommendedScopeAnnotation(detail)}.</span>
+            <span>This skill needs to be configured to use the <b>{detail.name}</b> API {this.recommendedScopeAnnotation(detail)}.</span>
             {this.addOAuth2ApplicationPrompt(detail)}
           </span>
         );
       } else {
         return (
           <span>
-            <span>This behavior needs to be configured to use the following APIs: </span>
+            <span>This skill needs to be configured to use the following APIs: </span>
             {this.props.details.map((ea, index) => {
               return (
                 <span key={"oAuthNotificationDetail" + index}>

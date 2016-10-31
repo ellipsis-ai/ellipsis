@@ -13,8 +13,8 @@ return React.createClass({
         onCollapseClick={this.props.onCollapseClick}
       >
         <p>
-          <span>In order for Ellipsis behaviors to access your AWS account, you need to configure credentials. </span>
-          <span>Such credentials are stored using “environment variables” (separate from individual behaviors), </span>
+          <span>In order for Ellipsis skills to access your AWS account, you need to configure credentials. </span>
+          <span>Such credentials are stored using “environment variables” (separate from individual skills), </span>
           <span>so you only need to add them once.</span>
         </p>
 

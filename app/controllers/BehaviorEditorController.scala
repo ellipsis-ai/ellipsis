@@ -41,8 +41,8 @@ class BehaviorEditorController @Inject() (
           val response = NotFound(
             views.html.notFound(
               Some(teamAccess),
-              Some("Behavior not found"),
-              Some("The behavior you are trying to access could not be found."),
+              Some("Skill not found"),
+              Some("The skill you are trying to access could not be found."),
               Some(reAuthLinkFor(request, None))
             ))
 
@@ -66,8 +66,8 @@ class BehaviorEditorController @Inject() (
           val response = NotFound(
             views.html.notFound(
               Some(teamAccess),
-              Some("Behavior not found"),
-              Some("The behavior you are trying to access could not be found."),
+              Some("Skill not found"),
+              Some("The skill you are trying to access could not be found."),
               Some(reAuthLinkFor(request, None))
             ))
 
@@ -149,8 +149,8 @@ class BehaviorEditorController @Inject() (
                 NotFound(
                   views.html.notFound(
                     Some(teamAccess),
-                    Some("Behavior not found"),
-                    Some("The behavior you were trying to save could not be found."
+                    Some("Skill not found"),
+                    Some("The skill you were trying to save could not be found."
                     )
                   )
                 )
@@ -288,7 +288,7 @@ class BehaviorEditorController @Inject() (
           maybeReport.map { report =>
             Ok(report.json)
           }.getOrElse {
-            NotFound(s"Behavior not found: ${info.behaviorId}")
+            NotFound(s"Skill not found: ${info.behaviorId}")
           }
         }
       }
@@ -326,7 +326,7 @@ class BehaviorEditorController @Inject() (
               maybeReport.map { report =>
                 Ok(report.json)
               }.getOrElse {
-                NotFound(s"Behavior not found: ${info.behaviorId}")
+                NotFound(s"Skill not found: ${info.behaviorId}")
               }
             }
           }

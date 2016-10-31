@@ -247,7 +247,7 @@ define(function(require) {
             <div className="container phn">
               <div className="columns">
                 <div className="column column-one-quarter mobile-column-full">
-                  <h4 className="type-weak">Test the behavior</h4>
+                  <h4 className="type-weak">Test the skill</h4>
                 </div>
                 <div className="column column-three-quarters pll mobile-pln mobile-column-full">
                   {this.renderContent()}
@@ -340,7 +340,7 @@ define(function(require) {
     renderNoTriggers: function() {
       return (
         <div>
-          <p>This behavior does not have any triggers. Add at least one trigger before testing.</p>
+          <p>This skill does not have any triggers. Add at least one trigger before testing.</p>
 
           <div className="mvxl">
             <button type="button" onClick={this.props.onDone}>OK</button>

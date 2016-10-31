@@ -247,7 +247,7 @@ define(function(require) {
             <span>Once configured, Ellipsis will be able to talk to the other product, while ensuring </span>
             <span>that each user authenticates separately (no credentials are shared). </span>
             <span>For better security, you should make separate configurations for each scope you deem </span>
-            <span>appropriate so that, for example, only certain behaviors can make requests to modify data.</span>
+            <span>appropriate so that, for example, only certain skills can make requests to modify data.</span>
           </p>
         </HelpPanel>
       );

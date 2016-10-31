@@ -77,7 +77,7 @@ define(function(require) {
         );
       } else {
         return (
-          <button title="Install this behavior" type="button" className="button-raw button-s" onClick={this.importBehavior} style={{ width: 40, height: 24 }}>
+          <button title="Install this skill" type="button" className="button-raw button-s" onClick={this.importBehavior} style={{ width: 40, height: 24 }}>
             <SVGInstall />
           </button>
         );

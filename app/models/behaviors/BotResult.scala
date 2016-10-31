@@ -100,7 +100,7 @@ case class UnhandledErrorResult(
   val resultType = ResultType.UnhandledError
 
   def text: String = {
-    val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your behaviors")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
+    val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
     Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated)).flatten.mkString(":\n\n")
   }
 
@@ -125,7 +125,7 @@ case class HandledErrorResult(
     val detail = (json \ "errorMessage").toOption.map(processedResultFor).map { msg =>
       s":\n\n```$msg```"
     }.getOrElse("")
-    s"I encountered an error in ${linkToBehaviorFor("one of your behaviors")}$detail"
+    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}$detail"
   }
 }
 
@@ -140,11 +140,11 @@ case class SyntaxErrorResult(
 
   def text: String = {
     s"""
-       |There's a syntax error in your behavior:
+       |There's a syntax error in your skill:
        |
        |${(json \ "errorMessage").asOpt[String].getOrElse("")}
        |
-       |${linkToBehaviorFor("Take a look in the behavior editor")} for more details.
+       |${linkToBehaviorFor("Take a look in the skill editor")} for more details.
      """.stripMargin
   }
 }
@@ -156,7 +156,7 @@ case class NoCallbackTriggeredResult(
 
   val resultType = ResultType.NoCallbackTriggered
 
-  def text = s"It looks like neither callback was triggered in ${linkToBehaviorFor("your behavior")}— you need to make sure that `$SUCCESS_CALLBACK`" ++
+  def text = s"It looks like neither callback was triggered in ${linkToBehaviorFor("your skill")}— you need to make sure that `$SUCCESS_CALLBACK`" ++
     s"is called to end every successful invocation and `$ERROR_CALLBACK` is called to end every unsuccessful one"
 
 }
@@ -171,7 +171,7 @@ case class MissingEnvVarsResult(
 
   def text = {
     s"""
-       |To use ${linkToBehaviorFor("this behavior")}, you need the following environment variables defined:
+       |To use ${linkToBehaviorFor("this skill")}, you need the following environment variables defined:
        |${missingEnvVars.map( ea => s"\n- $ea").mkString("")}
         |
         |You can define an environment variable by typing something like:
@@ -220,7 +220,7 @@ case class OAuth2TokenMissing(
   }
 
   def text: String = {
-    s"""To use this behavior, you need to [authenticate with ${oAuth2Application.name}]($authLink).
+    s"""To use this skill, you need to [authenticate with ${oAuth2Application.name}]($authLink).
        |
        |You only need to do this one time for ${oAuth2Application.name}. You may be prompted to sign in to Ellipsis using your Slack account.
        |""".stripMargin
@@ -248,7 +248,7 @@ case class RequiredApiNotReady(
   }
 
   def text: String = {
-    s"This behavior is not ready to use. $configText."
+    s"This skill is not ready to use. $configText."
   }
 
 }

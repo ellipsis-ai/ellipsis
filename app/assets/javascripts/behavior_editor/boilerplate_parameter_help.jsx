@@ -72,7 +72,7 @@ return React.createClass({
       ));
     } else {
       return (
-        <p className="man">This behavior has no API access tokens available.</p>
+        <p className="man">This skill has no API access tokens available.</p>
       );
     }
   },
@@ -169,7 +169,7 @@ return React.createClass({
               <div className="column column-shrink pbl prxl"><pre>  accessTokens</pre></div>
               <div className="column column-expand pbl">
                 <div>
-                  <span>Contains any <b>third-party API access tokens</b> available to the behavior. </span>
+                  <span>Contains any <b>third-party API access tokens</b> available to the skill. </span>
                   <button type="button" className="button-raw" onClick={this.toggleApiAccessTokens}>
                     {this.renderExpandLabelFor('Show list', 'apiAccessTokens')}
                   </button>
