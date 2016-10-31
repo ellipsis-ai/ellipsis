@@ -2,6 +2,7 @@ package models.behaviors.behavior
 
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.SlackMessageContext
 import models.team.Team
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,5 +41,7 @@ trait BehaviorService {
   def maybeCurrentVersionFor(behavior: Behavior): Future[Option[BehaviorVersion]]
 
   def unlearn(behavior: Behavior): Future[Unit]
+
+  def authorNamesFor(behavior: Behavior, slackMessageContext: SlackMessageContext): Future[Seq[String]]
 
 }

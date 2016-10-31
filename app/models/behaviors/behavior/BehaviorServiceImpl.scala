@@ -7,6 +7,7 @@ import com.google.inject.Provider
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.SlackMessageContext
 import models.team.Team
 import org.joda.time.DateTime
 import services.{AWSLambdaService, DataService}
@@ -126,6 +127,16 @@ class BehaviorServiceImpl @Inject() (
       _ <- Future.sequence(versions.map(v => dataService.behaviorVersions.unlearn(v)))
       _ <- delete(behavior)
     } yield {}
+  }
+
+  def authorNamesFor(behavior: Behavior, slackMessageContext: SlackMessageContext): Future[Seq[String]] = {
+    for {
+      versions <- dataService.behaviorVersions.allFor(behavior)
+      authors <- Future.successful(versions.flatMap(_.maybeAuthor).distinct)
+      authorNames <- Future.sequence(authors.map { ea =>
+        dataService.users.maybeNameFor(ea, slackMessageContext)
+      }).map(_.flatten)
+    } yield authorNames
   }
 
 }

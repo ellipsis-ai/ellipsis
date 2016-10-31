@@ -98,4 +98,15 @@ class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) ext
     }
   }
 
+  def maybeNameFor(user: User, slackMessageContext: SlackMessageContext): Future[Option[String]] = {
+    for {
+      maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
+      maybeName <- Future {
+        maybeSlackAccount.map { acc =>
+          slackMessageContext.client.apiClient.getUserInfo(acc.loginInfo.providerKey).name
+        }
+      }
+    } yield maybeName
+  }
+
 }

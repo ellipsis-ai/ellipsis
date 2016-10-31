@@ -4,7 +4,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import models.team.Team
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.MessageContext
+import models.behaviors.events.{MessageContext, SlackMessageContext}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,4 +21,6 @@ trait UserService extends IdentityService[User] {
     teamAccessFor(user, Some(team.id)).map(_.canAccessTargetTeam)
   }
   def isAdmin(user: User): Future[Boolean]
+
+  def maybeNameFor(user: User, slackMessageContext: SlackMessageContext): Future[Option[String]]
 }
