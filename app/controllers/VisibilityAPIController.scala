@@ -2,6 +2,8 @@ package controllers
 
 import javax.inject.Inject
 
+import json.{InvocationLogEntryData, InvocationLogsByDayData}
+import json.Formatting._
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.i18n.MessagesApi
@@ -50,16 +52,52 @@ class VisibilityAPIController @Inject() (
                 val teamName = teamsById.get(teamId).flatMap(_.headOption).map(_.name).getOrElse("<no team>")
                 val uniqueBehaviorCount =
                   uniqueBehaviorCounts.
-                    filter { case(d, tid, bCount) => date == d && teamId == tid }.
-                    headOption.map(_._3).getOrElse(0)
+                    find { case(d, tid, bCount) => date == d && teamId == tid }.
+                    map(_._3).getOrElse(0)
                 val uniqueUserCount =
                   uniqueUserCounts.
-                    filter { case(d, tid, bCount) => date == d && teamId == tid }.
-                    headOption.map(_._3).getOrElse(0)
+                    find { case(d, tid, bCount) => date == d && teamId == tid }.
+                    map(_._3).getOrElse(0)
                 InvocationCount(date.toString(dateFormatter), teamName, totalCount, uniqueBehaviorCount, uniqueUserCount)
               }
           )
         )
+      } else {
+        NotFound("")
+      }
+    }
+  }
+
+  def forTeamByDay(token: String, targetTeamName: String) = Action.async { implicit request =>
+    for {
+      maybeRequestingTeam <- dataService.teams.findForToken(token)
+      isAdmin <- maybeRequestingTeam.map { team =>
+        dataService.teams.isAdmin(team)
+      }.getOrElse(Future.successful(false))
+      maybeTargetTeam <- dataService.teams.findByName(targetTeamName)
+      entries <- maybeTargetTeam.map { targetTeam =>
+        dataService.invocationLogEntries.forTeamByDay(targetTeam)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      if (isAdmin) {
+        val data = entries.map { case(date, entries) =>
+          InvocationLogsByDayData(
+            date.toString(dateFormatter),
+            entries.map { ea =>
+              InvocationLogEntryData(
+                ea.behaviorVersion.behavior.id,
+                ea.resultType,
+                ea.messageText,
+                ea.resultText,
+                ea.context,
+                ea.maybeUserIdForContext,
+                ea.runtimeInMilliseconds,
+                ea.createdAt
+              )
+            }
+          )
+        }
+        Ok(Json.toJson(data))
       } else {
         NotFound("")
       }

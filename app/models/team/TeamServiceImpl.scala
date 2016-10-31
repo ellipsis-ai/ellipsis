@@ -29,6 +29,11 @@ class TeamServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def findByName(name: String): Future[Option[Team]] = {
+    val action = findByNameQueryFor(name).result.map(_.headOption)
+    dataService.run(action)
+  }
+
   def find(id: String, user: User): Future[Option[Team]] = {
     for {
       maybeTeam <- find(id)

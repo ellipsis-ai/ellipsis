@@ -2,12 +2,14 @@ package models.behaviors.invocationlogentry
 
 import javax.inject.Inject
 
+import com.github.nscala_time.time.OrderingImplicits.DateTimeOrdering
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs
 import models.behaviors.BotResult
 import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import models.behaviors.events.MessageEvent
+import models.team.Team
 import org.joda.time.DateTime
 import services.DataService
 import slick.driver.PostgresDriver.api._
@@ -15,7 +17,19 @@ import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class InvocationLogEntriesTable(tag: Tag) extends Table[InvocationLogEntry](tag, "invocation_log_entries") {
+case class RawInvocationLogEntry(
+                                  id: String,
+                                  behaviorVersionId: String,
+                                  resultType: String,
+                                  messageText: String,
+                                  resultText: String,
+                                  context: String,
+                                  maybeUserIdForContext: Option[String],
+                                  runtimeInMilliseconds: Long,
+                                  createdAt: DateTime
+                                )
+
+class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](tag, "invocation_log_entries") {
 
   def id = column[String]("id", O.PrimaryKey)
   def behaviorVersionId = column[String]("behavior_version_id")
@@ -28,7 +42,7 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[InvocationLogEntry](tag,
   def createdAt = column[DateTime]("created_at")
 
   def * = (id, behaviorVersionId, resultType, messageText, resultText, context, maybeUserIdForContext, runtimeInMilliseconds, createdAt) <>
-    ((InvocationLogEntry.apply _).tupled, InvocationLogEntry.unapply _)
+    ((RawInvocationLogEntry.apply _).tupled, RawInvocationLogEntry.unapply _)
 }
 
 class InvocationLogEntryServiceImpl @Inject() (
@@ -41,6 +55,23 @@ class InvocationLogEntryServiceImpl @Inject() (
   val allWithVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
 
   val truncateDate = SimpleFunction.binary[String, DateTime, DateTime]("date_trunc")
+
+  type TupleType = (RawInvocationLogEntry, BehaviorVersionQueries.TupleType)
+
+  def tuple2Entry(tuple: TupleType): InvocationLogEntry = {
+    val raw = tuple._1
+    InvocationLogEntry(
+      raw.id,
+      BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
+      raw.resultType,
+      raw.messageText,
+      raw.resultText,
+      raw.context,
+      raw.maybeUserIdForContext,
+      raw.runtimeInMilliseconds,
+      raw.createdAt
+    )
+  }
 
   def countsByDay: Future[Seq[(DateTime, String, Int)]] = {
     val action = allWithVersion.
@@ -85,6 +116,23 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledForTeamQuery(teamId: Rep[String]) = {
+    allWithVersion.filter { case(entry, ((version, user), (behavior, t))) => teamId === t.id}
+  }
+  val forTeamQuery = Compiled(uncompiledForTeamQuery _)
+
+  def forTeamByDay(team: Team): Future[Seq[(DateTime, Seq[InvocationLogEntry])]] = {
+    val action = forTeamQuery(team.id).result.map { r =>
+      r.
+        map(tuple2Entry).
+        groupBy(_.createdAt.withTimeAtStartOfDay).
+        toSeq.
+        sortBy { case(date, entry) => date }.
+        reverse
+    }
+    dataService.run(action)
+  }
+
   def createFor(
                  behaviorVersion: BehaviorVersion,
                  result: BotResult,
@@ -92,8 +140,8 @@ class InvocationLogEntryServiceImpl @Inject() (
                  maybeUserIdForContext: Option[String],
                  runtimeInMilliseconds: Long
                ): Future[InvocationLogEntry] = {
-    val newInstance =
-      InvocationLogEntry(
+    val raw =
+      RawInvocationLogEntry(
         IDs.next,
         behaviorVersion.id,
         result.resultType.toString,
@@ -105,7 +153,19 @@ class InvocationLogEntryServiceImpl @Inject() (
         DateTime.now
       )
 
-    val action = (all += newInstance).map(_ => newInstance)
+    val action = (all += raw).map { _ =>
+      InvocationLogEntry(
+        raw.id,
+        behaviorVersion,
+        raw.resultType,
+        raw.messageText,
+        raw.resultText,
+        raw.context,
+        raw.maybeUserIdForContext,
+        raw.runtimeInMilliseconds,
+        raw.createdAt
+      )
+    }
     dataService.run(action)
   }
 }

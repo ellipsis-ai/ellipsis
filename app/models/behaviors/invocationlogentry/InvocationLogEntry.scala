@@ -1,10 +1,11 @@
 package models.behaviors.invocationlogentry
 
+import models.behaviors.behaviorversion.BehaviorVersion
 import org.joda.time.DateTime
 
 case class InvocationLogEntry(
                                id: String,
-                               behaviorVersionId: String,
+                               behaviorVersion: BehaviorVersion,
                                resultType: String,
                                messageText: String,
                                resultText: String,

@@ -23,6 +23,7 @@ libraryDependencies ++= Seq(
   jdbc,
   filters,
   cache,
+  "com.github.nscala-time" %% "nscala-time" % "2.14.0",
   "com.github.tototoshi" %% "slick-joda-mapper" % "2.0.0",
   "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test,
   "org.mockito" % "mockito-core" % "1.8.5" % Test,
