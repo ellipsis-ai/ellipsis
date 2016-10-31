@@ -10,11 +10,11 @@ import scala.concurrent.Future
 
 trait InvocationLogEntryService {
 
-  def countsByDay: Future[Seq[(DateTime, String, Int)]]
+  def countsForDate(date: DateTime): Future[Seq[(String, Int)]]
 
-  def uniqueInvokingUserCountsByDay: Future[Seq[(DateTime, String, Int)]]
+  def uniqueInvokingUserCountsForDate(date: DateTime): Future[Seq[(String, Int)]]
 
-  def uniqueInvokedBehaviorCountsByDay: Future[Seq[(DateTime, String, Int)]]
+  def uniqueInvokedBehaviorCountsForDate(date: DateTime): Future[Seq[(String, Int)]]
 
   def forTeamByDay(team: Team): Future[Seq[(DateTime, Seq[InvocationLogEntry])]]
 

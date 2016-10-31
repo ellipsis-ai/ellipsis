@@ -73,45 +73,39 @@ class InvocationLogEntryServiceImpl @Inject() (
     )
   }
 
-  def countsByDay: Future[Seq[(DateTime, String, Int)]] = {
+  def countsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
     val action = allWithVersion.
-      map { case(entry, ((version, _), (behavior, team))) =>
-        (truncateDate("day", entry.createdAt), team.id, 1)
-      }.
-      groupBy { case(date, teamId, _) => (date, teamId)}.
-      map { case((date, teamId), q) =>
-        (date, teamId, q.map(_._3).sum.getOrElse(0))
+      filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
+      groupBy { case(entry, ((version, _), (behavior, team))) => team.id }.
+      map { case(teamId, q) =>
+        (teamId, q.length)
       }.
       result
     dataService.run(action)
   }
 
-  def uniqueInvokingUserCountsByDay: Future[Seq[(DateTime, String, Int)]] = {
+  def uniqueInvokingUserCountsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
     val action = allWithVersion.
-      map { case(entry, ((version, _), (behavior, team))) =>
-        (truncateDate("day", entry.createdAt), team.id, entry.maybeUserIdForContext.getOrElse("None"))
+      filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
+      groupBy { case(entry, ((version, _), (behavior, team))) => (team.id, entry.maybeUserIdForContext.getOrElse("<no user>")) }.
+      map { case((teamId, userId), q) =>
+        (teamId, userId, 1)
       }.
-      groupBy { case(date, teamId, userId) => (date, teamId, userId)}.
-      map { case((date, teamId, userId), q) =>
-        (date, teamId, userId, 1)
-      }.
-      groupBy { case(date, teamId, _, _) => (date, teamId) }.
-      map { case((date, teamId), q) => (date, teamId, q.map(_._4).sum.getOrElse(0)) }.
+      groupBy { case(teamId, _, _) => teamId }.
+      map { case(teamId, q) => (teamId, q.map(_._3).sum.getOrElse(0)) }.
       result
     dataService.run(action)
   }
 
-  def uniqueInvokedBehaviorCountsByDay: Future[Seq[(DateTime, String, Int)]] = {
+  def uniqueInvokedBehaviorCountsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
     val action = allWithVersion.
-      map { case(entry, ((version, _), (behavior, team))) =>
-        (truncateDate("day", entry.createdAt), team.id, behavior.id)
+      filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
+      groupBy { case(entry, ((version, _), (behavior, team))) => (team.id, behavior.id) }.
+      map { case((teamId, behaviorId), q) =>
+        (teamId, behaviorId, 1)
       }.
-      groupBy { case(date, teamId, behaviorId) => (date, teamId, behaviorId)}.
-      map { case((date, teamId, behaviorId), q) =>
-        (date, teamId, behaviorId, 1)
-      }.
-      groupBy { case(date, teamId, _, _) => (date, teamId) }.
-      map { case((date, teamId), q) => (date, teamId, q.map(_._4).sum.getOrElse(0)) }.
+      groupBy { case(teamId, _, _) => teamId }.
+      map { case(teamId, q) => (teamId, q.map(_._3).sum.getOrElse(0)) }.
       result
     dataService.run(action)
   }
