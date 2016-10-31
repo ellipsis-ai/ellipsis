@@ -34,7 +34,7 @@ trait MessageContext extends Context {
       val path = controllers.routes.ApplicationController.installBehaviors(Some(teamId))
       s"$baseUrl$path"
     }.get
-    s"[install new behaviors]($installLink)"
+    s"[install new skills]($installLink)"
   }
 
   def iDontKnowHowToRespondMessageFor(lambdaService: AWSLambdaService)(implicit ec: ExecutionContext): String = {

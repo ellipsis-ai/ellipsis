@@ -6,7 +6,7 @@
 @import play.api.libs.json._
 @import json.Formatting._
 
-@main("View your behaviors", Some(teamAccess)) {
+@main("View your skills", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.edit
   )
