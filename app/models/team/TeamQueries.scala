@@ -20,4 +20,9 @@ object TeamQueries {
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
+  def uncompiledFindByNameQueryFor(name: Rep[String]) = {
+    all.filter(_.name === name)
+  }
+  val findByNameQueryFor = Compiled(uncompiledFindByNameQueryFor _)
+
 }
