@@ -16,7 +16,7 @@ trait InvocationLogEntryService {
 
   def uniqueInvokedBehaviorCountsForDate(date: DateTime): Future[Seq[(String, Int)]]
 
-  def forTeamByDay(team: Team): Future[Seq[(DateTime, Seq[InvocationLogEntry])]]
+  def forTeamForDate(team: Team, date: DateTime): Future[Seq[InvocationLogEntry]]
 
   def createFor(
                  behaviorVersion: BehaviorVersion,

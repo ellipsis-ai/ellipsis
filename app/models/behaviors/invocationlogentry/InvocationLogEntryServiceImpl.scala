@@ -110,19 +110,16 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def uncompiledForTeamQuery(teamId: Rep[String]) = {
-    allWithVersion.filter { case(entry, ((version, user), (behavior, t))) => teamId === t.id}
+  def uncompiledForTeamForDateQuery(teamId: Rep[String], date: Rep[DateTime]) = {
+    allWithVersion.
+      filter { case(entry, ((version, user), (behavior, t))) => teamId === t.id}.
+      filter { case(entry, _) => truncateDate("day", entry.createdAt) === date }
   }
-  val forTeamQuery = Compiled(uncompiledForTeamQuery _)
+  val forTeamForDateQuery = Compiled(uncompiledForTeamForDateQuery _)
 
-  def forTeamByDay(team: Team): Future[Seq[(DateTime, Seq[InvocationLogEntry])]] = {
-    val action = forTeamQuery(team.id).result.map { r =>
-      r.
-        map(tuple2Entry).
-        groupBy(_.createdAt.withTimeAtStartOfDay).
-        toSeq.
-        sortBy { case(date, entry) => date }.
-        reverse
+  def forTeamForDate(team: Team, date: DateTime): Future[Seq[InvocationLogEntry]] = {
+    val action = forTeamForDateQuery(team.id, date).result.map { r =>
+      r.map(tuple2Entry)
     }
     dataService.run(action)
   }

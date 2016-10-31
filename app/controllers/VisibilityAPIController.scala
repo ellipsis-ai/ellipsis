@@ -33,8 +33,12 @@ class VisibilityAPIController @Inject() (
 
   private val dateFormatter =  DateTimeFormat.forPattern("EEE, dd MMM yyyy").withLocale(java.util.Locale.ENGLISH)
 
+  private def dateFor(year: String, month: String, day: String): DateTime = {
+    new DateTime(year.toInt, month.toInt, day.toInt, 0, 0)
+  }
+
   def invocationCountsForDate(token: String, year: String, month: String, day: String) = Action.async { implicit request =>
-    val date = new DateTime(year.toInt, month.toInt, day.toInt, 0, 0)
+    val date = dateFor(year, month, day)
     for {
       maybeTeam <- dataService.teams.findForToken(token)
       isAdmin <- maybeTeam.map { team =>
@@ -69,7 +73,8 @@ class VisibilityAPIController @Inject() (
     }
   }
 
-  def forTeamByDay(token: String, targetTeamName: String) = Action.async { implicit request =>
+  def forTeamForDate(token: String, targetTeamName: String, year: String, month: String, day: String) = Action.async { implicit request =>
+    val date = dateFor(year, month, day)
     for {
       maybeRequestingTeam <- dataService.teams.findForToken(token)
       isAdmin <- maybeRequestingTeam.map { team =>
@@ -77,25 +82,20 @@ class VisibilityAPIController @Inject() (
       }.getOrElse(Future.successful(false))
       maybeTargetTeam <- dataService.teams.findByName(targetTeamName)
       entries <- maybeTargetTeam.map { targetTeam =>
-        dataService.invocationLogEntries.forTeamByDay(targetTeam)
+        dataService.invocationLogEntries.forTeamForDate(targetTeam, date)
       }.getOrElse(Future.successful(Seq()))
     } yield {
       if (isAdmin) {
-        val data = entries.map { case(date, entries) =>
-          InvocationLogsByDayData(
-            date.toString(dateFormatter),
-            entries.map { ea =>
-              InvocationLogEntryData(
-                ea.behaviorVersion.behavior.id,
-                ea.resultType,
-                ea.messageText,
-                ea.resultText,
-                ea.context,
-                ea.maybeUserIdForContext,
-                ea.runtimeInMilliseconds,
-                ea.createdAt
-              )
-            }
+        val data = entries.map { ea =>
+          InvocationLogEntryData(
+            ea.behaviorVersion.behavior.id,
+            ea.resultType,
+            ea.messageText,
+            ea.resultText,
+            ea.context,
+            ea.maybeUserIdForContext,
+            ea.runtimeInMilliseconds,
+            ea.createdAt
           )
         }
         Ok(Json.toJson(data))
