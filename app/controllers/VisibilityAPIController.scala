@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import json.{InvocationLogEntryData, InvocationLogsByDayData}
 import json.Formatting._
+import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.i18n.MessagesApi
@@ -32,32 +33,32 @@ class VisibilityAPIController @Inject() (
 
   private val dateFormatter =  DateTimeFormat.forPattern("EEE, dd MMM yyyy").withLocale(java.util.Locale.ENGLISH)
 
-  def invocationCountsByDay(token: String) = Action.async { implicit request =>
+  def invocationCountsForDate(token: String, year: String, month: String, day: String) = Action.async { implicit request =>
+    val date = new DateTime(year.toInt, month.toInt, day.toInt, 0, 0)
     for {
       maybeTeam <- dataService.teams.findForToken(token)
       isAdmin <- maybeTeam.map { team =>
         dataService.teams.isAdmin(team)
       }.getOrElse(Future.successful(false))
-      totalCounts <- dataService.invocationLogEntries.countsByDay
-      uniqueBehaviorCounts <- dataService.invocationLogEntries.uniqueInvokedBehaviorCountsByDay
-      uniqueUserCounts <- dataService.invocationLogEntries.uniqueInvokingUserCountsByDay
+      totalCounts <- dataService.invocationLogEntries.countsForDate(date)
+      uniqueBehaviorCounts <- dataService.invocationLogEntries.uniqueInvokedBehaviorCountsForDate(date)
+      uniqueUserCounts <- dataService.invocationLogEntries.uniqueInvokingUserCountsForDate(date)
       teamsById <- dataService.teams.allTeams.map(_.groupBy(_.id))
     } yield {
       if (isAdmin) {
         Ok(
           Json.toJson(
-            totalCounts.toArray.
-              sortBy(_._1.toDate).reverse.
-              map { case(date, teamId, totalCount) =>
+            totalCounts.
+              map { case(teamId, totalCount) =>
                 val teamName = teamsById.get(teamId).flatMap(_.headOption).map(_.name).getOrElse("<no team>")
                 val uniqueBehaviorCount =
                   uniqueBehaviorCounts.
-                    find { case(d, tid, bCount) => date == d && teamId == tid }.
-                    map(_._3).getOrElse(0)
+                    find { case(tid, bCount) => teamId == tid }.
+                    map(_._2).getOrElse(0)
                 val uniqueUserCount =
                   uniqueUserCounts.
-                    find { case(d, tid, bCount) => date == d && teamId == tid }.
-                    map(_._3).getOrElse(0)
+                    find { case(tid, bCount) => teamId == tid }.
+                    map(_._2).getOrElse(0)
                 InvocationCount(date.toString(dateFormatter), teamName, totalCount, uniqueBehaviorCount, uniqueUserCount)
               }
           )
