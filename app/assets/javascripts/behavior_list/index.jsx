@@ -10,6 +10,12 @@ define(function(require) {
       behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
     },
 
+    getTriggerTextFromTrigger: function(trigger) {
+      return trigger.requiresMention ?
+        `...${trigger.text}` :
+        trigger.text;
+    },
+
     getDisplayTriggerFromVersion: function(version) {
       var firstTriggerIndex = version.triggers.findIndex(function(trigger) {
         return !!trigger.text && !trigger.isRegex;
@@ -20,7 +26,7 @@ define(function(require) {
       var firstTrigger = version.triggers[firstTriggerIndex];
       var text = firstTrigger && firstTrigger.text ? firstTrigger.text : "";
       var label = text ?
-        (<span className="link type-monospace">{firstTrigger.text}</span>) :
+        (<span className="link type-monospace">{this.getTriggerTextFromTrigger(firstTrigger)}</span>) :
         (<span className="link type-italic">(New behavior)</span>);
       return {
         index: firstTriggerIndex,
@@ -37,7 +43,7 @@ define(function(require) {
           return (
             <span className="type-monospace" key={"regularTrigger" + index}>
               <span className="type-disabled"> · </span>
-              <span className="type-weak">{trigger.text}</span>
+              <span className="type-weak">{this.getTriggerTextFromTrigger(trigger)}</span>
             </span>
           );
         } else {
@@ -185,9 +191,13 @@ define(function(require) {
     render: function() {
       if (this.props.behaviorVersions.length > 0) {
         return (
-          <div className="columns columns-elastic mobile-columns-float">
-            {this.getTaskRows()}
-            {this.getKnowledgeRows()}
+          <div>
+            <p><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>
+
+            <div className="columns columns-elastic mobile-columns-float">
+              {this.getTaskRows()}
+              {this.getKnowledgeRows()}
+            </div>
           </div>
         );
       } else {

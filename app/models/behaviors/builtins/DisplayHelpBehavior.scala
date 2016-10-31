@@ -18,7 +18,7 @@ case class DisplayHelpBehavior(
 
   private def triggerStringFor(messageTrigger: MessageTrigger): String = {
     if (messageTrigger.requiresBotMention)
-      s"`…${messageTrigger.pattern}`"
+      s"`...${messageTrigger.pattern}`"
     else
       s"`${messageTrigger.pattern}`"
   }
@@ -34,7 +34,7 @@ case class DisplayHelpBehavior(
           if (nonRegexTriggers.isEmpty)
             triggerStringFor(triggers.head)
           else
-            nonRegexTriggers.map(triggerStringFor).mkString(" or ")
+            nonRegexTriggers.map(triggerStringFor).mkString(" ")
 
         val regexTriggerCount =
           if (nonRegexTriggers.isEmpty)
@@ -44,20 +44,20 @@ case class DisplayHelpBehavior(
 
         val regexTriggerString =
           if (regexTriggerCount == 1)
-            s" (also matches another pattern)"
+            s" _(also matches another pattern)_"
           else if (regexTriggerCount > 1)
-            s" (also matches $regexTriggerCount other patterns)"
+            s" _(also matches $regexTriggerCount other patterns)_"
           else
             s""
 
         val triggersString = namedTriggers + regexTriggerString
         val link = behavior.editLinkFor(lambdaService.configuration)
-        s"\n- $triggersString [Details]($link)"
+        s"\n$triggersString [✎]($link)  "
       }
       if (behaviorStrings.isEmpty) {
         ""
       } else {
-        s"$prompt$matchString:${behaviorStrings.toSeq.sortBy(_.toLowerCase).mkString("")}"
+        s"$prompt$matchString  \n${behaviorStrings.toSeq.sortBy(_.toLowerCase).mkString("")}"
       }
     }
   }
@@ -78,11 +78,11 @@ case class DisplayHelpBehavior(
       matchString <- Future.successful(maybeHelpSearch.map { s =>
         s" that matches `$s`"
       }.getOrElse(""))
-      skillsString <- helpStringFor(skills, "Here's what I can do", matchString)
-      knowledgeString <- helpStringFor(knowledge, "Here's what I know", matchString)
+      skillsString <- helpStringFor(skills, "Here’s what I can do:", matchString)
+      knowledgeString <- helpStringFor(knowledge, "Here’s what I know:", matchString)
     } yield {
       val endingString = if (behaviorVersions.isEmpty) {
-        s"""I'm just getting started here and can't wait to learn.
+        s"""I’m just getting started here and can’t wait to learn.
            |
            |You can ${messageContext.installLinkFor(lambdaService)} or ${messageContext.teachMeLinkFor(lambdaService)} yourself.""".stripMargin
       } else {
