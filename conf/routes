@@ -5,20 +5,31 @@
 # An example controller showing a sample home page
 GET         /                                         @controllers.ApplicationController.index(teamId: Option[String] ?= None)
 GET         /intro                                    @controllers.ApplicationController.intro(teamId: Option[String] ?= None, branch: Option[String] ?= None)
+GET         /install_skills                           @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 GET         /install_behaviors                        @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 GET         /new_behavior                             @controllers.BehaviorEditorController.newForNormalBehavior(teamId: Option[String] ?= None)
 GET         /new_data_type                            @controllers.BehaviorEditorController.newForDataType(teamId: Option[String] ?= None)
+GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
 GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
+GET         /export_skill/:id                         @controllers.BehaviorImportExportController.export(id: String)
 GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
+GET         /import_skill_zip                         @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)
 GET         /import_behavior_zip                      @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)
+POST        /import_skill_zip                         @controllers.BehaviorImportExportController.doImportZip
 POST        /import_behavior_zip                      @controllers.BehaviorImportExportController.doImportZip
+POST        /import_skill                             @controllers.BehaviorImportExportController.doImport
 POST        /import_behavior                          @controllers.BehaviorImportExportController.doImport
+POST        /save_skill                               @controllers.BehaviorEditorController.save
 POST        /save_behavior                            @controllers.BehaviorEditorController.save
+POST        /delete_skill                             @controllers.BehaviorEditorController.delete
 POST        /delete_behavior                          @controllers.BehaviorEditorController.delete
+POST        /clone_skill                              @controllers.BehaviorEditorController.duplicate
 POST        /clone_behavior                           @controllers.BehaviorEditorController.duplicate
 GET         /regex_validation_errors/:pattern         @controllers.BehaviorEditorController.regexValidationErrorsFor(pattern: String)
 GET         /version_info/:behaviorId                 @controllers.BehaviorEditorController.versionInfoFor(behaviorId: String)
+POST        /test_skill_triggers                      @controllers.BehaviorEditorController.testTriggers
 POST        /test_behavior_triggers                   @controllers.BehaviorEditorController.testTriggers
+POST        /test_skill_invocation                    @controllers.BehaviorEditorController.testInvocation
 POST        /test_behavior_invocation                 @controllers.BehaviorEditorController.testInvocation
 
 GET         /data_types                               @controllers.BehaviorBackedDataTypeController.list(teamId: Option[String] ?= None)
