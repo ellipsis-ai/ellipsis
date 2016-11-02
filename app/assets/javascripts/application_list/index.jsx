@@ -69,8 +69,8 @@ define(function(require) {
               {this.renderHeader()}
             </div>
           </div>
-          <div className="flex-container">
-            <div className="container flex flex-center">
+          <div className="flex-columns">
+            <div className="container flex-column flex-column-center">
               <div className="columns">
                 <div className="column column-one-quarter">
                   <SettingsMenu activePage="oauthApplications"/>
@@ -111,8 +111,8 @@ define(function(require) {
                 </div>
               </div>
             </div>
-            <div className="flex flex-left"></div>
-            <div className="flex flex-right bg-white"></div>
+            <div className="flex-column flex-column-left"></div>
+            <div className="flex-column flex-column-right bg-white"></div>
           </div>
 
           <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
