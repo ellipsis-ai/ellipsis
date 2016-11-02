@@ -1277,12 +1277,12 @@ return React.createClass({
       <div className="bg-light">
         <div className="container pbs">
           <div className="columns">
-            <div className="column column-one-quarter ptxxl">
+            <div className="column column-one-quarter ptxl">
               <h3 className="mvn type-weak">
                 <span>{this.getPageHeading()}</span>
               </h3>
             </div>
-            <div className="column column-three-quarters pll ptxl">
+            <div className="column column-three-quarters pll ptl pbs">
               <Input
                 className="form-input-borderless form-input-large"
                 placeholder="Add a description (optional)"
