@@ -178,14 +178,23 @@
   }
 }
 
-.flex-rows {
+.flex-rows, .flex-row-cascade {
   display: flex;
   flex-direction: column;
+}
+
+.flex-rows-viewport {
   min-height: 100vh;
 }
 
-.flex-row {
-  flex: 1 1 auto;
+.flex-row-shrink {
+  flex-shrink: 1;
+  flex-basis: max-content;
+}
+
+.flex-row-expand, .flex-row-cascade {
+  flex-grow: 1;
+  flex-basis: auto;
 }
 
 @media (max-width: @mobile-max-width) {
