@@ -148,10 +148,10 @@ define(function(require) {
       if (v.isAlreadySavedWithValue) {
         return (
           <div className="position-relative">
-            <span className="align-button type-monospace type-weak mrm">
+            <span className="type-monospace type-weak mrm">
               ••••••••
             </span>
-            <button type="button" className="button-raw mbs"
+            <button type="button" className="button-raw"
               onClick={this.resetVar.bind(this, index)}>Reset</button>
           </div>
         );
@@ -202,7 +202,10 @@ define(function(require) {
                   return (
                     <div className="column-row" key={`envVar${index}`}>
                       <div className="column column-one-quarter mobile-column-full type-monospace pvxs mobile-pbn">
-                        <div className="type-monospace align-button display-ellipsis">
+                        <div className={
+                          "type-monospace display-ellipsis " +
+                          (v.isAlreadySavedWithValue ? "" : "align-button")
+                        }>
                           {v.name}
                         </div>
                       </div>
