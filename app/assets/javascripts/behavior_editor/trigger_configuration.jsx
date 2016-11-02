@@ -92,7 +92,6 @@ define(function(require) {
               {this.props.triggers.map(function(trigger, index) {
                 return (
                   <TriggerInput
-                    large={index === 0}
                     dropdownIsOpen={this.props.openDropdownName === `BehaviorEditorTriggerDropdown${index}`}
                     key={`BehaviorEditorTrigger${index}`}
                     id={`trigger${index}`}
