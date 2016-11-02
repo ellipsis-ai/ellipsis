@@ -208,7 +208,7 @@ define(function(require) {
           </div>
 
           <div className="flex-columns">
-            <div className="containerflex-columnflex-column-center">
+            <div className="container flex-column flex-column-center">
               <div className="columns">
                 <div className="column column-one-quarter">
                   <SettingsMenu activePage="oauthApplications" />
