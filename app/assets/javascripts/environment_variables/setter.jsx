@@ -4,14 +4,16 @@ define(function(require) {
     Input = require('../form/input'),
     Textarea = require('../form/textarea'),
     formatEnvVarName = require('./formatter'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../if_present'),
+    SetterActions = require('./setter_actions');
 
   return React.createClass({
     propTypes: {
       onCancelClick: React.PropTypes.func,
       onSave: React.PropTypes.func.isRequired,
       vars: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      errorMessage: React.PropTypes.string
+      errorMessage: React.PropTypes.string,
+      isFullPage: React.PropTypes.bool
     },
 
     getVars: function() {
@@ -244,7 +246,7 @@ define(function(require) {
               </button>
             </div>
 
-            <div className="mtxl">
+            <SetterActions isFullPage={this.props.isFullPage}>
               <button type="button"
                 className={"button-primary mrs mbs " + (this.state.isSaving ? "button-activated" : "")}
                 disabled={!this.isValid()}
@@ -267,8 +269,7 @@ define(function(require) {
                   An error occurred while saving. Please try again.
                 </span>
               ), () => (this.getDuplicateErrorMessage()))}
-            </div>
-
+            </SetterActions>
         </div>
       );
     }

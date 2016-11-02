@@ -109,6 +109,7 @@ define(function(require) {
           ref="setter"
           onSave={this.onSave}
           vars={this.getVars()}
+          isFullPage={true}
         />
       );
     }
