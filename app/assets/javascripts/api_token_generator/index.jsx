@@ -64,14 +64,14 @@ define(function(require) {
 
     render: function() {
       return (
-        <div>
+        <div className="flex-rows">
           <div className="bg-light">
             <div className="container pbm">
               <h3 className="mvn ptxxl type-weak display-ellipsis">Ellipsis API tokens</h3>
             </div>
           </div>
-          <div className="flex-container">
-            <div className="container flex flex-center">
+          <div className="flex-columns">
+            <div className="container flex-column flex-column-center">
               <div className="columns">
                 <div className="column column-one-quarter">
                   <SettingsMenu activePage="apiTokens"/>

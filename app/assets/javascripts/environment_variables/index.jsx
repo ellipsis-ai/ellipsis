@@ -68,27 +68,27 @@ define(function(require) {
 
     render: function() {
       return (
-        <div>
+        <div className="flex-rows">
           <div className="bg-light">
             <div className="container pbm">
               {this.renderHeader()}
             </div>
           </div>
-          <div className="flex-container">
-            <div className="container flex flex-center">
-              <div className="columns">
-                <div className="column column-one-quarter">
+          <div className="flex-columns flex-row">
+            <div className="container flex-column flex-column-center flex-rows">
+              <div className="columns flex-columns flex-row">
+                <div className="column column-one-quarter flex-column">
                   <SettingsMenu activePage="environmentVariables"/>
                 </div>
-                <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl phxxxxl">
+                <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
 
                   {this.renderEnvVarList()}
 
                 </div>
               </div>
             </div>
-            <div className="flex flex-left"></div>
-            <div className="flex flex-right bg-white"></div>
+            <div className="flex-column flex-column-left"></div>
+            <div className="flex-column flex-column-right bg-white"></div>
           </div>
         </div>
       );

@@ -139,7 +139,7 @@
   padding-right: @xl;
 }
 
-.flex-container {
+.flex-columns {
   display: flex;
   flex-flow: row;
   width: 100%;
@@ -148,34 +148,44 @@
   align-items: stretch;
 }
 
-.flex {
+.flex-column {
   flex: 1 1 auto;
 }
 
-.flex-left {
+.flex-column-left {
   order: 1;
 }
 
-.flex-center {
+.flex-column-center {
   order: 2;
   width: 72rem;
   padding: 0;
 }
 
-.flex-right {
+.flex-column-right {
   order: 3;
 }
 
 @media (max-width: (1296px + @xl*2)) {
-  .flex-center {
+  .flex-column-center {
     width: 100%;
     padding-left: @xl;
     padding-right: @xl;
   }
 
-  .flex-left, .flex-right {
+  .flex-column-left, .flex-column-right {
     display: none;
   }
+}
+
+.flex-rows {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.flex-row {
+  flex: 1 1 auto;
 }
 
 @media (max-width: @mobile-max-width) {
