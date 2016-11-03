@@ -71,7 +71,6 @@ define(function(require) {
 
     onDone: function() {
       this.props.onDone();
-      this.setState(this.getInitialState());
     },
 
     updateResult: function() {
