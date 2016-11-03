@@ -97,7 +97,8 @@ object BehaviorResponse {
                                paramValues: Map[String, String],
                                maybeConversation: Option[Conversation],
                                dataService: DataService,
-                               cache: CacheApi
+                               cache: CacheApi,
+                               configuration: Configuration
                              ): Future[Seq[ParameterWithValue]] = {
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
@@ -105,7 +106,7 @@ object BehaviorResponse {
         AWSLambdaConstants.invocationParamFor(i)
       })
       values <- Future.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
-        val context = BehaviorParameterContext(event, maybeConversation, param, cache, dataService)
+        val context = BehaviorParameterContext(event, maybeConversation, param, cache, dataService, configuration)
         paramValues.get(invocationName).map { v =>
           for {
             isValid <- param.paramType.isValid(v, context)
@@ -132,7 +133,7 @@ object BehaviorResponse {
                 ws: WSClient,
                 configuration: Configuration
                 ): Future[BehaviorResponse] = {
-    parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cache).map { paramsWithValues =>
+    parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cache, configuration).map { paramsWithValues =>
       BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger, lambdaService, dataService, cache, ws, configuration)
     }
   }
