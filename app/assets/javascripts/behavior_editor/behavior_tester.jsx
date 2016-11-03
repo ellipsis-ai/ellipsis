@@ -11,6 +11,13 @@ define(function(require) {
     oauth2ApplicationShape = require('./oauth2_application_shape'),
     TesterAuthRequired = require('./tester_auth_required');
 
+  class TestResult {
+    constructor(response, missingParamNames) {
+      this.response = response || '';
+      this.missingParamNames = missingParamNames || [];
+    }
+  }
+
   return React.createClass({
     displayName: 'BehaviorTester',
     propTypes: {
@@ -33,8 +40,8 @@ define(function(require) {
         hasTestedResult: false,
         triggerErrorOccurred: false,
         resultErrorOccurred: false,
-        result: '',
-        resultMissingParamNames: []
+        resultMissingParamNames: [],
+        results: []
       };
     },
 
@@ -132,8 +139,6 @@ define(function(require) {
     fetchResult: function() {
       this.setState({
         isTestingResult: true,
-        result: '',
-        resultMissingParamNames: [],
         resultErrorOccurred: false
       });
       BehaviorTest.testInvocation({
@@ -141,9 +146,12 @@ define(function(require) {
         paramValues: this.state.paramValues,
         csrfToken: this.props.csrfToken,
         onSuccess: (json) => {
+          var newResults = this.state.results.concat(new TestResult(
+            json.result && json.result.fullText,
+            json.missingParamNames
+          ));
           this.setState({
-            result: json.result ? json.result.fullText : '',
-            resultMissingParamNames: json.missingParamNames || [],
+            results: newResults,
             isTestingResult: false,
             hasTestedResult: true
           });
@@ -167,12 +175,12 @@ define(function(require) {
       return this.props.triggers.filter((trigger) => !!trigger.text);
     },
 
-    getResult: function() {
-      return this.state.result;
+    getResults: function() {
+      return this.state.results;
     },
 
     hasResult: function() {
-      return !!this.getResult() || this.state.resultMissingParamNames.length > 0;
+      return this.getResults().length > 0;
     },
 
     getValueForParamName: function(name) {
@@ -227,28 +235,43 @@ define(function(require) {
       }
     },
 
+    componentDidUpdate: function() {
+      this.refs.results.scrollTop = this.refs.results.scrollHeight - this.refs.results.clientHeight;
+    },
+
     render: function() {
       return (
         <div>
-          <Collapsible revealWhen={this.hasResult() && !this.state.isTestingResult}>
+          <Collapsible revealWhen={this.hasResult()}>
             <div className="box-help">
               <div className="container phn">
                 <div className="columns">
                   <div className="column column-one-quarter mobile-column-full"></div>
                   <div className="column column-three-quarters pll mobile-pln mobile-column-full">
 
-                    <h4>Response</h4>
-                    {ifPresent(this.getResult(), (result) => (
-                      <div className="display-overflow-scroll border border-blue pas bg-blue-lightest"
-                        style={{
-                          maxHeight: "10.25em",
-                          overflow: "auto"
-                        }}
-                      >
-                        <pre>{result}</pre>
-                      </div>
-                    ))}
-                    {ifPresent(this.state.resultMissingParamNames, this.missingParametersResult)}
+                    <h4>Response log</h4>
+                    <div ref="results" className="type-s" style={{
+                      maxHeight: "12rem",
+                      overflow: "auto"
+                    }}>
+                      {this.getResults().map((result, index) => {
+                        return (
+                          <div
+                            className={
+                              "mbxs " +
+                              (index + 1 === this.getResults().length ? "type-black" : "type-disabled")
+                            }
+                          >
+                            {ifPresent(result.response, (response) => (
+                              <div className="display-overflow-scroll border border-blue pas bg-blue-lightest">
+                                <pre>{response}</pre>
+                              </div>
+                            ))}
+                            {ifPresent(result.missingParamNames, this.missingParametersResult)}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
