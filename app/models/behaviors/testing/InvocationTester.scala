@@ -3,6 +3,7 @@ package models.behaviors.testing
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.BehaviorResponse
+import play.api.Configuration
 import play.api.cache.CacheApi
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
@@ -15,7 +16,8 @@ case class InvocationTester(
                             paramValues: Map[String, String],
                             lambdaService: AWSLambdaService,
                             dataService: DataService,
-                            cache: CacheApi
+                            cache: CacheApi,
+                            configuration: Configuration
                           ) {
 
   def run: Future[InvocationTestReport] = {
@@ -42,7 +44,7 @@ case class InvocationTester(
           (AWSLambdaConstants.invocationParamFor(i), v.get)
         }
         for {
-          parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache)
+          parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache, configuration)
           result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event)
         } yield InvocationTestReport(behaviorVersion, Some(result), Seq())
       } else {

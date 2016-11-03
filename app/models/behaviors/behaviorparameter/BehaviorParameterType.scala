@@ -94,6 +94,11 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   val id = behavior.id
   val name = behavior.maybeDataTypeName.getOrElse("Unnamed data type")
 
+  def editLinkFor(context: BehaviorParameterContext) = {
+    val link = behavior.editLinkFor(context.configuration)
+    s"[${context.parameter.paramType.name}]($link)"
+  }
+
   def needsConfig(dataService: DataService) = {
     for {
       maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
@@ -228,17 +233,21 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
       output <- maybeValidValuesResult.map {
         case r: SuccessResult => {
           val validValues = extractValidValues(r)
-          context.maybeConversation.foreach { conversation =>
-            context.cache.set(valuesListCacheKeyFor(conversation, context.parameter), validValues, 5.minutes)
+          if (validValues.isEmpty) {
+            cancelAndRespondFor(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
+          } else {
+            context.maybeConversation.foreach { conversation =>
+              context.cache.set(valuesListCacheKeyFor(conversation, context.parameter), validValues, 5.minutes)
+            }
+            val valuesPrompt = validValues.zipWithIndex.map { case (ea, i) =>
+              s"\n\n$i. ${ea.label}"
+            }.mkString
+            Future.successful(superPrompt ++ valuesPrompt)
           }
-          val valuesPrompt = validValues.zipWithIndex.map { case(ea, i) =>
-            s"\n\n$i. ${ea.label}"
-          }.mkString
-          Future.successful(superPrompt ++ valuesPrompt)
         }
         case r: BotResult => cancelAndRespondFor(r.fullText, context)
       }.getOrElse {
-        cancelAndRespondFor(s"This data type appears to be misconfigured: ${context.parameter.paramType.name}", context)
+        cancelAndRespondFor(s"This data type appears to be misconfigured: ${editLinkFor(context)}", context)
       }
     } yield output
 

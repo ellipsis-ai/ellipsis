@@ -24,7 +24,7 @@ trait Conversation {
   val state: String
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi): Future[Conversation]
+  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
   def respond(
                event: MessageEvent,
                lambdaService: AWSLambdaService,
@@ -43,7 +43,7 @@ trait Conversation {
                  configuration: Configuration
                ): Future[BotResult] = {
     for {
-      updatedConversation <- updateWith(event, lambdaService, dataService, cache)
+      updatedConversation <- updateWith(event, lambdaService, dataService, cache, configuration)
       result <- updatedConversation.respond(event, lambdaService, dataService, cache, ws, configuration)
     } yield result
   }
