@@ -159,13 +159,18 @@ define(function(require) {
         return (
           <Textarea
             ref={"envVarValue" + index}
-            className="type-monospace"
+            className="type-monospace form-input-borderless form-input-height-auto"
             placeholder="Enter value"
             value={v.value || ""}
             onChange={this.onChangeVarValue.bind(this, index)}
+            rows={this.getRowCountForTextareaValue(v.value)}
           />
         );
       }
+    },
+
+    getRowCountForTextareaValue: function(value) {
+      return Math.min((value || "").split('\n').length, 5);
     },
 
     onSaveError: function() {
@@ -229,10 +234,11 @@ define(function(require) {
                       <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
                         <Textarea
                           ref={"newEnvVarValue" + index}
-                          className="type-monospace"
+                          className="type-monospace form-input-borderless form-input-height-auto"
                           placeholder="Enter value"
                           value={v.value || ""}
                           onChange={this.setNewVarIndexValue.bind(this, index)}
+                          rows={this.getRowCountForTextareaValue(v.value)}
                         />
                       </div>
                     </div>
