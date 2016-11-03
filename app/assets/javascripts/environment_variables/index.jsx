@@ -22,12 +22,16 @@ define(function(require) {
     getInitialState: function() {
       return {
         activePanel: null,
-        environmentVariables: Sort.arrayAlphabeticalBy(this.props.data.variables, (ea) => {
-          // Group vars with existing values before those without
-          return ea.isAlreadySavedWithValue ? `-${ea.name}` : ea.name;
-        }),
+        environmentVariables: this.groupAndSortVarsByNameAndPresenceOfValue(this.props.data.variables),
         justSaved: false
       };
+    },
+
+    groupAndSortVarsByNameAndPresenceOfValue: function(vars) {
+      return Sort.arrayAlphabeticalBy(vars, (ea) => {
+        // Group vars with existing values before those without
+        return ea.isAlreadySavedWithValue ? `-${ea.name}` : ea.name;
+      });
     },
 
     onSave: function(envVars) {
