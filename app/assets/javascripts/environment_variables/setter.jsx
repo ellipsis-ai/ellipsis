@@ -170,7 +170,7 @@ define(function(require) {
     },
 
     getRowCountForTextareaValue: function(value) {
-      return Math.min((value || "").split('\n').length, 5);
+      return String(Math.min((value || "").split('\n').length, 5));
     },
 
     onSaveError: function() {
