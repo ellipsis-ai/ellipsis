@@ -39,8 +39,20 @@ define(function(require) {
     },
 
     componentWillReceiveProps: function(newProps) {
-      if (this.props.triggers !== newProps.triggers) {
-        this.setState(this.getInitialState());
+      if (JSON.stringify(this.props.triggers) !== JSON.stringify(newProps.triggers)) {
+        this.setState({
+          testMessage: '',
+          highlightedTriggerText: null,
+          isTestingTriggers: false,
+          isTestingResult: false,
+          hasTestedTriggers: false,
+          triggerErrorOccurred: false
+        });
+      }
+      if (JSON.stringify(this.props.params) !== JSON.stringify(newProps.params)) {
+        this.setState({
+          paramValues: {}
+        });
       }
     },
 
@@ -68,7 +80,6 @@ define(function(require) {
 
     onDone: function() {
       this.props.onDone();
-      this.setState(this.getInitialState());
     },
 
     validateMessage: debounce(function() {
