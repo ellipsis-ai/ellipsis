@@ -30,7 +30,7 @@ define(function(require) {
     groupAndSortVarsByNameAndPresenceOfValue: function(vars) {
       return Sort.arrayAlphabeticalBy(vars, (ea) => {
         // Group vars with existing values before those without
-        return ea.isAlreadySavedWithValue ? `-${ea.name}` : ea.name;
+        return ea.isAlreadySavedWithValue ? `-${ea.name}` : `~${ea.name}`;
       });
     },
 
