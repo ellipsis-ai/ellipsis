@@ -12,7 +12,6 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
-import models.environmentvariable.EnvironmentVariable
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -203,37 +202,6 @@ class BehaviorVersionServiceImpl @Inject() (
 
   def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == CONTEXT_PARAM)
 
-  def environmentVariablesUsedInCode(functionBody: String): Seq[String] = {
-    // regex quite incomplete, but we're just trying to provide some guidance
-    """(?s)ellipsis\.env\.([$A-Za-z_][0-9A-Za-z_$]*)""".r.findAllMatchIn(functionBody).flatMap { m =>
-      m.subgroups.headOption
-    }.toSeq
-  }
-
-  private def environmentVariablesUsedInConfigFor(behaviorVersion: BehaviorVersion): Future[Seq[String]] = {
-    dataService.awsConfigs.maybeFor(behaviorVersion).map { maybeAwsConfig =>
-      maybeAwsConfig.map { awsConfig =>
-        awsConfig.environmentVariableNames
-      }.getOrElse(Seq())
-    }
-  }
-
-  def knownEnvironmentVariablesUsedIn(behaviorVersion: BehaviorVersion, dataService: DataService): Future[Seq[String]] = {
-    environmentVariablesUsedInConfigFor(behaviorVersion).map { inConfig =>
-      inConfig ++ dataService.environmentVariables.lookForInCode(behaviorVersion.functionBody)
-    }
-  }
-
-  def missingEnvironmentVariablesIn(
-                                     behaviorVersion: BehaviorVersion,
-                                     environmentVariables: Seq[EnvironmentVariable],
-                                     dataService: DataService
-                                   ): Future[Seq[String]] = {
-    knownEnvironmentVariablesUsedIn(behaviorVersion, dataService).map{ used =>
-      used diff environmentVariables.filter(_.value.trim.nonEmpty).map(_.name)
-    }
-  }
-
   def maybeFunctionFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
     behaviorVersion.maybeFunctionBody.map { functionBody =>
       (for {
@@ -259,16 +227,17 @@ class BehaviorVersionServiceImpl @Inject() (
 
   def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: MessageEvent): Future[Option[BotResult]] = {
     for {
-      environmentVariables <- dataService.environmentVariables.allFor(behaviorVersion.team)
-      missingEnvVars <- dataService.behaviorVersions.missingEnvironmentVariablesIn(behaviorVersion, environmentVariables, dataService)
+      missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingIn(behaviorVersion, dataService)
+      user <- event.context.ensureUser(dataService)
+      missingUserEnvVars <- dataService.userEnvironmentVariables.missingFor(user, behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
       userInfo <- event.context.userInfo(ws, dataService)
       notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)
       })
-      maybeResult <- if (missingEnvVars.nonEmpty) {
-        Future.successful(Some(MissingEnvVarsResult(behaviorVersion, configuration, missingEnvVars)))
+      maybeResult <- if (missingTeamEnvVars.nonEmpty) {
+        Future.successful(Some(MissingTeamEnvVarsResult(behaviorVersion, configuration, missingTeamEnvVars)))
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
           Future.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, configuration)))
@@ -280,7 +249,13 @@ class BehaviorVersionServiceImpl @Inject() (
                 OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
               }
             }.map(Some(_))
-          }.getOrElse(Future.successful(None))
+          }.getOrElse {
+            if (missingUserEnvVars.nonEmpty) {
+              Future.successful(Some(MissingUserEnvVarsResult(behaviorVersion, configuration, missingUserEnvVars)))
+            } else {
+              Future.successful(None)
+            }
+          }
         }
       }
     } yield maybeResult
@@ -292,10 +267,12 @@ class BehaviorVersionServiceImpl @Inject() (
                  event: MessageEvent
                ): Future[BotResult] = {
     for {
-      envVars <- dataService.environmentVariables.allFor(behaviorVersion.team)
+      teamEnvVars <- dataService.teamEnvironmentVariables.allFor(behaviorVersion.team)
+      user <- event.context.ensureUser(dataService)
+      userEnvVars <- dataService.userEnvironmentVariables.allFor(user)
       result <- maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(Future.successful).getOrElse {
-          lambdaService.invoke(behaviorVersion, parametersWithValues, envVars, event)
+          lambdaService.invoke(behaviorVersion, parametersWithValues, (teamEnvVars ++ userEnvVars), event)
         }
       }
     } yield result

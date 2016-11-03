@@ -76,7 +76,8 @@ object BehaviorEditorData {
               ): Future[BehaviorEditorData] = {
     for {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
-      environmentVariables <- dataService.environmentVariables.allFor(team)
+      teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
+      userEnvironmentVariables <- dataService.userEnvironmentVariables.allFor(user)
       oAuth2Applications <- dataService.oauth2Applications.allFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUser(user, ws)
@@ -104,7 +105,7 @@ object BehaviorEditorData {
       BehaviorEditorData(
         teamAccess,
         versionData,
-        environmentVariables.map(EnvironmentVariableData.withoutValueFor),
+        (teamEnvironmentVariables ++ userEnvironmentVariables).map(EnvironmentVariableData.withoutValueFor),
         paramTypeData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),

@@ -23,7 +23,7 @@ import models.behaviors.conversations.conversation.ConversationService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
-import models.environmentvariable.EnvironmentVariableService
+import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.team.TeamService
 import slick.dbio.DBIO
@@ -38,7 +38,8 @@ class PostgresDataService @Inject() (
                                       val linkedAccountsProvider: Provider[LinkedAccountService],
                                       val teamsProvider: Provider[TeamService],
                                       val apiTokensProvider: Provider[APITokenService],
-                                      val environmentVariablesProvider: Provider[EnvironmentVariableService],
+                                      val environmentVariablesProvider: Provider[TeamEnvironmentVariableService],
+                                      val userEnvironmentVariablesProvider: Provider[UserEnvironmentVariableService],
                                       val invocationTokensProvider: Provider[InvocationTokenService],
                                       val linkedOAuth2TokensProvider: Provider[LinkedOAuth2TokenService],
                                       val oauth2ApisProvider: Provider[OAuth2ApiService],
@@ -63,7 +64,8 @@ class PostgresDataService @Inject() (
   val linkedAccounts = linkedAccountsProvider.get
   val teams = teamsProvider.get
   val apiTokens = apiTokensProvider.get
-  val environmentVariables = environmentVariablesProvider.get
+  val teamEnvironmentVariables = environmentVariablesProvider.get
+  val userEnvironmentVariables = userEnvironmentVariablesProvider.get
   val invocationTokens = invocationTokensProvider.get
   val linkedOAuth2Tokens = linkedOAuth2TokensProvider.get
   val oauth2Apis = oauth2ApisProvider.get
