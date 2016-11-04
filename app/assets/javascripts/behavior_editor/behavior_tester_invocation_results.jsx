@@ -48,35 +48,38 @@ define(function(require) {
                   maxHeight: "12rem",
                   overflow: "auto"
                 }}>
-                  {this.props.results.map((result, index) => {
-                    return (
-                      <div
-                        key={`invocationTestResult${index}`}
-                        className={
-                          "mbxs " +
-                          (index + 1 === this.props.results.length ? "" : "opacity-50")
-                        }
-                      >
-                        {ifPresent(
-                          this.props.onRenderResult, (renderResult) => renderResult(result, index),
-                          () => (
-                            <div>
-                              {ifPresent(result.response, (response) => (
-                                <div className="display-overflow-scroll border border-green pas bg-white">
-                                  <pre>{response}</pre>
-                                </div>
-                              ))}
-                              {ifPresent(result.missingParamNames, this.missingParametersResult)}
-                            </div>
-                          )
-                        )}
-                      </div>
-                    );
-                  })}
+                  {this.props.results.map(this.renderResult)}
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      );
+    },
+
+    renderResult: function(result, index) {
+      return (
+        <div className={
+          "mbxs " +
+          (index + 1 === this.props.results.length ? "" : "opacity-50")
+        }>
+          {this.props.onRenderResult ?
+            this.props.onRenderResult(result, index) :
+            this.defaultResultRenderer(result, index)
+          }
+        </div>
+      );
+    },
+
+    defaultResultRenderer: function(result) {
+      return (
+        <div>
+          {ifPresent(result.response, (response) => (
+            <div className="display-overflow-scroll border border-green pas bg-white">
+              <pre>{response}</pre>
+            </div>
+          ))}
+          {ifPresent(result.missingParamNames, this.missingParametersResult)}
         </div>
       );
     }
