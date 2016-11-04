@@ -27,10 +27,12 @@ define(function(require) {
       );
     },
 
-    componentDidUpdate: function() {
-      var results = this.refs.results;
-      if (results && results.scrollHeight > results.clientHeight) {
-        results.scrollTop = results.scrollHeight - results.clientHeight;
+    componentDidUpdate: function(prevProps) {
+      var resultsPane = this.refs.results;
+      var hasScrolled = resultsPane.scrollHeight > resultsPane.clientHeight;
+      var resultsHaveChanged = prevProps.results !== this.props.results;
+      if (resultsPane && resultsHaveChanged && hasScrolled) {
+        resultsPane.scrollTop = resultsPane.scrollHeight - resultsPane.clientHeight;
       }
     },
 
