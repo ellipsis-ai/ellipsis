@@ -4,7 +4,9 @@ define(function(require) {
     Input = require('../form/input'),
     Collapsible = require('../collapsible'),
     oauth2ApplicationShape = require('./oauth2_application_shape'),
-    TesterAuthRequired = require('./tester_auth_required');
+    TesterAuthRequired = require('./tester_auth_required'),
+    InvocationResults = require('./behavior_tester_invocation_results'),
+    InvocationTestResult = require('../models/behavior_invocation_result');
 
   var MAX_RESULTS_TO_SHOW = 10;
 
@@ -21,27 +23,27 @@ define(function(require) {
     getInitialState: function() {
       return {
         searchQuery: '',
-        result: '',
+        results: [],
         isTesting: false,
         hasTested: false
       };
     },
 
-    getResult: function() {
-      return this.state.result;
+    getResults: function() {
+      return this.state.results;
     },
 
-    getParsedResult: function() {
+    getParsedResponse: function(result) {
       try {
-        return JSON.parse(this.getResult());
+        return JSON.parse(result.response);
       } catch(e) {
         return null;
       }
     },
 
-    isValidResult: function() {
-      var result = this.getParsedResult();
-      return Array.isArray(result) && result.every((ea) => {
+    isValidResult: function(result) {
+      var parsedResponse = this.getParsedResponse(result);
+      return Array.isArray(parsedResponse) && parsedResponse.every((ea) => {
         return typeof ea === "object" && Object.keys(ea).includes('id') && Object.keys(ea).includes('label');
       });
     },
@@ -94,14 +96,16 @@ define(function(require) {
         csrfToken: this.props.csrfToken,
         paramValues: this.params(),
         onSuccess: (json) => {
+          var newResults = this.state.results.concat(
+            new InvocationTestResult(json.result && json.result.fullText)
+          );
           this.setState({
-            result: json.result.fullText,
+            results: newResults,
             isTesting: false
           });
         },
         onError: () => {
           this.setState({
-            result: '',
             errorOccurred: true,
             isTesting: false
           });
@@ -113,22 +117,11 @@ define(function(require) {
       return (
         <div>
           <Collapsible revealWhen={this.state.hasTested}>
-            <div className="box-help">
-              <div className="container phn">
-                <div className="columns">
-                  <div className="column column-one-quarter mobile-column-full"></div>
-                  <div className="column column-three-quarters pll mobile-pln mobile-column-full">
-                    <Collapsible revealWhen={!!(this.getResult() && !this.state.isTesting)}>
-                      {this.renderResult()}
-                    </Collapsible>
-                    <h4 className="mtl">
-                      <span>Test result </span>
-                      {this.renderResultStatus()}
-                    </h4>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <InvocationResults
+              results={this.getResults()}
+              resultStatus={this.renderResultStatus()}
+              onRenderResult={this.renderResult}
+            />
           </Collapsible>
           <div className="box-action">
             <div className="container phn">
@@ -175,52 +168,48 @@ define(function(require) {
     },
 
     renderResultStatus: function() {
+      var result = this.getResults()[this.getResults().length - 1];
       if (this.state.isTesting) {
         return (
-          <span className="type-weak pulse">— Testing</span>
+          <span className="type-weak pulse">Testing</span>
         );
-      } else if (this.isValidResult()) {
-        var numMatches = this.getParsedResult().length;
+      } else if (this.isValidResult(result)) {
+        var numMatches = this.getParsedResponse(result).length;
         return (
-          <span className="type-green">— Valid {numMatches === 1 ? '(1 item)' : `(${numMatches} items)`} ✓</span>
+          <span className="type-green">Last response valid {numMatches === 1 ? '(1 item)' : `(${numMatches} items)`} ✓</span>
         );
-      } else if (this.getResult()) {
+      } else if (result) {
         return (
-          <span className="type-pink">— Invalid: must be an array of objects, each with an <code className="type-black">id</code> and <code className="type-black">label</code> property.</span>
+          <span className="type-pink">Last response invalid: must be an array of objects, each with an <code className="type-black">id</code> and <code className="type-black">label</code> property.</span>
         );
       } else {
         return (
-          <span className="type-weak">— No result</span>
+          <span className="type-weak">Last response missing</span>
         );
       }
     },
 
-    renderResult: function() {
-      var isValidResult = this.isValidResult();
-      var resultString = this.getResult();
+    renderResult: function(result) {
+      var isValidResult = this.isValidResult(result);
       if (isValidResult) {
-        return this.renderValidResultTableWith(this.getParsedResult());
-      } else if (resultString) {
-        return (
-          <pre className="box-code-example">{this.getResult()}</pre>
-        );
+        return this.renderValidResultTableWith(this.getParsedResponse(result));
       } else {
         return (
-          <div/>
+          <pre className="display-overflow-scroll border border-pink bg-white pas">{result.response}</pre>
         );
       }
     },
 
-    renderValidResultTableWith: function(result) {
-      var hasOtherData = result.some((item) => {
+    renderValidResultTableWith: function(response) {
+      var hasOtherData = response.some((item) => {
         return Object.keys(item).filter((key) => {
           return key !== 'id' && key !== 'label';
         }).length > 0;
       });
-      var overflowResults = result.length - MAX_RESULTS_TO_SHOW;
-      if (result.length > 0) {
+      var overflowResults = response.length - MAX_RESULTS_TO_SHOW;
+      if (response.length > 0) {
         return (
-          <div>
+          <div className="border pas border-green bg-white">
             <div className="columns columns-elastic">
               <div className="column-group">
                 <div className="column-row type-s type-monospace">
@@ -230,7 +219,7 @@ define(function(require) {
                     {hasOtherData ? "Other properties" : ""}
                   </div>
                 </div>
-                {result.slice(0, MAX_RESULTS_TO_SHOW).map((item, itemIndex) => (
+                {response.slice(0, MAX_RESULTS_TO_SHOW).map((item, itemIndex) => (
                   <div className="column-row" key={`item${itemIndex}`}>
                     <div className="column column-shrink pbxs">
                       <pre className="box-code-example display-inline-block">{item.id}</pre>
@@ -257,7 +246,7 @@ define(function(require) {
         );
       } else {
         return (
-          <div className="type-italic">An empty array was returned.</div>
+          <div className="type-italic border pas border-green bg-white type-italic">An empty array was returned.</div>
         );
       }
     },

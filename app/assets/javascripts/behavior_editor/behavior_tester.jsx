@@ -10,7 +10,8 @@ define(function(require) {
     debounce = require('javascript-debounce'),
     oauth2ApplicationShape = require('./oauth2_application_shape'),
     TesterAuthRequired = require('./tester_auth_required'),
-    InvocationTestResult = require('../models/behavior_invocation_result');
+    InvocationTestResult = require('../models/behavior_invocation_result'),
+    InvocationResults = require('./behavior_tester_invocation_results');
 
   return React.createClass({
     displayName: 'BehaviorTester',
@@ -115,23 +116,6 @@ define(function(require) {
       });
     },
 
-    missingParametersResult: function(missingParamNames) {
-      return (
-        <div className="display-overflow-scroll border border-pink bg-white pas">
-          {missingParamNames.length === 1 ? (
-            <span>
-              Ellipsis will ask the user for a value for <code className="type-bold mlxs">{missingParamNames[0]}</code>.
-            </span>
-          ) : (
-            <span>
-              <span>Ellipsis will ask the user for values for these inputs: </span>
-              <code className="type-bold mlxs">{missingParamNames.join(", ")}</code>
-            </span>
-          )}
-        </div>
-      );
-    },
-
     fetchResult: function() {
       this.setState({
         isTestingResult: true,
@@ -231,48 +215,13 @@ define(function(require) {
       }
     },
 
-    componentDidUpdate: function() {
-      this.refs.results.scrollTop = this.refs.results.scrollHeight - this.refs.results.clientHeight;
-    },
-
     render: function() {
       return (
         <div>
           <Collapsible revealWhen={this.hasResult()}>
-            <div className="box-help">
-              <div className="container phn">
-                <div className="columns">
-                  <div className="column column-one-quarter mobile-column-full">
-                    <h4 className="type-weak mts">Response log</h4>
-                  </div>
-                  <div className="column column-three-quarters pll mobile-pln mobile-column-full">
-
-                    <div ref="results" className="type-s" style={{
-                      maxHeight: "12rem",
-                      overflow: "auto"
-                    }}>
-                      {this.getResults().map((result, index) => {
-                        return (
-                          <div
-                            className={
-                              "mbxs " +
-                              (index + 1 === this.getResults().length ? "" : "opacity-50")
-                            }
-                          >
-                            {ifPresent(result.response, (response) => (
-                              <div className="display-overflow-scroll border border-green pas bg-white">
-                                <pre>{response}</pre>
-                              </div>
-                            ))}
-                            {ifPresent(result.missingParamNames, this.missingParametersResult)}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <InvocationResults
+              results={this.getResults()}
+            />
           </Collapsible>
           <div className="box-action">
             <div className="container phn">
