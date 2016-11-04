@@ -116,18 +116,20 @@ define(function(require) {
     },
 
     missingParametersResult: function(missingParamNames) {
-      if (missingParamNames.length === 1) {
-        return (
-          <div>Ellipsis will ask the user for a value for <code className="type-bold mlxs">{missingParamNames[0]}</code>.</div>
-        );
-      } else {
-        return (
-          <div>
-            <span>Ellipsis will ask the user for values for these inputs: </span>
-            <code className="type-bold mlxs">{missingParamNames.join(", ")}</code>
-          </div>
-        );
-      }
+      return (
+        <div className="display-overflow-scroll border border-pink bg-white pas">
+          {missingParamNames.length === 1 ? (
+            <span>
+              Ellipsis will ask the user for a value for <code className="type-bold mlxs">{missingParamNames[0]}</code>.
+            </span>
+          ) : (
+            <span>
+              <span>Ellipsis will ask the user for values for these inputs: </span>
+              <code className="type-bold mlxs">{missingParamNames.join(", ")}</code>
+            </span>
+          )}
+        </div>
+      );
     },
 
     fetchResult: function() {
@@ -240,10 +242,11 @@ define(function(require) {
             <div className="box-help">
               <div className="container phn">
                 <div className="columns">
-                  <div className="column column-one-quarter mobile-column-full"></div>
+                  <div className="column column-one-quarter mobile-column-full">
+                    <h4 className="type-weak mts">Response log</h4>
+                  </div>
                   <div className="column column-three-quarters pll mobile-pln mobile-column-full">
 
-                    <h4>Response log</h4>
                     <div ref="results" className="type-s" style={{
                       maxHeight: "12rem",
                       overflow: "auto"
@@ -253,11 +256,11 @@ define(function(require) {
                           <div
                             className={
                               "mbxs " +
-                              (index + 1 === this.getResults().length ? "type-black" : "type-disabled")
+                              (index + 1 === this.getResults().length ? "" : "opacity-50")
                             }
                           >
                             {ifPresent(result.response, (response) => (
-                              <div className="display-overflow-scroll border border-blue pas bg-blue-lightest">
+                              <div className="display-overflow-scroll border border-green pas bg-white">
                                 <pre>{response}</pre>
                               </div>
                             ))}
