@@ -51,6 +51,7 @@ describe('BehaviorEditor', () => {
       displayName: "My other awesome oauth app",
       keyName: "myOtherAwesomeOauthApp"
     }],
+    linkedOAuth2ApplicationIds: [],
     notifications: [],
     shouldRevealCodeEditor: true,
     onSave: jest.fn()
