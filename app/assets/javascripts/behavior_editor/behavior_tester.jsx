@@ -9,14 +9,8 @@ define(function(require) {
     Trigger = require('../models/trigger'),
     debounce = require('javascript-debounce'),
     oauth2ApplicationShape = require('./oauth2_application_shape'),
-    TesterAuthRequired = require('./tester_auth_required');
-
-  class TestResult {
-    constructor(response, missingParamNames) {
-      this.response = response || '';
-      this.missingParamNames = missingParamNames || [];
-    }
-  }
+    TesterAuthRequired = require('./tester_auth_required'),
+    InvocationTestResult = require('../models/behavior_invocation_result');
 
   return React.createClass({
     displayName: 'BehaviorTester',
@@ -146,7 +140,7 @@ define(function(require) {
         paramValues: this.state.paramValues,
         csrfToken: this.props.csrfToken,
         onSuccess: (json) => {
-          var newResults = this.state.results.concat(new TestResult(
+          var newResults = this.state.results.concat(new InvocationTestResult(
             json.result && json.result.fullText,
             json.missingParamNames
           ));
