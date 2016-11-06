@@ -15,12 +15,29 @@ define(function(require) {
         <div className="display-overflow-scroll border border-pink bg-white pas">
           {missingParamNames.length === 1 ? (
             <span>
-              Ellipsis will ask the user for a value for <code className="type-bold mlxs">{missingParamNames[0]}</code>.
+              Ellipsis will ask the user for a value for the input <code className="type-bold mlxs">{missingParamNames[0]}</code>.
             </span>
           ) : (
             <span>
               <span>Ellipsis will ask the user for values for these inputs: </span>
               <code className="type-bold mlxs">{missingParamNames.join(", ")}</code>
+            </span>
+          )}
+        </div>
+      );
+    },
+
+    missingUserEnvVarsResult: function(missingUserEnvVars) {
+      return (
+        <div className="display-overflow-scroll border border-pink bg-white pas">
+          {missingUserEnvVars.length === 1 ? (
+            <span>
+              If, like you, the user hasn't yet set a value for the environment variable <code className="type-bold">{missingUserEnvVars[0]}</code>, Ellipsis will ask for one.
+            </span>
+          ) : (
+            <span>
+              <span>If, like you, the user hasn't yet set values for these environment variables, Ellipsis will ask for them: </span>
+              <code className="type-bold mlxs">{missingUserEnvVars.join(", ")}</code>
             </span>
           )}
         </div>
@@ -84,6 +101,7 @@ define(function(require) {
               <pre>{response}</pre>
             </div>
           ))}
+          {ifPresent(result.missingUserEnvVars, this.missingUserEnvVarsResult)}
           {ifPresent(result.missingParamNames, this.missingParametersResult)}
         </div>
       );
