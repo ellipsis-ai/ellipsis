@@ -228,8 +228,6 @@ class BehaviorVersionServiceImpl @Inject() (
   def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: MessageEvent): Future[Option[BotResult]] = {
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingIn(behaviorVersion, dataService)
-      user <- event.context.ensureUser(dataService)
-      missingUserEnvVars <- dataService.userEnvironmentVariables.missingFor(user, behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
       userInfo <- event.context.userInfo(ws, dataService)
       notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
@@ -249,13 +247,7 @@ class BehaviorVersionServiceImpl @Inject() (
                 OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
               }
             }.map(Some(_))
-          }.getOrElse {
-            if (missingUserEnvVars.nonEmpty) {
-              Future.successful(Some(MissingUserEnvVarsResult(behaviorVersion, configuration, missingUserEnvVars)))
-            } else {
-              Future.successful(None)
-            }
-          }
+          }.getOrElse(Future.successful(None))
         }
       }
     } yield maybeResult
