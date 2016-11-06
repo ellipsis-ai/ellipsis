@@ -20,7 +20,7 @@ class EnvironmentVariablesControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val nonExistentEnvVarName = IDs.next
         when(dataService.teams.find(team.id)).thenReturn(Future.successful(Some(team)))
-        when(dataService.environmentVariables.deleteFor(nonExistentEnvVarName, team)).thenReturn(Future.successful(false))
+        when(dataService.teamEnvironmentVariables.deleteFor(nonExistentEnvVarName, team)).thenReturn(Future.successful(false))
         val csrfToken = csrfProvider.generateToken
         val request =
           FakeRequest(controllers.routes.EnvironmentVariablesController.delete()).
@@ -30,7 +30,7 @@ class EnvironmentVariablesControllerSpec extends PlaySpec with MockitoSugar {
             withAuthenticator(user.loginInfo)
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND
-        verify(dataService.environmentVariables, times(1)).deleteFor(nonExistentEnvVarName, team)
+        verify(dataService.teamEnvironmentVariables, times(1)).deleteFor(nonExistentEnvVarName, team)
       }
     }
 
@@ -38,7 +38,7 @@ class EnvironmentVariablesControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val existingEnvVarName = IDs.next
         when(dataService.teams.find(team.id)).thenReturn(Future.successful(Some(team)))
-        when(dataService.environmentVariables.deleteFor(existingEnvVarName, team)).thenReturn(Future.successful(true))
+        when(dataService.teamEnvironmentVariables.deleteFor(existingEnvVarName, team)).thenReturn(Future.successful(true))
         val csrfToken = csrfProvider.generateToken
         val request =
           FakeRequest(controllers.routes.EnvironmentVariablesController.delete()).
@@ -48,7 +48,7 @@ class EnvironmentVariablesControllerSpec extends PlaySpec with MockitoSugar {
             withAuthenticator(user.loginInfo)
         val result = route(app, request).get
         status(result) mustBe OK
-        verify(dataService.environmentVariables, times(1)).deleteFor(existingEnvVarName, team)
+        verify(dataService.teamEnvironmentVariables, times(1)).deleteFor(existingEnvVarName, team)
       }
     }
 

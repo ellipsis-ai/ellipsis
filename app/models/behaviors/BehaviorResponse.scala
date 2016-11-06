@@ -44,8 +44,21 @@ case class BehaviorResponse(
                              configuration: Configuration
                              ) {
 
-  def isFilledOut: Boolean = {
+  def hasAllParamValues: Boolean = {
     parametersWithValues.forall(_.hasValidValue)
+  }
+
+  def hasAllUserEnvVarValues: Future[Boolean] = {
+    for {
+      user <- event.context.ensureUser(dataService)
+      missing <- dataService.userEnvironmentVariables.missingFor(user, behaviorVersion, dataService)
+    } yield missing.isEmpty
+  }
+
+  def isReady: Future[Boolean] = {
+    hasAllUserEnvVarValues.map { hasUserEnvVars =>
+      hasUserEnvVars && hasAllParamValues
+    }
   }
 
   def resultForFilledOut: Future[BotResult] = {
@@ -65,24 +78,26 @@ case class BehaviorResponse(
   def result: Future[BotResult] = {
     dataService.behaviorVersions.maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeNotReadyResult =>
       maybeNotReadyResult.map(Future.successful).getOrElse {
-        if (isFilledOut) {
-          resultForFilledOut
-        } else {
-          for {
-            convo <- InvokeBehaviorConversation.createFor(
-              behaviorVersion,
-              event.context.conversationContextFor(behaviorVersion),
-              event.context.userIdForContext,
-              activatedTrigger,
-              dataService
-            )
-            _ <- Future.sequence(parametersWithValues.map { p =>
-              p.maybeValue.map { v =>
-                dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
-              }.getOrElse(Future.successful(Unit))
-            })
-            result <- convo.resultFor(event, lambdaService, dataService, cache, ws, configuration)
-          } yield result
+        isReady.flatMap { ready =>
+          if (ready) {
+            resultForFilledOut
+          } else {
+            for {
+              convo <- InvokeBehaviorConversation.createFor(
+                behaviorVersion,
+                event.context.conversationContextFor(behaviorVersion),
+                event.context.userIdForContext,
+                activatedTrigger,
+                dataService
+              )
+              _ <- Future.sequence(parametersWithValues.map { p =>
+                p.maybeValue.map { v =>
+                  dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
+                }.getOrElse(Future.successful(Unit))
+              })
+              result <- convo.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+            } yield result
+          }
         }
       }
     }

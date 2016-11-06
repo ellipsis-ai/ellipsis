@@ -11,15 +11,7 @@ import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RawAWSConfig(
-                         id: String,
-                         behaviorVersionId: String,
-                         maybeAccessKeyName: Option[String],
-                         maybeSecretKeyName: Option[String],
-                         maybeRegionName: Option[String]
-                       )
-
-class AWSConfigsTable(tag: Tag) extends Table[RawAWSConfig](tag, "aws_configs") {
+class AWSConfigsTable(tag: Tag) extends Table[AWSConfig](tag, "aws_configs") {
 
   def id = column[String]("id", O.PrimaryKey)
   def behaviorVersionId = column[String]("behavior_version_id")
@@ -27,7 +19,7 @@ class AWSConfigsTable(tag: Tag) extends Table[RawAWSConfig](tag, "aws_configs") 
   def maybeSecretKeyName = column[Option[String]]("secret_key_name")
   def maybeRegionName = column[Option[String]]("region_name")
 
-  def * = (id, behaviorVersionId, maybeAccessKeyName, maybeSecretKeyName, maybeRegionName) <> ((RawAWSConfig.apply _).tupled, RawAWSConfig.unapply _)
+  def * = (id, behaviorVersionId, maybeAccessKeyName, maybeSecretKeyName, maybeRegionName) <> ((AWSConfig.apply _).tupled, AWSConfig.unapply _)
 }
 
 class AWSConfigServiceImpl @Inject() (
@@ -42,29 +34,7 @@ class AWSConfigServiceImpl @Inject() (
   val findQuery = Compiled(uncompiledFindQuery _)
 
   def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[AWSConfig]] = {
-    val action = for {
-      maybeRaw <- findQuery(behaviorVersion.id).result.map(_.headOption)
-      maybeAccessKey <- maybeRaw.flatMap { raw =>
-        raw.maybeAccessKeyName.map { accessKeyName =>
-          DBIO.from(dataService.environmentVariables.find(accessKeyName, behaviorVersion.team))
-        }
-      }.getOrElse(DBIO.successful(None))
-      maybeSecretKey <- maybeRaw.flatMap { raw =>
-        raw.maybeSecretKeyName.map { secretKeyName =>
-          DBIO.from(dataService.environmentVariables.find(secretKeyName, behaviorVersion.team))
-        }
-      }.getOrElse(DBIO.successful(None))
-      maybeRegion <- maybeRaw.flatMap { raw =>
-        raw.maybeRegionName.map { regionName =>
-          DBIO.from(dataService.environmentVariables.find(regionName, behaviorVersion.team))
-        }
-      }.getOrElse(DBIO.successful(None))
-    } yield {
-      maybeRaw.map { raw =>
-        AWSConfig(raw.id, raw.behaviorVersionId, maybeAccessKey, maybeSecretKey, maybeRegion)
-      }
-    }
-
+    val action = findQuery(behaviorVersion.id).result.map(_.headOption)
     dataService.run(action)
   }
 
@@ -74,29 +44,16 @@ class AWSConfigServiceImpl @Inject() (
                  maybeSecretKeyName: Option[String],
                  maybeRegionName: Option[String]
                ): Future[AWSConfig] = {
-    val action = for {
-      maybeAccessKey <- maybeAccessKeyName.map { name =>
-        DBIO.from(dataService.environmentVariables.ensureFor(name, None, behaviorVersion.team))
-      }.getOrElse(DBIO.successful(None))
-      maybeSecretKey <- maybeSecretKeyName.map { name =>
-        DBIO.from(dataService.environmentVariables.ensureFor(name, None, behaviorVersion.team))
-      }.getOrElse(DBIO.successful(None))
-      maybeRegion <- maybeRegionName.map { name =>
-        DBIO.from(dataService.environmentVariables.ensureFor(name, None, behaviorVersion.team))
-      }.getOrElse(DBIO.successful(None))
-      newInstance <- {
-        val raw =
-          RawAWSConfig(
-            IDs.next,
-            behaviorVersion.id,
-            maybeAccessKey.map(_.name),
-            maybeSecretKey.map(_.name),
-            maybeRegion.map(_.name)
-          )
-        (all += raw).map { _ => AWSConfig(raw.id, raw.behaviorVersionId, maybeAccessKey, maybeSecretKey, maybeRegion) }
-      }
-    } yield newInstance
 
+    val newInstance = AWSConfig(
+      IDs.next,
+      behaviorVersion.id,
+      maybeAccessKeyName,
+      maybeSecretKeyName,
+      maybeRegionName
+    )
+
+    val action = (all += newInstance).map { _ => newInstance }
     dataService.run(action)
   }
 

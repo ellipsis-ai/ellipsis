@@ -1,7 +1,6 @@
 package modules
 
 import com.google.inject.{AbstractModule, Provides}
-import data.OAuth2ApiPopulator
 import models.Models
 import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
@@ -24,7 +23,7 @@ import models.behaviors.events.EventHandler
 import models.behaviors.invocationlogentry.{InvocationLogEntryService, InvocationLogEntryServiceImpl}
 import models.behaviors.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
 import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
-import models.environmentvariable.{EnvironmentVariableService, EnvironmentVariableServiceImpl}
+import models.environmentvariable._
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
@@ -44,7 +43,8 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[LinkedAccountService].to(classOf[LinkedAccountServiceImpl])
     bind[TeamService].to(classOf[TeamServiceImpl])
     bind[APITokenService].to(classOf[APITokenServiceImpl])
-    bind[EnvironmentVariableService].to(classOf[EnvironmentVariableServiceImpl])
+    bind[TeamEnvironmentVariableService].to(classOf[TeamEnvironmentVariableServiceImpl])
+    bind[UserEnvironmentVariableService].to(classOf[UserEnvironmentVariableServiceImpl])
     bind[InvocationTokenService].to(classOf[InvocationTokenServiceImpl])
     bind[LinkedOAuth2TokenService].to(classOf[LinkedOAuth2TokenServiceImpl])
     bind[OAuth2ApiService].to(classOf[OAuth2ApiServiceImpl])

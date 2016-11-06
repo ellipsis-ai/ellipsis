@@ -22,7 +22,7 @@ import models.behaviors.conversations.conversation.ConversationService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
-import models.environmentvariable.EnvironmentVariableService
+import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.team.TeamService
 import org.scalatest.mock.MockitoSugar
@@ -39,7 +39,8 @@ class MockDataService extends DataService with MockitoSugar {
   val linkedAccounts = mock[LinkedAccountService]
   val teams = mock[TeamService]
   val apiTokens = mock[APITokenService]
-  val environmentVariables = mock[EnvironmentVariableService]
+  val teamEnvironmentVariables = mock[TeamEnvironmentVariableService]
+  val userEnvironmentVariables = mock[UserEnvironmentVariableService]
   val invocationTokens = mock[InvocationTokenService]
   val linkedOAuth2Tokens = mock[LinkedOAuth2TokenService]
   val oauth2Apis = mock[OAuth2ApiService]

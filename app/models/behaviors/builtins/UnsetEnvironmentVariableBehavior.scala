@@ -19,7 +19,7 @@ case class UnsetEnvironmentVariableBehavior(
     for {
       maybeTeam <- dataService.teams.find(messageContext.teamId)
       didDelete <- maybeTeam.map { team =>
-        dataService.environmentVariables.deleteFor(name, team)
+        dataService.teamEnvironmentVariables.deleteFor(name, team)
       }.getOrElse(Future.successful(false))
     } yield {
       val msg = if (didDelete) {

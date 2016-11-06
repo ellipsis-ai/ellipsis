@@ -13,7 +13,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.events.MessageEvent
-import models.environmentvariable.EnvironmentVariable
+import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.behaviors.invocationtoken.InvocationToken
 import models.team.Team
 import play.api.Configuration
@@ -72,10 +72,15 @@ class AWSLambdaServiceImpl @Inject() (
                                    teamInfo: TeamInfo,
                                    token: InvocationToken
                                    ): Seq[(String, JsObject)] = {
+    val teamEnvVars = environmentVariables.filter(ev => ev.isInstanceOf[TeamEnvironmentVariable])
+    val userEnvVars = environmentVariables.filter(ev => ev.isInstanceOf[UserEnvironmentVariable])
     Seq(CONTEXT_PARAM -> JsObject(Seq(
       API_BASE_URL_KEY -> JsString(apiBaseUrl),
       TOKEN_KEY -> JsString(token.id),
-      ENV_KEY -> JsObject(environmentVariables.map { ea =>
+      ENV_KEY -> JsObject(teamEnvVars.map { ea =>
+        ea.name -> JsString(ea.value)
+      }),
+      USER_ENV_KEY -> JsObject(userEnvVars.map { ea =>
         ea.name -> JsString(ea.value)
       }),
       USER_INFO_KEY -> userInfo.toJson,

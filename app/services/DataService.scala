@@ -20,7 +20,7 @@ import models.behaviors.conversations.conversation.ConversationService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
-import models.environmentvariable.EnvironmentVariableService
+import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.team.TeamService
 import slick.dbio.DBIO
@@ -34,7 +34,8 @@ trait DataService {
   val linkedAccounts: LinkedAccountService
   val teams: TeamService
   val apiTokens: APITokenService
-  val environmentVariables: EnvironmentVariableService
+  val teamEnvironmentVariables: TeamEnvironmentVariableService
+  val userEnvironmentVariables: UserEnvironmentVariableService
   val invocationTokens: InvocationTokenService
   val linkedOAuth2Tokens: LinkedOAuth2TokenService
   val oauth2Apis: OAuth2ApiService
