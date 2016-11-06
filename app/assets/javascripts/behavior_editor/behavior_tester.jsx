@@ -128,7 +128,8 @@ define(function(require) {
         onSuccess: (json) => {
           var newResults = this.state.results.concat(new InvocationTestResult(
             json.result && json.result.fullText,
-            json.missingParamNames
+            json.missingParamNames,
+            json.missingUserEnvVars
           ));
           this.setState({
             results: newResults,
