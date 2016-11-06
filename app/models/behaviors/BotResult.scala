@@ -18,7 +18,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, MissingUserEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BotResult {
@@ -177,27 +177,6 @@ case class MissingTeamEnvVarsResult(
        |You can define an environment variable by typing something like:
        |
        |`@ellipsis: set env ENV_VAR_NAME value`
-    """.stripMargin
-  }
-
-}
-
-case class MissingUserEnvVarsResult(
-                                     behaviorVersion: BehaviorVersion,
-                                     configuration: Configuration,
-                                     missingEnvVars: Seq[String]
-                                   ) extends BotResult with WithBehaviorLink {
-
-  val resultType = ResultType.MissingUserEnvVar
-
-  def text = {
-    s"""
-       |To use ${linkToBehaviorFor("this skill")}, you need a value for the following user-specific environment variables:
-       |${missingEnvVars.map( ea => s"\n- $ea").mkString("")}
-       |
-       |You can do this by typing something like:
-       |
-       |`@ellipsis: set user env ENV_VAR_NAME value`
     """.stripMargin
   }
 
