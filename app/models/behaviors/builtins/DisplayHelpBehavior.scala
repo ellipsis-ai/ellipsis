@@ -27,7 +27,8 @@ case class DisplayHelpBehavior(
     for {
       triggers <- dataService.messageTriggers.allFor(behaviorVersion)
       authorNames <- messageContext match {
-        case c: SlackMessageContext => dataService.behaviors.authorNamesFor(behaviorVersion.behavior, c)
+        // TODO: this is broken in production for some teams
+//        case c: SlackMessageContext => dataService.behaviors.authorNamesFor(behaviorVersion.behavior, c)
         case _ => Future.successful(Seq())
       }
     } yield {
