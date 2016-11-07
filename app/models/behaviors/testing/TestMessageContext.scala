@@ -28,7 +28,12 @@ case class TestMessageContext(
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = Future.successful(None)
 
-  def sendMessage(text: String, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
+  def sendMessage(
+                   text: String,
+                   forcePrivate: Boolean,
+                   maybeShouldUnfurl: Option[Boolean],
+                   maybeConversation: Option[Conversation]
+                 )(implicit ec: ExecutionContext): Unit = {
     messageBuffer += text
   }
 

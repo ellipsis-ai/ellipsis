@@ -5,6 +5,7 @@ import models.accounts.logintoken.LoginToken
 import models.accounts.oauth2application.OAuth2Application
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageContext, MessageEvent}
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
@@ -28,8 +29,12 @@ sealed trait BotResult {
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
 
-  def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
-    context.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl)
+  def sendIn(
+              context: MessageContext,
+              maybeShouldUnfurl: Option[Boolean],
+              maybeConversation: Option[Conversation]
+            ): Unit = {
+    context.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation)
   }
 }
 
@@ -72,7 +77,11 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
 
   def text: String = ""
 
-  override def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+  override def sendIn(
+                       context: MessageContext,
+                       maybeShouldUnfurl: Option[Boolean],
+                       maybeConversation: Option[Conversation]
+                     ): Unit = {
     // do nothing
   }
 
@@ -226,9 +235,13 @@ case class OAuth2TokenMissing(
        |""".stripMargin
   }
 
-  override def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+  override def sendIn(
+                       context: MessageContext,
+                       maybeShouldUnfurl: Option[Boolean],
+                       maybeConversation: Option[Conversation]
+                     ): Unit = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(context, maybeShouldUnfurl)
+    super.sendIn(context, maybeShouldUnfurl, maybeConversation)
   }
 }
 

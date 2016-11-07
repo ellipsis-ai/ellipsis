@@ -57,8 +57,18 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def findOngoingFor(userIdForContext: String, context: String): Future[Option[Conversation]] = {
-    val action = findWithoutStateQueryFor(userIdForContext, context, Conversation.DONE_STATE).result.map(_.headOption.map(tuple2Conversation))
+  def findOngoingFor(userIdForContext: String, context: String, isPrivateMessage: Boolean): Future[Option[Conversation]] = {
+    val action = allWithoutStateQueryFor(userIdForContext, Conversation.DONE_STATE).result.map { r =>
+      r.map(tuple2Conversation)
+    }.map { activeConvos =>
+      activeConvos.find { ea =>
+        ea.stateRequiresPrivateMessage && isPrivateMessage
+      }.orElse {
+        activeConvos.find { ea =>
+          !ea.stateRequiresPrivateMessage && ea.context == context
+        }
+      }
+    }
     dataService.run(action)
   }
 

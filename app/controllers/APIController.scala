@@ -89,13 +89,13 @@ class APIController @Inject() (
               APIMessageEvent(APIMessageContext(slackClient, botProfile, info.channel, info.message))
             })
           result <- maybeEvent.map { event =>
-            eventHandler.handle(event).map { results =>
+            eventHandler.handle(event, None).map { results =>
               results.foreach { result =>
                 maybeSlackProfile.foreach { slackProfile =>
                   val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
-                  introResult.sendIn(event.context)
+                  introResult.sendIn(event.context, None, None)
                 }
-                result.sendIn(event.context)
+                result.sendIn(event.context, None, None)
               }
               Ok(Json.toJson(results.map(_.fullText)))
             }

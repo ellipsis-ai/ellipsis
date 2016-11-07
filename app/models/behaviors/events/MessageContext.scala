@@ -19,8 +19,6 @@ trait MessageContext extends Context {
 
   val includesBotMention: Boolean
 
-  def sendMessage(text: String, forcePrivate: Boolean = false, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit
-
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.BehaviorEditorController.newForNormalBehavior(Some(teamId))

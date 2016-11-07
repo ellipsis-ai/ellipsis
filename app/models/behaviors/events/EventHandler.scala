@@ -43,21 +43,18 @@ class EventHandler @Inject() (
     conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
   }
 
-  def handle(event: Event): Future[Seq[BotResult]] = {
+  def handle(event: MessageEvent, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     event match {
       case messageEvent: MessageEvent => {
-        for {
-          maybeConversation <- event.context.maybeOngoingConversation(dataService)
-          results <- maybeConversation.map { conversation =>
-            handleInConversation(conversation, messageEvent).map(Seq(_))
+        maybeConversation.map { conversation =>
+          handleInConversation(conversation, messageEvent).map(Seq(_))
+        }.getOrElse {
+          BuiltinBehavior.maybeFrom(messageEvent.context, lambdaService, dataService).map { builtin =>
+            builtin.result.map(Seq(_))
           }.getOrElse {
-            BuiltinBehavior.maybeFrom(messageEvent.context, lambdaService, dataService).map { builtin =>
-              builtin.result.map(Seq(_))
-            }.getOrElse {
-              startInvokeConversationFor(messageEvent)
-            }
+            startInvokeConversationFor(messageEvent)
           }
-        } yield results
+        }
       }
       case _ => Future.successful(Seq(NoResponseResult(None)))
     }
