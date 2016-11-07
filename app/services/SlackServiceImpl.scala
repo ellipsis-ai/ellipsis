@@ -8,6 +8,7 @@ import slack.rtm.SlackRtmClient
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.{EventHandler, SlackMessageContext, SlackMessageEvent}
+import play.api.Logger
 
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
@@ -60,6 +61,11 @@ class SlackServiceImpl @Inject() (
             results.foreach(_.sendIn(event.context, None, maybeConversation))
           }
         } yield {}
+        handleMessage.recover {
+          case t: Throwable => {
+            Logger.error("Exception responding to a Slack message", t)
+          }
+        }
         p.completeWith(handleMessage)
         Future {
           Thread.sleep(500)
