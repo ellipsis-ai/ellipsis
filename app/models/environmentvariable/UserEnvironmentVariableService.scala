@@ -25,9 +25,7 @@ trait UserEnvironmentVariableService {
   }
 
   def knownUsedIn(behaviorVersion: BehaviorVersion, dataService: DataService): Future[Seq[String]] = {
-    dataService.awsConfigs.environmentVariablesUsedFor(behaviorVersion).map { inConfig =>
-      inConfig ++ lookForInCode(behaviorVersion.functionBody)
-    }
+    Future.successful(lookForInCode(behaviorVersion.functionBody))
   }
 
   def missingFor(user: User, behaviorVersion: BehaviorVersion, dataService: DataService): Future[Seq[String]] = {
