@@ -21,10 +21,10 @@ object ConversationQueries {
   def uncompiledFindQueryFor(id: Rep[String]) = allWithTrigger.filter(_._1.id === id)
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
-  def uncompiledFindWithoutStateQueryFor(userIdForContext: Rep[String], state: Rep[String]) = {
+  def uncompiledAllWithoutStateQueryFor(userIdForContext: Rep[String], state: Rep[String]) = {
     allWithTrigger.
       filter { case(conversation, _) => conversation.userIdForContext === userIdForContext }.
       filterNot { case(conversation, _) => conversation.state === state }
   }
-  val allWithoutStateQueryFor = Compiled(uncompiledFindWithoutStateQueryFor _)
+  val allWithoutStateQueryFor = Compiled(uncompiledAllWithoutStateQueryFor _)
 }
