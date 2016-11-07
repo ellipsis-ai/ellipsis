@@ -27,8 +27,7 @@ case class DisplayHelpBehavior(
     for {
       triggers <- dataService.messageTriggers.allFor(behaviorVersion)
       authorNames <- messageContext match {
-        // TODO: this is broken in production for some teams
-//        case c: SlackMessageContext => dataService.behaviors.authorNamesFor(behaviorVersion.behavior, c)
+        case c: SlackMessageContext => dataService.behaviors.authorNamesFor(behaviorVersion.behavior, c)
         case _ => Future.successful(Seq())
       }
     } yield {
@@ -58,8 +57,8 @@ case class DisplayHelpBehavior(
         None
       } else {
         val link = behaviorVersion.editLinkFor(lambdaService.configuration)
-        val authorsString = "" // "by " ++ authorNames.map(n => s"<@$n>").mkString(", ")
-        Some(s"\n$triggersString [✎]($link) $authorsString ")
+        val authorsString = "" //if (authorNames.isEmpty) { "" } else { "by " ++ authorNames.map(n => s"<@$n>").mkString(", ") }
+        Some(s"\n$triggersString [✎]($link) $authorsString  ")
       }
     }
   }

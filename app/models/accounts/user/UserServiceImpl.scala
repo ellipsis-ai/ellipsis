@@ -10,6 +10,7 @@ import models.IDs
 import models.team.Team
 import org.joda.time.DateTime
 import services.DataService
+import slack.api.ApiError
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -102,8 +103,12 @@ class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) ext
     for {
       maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
       maybeName <- Future {
-        maybeSlackAccount.map { acc =>
-          slackMessageContext.client.apiClient.getUserInfo(acc.loginInfo.providerKey).name
+        maybeSlackAccount.flatMap { acc =>
+          try {
+            Some(slackMessageContext.client.apiClient.getUserInfo(acc.loginInfo.providerKey).name)
+          } catch {
+            case e: ApiError => None
+          }
         }
       }
     } yield maybeName
