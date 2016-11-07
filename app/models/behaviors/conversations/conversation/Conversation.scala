@@ -23,6 +23,8 @@ trait Conversation {
   val startedAt: DateTime
   val state: String
 
+  val stateRequiresPrivateMessage: Boolean = false
+
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
   def respond(

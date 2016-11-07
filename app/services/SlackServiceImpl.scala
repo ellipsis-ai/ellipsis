@@ -54,11 +54,14 @@ class SlackServiceImpl @Inject() (
       if (message.user != selfId) {
         val p = Promise[Unit]()
         val event = SlackMessageEvent(SlackMessageContext(client, profile, message))
-        val handleMessage = eventHandler.handle(event).map { results =>
-          results.foreach(_.sendIn(event.context))
-        }
+        val handleMessage = for {
+          maybeConversation <- event.context.maybeOngoingConversation(dataService)
+          _ <- eventHandler.handle(event, maybeConversation).map { results =>
+            results.foreach(_.sendIn(event.context, None, maybeConversation))
+          }
+        } yield {}
         p.completeWith(handleMessage)
-        val indicateTyping = Future {
+        Future {
           Thread.sleep(500)
           while (!p.isCompleted) {
             client.indicateTyping(message.channel)

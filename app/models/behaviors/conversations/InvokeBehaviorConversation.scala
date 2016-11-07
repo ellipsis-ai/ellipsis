@@ -29,6 +29,8 @@ case class InvokeBehaviorConversation(
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
 
+  override val stateRequiresPrivateMessage: Boolean = state == InvokeBehaviorConversation.COLLECT_USER_ENV_VARS_STATE
+
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation] = {
     dataService.conversations.save(this.copy(state = newState))
   }
@@ -176,7 +178,7 @@ case class InvokeBehaviorConversation(
       }.getOrElse {
         "All done!"
       }
-      SimpleTextResult(prompt, behaviorVersion.forcePrivateResponse)
+      SimpleTextResult(prompt, forcePrivateResponse = true)
     }
   }
 
