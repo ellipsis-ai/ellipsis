@@ -3,6 +3,7 @@ package models.behaviors.testing
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.BehaviorResponse
+import play.api.Configuration
 import play.api.cache.CacheApi
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
@@ -15,7 +16,8 @@ case class InvocationTester(
                             paramValues: Map[String, String],
                             lambdaService: AWSLambdaService,
                             dataService: DataService,
-                            cache: CacheApi
+                            cache: CacheApi,
+                            configuration: Configuration
                           ) {
 
   def run: Future[InvocationTestReport] = {
@@ -37,16 +39,19 @@ case class InvocationTester(
           map { case(param, v) => param }.
           toSeq
       }
-      report <- if (missingParams.isEmpty) {
+
+      missingUserEnvVars <- dataService.userEnvironmentVariables.missingFor(user, behaviorVersion, dataService)
+
+      report <- if (missingParams.isEmpty && missingUserEnvVars.isEmpty) {
         val invocationParamValues = paramValueMaybes.zipWithIndex.map { case ((param, v), i) =>
           (AWSLambdaConstants.invocationParamFor(i), v.get)
         }
         for {
-          parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache)
+          parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache, configuration)
           result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event)
-        } yield InvocationTestReport(behaviorVersion, Some(result), Seq())
+        } yield InvocationTestReport(behaviorVersion, Some(result), Seq(), Seq())
       } else {
-        Future.successful(InvocationTestReport(behaviorVersion, None, missingParams))
+        Future.successful(InvocationTestReport(behaviorVersion, None, missingParams, missingUserEnvVars))
       }
     } yield report
   }

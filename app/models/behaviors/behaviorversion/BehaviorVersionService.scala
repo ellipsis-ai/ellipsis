@@ -5,8 +5,6 @@ import models.accounts.user.User
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
-import models.environmentvariable.EnvironmentVariable
-import services.DataService
 
 import scala.concurrent.Future
 
@@ -29,14 +27,6 @@ trait BehaviorVersionService {
   def save(behaviorVersion: BehaviorVersion): Future[BehaviorVersion]
 
   def delete(behaviorVersion: BehaviorVersion): Future[BehaviorVersion]
-
-  def environmentVariablesUsedInCode(functionBody: String): Seq[String]
-
-  def missingEnvironmentVariablesIn(
-                                     behaviorVersion: BehaviorVersion,
-                                     environmentVariables: Seq[EnvironmentVariable],
-                                     dataService: DataService
-                                   ): Future[Seq[String]]
 
   def maybeFunctionFor(behaviorVersion: BehaviorVersion): Future[Option[String]]
 

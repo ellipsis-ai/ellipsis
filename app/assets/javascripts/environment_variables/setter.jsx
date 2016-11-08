@@ -4,14 +4,16 @@ define(function(require) {
     Input = require('../form/input'),
     Textarea = require('../form/textarea'),
     formatEnvVarName = require('./formatter'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../if_present'),
+    SetterActions = require('./setter_actions');
 
   return React.createClass({
     propTypes: {
       onCancelClick: React.PropTypes.func,
       onSave: React.PropTypes.func.isRequired,
       vars: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      errorMessage: React.PropTypes.string
+      errorMessage: React.PropTypes.string,
+      isFullPage: React.PropTypes.bool
     },
 
     getVars: function() {
@@ -146,10 +148,10 @@ define(function(require) {
       if (v.isAlreadySavedWithValue) {
         return (
           <div className="position-relative">
-            <span className="align-button type-monospace type-weak mrm">
+            <span className="type-monospace type-weak mrm">
               ••••••••
             </span>
-            <button type="button" className="button-raw mbs"
+            <button type="button" className="button-raw"
               onClick={this.resetVar.bind(this, index)}>Reset</button>
           </div>
         );
@@ -157,13 +159,18 @@ define(function(require) {
         return (
           <Textarea
             ref={"envVarValue" + index}
-            className="type-monospace"
+            className="type-monospace form-input-borderless form-input-height-auto"
             placeholder="Enter value"
             value={v.value || ""}
             onChange={this.onChangeVarValue.bind(this, index)}
+            rows={this.getRowCountForTextareaValue(v.value)}
           />
         );
       }
+    },
+
+    getRowCountForTextareaValue: function(value) {
+      return String(Math.min((value || "").split('\n').length, 5));
     },
 
     onSaveError: function() {
@@ -200,7 +207,10 @@ define(function(require) {
                   return (
                     <div className="column-row" key={`envVar${index}`}>
                       <div className="column column-one-quarter mobile-column-full type-monospace pvxs mobile-pbn">
-                        <div className="type-monospace align-button display-ellipsis">
+                        <div className={
+                          "type-monospace display-ellipsis " +
+                          (v.isAlreadySavedWithValue ? "" : "align-button")
+                        }>
                           {v.name}
                         </div>
                       </div>
@@ -224,10 +234,11 @@ define(function(require) {
                       <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
                         <Textarea
                           ref={"newEnvVarValue" + index}
-                          className="type-monospace"
+                          className="type-monospace form-input-borderless form-input-height-auto"
                           placeholder="Enter value"
                           value={v.value || ""}
                           onChange={this.setNewVarIndexValue.bind(this, index)}
+                          rows={this.getRowCountForTextareaValue(v.value)}
                         />
                       </div>
                     </div>
@@ -244,7 +255,7 @@ define(function(require) {
               </button>
             </div>
 
-            <div className="mtxl">
+            <SetterActions isFullPage={this.props.isFullPage}>
               <button type="button"
                 className={"button-primary mrs mbs " + (this.state.isSaving ? "button-activated" : "")}
                 disabled={!this.isValid()}
@@ -267,8 +278,7 @@ define(function(require) {
                   An error occurred while saving. Please try again.
                 </span>
               ), () => (this.getDuplicateErrorMessage()))}
-            </div>
-
+            </SetterActions>
         </div>
       );
     }

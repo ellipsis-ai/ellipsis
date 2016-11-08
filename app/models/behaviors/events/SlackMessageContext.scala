@@ -39,10 +39,15 @@ case class SlackMessageContext(
     }
     conversationContextForChannel(maybeChannel.getOrElse(message.channel))
   }
+  def maybeChannelFromConversationContext(context: String): Option[String] = {
+    s"""${Conversation.SLACK_CONTEXT}#(\\S+)""".r.findFirstMatchIn(context).flatMap { m =>
+      m.subgroups.headOption
+    }
+  }
   lazy val userIdForContext: String = message.user
 
-  lazy val isDirectMessage: Boolean = {
-    message.channel.startsWith("D")
+  def isDirectMessage(channelId: String): Boolean = {
+    channelId.startsWith("D")
   }
 
   override def relevantMessageText: String = {
@@ -50,7 +55,7 @@ case class SlackMessageContext(
   }
 
   lazy val includesBotMention: Boolean = {
-    isDirectMessage ||
+    isDirectMessage(message.channel) ||
       SlackMessageContext.mentionRegexFor(botId).findFirstMatchIn(message.text).nonEmpty ||
       MessageContext.ellipsisRegex.findFirstMatchIn(message.text).nonEmpty
   }
@@ -70,21 +75,37 @@ case class SlackMessageContext(
 
   def maybeDMChannel = client.apiClient.listIms.find(_.user == message.user).map(_.id)
 
-  def sendMessage(unformattedText: String, forcePrivate: Boolean, maybeShouldUnfurl: Option[Boolean] = None)(implicit ec: ExecutionContext): Unit = {
-    val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
-    val apiClient = client.apiClient
-    val maybeDMChannelToUse = if (forcePrivate) {
+  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation]): String = {
+    (if (forcePrivate) {
       maybeDMChannel
     } else {
       None
-    }
+    }).orElse {
+      maybeConversation.flatMap { convo =>
+        maybeChannelFromConversationContext(convo.context)
+      }
+    }.getOrElse(message.channel)
+  }
+
+  def sendMessage(
+                   unformattedText: String,
+                   forcePrivate: Boolean,
+                   maybeShouldUnfurl: Option[Boolean],
+                   maybeConversation: Option[Conversation]
+                 )(implicit ec: ExecutionContext): Unit = {
+    val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
+    val apiClient = client.apiClient
+    val channel = channelForSend(forcePrivate, maybeConversation)
     messageSegmentsFor(formattedText).foreach { ea =>
       // The Slack API considers sending an empty message to be an error rather than a no-op
       if (ea.nonEmpty) {
-        if (maybeDMChannelToUse.isDefined && !maybeDMChannelToUse.contains(message.channel)) {
+        if (isDirectMessage(channel) && channel != message.channel) {
           apiClient.postChatMessage(message.channel, s"<@${message.user}> I've sent you a private message :sleuth_or_spy:", asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
         }
-        apiClient.postChatMessage(maybeDMChannelToUse.getOrElse(message.channel), ea, asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
+        if (!isDirectMessage(channel) && channel != message.channel) {
+          apiClient.postChatMessage(message.channel, s"<@${message.user}> OK, back to <#${channel}>", asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
+        }
+        apiClient.postChatMessage(channel, ea, asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
       }
     }
   }
@@ -108,7 +129,7 @@ case class SlackMessageContext(
   }
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(message.user, conversationContext)
+    dataService.conversations.findOngoingFor(message.user, conversationContext, isDirectMessage(message.channel))
   }
 
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {

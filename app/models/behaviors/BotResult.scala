@@ -5,6 +5,7 @@ import models.accounts.logintoken.LoginToken
 import models.accounts.oauth2application.OAuth2Application
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageContext, MessageEvent}
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
@@ -18,7 +19,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BotResult {
@@ -28,8 +29,12 @@ sealed trait BotResult {
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
 
-  def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
-    context.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl)
+  def sendIn(
+              context: MessageContext,
+              maybeShouldUnfurl: Option[Boolean],
+              maybeConversation: Option[Conversation]
+            ): Unit = {
+    context.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation)
   }
 }
 
@@ -72,7 +77,11 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
 
   def text: String = ""
 
-  override def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+  override def sendIn(
+                       context: MessageContext,
+                       maybeShouldUnfurl: Option[Boolean],
+                       maybeConversation: Option[Conversation]
+                     ): Unit = {
     // do nothing
   }
 
@@ -161,22 +170,22 @@ case class NoCallbackTriggeredResult(
 
 }
 
-case class MissingEnvVarsResult(
+case class MissingTeamEnvVarsResult(
                                  behaviorVersion: BehaviorVersion,
                                  configuration: Configuration,
                                  missingEnvVars: Seq[String]
                                ) extends BotResult with WithBehaviorLink {
 
-  val resultType = ResultType.MissingEnvVar
+  val resultType = ResultType.MissingTeamEnvVar
 
   def text = {
     s"""
        |To use ${linkToBehaviorFor("this skill")}, you need the following environment variables defined:
        |${missingEnvVars.map( ea => s"\n- $ea").mkString("")}
-        |
-        |You can define an environment variable by typing something like:
-        |
-        |`@ellipsis: set env ENV_VAR_NAME value`
+       |
+       |You can define an environment variable by typing something like:
+       |
+       |`@ellipsis: set env ENV_VAR_NAME value`
     """.stripMargin
   }
 
@@ -226,9 +235,13 @@ case class OAuth2TokenMissing(
        |""".stripMargin
   }
 
-  override def sendIn(context: MessageContext, maybeShouldUnfurl: Option[Boolean] = None): Unit = {
+  override def sendIn(
+                       context: MessageContext,
+                       maybeShouldUnfurl: Option[Boolean],
+                       maybeConversation: Option[Conversation]
+                     ): Unit = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(context, maybeShouldUnfurl)
+    super.sendIn(context, maybeShouldUnfurl, maybeConversation)
   }
 }
 

@@ -79,8 +79,8 @@ class APIAccessController @Inject() (
                     map { _ =>
                       request.session.get("invocation-id").flatMap { invocationId =>
                         cache.get[MessageEvent](invocationId).map { event =>
-                          eventHandler.handle(event).map { results =>
-                            results.map(_.sendIn(event.context))
+                          eventHandler.handle(event, None).map { results =>
+                            results.map(_.sendIn(event.context, None, None))
                             Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.context.name}."))
                           }
                         }

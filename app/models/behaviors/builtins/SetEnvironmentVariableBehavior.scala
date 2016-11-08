@@ -20,7 +20,7 @@ case class SetEnvironmentVariableBehavior(
     for {
       maybeTeam <- dataService.teams.find(messageContext.teamId)
       maybeEnvVar <- maybeTeam.map { team =>
-        dataService.environmentVariables.ensureFor(name, Some(value), team)
+        dataService.teamEnvironmentVariables.ensureFor(name, Some(value), team)
       }.getOrElse(Future.successful(None))
     } yield {
       SimpleTextResult(s"OK, saved $name!", forcePrivateResponse = false)

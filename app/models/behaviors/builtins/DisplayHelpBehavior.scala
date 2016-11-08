@@ -57,8 +57,8 @@ case class DisplayHelpBehavior(
         None
       } else {
         val link = behaviorVersion.editLinkFor(lambdaService.configuration)
-        val authorsString = "" // "by " ++ authorNames.map(n => s"<@$n>").mkString(", ")
-        Some(s"\n$triggersString [✎]($link) $authorsString ")
+        val authorsString = "" //if (authorNames.isEmpty) { "" } else { "by " ++ authorNames.map(n => s"<@$n>").mkString(", ") }
+        Some(s"\n$triggersString [✎]($link) $authorsString  ")
       }
     }
   }

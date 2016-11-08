@@ -9,13 +9,15 @@ case class ResultOutput(kind: String, fullText: String)
 
 case class InvocationTestReportOutput(
                                       missingParamNames: Seq[String],
+                                      missingUserEnvVars: Seq[String],
                                       result: Option[ResultOutput]
                                     )
 
 case class InvocationTestReport(
                                 behaviorVersion: BehaviorVersion,
                                 maybeResult: Option[BotResult],
-                                missingParams: Seq[BehaviorParameter]
+                                missingParams: Seq[BehaviorParameter],
+                                missingUserEnvVars: Seq[String]
                               ) {
 
   implicit val resultOutputWrites = Json.writes[ResultOutput]
@@ -24,6 +26,7 @@ case class InvocationTestReport(
   def json: JsValue = {
     val data = InvocationTestReportOutput(
       missingParams.map(_.name),
+      missingUserEnvVars,
       maybeResult.map { r =>
         ResultOutput(r.resultType.toString, r.fullText)
       }

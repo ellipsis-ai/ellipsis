@@ -12,35 +12,35 @@ import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RawEnvironmentVariable(
+case class RawTeamEnvironmentVariable(
                                    name: String,
                                    value: String,
                                    teamId: String,
                                    createdAt: DateTime
                                  )
 
-class EnvironmentVariablesTable(tag: Tag) extends Table[RawEnvironmentVariable](tag, "environment_variables") {
+class TeamEnvironmentVariablesTable(tag: Tag) extends Table[RawTeamEnvironmentVariable](tag, "environment_variables") {
 
   def name = column[String]("name")
   def value = column[String]("value")
   def teamId = column[String]("team_id")
   def createdAt = column[DateTime]("created_at")
 
-  def * = (name, value, teamId, createdAt) <> ((RawEnvironmentVariable.apply _).tupled, RawEnvironmentVariable.unapply _)
+  def * = (name, value, teamId, createdAt) <> ((RawTeamEnvironmentVariable.apply _).tupled, RawTeamEnvironmentVariable.unapply _)
 }
 
-class EnvironmentVariableServiceImpl @Inject() (
+class TeamEnvironmentVariableServiceImpl @Inject() (
                                       dataServiceProvider: Provider[DataService]
-                                    ) extends EnvironmentVariableService {
+                                    ) extends TeamEnvironmentVariableService {
 
   def dataService = dataServiceProvider.get
 
-  val all = TableQuery[EnvironmentVariablesTable]
+  val all = TableQuery[TeamEnvironmentVariablesTable]
   val allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
 
-  def tuple2EnvironmentVariable(tuple: (RawEnvironmentVariable, Team)): EnvironmentVariable = {
+  def tuple2EnvironmentVariable(tuple: (RawTeamEnvironmentVariable, Team)): TeamEnvironmentVariable = {
     val raw = tuple._1
-    EnvironmentVariable(raw.name, raw.value, tuple._2, raw.createdAt)
+    TeamEnvironmentVariable(raw.name, raw.value, tuple._2, raw.createdAt)
   }
 
   def uncompiledFindQueryFor(name: Rep[String], teamId: Rep[String]) = {
@@ -55,25 +55,25 @@ class EnvironmentVariableServiceImpl @Inject() (
   }
   val rawFindQueryFor = Compiled(uncompiledRawFindQueryFor _)
 
-  def find(name: String, team: Team): Future[Option[EnvironmentVariable]] = {
+  def find(name: String, team: Team): Future[Option[TeamEnvironmentVariable]] = {
     dataService.run(findQueryFor(name, team.id).result.map { r => r.headOption.map(tuple2EnvironmentVariable) })
   }
 
-  def ensureFor(name: String, maybeValue: Option[String], team: Team): Future[Option[EnvironmentVariable]] = {
+  def ensureFor(name: String, maybeValue: Option[String], team: Team): Future[Option[TeamEnvironmentVariable]] = {
     val action = Option(name).filter(_.trim.nonEmpty).map { nonEmptyName =>
       val query = rawFindQueryFor(name, team.id)
       query.result.flatMap { r =>
         r.headOption.map { existing =>
           maybeValue.map { value =>
-            val raw = RawEnvironmentVariable(name, value, team.id, DateTime.now)
+            val raw = RawTeamEnvironmentVariable(name, value, team.id, DateTime.now)
             query.update(raw).map(_ => raw)
           }.getOrElse(DBIO.successful(existing))
         }.getOrElse {
           val value = maybeValue.getOrElse("")
-          val raw = RawEnvironmentVariable(name, value, team.id, DateTime.now)
+          val raw = RawTeamEnvironmentVariable(name, value, team.id, DateTime.now)
           (all += raw).map(_ => raw)
         }.map { raw =>
-          Some(EnvironmentVariable(raw.name, raw.value, team, raw.createdAt))
+          Some(TeamEnvironmentVariable(raw.name, raw.value, team, raw.createdAt))
         }
       }
     }.getOrElse(DBIO.successful(None))
@@ -88,7 +88,7 @@ class EnvironmentVariableServiceImpl @Inject() (
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = allWithTeam.filter(_._1.teamId === teamId)
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
-  def allFor(team: Team): Future[Seq[EnvironmentVariable]] = {
+  def allFor(team: Team): Future[Seq[TeamEnvironmentVariable]] = {
     val action = allForTeamQuery(team.id).result.map { r => r.map(tuple2EnvironmentVariable)}
     dataService.run(action)
   }

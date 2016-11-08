@@ -13,7 +13,7 @@ define(function(require) {
       onChange: React.PropTypes.func.isRequired,
       onFocus: React.PropTypes.func,
       placeholder: React.PropTypes.string,
-      size: React.PropTypes.string,
+      rows: React.PropTypes.string,
       value: React.PropTypes.string.isRequired
     },
 
@@ -57,6 +57,7 @@ define(function(require) {
           onChange={this.onChange}
           onBlur={this.onBlur}
           onFocus={this.onFocus}
+          rows={this.props.rows}
         />
       );
     }

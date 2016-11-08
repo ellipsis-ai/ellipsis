@@ -86,9 +86,9 @@ case class ScheduledMessage(
       } yield {
         results.foreach { result =>
           if (result.hasText) {
-            scheduleInfoResultFor(result).sendIn(context)
+            scheduleInfoResultFor(result).sendIn(context, None, None)
           }
-          result.sendIn(context)
+          result.sendIn(context, None, None)
         }
       }
     }.getOrElse(Future.successful(Unit))

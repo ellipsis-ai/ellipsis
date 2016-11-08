@@ -44,7 +44,7 @@ class EnvironmentVariablesController @Inject() (
               maybeTeam <- dataService.teams.find(data.teamId, user)
               maybeEnvironmentVariables <- maybeTeam.map { team =>
                 Future.sequence(data.variables.map { envVarData =>
-                  dataService.environmentVariables.ensureFor(envVarData.name, envVarData.value, team)
+                  dataService.teamEnvironmentVariables.ensureFor(envVarData.name, envVarData.value, team)
                 }).map( vars => Some(vars.flatten) )
               }.getOrElse(Future.successful(None))
             } yield {
@@ -82,7 +82,7 @@ class EnvironmentVariablesController @Inject() (
         for {
           maybeTeam <- dataService.teams.find(user.teamId)
           isDeleted <- maybeTeam.map { team =>
-            dataService.environmentVariables.deleteFor(name, team)
+            dataService.teamEnvironmentVariables.deleteFor(name, team)
           }.getOrElse(Future.successful(false))
         } yield {
           if (isDeleted) {
@@ -100,7 +100,7 @@ class EnvironmentVariablesController @Inject() (
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.environmentVariables.allFor(team).map(Some(_))
+        dataService.teamEnvironmentVariables.allFor(team).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>

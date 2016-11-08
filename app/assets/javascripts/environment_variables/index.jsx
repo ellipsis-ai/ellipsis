@@ -22,9 +22,16 @@ define(function(require) {
     getInitialState: function() {
       return {
         activePanel: null,
-        environmentVariables: Sort.arrayAlphabeticalBy(this.props.data.variables, (ea) => ea.name),
+        environmentVariables: this.groupAndSortVarsByNameAndPresenceOfValue(this.props.data.variables),
         justSaved: false
       };
+    },
+
+    groupAndSortVarsByNameAndPresenceOfValue: function(vars) {
+      return Sort.arrayAlphabeticalBy(vars, (ea) => {
+        // Group vars with existing values before those without
+        return ea.isAlreadySavedWithValue ? `-${ea.name}` : `~${ea.name}`;
+      });
     },
 
     onSave: function(envVars) {
@@ -68,27 +75,27 @@ define(function(require) {
 
     render: function() {
       return (
-        <div>
+        <div className="flex-row-cascade">
           <div className="bg-light">
             <div className="container pbm">
               {this.renderHeader()}
             </div>
           </div>
-          <div className="flex-container">
-            <div className="container flex flex-center">
-              <div className="columns">
-                <div className="column column-one-quarter">
+          <div className="flex-columns flex-row-expand">
+            <div className="container flex-column flex-column-center flex-rows">
+              <div className="columns flex-columns flex-row-expand">
+                <div className="column column-one-quarter flex-column">
                   <SettingsMenu activePage="environmentVariables"/>
                 </div>
-                <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl phxxxxl">
+                <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
 
                   {this.renderEnvVarList()}
 
                 </div>
               </div>
             </div>
-            <div className="flex flex-left"></div>
-            <div className="flex flex-right bg-white"></div>
+            <div className="flex-column flex-column-left"></div>
+            <div className="flex-column flex-column-right bg-white"></div>
           </div>
         </div>
       );
@@ -109,6 +116,7 @@ define(function(require) {
           ref="setter"
           onSave={this.onSave}
           vars={this.getVars()}
+          isFullPage={true}
         />
       );
     }

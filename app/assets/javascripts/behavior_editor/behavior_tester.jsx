@@ -9,7 +9,9 @@ define(function(require) {
     Trigger = require('../models/trigger'),
     debounce = require('javascript-debounce'),
     oauth2ApplicationShape = require('./oauth2_application_shape'),
-    TesterAuthRequired = require('./tester_auth_required');
+    TesterAuthRequired = require('./tester_auth_required'),
+    InvocationTestResult = require('../models/behavior_invocation_result'),
+    InvocationResults = require('./behavior_tester_invocation_results');
 
   return React.createClass({
     displayName: 'BehaviorTester',
@@ -33,14 +35,26 @@ define(function(require) {
         hasTestedResult: false,
         triggerErrorOccurred: false,
         resultErrorOccurred: false,
-        result: '',
-        resultMissingParamNames: []
+        resultMissingParamNames: [],
+        results: []
       };
     },
 
     componentWillReceiveProps: function(newProps) {
-      if (this.props.triggers !== newProps.triggers) {
-        this.setState(this.getInitialState());
+      if (JSON.stringify(this.props.triggers) !== JSON.stringify(newProps.triggers)) {
+        this.setState({
+          testMessage: '',
+          highlightedTriggerText: null,
+          isTestingTriggers: false,
+          isTestingResult: false,
+          hasTestedTriggers: false,
+          triggerErrorOccurred: false
+        });
+      }
+      if (JSON.stringify(this.props.params) !== JSON.stringify(newProps.params)) {
+        this.setState({
+          paramValues: {}
+        });
       }
     },
 
@@ -68,7 +82,6 @@ define(function(require) {
 
     onDone: function() {
       this.props.onDone();
-      this.setState(this.getInitialState());
     },
 
     validateMessage: debounce(function() {
@@ -103,26 +116,9 @@ define(function(require) {
       });
     },
 
-    missingParametersResult: function(missingParamNames) {
-      if (missingParamNames.length === 1) {
-        return (
-          <div>Ellipsis will ask the user for a value for <code className="type-bold mlxs">{missingParamNames[0]}</code>.</div>
-        );
-      } else {
-        return (
-          <div>
-            <span>Ellipsis will ask the user for values for these inputs: </span>
-            <code className="type-bold mlxs">{missingParamNames.join(", ")}</code>
-          </div>
-        );
-      }
-    },
-
     fetchResult: function() {
       this.setState({
         isTestingResult: true,
-        result: '',
-        resultMissingParamNames: [],
         resultErrorOccurred: false
       });
       BehaviorTest.testInvocation({
@@ -130,9 +126,13 @@ define(function(require) {
         paramValues: this.state.paramValues,
         csrfToken: this.props.csrfToken,
         onSuccess: (json) => {
+          var newResults = this.state.results.concat(new InvocationTestResult(
+            json.result && json.result.fullText,
+            json.missingParamNames,
+            json.missingUserEnvVars
+          ));
           this.setState({
-            result: json.result ? json.result.fullText : '',
-            resultMissingParamNames: json.missingParamNames || [],
+            results: newResults,
             isTestingResult: false,
             hasTestedResult: true
           });
@@ -156,12 +156,12 @@ define(function(require) {
       return this.props.triggers.filter((trigger) => !!trigger.text);
     },
 
-    getResult: function() {
-      return this.state.result;
+    getResults: function() {
+      return this.state.results;
     },
 
     hasResult: function() {
-      return !!this.getResult() || this.state.resultMissingParamNames.length > 0;
+      return this.getResults().length > 0;
     },
 
     getValueForParamName: function(name) {
@@ -219,29 +219,10 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <Collapsible revealWhen={this.hasResult() && !this.state.isTestingResult}>
-            <div className="box-help">
-              <div className="container phn">
-                <div className="columns">
-                  <div className="column column-one-quarter mobile-column-full"></div>
-                  <div className="column column-three-quarters pll mobile-pln mobile-column-full">
-
-                    <h4>Response</h4>
-                    {ifPresent(this.getResult(), (result) => (
-                      <div className="display-overflow-scroll border border-blue pas bg-blue-lightest"
-                        style={{
-                          maxHeight: "10.25em",
-                          overflow: "auto"
-                        }}
-                      >
-                        <pre>{result}</pre>
-                      </div>
-                    ))}
-                    {ifPresent(this.state.resultMissingParamNames, this.missingParametersResult)}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <Collapsible revealWhen={this.hasResult()}>
+            <InvocationResults
+              results={this.getResults()}
+            />
           </Collapsible>
           <div className="box-action">
             <div className="container phn">

@@ -33,11 +33,7 @@ case class BehaviorVersion(
     }
   }
 
-  def editLinkFor(configuration: Configuration): String = {
-    val baseUrl = configuration.getString("application.apiBaseUrl").get
-    val path = controllers.routes.BehaviorEditorController.edit(behavior.id)
-    s"$baseUrl$path"
-  }
+  def editLinkFor(configuration: Configuration) = behavior.editLinkFor(configuration)
 
   def description: String = maybeDescription.getOrElse("")
 
