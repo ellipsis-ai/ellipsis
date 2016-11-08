@@ -43,7 +43,7 @@ define(function(require) {
           return (
             <span className="type-monospace" key={"regularTrigger" + index}>
               <span className="type-disabled"> · </span>
-              <span className="">{this.getTriggerTextFromTrigger(trigger)}</span>
+              <span>{this.getTriggerTextFromTrigger(trigger)}</span>
             </span>
           );
         } else {
