@@ -30,6 +30,7 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
           BehaviorVersionData.buildFor(
             behavior.team.id,
             Some(behavior.id),
+            None,
             "",
             qaExtractor.possibleAnswerContent,
             Seq(),

@@ -14,7 +14,6 @@ require('whatwg-fetch');
 return React.createClass({
   propTypes: {
     trigger: React.PropTypes.instanceOf(Trigger).isRequired,
-    large: React.PropTypes.bool,
     dropdownIsOpen: React.PropTypes.bool.isRequired,
     helpVisible: React.PropTypes.bool.isRequired,
     hideDelete: React.PropTypes.bool.isRequired,
@@ -246,8 +245,7 @@ return React.createClass({
             <Input
               className={
                 " form-input-borderless " +
-                (this.props.trigger.isRegex ? " type-monospace " : "") +
-                (this.props.large ? " form-input-large " : "")
+                (this.props.trigger.isRegex ? " type-monospace " : "")
               }
               id={this.props.id}
               ref="input"

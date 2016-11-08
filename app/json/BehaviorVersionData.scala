@@ -14,6 +14,7 @@ import scala.concurrent.Future
 case class BehaviorVersionData(
                                 teamId: String,
                                 behaviorId: Option[String],
+                                description: Option[String],
                                 functionBody: String,
                                 responseTemplate: String,
                                 params: Seq[BehaviorParameterData],
@@ -46,6 +47,7 @@ object BehaviorVersionData {
   def buildFor(
                 teamId: String,
                 behaviorId: Option[String],
+                description: Option[String],
                 functionBody: String,
                 responseTemplate: String,
                 params: Seq[BehaviorParameterData],
@@ -65,6 +67,7 @@ object BehaviorVersionData {
     BehaviorVersionData(
       teamId,
       behaviorId,
+      description,
       functionBody,
       responseTemplate,
       params,
@@ -79,6 +82,7 @@ object BehaviorVersionData {
 
   def fromStrings(
                    teamId: String,
+                   maybeDescription: Option[String],
                    function: String,
                    response: String,
                    params: String,
@@ -91,6 +95,7 @@ object BehaviorVersionData {
     BehaviorVersionData.buildFor(
       teamId,
       None,
+      maybeDescription,
       extractFunctionBodyFrom(function),
       response,
       Json.parse(params).validate[Seq[BehaviorParameterData]].get,
@@ -147,6 +152,7 @@ object BehaviorVersionData {
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           Some(behavior.id),
+          behaviorVersion.maybeDescription,
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
           params.map { ea =>

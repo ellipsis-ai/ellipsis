@@ -91,6 +91,7 @@ object BehaviorEditorData {
         BehaviorVersionData.buildFor(
           team.id,
           None,
+          None,
           "",
           "",
           Seq(),

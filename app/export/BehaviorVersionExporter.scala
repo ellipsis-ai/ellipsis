@@ -27,6 +27,9 @@ case class BehaviorVersionExporter(
   val exportId = behaviorVersion.id
 
   protected def writeFiles(): Unit = {
+    behaviorVersion.maybeDescription.foreach { desc =>
+      writeFileFor("README", desc)
+    }
     writeFileFor("function.js", functionString)
     writeFileFor("triggers.json", triggersString)
     writeFileFor("params.json", paramsString)

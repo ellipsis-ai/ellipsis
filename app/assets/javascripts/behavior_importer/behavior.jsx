@@ -137,7 +137,7 @@ define(function(require) {
                   <span key={"trigger" + index}
                     className={
                       "type-monospace " +
-                      (!this.isFirstTriggerIndex(index) ? "type-weak" : "")
+                      (this.isFirstTriggerIndex(index) ? "" : "type-weak")
                     }
                   >
                     <span className="type-wrap-words">{trigger.text}</span>
@@ -152,6 +152,7 @@ define(function(require) {
               {this.getLocalBehaviorEditLink()}
               {this.behaviorAlreadyImported() ? /* TODO: update/re-install buttons */
                 "" : ""}
+              <div className="type-italic type-weak">{this.props.behaviorData.description}</div>
             </div>
           </div>
         </form>

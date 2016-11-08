@@ -22,6 +22,7 @@ var React = require('react'),
   EnvVariableSetter = require('../environment_variables/setter'),
   FixedFooter = require('../fixed_footer'),
   HiddenJsonInput = require('./hidden_json_input'),
+  Input = require('../form/input'),
   Notification = require('../notifications/notification'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
@@ -60,6 +61,7 @@ return React.createClass({
   propTypes: {
     teamId: React.PropTypes.string.isRequired,
     behaviorId: React.PropTypes.string,
+    description: React.PropTypes.string,
     functionBody: React.PropTypes.string,
     responseTemplate: React.PropTypes.instanceOf(ResponseTemplate),
     params: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)),
@@ -158,6 +160,14 @@ return React.createClass({
       return config[property];
     } else {
       return "";
+    }
+  },
+
+  getBehaviorDescription: function() {
+    if (this.state) {
+      return this.getBehaviorProp('description') || "";
+    } else {
+      return this.props.description || "";
     }
   },
 
@@ -893,6 +903,10 @@ return React.createClass({
     }
   },
 
+  updateDescription: function(newDescription) {
+    this.setBehaviorProp('description', newDescription);
+  },
+
   updateEnvVariables: function(envVars, options) {
     var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
     var data = {
@@ -1203,6 +1217,7 @@ return React.createClass({
     return {
       teamId: props.teamId,
       behaviorId: props.behaviorId,
+      description: props.description,
       functionBody: props.functionBody,
       responseTemplate: props.responseTemplate,
       params: props.params,
@@ -1260,10 +1275,22 @@ return React.createClass({
   renderPageHeading: function() {
     return (
       <div className="bg-light">
-        <div className="container pbm">
-          <h3 className="mvn ptxxl type-weak display-ellipsis">
-            <span>{this.getPageHeading()}</span>
-          </h3>
+        <div className="container pbs">
+          <div className="columns">
+            <div className="column column-one-quarter ptxl">
+              <h3 className="mvn type-weak">
+                <span>{this.getPageHeading()}</span>
+              </h3>
+            </div>
+            <div className="column column-three-quarters pll ptl pbs">
+              <Input
+                className="form-input-borderless form-input-large"
+                placeholder="Add a description (optional)"
+                onChange={this.updateDescription}
+                value={this.getBehaviorDescription()}
+              />
+            </div>
+          </div>
         </div>
       </div>
     );
