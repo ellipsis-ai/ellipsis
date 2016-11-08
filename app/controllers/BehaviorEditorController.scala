@@ -232,6 +232,7 @@ class BehaviorEditorController @Inject() (
           BehaviorVersionData.buildFor(
             version.team.id,
             Some(behavior.id),
+            version.maybeDescription,
             version.functionBody,
             version.maybeResponseTemplate.getOrElse(""),
             parametersByVersion.get(version).map { params =>

@@ -127,6 +127,7 @@ class BehaviorVersionServiceImpl @Inject() (
       _ <-
       for {
         updated <- DBIO.from(save(behaviorVersion.copy(
+          maybeDescription = data.description,
           maybeFunctionBody = Some(data.functionBody),
           maybeResponseTemplate = Some(data.responseTemplate),
           forcePrivateResponse = data.config.forcePrivateResponse.exists(identity)

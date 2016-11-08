@@ -64,6 +64,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
   case class BehaviorCode(
                            githubUrl: String,
                            configUrl: String,
+                           maybeDescriptionUrl: Option[String],
                            functionUrl: String,
                            responseUrl: String,
                            triggersUrl: String,
@@ -73,12 +74,16 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     def fetchData: Future[BehaviorVersionData] = {
       for {
         config <- fetchTextFor(configUrl)
+        description <- maybeDescriptionUrl.map { url =>
+          fetchTextFor(url).map(Some(_))
+        }.getOrElse(Future.successful(None))
         function <- fetchTextFor(functionUrl)
         response <- fetchTextFor(responseUrl)
         params <- fetchTextFor(paramsUrl)
         triggers <- fetchTextFor(triggersUrl)
       } yield BehaviorVersionData.fromStrings(
         team.id,
+        description,
         function,
         response,
         params,
@@ -111,9 +116,10 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
         triggersUrl <- urlForTreeFileNamed("triggers.json", tree)
         paramsUrl <- urlForTreeFileNamed("params.json", tree)
       } yield {
-          val githubUrl = githubUrlForBehaviorPath(categoryPath, behaviorPath)
-          BehaviorCode(githubUrl, configUrl, functionUrl, responseUrl, triggersUrl, paramsUrl).fetchData.map(Some(_))
-        }).getOrElse(Future.successful(None))
+        val githubUrl = githubUrlForBehaviorPath(categoryPath, behaviorPath)
+        val maybeDescriptionUrl = urlForTreeFileNamed("README", tree)
+        BehaviorCode(githubUrl, configUrl, maybeDescriptionUrl, functionUrl, responseUrl, triggersUrl, paramsUrl).fetchData.map(Some(_))
+      }).getOrElse(Future.successful(None))
     }
   }
 

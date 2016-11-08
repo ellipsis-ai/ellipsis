@@ -19,6 +19,7 @@ case class BehaviorVersionZipImporter(
     val data =
       BehaviorVersionData.fromStrings(
         team.id,
+        strings.get("README"),
         strings.getOrElse("function.js", ""),
         strings.getOrElse("response.md", ""),
         strings.getOrElse("params.json", ""),
