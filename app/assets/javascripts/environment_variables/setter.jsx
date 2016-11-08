@@ -151,8 +151,10 @@ define(function(require) {
             <span className="type-monospace type-weak mrm">
               ••••••••
             </span>
-            <button type="button" className="button-raw"
-              onClick={this.resetVar.bind(this, index)}>Reset</button>
+            <span className="type-s">
+              <button type="button" className="button-raw"
+                onClick={this.resetVar.bind(this, index)}>Clear team-wide value</button>
+            </span>
           </div>
         );
       } else {
@@ -160,7 +162,7 @@ define(function(require) {
           <Textarea
             ref={"envVarValue" + index}
             className="type-monospace form-input-borderless form-input-height-auto"
-            placeholder="Enter value"
+            placeholder="Set team-wide value (optional)"
             value={v.value || ""}
             onChange={this.onChangeVarValue.bind(this, index)}
             rows={this.getRowCountForTextareaValue(v.value)}
@@ -202,7 +204,7 @@ define(function(require) {
             </p>
 
             <div className="columns">
-              <div className="column-group">
+              <div>
                 {this.getVars().map((v, index) => {
                   return (
                     <div className="column-row" key={`envVar${index}`}>
@@ -220,6 +222,13 @@ define(function(require) {
                     </div>
                  );
                 }, this)}
+              </div>
+            </div>
+
+            <hr />
+
+            <div className="columns">
+              <div>
                 {this.getNewVars().map((v, index) => {
                   return (
                     <div className="column-row" key={`newEnvVar${index}`}>
@@ -235,7 +244,7 @@ define(function(require) {
                         <Textarea
                           ref={"newEnvVarValue" + index}
                           className="type-monospace form-input-borderless form-input-height-auto"
-                          placeholder="Enter value"
+                          placeholder="Set team-wide value (optional)"
                           value={v.value || ""}
                           onChange={this.setNewVarIndexValue.bind(this, index)}
                           rows={this.getRowCountForTextareaValue(v.value)}
@@ -246,6 +255,7 @@ define(function(require) {
                 })}
               </div>
             </div>
+
             <div className="align-r mts">
               <button type="button"
                 className="button-s"
