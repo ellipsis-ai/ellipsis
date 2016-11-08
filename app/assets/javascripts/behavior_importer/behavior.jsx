@@ -132,13 +132,12 @@ define(function(require) {
               {this.getInstallButton()}
             </div>
             <div className="column column-expand type-s">
-              <div className="type-italic">{this.props.behaviorData.description || null}</div>
               {this.props.triggers.map(function(trigger, index) {
                 return (
                   <span key={"trigger" + index}
                     className={
                       "type-monospace " +
-                      (this.isFirstTriggerIndex(index) && !this.props.behaviorData.description ? "" : "type-weak")
+                      (this.isFirstTriggerIndex(index) ? "" : "type-weak")
                     }
                   >
                     <span className="type-wrap-words">{trigger.text}</span>
@@ -153,6 +152,7 @@ define(function(require) {
               {this.getLocalBehaviorEditLink()}
               {this.behaviorAlreadyImported() ? /* TODO: update/re-install buttons */
                 "" : ""}
+              <div className="type-italic type-weak">{this.props.behaviorData.description}</div>
             </div>
           </div>
         </form>
