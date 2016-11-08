@@ -43,7 +43,7 @@ define(function(require) {
           return (
             <span className="type-monospace" key={"regularTrigger" + index}>
               <span className="type-disabled"> · </span>
-              <span className="type-weak">{this.getTriggerTextFromTrigger(trigger)}</span>
+              <span className="">{this.getTriggerTextFromTrigger(trigger)}</span>
             </span>
           );
         } else {
@@ -65,7 +65,7 @@ define(function(require) {
         return (
           <span>
             <span className="type-monospace type-disabled"> · </span>
-            <span className="type-weak type-italic">{text}</span>
+            <span className="type-italic">{text}</span>
           </span>
         );
       } else {
@@ -86,6 +86,14 @@ define(function(require) {
           </a>
         </div>
       );
+    },
+
+    getDescriptionFromVersion: function(version) {
+      if (version.description) {
+        return (
+          <div className="type-italic type-weak">{version.description}</div>
+        );
+      }
     },
 
     getImportedStatusFromVersion: function(version) {
@@ -145,13 +153,14 @@ define(function(require) {
     getVersionRow: function(version, index) {
       return (
         <div className="column-row" key={"version" + index}>
-          <div className={"column column-expand type-s type-wrap-words mobile-border-top mobile-pts mobile-pbn" + this.getTableRowClasses(index)}>
+          <div className={"column column-expand type-s type-wrap-words border-top pvxs"}>
             {this.getTriggersFromVersion(version)}
+            {this.getDescriptionFromVersion(version)}
           </div>
-          <div className={"column column-shrink type-s display-ellipsis align-r prxs mobile-border-none mobile-ptn mobile-pbxs" + this.getTableRowClasses(index)}>
+          <div className={"column column-shrink type-s type-weak display-ellipsis align-r prxs border-top pvxs mobile-display-none"}>
             {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}
           </div>
-          <div className={"column column-shrink mobile-border-none mobile-ptn mobile-pbxs" + this.getTableRowClasses(index)}>
+          <div className={"column column-shrink border-top pvxs mobile-display-none"}>
             {this.getImportedStatusFromVersion(version)}
           </div>
         </div>
@@ -165,7 +174,7 @@ define(function(require) {
           <div className="column-group">
             <div className="column-row type-bold">
               <div className="column column-expand ptl type-l pbs">What Ellipsis can do</div>
-              <div className="column column-shrink type-label align-r pbs align-b">Last modified</div>
+              <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
             {this.getTasks().map(this.getVersionRow, this)}
           </div>
@@ -180,7 +189,7 @@ define(function(require) {
           <div className="column-group">
             <div className="column-row type-bold">
               <div className="column column-expand ptxxl type-l pbs">What Ellipsis knows</div>
-              <div className="column column-shrink type-label align-r pbs align-b">Last modified</div>
+              <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
             {this.getKnowledge().map(this.getVersionRow, this)}
           </div>
