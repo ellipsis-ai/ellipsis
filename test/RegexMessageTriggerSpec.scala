@@ -7,7 +7,7 @@ import org.joda.time.DateTime
 
 class RegexMessageTriggerSpec extends MessageTriggerSpec {
 
-  def triggerFor(pattern: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): RegexMessageTrigger = {
+  def triggerFor(pattern: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = true): RegexMessageTrigger = {
     val team = Team(IDs.next, "Team!")
     val versionId = IDs.next
     val behavior = Behavior(IDs.next, team, Some(versionId), None, None, DateTime.now)
@@ -23,6 +23,11 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
     "be activated with one word param" in  {
       val trigger = triggerFor(oneParamPattern)
       matches(trigger, "deploy foo") mustBe true
+    }
+
+    "ignore case when instructed" in {
+      val trigger = triggerFor(oneParamPattern, isCaseSensitive = false)
+      matches(trigger, "Deploy foo") mustBe true
     }
 
     "be activated with two word param" in  {

@@ -14,7 +14,13 @@ case class RegexMessageTrigger(
                                 isCaseSensitive: Boolean
                                 ) extends MessageTrigger {
 
-  def regex: Regex = pattern.r
+  def regex: Regex = {
+    if (isCaseSensitive) {
+      pattern.r
+    } else {
+      s"(?i)${pattern}".r
+    }
+  }
 
   val shouldTreatAsRegex: Boolean = true
 
