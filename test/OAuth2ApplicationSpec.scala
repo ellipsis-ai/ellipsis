@@ -19,7 +19,11 @@ class OAuth2ApplicationSpec extends PlaySpec {
 
   "OAuth2Application.keyName" should {
     "convert a phrase into a camel-case identifier" in {
-      val app = appNamed("The quick brown FOX — it jumped over the lazy dog!")
+      appNamed("Todoist add item").keyName mustBe "todoistAddItem"
+    }
+
+    "strip non-valid characters and extra spaces" in {
+      val app = appNamed("The quick  brown FOX — it jumped over the lazy dog!")
       app.keyName mustBe "theQuickBrownFOXItJumpedOverTheLazyDog"
     }
 
