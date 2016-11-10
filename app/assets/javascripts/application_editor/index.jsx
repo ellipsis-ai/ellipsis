@@ -373,7 +373,6 @@ define(function(require) {
                   <code className="box-code-example">{Formatter.formatCamelCaseIdentifier(this.getApplicationName())}</code>
                 </div>
 
-
               </div>
             </div>
 
