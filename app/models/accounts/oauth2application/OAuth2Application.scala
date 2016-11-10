@@ -69,8 +69,15 @@ case class OAuth2Application(
   }
 
   def keyName: String = {
-    val capitalized = WordUtils.capitalize(name).replaceAll("\\s", "")
-    capitalized.substring(0, 1).toLowerCase() + capitalized.substring(1)
+    // TODO: This replicates code on the client; we should just save the value from the client instead
+    val words = name.split(" ").map((ea) => ea.replaceAll("""[^\w$]""", ""))
+    val firstWord = WordUtils.uncapitalize(words.head)
+    val camel = firstWord + words.tail.map((ea) => WordUtils.capitalize(ea)).mkString("")
+    if (camel.head.toString.matches("""[A-Za-z_$]""")) {
+      camel
+    } else {
+      "_" + camel
+    }
   }
 
   def toRaw = RawOAuth2Application(

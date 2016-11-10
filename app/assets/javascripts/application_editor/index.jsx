@@ -6,7 +6,8 @@ define(function(require) {
     Input = require('../form/input'),
     SettingsMenu = require('../settings_menu'),
     BrowserUtils = require('../browser_utils'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../if_present'),
+    Formatter = require('../formatter');
 
   return React.createClass({
     displayName: 'ApplicationEditor',
@@ -355,15 +356,23 @@ define(function(require) {
 
             <div className="mbxxl columns">
               <div className="column column-two-thirds">
-                <Input
-                  ref="applicationName"
-                  name="name"
-                  value={this.getApplicationName()}
-                  placeholder={"e.g. " + this.getApplicationApiName() + " read-only"}
-                  className="form-input-borderless form-input-large"
-                  onChange={this.setApplicationName}
-                  onEnterKey={this.onApplicationNameEnterKey}
-                />
+                <div>
+                  <Input
+                    ref="applicationName"
+                    name="name"
+                    value={this.getApplicationName()}
+                    placeholder={"e.g. " + this.getApplicationApiName() + "ReadOnly"}
+                    className="form-input-borderless form-input-large"
+                    onChange={this.setApplicationName}
+                    onEnterKey={this.onApplicationNameEnterKey}
+                  />
+                </div>
+
+                <div className="mtm type-s">
+                  <span className="type-weak mrxs">Name used in code: </span>
+                  <code className="box-code-example">{Formatter.formatCamelCaseIdentifier(this.getApplicationName())}</code>
+                </div>
+
               </div>
             </div>
 

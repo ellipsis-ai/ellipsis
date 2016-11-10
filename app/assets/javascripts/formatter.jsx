@@ -23,6 +23,16 @@ define(function(require) {
 
     formatTimestampShort: function(timestamp) {
       return moment(timestamp).format('ll, LT');
+    },
+
+    formatCamelCaseIdentifier: function(phrase) {
+      var split = phrase.split(' ').map((ea) => ea.replace(/[^\w$]/ig, ''));
+      var firstWord = split[0].charAt(0).toLowerCase() + split[0].slice(1);
+      var camel = firstWord + split.slice(1).map((ea) => ea.charAt(0).toUpperCase() + ea.slice(1)).join("");
+      if (/^[^a-z_$]/i.test(phrase.charAt(0))) {
+        camel = "_" + camel;
+      }
+      return camel;
     }
   };
 });
