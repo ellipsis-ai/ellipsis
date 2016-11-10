@@ -138,6 +138,9 @@ class BehaviorVersionServiceImpl @Inject() (
         requiredOAuth2ApiConfigs <- DBIO.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
           DBIO.from(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(requiredData, updated))
         }).map(_.flatten)
+        requiredSimpleTokenApis <- DBIO.sequence(data.config.requiredSimpleTokenApis.getOrElse(Seq()).map { requiredData =>
+          DBIO.from(dataService.requiredSimpleTokenApis.maybeCreateFor(requiredData, updated))
+        }).map(_.flatten)
         _ <- DBIO.from(lambdaService.deployFunctionFor(
           updated,
           data.functionBody,

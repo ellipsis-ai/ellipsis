@@ -10,15 +10,6 @@ trait OAuth2ApiService {
 
   def allFor(maybeTeam: Option[Team]): Future[Seq[OAuth2Api]]
 
-  def createFor(
-                 name: String,
-                 grantType: OAuth2GrantType,
-                 maybeAuthorizationUrl: Option[String],
-                 accessTokenUrl: String,
-                 maybeNewApplicationUrl: Option[String],
-                 maybeScopeDocumentationUrl: Option[String]
-               ): Future[OAuth2Api]
-
   def save(api: OAuth2Api): Future[OAuth2Api]
 
 }

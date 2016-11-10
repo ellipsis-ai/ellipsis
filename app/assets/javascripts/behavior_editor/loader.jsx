@@ -11,6 +11,7 @@ requirejs(['../common'], function() {
         paramTypes: config.paramTypes,
         oauth2Applications: config.oauth2Applications,
         oauth2Apis: config.oauth2Apis,
+        simpleTokenApis: config.simpleTokenApis,
         linkedOAuth2ApplicationIds: config.linkedOAuth2ApplicationIds,
         justSaved: config.justSaved,
         notifications: config.notifications,

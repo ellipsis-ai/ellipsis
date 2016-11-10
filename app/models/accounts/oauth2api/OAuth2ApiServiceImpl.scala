@@ -48,18 +48,6 @@ class OAuth2ApiServiceImpl @Inject() (
     dataService.run(allForQuery(maybeTeam.map(_.id)).result)
   }
 
-  def createFor(
-                 name: String,
-                 grantType: OAuth2GrantType,
-                 maybeAuthorizationUrl: Option[String],
-                 accessTokenUrl: String,
-                 maybeNewApplicationUrl: Option[String],
-                 maybeScopeDocumentationUrl: Option[String]
-               ): Future[OAuth2Api] = {
-    val api = OAuth2Api(IDs.next, name, grantType, maybeAuthorizationUrl, accessTokenUrl, maybeNewApplicationUrl, maybeScopeDocumentationUrl, None)
-    dataService.run((all += api).map(_ => api))
-  }
-
   def save(api: OAuth2Api): Future[OAuth2Api] = {
     val query = findQuery(api.id)
     val action = query.result.flatMap { r =>

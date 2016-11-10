@@ -80,6 +80,13 @@ return React.createClass({
           application: oauth2ApplicationShape
         })
       ),
+      requiredSimpleTokenApis: React.PropTypes.arrayOf(
+        React.PropTypes.shape({
+          id: React.PropTypes.string.isRequired,
+          apiId: React.PropTypes.string.isRequired,
+          name: React.PropTypes.string.isRequired
+        })
+      ),
       forcePrivateResponse: React.PropTypes.bool
     }),
     knownEnvVarsUsed: React.PropTypes.arrayOf(React.PropTypes.string),
@@ -95,6 +102,10 @@ return React.createClass({
     ).isRequired,
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
+      apiId: React.PropTypes.string.isRequired,
+      name: React.PropTypes.string.isRequired
+    })),
+    simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
     })),
@@ -133,6 +144,20 @@ return React.createClass({
       return this.getBehaviorConfig()['requiredOAuth2ApiConfigs'] || [];
     } else if (this.props.config) {
       return this.props.config.requiredOAuth2ApiConfigs || [];
+    } else {
+      return [];
+    }
+  },
+
+  getAllSimpleTokenApis: function() {
+    return this.props.simpleTokenApis || [];
+  },
+
+  getRequiredSimpleTokenApis: function() {
+    if (this.state) {
+      return this.getBehaviorConfig()['requiredSimpleTokenApis'] || [];
+    } else if (this.props.config) {
+      return this.props.config.requiredSimpleTokenApis || [];
     } else {
       return [];
     }
@@ -1164,6 +1189,17 @@ return React.createClass({
     }));
   },
 
+  onAddSimpleTokenApi: function(toAdd) {
+    this.setConfigProperty('requiredSimpleTokenApis', this.getRequiredSimpleTokenApis().concat([toAdd]));
+  },
+
+  onRemoveSimpleTokenApi: function(toRemove) {
+    var existing = this.getRequiredSimpleTokenApis();
+    this.setConfigProperty('requiredSimpleTokenApis', existing.filter(function(ea) {
+      return ea.apiId !== toRemove.apiId;
+    }));
+  },
+
   onNewOAuth2Application: function(requiredOAuth2ApiConfigId) {
     this.setState({
       redirectValue: "newOAuth2Application",
@@ -1320,8 +1356,12 @@ return React.createClass({
                 toggle={this.toggleAPISelectorMenu}
                 allOAuth2Applications={this.getAllOAuth2Applications()}
                 requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
+                allSimpleTokenApis={this.getAllSimpleTokenApis()}
+                requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
                 onAddOAuth2Application={this.onAddOAuth2Application}
                 onRemoveOAuth2Application={this.onRemoveOAuth2Application}
+                onAddSimpleTokenApi={this.onAddSimpleTokenApi}
+                onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
                 onNewOAuth2Application={this.onNewOAuth2Application}
                 getOAuth2ApiWithId={this.getOAuth2ApiWithId}
               />

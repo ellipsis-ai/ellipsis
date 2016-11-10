@@ -1,10 +1,10 @@
-package models.accounts.oauth2api
+package models.accounts.simpletokenapi
 
 import slick.driver.PostgresDriver.api._
 
-object OAuth2ApiQueries {
+object SimpleTokenApiQueries {
 
-  val all = TableQuery[OAuth2ApisTable]
+  val all = TableQuery[SimpleTokenApisTable]
 
   def uncompiledFindQuery(id: Rep[String]) = {
     all.filter(_.id === id)

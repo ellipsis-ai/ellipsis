@@ -37,6 +37,12 @@ object Formatting {
   implicit val requiredOAuth2ApiConfigReads = Json.reads[RequiredOAuth2ApiConfigData]
   implicit val requiredOAuth2ApiConfigWrites = Json.writes[RequiredOAuth2ApiConfigData]
 
+  implicit val simpleTokenApiReads = Json.reads[SimpleTokenApiData]
+  implicit val simpleTokenApiWrites = Json.writes[SimpleTokenApiData]
+
+  implicit val requiredSimpleTokenApiReads = Json.reads[RequiredSimpleTokenApiData]
+  implicit val requiredSimpleTokenApiWrites = Json.writes[RequiredSimpleTokenApiData]
+
   implicit val behaviorConfigReads = Json.reads[BehaviorConfig]
   implicit val behaviorConfigWrites = Json.writes[BehaviorConfig]
 

@@ -210,6 +210,11 @@ class BehaviorEditorController @Inject() (
           (version, apps)
         }
       }).map(_.toMap)
+      requiredSimpleTokenApisByVersion <- Future.sequence(versions.map { version =>
+        dataService.requiredSimpleTokenApis.allFor(version).map { apis =>
+          (version, apis)
+        }
+      }).map(_.toMap)
       paramTypes <- Future.successful(parametersByVersion.flatMap { case(_, params) =>
         params.map(_.paramType)
       }.toSeq.distinct)
@@ -229,6 +234,9 @@ class BehaviorEditorController @Inject() (
           val maybeRequiredOAuth2ApiConfigsData = requiredOAuth2ApiConfigsByVersion.get(version).map { configs =>
             configs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
           }
+          val maybeRequiredSimpleTokenApisData = requiredSimpleTokenApisByVersion.get(version).map { apis =>
+            apis.map(ea => RequiredSimpleTokenApiData.from(ea))
+          }
           BehaviorVersionData.buildFor(
             version.team.id,
             Some(behavior.id),
@@ -245,7 +253,14 @@ class BehaviorEditorController @Inject() (
                 BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
               }
             }.getOrElse(Seq()),
-            BehaviorConfig(None, maybeAwsConfigData, maybeRequiredOAuth2ApiConfigsData, Some(version.forcePrivateResponse), behavior.maybeDataTypeName),
+            BehaviorConfig(
+              None,
+              maybeAwsConfigData,
+              maybeRequiredOAuth2ApiConfigsData,
+              maybeRequiredSimpleTokenApisData,
+              Some(version.forcePrivateResponse),
+              behavior.maybeDataTypeName
+            ),
             behavior.maybeImportedId,
             None,
             Some(version.createdAt),
