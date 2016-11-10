@@ -73,10 +73,10 @@ case class OAuth2Application(
     val words = name.split(" ").map((ea) => ea.replaceAll("""[^\w$]""", ""))
     val firstWord = WordUtils.uncapitalize(words.head)
     val camel = firstWord + words.tail.map((ea) => WordUtils.capitalize(ea)).mkString("")
-    if (camel.matches("""^[^A-Za-z_$]""")) {
-      "_" + camel
-    } else {
+    if (camel.head.toString.matches("""[A-Za-z_$]""")) {
       camel
+    } else {
+      "_" + camel
     }
   }
 
