@@ -8,6 +8,7 @@ import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
+import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
 import org.scalatest.mock.MockitoSugar
@@ -36,7 +37,8 @@ class MockAWSLambdaService @Inject() (
                                   functionBody: String,
                                   params: Array[String],
                                   maybeAWSConfig: Option[AWSConfig],
-                                  requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
+                                  requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                                  requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
                                 ): Future[Unit] = Future.successful({})
 
   override def invoke(

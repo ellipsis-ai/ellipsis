@@ -16,7 +16,7 @@ case class LinkedInfo(externalSystem: String, accessToken: String) {
   def toJson: JsObject = {
     JsObject(Seq(
       "externalSystem" -> JsString(externalSystem),
-      "oauthToken" -> JsString(accessToken)
+      "token" -> JsString(accessToken)
     ))
   }
 
