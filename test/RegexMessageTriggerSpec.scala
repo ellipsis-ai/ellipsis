@@ -25,6 +25,11 @@ class RegexMessageTriggerSpec extends MessageTriggerSpec {
       matches(trigger, "deploy foo") mustBe true
     }
 
+    "respect case when instructed" in {
+      val trigger = triggerFor(oneParamPattern, isCaseSensitive = true)
+      matches(trigger, "Deploy foo") mustBe false
+    }
+
     "ignore case when instructed" in {
       val trigger = triggerFor(oneParamPattern, isCaseSensitive = false)
       matches(trigger, "Deploy foo") mustBe true
