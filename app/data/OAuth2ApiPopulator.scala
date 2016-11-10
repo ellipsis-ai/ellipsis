@@ -2,7 +2,7 @@ package data
 
 import javax.inject._
 
-import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
+import models.accounts.oauth2api.{AuthorizationCode, ClientCredentials, OAuth2Api}
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -44,7 +44,7 @@ class OAuth2ApiPopulator @Inject() (dataService: DataService) {
     OAuth2Api(
       "0liyxeHPTrqEpRCAsUQJRQ",
       "Yelp",
-      AuthorizationCode,
+      ClientCredentials,
       None,
       "https://api.yelp.com/oauth2/token",
       Some("https://www.yelp.com/developers/v3/manage_app"),
