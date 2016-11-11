@@ -146,7 +146,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   private def cachedValidValueForLabel(text: String, context: BehaviorParameterContext): Option[ValidValue] = {
     for {
       values <- cachedValuesFor(context)
-      value <- values.find(_.label.toLowerCase == text.toLowerCase)
+      value <- values.find((ea) => textMatchesLabel(text, ea.label))
     } yield value
   }
 
@@ -210,9 +210,18 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     }
   }
 
+  private def textMatchesLabel(text: String, label: String): Boolean = {
+    val lowercaseText = text.toLowerCase
+    val insideOfFormattedLink = text.replaceFirst("""^<.+\|(.+)>$""", "$1").toLowerCase
+    val lowercaseLabel = label.toLowerCase
+    lowercaseLabel == lowercaseText || lowercaseLabel == insideOfFormattedLink
+  }
+
   private def fetchMatchFor(text: String, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
     fetchValidValues(context).map { validValues =>
-      validValues.find { v => v.id == text || v.label.toLowerCase == text.toLowerCase }
+      validValues.find {
+        v => v.id == text || textMatchesLabel(text, v.label)
+      }
     }
   }
 
