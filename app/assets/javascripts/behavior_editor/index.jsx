@@ -24,6 +24,7 @@ var React = require('react'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../form/input'),
   Notification = require('../notifications/notification'),
+  PageHeading = require('./page_heading'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
@@ -1308,30 +1309,6 @@ return React.createClass({
     }
   },
 
-  renderPageHeading: function() {
-    return (
-      <div className="bg-light">
-        <div className="container pbs">
-          <div className="columns">
-            <div className="column column-one-quarter ptxl">
-              <h3 className="mvn type-weak">
-                <span>{this.getPageHeading()}</span>
-              </h3>
-            </div>
-            <div className="column column-three-quarters pll ptl pbs">
-              <Input
-                className="form-input-borderless form-input-large"
-                placeholder="Add a description (optional)"
-                onChange={this.updateDescription}
-                value={this.getBehaviorDescription()}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  },
-
   renderHiddenFormValues: function() {
     return (
       <div>
@@ -1648,7 +1625,14 @@ return React.createClass({
     return (
 
       <div>
-        {this.renderPageHeading()}
+        <PageHeading heading={this.getPageHeading()}>
+          <Input
+            className="form-input-borderless form-input-large"
+            placeholder="Add a description (optional)"
+            onChange={this.updateDescription}
+            value={this.getBehaviorDescription()}
+          />
+        </PageHeading>
 
       <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
@@ -1752,7 +1736,7 @@ return React.createClass({
   renderDataTypeBehavior: function() {
     return (
       <div>
-        {this.renderPageHeading()}
+        <PageHeading heading={this.getPageHeading()} />
 
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
