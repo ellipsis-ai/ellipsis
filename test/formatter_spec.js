@@ -13,6 +13,6 @@ describe("Formatter", () => {
     });
     it('ensures the first character is valid', () => {
       expect(Formatter.formatCamelCaseIdentifier('1 for the money')).toEqual("_1ForTheMoney");
-    })
+    });
   });
 });
