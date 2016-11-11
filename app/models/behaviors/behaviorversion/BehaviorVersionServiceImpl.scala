@@ -138,12 +138,16 @@ class BehaviorVersionServiceImpl @Inject() (
         requiredOAuth2ApiConfigs <- DBIO.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
           DBIO.from(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(requiredData, updated))
         }).map(_.flatten)
+        requiredSimpleTokenApis <- DBIO.sequence(data.config.requiredSimpleTokenApis.getOrElse(Seq()).map { requiredData =>
+          DBIO.from(dataService.requiredSimpleTokenApis.maybeCreateFor(requiredData, updated))
+        }).map(_.flatten)
         _ <- DBIO.from(lambdaService.deployFunctionFor(
           updated,
           data.functionBody,
           withoutBuiltin(data.params.map(_.name).toArray),
           maybeAWSConfig,
-          requiredOAuth2ApiConfigs
+          requiredOAuth2ApiConfigs,
+          requiredSimpleTokenApis
         ))
         _ <- DBIO.from(dataService.behaviorParameters.ensureFor(updated, data.params))
         _ <- DBIO.sequence(
@@ -276,12 +280,14 @@ class BehaviorVersionServiceImpl @Inject() (
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
       maybeAWSConfig <- dataService.awsConfigs.maybeFor(behaviorVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
+      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(behaviorVersion)
       _ <- lambdaService.deployFunctionFor(
               behaviorVersion,
               behaviorVersion.functionBody,
               params.map(_.name).toArray,
               maybeAWSConfig,
-              requiredOAuth2ApiConfigs
+              requiredOAuth2ApiConfigs,
+              requiredSimpleTokenApis
             )
     } yield {}
   }

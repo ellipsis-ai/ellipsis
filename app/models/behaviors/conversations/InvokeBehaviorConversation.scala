@@ -1,6 +1,8 @@
 package models.behaviors.conversations
 
 import models.IDs
+import models.accounts.linkedsimpletoken.LinkedSimpleToken
+import models.accounts.simpletokenapi.SimpleTokenApi
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
@@ -29,7 +31,9 @@ case class InvokeBehaviorConversation(
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
 
-  override val stateRequiresPrivateMessage: Boolean = state == InvokeBehaviorConversation.COLLECT_USER_ENV_VARS_STATE
+  override val stateRequiresPrivateMessage: Boolean = {
+    InvokeBehaviorConversation.statesRequiringPrivateMessage.contains(state)
+  }
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation] = {
     dataService.conversations.save(this.copy(state = newState))
@@ -38,6 +42,9 @@ case class InvokeBehaviorConversation(
   def updateToNextState(event: MessageEvent, cache: CacheApi, dataService: DataService, configuration: Configuration): Future[Conversation] = {
     for {
       user <- event.context.ensureUser(dataService)
+      needsSimpleToken <- simpleTokenInfo(user, dataService).flatMap { info =>
+        info.maybeNextToCollect.map(_.isDefined)
+      }
       needsUserEnvVar <- userEnvVarInfo(user, dataService).flatMap { info =>
         info.maybeNextToCollect.map(_.isDefined)
       }
@@ -45,7 +52,9 @@ case class InvokeBehaviorConversation(
         info.maybeNextToCollect(event, this, cache, dataService, configuration).map(_.isDefined)
       }
       updated <- {
-        val targetState = if (needsUserEnvVar) {
+        val targetState = if (needsSimpleToken) {
+          InvokeBehaviorConversation.COLLECT_SIMPLE_TOKENS_STATE
+        } else if (needsUserEnvVar) {
           InvokeBehaviorConversation.COLLECT_USER_ENV_VARS_STATE
         } else if (needsParam) {
           InvokeBehaviorConversation.COLLECT_PARAM_VALUES_STATE
@@ -118,6 +127,25 @@ case class InvokeBehaviorConversation(
     } yield UserEnvVarInfo(missingUserEnvVars)
   }
 
+  case class SimpleTokenInfo(missingTokenApis: Seq[SimpleTokenApi]) {
+
+    def maybeNextToCollect: Future[Option[SimpleTokenApi]] = {
+      Future.successful(missingTokenApis.headOption)
+    }
+  }
+
+  private def simpleTokenInfo(user: User, dataService: DataService): Future[SimpleTokenInfo] = {
+    for {
+      tokens <- dataService.linkedSimpleTokens.allForUser(user)
+      requiredTokenApis <- dataService.requiredSimpleTokenApis.allFor(behaviorVersion)
+    } yield {
+      val missing = requiredTokenApis.filterNot { required =>
+        tokens.exists(linked => linked.api == required.api)
+      }.map(_.api)
+      SimpleTokenInfo(missing)
+    }
+  }
+
   private def collectParamValueFrom(event: MessageEvent, info: ParamInfo, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation] = {
     for {
       maybeNextToCollect <- info.maybeNextToCollect(event, this, cache, dataService, configuration)
@@ -140,16 +168,29 @@ case class InvokeBehaviorConversation(
     } yield updatedConversation
   }
 
+  private def collectSimpleTokenFrom(event: MessageEvent, info: SimpleTokenInfo, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation] = {
+    for {
+      maybeNextToCollect <- info.maybeNextToCollect
+      user <- event.context.ensureUser(dataService)
+      updatedConversation <- maybeNextToCollect.map { api =>
+        val token = event.context.relevantMessageText.trim
+        dataService.linkedSimpleTokens.save(LinkedSimpleToken(token, user.id, api)).map(_ => this)
+      }.getOrElse(Future.successful(this))
+      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration)
+    } yield updatedConversation
+  }
   def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation] = {
     import Conversation._
     import InvokeBehaviorConversation._
 
     for {
       user <- event.context.ensureUser(dataService)
+      simpleTokenInfo <- simpleTokenInfo(user, dataService)
       userEnvVarInfo <- userEnvVarInfo(user, dataService)
       paramInfo <- paramInfo(dataService)
       updated <- state match {
         case NEW_STATE => updateToNextState(event, cache, dataService, configuration)
+        case COLLECT_SIMPLE_TOKENS_STATE => collectSimpleTokenFrom(event, simpleTokenInfo, dataService, cache, configuration)
         case COLLECT_USER_ENV_VARS_STATE => collectUserEnvVarFrom(event, userEnvVarInfo, dataService, cache, configuration)
         case COLLECT_PARAM_VALUES_STATE => collectParamValueFrom(event, paramInfo, dataService, cache, configuration)
         case DONE_STATE => Future.successful(this)
@@ -182,6 +223,21 @@ case class InvokeBehaviorConversation(
     }
   }
 
+  private def promptResultFor(info: SimpleTokenInfo, event: MessageEvent, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[BotResult] = {
+    info.maybeNextToCollect.map { maybeNextToCollect =>
+      val prompt = maybeNextToCollect.map { api =>
+        s"""
+          |To use this skill, you need to provide your ${api.name} API token.
+          |
+          |You can find it by visiting ${api.maybeTokenUrl.getOrElse("")}.
+          |""".stripMargin
+      }.getOrElse {
+        "All done!"
+      }
+      SimpleTextResult(prompt, forcePrivateResponse = true)
+    }
+  }
+
   def respond(
                event: MessageEvent,
                lambdaService: AWSLambdaService,
@@ -195,9 +251,11 @@ case class InvokeBehaviorConversation(
 
     for {
       user <- event.context.ensureUser(dataService)
+      simpleTokenInfo <- simpleTokenInfo(user, dataService)
       userEnvVarInfo <- userEnvVarInfo(user, dataService)
       paramInfo <- paramInfo(dataService)
       result <- state match {
+        case COLLECT_SIMPLE_TOKENS_STATE => promptResultFor(simpleTokenInfo, event, dataService, cache, configuration)
         case COLLECT_PARAM_VALUES_STATE => promptResultFor(paramInfo, event, dataService, cache, configuration)
         case COLLECT_USER_ENV_VARS_STATE => promptResultFor(userEnvVarInfo, event, dataService, cache, configuration)
         case DONE_STATE => {
@@ -213,8 +271,14 @@ case class InvokeBehaviorConversation(
 
 object InvokeBehaviorConversation {
 
+  val COLLECT_SIMPLE_TOKENS_STATE = "collect_simple_tokens"
   val COLLECT_USER_ENV_VARS_STATE = "collect_user_env_vars"
   val COLLECT_PARAM_VALUES_STATE = "collect_param_values"
+
+  val statesRequiringPrivateMessage = Seq(
+    COLLECT_SIMPLE_TOKENS_STATE,
+    COLLECT_USER_ENV_VARS_STATE
+  )
 
   def createFor(
                  behaviorVersion: BehaviorVersion,

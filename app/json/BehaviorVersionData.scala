@@ -134,6 +134,9 @@ object BehaviorVersionData {
       maybeRequiredOAuth2ApiConfigs <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(Future.successful(None))
+      maybeRequiredSimpleTokenApis <- maybeBehaviorVersion.map { behaviorVersion =>
+        dataService.requiredSimpleTokenApis.allFor(behaviorVersion).map(Some(_))
+      }.getOrElse(Future.successful(None))
     } yield {
       for {
         behavior <- maybeBehavior
@@ -141,14 +144,14 @@ object BehaviorVersionData {
         params <- maybeParameters
         triggers <- maybeTriggers
         requiredOAuth2ApiConfigs <- maybeRequiredOAuth2ApiConfigs
+        requiredSimpleTokenApis <- maybeRequiredSimpleTokenApis
       } yield {
         val maybeAWSConfigData = maybeAWSConfig.map { config =>
           AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
         }
-        val maybeRequiredOAuth2ApiConfigData = maybeRequiredOAuth2ApiConfigs.map { requiredOAuth2ApiConfigs =>
-          requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
-        }
-        val config = BehaviorConfig(maybePublishedId, maybeAWSConfigData, maybeRequiredOAuth2ApiConfigData, Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
+        val requiredOAuth2ApiConfigData = requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
+        val requiredSimpleTokenApiData = requiredSimpleTokenApis.map(ea => RequiredSimpleTokenApiData.from(ea))
+        val config = BehaviorConfig(maybePublishedId, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           Some(behavior.id),

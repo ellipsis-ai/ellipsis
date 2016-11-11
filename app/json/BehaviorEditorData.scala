@@ -17,6 +17,7 @@ case class BehaviorEditorData(
                                paramTypes: Seq[BehaviorParameterTypeData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
+                               simpleTokenApis: Seq[SimpleTokenApiData],
                                linkedOAuth2ApplicationIds: Seq[String],
                                justSaved: Boolean
                               ) {
@@ -80,6 +81,7 @@ object BehaviorEditorData {
       userEnvironmentVariables <- dataService.userEnvironmentVariables.allFor(user)
       oAuth2Applications <- dataService.oauth2Applications.allFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
+      simpleTokenApis <- dataService.simpleTokenApis.allFor(teamAccess.maybeTargetTeam)
       linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUser(user, ws)
       paramTypes <- teamAccess.maybeTargetTeam.map { team =>
         BehaviorParameterType.allFor(team, dataService)
@@ -96,7 +98,7 @@ object BehaviorEditorData {
           "",
           Seq(),
           Seq(),
-          BehaviorConfig(None, None, None, None, maybeDataTypeName),
+          BehaviorConfig(None, None, None, None, None, maybeDataTypeName),
           None,
           None,
           None,
@@ -110,6 +112,7 @@ object BehaviorEditorData {
         paramTypeData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
+        simpleTokenApis.map(SimpleTokenApiData.from),
         linkedOAuth2Tokens.map(_.application.id),
         maybeJustSaved.exists(identity)
       )

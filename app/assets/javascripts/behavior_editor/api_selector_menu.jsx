@@ -20,15 +20,25 @@ define(function(require) {
           displayName: React.PropTypes.string.isRequired
         })
       })).isRequired,
+      allSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.shape({
+        apiId: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired
+      })).isRequired,
+      requiredSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.shape({
+        apiId: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired
+      })).isRequired,
       onAddOAuth2Application: React.PropTypes.func.isRequired,
       onRemoveOAuth2Application: React.PropTypes.func.isRequired,
+      onAddSimpleTokenApi: React.PropTypes.func.isRequired,
+      onRemoveSimpleTokenApi: React.PropTypes.func.isRequired,
       onNewOAuth2Application: React.PropTypes.func.isRequired,
       getOAuth2ApiWithId: React.PropTypes.func.isRequired
     },
 
     getAPISelectorDropdownLabel: function() {
       var activeApiConfigs = this.props.requiredOAuth2ApiConfigs.filter((ea) => !!ea.application);
-      var activeAPICount = activeApiConfigs.length;
+      var activeAPICount = activeApiConfigs.length + this.props.requiredSimpleTokenApis.length;
       if (this.props.awsCheckedWhen) {
         activeAPICount++;
       }
@@ -44,8 +54,7 @@ define(function(require) {
       }
     },
 
-    getAPISelectorLabelForApp: function(app) {
-      var api = this.props.getOAuth2ApiWithId(app.apiId);
+    getAPISelectorLabelForApi: function(api, displayName) {
       if (api && api.iconImageUrl) {
         return (
           <div className="columns columns-elastic">
@@ -53,7 +62,7 @@ define(function(require) {
               <img src={api.iconImageUrl} width="24" height="24"/>
             </div>
             <div className="column column-expand align-m">
-              {app.displayName}
+              {displayName}
             </div>
           </div>
         );
@@ -64,15 +73,21 @@ define(function(require) {
               <img src={api.logoImageUrl} height="18" />
             </div>
             <div className="column column-expand align-m">
-              {app.displayName}
+              {displayName}
             </div>
           </div>
         );
       } else {
         return (
-          <span>{app.displayName}</span>
+          <span>{displayName}</span>
         );
       }
+    },
+
+
+    getAPISelectorLabelForApp: function(app) {
+      var api = this.props.getOAuth2ApiWithId(app.apiId);
+      return this.getAPISelectorLabelForApi(api, app.displayName);
     },
 
     isRequiredOAuth2Application: function(app) {
@@ -87,6 +102,21 @@ define(function(require) {
         this.props.onRemoveOAuth2Application(app);
       } else {
         this.props.onAddOAuth2Application(app);
+      }
+    },
+
+    isRequiredSimpleTokenApi: function(api) {
+      var appIndex = this.props.requiredSimpleTokenApis.findIndex(function(ea) {
+        return ea.apiId === api.apiId;
+      });
+      return appIndex >= 0;
+    },
+
+    toggleSimpleTokenApi: function(api) {
+      if (this.isRequiredSimpleTokenApi(api)) {
+        this.props.onRemoveSimpleTokenApi(api);
+      } else {
+        this.props.onAddSimpleTokenApi(api);
       }
     },
 
@@ -114,6 +144,16 @@ define(function(require) {
                 checkedWhen={this.isRequiredOAuth2Application(app)}
                 onClick={this.toggleOAuth2Application.bind(this, app)}
                 label={this.getAPISelectorLabelForApp(app)}
+              />
+            );
+          })}
+          {this.props.allSimpleTokenApis.map((api, index) => {
+            return (
+              <DropdownMenu.Item
+                key={"simple-token-api-" + index}
+                checkedWhen={this.isRequiredSimpleTokenApi(api)}
+                onClick={this.toggleSimpleTokenApi.bind(this, api)}
+                label={this.getAPISelectorLabelForApi(api, api.name)}
               />
             );
           })}

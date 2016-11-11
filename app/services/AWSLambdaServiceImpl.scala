@@ -12,6 +12,7 @@ import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
+import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.events.MessageEvent
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.behaviors.invocationtoken.InvocationToken
@@ -187,12 +188,21 @@ class AWSLambdaServiceImpl @Inject() (
   private def accessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
     app.maybeApplication.map { application =>
       val infoKey =  if (application.api.grantType.requiresAuth) { "userInfo" } else { "teamInfo" }
-      s"""$CONTEXT_PARAM.accessTokens.${application.keyName} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem == "${application.name}").oauthToken;"""
+      s"""$CONTEXT_PARAM.accessTokens.${application.keyName} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem == "${application.name}").token;"""
     }.getOrElse("")
   }
 
   private def accessTokensCodeFor(requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
     requiredOAuth2ApiConfigs.map(accessTokenCodeFor).mkString("\n")
+  }
+
+  private def accessTokenCodeFor(required: RequiredSimpleTokenApi): String = {
+    val api = required.api
+    s"""$CONTEXT_PARAM.accessTokens.${api.keyName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${api.name}").token;"""
+  }
+
+  private def simpleTokensCodeFor(requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]): String = {
+    requiredSimpleTokenApis.map(accessTokenCodeFor).mkString("\n")
   }
 
   def functionWithParams(params: Array[String], functionBody: String): String = {
@@ -201,7 +211,13 @@ class AWSLambdaServiceImpl @Inject() (
         |}\n""".stripMargin
   }
 
-  private def nodeCodeFor(functionBody: String, params: Array[String], maybeAwsConfig: Option[AWSConfig], requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
+  private def nodeCodeFor(
+                           functionBody: String,
+                           params: Array[String],
+                           maybeAwsConfig: Option[AWSConfig],
+                           requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                           requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
+                         ): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
 
@@ -219,6 +235,7 @@ class AWSLambdaServiceImpl @Inject() (
         |   ${awsCodeFor(maybeAwsConfig)}
         |   $CONTEXT_PARAM.accessTokens = {};
         |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
+        |   ${simpleTokensCodeFor(requiredSimpleTokenApis)}
         |   fn($invocationParamsString);
         |}
     """.stripMargin
@@ -247,6 +264,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        params: Array[String],
                                        maybeAWSConfig: Option[AWSConfig],
                                        requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                                        maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
                                      ): Unit = {
     val dirName = dirNameFor(functionName)
@@ -254,7 +272,7 @@ class AWSLambdaServiceImpl @Inject() (
     path.createDirectory()
 
     val writer = new PrintWriter(new File(s"$dirName/index.js"))
-    writer.write(nodeCodeFor(functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs))
+    writer.write(nodeCodeFor(functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
     writer.close()
 
     val requiredModules = requiredModulesIn(functionBody)
@@ -282,9 +300,10 @@ class AWSLambdaServiceImpl @Inject() (
                          params: Array[String],
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                          maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
                        ): ByteBuffer = {
-    createZipWithModulesFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, maybePreviousFunctionInfo)
+    createZipWithModulesFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
     val path = Paths.get(zipFileNameFor(functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -312,6 +331,7 @@ class AWSLambdaServiceImpl @Inject() (
                       params: Array[String],
                       maybeAWSConfig: Option[AWSConfig],
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                      requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                       maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
                     ): Future[Unit] = {
 
@@ -322,7 +342,7 @@ class AWSLambdaServiceImpl @Inject() (
       } else {
         val functionCode =
           new FunctionCode().
-            withZipFile(getZipFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, maybePreviousFunctionInfo))
+            withZipFile(getZipFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo))
         val createFunctionRequest =
           new CreateFunctionRequest().
             withFunctionName(functionName).
@@ -342,13 +362,14 @@ class AWSLambdaServiceImpl @Inject() (
                          functionBody: String,
                          params: Array[String],
                          maybeAWSConfig: Option[AWSConfig],
-                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
-                         ): Future[Unit] = {
+                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
+                       ): Future[Unit] = {
     dataService.behaviorVersions.maybePreviousFor(behaviorVersion).map { maybePrevious =>
       val maybePreviousFunctionInfo = maybePrevious.map { version =>
         PreviousFunctionInfo(version.functionName, version.functionBody)
       }
-      deployFunction(behaviorVersion.functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, maybePreviousFunctionInfo)
+      deployFunction(behaviorVersion.functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
     }
 
   }

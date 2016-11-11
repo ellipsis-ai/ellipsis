@@ -16,7 +16,7 @@ case class LinkedInfo(externalSystem: String, accessToken: String) {
   def toJson: JsObject = {
     JsObject(Seq(
       "externalSystem" -> JsString(externalSystem),
-      "oauthToken" -> JsString(accessToken)
+      "token" -> JsString(accessToken)
     ))
   }
 
@@ -60,12 +60,19 @@ object UserInfo {
 
   def buildFor(maybeUser: Option[User], context: MessageContext, ws: WSClient, dataService: DataService): Future[UserInfo] = {
     for {
-      linkedTokens <- maybeUser.map { user =>
+      linkedOAuth2Tokens <- maybeUser.map { user =>
         dataService.linkedOAuth2Tokens.allForUser(user, ws)
       }.getOrElse(Future.successful(Seq()))
-      links <- Future.successful(linkedTokens.map { ea =>
-        LinkedInfo(ea.application.name, ea.accessToken)
-      })
+      linkedSimpleTokens <- maybeUser.map { user =>
+        dataService.linkedSimpleTokens.allForUser(user)
+      }.getOrElse(Future.successful(Seq()))
+      links <- Future.successful {
+        linkedOAuth2Tokens.map { ea =>
+          LinkedInfo(ea.application.name, ea.accessToken)
+        } ++ linkedSimpleTokens.map { ea =>
+          LinkedInfo(ea.api.name, ea.accessToken)
+        }
+      }
       messageInfo <- context.messageInfo(ws, dataService)
     } yield {
       UserInfo(maybeUser, links, Some(messageInfo))

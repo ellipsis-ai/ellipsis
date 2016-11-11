@@ -102,10 +102,10 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   def needsConfig(dataService: DataService) = {
     for {
       maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
-      requiredApiConfigs <- maybeCurrentVersion.map { currentVersion =>
+      requiredOAuth2ApiConfigs <- maybeCurrentVersion.map { currentVersion =>
         dataService.requiredOAuth2ApiConfigs.allFor(currentVersion)
       }.getOrElse(Future.successful(Seq()))
-    } yield !requiredApiConfigs.forall(_.isReady)
+    } yield !requiredOAuth2ApiConfigs.forall(_.isReady)
   }
 
   case class ValidValue(id: String, label: String)

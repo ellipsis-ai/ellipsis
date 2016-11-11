@@ -6,6 +6,7 @@ import models.Models
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
+import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
@@ -36,7 +37,8 @@ trait AWSLambdaService extends AWSService {
                          functionBody: String,
                          params: Array[String],
                          maybeAWSConfig: Option[AWSConfig],
-                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]
+                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
                          ): Future[Unit]
 
 }

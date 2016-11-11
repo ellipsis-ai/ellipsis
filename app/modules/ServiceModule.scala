@@ -4,12 +4,14 @@ import com.google.inject.{AbstractModule, Provides}
 import models.Models
 import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
+import models.accounts.linkedsimpletoken.{LinkedSimpleTokenService, LinkedSimpleTokenServiceImpl}
 import models.accounts.user.{UserService, UserServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
 import models.accounts.oauth2api.{OAuth2ApiService, OAuth2ApiServiceImpl}
 import models.accounts.oauth2application.{OAuth2ApplicationService, OAuth2ApplicationServiceImpl}
 import models.accounts.slack.profile.{SlackProfileService, SlackProfileServiceImpl}
 import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
+import models.accounts.simpletokenapi.{SimpleTokenApiService, SimpleTokenApiServiceImpl}
 import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfileServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
@@ -17,6 +19,7 @@ import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorPar
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
 import models.behaviors.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigService, RequiredOAuth2ApiConfigServiceImpl}
+import models.behaviors.config.requiredsimpletokenapi.{RequiredSimpleTokenApiService, RequiredSimpleTokenApiServiceImpl}
 import models.behaviors.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
 import models.behaviors.conversations.conversation.{ConversationService, ConversationServiceImpl}
 import models.behaviors.events.EventHandler
@@ -47,8 +50,10 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[UserEnvironmentVariableService].to(classOf[UserEnvironmentVariableServiceImpl])
     bind[InvocationTokenService].to(classOf[InvocationTokenServiceImpl])
     bind[LinkedOAuth2TokenService].to(classOf[LinkedOAuth2TokenServiceImpl])
+    bind[LinkedSimpleTokenService].to(classOf[LinkedSimpleTokenServiceImpl])
     bind[OAuth2ApiService].to(classOf[OAuth2ApiServiceImpl])
     bind[OAuth2ApplicationService].to(classOf[OAuth2ApplicationServiceImpl])
+    bind[SimpleTokenApiService].to(classOf[SimpleTokenApiServiceImpl])
     bind[SlackProfileService].to(classOf[SlackProfileServiceImpl])
     bind[SlackBotProfileService].to(classOf[SlackBotProfileServiceImpl])
     bind[OAuth2TokenService].to(classOf[OAuth2TokenServiceImpl])
@@ -58,6 +63,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[MessageTriggerService].to(classOf[MessageTriggerServiceImpl])
     bind[AWSConfigService].to(classOf[AWSConfigServiceImpl])
     bind[RequiredOAuth2ApiConfigService].to(classOf[RequiredOAuth2ApiConfigServiceImpl])
+    bind[RequiredSimpleTokenApiService].to(classOf[RequiredSimpleTokenApiServiceImpl])
     bind[ConversationService].to(classOf[ConversationServiceImpl])
     bind[CollectedParameterValueService].to(classOf[CollectedParameterValueServiceImpl])
     bind[ScheduledMessageService].to(classOf[ScheduledMessageServiceImpl])
