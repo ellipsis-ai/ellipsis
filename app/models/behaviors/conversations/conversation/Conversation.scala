@@ -26,6 +26,7 @@ trait Conversation {
   val stateRequiresPrivateMessage: Boolean = false
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
+  def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
   def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
   def respond(
                event: MessageEvent,

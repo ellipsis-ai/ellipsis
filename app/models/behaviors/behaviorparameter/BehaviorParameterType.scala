@@ -171,7 +171,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     }
   }
 
-  val invalidPromptModifier: String = s"I need a $name. Use one of the numbers or labels below"
+  val invalidPromptModifier: String = s"I need a $name. Use one of the numbers or labels below or `…stop` to get out of here"
 
   private def valuesListCacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = {
     s"values-list-${conversation.id}-${parameter.id}"
