@@ -6,6 +6,7 @@ import com.google.inject.Provider
 import json.RequiredSimpleTokenApiData
 import models.IDs
 import models.accounts.simpletokenapi.{SimpleTokenApi, SimpleTokenApiQueries}
+import models.accounts.user.User
 import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import services.DataService
 import slick.driver.PostgresDriver.api._
@@ -73,6 +74,17 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
       r.map(tuple2Required)
     }
     dataService.run(action)
+  }
+
+  def missingFor(user: User, behaviorVersion: BehaviorVersion): Future[Seq[RequiredSimpleTokenApi]] = {
+    for {
+      required <- allFor(behaviorVersion)
+      linked <- dataService.linkedSimpleTokens.allForUser(user)
+    } yield {
+      required.filterNot { r =>
+        linked.exists { link => link.api == r.api }
+      }
+    }
   }
 
   def uncompiledFindQuery(id: Rep[String]) = allWithApi.filter { case((required, _), _) => required.id === id }
