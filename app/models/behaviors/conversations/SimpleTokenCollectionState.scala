@@ -1,0 +1,82 @@
+package models.behaviors.conversations
+
+import models.accounts.linkedsimpletoken.LinkedSimpleToken
+import models.accounts.simpletokenapi.SimpleTokenApi
+import models.accounts.user.User
+import models.behaviors.{BotResult, SimpleTextResult}
+import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.MessageEvent
+import play.api.Configuration
+import play.api.cache.CacheApi
+import services.DataService
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
+case class SimpleTokenCollectionState(
+                                       missingTokenApis: Seq[SimpleTokenApi],
+                                       event: MessageEvent,
+                                       dataService: DataService,
+                                       cache: CacheApi,
+                                       configuration: Configuration
+                                    ) extends CollectionState {
+
+  val name = InvokeBehaviorConversation.COLLECT_SIMPLE_TOKENS_STATE
+
+  def maybeNextToCollect: Future[Option[SimpleTokenApi]] = {
+    Future.successful(missingTokenApis.headOption)
+  }
+
+  def isCompleteIn(conversation: Conversation): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
+
+  def collectValueFrom(conversation: InvokeBehaviorConversation): Future[Conversation] = {
+    for {
+      maybeNextToCollect <- maybeNextToCollect
+      user <- event.context.ensureUser(dataService)
+      updatedConversation <- maybeNextToCollect.map { api =>
+        val token = event.context.relevantMessageText.trim
+        dataService.linkedSimpleTokens.save(LinkedSimpleToken(token, user.id, api)).map(_ => conversation)
+      }.getOrElse(Future.successful(conversation))
+      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration)
+    } yield updatedConversation
+  }
+
+  def promptResultFor(conversation: Conversation): Future[BotResult] = {
+    maybeNextToCollect.map { maybeNextToCollect =>
+      val prompt = maybeNextToCollect.map { api =>
+        s"""
+           |To use this skill, you need to provide your ${api.name} API token.
+           |
+           |You can find it by visiting ${api.maybeTokenUrl.getOrElse("")}.
+           |""".stripMargin
+      }.getOrElse {
+        "All done!"
+      }
+      SimpleTextResult(prompt, forcePrivateResponse = true)
+    }
+  }
+
+}
+
+object SimpleTokenCollectionState {
+
+  def from(
+            user: User,
+            conversation: Conversation,
+            event: MessageEvent,
+            dataService: DataService,
+            cache: CacheApi,
+            configuration: Configuration
+          ): Future[SimpleTokenCollectionState] = {
+    for {
+      tokens <- dataService.linkedSimpleTokens.allForUser(user)
+      requiredTokenApis <- dataService.requiredSimpleTokenApis.allFor(conversation.behaviorVersion)
+    } yield {
+      val missing = requiredTokenApis.filterNot { required =>
+        tokens.exists(linked => linked.api == required.api)
+      }.map(_.api)
+      SimpleTokenCollectionState(missing, event, dataService, cache, configuration)
+    }
+  }
+
+}
