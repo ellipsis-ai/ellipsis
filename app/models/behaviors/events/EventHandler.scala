@@ -39,8 +39,18 @@ class EventHandler @Inject() (
     }
   }
 
+  def isCancelConversationMessage(text: String): Boolean = {
+    Seq("…stop", "…cancel").contains(text)
+  }
+
   def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
-    conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+    if (isCancelConversationMessage(event.context.fullMessageText)) {
+      conversation.cancel(dataService).map { _ =>
+        SimpleTextResult(s"OK, I'll stop talking about `${conversation.trigger.pattern}`", forcePrivateResponse = false)
+      }
+    } else {
+      conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+    }
   }
 
   def handle(event: MessageEvent, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
