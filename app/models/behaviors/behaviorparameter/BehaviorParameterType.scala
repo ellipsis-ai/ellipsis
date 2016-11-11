@@ -110,6 +110,8 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]
+  case class ValidValueWithNumericId(id: Double, label: String)
+  implicit val validValueWithNumericIdReads = Json.reads[ValidValueWithNumericId]
 
   val team = behavior.team
 
@@ -196,7 +198,12 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     result.result.as[Seq[JsObject]].flatMap { ea =>
       ea.validate[ValidValue] match {
         case JsSuccess(data, jsPath) => Some(data)
-        case e: JsError => None
+        case e: JsError => {
+          ea.validate[ValidValueWithNumericId] match {
+            case JsSuccess(data, jsPath) => Some(ValidValue(data.id.toString, data.label))
+            case e: JsError => None
+          }
+        }
       }
     }
   }
