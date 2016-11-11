@@ -16,4 +16,10 @@ trait Context {
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]]
 
+  def unformatTextFragment(text: String): String = {
+    // Override for client-specific code to strip formatting from text
+    text
+  }
+
+
 }

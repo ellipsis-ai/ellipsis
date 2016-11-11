@@ -161,6 +161,11 @@ case class SlackMessageContext(
       )
     }
   }
+
+  override def unformatTextFragment(text: String): String = {
+    // Replace formatted links with their visible text
+    text.replaceAll("""<.+?\|(.+?)>""", "$1")
+  }
 }
 
 object SlackMessageContext {
