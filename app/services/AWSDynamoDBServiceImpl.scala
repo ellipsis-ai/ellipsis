@@ -43,7 +43,12 @@ class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extend
         withKey(Map(ITEM_PRIMARY_KEY -> new AttributeValue(primaryKeyFor(itemId, itemType, team))).asJava)
 
     JavaFutureConverter.javaToScala(client.getItemAsync(request)).map { result =>
-      result.getItem.asScala.get(ITEM).map(_.getS)
+      val item = result.getItem
+      if (item == null) {
+        None
+      } else {
+        item.asScala.get(ITEM).map(_.getS)
+      }
     }
   }
 }

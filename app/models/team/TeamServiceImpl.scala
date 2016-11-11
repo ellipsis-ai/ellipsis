@@ -6,6 +6,7 @@ import com.google.inject.Provider
 import models.accounts.linkedaccount.LinkedAccount
 import models.IDs
 import models.accounts.user.User
+import play.api.Configuration
 import services.DataService
 import slick.driver.PostgresDriver.api._
 
@@ -13,7 +14,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class TeamServiceImpl @Inject() (
-                                  dataServiceProvider: Provider[DataService]
+                                  dataServiceProvider: Provider[DataService],
+                                  configuration: Configuration
                                 ) extends TeamService {
 
   def dataService = dataServiceProvider.get
@@ -56,7 +58,14 @@ class TeamServiceImpl @Inject() (
         } else {
           find(token.teamId)
         }
-      }.getOrElse(Future.successful(None))
+      }.getOrElse {
+        if (configuration.getString("application.version").contains("Development")) {
+          // in dev, if not found, we assume the tokenId is a teamId
+          find(tokenId)
+        } else {
+          Future.successful(None)
+        }
+      }
     } yield maybeTeam
   }
 
