@@ -129,6 +129,7 @@ define(function(require) {
           var newResults = this.state.results.concat(new InvocationTestResult(
             json.result && json.result.fullText,
             json.missingParamNames,
+            json.missingSimpleTokens,
             json.missingUserEnvVars
           ));
           this.setState({
