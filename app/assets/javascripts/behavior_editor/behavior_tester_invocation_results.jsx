@@ -27,6 +27,23 @@ define(function(require) {
       );
     },
 
+    missingSimpleTokensResult: function(missingSimpleTokens) {
+      return (
+        <div className="display-overflow-scroll border border-pink bg-white pas">
+          {missingSimpleTokens.length === 1 ? (
+            <span>
+              If, like you, the user hasn't yet supplied a token for the <code className="type-bold">{missingSimpleTokens[0]}</code> API, Ellipsis will ask for one.
+            </span>
+          ) : (
+            <span>
+              <span>If, like you, the user hasn't yet supplied tokens for these APIs, Ellipsis will ask for them: </span>
+              <code className="type-bold mlxs">{missingSimpleTokens.join(", ")}</code>
+            </span>
+          )}
+        </div>
+      );
+    },
+
     missingUserEnvVarsResult: function(missingUserEnvVars) {
       return (
         <div className="display-overflow-scroll border border-pink bg-white pas">
@@ -101,6 +118,7 @@ define(function(require) {
               <pre>{response}</pre>
             </div>
           ))}
+          {ifPresent(result.missingSimpleTokens, this.missingSimpleTokensResult)}
           {ifPresent(result.missingUserEnvVars, this.missingUserEnvVarsResult)}
           {ifPresent(result.missingParamNames, this.missingParametersResult)}
         </div>
