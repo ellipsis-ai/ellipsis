@@ -55,9 +55,19 @@ case class BehaviorResponse(
     } yield missing.isEmpty
   }
 
+  def hasAllSimpleTokens: Future[Boolean] = {
+    for {
+      user <- event.context.ensureUser(dataService)
+      missing <- dataService.requiredSimpleTokenApis.missingFor(user, behaviorVersion)
+    } yield missing.isEmpty
+  }
+
   def isReady: Future[Boolean] = {
-    hasAllUserEnvVarValues.map { hasUserEnvVars =>
-      hasUserEnvVars && hasAllParamValues
+    for {
+      hasSimpleTokens <- hasAllSimpleTokens
+      hasUserEnvVars <- hasAllUserEnvVarValues
+    } yield {
+      hasSimpleTokens && hasUserEnvVars && hasAllParamValues
     }
   }
 
