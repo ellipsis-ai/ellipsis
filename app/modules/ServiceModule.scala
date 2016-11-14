@@ -23,6 +23,7 @@ import models.behaviors.config.requiredsimpletokenapi.{RequiredSimpleTokenApiSer
 import models.behaviors.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
 import models.behaviors.conversations.conversation.{ConversationService, ConversationServiceImpl}
 import models.behaviors.events.EventHandler
+import models.behaviors.input.{InputService, InputServiceImpl}
 import models.behaviors.invocationlogentry.{InvocationLogEntryService, InvocationLogEntryServiceImpl}
 import models.behaviors.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
 import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
@@ -60,6 +61,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BehaviorService].to(classOf[BehaviorServiceImpl])
     bind[BehaviorVersionService].to(classOf[BehaviorVersionServiceImpl])
     bind[BehaviorParameterService].to(classOf[BehaviorParameterServiceImpl])
+    bind[InputService].to(classOf[InputServiceImpl])
     bind[MessageTriggerService].to(classOf[MessageTriggerServiceImpl])
     bind[AWSConfigService].to(classOf[AWSConfigServiceImpl])
     bind[RequiredOAuth2ApiConfigService].to(classOf[RequiredOAuth2ApiConfigServiceImpl])

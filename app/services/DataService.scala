@@ -20,6 +20,7 @@ import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigSe
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
 import models.behaviors.conversations.conversation.ConversationService
+import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
@@ -51,6 +52,7 @@ trait DataService {
   val behaviors: BehaviorService
   val behaviorVersions: BehaviorVersionService
   val behaviorParameters: BehaviorParameterService
+  val inputs: InputService
   val messageTriggers: MessageTriggerService
   val awsConfigs: AWSConfigService
   val requiredOAuth2ApiConfigs: RequiredOAuth2ApiConfigService
