@@ -55,7 +55,7 @@ class BehaviorParameterServiceImpl @Inject() (
       inputData <- DBIO.successful(InputData(name, Some(paramTypeData), maybeQuestion.getOrElse("")))
       input <- DBIO.from(dataService.inputs.ensureFor(inputData, behaviorVersion.team))
       raw <- DBIO.successful {
-        RawBehaviorParameter(IDs.next, rank, Some(input.id), behaviorVersion.id, name, maybeQuestion, maybeParamType.map(_.id).getOrElse(TextType.id))
+        RawBehaviorParameter(IDs.next, rank, Some(input.id), behaviorVersion.id, input.name, input.maybeQuestion, input.toRaw.paramType)
       }
       param <- (all += raw).map { _ =>
         BehaviorParameter(raw.id, raw.rank, input, behaviorVersion)

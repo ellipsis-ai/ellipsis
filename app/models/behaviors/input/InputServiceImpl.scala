@@ -42,7 +42,7 @@ class InputServiceImpl @Inject() (
 //  def maybeFor(behaviorParameter: BehaviorParameter): Future[Option[Input]]
 
   def ensureFor(data: InputData, team: Team): Future[Input] = {
-    val raw = RawInput(IDs.next, data.name, data.maybeNonEmptyQuestion, data.paramType.map(_.name).getOrElse(TextType.id))
+    val raw = RawInput(IDs.next, data.name, data.maybeNonEmptyQuestion, data.paramType.map(_.id).getOrElse(TextType.id))
     val action = for {
       maybeParamType <- DBIO.from(data.paramType.map { paramTypeData =>
         BehaviorParameterType.find(paramTypeData.id, team, dataService)
