@@ -14,18 +14,6 @@ case class Input(
 
   def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
-  def isComplete: Boolean = {
-    maybeQuestion.isDefined
-  }
-
-  def invalidValueModifierFor(maybePreviousCollectedValue: Option[CollectedParameterValue]): String = {
-    if (maybePreviousCollectedValue.isDefined) {
-      s" (${paramType.invalidPromptModifier})"
-    } else {
-      ""
-    }
-  }
-
   def prompt(maybeCollected: Option[CollectedParameterValue], context: BehaviorParameterContext): Future[String] = {
     paramType.promptFor(maybeCollected, context)
   }
