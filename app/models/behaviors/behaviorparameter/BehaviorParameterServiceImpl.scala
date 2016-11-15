@@ -49,10 +49,8 @@ class BehaviorParameterServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  private def createFor(name: String, paramTypeData: BehaviorParameterTypeData, maybeQuestion: Option[String], rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
+  private def createFor(inputData: InputData, rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
     val action = for {
-      maybeParamType <- DBIO.from(BehaviorParameterType.find(paramTypeData.id, behaviorVersion.team, dataService))
-      inputData <- DBIO.successful(InputData(name, Some(paramTypeData), maybeQuestion.getOrElse("")))
       input <- DBIO.from(dataService.inputs.ensureFor(inputData, behaviorVersion.team))
       raw <- DBIO.successful {
         RawBehaviorParameter(IDs.next, rank, Some(input.id), behaviorVersion.id, input.name, input.maybeQuestion, input.toRaw.paramType)
@@ -70,7 +68,7 @@ class BehaviorParameterServiceImpl @Inject() (
       newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
         DBIO.from(for {
           paramTypeData <- data.paramType.map(Future.successful).getOrElse(BehaviorParameterTypeData.from(TextType, dataService))
-          param <- createFor(data.name, paramTypeData, data.maybeNonEmptyQuestion, i + 1, behaviorVersion)
+          param <- createFor(data.inputData, i + 1, behaviorVersion)
         } yield param)
       })
     } yield newParams
