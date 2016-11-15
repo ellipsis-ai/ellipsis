@@ -29,6 +29,7 @@ import models.behaviors.scheduledmessage.{ScheduledMessageService, ScheduledMess
 import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
 import models.environmentvariable._
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
+import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
 import play.api.i18n.MessagesApi
@@ -62,6 +63,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BehaviorVersionService].to(classOf[BehaviorVersionServiceImpl])
     bind[BehaviorParameterService].to(classOf[BehaviorParameterServiceImpl])
     bind[InputService].to(classOf[InputServiceImpl])
+    bind[SavedAnswerService].to(classOf[SavedAnswerServiceImpl])
     bind[MessageTriggerService].to(classOf[MessageTriggerServiceImpl])
     bind[AWSConfigService].to(classOf[AWSConfigServiceImpl])
     bind[RequiredOAuth2ApiConfigService].to(classOf[RequiredOAuth2ApiConfigServiceImpl])

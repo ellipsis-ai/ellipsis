@@ -18,7 +18,7 @@ object InputQueries {
         findBuiltIn(raw.paramType).
         orElse(tuple._2.map { dataTypeBehavior => BehaviorBackedDataType(BehaviorQueries.tuple2Behavior(dataTypeBehavior)) }).
         getOrElse(TextType)
-    Input(raw.id, raw.name, raw.maybeQuestion, paramType)
+    Input(raw.id, raw.name, raw.maybeQuestion, paramType, raw.isSavedForTeam, raw.isSavedForUser)
   }
 
 }

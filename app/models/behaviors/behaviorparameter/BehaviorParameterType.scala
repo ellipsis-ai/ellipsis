@@ -25,7 +25,7 @@ sealed trait BehaviorParameterType {
 
   def invalidPromptModifier: String
 
-  def invalidValueModifierFor(maybePreviousCollectedValue: Option[CollectedParameterValue]): String = {
+  def invalidValueModifierFor(maybePreviousCollectedValue: Option[String]): String = {
     if (maybePreviousCollectedValue.isDefined) {
       s" (${invalidPromptModifier})"
     } else {
@@ -34,7 +34,7 @@ sealed trait BehaviorParameterType {
   }
 
   def promptFor(
-                 maybePreviousCollectedValue: Option[CollectedParameterValue],
+                 maybePreviousCollectedValue: Option[String],
                  context: BehaviorParameterContext
                ): Future[String] = {
     Future.successful(s"${context.parameter.question}${invalidValueModifierFor(maybePreviousCollectedValue)}")
@@ -42,9 +42,16 @@ sealed trait BehaviorParameterType {
 
   def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
     val potentialValue = event.context.relevantMessageText
-    context.maybeConversation.map { conversation =>
-      context.dataService.collectedParameterValues.ensureFor(context.parameter, conversation, potentialValue).map(_ => {})
-    }.getOrElse(Future.successful({}))
+    val input = context.parameter.input
+    if (input.isSaved) {
+      event.context.ensureUser(context.dataService).flatMap { user =>
+        context.dataService.savedAnswers.ensureFor(input, potentialValue, user).map(_ => {})
+      }
+    } else {
+      context.maybeConversation.map { conversation =>
+        context.dataService.collectedParameterValues.ensureFor(context.parameter, conversation, potentialValue).map(_ => {})
+      }.getOrElse(Future.successful({}))
+    }
   }
 
 }
@@ -240,7 +247,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
 
   private def promptForListAllCase(
                                     maybeSearchQuery: Option[String],
-                                    maybePreviousCollectedValue: Option[CollectedParameterValue],
+                                    maybePreviousCollectedValue: Option[String],
                                     context: BehaviorParameterContext
                                   ): Future[String] = {
     for {
@@ -276,7 +283,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   }
 
   private def promptForSearchCase(
-                                   maybePreviousCollectedValue: Option[CollectedParameterValue],
+                                   maybePreviousCollectedValue: Option[String],
                                    context: BehaviorParameterContext
                                  ): Future[String] = {
 
@@ -290,7 +297,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   }
 
   override def promptFor(
-                           maybePreviousCollectedValue: Option[CollectedParameterValue],
+                           maybePreviousCollectedValue: Option[String],
                            context: BehaviorParameterContext
                          ): Future[String] = {
     context.dataService.behaviors.hasSearchParam(this.behavior).flatMap { usesSearch =>

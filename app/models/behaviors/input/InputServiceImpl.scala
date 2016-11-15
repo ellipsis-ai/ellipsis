@@ -17,7 +17,9 @@ case class RawInput(
                      id: String,
                      name: String,
                      maybeQuestion: Option[String],
-                     paramType: String
+                     paramType: String,
+                     isSavedForTeam: Boolean,
+                     isSavedForUser: Boolean
                    )
 
 class InputsTable(tag: Tag) extends Table[RawInput](tag, "inputs") {
@@ -26,9 +28,11 @@ class InputsTable(tag: Tag) extends Table[RawInput](tag, "inputs") {
   def name = column[String]("name")
   def maybeQuestion = column[Option[String]]("question")
   def paramType = column[String]("param_type")
+  def isSavedForTeam = column[Boolean]("is_saved_for_team")
+  def isSavedForUser = column[Boolean]("is_saved_for_user")
 
   def * =
-    (id, name, maybeQuestion, paramType) <> ((RawInput.apply _).tupled, RawInput.unapply _)
+    (id, name, maybeQuestion, paramType, isSavedForTeam, isSavedForUser) <> ((RawInput.apply _).tupled, RawInput.unapply _)
 }
 
 class InputServiceImpl @Inject() (
@@ -40,13 +44,21 @@ class InputServiceImpl @Inject() (
   import InputQueries._
 
   def ensureFor(data: InputData, team: Team): Future[Input] = {
-    val raw = RawInput(IDs.next, data.name, data.maybeNonEmptyQuestion, data.paramType.map(_.id).getOrElse(TextType.id))
+    val raw =
+      RawInput(
+        IDs.next,
+        data.name,
+        data.maybeNonEmptyQuestion,
+        data.paramType.map(_.id).getOrElse(TextType.id),
+        data.isSavedForTeam,
+        data.isSavedForUser
+      )
     val action = for {
       maybeParamType <- DBIO.from(data.paramType.map { paramTypeData =>
         BehaviorParameterType.find(paramTypeData.id, team, dataService)
       }.getOrElse(Future.successful(None)))
       input <- (all += raw).map { _ =>
-        Input(raw.id, raw.name, raw.maybeQuestion, maybeParamType.getOrElse(TextType))
+        Input(raw.id, raw.name, raw.maybeQuestion, maybeParamType.getOrElse(TextType), raw.isSavedForTeam, raw.isSavedForUser)
       }
     } yield input
     dataService.run(action)

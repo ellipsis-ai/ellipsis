@@ -29,6 +29,7 @@ import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
+import models.behaviors.savedanswer.SavedAnswerService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -57,6 +58,7 @@ class PostgresDataService @Inject() (
                                       val behaviorVersionsProvider: Provider[BehaviorVersionService],
                                       val behaviorParametersProvider: Provider[BehaviorParameterService],
                                       val inputsProvider: Provider[InputService],
+                                      val savedAnswersProvider: Provider[SavedAnswerService],
                                       val messageTriggersProvider: Provider[MessageTriggerService],
                                       val awsConfigsProvider: Provider[AWSConfigService],
                                       val requiredOAuth2ApiConfigsProvider: Provider[RequiredOAuth2ApiConfigService],
@@ -87,6 +89,7 @@ class PostgresDataService @Inject() (
   val behaviorVersions = behaviorVersionsProvider.get
   val behaviorParameters = behaviorParametersProvider.get
   val inputs = inputsProvider.get
+  val savedAnswers = savedAnswersProvider.get
   val messageTriggers = messageTriggersProvider.get
   val awsConfigs = awsConfigsProvider.get
   val requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsProvider.get

@@ -12,7 +12,9 @@ define(function() {
       var initialProps = Object.assign({
         name: '',
         question: '',
-        paramType: null
+        paramType: null,
+        isSavedForTeam: false,
+        isSavedForUser: false
       }, props);
 
       if (!initialProps.paramType) {
@@ -29,6 +31,14 @@ define(function() {
         },
         paramType: {
           value: initialProps.paramType,
+          enumerable: true
+        },
+        isSavedForTeam: {
+          value: initialProps.isSavedForTeam,
+          enumerable: true
+        },
+        isSavedForUser: {
+          value: initialProps.isSavedForUser,
           enumerable: true
         }
       });
