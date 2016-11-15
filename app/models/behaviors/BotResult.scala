@@ -132,7 +132,7 @@ case class HandledErrorResult(
 
   def text: String = {
     val detail = (json \ "errorMessage").toOption.map(processedResultFor).map { msg =>
-      s":\n\n```$msg```"
+      s":\n\n```\n$msg\n```"
     }.getOrElse("")
     s"I encountered an error in ${linkToBehaviorFor("one of your skills")}$detail"
   }
