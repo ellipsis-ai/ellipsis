@@ -84,4 +84,11 @@ class SavedAnswerServiceImpl @Inject() (
     }).map(_.flatten)
   }
 
+  def updateForInputId(maybeOldInputId: Option[String], newInputId: String): Future[Unit] = {
+    maybeOldInputId.map { oldInputId =>
+      val action = all.filter(_.inputId === oldInputId).map(_.inputId).update(newInputId).map(_ => {})
+      dataService.run(action)
+    }.getOrElse(Future.successful({}))
+  }
+
 }

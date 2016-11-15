@@ -5,7 +5,8 @@ case class BehaviorParameterData(
                                   paramType: Option[BehaviorParameterTypeData],
                                   question: String,
                                   isSavedForTeam: Option[Boolean],
-                                  isSavedForUser: Option[Boolean]
+                                  isSavedForUser: Option[Boolean],
+                                  inputId: Option[String]
                                 ) {
 
   val inputData = InputData(name, paramType, question, isSavedForTeam.exists(identity), isSavedForUser.exists(identity))

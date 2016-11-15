@@ -14,7 +14,8 @@ define(function() {
         question: '',
         paramType: null,
         isSavedForTeam: false,
-        isSavedForUser: false
+        isSavedForUser: false,
+        inputId: null
       }, props);
 
       if (!initialProps.paramType) {
@@ -39,6 +40,10 @@ define(function() {
         },
         isSavedForUser: {
           value: initialProps.isSavedForUser,
+          enumerable: true
+        },
+        inputId: {
+          value: initialProps.inputId,
           enumerable: true
         }
       });

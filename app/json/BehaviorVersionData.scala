@@ -164,7 +164,8 @@ object BehaviorVersionData {
               paramTypeDataByParamTypes.get(ea.paramType),
               ea.question,
               Some(ea.input.isSavedForTeam),
-              Some(ea.input.isSavedForUser)
+              Some(ea.input.isSavedForUser),
+              Some(ea.input.id)
             )
           },
           triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>

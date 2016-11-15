@@ -250,7 +250,8 @@ class BehaviorEditorController @Inject() (
                   paramTypeDataByParamTypes.get(ea.paramType),
                   ea.question,
                   Some(ea.input.isSavedForTeam),
-                  Some(ea.input.isSavedForUser)
+                  Some(ea.input.isSavedForUser),
+                  Some(ea.input.id)
                 )
               }
             }.getOrElse(Seq()),

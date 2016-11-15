@@ -69,6 +69,7 @@ class BehaviorParameterServiceImpl @Inject() (
         DBIO.from(for {
           paramTypeData <- data.paramType.map(Future.successful).getOrElse(BehaviorParameterTypeData.from(TextType, dataService))
           param <- createFor(data.inputData, i + 1, behaviorVersion)
+          _ <- dataService.savedAnswers.updateForInputId(data.inputId, param.input.id)
         } yield param)
       })
     } yield newParams
