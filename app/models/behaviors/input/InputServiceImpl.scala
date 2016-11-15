@@ -39,8 +39,6 @@ class InputServiceImpl @Inject() (
 
   import InputQueries._
 
-//  def maybeFor(behaviorParameter: BehaviorParameter): Future[Option[Input]]
-
   def ensureFor(data: InputData, team: Team): Future[Input] = {
     val raw = RawInput(IDs.next, data.name, data.maybeNonEmptyQuestion, data.paramType.map(_.id).getOrElse(TextType.id))
     val action = for {
