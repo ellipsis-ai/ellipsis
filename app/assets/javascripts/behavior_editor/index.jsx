@@ -1323,7 +1323,7 @@ return React.createClass({
   renderCodeEditor: function() {
     return (
       <div>
-        <div className="border-top border-left border-right border-radius-top pts">
+        <div className="border-top border-left border-right pts">
           <div className="ptxs type-s">
             <div className="phm mbm">
               <APISelectorMenu
