@@ -1,5 +1,6 @@
 package models.behaviors.input
 
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorparameter.{BehaviorParameterContext, BehaviorParameterType}
 
 import scala.concurrent.Future
@@ -10,10 +11,13 @@ case class Input(
                   maybeQuestion: Option[String],
                   paramType: BehaviorParameterType,
                   isSavedForTeam: Boolean,
-                  isSavedForUser: Boolean
+                  isSavedForUser: Boolean,
+                  maybeBehaviorGroup: Option[BehaviorGroup]
                 ) {
 
   val isSaved = isSavedForTeam || isSavedForUser
+
+  def isShared = maybeBehaviorGroup.isDefined
 
   def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
@@ -22,6 +26,6 @@ case class Input(
   }
 
   def toRaw: RawInput = {
-    RawInput(id, name, maybeQuestion, paramType.name, isSavedForTeam, isSavedForUser)
+    RawInput(id, name, maybeQuestion, paramType.name, isSavedForTeam, isSavedForUser, maybeBehaviorGroup.map(_.id))
   }
 }

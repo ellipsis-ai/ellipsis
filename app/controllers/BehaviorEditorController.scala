@@ -251,7 +251,8 @@ class BehaviorEditorController @Inject() (
                   ea.question,
                   Some(ea.input.isSavedForTeam),
                   Some(ea.input.isSavedForUser),
-                  Some(ea.input.id)
+                  Some(ea.input.id),
+                  ea.input.maybeBehaviorGroup.map(_.id)
                 )
               }
             }.getOrElse(Seq()),
