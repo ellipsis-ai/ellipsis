@@ -9,6 +9,10 @@ var React = require('react'),
     "Number": "A number"
   };
 
+  var EACH_TIME = "each_time";
+  var PER_TEAM = "per_team";
+  var PER_USER = "per_user";
+
 return React.createClass({
   propTypes: {
     id: React.PropTypes.oneOfType([
@@ -45,6 +49,17 @@ return React.createClass({
     this.props.onChange(this.props.param.clone({ question: newQuestion }));
   },
 
+  onSaveOptionChange: function(event) {
+    var newOption = event.target.value;
+    var changedProps = { isSavedForTeam: false, isSavedForUser: false };
+    if (newOption === PER_TEAM) {
+      changedProps.isSavedForTeam = true;
+    } else if (newOption === PER_USER) {
+      changedProps.isSavedForUser = true;
+    }
+    this.props.onChange(this.props.param.clone(changedProps));
+  },
+
   onDeleteClick: function() {
     this.props.onDelete();
   },
@@ -64,11 +79,21 @@ return React.createClass({
 
   getParamSource: function() {
     if (this.props.numLinkedTriggers === 1) {
-      return "from 1 trigger above, or by asking a question:";
+      return "from 1 trigger above, or by";
     } else if (this.props.numLinkedTriggers > 1) {
-      return `from ${this.props.numLinkedTriggers} triggers above, or by asking a question:`;
+      return `from ${this.props.numLinkedTriggers} triggers above, or by`;
     } else {
-      return "by asking a question:";
+      return "by";
+    }
+  },
+
+  getSaveOptionValue: function() {
+    if (this.props.param.isSavedForTeam) {
+      return PER_TEAM;
+    } else if (this.props.param.isSavedForUser) {
+      return PER_USER;
+    } else {
+      return EACH_TIME
     }
   },
 
@@ -77,14 +102,7 @@ return React.createClass({
       <div>
         <div className="columns columns-elastic">
           <div className="column column-expand align-form-input">
-            <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
-              {this.props.paramTypes.map((paramType) => (
-                <option value={paramType.id} key={this.keyFor(paramType)}>
-                  {this.paramTypeDisplayNameFor(paramType.name)}
-                </option>
-              ))}
-            </select>
-            <span className="display-inline-block align-m type-s type-weak mrm">labeled</span>
+            <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
             <Input
               ref="name"
               className="form-input-borderless type-monospace type-s width-10 mrm"
@@ -97,6 +115,17 @@ return React.createClass({
             <span className="display-inline-block align-m type-s type-weak mrm">
               {this.getParamSource()}
             </span>
+            <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
+              <option value={EACH_TIME} key={EACH_TIME}>
+                asking each time the skill is run
+              </option>
+              <option value={PER_TEAM} key={PER_TEAM}>
+                asking once and saving the answer for the whole team
+              </option>
+              <option value={PER_USER} key={PER_USER}>
+                asking each user once and saving their answer
+              </option>
+            </select>
           </div>
           <div className="column column-shrink">
             <DeleteButton
@@ -116,6 +145,17 @@ return React.createClass({
             onEnterKey={this.props.onEnterKey}
             className="form-input-borderless type-italic"
           />
+        </div>
+        <div className="column column-expand align-form-input">
+          <span className="display-inline-block align-m type-s type-weak mrm">and accept</span>
+          <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
+            {this.props.paramTypes.map((paramType) => (
+              <option value={paramType.id} key={this.keyFor(paramType)}>
+                {this.paramTypeDisplayNameFor(paramType.name)}
+              </option>
+            ))}
+          </select>
+          <span className="display-inline-block align-m type-s type-weak mrm">in response</span>
         </div>
       </div>
     );

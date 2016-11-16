@@ -159,7 +159,14 @@ object BehaviorVersionData {
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
           params.map { ea =>
-            BehaviorParameterData(ea.name, paramTypeDataByParamTypes.get(ea.paramType), ea.question)
+            BehaviorParameterData(
+              ea.name,
+              paramTypeDataByParamTypes.get(ea.paramType),
+              ea.question,
+              Some(ea.input.isSavedForTeam),
+              Some(ea.input.isSavedForUser),
+              Some(ea.input.id)
+            )
           },
           triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)

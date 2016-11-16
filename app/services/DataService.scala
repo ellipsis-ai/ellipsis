@@ -26,6 +26,7 @@ import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
+import models.behaviors.savedanswer.SavedAnswerService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -53,6 +54,7 @@ trait DataService {
   val behaviorVersions: BehaviorVersionService
   val behaviorParameters: BehaviorParameterService
   val inputs: InputService
+  val savedAnswers: SavedAnswerService
   val messageTriggers: MessageTriggerService
   val awsConfigs: AWSConfigService
   val requiredOAuth2ApiConfigs: RequiredOAuth2ApiConfigService

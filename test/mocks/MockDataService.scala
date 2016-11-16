@@ -28,6 +28,7 @@ import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
+import models.behaviors.savedanswer.SavedAnswerService
 import models.team.TeamService
 import org.scalatest.mock.MockitoSugar
 import slick.dbio.DBIO
@@ -58,6 +59,7 @@ class MockDataService extends DataService with MockitoSugar {
   val behaviorVersions = mock[BehaviorVersionService]
   val behaviorParameters = mock[BehaviorParameterService]
   val inputs = mock[InputService]
+  val savedAnswers = mock[SavedAnswerService]
   val messageTriggers = mock[MessageTriggerService]
   val awsConfigs = mock[AWSConfigService]
   val requiredOAuth2ApiConfigs = mock[RequiredOAuth2ApiConfigService]

@@ -19,8 +19,8 @@ case class BehaviorParameter(
 
   def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
-  def prompt(maybeCollected: Option[CollectedParameterValue], context: BehaviorParameterContext): Future[String] = {
-    paramType.promptFor(maybeCollected, context)
+  def prompt(maybeValue: Option[String], context: BehaviorParameterContext): Future[String] = {
+    paramType.promptFor(maybeValue, context)
   }
 
   def toRaw: RawBehaviorParameter = {
