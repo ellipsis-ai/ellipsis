@@ -93,7 +93,7 @@ return React.createClass({
     } else if (this.props.param.isSavedForUser) {
       return PER_USER;
     } else {
-      return EACH_TIME
+      return EACH_TIME;
     }
   },
 
