@@ -117,23 +117,19 @@ define(function(require) {
                 <div>
                   <div className="mbm">
                     {this.props.userParams.map((param, paramIndex) => (
-                      <div key={'paramInput' + paramIndex} className="columns columns-elastic mbxl">
-                        <div className="column column-expand">
-                          <UserInputDefinition
-                            key={'UserInputDefinition' + paramIndex}
-                            ref={'param' + paramIndex}
-                            param={param}
-                            paramTypes={this.props.paramTypes}
-                            onChange={this.onChange.bind(this, paramIndex)}
-                            onDelete={this.onDelete.bind(this, paramIndex)}
-                            onEnterKey={this.onEnterKey.bind(this, paramIndex)}
-                            onNameFocus={this.onNameFocus.bind(this, paramIndex)}
-                            onNameBlur={this.onNameBlur.bind(this, paramIndex)}
-                            numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
-                            id={paramIndex}
-                          />
-                        </div>
-                      </div>
+                      <UserInputDefinition
+                        key={'UserInputDefinition' + paramIndex}
+                        ref={'param' + paramIndex}
+                        param={param}
+                        paramTypes={this.props.paramTypes}
+                        onChange={this.onChange.bind(this, paramIndex)}
+                        onDelete={this.onDelete.bind(this, paramIndex)}
+                        onEnterKey={this.onEnterKey.bind(this, paramIndex)}
+                        onNameFocus={this.onNameFocus.bind(this, paramIndex)}
+                        onNameBlur={this.onNameBlur.bind(this, paramIndex)}
+                        numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
+                        id={paramIndex}
+                      />
                     ))}
                   </div>
                   <div>

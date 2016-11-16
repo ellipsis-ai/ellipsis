@@ -208,8 +208,9 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="columns columns-elastic mobile-columns-float mbxl">
-        <div className="column column-expand">
+      <div className="border bg-white plm pbm mbm">
+      <div className="columns columns-elastic mobile-columns-float">
+        <div className="column column-expand ptxs">
           <div>
             <label className="type-label type-weak" htmlFor={this.props.id}>{this.getPrefix()}</label>
             <DropdownMenu
@@ -289,9 +290,10 @@ return React.createClass({
             />
           </ToggleGroup>
         </div>
-        <div className="column column-shrink align-b">
+        <div className="column column-shrink align-t">
           <DeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
         </div>
+      </div>
       </div>
     );
   }
