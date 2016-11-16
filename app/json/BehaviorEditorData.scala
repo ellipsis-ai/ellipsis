@@ -105,12 +105,10 @@ object BehaviorEditorData {
           dataService
         )
       }
-      val uniqEnvironmentVariables = teamEnvironmentVariables ++
-        userEnvironmentVariables.filter(uev => !teamEnvironmentVariables.exists(tev => tev.name == uev.name))
       BehaviorEditorData(
         teamAccess,
         versionData,
-        uniqEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
+        teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         paramTypeData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
