@@ -53,9 +53,9 @@ return React.createClass({
     var newOption = event.target.value;
     var changedProps = { isSavedForTeam: false, isSavedForUser: false };
     if (newOption === PER_TEAM) {
-      changedProps = Object.assign(changedProps, { isSavedForTeam: true });
+      changedProps.isSavedForTeam = true;
     } else if (newOption === PER_USER) {
-      changedProps = Object.assign(changedProps, { isSavedForUser: true });
+      changedProps.isSavedForUser = true;
     }
     this.props.onChange(this.props.param.clone(changedProps));
   },
@@ -93,7 +93,7 @@ return React.createClass({
     } else if (this.props.param.isSavedForUser) {
       return PER_USER;
     } else {
-      EACH_TIME
+      return EACH_TIME
     }
   },
 
