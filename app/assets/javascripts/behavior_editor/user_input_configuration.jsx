@@ -132,7 +132,7 @@ define(function(require) {
                           id={paramIndex}
                         />
                         {paramIndex + 1 < this.props.userParams.length ? (
-                          <div className="pvxs type-label type-disabled align-c border-left border-right border-light">and</div>
+                          <div className="pvxs type-label type-disabled align-c">and</div>
                         ) : null}
                       </div>
                     ))}

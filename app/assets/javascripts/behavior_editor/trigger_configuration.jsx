@@ -107,14 +107,14 @@ define(function(require) {
                       helpVisible={this.props.helpVisible}
                     />
                     {index + 1 < this.props.triggers.length ? (
-                      <div className="pvxs type-label type-disabled align-c border-left border-right border-light">or</div>
+                      <div className="pvxs type-label type-disabled align-c">or</div>
                     ) : null}
                   </div>
                 );
               }, this)}
-            </div>
-            <div>
-              <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
+              <div className="mtm">
+                <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
+              </div>
             </div>
           </div>
         </div>
