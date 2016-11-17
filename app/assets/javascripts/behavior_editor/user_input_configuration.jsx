@@ -67,6 +67,10 @@ define(function(require) {
       return this.props.triggers.some((trigger) => trigger.hasRegexCapturingParens());
     },
 
+    hasRegexTriggers: function() {
+      return this.props.triggers.some((trigger) => trigger.isRegex);
+    },
+
     render: function() {
       return (
         <div>
@@ -92,7 +96,7 @@ define(function(require) {
 
             <div className="columns">
               <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-                <SectionHeading>Ellipsis will collect this input</SectionHeading>
+                <SectionHeading>Collect input</SectionHeading>
 
                 <Checklist disabledWhen={this.props.isFinishedBehavior}>
                   <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>
@@ -103,7 +107,7 @@ define(function(require) {
                     <span>User input can also come from triggers that include matching fill-in-the-blank </span>
                     <code>{"{labels}"}</code>
                   </Checklist.Item>
-                  <Checklist.Item checkedWhen={this.hasRegexCapturingTriggers()}>
+                  <Checklist.Item hiddenWhen={!this.hasRegexTriggers()} checkedWhen={this.hasRegexCapturingTriggers()}>
                     <span>Regex triggers will send text captured in parentheses in the same order as </span>
                     <span>the inputs are defined.</span>
                   </Checklist.Item>
@@ -113,22 +117,23 @@ define(function(require) {
                 <div>
                   <div className="mbm">
                     {this.props.userParams.map((param, paramIndex) => (
-                      <div key={'paramInput' + paramIndex} className="columns columns-elastic mbxl">
-                        <div className="column column-expand">
-                          <UserInputDefinition
-                            key={'UserInputDefinition' + paramIndex}
-                            ref={'param' + paramIndex}
-                            param={param}
-                            paramTypes={this.props.paramTypes}
-                            onChange={this.onChange.bind(this, paramIndex)}
-                            onDelete={this.onDelete.bind(this, paramIndex)}
-                            onEnterKey={this.onEnterKey.bind(this, paramIndex)}
-                            onNameFocus={this.onNameFocus.bind(this, paramIndex)}
-                            onNameBlur={this.onNameBlur.bind(this, paramIndex)}
-                            numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
-                            id={paramIndex}
-                          />
-                        </div>
+                      <div key={`userParam${paramIndex}`}>
+                        <UserInputDefinition
+                          key={'UserInputDefinition' + paramIndex}
+                          ref={'param' + paramIndex}
+                          param={param}
+                          paramTypes={this.props.paramTypes}
+                          onChange={this.onChange.bind(this, paramIndex)}
+                          onDelete={this.onDelete.bind(this, paramIndex)}
+                          onEnterKey={this.onEnterKey.bind(this, paramIndex)}
+                          onNameFocus={this.onNameFocus.bind(this, paramIndex)}
+                          onNameBlur={this.onNameBlur.bind(this, paramIndex)}
+                          numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
+                          id={paramIndex}
+                        />
+                        {paramIndex + 1 < this.props.userParams.length ? (
+                          <div className="pvxs type-label type-disabled align-c">and</div>
+                        ) : null}
                       </div>
                     ))}
                   </div>

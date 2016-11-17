@@ -78,13 +78,17 @@ return React.createClass({
   },
 
   getParamSource: function() {
+    var message;
     if (this.props.numLinkedTriggers === 1) {
-      return "from 1 trigger above, or by";
+      message = "from 1 trigger above, or by asking a question:";
     } else if (this.props.numLinkedTriggers > 1) {
-      return `from ${this.props.numLinkedTriggers} triggers above, or by`;
+      message = `from ${this.props.numLinkedTriggers} triggers above, or by asking a question:`;
     } else {
-      return "by";
+      message = "by asking a question:";
     }
+    return (
+      <span className="display-inline-block align-m type-s type-weak mrm fade-in">{message}</span>
+    );
   },
 
   getSaveOptionValue: function() {
@@ -99,7 +103,7 @@ return React.createClass({
 
   render: function() {
     return (
-      <div>
+      <div className="border border-light bg-white plm pbm">
         <div className="columns columns-elastic">
           <div className="column column-expand align-form-input">
             <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
@@ -112,20 +116,7 @@ return React.createClass({
               onFocus={this.props.onNameFocus}
               onBlur={this.props.onNameBlur}
             />
-            <span className="display-inline-block align-m type-s type-weak mrm">
-              {this.getParamSource()}
-            </span>
-            <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
-              <option value={EACH_TIME} key={EACH_TIME}>
-                asking each time the skill is run
-              </option>
-              <option value={PER_TEAM} key={PER_TEAM}>
-                asking once and saving the answer for the whole team
-              </option>
-              <option value={PER_USER} key={PER_USER}>
-                asking each user once and saving their answer
-              </option>
-            </select>
+            {this.getParamSource()}
           </div>
           <div className="column column-shrink">
             <DeleteButton
@@ -143,10 +134,21 @@ return React.createClass({
             value={this.props.param.question}
             onChange={this.onQuestionChange}
             onEnterKey={this.props.onEnterKey}
-            className="form-input-borderless type-italic"
+            className="form-input-borderless"
           />
         </div>
-        <div className="column column-expand align-form-input">
+        <div className="prsymbol mts">
+          <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
+            <option value={EACH_TIME}>
+              Ask each time the skill is run
+            </option>
+            <option value={PER_TEAM}>
+              Ask once and save the answer for the whole team
+            </option>
+            <option value={PER_USER}>
+              Ask each user once and save their answer
+            </option>
+          </select>
           <span className="display-inline-block align-m type-s type-weak mrm">and accept</span>
           <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
             {this.props.paramTypes.map((paramType) => (

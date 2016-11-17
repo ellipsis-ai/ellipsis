@@ -91,25 +91,30 @@ define(function(require) {
             <div className="mbm">
               {this.props.triggers.map(function(trigger, index) {
                 return (
-                  <TriggerInput
-                    dropdownIsOpen={this.props.openDropdownName === `BehaviorEditorTriggerDropdown${index}`}
-                    key={`BehaviorEditorTrigger${index}`}
-                    id={`trigger${index}`}
-                    ref={`trigger${index}`}
-                    trigger={trigger}
-                    hideDelete={!this.hasMultipleTriggers()}
-                    onChange={this.changeTrigger.bind(this, index)}
-                    onDelete={this.deleteTrigger.bind(this, index)}
-                    onEnterKey={this.onTriggerEnterKey.bind(this, index)}
-                    onHelpClick={this.props.onToggleHelp}
-                    onToggleDropdown={this.toggleDropdown.bind(this, `BehaviorEditorTriggerDropdown${index}`)}
-                    helpVisible={this.props.helpVisible}
-                  />
+                  <div key={`trigger${index}`}>
+                    <TriggerInput
+                      dropdownIsOpen={this.props.openDropdownName === `BehaviorEditorTriggerDropdown${index}`}
+                      key={`BehaviorEditorTrigger${index}`}
+                      id={`trigger${index}`}
+                      ref={`trigger${index}`}
+                      trigger={trigger}
+                      hideDelete={!this.hasMultipleTriggers()}
+                      onChange={this.changeTrigger.bind(this, index)}
+                      onDelete={this.deleteTrigger.bind(this, index)}
+                      onEnterKey={this.onTriggerEnterKey.bind(this, index)}
+                      onHelpClick={this.props.onToggleHelp}
+                      onToggleDropdown={this.toggleDropdown.bind(this, `BehaviorEditorTriggerDropdown${index}`)}
+                      helpVisible={this.props.helpVisible}
+                    />
+                    {index + 1 < this.props.triggers.length ? (
+                      <div className="pvxs type-label type-disabled align-c">or</div>
+                    ) : null}
+                  </div>
                 );
               }, this)}
-            </div>
-            <div>
-              <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
+              <div className="mtm">
+                <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
+              </div>
             </div>
           </div>
         </div>

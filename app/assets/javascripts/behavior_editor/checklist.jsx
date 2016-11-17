@@ -32,7 +32,7 @@ define(function(require) {
       return (
         <li className={
           (this.props.checkedWhen ? " checklist-checked " : "") +
-          (this.props.hiddenWhen ? " display-none " : "")
+          (this.props.hiddenWhen ? " display-none " : " fade-in ")
         }>
           {React.Children.map(this.props.children, function(child) {
             return child;
