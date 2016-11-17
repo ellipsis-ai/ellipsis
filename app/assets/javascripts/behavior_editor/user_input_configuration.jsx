@@ -117,19 +117,24 @@ define(function(require) {
                 <div>
                   <div className="mbm">
                     {this.props.userParams.map((param, paramIndex) => (
-                      <UserInputDefinition
-                        key={'UserInputDefinition' + paramIndex}
-                        ref={'param' + paramIndex}
-                        param={param}
-                        paramTypes={this.props.paramTypes}
-                        onChange={this.onChange.bind(this, paramIndex)}
-                        onDelete={this.onDelete.bind(this, paramIndex)}
-                        onEnterKey={this.onEnterKey.bind(this, paramIndex)}
-                        onNameFocus={this.onNameFocus.bind(this, paramIndex)}
-                        onNameBlur={this.onNameBlur.bind(this, paramIndex)}
-                        numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
-                        id={paramIndex}
-                      />
+                      <div key={`userParam${paramIndex}`}>
+                        <UserInputDefinition
+                          key={'UserInputDefinition' + paramIndex}
+                          ref={'param' + paramIndex}
+                          param={param}
+                          paramTypes={this.props.paramTypes}
+                          onChange={this.onChange.bind(this, paramIndex)}
+                          onDelete={this.onDelete.bind(this, paramIndex)}
+                          onEnterKey={this.onEnterKey.bind(this, paramIndex)}
+                          onNameFocus={this.onNameFocus.bind(this, paramIndex)}
+                          onNameBlur={this.onNameBlur.bind(this, paramIndex)}
+                          numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
+                          id={paramIndex}
+                        />
+                        {paramIndex + 1 < this.props.userParams.length ? (
+                          <div className="pvxs type-label type-disabled align-c border-left border-right border-light">and</div>
+                        ) : null}
+                      </div>
                     ))}
                   </div>
                   <div>

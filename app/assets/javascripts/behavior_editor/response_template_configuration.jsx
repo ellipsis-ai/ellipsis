@@ -117,7 +117,7 @@ define(function(require) {
           </div>
 
           <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
-            <div className="border-top border-left border-right pam">
+            <div className="border-top border-left border-right border-light pam">
               <ToggleGroup className="form-toggle-group-s align-m">
                 <ToggleGroup.Item
                   title="Ellipsis will respond wherever you talk to it"

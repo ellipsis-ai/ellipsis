@@ -164,13 +164,13 @@ return React.createClass({
   getPrefix: function() {
     var label;
     if (this.isCaseSensitiveRegex()) {
-      label = "Regex pattern (case-sensitive):";
+      label = "Regex pattern (case-sensitive)";
     } else if (this.isCaseInsensitiveRegex()) {
-      label = "Regex pattern (ignore case):";
+      label = "Regex pattern (ignore case)";
     } else if (this.isCaseSensitivePhrase()) {
-      label = "Case-sensitive phrase:";
+      label = "Case-sensitive phrase";
     } else {
-      label = "Phrase:";
+      label = "Phrase";
     }
     return label;
   },
@@ -208,7 +208,7 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="border bg-white plm pbm mbm">
+      <div className="border border-light bg-white plm pbm">
       <div className="columns columns-elastic mobile-columns-float">
         <div className="column column-expand ptxs">
           <div>

@@ -103,7 +103,7 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="border bg-white plm pbm mbm">
+      <div className="border border-light bg-white plm pbm">
         <div className="columns columns-elastic">
           <div className="column column-expand align-form-input">
             <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
