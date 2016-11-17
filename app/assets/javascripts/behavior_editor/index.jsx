@@ -1323,7 +1323,7 @@ return React.createClass({
   renderCodeEditor: function() {
     return (
       <div>
-        <div className="border-top border-left border-right pts">
+        <div className="border-top border-left border-right border-light pts">
           <div className="ptxs type-s">
             <div className="phm mbm">
               <APISelectorMenu
@@ -1345,7 +1345,7 @@ return React.createClass({
             </div>
 
             <Collapsible revealWhen={!!this.getAWSConfig()}>
-              <div className="phm pbs mbs border-bottom">
+              <div className="phm pbs mbs border-bottom border-light">
                 <AWSConfig
                   envVariableNames={this.getEnvVariableNames()}
                   accessKeyName={this.getAWSConfigProperty('accessKeyName')}
