@@ -1,7 +1,7 @@
 package modules
 
 import com.google.inject.AbstractModule
-import data.{EnsureInputs, OAuth2ApiPopulator, SimpleTokenApiPopulator}
+import data.{EnsureGroups, EnsureInputs, OAuth2ApiPopulator, SimpleTokenApiPopulator}
 import net.codingwell.scalaguice.ScalaModule
 
 class DataPopulationModule extends AbstractModule with ScalaModule {
@@ -10,6 +10,7 @@ class DataPopulationModule extends AbstractModule with ScalaModule {
     bind(classOf[OAuth2ApiPopulator]).asEagerSingleton()
     bind(classOf[SimpleTokenApiPopulator]).asEagerSingleton()
     bind(classOf[EnsureInputs]).asEagerSingleton()
+    bind(classOf[EnsureGroups]).asEagerSingleton()
   }
 
 }

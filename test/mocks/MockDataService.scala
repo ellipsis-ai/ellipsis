@@ -15,6 +15,7 @@ import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.behavior.BehaviorService
+import models.behaviors.behaviorgroup.BehaviorGroupService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
@@ -55,6 +56,7 @@ class MockDataService extends DataService with MockitoSugar {
   val slackProfiles = mock[SlackProfileService]
   val slackBotProfiles = mock[SlackBotProfileService]
   val oauth2Tokens = mock[OAuth2TokenService]
+  val behaviorGroups = mock[BehaviorGroupService]
   val behaviors = mock[BehaviorService]
   val behaviorVersions = mock[BehaviorVersionService]
   val behaviorParameters = mock[BehaviorParameterService]

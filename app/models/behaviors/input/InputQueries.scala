@@ -9,7 +9,7 @@ object InputQueries {
 
   val all = TableQuery[InputsTable]
   val allWithGroup = all.joinLeft(BehaviorGroupQueries.allWithTeam).on(_.maybeBehaviorGroupId === _._1.id)
-  val joined = allWithGroup.joinLeft(BehaviorQueries.allWithTeam).on(_._1.paramType === _._1.id)
+  val joined = allWithGroup.joinLeft(BehaviorQueries.allWithGroup).on(_._1.paramType === _._1._1.id)
 
   type TupleType = ((RawInput, Option[BehaviorGroupQueries.TupleType]), Option[BehaviorQueries.TupleType])
 

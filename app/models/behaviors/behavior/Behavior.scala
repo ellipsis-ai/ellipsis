@@ -1,5 +1,6 @@
 package models.behaviors.behavior
 
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import org.joda.time.DateTime
 import play.api.Configuration
@@ -7,6 +8,7 @@ import play.api.Configuration
 case class Behavior(
                      id: String,
                      team: Team,
+                     maybeGroup: Option[BehaviorGroup],
                      maybeCurrentVersionId: Option[String],
                      maybeImportedId: Option[String],
                      maybeDataTypeName: Option[String],
@@ -20,7 +22,7 @@ case class Behavior(
   }
 
   def toRaw: RawBehavior = {
-    RawBehavior(id, team.id, maybeCurrentVersionId, maybeImportedId, maybeDataTypeName, createdAt)
+    RawBehavior(id, team.id, maybeGroup.map(_.id), maybeCurrentVersionId, maybeImportedId, maybeDataTypeName, createdAt)
   }
 
 }
