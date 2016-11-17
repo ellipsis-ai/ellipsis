@@ -110,8 +110,8 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   val name = behavior.maybeDataTypeName.getOrElse("Unnamed data type")
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
-    cachedValuesFor(context).map { cached =>
-      Future.successful(cachedValidValueFor(text, context))
+    cachedValidValueFor(text, context).map { vv =>
+      Future.successful(Some(vv))
     }.getOrElse {
       fetchMatchFor(text, context)
     }.map { maybeValidValue =>
