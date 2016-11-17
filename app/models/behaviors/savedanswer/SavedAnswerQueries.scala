@@ -6,7 +6,7 @@ import slick.driver.PostgresDriver.api._
 object SavedAnswerQueries {
 
   val all = TableQuery[SavedAnswersTable]
-  val allWithInput = all.join(InputQueries.joined).on(_.inputId === _._1.id)
+  val allWithInput = all.join(InputQueries.joined).on(_.inputId === _._1._1.id)
 
   type TupleType = (RawSavedAnswer, InputQueries.TupleType)
 
@@ -18,7 +18,7 @@ object SavedAnswerQueries {
 
   def uncompiledFindQueryFor(inputId: Rep[String], maybeUserId: Rep[Option[String]]) = {
     allWithInput.
-      filter { case(saved, (input, _)) => input.id === inputId }.
+      filter { case(saved, ((input, _), _)) => input.id === inputId }.
       filter { case(saved, _) => (saved.maybeUserId.isEmpty && maybeUserId.isEmpty) || saved.maybeUserId === maybeUserId }
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
@@ -33,7 +33,7 @@ object SavedAnswerQueries {
   def uncompiledMaybeForQuery(maybeUserId: Rep[Option[String]], inputId: Rep[String]) = {
     allWithInput.
       filter { case(saved, _) => (saved.maybeUserId.isEmpty && maybeUserId.isEmpty) || saved.maybeUserId === maybeUserId }.
-      filter { case(saved, (input, _)) => input.id === inputId }
+      filter { case(saved, ((input, _), _)) => input.id === inputId }
   }
   val maybeForQuery = Compiled(uncompiledMaybeForQuery _)
 

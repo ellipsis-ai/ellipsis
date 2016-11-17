@@ -15,6 +15,7 @@ import models.accounts.simpletokenapi.{SimpleTokenApiService, SimpleTokenApiServ
 import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfileServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
+import models.behaviors.behaviorgroup.{BehaviorGroupService, BehaviorGroupServiceImpl}
 import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
@@ -59,6 +60,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[SlackProfileService].to(classOf[SlackProfileServiceImpl])
     bind[SlackBotProfileService].to(classOf[SlackBotProfileServiceImpl])
     bind[OAuth2TokenService].to(classOf[OAuth2TokenServiceImpl])
+    bind[BehaviorGroupService].to(classOf[BehaviorGroupServiceImpl])
     bind[BehaviorService].to(classOf[BehaviorServiceImpl])
     bind[BehaviorVersionService].to(classOf[BehaviorVersionServiceImpl])
     bind[BehaviorParameterService].to(classOf[BehaviorParameterServiceImpl])

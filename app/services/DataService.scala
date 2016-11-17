@@ -13,6 +13,7 @@ import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.behavior.BehaviorService
+import models.behaviors.behaviorgroup.BehaviorGroupService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
@@ -50,6 +51,7 @@ trait DataService {
   val slackProfiles: SlackProfileService
   val slackBotProfiles: SlackBotProfileService
   val oauth2Tokens: OAuth2TokenService
+  val behaviorGroups: BehaviorGroupService
   val behaviors: BehaviorService
   val behaviorVersions: BehaviorVersionService
   val behaviorParameters: BehaviorParameterService

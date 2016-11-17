@@ -7,7 +7,7 @@ import slick.driver.PostgresDriver.api._
 object BehaviorParameterQueries {
 
   val all = TableQuery[BehaviorParametersTable]
-  val allWithInput = all.join(InputQueries.joined).on(_.inputId === _._1.id)
+  val allWithInput = all.join(InputQueries.joined).on(_.inputId === _._1._1.id)
   val allWithBehaviorVersion = allWithInput.join(BehaviorVersionQueries.allWithBehavior).on(_._1.behaviorVersionId === _._1._1.id)
 
   type TupleType = (((RawBehaviorParameter, InputQueries.TupleType), BehaviorVersionQueries.TupleType))
