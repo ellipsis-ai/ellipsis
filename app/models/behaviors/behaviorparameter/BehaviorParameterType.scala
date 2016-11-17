@@ -2,7 +2,6 @@ package models.behaviors.behaviorparameter
 
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import models.behaviors.behavior.Behavior
-import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageEvent
 import models.team.Team
@@ -40,12 +39,18 @@ sealed trait BehaviorParameterType {
     Future.successful(s"${context.parameter.question}${invalidValueModifierFor(maybePreviousCollectedValue)}")
   }
 
+  def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]]
+
   def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
     val potentialValue = event.context.relevantMessageText
     val input = context.parameter.input
     if (input.isSaved) {
-      event.context.ensureUser(context.dataService).flatMap { user =>
-        context.dataService.savedAnswers.ensureFor(input, potentialValue, user).map(_ => {})
+      resolvedValueFor(potentialValue, context).flatMap { maybeValueToSave =>
+        maybeValueToSave.map { valueToSave =>
+          event.context.ensureUser(context.dataService).flatMap { user =>
+            context.dataService.savedAnswers.ensureFor(input, valueToSave, user).map(_ => {})
+          }
+        }.getOrElse(Future.successful({}))
       }
     } else {
       context.maybeConversation.map { conversation =>
@@ -59,6 +64,9 @@ sealed trait BehaviorParameterType {
 trait BuiltInType extends BehaviorParameterType {
   lazy val id = name
   def needsConfig(dataService: DataService) = Future.successful(false)
+  def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
+    Future.successful(Some(text))
+  }
 }
 
 object TextType extends BuiltInType {
@@ -101,6 +109,16 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   val id = behavior.id
   val name = behavior.maybeDataTypeName.getOrElse("Unnamed data type")
 
+  def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
+    cachedValuesFor(context).map { cached =>
+      Future.successful(cachedValidValueFor(text, context))
+    }.getOrElse {
+      fetchMatchFor(text, context)
+    }.map { maybeValidValue =>
+      maybeValidValue.map(_.id)
+    }
+  }
+
   def editLinkFor(context: BehaviorParameterContext) = {
     val link = behavior.editLinkFor(context.configuration)
     s"[${context.parameter.paramType.name}]($link)"
@@ -117,18 +135,16 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]
-  case class ValidValueWithNumericId(id: Double, label: String)
+  case class ValidValueWithNumericId(id: Long, label: String)
   implicit val validValueWithNumericIdReads = Json.reads[ValidValueWithNumericId]
 
   val team = behavior.team
 
   def isValid(text: String, context: BehaviorParameterContext) = {
-    cachedValuesFor(context).map { cached =>
-      Future.successful(cachedValidValueFor(text, context).isDefined)
+    cachedValidValueFor(text, context).map { value =>
+      Future.successful(true)
     }.getOrElse {
-      fetchMatchFor(text, context).map { maybeMatch =>
-        maybeMatch.isDefined
-      }
+      fetchMatchFor(text, context).map(_.isDefined)
     }
   }
 
