@@ -29,6 +29,16 @@ class ApplicationController @Inject() (
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      maybeBehaviorGroups <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.behaviorGroups.allFor(team).map(Some(_))
+      }.getOrElse {
+        Future.successful(None)
+      }
+      groupData <- Future.successful(maybeBehaviorGroups.map { groups =>
+        groups.map { group =>
+          BehaviorGroupData(group.id, group.name, group.createdAt)
+        }
+      }.getOrElse(Seq()))
       maybeBehaviors <- teamAccess.maybeTargetTeam.map { team =>
         dataService.behaviors.regularForTeam(team).map { behaviors =>
           Some(behaviors)
@@ -45,7 +55,7 @@ class ApplicationController @Inject() (
         Future.successful(if (versionData.isEmpty) {
           Redirect(routes.ApplicationController.intro(maybeTeamId))
         } else {
-          Ok(views.html.index(teamAccess, versionData))
+          Ok(views.html.index(teamAccess, groupData, versionData))
         })
       }.getOrElse {
         reAuthFor(request, maybeTeamId)

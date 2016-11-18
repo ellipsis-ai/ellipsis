@@ -7,6 +7,7 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
     },
 
@@ -110,6 +111,18 @@ define(function(require) {
       return this.sortVersionsByFirstTrigger(this.props.behaviorVersions);
     },
 
+    getBehaviorGroups: function() {
+      var grouped = {};
+      this.props.behaviorVersions.forEach(ea => {
+        var gid = ea.groupId;
+        if (!grouped[gid]) {
+          grouped[gid] = [];
+        }
+        grouped[gid].push(ea);
+      });
+      return grouped;
+    },
+
     sortVersionsByFirstTrigger: function(versions) {
       return Sort.arrayAlphabeticalBy(versions, (item) => this.getDisplayTriggerFromVersion(item).text);
     },
@@ -130,33 +143,45 @@ define(function(require) {
       }
     },
 
-    getVersionRow: function(version, index) {
+    getVersionRow: function(version, groupId, versionIndex, versionsCount) {
+      var borderAndSpacingClass = versionIndex == 0 ? "border-top pts" : "ptxs";
+      if (versionIndex == versionsCount - 1) {
+        borderAndSpacingClass += " pbs";
+      } else {
+        borderAndSpacingClass += " pbxs"
+      }
       return (
-        <div className="column-row" key={"version" + index}>
-          <div className={"column column-expand type-s type-wrap-words border-top pvxs"}>
+        <div className="column-row" key={`version-${groupId}-${versionIndex}`}>
+          <div className={"column column-expand type-s type-wrap-words " + borderAndSpacingClass}>
             {this.getTriggersFromVersion(version)}
             {this.getDescriptionFromVersion(version)}
           </div>
-          <div className={"column column-shrink type-s type-weak display-ellipsis align-r prxs border-top pvxs mobile-display-none"}>
+          <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>
             {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}
           </div>
-          <div className={"column column-shrink border-top pvxs mobile-display-none"}>
+          <div className={"column column-shrink mobile-display-none " + borderAndSpacingClass}>
             {this.getImportedStatusFromVersion(version)}
           </div>
         </div>
       );
     },
 
-    getVersionRows: function() {
-      var versions = this.getVersions();
-      if (versions.length > 0) {
+    getBehaviorGroupRow: function(groupId, versions) {
+      return versions.map((ea, i) => {
+        return this.getVersionRow(ea, groupId, i, versions.length)
+      });
+    },
+
+    getBehaviorGroupRows: function() {
+      var groups = this.getBehaviorGroups();
+      if (Object.keys(groups).length > 0) {
         return (
           <div className="column-group">
             <div className="column-row type-bold">
               <div className="column column-expand ptl type-l pbs">What Ellipsis can do</div>
               <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
-            {versions.map(this.getVersionRow, this)}
+            {Object.keys(groups).map(ea => this.getBehaviorGroupRow(ea, groups[ea]))}
           </div>
         );
       }
@@ -169,7 +194,7 @@ define(function(require) {
             <p><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>
 
             <div className="columns columns-elastic mobile-columns-float">
-              {this.getVersionRows()}
+              {this.getBehaviorGroupRows()}
             </div>
           </div>
         );

@@ -239,6 +239,7 @@ class BehaviorEditorController @Inject() (
           }
           BehaviorVersionData.buildFor(
             version.team.id,
+            behavior.maybeGroup.map(_.id),
             Some(behavior.id),
             version.maybeDescription,
             version.functionBody,
