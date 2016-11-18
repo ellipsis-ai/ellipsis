@@ -7,7 +7,11 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
-      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.shape({
+        id: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired,
+        createdAt: React.PropTypes.number.isRequired
+      })).isRequired,
       behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
     },
 
