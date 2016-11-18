@@ -106,37 +106,17 @@ define(function(require) {
       }
     },
 
-    getGroupedVersions: function() {
-      var tasks = [];
-      var knowledge = [];
-      this.props.behaviorVersions.forEach(function(version) {
-        if (version.functionBody) {
-          tasks.push(version);
-        } else {
-          knowledge.push(version);
-        }
-      }, this);
-      return {
-        tasks: this.sortVersionsByFirstTrigger(tasks),
-        knowledge: this.sortVersionsByFirstTrigger(knowledge)
-      };
+    getVersions: function() {
+      return this.sortVersionsByFirstTrigger(this.props.behaviorVersions);
     },
 
     sortVersionsByFirstTrigger: function(versions) {
       return Sort.arrayAlphabeticalBy(versions, (item) => this.getDisplayTriggerFromVersion(item).text);
     },
 
-    getKnowledge: function() {
-      return this.state.groupedVersions.knowledge;
-    },
-
-    getTasks: function() {
-      return this.state.groupedVersions.tasks;
-    },
-
     getInitialState: function() {
       return {
-        groupedVersions: this.getGroupedVersions()
+        versions: this.getVersions()
       };
     },
 
@@ -167,31 +147,16 @@ define(function(require) {
       );
     },
 
-    getTaskRows: function() {
-      var tasks = this.getTasks();
-      if (tasks.length > 0) {
+    getVersionRows: function() {
+      var versions = this.getVersions();
+      if (versions.length > 0) {
         return (
           <div className="column-group">
             <div className="column-row type-bold">
               <div className="column column-expand ptl type-l pbs">What Ellipsis can do</div>
               <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
-            {this.getTasks().map(this.getVersionRow, this)}
-          </div>
-        );
-      }
-    },
-
-    getKnowledgeRows: function() {
-      var knowledge = this.getKnowledge();
-      if (knowledge.length > 0) {
-        return (
-          <div className="column-group">
-            <div className="column-row type-bold">
-              <div className="column column-expand ptxxl type-l pbs">What Ellipsis knows</div>
-              <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
-            </div>
-            {this.getKnowledge().map(this.getVersionRow, this)}
+            {versions.map(this.getVersionRow, this)}
           </div>
         );
       }
@@ -204,8 +169,7 @@ define(function(require) {
             <p><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>
 
             <div className="columns columns-elastic mobile-columns-float">
-              {this.getTaskRows()}
-              {this.getKnowledgeRows()}
+              {this.getVersionRows()}
             </div>
           </div>
         );
