@@ -150,8 +150,8 @@ define(function(require) {
     },
 
     getVersionRow: function(version, versionIndex, group) {
-      var borderAndSpacingClass = versionIndex === 0 ? "border-top pts" : "ptxs";
-      borderAndSpacingClass += " " + (versionIndex === group.versions.length - 1 ? "pbs" : "pbxs");
+      var borderAndSpacingClass = versionIndex === 0 ? "border-top pts " : "ptxs ";
+      borderAndSpacingClass += (versionIndex === group.versions.length - 1 ? "pbs " : "pbxs ");
       return (
         <div className="column-row" key={`version-${group.id}-${versionIndex}`}>
           <div className={"column column-expand type-s type-wrap-words " + borderAndSpacingClass}>
