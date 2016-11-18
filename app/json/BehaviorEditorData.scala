@@ -94,6 +94,7 @@ object BehaviorEditorData {
           team.id,
           None,
           None,
+          None,
           "",
           "",
           Seq(),

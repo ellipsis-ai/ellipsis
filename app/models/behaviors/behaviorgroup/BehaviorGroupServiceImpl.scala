@@ -40,4 +40,11 @@ class BehaviorGroupServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def allFor(team: Team): Future[Seq[BehaviorGroup]] = {
+    val action = allForTeamQuery(team.id).result.map { r =>
+      r.map(tuple2Group)
+    }
+    dataService.run(action)
+  }
+
 }

@@ -15,4 +15,9 @@ object BehaviorGroupQueries {
     val team = tupleType._2
     BehaviorGroup(raw.id, raw.name, team, raw.createdAt)
   }
+
+  def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
+    allWithTeam.filter { case(group, team) => team.id === teamId }
+  }
+  val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 }

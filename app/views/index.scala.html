@@ -1,5 +1,6 @@
 @(
   teamAccess: models.accounts.user.UserTeamAccess,
+  behaviorGroups: Seq[json.BehaviorGroupData],
   behaviorVersions: Seq[json.BehaviorVersionData]
 )(implicit messages: Messages, r: RequestHeader)
 
@@ -20,6 +21,7 @@
         <script>
           var BehaviorListConfig = {
             containerId: 'behaviorListContainer',
+            behaviorGroups: @Html(Json.toJson(behaviorGroups).toString),
             behaviorVersions: @Html(Json.toJson(behaviorVersions).toString)
           };
         </script>
