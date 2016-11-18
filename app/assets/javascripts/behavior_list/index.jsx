@@ -112,15 +112,17 @@ define(function(require) {
     },
 
     getBehaviorGroups: function() {
-      var grouped = {};
-      this.props.behaviorVersions.forEach(ea => {
-        var gid = ea.groupId;
-        if (!grouped[gid]) {
-          grouped[gid] = [];
+      var groups = [];
+      this.props.behaviorVersions.forEach(version => {
+        var gid = version.groupId;
+        var group = groups.find(ea => ea.id === gid);
+        if (!group) {
+          group = { id: gid, versions: [] };
+          groups.push(group);
         }
-        grouped[gid].push(ea);
+        group.versions.push(version);
       });
-      return grouped;
+      return groups;
     },
 
     sortVersionsByFirstTrigger: function(versions) {
@@ -143,15 +145,15 @@ define(function(require) {
       }
     },
 
-    getVersionRow: function(version, groupId, versionIndex, versionsCount) {
-      var borderAndSpacingClass = versionIndex == 0 ? "border-top pts" : "ptxs";
-      if (versionIndex == versionsCount - 1) {
+    getVersionRow: function(version, versionIndex, group) {
+      var borderAndSpacingClass = versionIndex === 0 ? "border-top pts" : "ptxs";
+      if (versionIndex === group.versions.length - 1) {
         borderAndSpacingClass += " pbs";
       } else {
         borderAndSpacingClass += " pbxs"
       }
       return (
-        <div className="column-row" key={`version-${groupId}-${versionIndex}`}>
+        <div className="column-row" key={`version-${group.id}-${versionIndex}`}>
           <div className={"column column-expand type-s type-wrap-words " + borderAndSpacingClass}>
             {this.getTriggersFromVersion(version)}
             {this.getDescriptionFromVersion(version)}
@@ -166,22 +168,22 @@ define(function(require) {
       );
     },
 
-    getBehaviorGroupRow: function(groupId, versions) {
-      return versions.map((ea, i) => {
-        return this.getVersionRow(ea, groupId, i, versions.length)
+    getBehaviorGroupRow: function(group) {
+      return group.versions.map((ea, i) => {
+        return this.getVersionRow(ea, i, group)
       });
     },
 
     getBehaviorGroupRows: function() {
       var groups = this.getBehaviorGroups();
-      if (Object.keys(groups).length > 0) {
+      if (groups.length > 0) {
         return (
           <div className="column-group">
             <div className="column-row type-bold">
               <div className="column column-expand ptl type-l pbs">What Ellipsis can do</div>
               <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
-            {Object.keys(groups).map(ea => this.getBehaviorGroupRow(ea, groups[ea]))}
+            {groups.map(this.getBehaviorGroupRow)}
           </div>
         );
       }
