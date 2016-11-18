@@ -96,7 +96,7 @@ define(function(require) {
     getDescriptionFromVersion: function(version) {
       if (version.description) {
         return (
-          <div className="type-italic type-weak">{version.description}</div>
+          <div className="type-italic type-weak pbxs ">{version.description}</div>
         );
       }
     },
@@ -150,7 +150,7 @@ define(function(require) {
     },
 
     getVersionRow: function(version, versionIndex, group) {
-      var borderAndSpacingClass = versionIndex === 0 ? "border-top pts " : "ptxs ";
+      var borderAndSpacingClass = versionIndex === 0 ? "border-top pts " : "";
       borderAndSpacingClass += (versionIndex === group.versions.length - 1 ? "pbs " : "pbxs ");
       return (
         <div className="column-row" key={`version-${group.id}-${versionIndex}`}>
