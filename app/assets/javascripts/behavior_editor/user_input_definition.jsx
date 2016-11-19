@@ -2,12 +2,8 @@ define(function(require) {
 var React = require('react'),
   DeleteButton = require('./delete_button'),
   Input = require('../form/input'),
-  Param = require('../models/param');
-
-  var paramTypeDescriptions = {
-    "Text": "Some text",
-    "Number": "A number"
-  };
+  Param = require('../models/param'),
+  ifPresent = require('../if_present');
 
   var EACH_TIME = "each_time";
   var PER_TEAM = "per_team";
@@ -64,6 +60,15 @@ return React.createClass({
     this.props.onDelete();
   },
 
+  configureType: function() {
+    window.location.href = jsRoutes.controllers.BehaviorEditorController.edit(this.props.param.paramType.id).url;
+  },
+
+  isConfigurable: function() {
+    const pt = this.props.param.paramType;
+    return pt.id !== pt.name;
+  },
+
   focus: function() {
     this.refs.name.focus();
     this.refs.name.select();
@@ -71,10 +76,6 @@ return React.createClass({
 
   keyFor: function(paramType) {
     return 'param-type-' + this.props.id + '-' + paramType.id;
-  },
-
-  paramTypeDisplayNameFor: function(paramTypeName) {
-    return paramTypeDescriptions[paramTypeName] || paramTypeName;
   },
 
   getParamSource: function() {
@@ -99,6 +100,12 @@ return React.createClass({
     } else {
       return EACH_TIME;
     }
+  },
+
+  renderConfigureAction: function() {
+    return (
+      <button type="button" className="button-s button-shrink" onClick={this.configureType}>configure</button>
+    );
   },
 
   render: function() {
@@ -149,15 +156,15 @@ return React.createClass({
               Ask each user once and save their answer
             </option>
           </select>
-          <span className="display-inline-block align-m type-s type-weak mrm">and accept</span>
+          <span className="display-inline-block align-m type-s type-weak mrm">of type</span>
           <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
             {this.props.paramTypes.map((paramType) => (
               <option value={paramType.id} key={this.keyFor(paramType)}>
-                {this.paramTypeDisplayNameFor(paramType.name)}
+                {paramType.name}
               </option>
             ))}
           </select>
-          <span className="display-inline-block align-m type-s type-weak mrm">in response</span>
+          {ifPresent(this.isConfigurable(), this.renderConfigureAction, () => null)}
         </div>
       </div>
     );
