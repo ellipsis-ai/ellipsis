@@ -142,7 +142,27 @@ $ ./actw run
 
 #### Run the console
 ```bash
-$ ./actw
+$ ./actw console
+```
+
+#### Run a query in the console
+```scala
+import play.api._
+
+val env = Environment(new java.io.File("."), this.getClass.getClassLoader, Mode.Dev)
+val context = ApplicationLoader.createContext(env)
+val loader = ApplicationLoader(context)
+val app = loader.load(context)
+Play.start(app)
+
+import services.DataService
+
+val dataService = app.injector.instanceOf(classOf[DataService])
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+Await.result(dataService.teams.find("foo"), 10.seconds)
 ```
 
 #### Debug the app

@@ -23,6 +23,7 @@ server.pid
 activator
 .DS_Store
 node_modules
+npm-debug.log
 /conf/version.conf
 tags
 .ctags

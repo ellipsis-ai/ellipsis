@@ -11,7 +11,6 @@ function findMissingArgs(keysToEnsure, args) {
 }
 
 module.exports = {
-
     putItem: function (args) {
         var missing = findMissingArgs(["itemId", "itemType", "item", "ellipsis"], args);
         if (missing.length > 0) {
@@ -26,10 +25,13 @@ module.exports = {
                 }, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         if (args.onSuccess) {
+                            console.log("success");
                             args.onSuccess(response, body);
                         }
                     } else {
                         if (args.onError) {
+                            console.log("ERROR");
+                            console.log(error);
                             args.onError(error);
                         }
                     }

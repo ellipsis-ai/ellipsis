@@ -10,6 +10,8 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import services.{AWSDynamoDBService, DataService}
 
+import play.api.Logger
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -37,6 +39,7 @@ class DefaultStorage @Inject() (
         Future.successful(BadRequest("oops"))
       },
       info => {
+//        Logger.debug("Attempting risky calculation.")
         for {
           maybeTeam <- dataService.teams.findForToken(info.token)
           result <- maybeTeam.map { team =>
