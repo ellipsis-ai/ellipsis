@@ -15,6 +15,7 @@ import models.accounts.simpletokenapi.{SimpleTokenApiService, SimpleTokenApiServ
 import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfileServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
+import models.behaviors.behaviorgroup.{BehaviorGroupService, BehaviorGroupServiceImpl}
 import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
@@ -23,11 +24,13 @@ import models.behaviors.config.requiredsimpletokenapi.{RequiredSimpleTokenApiSer
 import models.behaviors.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
 import models.behaviors.conversations.conversation.{ConversationService, ConversationServiceImpl}
 import models.behaviors.events.EventHandler
+import models.behaviors.input.{InputService, InputServiceImpl}
 import models.behaviors.invocationlogentry.{InvocationLogEntryService, InvocationLogEntryServiceImpl}
 import models.behaviors.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
 import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
 import models.environmentvariable._
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
+import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
 import play.api.i18n.MessagesApi
@@ -57,9 +60,12 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[SlackProfileService].to(classOf[SlackProfileServiceImpl])
     bind[SlackBotProfileService].to(classOf[SlackBotProfileServiceImpl])
     bind[OAuth2TokenService].to(classOf[OAuth2TokenServiceImpl])
+    bind[BehaviorGroupService].to(classOf[BehaviorGroupServiceImpl])
     bind[BehaviorService].to(classOf[BehaviorServiceImpl])
     bind[BehaviorVersionService].to(classOf[BehaviorVersionServiceImpl])
     bind[BehaviorParameterService].to(classOf[BehaviorParameterServiceImpl])
+    bind[InputService].to(classOf[InputServiceImpl])
+    bind[SavedAnswerService].to(classOf[SavedAnswerServiceImpl])
     bind[MessageTriggerService].to(classOf[MessageTriggerServiceImpl])
     bind[AWSConfigService].to(classOf[AWSConfigServiceImpl])
     bind[RequiredOAuth2ApiConfigService].to(classOf[RequiredOAuth2ApiConfigServiceImpl])

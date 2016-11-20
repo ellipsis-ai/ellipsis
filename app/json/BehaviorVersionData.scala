@@ -13,6 +13,7 @@ import scala.concurrent.Future
 
 case class BehaviorVersionData(
                                 teamId: String,
+                                groupId: Option[String],
                                 behaviorId: Option[String],
                                 description: Option[String],
                                 functionBody: String,
@@ -46,6 +47,7 @@ object BehaviorVersionData {
 
   def buildFor(
                 teamId: String,
+                groupId: Option[String],
                 behaviorId: Option[String],
                 description: Option[String],
                 functionBody: String,
@@ -66,6 +68,7 @@ object BehaviorVersionData {
 
     BehaviorVersionData(
       teamId,
+      groupId,
       behaviorId,
       description,
       functionBody,
@@ -94,6 +97,7 @@ object BehaviorVersionData {
     val config = Json.parse(configString).validate[BehaviorConfig].get
     BehaviorVersionData.buildFor(
       teamId,
+      None,
       None,
       maybeDescription,
       extractFunctionBodyFrom(function),
@@ -154,12 +158,21 @@ object BehaviorVersionData {
         val config = BehaviorConfig(maybePublishedId, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
+          behavior.maybeGroup.map(_.id),
           Some(behavior.id),
           behaviorVersion.maybeDescription,
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
           params.map { ea =>
-            BehaviorParameterData(ea.name, paramTypeDataByParamTypes.get(ea.paramType), ea.question)
+            BehaviorParameterData(
+              ea.name,
+              paramTypeDataByParamTypes.get(ea.paramType),
+              ea.question,
+              Some(ea.input.isSavedForTeam),
+              Some(ea.input.isSavedForUser),
+              Some(ea.input.id),
+              ea.input.maybeBehaviorGroup.map(_.id)
+            )
           },
           triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)

@@ -16,6 +16,7 @@ import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.behavior.BehaviorService
+import models.behaviors.behaviorgroup.BehaviorGroupService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
@@ -23,11 +24,13 @@ import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigSe
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
 import models.behaviors.conversations.conversation.ConversationService
+import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
+import models.behaviors.savedanswer.SavedAnswerService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -52,9 +55,12 @@ class PostgresDataService @Inject() (
                                       val slackProfilesProvider: Provider[SlackProfileService],
                                       val slackBotProfilesProvider: Provider[SlackBotProfileService],
                                       val oauth2TokensProvider: Provider[OAuth2TokenService],
+                                      val behaviorGroupsProvider: Provider[BehaviorGroupService],
                                       val behaviorsProvider: Provider[BehaviorService],
                                       val behaviorVersionsProvider: Provider[BehaviorVersionService],
                                       val behaviorParametersProvider: Provider[BehaviorParameterService],
+                                      val inputsProvider: Provider[InputService],
+                                      val savedAnswersProvider: Provider[SavedAnswerService],
                                       val messageTriggersProvider: Provider[MessageTriggerService],
                                       val awsConfigsProvider: Provider[AWSConfigService],
                                       val requiredOAuth2ApiConfigsProvider: Provider[RequiredOAuth2ApiConfigService],
@@ -81,9 +87,12 @@ class PostgresDataService @Inject() (
   val slackProfiles = slackProfilesProvider.get
   val slackBotProfiles = slackBotProfilesProvider.get
   val oauth2Tokens = oauth2TokensProvider.get
+  val behaviorGroups = behaviorGroupsProvider.get
   val behaviors = behaviorsProvider.get
   val behaviorVersions = behaviorVersionsProvider.get
   val behaviorParameters = behaviorParametersProvider.get
+  val inputs = inputsProvider.get
+  val savedAnswers = savedAnswersProvider.get
   val messageTriggers = messageTriggersProvider.get
   val awsConfigs = awsConfigsProvider.get
   val requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsProvider.get

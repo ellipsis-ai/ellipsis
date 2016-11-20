@@ -76,7 +76,7 @@ class InvocationLogEntryServiceImpl @Inject() (
   def countsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
     val action = allWithVersion.
       filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
-      groupBy { case(entry, ((version, _), (behavior, team))) => team.id }.
+      groupBy { case(entry, ((version, _), ((behavior, team), _))) => team.id }.
       map { case(teamId, q) =>
         (teamId, q.length)
       }.
@@ -87,7 +87,7 @@ class InvocationLogEntryServiceImpl @Inject() (
   def uniqueInvokingUserCountsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
     val action = allWithVersion.
       filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
-      groupBy { case(entry, ((version, _), (behavior, team))) => (team.id, entry.maybeUserIdForContext.getOrElse("<no user>")) }.
+      groupBy { case(entry, ((version, _), ((behavior, team), _))) => (team.id, entry.maybeUserIdForContext.getOrElse("<no user>")) }.
       map { case((teamId, userId), q) =>
         (teamId, userId, 1)
       }.
@@ -100,7 +100,7 @@ class InvocationLogEntryServiceImpl @Inject() (
   def uniqueInvokedBehaviorCountsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
     val action = allWithVersion.
       filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
-      groupBy { case(entry, ((version, _), (behavior, team))) => (team.id, behavior.id) }.
+      groupBy { case(entry, ((version, _), ((behavior, team), _))) => (team.id, behavior.id) }.
       map { case((teamId, behaviorId), q) =>
         (teamId, behaviorId, 1)
       }.
@@ -112,7 +112,7 @@ class InvocationLogEntryServiceImpl @Inject() (
 
   def uncompiledForTeamForDateQuery(teamId: Rep[String], date: Rep[DateTime]) = {
     allWithVersion.
-      filter { case(entry, ((version, user), (behavior, t))) => teamId === t.id}.
+      filter { case(entry, ((version, user), ((behavior, team), _))) => teamId === team.id}.
       filter { case(entry, _) => truncateDate("day", entry.createdAt) === date }
   }
   val forTeamForDateQuery = Compiled(uncompiledForTeamForDateQuery _)

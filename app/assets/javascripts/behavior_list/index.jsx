@@ -7,6 +7,11 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.shape({
+        id: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired,
+        createdAt: React.PropTypes.number.isRequired
+      })).isRequired,
       behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
     },
 
@@ -91,7 +96,7 @@ define(function(require) {
     getDescriptionFromVersion: function(version) {
       if (version.description) {
         return (
-          <div className="type-italic type-weak">{version.description}</div>
+          <div className="type-italic type-weak pbxs ">{version.description}</div>
         );
       }
     },
@@ -106,37 +111,31 @@ define(function(require) {
       }
     },
 
-    getGroupedVersions: function() {
-      var tasks = [];
-      var knowledge = [];
-      this.props.behaviorVersions.forEach(function(version) {
-        if (version.functionBody) {
-          tasks.push(version);
-        } else {
-          knowledge.push(version);
+    getVersions: function() {
+      return this.sortVersionsByFirstTrigger(this.props.behaviorVersions);
+    },
+
+    getBehaviorGroups: function() {
+      var groups = [];
+      this.props.behaviorVersions.forEach(version => {
+        var gid = version.groupId;
+        var group = groups.find(ea => ea.id === gid);
+        if (!group) {
+          group = { id: gid, versions: [] };
+          groups.push(group);
         }
-      }, this);
-      return {
-        tasks: this.sortVersionsByFirstTrigger(tasks),
-        knowledge: this.sortVersionsByFirstTrigger(knowledge)
-      };
+        group.versions.push(version);
+      });
+      return groups;
     },
 
     sortVersionsByFirstTrigger: function(versions) {
       return Sort.arrayAlphabeticalBy(versions, (item) => this.getDisplayTriggerFromVersion(item).text);
     },
 
-    getKnowledge: function() {
-      return this.state.groupedVersions.knowledge;
-    },
-
-    getTasks: function() {
-      return this.state.groupedVersions.tasks;
-    },
-
     getInitialState: function() {
       return {
-        groupedVersions: this.getGroupedVersions()
+        versions: this.getVersions()
       };
     },
 
@@ -150,48 +149,41 @@ define(function(require) {
       }
     },
 
-    getVersionRow: function(version, index) {
+    getVersionRow: function(version, versionIndex, group) {
+      var borderAndSpacingClass = versionIndex === 0 ? "border-top pts " : "";
+      borderAndSpacingClass += (versionIndex === group.versions.length - 1 ? "pbs " : "pbxs ");
       return (
-        <div className="column-row" key={"version" + index}>
-          <div className={"column column-expand type-s type-wrap-words border-top pvxs"}>
+        <div className="column-row" key={`version-${group.id}-${versionIndex}`}>
+          <div className={"column column-expand type-s type-wrap-words " + borderAndSpacingClass}>
             {this.getTriggersFromVersion(version)}
             {this.getDescriptionFromVersion(version)}
           </div>
-          <div className={"column column-shrink type-s type-weak display-ellipsis align-r prxs border-top pvxs mobile-display-none"}>
+          <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>
             {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}
           </div>
-          <div className={"column column-shrink border-top pvxs mobile-display-none"}>
+          <div className={"column column-shrink mobile-display-none " + borderAndSpacingClass}>
             {this.getImportedStatusFromVersion(version)}
           </div>
         </div>
       );
     },
 
-    getTaskRows: function() {
-      var tasks = this.getTasks();
-      if (tasks.length > 0) {
+    getBehaviorGroupRow: function(group) {
+      return group.versions.map((ea, i) => {
+        return this.getVersionRow(ea, i, group)
+      });
+    },
+
+    getBehaviorGroupRows: function() {
+      var groups = this.getBehaviorGroups();
+      if (groups.length > 0) {
         return (
           <div className="column-group">
             <div className="column-row type-bold">
               <div className="column column-expand ptl type-l pbs">What Ellipsis can do</div>
               <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
-            {this.getTasks().map(this.getVersionRow, this)}
-          </div>
-        );
-      }
-    },
-
-    getKnowledgeRows: function() {
-      var knowledge = this.getKnowledge();
-      if (knowledge.length > 0) {
-        return (
-          <div className="column-group">
-            <div className="column-row type-bold">
-              <div className="column column-expand ptxxl type-l pbs">What Ellipsis knows</div>
-              <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
-            </div>
-            {this.getKnowledge().map(this.getVersionRow, this)}
+            {groups.map(this.getBehaviorGroupRow)}
           </div>
         );
       }
@@ -204,8 +196,7 @@ define(function(require) {
             <p><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>
 
             <div className="columns columns-elastic mobile-columns-float">
-              {this.getTaskRows()}
-              {this.getKnowledgeRows()}
+              {this.getBehaviorGroupRows()}
             </div>
           </div>
         );

@@ -56,7 +56,7 @@ class MessageTriggerServiceImpl @Inject() (
 
   def allWithExactPattern(pattern: String, teamId: String): Future[Seq[MessageTrigger]] = {
     val action = allWithBehaviorVersion.
-      filter { case(trigger, (behaviorVersion, (behavior, team))) => team.id === teamId }.
+      filter { case(trigger, (behaviorVersion, ((behavior, team), _))) => team.id === teamId }.
       filter { case(trigger, _) => trigger.pattern === pattern }.
       result.
       map(_.map(tuple2Trigger))

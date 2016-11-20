@@ -3,7 +3,7 @@ package models.behaviors.behaviorparameter
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import json.{BehaviorParameterData, BehaviorParameterTypeData}
+import json.{BehaviorParameterData, BehaviorParameterTypeData, InputData}
 import models.IDs
 import models.behaviors.behaviorversion.BehaviorVersion
 import services.DataService
@@ -14,9 +14,10 @@ import scala.concurrent.Future
 
 case class RawBehaviorParameter(
                                  id: String,
-                                 name: String,
                                  rank: Int,
+                                 inputId: Option[String],
                                  behaviorVersionId: String,
+                                 name: String,
                                  maybeQuestion: Option[String],
                                  paramType: String
                                )
@@ -24,14 +25,15 @@ case class RawBehaviorParameter(
 class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag, "behavior_parameters") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def name = column[String]("name")
   def rank = column[Int]("rank")
+  def inputId = column[Option[String]]("input_id")
   def behaviorVersionId = column[String]("behavior_version_id")
+  def name = column[String]("name")
   def maybeQuestion = column[Option[String]]("question")
   def paramType = column[String]("param_type")
 
   def * =
-    (id, name, rank, behaviorVersionId, maybeQuestion, paramType) <> ((RawBehaviorParameter.apply _).tupled, RawBehaviorParameter.unapply _)
+    (id, rank, inputId, behaviorVersionId, name, maybeQuestion, paramType) <> ((RawBehaviorParameter.apply _).tupled, RawBehaviorParameter.unapply _)
 }
 
 class BehaviorParameterServiceImpl @Inject() (
@@ -47,14 +49,14 @@ class BehaviorParameterServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  private def createFor(name: String, paramTypeData: BehaviorParameterTypeData, maybeQuestion: Option[String], rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
+  private def createFor(inputData: InputData, rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
     val action = for {
-      maybeParamType <- DBIO.from(BehaviorParameterType.find(paramTypeData.id, behaviorVersion.team, dataService))
+      input <- DBIO.from(dataService.inputs.ensureFor(inputData, behaviorVersion.team))
       raw <- DBIO.successful {
-        RawBehaviorParameter(IDs.next, name, rank, behaviorVersion.id, maybeQuestion, maybeParamType.map(_.id).getOrElse(TextType.id))
+        RawBehaviorParameter(IDs.next, rank, Some(input.id), behaviorVersion.id, input.name, input.maybeQuestion, input.toRaw.paramType)
       }
       param <- (all += raw).map { _ =>
-        BehaviorParameter(raw.id, raw.name, raw.rank, behaviorVersion, raw.maybeQuestion, maybeParamType.getOrElse(TextType))
+        BehaviorParameter(raw.id, raw.rank, input, behaviorVersion)
       }
     } yield param
     dataService.run(action)
@@ -66,7 +68,12 @@ class BehaviorParameterServiceImpl @Inject() (
       newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
         DBIO.from(for {
           paramTypeData <- data.paramType.map(Future.successful).getOrElse(BehaviorParameterTypeData.from(TextType, dataService))
-          param <- createFor(data.name, paramTypeData, data.maybeNonEmptyQuestion, i + 1, behaviorVersion)
+          param <- createFor(data.inputData, i + 1, behaviorVersion)
+          _ <- if (data.isShared) {
+            Future.successful({})
+          } else {
+            dataService.savedAnswers.updateForInputId(data.inputId, param.input.id)
+          }
         } yield param)
       })
     } yield newParams

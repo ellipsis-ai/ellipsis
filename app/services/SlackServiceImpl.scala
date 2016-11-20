@@ -85,6 +85,10 @@ class SlackServiceImpl @Inject() (
       profiles.foreach { profile =>
         startFor(profile)
       }
+    }.recover {
+      case t: Throwable => {
+        Logger.error("Exception starting websocket connections to Slack", t)
+      }
     }
   }
 

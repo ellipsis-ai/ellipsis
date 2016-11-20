@@ -101,14 +101,15 @@ describe('BehaviorList', () => {
     });
   });
 
-  describe('getGroupedVersions', () => {
-    it('groups the versions by type and sorts them alphabetically', () => {
+  describe('getVersions', () => {
+    it('sorts versions alphabetically', () => {
       const list = createBehaviorList(config);
-      const groups = list.getGroupedVersions();
-      expect(groups).toEqual({
-        tasks: [behaviorVersionTask2, behaviorVersionTask1],
-        knowledge: [behaviorVersionKnowledge1]
-      });
+      const versions = list.getVersions();
+      expect(versions).toEqual([
+        behaviorVersionKnowledge1,
+        behaviorVersionTask2,
+        behaviorVersionTask1
+      ]);
     });
   });
 

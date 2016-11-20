@@ -2,12 +2,12 @@ define(function(require) {
 var React = require('react'),
   DeleteButton = require('./delete_button'),
   Input = require('../form/input'),
-  Param = require('../models/param');
+  Param = require('../models/param'),
+  ifPresent = require('../if_present');
 
-  var paramTypeDescriptions = {
-    "Text": "Some text",
-    "Number": "A number"
-  };
+  var EACH_TIME = "each_time";
+  var PER_TEAM = "per_team";
+  var PER_USER = "per_user";
 
 return React.createClass({
   propTypes: {
@@ -45,8 +45,28 @@ return React.createClass({
     this.props.onChange(this.props.param.clone({ question: newQuestion }));
   },
 
+  onSaveOptionChange: function(event) {
+    var newOption = event.target.value;
+    var changedProps = { isSavedForTeam: false, isSavedForUser: false };
+    if (newOption === PER_TEAM) {
+      changedProps.isSavedForTeam = true;
+    } else if (newOption === PER_USER) {
+      changedProps.isSavedForUser = true;
+    }
+    this.props.onChange(this.props.param.clone(changedProps));
+  },
+
   onDeleteClick: function() {
     this.props.onDelete();
+  },
+
+  configureType: function() {
+    window.location.href = jsRoutes.controllers.BehaviorEditorController.edit(this.props.param.paramType.id).url;
+  },
+
+  isConfigurable: function() {
+    const pt = this.props.param.paramType;
+    return pt.id !== pt.name;
   },
 
   focus: function() {
@@ -58,33 +78,42 @@ return React.createClass({
     return 'param-type-' + this.props.id + '-' + paramType.id;
   },
 
-  paramTypeDisplayNameFor: function(paramTypeName) {
-    return paramTypeDescriptions[paramTypeName] || paramTypeName;
+  getParamSource: function() {
+    var message;
+    if (this.props.numLinkedTriggers === 1) {
+      message = "from 1 trigger above, or by asking a question:";
+    } else if (this.props.numLinkedTriggers > 1) {
+      message = `from ${this.props.numLinkedTriggers} triggers above, or by asking a question:`;
+    } else {
+      message = "by asking a question:";
+    }
+    return (
+      <span className="display-inline-block align-m type-s type-weak mrm fade-in">{message}</span>
+    );
   },
 
-  getParamSource: function() {
-    if (this.props.numLinkedTriggers === 1) {
-      return "from 1 trigger above, or by asking a question:";
-    } else if (this.props.numLinkedTriggers > 1) {
-      return `from ${this.props.numLinkedTriggers} triggers above, or by asking a question:`;
+  getSaveOptionValue: function() {
+    if (this.props.param.isSavedForTeam) {
+      return PER_TEAM;
+    } else if (this.props.param.isSavedForUser) {
+      return PER_USER;
     } else {
-      return "by asking a question:";
+      return EACH_TIME;
     }
+  },
+
+  renderConfigureAction: function() {
+    return (
+      <button type="button" className="button-s button-shrink" onClick={this.configureType}>configure</button>
+    );
   },
 
   render: function() {
     return (
-      <div>
+      <div className="border border-light bg-white plm pbm">
         <div className="columns columns-elastic">
           <div className="column column-expand align-form-input">
-            <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
-              {this.props.paramTypes.map((paramType) => (
-                <option value={paramType.id} key={this.keyFor(paramType)}>
-                  {this.paramTypeDisplayNameFor(paramType.name)}
-                </option>
-              ))}
-            </select>
-            <span className="display-inline-block align-m type-s type-weak mrm">labeled</span>
+            <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
             <Input
               ref="name"
               className="form-input-borderless type-monospace type-s width-10 mrm"
@@ -94,9 +123,7 @@ return React.createClass({
               onFocus={this.props.onNameFocus}
               onBlur={this.props.onNameBlur}
             />
-            <span className="display-inline-block align-m type-s type-weak mrm">
-              {this.getParamSource()}
-            </span>
+            {this.getParamSource()}
           </div>
           <div className="column column-shrink">
             <DeleteButton
@@ -114,8 +141,30 @@ return React.createClass({
             value={this.props.param.question}
             onChange={this.onQuestionChange}
             onEnterKey={this.props.onEnterKey}
-            className="form-input-borderless type-italic"
+            className="form-input-borderless"
           />
+        </div>
+        <div className="prsymbol mts">
+          <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
+            <option value={EACH_TIME}>
+              Ask each time the skill is run
+            </option>
+            <option value={PER_TEAM}>
+              Ask once and save the answer for the whole team
+            </option>
+            <option value={PER_USER}>
+              Ask each user once and save their answer
+            </option>
+          </select>
+          <span className="display-inline-block align-m type-s type-weak mrm">of type</span>
+          <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
+            {this.props.paramTypes.map((paramType) => (
+              <option value={paramType.id} key={this.keyFor(paramType)}>
+                {paramType.name}
+              </option>
+            ))}
+          </select>
+          {ifPresent(this.isConfigurable(), this.renderConfigureAction, () => null)}
         </div>
       </div>
     );

@@ -94,6 +94,7 @@ object BehaviorEditorData {
           team.id,
           None,
           None,
+          None,
           "",
           "",
           Seq(),
@@ -108,7 +109,7 @@ object BehaviorEditorData {
       BehaviorEditorData(
         teamAccess,
         versionData,
-        (teamEnvironmentVariables ++ userEnvironmentVariables).map(EnvironmentVariableData.withoutValueFor),
+        teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         paramTypeData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),

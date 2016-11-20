@@ -239,13 +239,22 @@ class BehaviorEditorController @Inject() (
           }
           BehaviorVersionData.buildFor(
             version.team.id,
+            behavior.maybeGroup.map(_.id),
             Some(behavior.id),
             version.maybeDescription,
             version.functionBody,
             version.maybeResponseTemplate.getOrElse(""),
             parametersByVersion.get(version).map { params =>
               params.map { ea =>
-                BehaviorParameterData(ea.name, paramTypeDataByParamTypes.get(ea.paramType), ea.question)
+                BehaviorParameterData(
+                  ea.name,
+                  paramTypeDataByParamTypes.get(ea.paramType),
+                  ea.question,
+                  Some(ea.input.isSavedForTeam),
+                  Some(ea.input.isSavedForUser),
+                  Some(ea.input.id),
+                  ea.input.maybeBehaviorGroup.map(_.id)
+                )
               }
             }.getOrElse(Seq()),
             triggersByVersion.get(version).map { triggers =>

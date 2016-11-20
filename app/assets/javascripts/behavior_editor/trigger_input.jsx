@@ -164,13 +164,13 @@ return React.createClass({
   getPrefix: function() {
     var label;
     if (this.isCaseSensitiveRegex()) {
-      label = "Regex pattern (case-sensitive):";
+      label = "Regex pattern (case-sensitive)";
     } else if (this.isCaseInsensitiveRegex()) {
-      label = "Regex pattern (ignore case):";
+      label = "Regex pattern (ignore case)";
     } else if (this.isCaseSensitivePhrase()) {
-      label = "Case-sensitive phrase:";
+      label = "Case-sensitive phrase";
     } else {
-      label = "Phrase:";
+      label = "Phrase";
     }
     return label;
   },
@@ -208,8 +208,9 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="columns columns-elastic mobile-columns-float mbxl">
-        <div className="column column-expand">
+      <div className="border border-light bg-white plm pbm">
+      <div className="columns columns-elastic mobile-columns-float">
+        <div className="column column-expand ptxs">
           <div>
             <label className="type-label type-weak" htmlFor={this.props.id}>{this.getPrefix()}</label>
             <DropdownMenu
@@ -289,9 +290,10 @@ return React.createClass({
             />
           </ToggleGroup>
         </div>
-        <div className="column column-shrink align-b">
+        <div className="column column-shrink align-t">
           <DeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
         </div>
+      </div>
       </div>
     );
   }

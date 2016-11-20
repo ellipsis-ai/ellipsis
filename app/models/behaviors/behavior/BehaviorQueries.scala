@@ -1,5 +1,6 @@
 package models.behaviors.behavior
 
+import models.behaviors.behaviorgroup.BehaviorGroupQueries
 import models.team.{Team, TeamQueries}
 import slick.driver.PostgresDriver.api._
 
@@ -7,14 +8,18 @@ object BehaviorQueries {
 
   def all = TableQuery[BehaviorsTable]
   def allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
+  def allWithGroup = allWithTeam.joinLeft(BehaviorGroupQueries.allWithTeam).on(_._1.groupId === _._1.id)
 
-  type TupleType = (RawBehavior, Team)
+  type TupleType = ((RawBehavior, Team), Option[BehaviorGroupQueries.TupleType])
 
   def tuple2Behavior(tuple: TupleType): Behavior = {
-    val raw = tuple._1
+    val raw = tuple._1._1
+    val team = tuple._1._2
+    val maybeGroup = tuple._2.map(BehaviorGroupQueries.tuple2Group)
     Behavior(
       raw.id,
-      tuple._2,
+      team,
+      maybeGroup,
       raw.maybeCurrentVersionId,
       raw.maybeImportedId,
       raw.maybeDataTypeName,
@@ -23,13 +28,13 @@ object BehaviorQueries {
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
-    allWithTeam.filter { case(behavior, team) => behavior.id === id }
+    allWithGroup.filter { case((behavior, _), _) => behavior.id === id }
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
-    allWithTeam.
-      filter { case(behavior, team) => team.id === teamId }
+    allWithGroup.
+      filter { case((behavior, team), _) => team.id === teamId }
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
@@ -37,7 +42,7 @@ object BehaviorQueries {
   val findRawQueryFor = Compiled(uncompiledFindRawQuery _)
 
   def uncompiledFindWithImportedIdQuery(id: Rep[String], teamId: Rep[String]) = {
-    allWithTeam.filter { case(behavior, team) => behavior.maybeImportedId === id && behavior.teamId === teamId}
+    allWithGroup.filter { case((behavior, team), _) => behavior.maybeImportedId === id && team.id === teamId}
   }
   val findWithImportedIdQuery = Compiled(uncompiledFindWithImportedIdQuery _)
 

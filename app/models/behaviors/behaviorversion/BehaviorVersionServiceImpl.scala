@@ -74,7 +74,7 @@ class BehaviorVersionServiceImpl @Inject() (
 
   def uncompiledCurrentWithFunctionQuery() = {
     allWithBehavior.
-      filter { case((version, _), (behavior, team)) => behavior.maybeCurrentVersionId === version.id}.
+      filter { case((version, _), ((behavior, team), _)) => behavior.maybeCurrentVersionId === version.id}.
       filter { case((version, _), _) => version.maybeFunctionBody.map(_.trim.length > 0).getOrElse(false) }.
       map { case((version, _), _) => version.id }
   }

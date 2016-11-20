@@ -1,6 +1,7 @@
 import models.IDs
 import models.behaviors.behaviorparameter.{BehaviorParameter, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.input.Input
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.scalatestplus.play.PlaySpec
 
@@ -15,7 +16,7 @@ trait MessageTriggerSpec extends PlaySpec {
                     rank: Int,
                     behaviorVersion: BehaviorVersion
                   ): BehaviorParameter = {
-    BehaviorParameter(IDs.next, name, rank, behaviorVersion, None, TextType)
+    BehaviorParameter(IDs.next, rank, Input(IDs.next, name, None, TextType, false, false), behaviorVersion)
   }
 
 }
