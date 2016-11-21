@@ -1767,16 +1767,20 @@ return React.createClass({
             onChange={this.updateDataTypeName}
           />
 
+          <hr className="man thin bg-gray-light" />
+
           <DataTypeResultConfig
             usesSearch={this.hasUserParameterNamed('searchQuery')}
             onChange={this.updateDataTypeResultConfig}
           />
 
-          <div className="container ptxl pbxxxl">
-            <div className="columns">
-              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+          <hr className="man thin bg-gray-light" />
 
-                <SectionHeading>Run code to generate a list</SectionHeading>
+          <div className="container pbxxxl">
+            <div className="columns">
+              <div className="column column-one-quarter mobile-column-full ptxl mbxxl mobile-mbs">
+
+                <SectionHeading number="3">Run code to generate a list</SectionHeading>
 
                 <DataTypeCodeEditorHelp
                   functionBody={this.getBehaviorFunctionBody()}
