@@ -170,7 +170,7 @@ define(function(require) {
 
     getBehaviorGroupRow: function(group) {
       return group.versions.map((ea, i) => {
-        return this.getVersionRow(ea, i, group)
+        return this.getVersionRow(ea, i, group);
       });
     },
 
