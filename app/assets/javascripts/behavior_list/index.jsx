@@ -22,13 +22,14 @@ define(function(require) {
     },
 
     getDisplayTriggerFromVersion: function(version) {
-      var firstTriggerIndex = version.triggers.findIndex(function(trigger) {
+      var triggers = version.triggers || [];
+      var firstTriggerIndex = triggers.findIndex(function(trigger) {
         return !!trigger.text && !trigger.isRegex;
       });
       if (firstTriggerIndex === -1) {
         firstTriggerIndex = 0;
       }
-      var firstTrigger = version.triggers[firstTriggerIndex];
+      var firstTrigger = triggers[firstTriggerIndex];
       var text = firstTrigger && firstTrigger.text ? firstTrigger.text : "";
       var label = text ?
         (<span className="link type-monospace">{this.getTriggerTextFromTrigger(firstTrigger)}</span>) :
@@ -126,7 +127,9 @@ define(function(require) {
         }
         group.versions.push(version);
       });
-      return groups;
+      return Sort.arrayAlphabeticalBy(groups, group => {
+        return this.getDisplayTriggerFromVersion(group.versions[0]).text;
+      });
     },
 
     sortVersionsByFirstTrigger: function(versions) {
