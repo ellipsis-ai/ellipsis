@@ -1636,14 +1636,14 @@ return React.createClass({
 
           <div className="container pts">
             <Input
-              className="form-input-borderless mbn"
+              className="form-input-borderless form-input-m type-bold mbn"
               placeholder="Add a description (optional)"
               onChange={this.updateDescription}
               value={this.getBehaviorDescription()}
             />
           </div>
 
-          <hr className="mtneg1 mbn thin light" />
+          <hr className="mtneg1 mbn thin bg-gray-light" />
 
           <TriggerConfiguration
             isFinishedBehavior={this.isFinishedBehavior()}
@@ -1673,7 +1673,7 @@ return React.createClass({
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
-            <hr className="man thin light" />
+            <hr className="man thin bg-gray-light" />
           </Collapsible>
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
@@ -1712,7 +1712,7 @@ return React.createClass({
               </div>
             </div>
 
-            <hr className="man full-bleed thin light" />
+            <hr className="man full-bleed thin bg-gray-light" />
           </Collapsible>
 
           <ResponseTemplateConfiguration

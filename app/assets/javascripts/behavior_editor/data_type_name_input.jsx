@@ -20,7 +20,7 @@ define(function(require) {
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbl">
               <div className="mbm">
                 <Input
-                  className="form-input-borderless form-input-large"
+                  className="form-input-borderless form-input-l"
                   ref="input"
                   value={this.props.name}
                   placeholder="Give data type a name"

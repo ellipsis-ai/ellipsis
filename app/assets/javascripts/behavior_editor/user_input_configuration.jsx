@@ -92,7 +92,7 @@ define(function(require) {
 
           <Collapsible revealWhen={this.hasParams()}>
 
-            <hr className="mtn full-bleed thin light" />
+            <hr className="mtn full-bleed thin bg-gray-light" />
 
             <div className="columns container">
               <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
