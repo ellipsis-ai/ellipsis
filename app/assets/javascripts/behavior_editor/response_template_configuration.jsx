@@ -17,7 +17,8 @@ define(function(require) {
       shouldForcePrivateResponse: React.PropTypes.bool.isRequired,
       onChangeForcePrivateResponse: React.PropTypes.func.isRequired,
       onCursorChange: React.PropTypes.func.isRequired,
-      userParams: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired
+      userParams: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired,
+      sectionNumber: React.PropTypes.string.isRequired
     },
 
     getTemplateDataHelp: function() {
@@ -101,7 +102,7 @@ define(function(require) {
 
           <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s ptxxl">
 
-            <SectionHeading>Ellipsis will respond</SectionHeading>
+            <SectionHeading number={this.props.sectionNumber}>Then respond</SectionHeading>
 
             <Checklist disabledWhen={this.props.isFinishedBehavior}>
               <Checklist.Item checkedWhen={this.props.template.usesMarkdown()}>

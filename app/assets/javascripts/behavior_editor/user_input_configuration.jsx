@@ -95,8 +95,8 @@ define(function(require) {
             <hr className="mtn full-bleed thin bg-gray-light" />
 
             <div className="columns container">
-              <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-                <SectionHeading>Collect input</SectionHeading>
+              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+                <SectionHeading number="2">Collect input</SectionHeading>
 
                 <Checklist disabledWhen={this.props.isFinishedBehavior}>
                   <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>

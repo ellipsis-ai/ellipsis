@@ -502,6 +502,18 @@ return React.createClass({
     return this.state.versions;
   },
 
+  getResponseTemplateSectionNumber: function() {
+    var hasParams = this.hasUserParameters();
+    var hasCode = this.state.revealCodeEditor;
+    if (hasParams && hasCode) {
+      return "4";
+    } else if (hasParams || hasCode) {
+      return "3";
+    } else {
+      return "2";
+    }
+  },
+
   /* Setters/togglers */
 
   createNewParam: function(optionalValues) {
@@ -1699,6 +1711,7 @@ return React.createClass({
             <div className="columns container">
               <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs ptxxl">
                 <CodeEditorHelp
+                  sectionNumber={this.hasUserParameters() ? "3" : "2"}
                   isFinishedBehavior={this.isFinishedBehavior()}
                   functionBody={this.getBehaviorFunctionBody()}
                   onToggleHelp={this.toggleBoilerplateHelp}
@@ -1724,6 +1737,7 @@ return React.createClass({
             onChangeForcePrivateResponse={this.updateForcePrivateResponse}
             onCursorChange={this.ensureCursorVisible}
             userParams={this.getBehaviorParams()}
+            sectionNumber={this.getResponseTemplateSectionNumber()}
           />
 
         </div> {/* End of container */}
