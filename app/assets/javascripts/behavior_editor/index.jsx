@@ -502,6 +502,18 @@ return React.createClass({
     return this.state.versions;
   },
 
+  getResponseTemplateSectionNumber: function() {
+    var hasParams = this.hasUserParameters();
+    var hasCode = this.state.revealCodeEditor;
+    if (hasParams && hasCode) {
+      return "4";
+    } else if (hasParams || hasCode) {
+      return "3";
+    } else {
+      return "2";
+    }
+  },
+
   /* Setters/togglers */
 
   createNewParam: function(optionalValues) {
@@ -1323,9 +1335,9 @@ return React.createClass({
   renderCodeEditor: function() {
     return (
       <div>
-        <div className="border-top border-left border-right border-light pts">
-          <div className="ptxs type-s">
-            <div className="phm mbm">
+        <div className="border-top border-left border-right border-light mtxxl ptm">
+          <div className="type-s">
+            <div className="plxxxl prs mbm">
               <APISelectorMenu
                 openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
                 onAWSClick={this.toggleAWSConfig}
@@ -1345,7 +1357,7 @@ return React.createClass({
             </div>
 
             <Collapsible revealWhen={!!this.getAWSConfig()}>
-              <div className="phm pbs mbs border-bottom border-light">
+              <div className="plxxxl prs pbs mbs border-bottom border-light">
                 <AWSConfig
                   envVariableNames={this.getEnvVariableNames()}
                   accessKeyName={this.getAWSConfigProperty('accessKeyName')}
@@ -1625,21 +1637,25 @@ return React.createClass({
     return (
 
       <div>
-        <PageHeading heading={this.getPageHeading()}>
-          <Input
-            className="form-input-borderless form-input-large"
-            placeholder="Add a description (optional)"
-            onChange={this.updateDescription}
-            value={this.getBehaviorDescription()}
-          />
-        </PageHeading>
+        <PageHeading heading={this.getPageHeading()} />
 
       <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
         {this.renderHiddenFormValues()}
 
         {/* Start of container */}
-        <div className="container ptxl pbxxxl">
+        <div className="pbxxxl">
+
+          <div className="container pts">
+            <Input
+              className="form-input-borderless form-input-m type-bold mbn"
+              placeholder="Add a description (optional)"
+              onChange={this.updateDescription}
+              value={this.getBehaviorDescription()}
+            />
+          </div>
+
+          <hr className="mtneg1 mbn thin bg-gray-light" />
 
           <TriggerConfiguration
             isFinishedBehavior={this.isFinishedBehavior()}
@@ -1668,32 +1684,36 @@ return React.createClass({
             behaviorHasCode={this.state.revealCodeEditor}
           />
 
-          <Collapsible revealWhen={this.state.revealCodeEditor}>
-            <hr className="mtn" />
+          <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
+            <hr className="man thin bg-gray-light" />
           </Collapsible>
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
-            <div className="box-help border mbxxl">
-            <div className="columns columns-elastic mobile-columns-float">
-              <div className="column column-expand">
-                <p className="mbn">
-                  <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
-                  <span>or provide a simple response below.</span>
-                </p>
+            <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
+              <div className="container">
+                <div className="columns columns-elastic mobile-columns-float">
+                  <div className="column column-expand">
+                    <p className="mbn">
+                      <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
+                      <span>or provide a simple response below.</span>
+                    </p>
+                  </div>
+                  <div className="column column-shrink align-m mobile-mtm">
+                    <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
+                      Add code
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="column column-shrink align-m mobile-mtm">
-                <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
-                  Add code
-                </button>
-              </div>
-            </div>
             </div>
           </Collapsible>
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
-            <div className="columns">
-              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+
+            <div className="columns container">
+              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs ptxxl">
                 <CodeEditorHelp
+                  sectionNumber={this.hasUserParameters() ? "3" : "2"}
                   isFinishedBehavior={this.isFinishedBehavior()}
                   functionBody={this.getBehaviorFunctionBody()}
                   onToggleHelp={this.toggleBoilerplateHelp}
@@ -1702,12 +1722,12 @@ return React.createClass({
                 />
               </div>
 
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+              <div className="column column-three-quarters mobile-column-full pll mobile-pln">
                 {this.renderCodeEditor()}
               </div>
             </div>
 
-            <hr className="mtn" />
+            <hr className="man full-bleed thin bg-gray-light" />
           </Collapsible>
 
           <ResponseTemplateConfiguration
@@ -1719,6 +1739,7 @@ return React.createClass({
             onChangeForcePrivateResponse={this.updateForcePrivateResponse}
             onCursorChange={this.ensureCursorVisible}
             userParams={this.getBehaviorParams()}
+            sectionNumber={this.getResponseTemplateSectionNumber()}
           />
 
         </div> {/* End of container */}
@@ -1746,16 +1767,20 @@ return React.createClass({
             onChange={this.updateDataTypeName}
           />
 
+          <hr className="man thin bg-gray-light" />
+
           <DataTypeResultConfig
             usesSearch={this.hasUserParameterNamed('searchQuery')}
             onChange={this.updateDataTypeResultConfig}
           />
 
-          <div className="container ptxl pbxxxl">
-            <div className="columns">
-              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+          <hr className="man thin bg-gray-light" />
 
-                <SectionHeading>Run code to generate a list</SectionHeading>
+          <div className="container pbxxxl">
+            <div className="columns">
+              <div className="column column-one-quarter mobile-column-full ptxl mbxxl mobile-mbs">
+
+                <SectionHeading number="3">Run code to generate a list</SectionHeading>
 
                 <DataTypeCodeEditorHelp
                   functionBody={this.getBehaviorFunctionBody()}

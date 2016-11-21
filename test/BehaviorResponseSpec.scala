@@ -35,8 +35,8 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar{
         val specificTrigger = generalTrigger.copy(id = IDs.next, template = "trigger me {foo} {bar}")
         when(dataService.messageTriggers.allActiveFor(team)).
           thenReturn(Future.successful(Seq(generalTrigger, mediumTrigger, specificTrigger)))
-        val fooParam = BehaviorParameter(IDs.next, 1, Input(IDs.next, "foo", None, TextType, false, false), version)
-        val barParam = fooParam.copy(id = IDs.next, input = Input(IDs.next, "bar", None, TextType, false, false), rank = 2)
+        val fooParam = BehaviorParameter(IDs.next, 1, Input(IDs.next, "foo", None, TextType, false, false, None), version)
+        val barParam = fooParam.copy(id = IDs.next, input = Input(IDs.next, "bar", None, TextType, false, false, None), rank = 2)
         when(dataService.behaviorParameters.allFor(version)).
           thenReturn(Future.successful(Seq(fooParam, barParam)))
         val responses = await(BehaviorResponse.allFor(event, Some(team), None, lambdaService, dataService, cache, ws, configuration))

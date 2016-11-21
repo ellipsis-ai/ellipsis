@@ -12,17 +12,17 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="border-left border-bottom border-right border-light pvs">
+      <div className="border-left border-right border-bottom border-light pvs mbxxl">
         <div className="columns columns-elastic">
           <div className="column column-shrink plxxxl prn align-r position-relative">
-            <code className="type-disabled type-s position-absolute position-top-right prxs">{this.props.lineNumber}</code>
+            <code className="type-disabled type-s position-absolute position-top-right">{this.props.lineNumber}</code>
           </div>
-          <div className="column column-expand plxs">
+          <div className="column column-expand pls">
             <div className="columns columns-elastic">
               <div className="column column-expand">
                 <code className="type-weak type-s">{"}"}</code>
               </div>
-              <div className="column column-shrink prxs align-r">
+              <div className="column column-shrink prs align-r">
                 {ifPresent(this.props.onCodeDelete, (onCodeDelete) => (
                   <button type="button" className="button-s" onClick={onCodeDelete}>Remove code</button>
                 ))}

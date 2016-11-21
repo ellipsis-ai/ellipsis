@@ -75,16 +75,18 @@ define(function(require) {
       return (
         <div>
           <Collapsible revealWhen={!this.hasParams()}>
-            <div className="box-help border mbxxl">
-              <div className="columns columns-elastic mobile-columns-float">
-                <div className="column column-expand">
-                  <p className="mbn">
-                    <span>You can add inputs to ask for additional information from the user, or </span>
-                    <span>to clarify what kind of input will come from the trigger.</span>
-                  </p>
-                </div>
-                <div className="column column-shrink align-m mobile-mtm">
-                  <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add inputs</button>
+            <div className="bg-blue-lighter border-top border-blue pvl">
+              <div className="container">
+                <div className="columns columns-elastic mobile-columns-float">
+                  <div className="column column-expand">
+                    <p className="mbn">
+                      <span>You can add inputs to ask for additional information from the user, or </span>
+                      <span>to clarify what kind of input will come from the trigger.</span>
+                    </p>
+                  </div>
+                  <div className="column column-shrink align-m mobile-mtm">
+                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add inputs</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -92,11 +94,11 @@ define(function(require) {
 
           <Collapsible revealWhen={this.hasParams()}>
 
-            <hr className="mtn" />
+            <hr className="mtn full-bleed thin bg-gray-light" />
 
-            <div className="columns">
-              <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-                <SectionHeading>Collect input</SectionHeading>
+            <div className="columns container">
+              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+                <SectionHeading number="2">Collect input</SectionHeading>
 
                 <Checklist disabledWhen={this.props.isFinishedBehavior}>
                   <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>

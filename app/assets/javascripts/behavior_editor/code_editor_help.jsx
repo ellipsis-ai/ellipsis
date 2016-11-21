@@ -10,7 +10,8 @@ define(function(require) {
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       onToggleHelp: React.PropTypes.func.isRequired,
       helpIsActive: React.PropTypes.bool.isRequired,
-      hasUserParameters: React.PropTypes.bool.isRequired
+      hasUserParameters: React.PropTypes.bool.isRequired,
+      sectionNumber: React.PropTypes.string.isRequired
     },
 
     hasCalledNoResponse: function() {
@@ -41,7 +42,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <SectionHeading>Then Ellipsis will do</SectionHeading>
+          <SectionHeading number={this.props.sectionNumber}>Run code</SectionHeading>
 
           <Checklist disabledWhen={this.props.isFinishedBehavior}>
             <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.props.isFinishedBehavior}>

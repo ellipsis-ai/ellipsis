@@ -17,9 +17,9 @@ return React.createClass({
       <div className="pbxs">
         <div className="columns columns-elastic">
           <div className="column column-shrink plxxxl prn align-r position-relative">
-            <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>
+            <code className="type-disabled type-s position-absolute position-top-right">1</code>
           </div>
-          <div className="column column-expand plxs">
+          <div className="column column-expand pls">
             <code className="type-s">
               <span className="type-s type-weak">{"function ("}</span>
               {this.props.userParams.map((param, paramIndex) => (

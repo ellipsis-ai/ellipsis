@@ -24,7 +24,7 @@ define(function(require) {
         <div className="container ptxl pbxxxl">
           <div className="columns">
             <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-              <SectionHeading>How to prompt the user</SectionHeading>
+              <SectionHeading number="2">How to prompt the user</SectionHeading>
               <Checklist disabledWhen={false}>
                 <Checklist.Item checkedWhen={!this.props.usesSearch}>
                   <span>Use <code className="type-bold">Select from a list</code> when there are few choices.</span>

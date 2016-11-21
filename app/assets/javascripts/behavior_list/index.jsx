@@ -126,7 +126,9 @@ define(function(require) {
         }
         group.versions.push(version);
       });
-      return groups;
+      return Sort.arrayAlphabeticalBy(groups, group => {
+        return this.getDisplayTriggerFromVersion(group.versions[0]).text;
+      });
     },
 
     sortVersionsByFirstTrigger: function(versions) {
@@ -170,7 +172,7 @@ define(function(require) {
 
     getBehaviorGroupRow: function(group) {
       return group.versions.map((ea, i) => {
-        return this.getVersionRow(ea, i, group)
+        return this.getVersionRow(ea, i, group);
       });
     },
 

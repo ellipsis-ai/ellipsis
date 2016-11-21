@@ -70,9 +70,9 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="columns">
-          <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
-            <SectionHeading>When someone says</SectionHeading>
+        <div className="columns container ptxl">
+          <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+            <SectionHeading number="1">When someone says</SectionHeading>
 
             <Checklist disabledWhen={this.props.isFinishedBehavior}>
               <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.props.isFinishedBehavior}>

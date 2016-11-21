@@ -1,7 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    Checklist = require('./checklist'),
-    SectionHeading = require('./section_heading');
+    Checklist = require('./checklist');
 
   return React.createClass({
     propTypes: {
@@ -32,8 +31,6 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <SectionHeading>Then Ellipsis will do</SectionHeading>
-
           <Checklist disabledWhen={false}>
             <Checklist.Item hiddenWhen={this.hasCode()}>
               <span>Write a node.js function. You can <code>require()</code> any </span>
