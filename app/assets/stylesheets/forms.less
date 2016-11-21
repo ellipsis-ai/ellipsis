@@ -9,8 +9,12 @@ form {
 }
 
 input, select, textarea, .form-field {
-  font-size: @type-s;
+  font-size: @type-form;
   line-height: @xl;
+}
+
+select {
+  font-size: @type-s;
 }
 
 label {
@@ -50,7 +54,11 @@ input.box-code-example {
   font-size: @type-s * 0.93;
 }
 
-.form-input-large {
+.form-input-m {
+  .type-m();
+}
+
+.form-input-l {
   .type-l();
   height: @form-input-height-large;
 }
@@ -112,7 +120,7 @@ input.box-code-example {
   border-bottom-color: transparent;
 }
 
-.form-input-borderless.form-input-large {
+.form-input-borderless.form-input-l {
   height: @form-input-height-large - @xs;
   line-height: @form-input-height-large - @border-width-thick - @xs;
   padding-top: 0;

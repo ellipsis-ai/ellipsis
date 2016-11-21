@@ -10,10 +10,32 @@ hr {
   margin: @xxl 0;
 }
 
+hr.thin {
+  height: @border-width;
+}
+
 hr.form-border {
   height: @xxs;
   background-color: @border-color;
   border-radius: 0;
+}
+
+hr.full-bleed {
+  &::before {
+    content: ' ';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: @border-width-thick;
+    background-color: inherit;
+    margin: 0;
+  }
+}
+
+hr.thin.full-bleed {
+  &::before {
+    height: @border-width;
+  }
 }
 
 @arrow-width: 2px;

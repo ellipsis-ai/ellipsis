@@ -15,12 +15,12 @@ define(function(require) {
         <div className="container ptxl">
           <div className="columns">
             <div className="column column-one-quarter mobile-column-full mts mbl mobile-mbs">
-              <SectionHeading>Name of data type</SectionHeading>
+              <SectionHeading number="1">Name of data type</SectionHeading>
             </div>
             <div className="column column-three-quarters mobile-column-full pll mobile-pln mbl">
               <div className="mbm">
                 <Input
-                  className="form-input-borderless form-input-large"
+                  className="form-input-borderless form-input-l"
                   ref="input"
                   value={this.props.name}
                   placeholder="Give data type a name"
