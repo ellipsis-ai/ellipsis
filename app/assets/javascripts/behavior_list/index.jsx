@@ -22,14 +22,13 @@ define(function(require) {
     },
 
     getDisplayTriggerFromVersion: function(version) {
-      var triggers = version.triggers || [];
-      var firstTriggerIndex = triggers.findIndex(function(trigger) {
+      var firstTriggerIndex = version.triggers.findIndex(function(trigger) {
         return !!trigger.text && !trigger.isRegex;
       });
       if (firstTriggerIndex === -1) {
         firstTriggerIndex = 0;
       }
-      var firstTrigger = triggers[firstTriggerIndex];
+      var firstTrigger = version.triggers[firstTriggerIndex];
       var text = firstTrigger && firstTrigger.text ? firstTrigger.text : "";
       var label = text ?
         (<span className="link type-monospace">{this.getTriggerTextFromTrigger(firstTrigger)}</span>) :
