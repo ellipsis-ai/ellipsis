@@ -26,7 +26,18 @@ So for example:
 
 */
 
-@sizes: xxxxl @xxxxl, xxxl @xxxl, xxl @xxl, xl @xl, l @l, symbol 40px, m @m, s @s, xs @xs, n 0;
+@sizes:
+  xxxxl @xxxxl,
+  xxxl @xxxl,
+  xxl @xxl,
+  xl @xl,
+  l @l,
+  symbol 40px,
+  m @m,
+  s @s,
+  xs @xs,
+  n 0,
+  neg1 -1px;
 
 .generate-all-sided(@prefix, @iterator: 1) when (@iterator <= length(@sizes)) {
   @size-name: extract(extract(@sizes, @iterator), 1);

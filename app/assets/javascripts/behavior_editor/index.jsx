@@ -1625,14 +1625,7 @@ return React.createClass({
     return (
 
       <div>
-        <PageHeading heading={this.getPageHeading()}>
-          <Input
-            className="form-input-borderless form-input-large"
-            placeholder="Add a description (optional)"
-            onChange={this.updateDescription}
-            value={this.getBehaviorDescription()}
-          />
-        </PageHeading>
+        <PageHeading heading={this.getPageHeading()} />
 
       <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
@@ -1640,6 +1633,17 @@ return React.createClass({
 
         {/* Start of container */}
         <div className="pbxxxl">
+
+          <div className="container pts">
+            <Input
+              className="form-input-borderless mbn"
+              placeholder="Add a description (optional)"
+              onChange={this.updateDescription}
+              value={this.getBehaviorDescription()}
+            />
+          </div>
+
+          <hr className="mtneg1 mbn thin light" />
 
           <TriggerConfiguration
             isFinishedBehavior={this.isFinishedBehavior()}
