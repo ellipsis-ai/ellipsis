@@ -10,6 +10,7 @@ describe('BehaviorList', () => {
 
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",
+    "groupId": "sfgsdf",
     "behaviorId": "ghijkl",
     "functionBody": "use strict;",
     "responseTemplate": "A template",
@@ -36,6 +37,7 @@ describe('BehaviorList', () => {
   });
   const behaviorVersionTask2 = Object.freeze({
     "teamId": "abcdef",
+    "groupId": "gsdfgsg",
     "behaviorId": "mnopqr",
     "functionBody": "use strict;",
     "responseTemplate": "A template",
@@ -57,6 +59,7 @@ describe('BehaviorList', () => {
   });
   const behaviorVersionKnowledge1 = Object.freeze({
     "teamId": "abcdef",
+    "groupId": "jfghjfg",
     "behaviorId": "stuvwx",
     "functionBody": "",
     "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
@@ -66,6 +69,11 @@ describe('BehaviorList', () => {
     "createdAt": 1466109904858
   });
   const defaultConfig = Object.freeze({
+    behaviorGroups: [
+      {"id":"sfgsdf", "name":"", "createdAt": 1466109904858},
+      {"id":"gsdfgsg", "name":"", "createdAt": 1466109904858},
+      {"id":"jfghjfg", "name":"", "createdAt": 1466109904858}
+    ],
     behaviorVersions: [behaviorVersionTask1, behaviorVersionTask2, behaviorVersionKnowledge1]
   });
 
