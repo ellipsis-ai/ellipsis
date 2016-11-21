@@ -1669,7 +1669,7 @@ return React.createClass({
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor}>
-            <hr className="mtn" />
+            <hr className="mtn full-bleed thin light" />
           </Collapsible>
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
@@ -1707,7 +1707,7 @@ return React.createClass({
               </div>
             </div>
 
-            <hr className="mtn" />
+            <hr className="mtn full-bleed thin light" />
           </Collapsible>
 
           <ResponseTemplateConfiguration
