@@ -41,7 +41,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <SectionHeading>Then Ellipsis will do</SectionHeading>
+          <SectionHeading>Ellipsis will run code</SectionHeading>
 
           <Checklist disabledWhen={this.props.isFinishedBehavior}>
             <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.props.isFinishedBehavior}>

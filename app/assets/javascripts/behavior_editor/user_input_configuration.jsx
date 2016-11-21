@@ -75,8 +75,8 @@ define(function(require) {
       return (
         <div>
           <Collapsible revealWhen={!this.hasParams()}>
-            <div className="box-help border mbxxl">
-              <div className="columns columns-elastic mobile-columns-float">
+            <div className="bg-blue-lighter border-top border-blue pvl">
+              <div className="columns container columns-elastic mobile-columns-float">
                 <div className="column column-expand">
                   <p className="mbn">
                     <span>You can add inputs to ask for additional information from the user, or </span>
@@ -94,7 +94,7 @@ define(function(require) {
 
             <hr className="mtn full-bleed thin light" />
 
-            <div className="columns">
+            <div className="columns container">
               <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
                 <SectionHeading>Collect input</SectionHeading>
 

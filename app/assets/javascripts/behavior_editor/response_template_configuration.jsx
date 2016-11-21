@@ -97,11 +97,11 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="columns">
+        <div className="columns container">
 
-          <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s">
+          <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s ptxxl">
 
-            <SectionHeading>Then Ellipsis will respond with</SectionHeading>
+            <SectionHeading>Ellipsis will respond</SectionHeading>
 
             <Checklist disabledWhen={this.props.isFinishedBehavior}>
               <Checklist.Item checkedWhen={this.props.template.usesMarkdown()}>
@@ -117,7 +117,7 @@ define(function(require) {
           </div>
 
           <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
-            <div className="border-top border-left border-right border-light pam">
+            <div className="mtxxl border-top border-left border-right border-light pas">
               <ToggleGroup className="form-toggle-group-s align-m">
                 <ToggleGroup.Item
                   title="Ellipsis will respond wherever you talk to it"

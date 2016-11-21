@@ -70,7 +70,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="columns">
+        <div className="columns container ptxl">
           <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
             <SectionHeading>When someone says</SectionHeading>
 

@@ -1323,9 +1323,9 @@ return React.createClass({
   renderCodeEditor: function() {
     return (
       <div>
-        <div className="border-top border-left border-right border-light pts">
-          <div className="ptxs type-s">
-            <div className="phm mbm">
+        <div className="border-top border-left border-right border-light mtxxl ptm">
+          <div className="type-s">
+            <div className="plxxxl prs mbm">
               <APISelectorMenu
                 openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
                 onAWSClick={this.toggleAWSConfig}
@@ -1345,7 +1345,7 @@ return React.createClass({
             </div>
 
             <Collapsible revealWhen={!!this.getAWSConfig()}>
-              <div className="phm pbs mbs border-bottom border-light">
+              <div className="plxxxl prs pbs mbs border-bottom border-light">
                 <AWSConfig
                   envVariableNames={this.getEnvVariableNames()}
                   accessKeyName={this.getAWSConfigProperty('accessKeyName')}
@@ -1639,7 +1639,7 @@ return React.createClass({
         {this.renderHiddenFormValues()}
 
         {/* Start of container */}
-        <div className="container ptxl pbxxxl">
+        <div className="pbxxxl">
 
           <TriggerConfiguration
             isFinishedBehavior={this.isFinishedBehavior()}
@@ -1668,13 +1668,13 @@ return React.createClass({
             behaviorHasCode={this.state.revealCodeEditor}
           />
 
-          <Collapsible revealWhen={this.state.revealCodeEditor}>
-            <hr className="mtn full-bleed thin light" />
+          <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
+            <hr className="man thin light" />
           </Collapsible>
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
-            <div className="box-help border mbxxl">
-            <div className="columns columns-elastic mobile-columns-float">
+            <div className="box-help border-top border-bottom">
+            <div className="columns container columns-elastic mobile-columns-float">
               <div className="column column-expand">
                 <p className="mbn">
                   <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
@@ -1691,8 +1691,9 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
-            <div className="columns">
-              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+
+            <div className="columns container">
+              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs ptxxl">
                 <CodeEditorHelp
                   isFinishedBehavior={this.isFinishedBehavior()}
                   functionBody={this.getBehaviorFunctionBody()}
@@ -1702,12 +1703,12 @@ return React.createClass({
                 />
               </div>
 
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+              <div className="column column-three-quarters mobile-column-full pll mobile-pln">
                 {this.renderCodeEditor()}
               </div>
             </div>
 
-            <hr className="mtn full-bleed thin light" />
+            <hr className="man full-bleed thin light" />
           </Collapsible>
 
           <ResponseTemplateConfiguration
