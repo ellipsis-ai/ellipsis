@@ -126,7 +126,9 @@ define(function(require) {
         }
         group.versions.push(version);
       });
-      return groups;
+      return Sort.arrayAlphabeticalBy(groups, group => {
+        return this.getDisplayTriggerFromVersion(group.versions[0]).text;
+      });
     },
 
     sortVersionsByFirstTrigger: function(versions) {
