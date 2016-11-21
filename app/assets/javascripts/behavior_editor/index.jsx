@@ -1689,20 +1689,22 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
-            <div className="box-help border-top border-bottom">
-            <div className="columns container columns-elastic mobile-columns-float">
-              <div className="column column-expand">
-                <p className="mbn">
-                  <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
-                  <span>or provide a simple response below.</span>
-                </p>
+            <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
+              <div className="container">
+                <div className="columns columns-elastic mobile-columns-float">
+                  <div className="column column-expand">
+                    <p className="mbn">
+                      <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
+                      <span>or provide a simple response below.</span>
+                    </p>
+                  </div>
+                  <div className="column column-shrink align-m mobile-mtm">
+                    <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
+                      Add code
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="column column-shrink align-m mobile-mtm">
-                <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
-                  Add code
-                </button>
-              </div>
-            </div>
             </div>
           </Collapsible>
 
