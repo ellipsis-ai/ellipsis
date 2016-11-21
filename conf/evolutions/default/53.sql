@@ -1,0 +1,7 @@
+# --- !Ups
+
+ALTER TABLE teams ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+# --- !Downs
+
+ALTER TABLE teams DROP COLUMN created_at;
