@@ -1,6 +1,7 @@
 package models.behaviors.behavior
 
 import models.accounts.user.User
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageContext
 import models.team.Team
@@ -17,6 +18,10 @@ trait BehaviorService {
   def findWithImportedId(id: String, team: Team): Future[Option[Behavior]]
 
   def allForTeam(team: Team): Future[Seq[Behavior]]
+
+  def allForGroup(group: BehaviorGroup): Future[Seq[Behavior]]
+
+  def changeGroup(behavior: Behavior, newGroup: BehaviorGroup): Future[Behavior]
 
   def regularForTeam(team: Team): Future[Seq[Behavior]] = {
     allForTeam(team).map { all =>

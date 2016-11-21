@@ -29,4 +29,9 @@ object InputQueries {
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
+  def uncompiledAllForGroupQuery(groupId: Rep[String]) = {
+    joined.filter { case((raw, _), _) => raw.maybeBehaviorGroupId === groupId }
+  }
+  val allForGroupQuery = Compiled(uncompiledAllForGroupQuery _)
+
 }

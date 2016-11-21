@@ -10,4 +10,6 @@ trait BehaviorGroupService {
 
   def allFor(team: Team): Future[Seq[BehaviorGroup]]
 
+  def merge(groups: Seq[BehaviorGroup]): Future[BehaviorGroup]
+
 }

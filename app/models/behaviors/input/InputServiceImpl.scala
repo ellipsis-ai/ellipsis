@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import json.InputData
 import models.IDs
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorparameter.{BehaviorParameterType, TextType}
 import models.team.Team
 import services.DataService
@@ -91,4 +92,17 @@ class InputServiceImpl @Inject() (
       maybeExisting.map(Future.successful).getOrElse(createFor(data, team))
     }
   }
+
+  def allFor(group: BehaviorGroup): Future[Seq[Input]] = {
+    val action = allForGroupQuery(group.id).result.map { r =>
+      r.map(tuple2Input)
+    }
+    dataService.run(action)
+  }
+
+  def changeGroup(input: Input, newGroup: BehaviorGroup): Future[Input] = {
+    val action = all.filter(_.id === input.id).map(_.maybeBehaviorGroupId).update(Some(newGroup.id))
+    dataService.run(action).map { _ => input.copy(maybeBehaviorGroup = Some(newGroup)) }
+  }
+
 }

@@ -47,4 +47,31 @@ class BehaviorGroupServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def moveChildren(fromGroup: BehaviorGroup, toGroup: BehaviorGroup): Future[BehaviorGroup] = {
+    for {
+      behaviorsToMove <- dataService.behaviors.allForGroup(fromGroup)
+      _ <- Future.sequence(behaviorsToMove.map { ea =>
+        dataService.behaviors.changeGroup(ea, toGroup)
+      })
+      inputsToMove <- dataService.inputs.allFor(toGroup)
+      _ <- Future.sequence(inputsToMove.map { ea =>
+        dataService.inputs.changeGroup(ea, toGroup)
+      })
+    } yield toGroup
+  }
+
+  def merge(groups: Seq[BehaviorGroup]): Future[BehaviorGroup] = {
+    val firstGroup = groups.head
+    val team = firstGroup.team
+    val mergedName = groups.map(_.name).mkString("-")
+    val rawMerged = RawBehaviorGroup(IDs.next, mergedName, team.id, DateTime.now)
+    val action = for {
+      merged <- (all += rawMerged).map(_ => tuple2Group((rawMerged, team)))
+      _ <- DBIO.sequence(groups.map { ea =>
+        DBIO.from(moveChildren(ea, merged))
+      })
+    } yield merged
+    dataService.run(action.transactionally)
+  }
+
 }
