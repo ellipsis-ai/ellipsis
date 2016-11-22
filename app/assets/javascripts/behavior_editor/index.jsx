@@ -1637,20 +1637,17 @@ return React.createClass({
     );
   },
 
-  renderAddNew: function() {
-    return (
-      <AddNewBehaviorToGroup key="add-new-behavior-to-group" groupId={this.props.groupId} teamId={this.props.teamId}/>
-    );
-  },
-
   renderNormalBehavior: function() {
     return (
 
       <div>
-        <PageHeading
-          heading={this.getPageHeading()}
-          children={[this.renderAddNew()]}
-        />
+        <PageHeading heading={this.getPageHeading()}>
+          <AddNewBehaviorToGroup
+            key="add-new-behavior-to-group"
+            groupId={this.props.groupId}
+            teamId={this.props.teamId}
+          />
+        </PageHeading>
 
       <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
