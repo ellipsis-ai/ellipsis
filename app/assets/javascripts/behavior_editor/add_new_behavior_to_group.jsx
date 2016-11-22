@@ -6,12 +6,17 @@ define(function(require) {
       groupId: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired
     },
+
+    onAddNewBehavior: function() {
+      window.location.href = jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url;
+    },
+
     render: function() {
       return (
-        <div className="column column-right align-r">
-          <a
-            href={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
-            className="button">Add another action</a>
+        <div className="column column-right align-r ptm">
+          <button
+            onClick={this.onAddNewBehavior}
+            className="button-s">Add another action to this skill</button>
         </div>
       );
     }
