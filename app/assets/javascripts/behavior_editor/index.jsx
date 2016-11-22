@@ -35,6 +35,7 @@ var React = require('react'),
   TriggerHelp = require('./trigger_help'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
+  SVGHamburger = require('../svg/hamburger'),
   SVGSettingsIcon = require('../svg/settings'),
   SVGWarning = require('../svg/warning'),
   Collapsible = require('../collapsible'),
@@ -1081,6 +1082,11 @@ return React.createClass({
     return this.state && this.state.hasModifiedTemplate;
   },
 
+  countBehaviorsInGroup: function() {
+    // TODO: when other behaviors in the same group are hooked in, return the right value here
+    return 1;
+  },
+
   hasUserParameters: function() {
     return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
@@ -1642,11 +1648,22 @@ return React.createClass({
 
       <div>
         <PageHeading heading={this.getPageHeading()}>
-          <AddNewBehaviorToGroup
-            key="add-new-behavior-to-group"
-            groupId={this.props.groupId}
-            teamId={this.props.teamId}
-          />
+          {this.countBehaviorsInGroup() > 1 ? (
+            <div className="align-r type-s ptxl">
+              <button type="button" className="button-tab">
+                <span>{this.countBehaviorsInGroup()} actions in this skill</span>
+                <span className="display-inline-block align-b mlm" style={{ height: "24px" }}>
+                  <SVGHamburger />
+                </span>
+              </button>
+            </div>
+          ) : (
+            <AddNewBehaviorToGroup
+              key="add-new-behavior-to-group"
+              groupId={this.props.groupId}
+              teamId={this.props.teamId}
+            />
+          )}
         </PageHeading>
 
       <form action={this.getFormAction()} method="POST" ref="behaviorForm">

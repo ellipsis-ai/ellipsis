@@ -10,7 +10,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="bg-light">
+        <div className="bg-light border-bottom">
           <div className="container">
             <div className="columns">
               <div className="column column-one-quarter ptxl pbs">
