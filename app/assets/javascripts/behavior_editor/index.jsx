@@ -1,7 +1,6 @@
 define((require) => {
 var React = require('react'),
   ReactDOM = require('react-dom'),
-  AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
@@ -25,6 +24,7 @@ var React = require('react'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../form/input'),
   Notification = require('../notifications/notification'),
+  OtherBehaviorsMenu = require('./other_behaviors_menu'),
   PageHeading = require('./page_heading'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
@@ -1081,6 +1081,11 @@ return React.createClass({
     return this.state && this.state.hasModifiedTemplate;
   },
 
+  countBehaviorsInGroup: function() {
+    // TODO: when other behaviors in the same group are hooked in, return the right value here
+    return 1;
+  },
+
   hasUserParameters: function() {
     return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
@@ -1637,20 +1642,17 @@ return React.createClass({
     );
   },
 
-  renderAddNew: function() {
-    return (
-      <AddNewBehaviorToGroup key="add-new-behavior-to-group" groupId={this.props.groupId} teamId={this.props.teamId}/>
-    );
-  },
-
   renderNormalBehavior: function() {
     return (
 
       <div>
-        <PageHeading
-          heading={this.getPageHeading()}
-          children={[this.renderAddNew()]}
-        />
+        <PageHeading heading={this.getPageHeading()}>
+          <OtherBehaviorsMenu
+            behaviorCount={this.countBehaviorsInGroup()}
+            groupId={this.props.groupId}
+            teamId={this.props.teamId}
+          />
+        </PageHeading>
 
       <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 

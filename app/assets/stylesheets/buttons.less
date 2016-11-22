@@ -187,6 +187,15 @@ button.button-dropdown-item {
   transition: none !important;
 }
 
+button.button-tab {
+  border-width: @border-width @border-width 0 @border-width;
+  border-color: @gray-medium;
+  border-radius: 0;
+  background-color: @almost-white;
+  padding: @s @m;
+  color: @black;
+}
+
 button:focus,
 a.button:focus {
   outline: none;
@@ -202,6 +211,13 @@ button.button-dropdown-item-hover {
   padding-right: (@s - @border-width);
   background-color: @blue-medium;
   color: white;
+}
+
+button.button-tab:focus {
+  padding-left: (@m - @border-width);
+  padding-right: (@m - @border-width);
+  border-color: @gray-dark;
+  border-bottom-width: 0;
 }
 
 button.button-dropdown-trigger:focus,

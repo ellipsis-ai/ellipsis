@@ -13,7 +13,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="column column-right align-r ptm">
+        <div className="align-r ptxl">
           <button
             onClick={this.onAddNewBehavior}
             className="button-s">Add another action to this skill</button>
