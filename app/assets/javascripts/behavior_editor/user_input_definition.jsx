@@ -104,7 +104,7 @@ return React.createClass({
 
   renderConfigureAction: function() {
     return (
-      <button type="button" className="button-s button-shrink" onClick={this.configureType}>configure</button>
+      <button type="button" className="button-s button-shrink" onClick={this.configureType}>Edit type…</button>
     );
   },
 
@@ -145,18 +145,18 @@ return React.createClass({
           />
         </div>
         <div className="prsymbol mts">
-          <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
+          <select className="form-select form-select-s min-width-30 align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
             <option value={EACH_TIME}>
               Ask each time the skill is run
             </option>
             <option value={PER_TEAM}>
-              Ask once and save the answer for the whole team
+              Ask once, save the answer for the whole team
             </option>
             <option value={PER_USER}>
-              Ask each user once and save their answer
+              Ask each user once, save their answers
             </option>
           </select>
-          <span className="display-inline-block align-m type-s type-weak mrm">of type</span>
+          <span className="display-inline-block align-m type-s type-weak mrm">and allow data type</span>
           <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
             {this.props.paramTypes.map((paramType) => (
               <option value={paramType.id} key={this.keyFor(paramType)}>
