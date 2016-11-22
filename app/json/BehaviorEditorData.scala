@@ -14,6 +14,7 @@ case class BehaviorEditorData(
                                teamAccess: UserTeamAccess,
                                behaviorVersion: BehaviorVersionData,
                                environmentVariables: Seq[EnvironmentVariableData],
+                               otherBehaviorsInGroup: Seq[BehaviorVersionData],
                                paramTypes: Seq[BehaviorParameterTypeData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
@@ -82,6 +83,17 @@ object BehaviorEditorData {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
       userEnvironmentVariables <- dataService.userEnvironmentVariables.allFor(user)
+      maybeGroup <- maybeGroupId.map { groupId =>
+        dataService.behaviorGroups.find(groupId)
+      }.getOrElse(Future.successful(None))
+      otherBehaviorsInGroup <- maybeGroup.map { group =>
+        dataService.behaviors.allForGroup(group).map { behaviors =>
+          behaviors.filterNot(b => maybeBehaviorVersionData.exists(_.behaviorId.contains(b.id)))
+        }
+      }.getOrElse(Future.successful(Seq()))
+      otherBehaviorsInGroupData <- Future.sequence(otherBehaviorsInGroup.map { ea =>
+        BehaviorVersionData.maybeFor(ea.id, user, dataService)
+      }).map(_.flatten)
       oAuth2Applications <- dataService.oauth2Applications.allFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       simpleTokenApis <- dataService.simpleTokenApis.allFor(teamAccess.maybeTargetTeam)
@@ -113,6 +125,7 @@ object BehaviorEditorData {
         teamAccess,
         versionData,
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
+        otherBehaviorsInGroupData,
         paramTypeData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
