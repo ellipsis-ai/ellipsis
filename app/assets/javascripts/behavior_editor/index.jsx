@@ -1,7 +1,6 @@
 define((require) => {
 var React = require('react'),
   ReactDOM = require('react-dom'),
-  AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
@@ -25,6 +24,7 @@ var React = require('react'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../form/input'),
   Notification = require('../notifications/notification'),
+  OtherBehaviorsMenu = require('./other_behaviors_menu'),
   PageHeading = require('./page_heading'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
@@ -35,7 +35,6 @@ var React = require('react'),
   TriggerHelp = require('./trigger_help'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
-  SVGHamburger = require('../svg/hamburger'),
   SVGSettingsIcon = require('../svg/settings'),
   SVGWarning = require('../svg/warning'),
   Collapsible = require('../collapsible'),
@@ -1648,22 +1647,11 @@ return React.createClass({
 
       <div>
         <PageHeading heading={this.getPageHeading()}>
-          {this.countBehaviorsInGroup() > 1 ? (
-            <div className="align-r type-s ptxl">
-              <button type="button" className="button-tab">
-                <span>{this.countBehaviorsInGroup()} actions in this skill</span>
-                <span className="display-inline-block align-b mlm" style={{ height: "24px" }}>
-                  <SVGHamburger />
-                </span>
-              </button>
-            </div>
-          ) : (
-            <AddNewBehaviorToGroup
-              key="add-new-behavior-to-group"
-              groupId={this.props.groupId}
-              teamId={this.props.teamId}
-            />
-          )}
+          <OtherBehaviorsMenu
+            behaviorCount={this.countBehaviorsInGroup()}
+            groupId={this.props.groupId}
+            teamId={this.props.teamId}
+          />
         </PageHeading>
 
       <form action={this.getFormAction()} method="POST" ref="behaviorForm">
