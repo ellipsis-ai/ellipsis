@@ -8,7 +8,7 @@ var React = require('react'),
   ToggleGroup = require('../form/toggle_group'),
   DropdownMenu = require('./dropdown_menu'),
   Trigger = require('../models/trigger'),
-  SVGSettings = require('../svg/settings');
+  SVGDropdown = require('../svg/dropdown');
 require('whatwg-fetch');
 
 return React.createClass({
@@ -186,7 +186,7 @@ return React.createClass({
   },
 
   getDropdownIcon: function() {
-    return (<div style={{ height: 16 }}><SVGSettings /></div>);
+    return (<div style={{ height: 16 }}><SVGDropdown /></div>);
   },
 
   renderErrorMessage: function() {
