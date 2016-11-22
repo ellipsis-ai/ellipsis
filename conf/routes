@@ -9,9 +9,9 @@ GET         /install_skills                           @controllers.ApplicationCo
 GET         /install_behaviors                        @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 POST        /merge_skills                             @controllers.ApplicationController.mergeBehaviorGroups
 
-GET         /new_skill                                @controllers.BehaviorEditorController.newForNormalBehavior(teamId: Option[String] ?= None)
-GET         /new_behavior                             @controllers.BehaviorEditorController.newForNormalBehavior(teamId: Option[String] ?= None)
-GET         /new_data_type                            @controllers.BehaviorEditorController.newForDataType(teamId: Option[String] ?= None)
+GET         /new_skill                                @controllers.BehaviorEditorController.newForNormalBehavior(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
+GET         /new_behavior                             @controllers.BehaviorEditorController.newForNormalBehavior(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
+GET         /new_data_type                            @controllers.BehaviorEditorController.newForDataType(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
 GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
 GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
 GET         /export_skill/:id                         @controllers.BehaviorImportExportController.export(id: String)
