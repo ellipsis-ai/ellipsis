@@ -8,7 +8,10 @@ import models.silhouette.EllipsisEnv
 import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
+import play.api.data.Form
+import play.api.data.Forms._
 import play.api.i18n.MessagesApi
+import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService, GithubService}
 
@@ -24,6 +27,8 @@ class ApplicationController @Inject() (
                                         val ws: WSClient,
                                         val cache: CacheApi
                                       ) extends ReAuthable {
+
+  import json.Formatting._
 
   def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
@@ -124,6 +129,30 @@ class ApplicationController @Inject() (
         reAuthFor(request, maybeTeamId)
       }
     } yield result
+  }
+
+  case class MergeBehaviorGroupsInfo(behaviorGroupIds: Seq[String])
+
+  private val mergeBehaviorGroupsForm = Form(
+    mapping(
+      "behaviorGroupIds" -> seq(nonEmptyText)
+    )(MergeBehaviorGroupsInfo.apply)(MergeBehaviorGroupsInfo.unapply)
+  )
+
+  def mergeBehaviorGroups = silhouette.SecuredAction.async { implicit request =>
+    mergeBehaviorGroupsForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          groups <- Future.sequence(info.behaviorGroupIds.map { id =>
+            dataService.behaviorGroups.find(id)
+          }).map(_.flatten)
+          merged <- dataService.behaviorGroups.merge(groups)
+        } yield Ok(Json.toJson(BehaviorGroupData(merged.id, merged.name, merged.createdAt)))
+      }
+    )
   }
 
 }
