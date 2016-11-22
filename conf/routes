@@ -7,6 +7,8 @@ GET         /                                         @controllers.ApplicationCo
 GET         /intro                                    @controllers.ApplicationController.intro(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 GET         /install_skills                           @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 GET         /install_behaviors                        @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
+POST        /merge_skills                             @controllers.ApplicationController.mergeBehaviorGroups
+
 GET         /new_skill                                @controllers.BehaviorEditorController.newForNormalBehavior(teamId: Option[String] ?= None)
 GET         /new_behavior                             @controllers.BehaviorEditorController.newForNormalBehavior(teamId: Option[String] ?= None)
 GET         /new_data_type                            @controllers.BehaviorEditorController.newForDataType(teamId: Option[String] ?= None)
