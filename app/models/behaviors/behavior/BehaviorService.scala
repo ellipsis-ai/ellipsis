@@ -1,6 +1,7 @@
 package models.behaviors.behavior
 
 import models.accounts.user.User
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageContext
 import models.team.Team
@@ -18,6 +19,8 @@ trait BehaviorService {
 
   def allForTeam(team: Team): Future[Seq[Behavior]]
 
+  def allForGroup(group: BehaviorGroup): Future[Seq[Behavior]]
+
   def regularForTeam(team: Team): Future[Seq[Behavior]] = {
     allForTeam(team).map { all =>
       all.filter(_.maybeDataTypeName.isEmpty)
@@ -31,6 +34,8 @@ trait BehaviorService {
   }
 
   def createFor(team: Team, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
+
+  def createFor(group: BehaviorGroup, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
 
   def updateDataTypeNameFor(behavior: Behavior, maybeName: Option[String]): Future[Behavior]
 

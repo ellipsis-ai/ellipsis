@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import json.InputData
 import models.IDs
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorparameter.{BehaviorParameterType, TextType}
 import models.team.Team
 import services.DataService
@@ -52,34 +53,38 @@ class InputServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  private def createFor(data: InputData, team: Team): Future[Input] = {
-    val raw =
-      RawInput(
-        IDs.next,
-        data.name,
-        data.maybeNonEmptyQuestion,
-        data.paramType.map(_.id).getOrElse(TextType.id),
-        data.isSavedForTeam,
-        data.isSavedForUser,
-        None
-      )
-    val action = for {
-      maybeParamType <- DBIO.from(data.paramType.map { paramTypeData =>
-        BehaviorParameterType.find(paramTypeData.id, team, dataService)
-      }.getOrElse(Future.successful(None)))
-      input <- (all += raw).map { _ =>
-        Input(
-          raw.id,
-          raw.name,
-          raw.maybeQuestion,
-          maybeParamType.getOrElse(TextType),
-          raw.isSavedForTeam,
-          raw.isSavedForUser,
-          None
+  def createFor(data: InputData, team: Team): Future[Input] = {
+    data.groupId.map { gid =>
+      dataService.behaviorGroups.find(gid)
+    }.getOrElse(Future.successful(None)).flatMap { maybeGroup =>
+      val raw =
+        RawInput(
+          IDs.next,
+          data.name,
+          data.maybeNonEmptyQuestion,
+          data.paramType.map(_.id).getOrElse(TextType.id),
+          data.isSavedForTeam,
+          data.isSavedForUser,
+          maybeGroup.map(_.id)
         )
-      }
-    } yield input
-    dataService.run(action)
+      val action = for {
+        maybeParamType <- DBIO.from(data.paramType.map { paramTypeData =>
+          BehaviorParameterType.find(paramTypeData.id, team, dataService)
+        }.getOrElse(Future.successful(None)))
+        input <- (all += raw).map { _ =>
+          Input(
+            raw.id,
+            raw.name,
+            raw.maybeQuestion,
+            maybeParamType.getOrElse(TextType),
+            raw.isSavedForTeam,
+            raw.isSavedForUser,
+            maybeGroup
+          )
+        }
+      } yield input
+      dataService.run(action)
+    }
   }
 
   def ensureFor(data: InputData, team: Team): Future[Input] = {
@@ -91,4 +96,12 @@ class InputServiceImpl @Inject() (
       maybeExisting.map(Future.successful).getOrElse(createFor(data, team))
     }
   }
+
+  def allForGroup(group: BehaviorGroup): Future[Seq[Input]] = {
+    val action = allForGroupQuery(group.id).result.map { r =>
+      r.map(tuple2Input)
+    }
+    dataService.run(action)
+  }
+
 }

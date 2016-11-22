@@ -20,4 +20,9 @@ object BehaviorGroupQueries {
     allWithTeam.filter { case(group, team) => team.id === teamId }
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
+
+  def uncompiledFindQuery(id: Rep[String]) = {
+    allWithTeam.filter { case(group, team) => group.id === id }
+  }
+  val findQuery = Compiled(uncompiledFindQuery _)
 }
