@@ -96,6 +96,7 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
+    otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
     paramTypes: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         id: React.PropTypes.string.isRequired,
