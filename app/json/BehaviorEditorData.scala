@@ -45,13 +45,14 @@ object BehaviorEditorData {
         data <- maybeBehaviorVersionData
         team <- maybeTeam
       } yield {
-        buildFor(user, Some(data), team, maybeJustSaved, isForNewDataType = false, dataService, ws).map(Some(_))
+        buildFor(user, Some(data), data.groupId, team, maybeJustSaved, isForNewDataType = false, dataService, ws).map(Some(_))
       }).getOrElse(Future.successful(None))
     } yield maybeEditorData
   }
 
   def buildForNew(
                   user: User,
+                  maybeGroupId: Option[String],
                   maybeTeamId: Option[String],
                   isForNewDataType: Boolean,
                   dataService: DataService,
@@ -59,16 +60,18 @@ object BehaviorEditorData {
                  ): Future[Option[BehaviorEditorData]] = {
 
     val teamId = maybeTeamId.getOrElse(user.teamId)
-    dataService.teams.find(teamId, user).flatMap { maybeTeam =>
-      maybeTeam.map { team =>
-        buildFor(user, None, team, None, isForNewDataType, dataService, ws).map(Some(_))
+    for {
+      maybeTeam <- dataService.teams.find(teamId, user)
+      maybeData <- maybeTeam.map { team =>
+        buildFor(user, None, maybeGroupId, team, None, isForNewDataType, dataService, ws).map(Some(_))
       }.getOrElse(Future.successful(None))
-    }
+    } yield maybeData
   }
 
   def buildFor(
                 user: User,
                 maybeBehaviorVersionData: Option[BehaviorVersionData],
+                maybeGroupId: Option[String],
                 team: Team,
                 maybeJustSaved: Option[Boolean],
                 isForNewDataType: Boolean,
@@ -92,7 +95,7 @@ object BehaviorEditorData {
       val versionData = maybeBehaviorVersionData.getOrElse {
         BehaviorVersionData.buildFor(
           team.id,
-          None,
+          maybeGroupId,
           None,
           None,
           "",
