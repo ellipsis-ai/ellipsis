@@ -8,10 +8,10 @@ import scala.concurrent.Future
 
 trait InputService {
 
+  def createFor(data: InputData, team: Team): Future[Input]
+
   def ensureFor(data: InputData, team: Team): Future[Input]
 
-  def allFor(group: BehaviorGroup): Future[Seq[Input]]
-
-  def changeGroup(input: Input, newGroup: BehaviorGroup): Future[Input]
+  def allForGroup(group: BehaviorGroup): Future[Seq[Input]]
 
 }

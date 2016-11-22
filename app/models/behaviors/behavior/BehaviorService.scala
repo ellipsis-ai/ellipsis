@@ -21,8 +21,6 @@ trait BehaviorService {
 
   def allForGroup(group: BehaviorGroup): Future[Seq[Behavior]]
 
-  def changeGroup(behavior: Behavior, newGroup: BehaviorGroup): Future[Behavior]
-
   def regularForTeam(team: Team): Future[Seq[Behavior]] = {
     allForTeam(team).map { all =>
       all.filter(_.maybeDataTypeName.isEmpty)
@@ -36,6 +34,8 @@ trait BehaviorService {
   }
 
   def createFor(team: Team, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
+
+  def createFor(group: BehaviorGroup, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
 
   def updateDataTypeNameFor(behavior: Behavior, maybeName: Option[String]): Future[Behavior]
 

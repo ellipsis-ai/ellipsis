@@ -10,6 +10,8 @@ trait BehaviorGroupService {
 
   def allFor(team: Team): Future[Seq[BehaviorGroup]]
 
+  def find(id: String): Future[Option[BehaviorGroup]]
+
   def merge(groups: Seq[BehaviorGroup]): Future[BehaviorGroup]
 
 }
