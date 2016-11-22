@@ -1,6 +1,7 @@
 define((require) => {
 var React = require('react'),
   ReactDOM = require('react-dom'),
+  AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
@@ -61,6 +62,7 @@ return React.createClass({
 
   propTypes: {
     teamId: React.PropTypes.string.isRequired,
+    groupId: React.PropTypes.string.isRequired,
     behaviorId: React.PropTypes.string,
     description: React.PropTypes.string,
     functionBody: React.PropTypes.string,
@@ -733,6 +735,7 @@ return React.createClass({
     var version = this.getVersions()[versionIndex];
     this.setState({
       behavior: {
+        groupId: this.props.groupId,
         teamId: this.props.teamId,
         behaviorId: this.props.behaviorId,
         functionBody: version.functionBody,
@@ -1264,6 +1267,7 @@ return React.createClass({
 
   getInitialBehaviorFromProps: function(props) {
     return {
+      groupId: props.groupId,
       teamId: props.teamId,
       behaviorId: props.behaviorId,
       description: props.description,
@@ -1633,11 +1637,20 @@ return React.createClass({
     );
   },
 
+  renderAddNew: function() {
+    return (
+      <AddNewBehaviorToGroup key="add-new-behavior-to-group" groupId={this.props.groupId} teamId={this.props.teamId}/>
+    );
+  },
+
   renderNormalBehavior: function() {
     return (
 
       <div>
-        <PageHeading heading={this.getPageHeading()} />
+        <PageHeading
+          heading={this.getPageHeading()}
+          children={[this.renderAddNew()]}
+        />
 
       <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
