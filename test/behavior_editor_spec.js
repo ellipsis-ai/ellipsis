@@ -66,7 +66,7 @@ describe('BehaviorEditor', () => {
   });
 
   function createEditor(config) {
-    const behaviorVersionConfig = BehaviorVersion.fromJson(config);
+    const behaviorVersionConfig = Object.assign({}, BehaviorVersion.fromJson(config));
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...behaviorVersionConfig} />
     );

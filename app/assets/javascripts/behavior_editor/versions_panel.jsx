@@ -1,6 +1,7 @@
 define(function(require) {
 var React = require('react'),
   Formatter = require('../formatter'),
+  BehaviorVersion = require('../models/behavior_version'),
   Select = require('../form/select');
 
 return React.createClass({
@@ -11,7 +12,7 @@ return React.createClass({
     onSwitchVersions: React.PropTypes.func.isRequired,
     openMenuWhen: React.PropTypes.bool.isRequired,
     shouldFilterCurrentVersion: React.PropTypes.bool,
-    versions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
+    versions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired
   },
   getVersionText: function(versionIndex) {
     var text;

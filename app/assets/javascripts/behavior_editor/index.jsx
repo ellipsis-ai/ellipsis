@@ -499,7 +499,7 @@ return React.createClass({
   },
 
   getTimestampedBehavior: function(behavior) {
-    return Object.assign({}, behavior, { createdAt: Date.now() });
+    return new BehaviorVersion(Object.assign({}, behavior, { createdAt: Date.now() }));
   },
 
   getVersions: function() {

@@ -27,6 +27,10 @@ define(function(require) {
       }
     }
 
+    clone(props) {
+      return new BehaviorVersion(Object.assign({}, this, props));
+    }
+
     static fromJson(props) {
       return new BehaviorVersion(Object.assign({}, props, {
         params: Param.paramsFromJson(props.params || []),
