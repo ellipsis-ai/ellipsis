@@ -4,7 +4,7 @@ define(function(require) {
     ImmutableObjectUtils = require('../immutable_object_utils');
 
   return React.createClass({
-    displayName: 'Behavior',
+    displayName: 'BehaviorName',
     propTypes: {
       version: React.PropTypes.instanceOf(BehaviorVersion).isRequired
     },
