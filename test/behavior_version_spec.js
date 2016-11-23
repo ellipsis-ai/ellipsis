@@ -44,6 +44,11 @@ const behaviorVersionTask2 = Object.freeze({
     "requiresMention": true,
     "isRegex": true,
     "caseSensitive": false
+  }, {
+    "text": ".+",
+    "requiresMention": false,
+    "isRegex": true,
+    "caseSensitive": false
   }],
   "config": {
     "aws": {
@@ -61,7 +66,17 @@ const behaviorVersionKnowledge1 = Object.freeze({
   "functionBody": "",
   "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
   "params": [],
-  "triggers": [],
+  "triggers": [{
+    "text": "",
+    "requiresMention": false,
+    "isRegex": false,
+    "caseSensitive": false
+  }, {
+    "text": "",
+    "requiresMention": false,
+    "isRegex": false,
+    "caseSensitive": false
+  }],
   "config": {},
   "createdAt": 1466109904858
 });
@@ -73,8 +88,13 @@ describe('BehaviorVersion', () => {
       expect(version.findFirstTriggerIndexForDisplay()).toBe(1);
     });
 
-    it('returns the first trigger when they’re all regex or have no text', () => {
+    it('returns the first trigger when they’re all regex', () => {
       const version = BehaviorVersion.fromJson(behaviorVersionTask2);
+      expect(version.findFirstTriggerIndexForDisplay()).toBe(0);
+    });
+
+    it('returns the first trigger when none have text', () => {
+      const version = BehaviorVersion.fromJson(behaviorVersionKnowledge1);
       expect(version.findFirstTriggerIndexForDisplay()).toBe(0);
     });
   });
