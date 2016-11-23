@@ -7,8 +7,7 @@ var React = require('react'),
   Collapsible = require('../collapsible'),
   ToggleGroup = require('../form/toggle_group'),
   DropdownMenu = require('./dropdown_menu'),
-  Trigger = require('../models/trigger'),
-  SVGDropdown = require('../svg/dropdown');
+  Trigger = require('../models/trigger');
 require('whatwg-fetch');
 
 return React.createClass({
@@ -185,10 +184,6 @@ return React.createClass({
     }
   },
 
-  getDropdownIcon: function() {
-    return (<div style={{ height: 16 }}><SVGDropdown /></div>);
-  },
-
   renderErrorMessage: function() {
     return (
       <div style={{ marginTop: -4 }} className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
@@ -212,11 +207,10 @@ return React.createClass({
       <div className="columns columns-elastic mobile-columns-float">
         <div className="column column-expand ptxs">
           <div>
-            <label className="type-label type-weak" htmlFor={this.props.id}>{this.getPrefix()}</label>
             <DropdownMenu
               openWhen={this.props.dropdownIsOpen}
-              label={this.getDropdownIcon()}
-              labelClassName="button-dropdown-trigger-symbol button-s"
+              label={this.getPrefix()}
+              labelClassName="button-dropdown-trigger-borderless type-label type-weak button-s"
               toggle={this.props.onToggleDropdown}
               menuClassName="width-20"
             >

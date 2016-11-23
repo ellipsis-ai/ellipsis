@@ -80,6 +80,13 @@ button.button-dropdown-trigger-borderless,
 select.form-select-borderless {
   background-color: transparent;
   border-color: transparent;
+  border-width: 0 0 @border-width 0;
+  padding-left: 0 !important;
+  border-radius: 0 !important;
+}
+
+button.button-dropdown-trigger-borderless + .popup-dropdown-container {
+  top: @border-width-thick;
 }
 
 button.button-dropdown-trigger-symbol {
@@ -267,6 +274,13 @@ button.button-dropdown-trigger-symbol.button-dropdown-trigger-menu-open {
 button.button-dropdown-trigger-no-icon:focus,
 button.button-dropdown-trigger-no-icon.button-dropdown-trigger-menu-open {
   padding-right: (@l - @border-width-thick);
+}
+
+button.button-dropdown-trigger-borderless:focus,
+button.button-dropdown-trigger-borderless.button-dropdown-trigger-menu-open,
+select.form-select-borderless:focus {
+  border-width: 0 0 @border-width-thick 0;
+  padding-top: @border-width-thick * 2 !important;
 }
 
 button.button-warning:focus {
