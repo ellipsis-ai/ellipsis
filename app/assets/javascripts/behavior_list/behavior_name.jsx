@@ -6,13 +6,16 @@ define(function(require) {
   return React.createClass({
     displayName: 'BehaviorName',
     propTypes: {
-      version: React.PropTypes.instanceOf(BehaviorVersion).isRequired
+      version: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
+      disableLink: React.PropTypes.bool,
+      disableWrapping: React.PropTypes.bool
     },
 
     getLabelFromTrigger: function(trigger) {
+      var className = this.props.disableLink ? "" : "link";
       return trigger && trigger.text ?
-        (<span className="link type-monospace">{trigger.displayText}</span>) :
-        (<span className="link type-italic">(New skill)</span>);
+        (<span className={`${className} type-monospace`}>{trigger.displayText}</span>) :
+        (<span className={`${className} type-italic`}>(New skill)</span>);
     },
 
     getNonRegexTriggerLabelsFromTriggers: function(triggers) {
@@ -54,13 +57,10 @@ define(function(require) {
       var firstTrigger = version.triggers[firstTriggerIndex];
       var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTriggerIndex);
       return (
-        <div>
-          <a href={jsRoutes.controllers.BehaviorEditorController.edit(version.behaviorId).url}
-            className="link-block">
-            {this.getLabelFromTrigger(firstTrigger)}
-            {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
-            {this.getRegexTriggerLabelFromTriggers(otherTriggers)}
-          </a>
+        <div className={this.props.disableWrapping ? "display-ellipsis" : ""}>
+          {this.getLabelFromTrigger(firstTrigger)}
+          {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
+          {this.getRegexTriggerLabelFromTriggers(otherTriggers)}
         </div>
       );
     },
@@ -74,12 +74,24 @@ define(function(require) {
     },
 
     render: function() {
-      return (
-        <div>
-          {this.getTriggersFromVersion(this.props.version)}
-          {this.getDescriptionFromVersion(this.props.version)}
-        </div>
-      );
+      if (this.props.disableLink) {
+        return (
+          <div>
+            {this.getTriggersFromVersion(this.props.version)}
+            {this.getDescriptionFromVersion(this.props.version)}
+          </div>
+        );
+      } else {
+        return (
+          <div>
+            <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.behaviorId).url}
+              className="link-block">
+              {this.getTriggersFromVersion(this.props.version)}
+              {this.getDescriptionFromVersion(this.props.version)}
+            </a>
+          </div>
+        );
+      }
     }
   });
 });

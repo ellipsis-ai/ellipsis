@@ -1088,9 +1088,7 @@ return React.createClass({
   },
 
   countBehaviorsInGroup: function() {
-    // return this.props.otherBehaviorsInGroup.length + 1;
-    // TODO: Re-enable this once the UI is tolerable
-    return 1;
+    return this.props.otherBehaviorsInGroup.length + 1;
   },
 
   hasUserParameters: function() {
@@ -1662,12 +1660,16 @@ return React.createClass({
           />
         </PageHeading>
 
-        <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'}>
-          <BehaviorSwitcher
-            ref="behaviorSwitcher"
-            behaviors={this.props.otherBehaviorsInGroup}
-          />
-        </Collapsible>
+        <div className="position-fixed-right position-z-front bg-white border-left">
+          <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
+            <BehaviorSwitcher
+              ref="behaviorSwitcher"
+              behaviors={this.props.otherBehaviorsInGroup}
+              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
+              onToggle={this.toggleBehaviorSwitcher}
+            />
+          </Collapsible>
+        </div>
 
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
