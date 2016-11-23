@@ -1083,8 +1083,7 @@ return React.createClass({
   },
 
   countBehaviorsInGroup: function() {
-    // TODO: when other behaviors in the same group are hooked in, return the right value here
-    return 1;
+    return this.props.otherBehaviorsInGroup.length + 1;
   },
 
   hasUserParameters: function() {
