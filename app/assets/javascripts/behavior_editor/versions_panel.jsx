@@ -1,6 +1,7 @@
 define(function(require) {
 var React = require('react'),
-  Formatter = require('../formatter');
+  Formatter = require('../formatter'),
+  Select = require('../form/select');
 
 return React.createClass({
   propTypes: {
@@ -90,8 +91,8 @@ return React.createClass({
       this.selectVersionIndex(selectedIndex + 1);
     }
   },
-  onSelectVersion: function(event) {
-    var newIndex = parseInt(event.target.value, 10);
+  onSelectVersion: function(newValue) {
+    var newIndex = parseInt(newValue, 10);
     if (!isNaN(newIndex)) {
       this.selectVersionIndex(newIndex);
     }
@@ -145,13 +146,13 @@ return React.createClass({
                 >Current ►|</button>
               </div>
               <div>
-                <select
-                  className="form-select width-30 mrs mbs"
+                <Select
+                  className="width-30 mrs mbs"
                   onChange={this.onSelectVersion}
                   value={this.getSelectedVersionIndex()}
                 >
                   {this.getVersionsMenu()}
-                </select>
+                </Select>
               </div>
             </div>
             <div className="column column-right align-r mobile-column-full mobile-align-l">

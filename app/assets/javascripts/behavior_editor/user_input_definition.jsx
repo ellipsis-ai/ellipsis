@@ -2,6 +2,7 @@ define(function(require) {
 var React = require('react'),
   DeleteButton = require('./delete_button'),
   Input = require('../form/input'),
+  Select = require('../form/select'),
   Param = require('../models/param'),
   ifPresent = require('../if_present');
 
@@ -35,8 +36,7 @@ return React.createClass({
     this.props.onChange(this.props.param.clone({ name: Param.formatName(newName) }));
   },
 
-  onParamTypeChange: function(event) {
-    var newTypeId = event.target.value;
+  onParamTypeChange: function(newTypeId) {
     var newType = this.props.paramTypes.find(ea => ea.id === newTypeId);
     this.props.onChange(this.props.param.clone({ paramType: newType }));
   },
@@ -45,8 +45,7 @@ return React.createClass({
     this.props.onChange(this.props.param.clone({ question: newQuestion }));
   },
 
-  onSaveOptionChange: function(event) {
-    var newOption = event.target.value;
+  onSaveOptionChange: function(newOption) {
     var changedProps = { isSavedForTeam: false, isSavedForUser: false };
     if (newOption === PER_TEAM) {
       changedProps.isSavedForTeam = true;
@@ -145,7 +144,7 @@ return React.createClass({
           />
         </div>
         <div className="prsymbol mts">
-          <select className="form-select form-select-s min-width-30 align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
+          <Select className="form-select-s form-select-light align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
             <option value={EACH_TIME}>
               Ask each time the skill is run
             </option>
@@ -155,15 +154,15 @@ return React.createClass({
             <option value={PER_USER}>
               Ask each user once, save their answers
             </option>
-          </select>
+          </Select>
           <span className="display-inline-block align-m type-s type-weak mrm">and allow data type</span>
-          <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
+          <Select className="form-select-s form-select-light align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
             {this.props.paramTypes.map((paramType) => (
               <option value={paramType.id} key={this.keyFor(paramType)}>
                 {paramType.name}
               </option>
             ))}
-          </select>
+          </Select>
           {ifPresent(this.isConfigurable(), this.renderConfigureAction, () => null)}
         </div>
       </div>
