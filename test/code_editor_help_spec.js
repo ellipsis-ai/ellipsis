@@ -10,7 +10,8 @@ describe('CodeEditorHelp', () => {
     isFinishedBehavior: false,
     onToggleHelp: jest.fn(),
     helpIsActive: false,
-    hasUserParameters: false
+    hasUserParameters: false,
+    sectionNumber: "2"
   });
 
   let props;

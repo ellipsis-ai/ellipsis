@@ -3,13 +3,42 @@ define(function(require) {
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
-  return {
-    fromJson: function(props) {
-      return Object.assign({}, props, {
+  class BehaviorVersion {
+    constructor(props) {
+      Object.assign(this, props);
+    }
+
+    findFirstTriggerIndexForDisplay() {
+      var firstTriggerIndex = this.triggers.findIndex(function(trigger) {
+        return !!trigger.text && !trigger.isRegex;
+      });
+      if (firstTriggerIndex === -1) {
+        firstTriggerIndex = 0;
+      }
+      return firstTriggerIndex;
+    }
+
+    getFirstTriggerText() {
+      var trigger = this.triggers[this.findFirstTriggerIndexForDisplay()];
+      if (trigger) {
+        return trigger.text;
+      } else {
+        return "";
+      }
+    }
+
+    clone(props) {
+      return new BehaviorVersion(Object.assign({}, this, props));
+    }
+
+    static fromJson(props) {
+      return new BehaviorVersion(Object.assign({}, props, {
         params: Param.paramsFromJson(props.params || []),
         responseTemplate: ResponseTemplate.fromString(props.responseTemplate || ''),
         triggers: Trigger.triggersFromJson(props.triggers || [])
-      });
+      }));
     }
-  };
+  }
+
+  return BehaviorVersion;
 });
