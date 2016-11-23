@@ -4,7 +4,6 @@ define(function(require) {
   return React.createClass({
     displayName: 'Select',
     propTypes: {
-      containerClassName: React.PropTypes.string,
       className: React.PropTypes.string,
       name: React.PropTypes.string,
       value: React.PropTypes.string,
@@ -16,13 +15,35 @@ define(function(require) {
      this.props.onChange(event.target.value, event.target.selectedIndex);
     },
 
+    onFocus: function() {
+      this.setState({ focused: true });
+    },
+
+    onBlur: function() {
+      this.setState({ focused: false });
+    },
+
+    getInitialState: function() {
+      return {
+        focused: false
+      };
+    },
+
     render: function() {
       return (
-        <div className={`display-inline-block ${this.props.containerClassName || ""}`}>
-          <select className={`form-select ${this.props.className || ""}`}
+        <div
+          className={
+            "form-select " +
+            (this.state.focused ? "form-select-focus " : "") +
+            (this.props.className || "")
+          }
+        >
+          <select ref="select" className="form-select-element"
             name={this.props.name}
             value={this.props.value}
             onChange={this.onChange}
+            onFocus={this.onFocus}
+            onBlur={this.onBlur}
           >
             {this.props.children}
           </select>
