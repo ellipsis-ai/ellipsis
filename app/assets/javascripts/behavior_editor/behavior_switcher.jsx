@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
     BehaviorName = require('../behavior_list/behavior_name'),
     BehaviorVersion = require('../models/behavior_version'),
     SVGXIcon = require('../svg/x'),
@@ -10,7 +11,9 @@ define(function(require) {
     propTypes: {
       behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       currentBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-      onToggle: React.PropTypes.func.isRequired
+      onToggle: React.PropTypes.func.isRequired,
+      groupId: React.PropTypes.string.isRequired,
+      teamId: React.PropTypes.string.isRequired
     },
 
     getBehaviorList: function() {
@@ -30,6 +33,12 @@ define(function(require) {
                 <button type="button" className="button-symbol button-s button-subtle" onClick={this.props.onToggle}><SVGXIcon /></button>
               </div>
               <h4 className="ptxs">{this.props.behaviors.length + 1} actions in this skill</h4>
+              <div className="mvm">
+                <AddNewBehaviorToGroup
+                  groupId={this.props.groupId}
+                  teamId={this.props.teamId}
+                />
+              </div>
             </div>
           </div>
           <div className="type-s border-bottom">

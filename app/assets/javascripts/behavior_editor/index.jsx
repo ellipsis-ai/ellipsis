@@ -1667,6 +1667,8 @@ return React.createClass({
               behaviors={this.props.otherBehaviorsInGroup}
               currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
               onToggle={this.toggleBehaviorSwitcher}
+              groupId={this.props.groupId}
+              teamId={this.props.teamId}
             />
           </Collapsible>
         </div>
