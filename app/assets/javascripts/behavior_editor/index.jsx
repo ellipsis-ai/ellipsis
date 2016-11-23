@@ -5,6 +5,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorVersion = require('../models/behavior_version'),
+  BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
@@ -96,7 +97,7 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
-    otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+    otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
     paramTypes: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         id: React.PropTypes.string.isRequired,
@@ -853,6 +854,10 @@ return React.createClass({
 
   toggleAWSHelp: function() {
     this.toggleActivePanel('helpForAWS');
+  },
+
+  toggleBehaviorSwitcher: function() {
+    this.toggleActivePanel('behaviorSwitcher', true);
   },
 
   checkIfModifiedAndTest: function() {
@@ -1651,10 +1656,18 @@ return React.createClass({
             behaviorCount={this.countBehaviorsInGroup()}
             groupId={this.props.groupId}
             teamId={this.props.teamId}
+            onClick={this.toggleBehaviorSwitcher}
           />
         </PageHeading>
 
-      <form action={this.getFormAction()} method="POST" ref="behaviorForm">
+        <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'}>
+          <BehaviorSwitcher
+            ref="behaviorSwitcher"
+            behaviors={this.props.otherBehaviorsInGroup}
+          />
+        </Collapsible>
+
+        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
         {this.renderHiddenFormValues()}
 
