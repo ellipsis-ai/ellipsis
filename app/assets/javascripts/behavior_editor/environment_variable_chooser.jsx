@@ -1,5 +1,6 @@
 define(function(require) {
-  var React = require('react');
+  var React = require('react'),
+    Select = require('../form/select');
 
   return React.createClass({
     propTypes: {
@@ -11,13 +12,13 @@ define(function(require) {
       onChange: React.PropTypes.func.isRequired
     },
 
-    onChange: function(event) {
+    onChange: function(newValue, selectedIndex) {
       var property = this.props.property;
-      var isAddNewSelected = event.target.selectedIndex === this.props.envVariableNames.length + 1;
+      var isAddNewSelected = selectedIndex === this.props.envVariableNames.length + 1;
       if (isAddNewSelected) {
         this.props.onAddNew(property);
       } else {
-        this.props.onChange(property, event.target.value);
+        this.props.onChange(property, newValue);
       }
     },
 
@@ -30,7 +31,7 @@ define(function(require) {
         <div className="column-row">
           <div className="column column-shrink align-r mobile-align-l mobile-column-full display-ellipsis type-label pbxs prs align-m">{this.props.label}</div>
           <div className="column pbxs mobile-pbm">
-            <select className="form-select form-select-s min-width-20" name={this.props.property} value={this.props.chosenName || ""} onChange={this.onChange}>
+            <Select className="form-select-s min-width-20" name={this.props.property} value={this.props.chosenName || ""} onChange={this.onChange}>
               <option value="" key={this.keyFor("none")}>Select environment variable…</option>
               {this.props.envVariableNames.map(function(envVarName) {
                 return (
@@ -38,7 +39,7 @@ define(function(require) {
                 );
               }, this)}
               <option value="" key="AWSNewEnvVarName">Add new…</option>
-            </select>
+            </Select>
           </div>
         </div>
       );
