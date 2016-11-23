@@ -16,9 +16,7 @@ define(function(require) {
     },
 
     getNonRegexTriggerLabelsFromTriggers: function(triggers) {
-      return triggers.filter(function (trigger) {
-        return !trigger.isRegex;
-      }).map(function (trigger, index) {
+      return triggers.filter((trigger) => !trigger.isRegex).map((trigger, index) => {
         if (trigger.text) {
           return (
             <span className="type-monospace" key={"regularTrigger" + index}>
@@ -29,17 +27,15 @@ define(function(require) {
         } else {
           return null;
         }
-      }, this);
+      });
     },
 
     getRegexTriggerLabelFromTriggers: function(triggers) {
-      var regexTriggerCount = triggers.filter(function(trigger) {
-        return !!trigger.isRegex;
-      }).length;
+      var regexTriggerCount = triggers.filter((trigger) => !!trigger.isRegex).length;
 
       var text = regexTriggerCount === 1 ?
         "also matches another pattern" :
-      "also matches " + regexTriggerCount + " other patterns";
+        `also matches ${regexTriggerCount} other patterns`;
 
       if (regexTriggerCount > 0) {
         return (
