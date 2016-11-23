@@ -6,7 +6,7 @@ define(function(require) {
     propTypes: {
       className: React.PropTypes.string,
       name: React.PropTypes.string,
-      value: React.PropTypes.string,
+      value: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.number]),
       children: React.PropTypes.node.isRequired,
       onChange: React.PropTypes.func.isRequired
     },
