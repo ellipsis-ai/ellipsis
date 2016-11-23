@@ -144,7 +144,7 @@ return React.createClass({
           />
         </div>
         <div className="prsymbol mts">
-          <Select className="form-select-s align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
+          <Select className="form-select-s form-select-light align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
             <option value={EACH_TIME}>
               Ask each time the skill is run
             </option>
@@ -156,7 +156,7 @@ return React.createClass({
             </option>
           </Select>
           <span className="display-inline-block align-m type-s type-weak mrm">and allow data type</span>
-          <Select className="form-select-s align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
+          <Select className="form-select-s form-select-light align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
             {this.props.paramTypes.map((paramType) => (
               <option value={paramType.id} key={this.keyFor(paramType)}>
                 {paramType.name}

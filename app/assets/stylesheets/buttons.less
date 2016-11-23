@@ -71,6 +71,10 @@ button.button-dropdown-trigger,
   white-space: nowrap;
 }
 
+.form-select-light .form-select-element {
+  border-color: @border-color;
+}
+
 button.button-dropdown-trigger,
 .form-select {
   &::before {
@@ -293,6 +297,10 @@ button.button-dropdown-trigger-menu-open,
 
 .form-select-s .form-select-element:focus {
   padding: (@xs - @border-width-thick + 1) (@m - @border-width-thick) (@xs - @border-width-thick - 1);
+}
+
+.form-select-borderless.form-select-s .form-select-element:focus {
+  padding-right: @dropdown-trigger-small-right-padding - @border-width;
 }
 
 button.button-dropdown-trigger:focus,
