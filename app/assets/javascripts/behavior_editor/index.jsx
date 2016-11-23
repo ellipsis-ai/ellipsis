@@ -1088,7 +1088,9 @@ return React.createClass({
   },
 
   countBehaviorsInGroup: function() {
-    return this.props.otherBehaviorsInGroup.length + 1;
+    // return this.props.otherBehaviorsInGroup.length + 1;
+    // TODO: Re-enable this once the UI is tolerable
+    return 1;
   },
 
   hasUserParameters: function() {
