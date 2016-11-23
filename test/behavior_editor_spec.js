@@ -54,7 +54,9 @@ describe('BehaviorEditor', () => {
     linkedOAuth2ApplicationIds: [],
     notifications: [],
     shouldRevealCodeEditor: true,
-    onSave: jest.fn()
+    onSave: jest.fn(),
+    groupId: '1',
+    otherBehaviorsInGroup: []
   };
 
   let editorConfig;

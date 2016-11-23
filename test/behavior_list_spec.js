@@ -1,9 +1,14 @@
 jest.unmock('../app/assets/javascripts/behavior_list/index');
 jest.unmock('../app/assets/javascripts/sort');
+jest.unmock('../app/assets/javascripts/models/behavior_version');
+jest.unmock('../app/assets/javascripts/models/param');
+jest.unmock('../app/assets/javascripts/models/response_template');
+jest.unmock('../app/assets/javascripts/models/trigger');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorList = require('../app/assets/javascripts/behavior_list/index');
+const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
 
 describe('BehaviorList', () => {
   jsRoutes.controllers.BehaviorEditorController.edit = function() { return '/edit'; };
@@ -74,7 +79,7 @@ describe('BehaviorList', () => {
       {"id":"gsdfgsg", "name":"", "createdAt": 1466109904858},
       {"id":"jfghjfg", "name":"", "createdAt": 1466109904858}
     ],
-    behaviorVersions: [behaviorVersionTask1, behaviorVersionTask2, behaviorVersionKnowledge1]
+    behaviorVersions: [behaviorVersionTask1, behaviorVersionTask2, behaviorVersionKnowledge1].map((ea) => BehaviorVersion.fromJson(ea))
   });
 
   function createBehaviorList(config) {
@@ -87,38 +92,6 @@ describe('BehaviorList', () => {
 
   beforeEach(() => {
     config = Object.assign(config, defaultConfig);
-  });
-
-  describe('getDisplayTriggerFromVersion', () => {
-    it('returns the first non-regex trigger when available', () => {
-      const list = createBehaviorList(config);
-      const result = list.getDisplayTriggerFromVersion(behaviorVersionTask1);
-      expect(result.index).toBe(1);
-    });
-
-    it('returns an empty string when there’s no first trigger', () => {
-      const list = createBehaviorList(config);
-      const result = list.getDisplayTriggerFromVersion(behaviorVersionKnowledge1);
-      expect(result.text).toBe("");
-    });
-
-    it('returns the first trigger when they’re all regex', () => {
-      const list = createBehaviorList(config);
-      const result = list.getDisplayTriggerFromVersion(behaviorVersionTask2);
-      expect(result.index).toBe(0);
-    });
-  });
-
-  describe('getVersions', () => {
-    it('sorts versions alphabetically', () => {
-      const list = createBehaviorList(config);
-      const versions = list.getVersions();
-      expect(versions).toEqual([
-        behaviorVersionKnowledge1,
-        behaviorVersionTask2,
-        behaviorVersionTask1
-      ]);
-    });
   });
 
   describe('getTableRowClasses', () => {
