@@ -8,6 +8,7 @@ import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.reflect.io.Path
 import scala.sys.process.Process
 
 case class BehaviorGroupExporter(
@@ -30,6 +31,8 @@ case class BehaviorGroupExporter(
 
   protected def createZip(): Unit = {
     createDirectory()
+    val path = Path(zipFileName)
+    path.delete()
     Process(Seq("bash","-c",s"cd $dirName && zip -r $zipFileName *")).!
   }
 
