@@ -15,6 +15,8 @@ case class Behavior(
                      createdAt: DateTime
                    ) {
 
+  val isDataType = maybeDataTypeName.isDefined
+
   def editLinkFor(configuration: Configuration): String = {
     val baseUrl = configuration.getString("application.apiBaseUrl").get
     val path = controllers.routes.BehaviorEditorController.edit(id)
