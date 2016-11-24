@@ -1,7 +1,8 @@
 define(function(require) {
   var React = require('react'),
+    BehaviorName = require('./behavior_name'),
+    BehaviorVersion = require('../models/behavior_version'),
     Formatter = require('../formatter'),
-    ImmutableObjectUtils = require('../immutable_object_utils'),
     Sort = require('../sort'),
     SVGInstalled = require('../svg/installed');
 
@@ -12,93 +13,7 @@ define(function(require) {
         name: React.PropTypes.string.isRequired,
         createdAt: React.PropTypes.number.isRequired
       })).isRequired,
-      behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
-    },
-
-    getTriggerTextFromTrigger: function(trigger) {
-      return trigger.requiresMention ?
-        `...${trigger.text}` :
-        trigger.text;
-    },
-
-    getDisplayTriggerFromVersion: function(version) {
-      var firstTriggerIndex = version.triggers.findIndex(function(trigger) {
-        return !!trigger.text && !trigger.isRegex;
-      });
-      if (firstTriggerIndex === -1) {
-        firstTriggerIndex = 0;
-      }
-      var firstTrigger = version.triggers[firstTriggerIndex];
-      var text = firstTrigger && firstTrigger.text ? firstTrigger.text : "";
-      var label = text ?
-        (<span className="link type-monospace">{this.getTriggerTextFromTrigger(firstTrigger)}</span>) :
-        (<span className="link type-italic">(New skill)</span>);
-      return {
-        index: firstTriggerIndex,
-        label: label,
-        text: text
-      };
-    },
-
-    getNonRegexTriggerLabelsFromTriggers: function(triggers) {
-      return triggers.filter(function (trigger) {
-        return !trigger.isRegex;
-      }).map(function (trigger, index) {
-        if (trigger.text) {
-          return (
-            <span className="type-monospace" key={"regularTrigger" + index}>
-              <span className="type-disabled"> · </span>
-              <span>{this.getTriggerTextFromTrigger(trigger)}</span>
-            </span>
-          );
-        } else {
-          return null;
-        }
-      }, this);
-    },
-
-    getRegexTriggerLabelFromTriggers: function(triggers) {
-      var regexTriggerCount = triggers.filter(function(trigger) {
-        return !!trigger.isRegex;
-      }).length;
-
-      var text = regexTriggerCount === 1 ?
-          "also matches another pattern" :
-          "also matches " + regexTriggerCount + " other patterns";
-
-      if (regexTriggerCount > 0) {
-        return (
-          <span>
-            <span className="type-monospace type-disabled"> · </span>
-            <span className="type-italic">{text}</span>
-          </span>
-        );
-      } else {
-        return null;
-      }
-    },
-
-    getTriggersFromVersion: function(version) {
-      var firstTrigger = this.getDisplayTriggerFromVersion(version);
-      var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTrigger.index);
-      return (
-        <div>
-          <a href={jsRoutes.controllers.BehaviorEditorController.edit(version.behaviorId).url}
-            className="link-block">
-            {firstTrigger.label}
-            {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
-            {this.getRegexTriggerLabelFromTriggers(otherTriggers)}
-          </a>
-        </div>
-      );
-    },
-
-    getDescriptionFromVersion: function(version) {
-      if (version.description) {
-        return (
-          <div className="type-italic type-weak pbxs ">{version.description}</div>
-        );
-      }
+      behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired
     },
 
     getImportedStatusFromVersion: function(version) {
@@ -127,12 +42,12 @@ define(function(require) {
         group.versions.push(version);
       });
       return Sort.arrayAlphabeticalBy(groups, group => {
-        return this.getDisplayTriggerFromVersion(group.versions[0]).text;
+        return group.versions[0].getFirstTriggerText();
       });
     },
 
     sortVersionsByFirstTrigger: function(versions) {
-      return Sort.arrayAlphabeticalBy(versions, (item) => this.getDisplayTriggerFromVersion(item).text);
+      return Sort.arrayAlphabeticalBy(versions, (item) => item.getFirstTriggerText());
     },
 
     getInitialState: function() {
@@ -157,8 +72,7 @@ define(function(require) {
       return (
         <div className="column-row" key={`version-${group.id}-${versionIndex}`}>
           <div className={"column column-expand type-s type-wrap-words " + borderAndSpacingClass}>
-            {this.getTriggersFromVersion(version)}
-            {this.getDescriptionFromVersion(version)}
+            <BehaviorName version={version} />
           </div>
           <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>
             {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}

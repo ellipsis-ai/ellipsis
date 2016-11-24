@@ -9,8 +9,8 @@ to the boolean value of its revealWhen property, using the max-height CSS proper
 Animation speed defaults to 0.25s, or can be set with the animationDuration property,
 which should be set with a number (not a string).
 
-Note: to allow for child content to be dynamic in height and to overflow the
-bounds, max-height and overflow get cleared after reveal, and reset before collapse.
+Note: to allow for child content to be dynamic in height/width and to overflow the
+bounds, max-height/width and overflow get cleared after reveal, and reset before collapse.
 */
   displayName: 'Collapsible',
   propTypes: {
@@ -18,13 +18,18 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
     children: React.PropTypes.node.isRequired,
     className: React.PropTypes.string,
     revealWhen: React.PropTypes.bool.isRequired,
-    animateInitialRender: React.PropTypes.bool
+    animateInitialRender: React.PropTypes.bool,
+    isHorizontal: React.PropTypes.bool
   },
 
   getInitialState: function() {
     return {
       isAnimating: false
     };
+  },
+
+  isVertical: function() {
+    return !this.props.isHorizontal;
   },
 
   animationDurationSeconds: function() {
@@ -38,7 +43,8 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
   },
 
   addTransition: function() {
-    this.refs.container.style.transition = 'max-height ' + this.animationDurationSeconds() + 's ease';
+    var propName = this.isVertical() ? 'max-height' : 'max-width';
+    this.refs.container.style.transition = `${propName} ${this.animationDurationSeconds()}s ease`;
   },
   removeTransition: function() {
     this.refs.container.style.transition = null;
@@ -46,6 +52,9 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
 
   setMaxHeight: function(height) {
     this.refs.container.style.maxHeight = height;
+  },
+  setMaxWidth: function(width) {
+    this.refs.container.style.maxWidth = width;
   },
   setOverflow: function(overflow) {
     this.refs.container.style.overflow = overflow;
@@ -62,6 +71,17 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
     this.setMaxHeight('none');
   },
 
+  setCurrentWidth: function() {
+    var c = this.refs.container;
+    this.setMaxWidth(c.scrollWidth + 'px');
+  },
+  setNoWidth: function() {
+    this.setMaxWidth('0px');
+  },
+  setAutoWidth: function() {
+    this.setMaxWidth('none');
+  },
+
   setHidden: function() {
     this.refs.container.style.display = 'none';
   },
@@ -74,14 +94,22 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
       isAnimating: true
     }, () => {
       this.removeTransition();
-      this.setCurrentHeight();
+      if (this.isVertical()) {
+        this.setCurrentHeight();
+      } else {
+        this.setCurrentWidth();
+      }
       this.setOverflow('hidden');
       this.after(this.doCollapse);
     });
   },
   doCollapse: function() {
     this.addTransition();
-    this.setNoHeight();
+    if (this.isVertical()) {
+      this.setNoHeight();
+    } else {
+      this.setNoWidth();
+    }
     this.afterAnimation(this.finishCollapse);
   },
   finishCollapse: function() {
@@ -97,13 +125,21 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
     }, () => {
       this.setVisible();
       this.addTransition();
-      this.setCurrentHeight();
+      if (this.isVertical()) {
+        this.setCurrentHeight();
+      } else {
+        this.setCurrentWidth();
+      }
       this.afterAnimation(this.afterReveal);
     });
   },
   afterReveal: function() {
     this.removeTransition();
-    this.setAutoHeight();
+    if (this.isVertical()) {
+      this.setAutoHeight();
+    } else {
+      this.setAutoWidth();
+    }
     this.setOverflow('visible');
     this.setState({
       isAnimating: false
@@ -137,9 +173,15 @@ bounds, max-height and overflow get cleared after reveal, and reset before colla
     }
   },
 
+  getDefaultStyle: function() {
+    var styles = { overflow: 'hidden' };
+    styles[this.isVertical() ? 'maxHeight' : 'maxWidth'] = '0px';
+    return styles;
+  },
+
   render: function() {
     return (
-      <div ref="container" style={{ maxHeight: '0px', overflow: 'hidden' }} className={this.props.className || ""}>
+      <div ref="container" style={this.getDefaultStyle()} className={this.props.className || ""}>
         {React.Children.map(this.props.children, function(child) { return child; })}
       </div>
     );

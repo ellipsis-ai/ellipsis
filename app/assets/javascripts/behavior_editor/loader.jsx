@@ -25,7 +25,8 @@ requirejs(['../common'], function() {
           combinedData.justSaved = true;
         }
         var behaviorEditorProps = BehaviorVersion.fromJson(combinedData);
-        var myBehaviorEditor = React.createElement(BehaviorEditor, behaviorEditorProps);
+        behaviorEditorProps.otherBehaviorsInGroup = behaviorEditorProps.otherBehaviorsInGroup.map((ea) => BehaviorVersion.fromJson(ea));
+        var myBehaviorEditor = React.createElement(BehaviorEditor, Object.assign({}, behaviorEditorProps));
         ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
       }
 

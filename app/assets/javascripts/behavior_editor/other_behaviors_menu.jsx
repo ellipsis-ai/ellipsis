@@ -7,14 +7,15 @@ define(function(require) {
     propTypes: {
       behaviorCount: React.PropTypes.number.isRequired,
       groupId: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired
+      teamId: React.PropTypes.string.isRequired,
+      onClick: React.PropTypes.func.isRequired
     },
 
     render: function() {
       if (this.props.behaviorCount > 1) {
         return (
           <div className="align-r ptxl">
-            <button type="button" className="button-tab">
+            <button type="button" className="button-tab" onClick={this.props.onClick}>
               <span>{this.props.behaviorCount} actions in this skill</span>
               <span className="display-inline-block align-b mlm" style={{height: "24px"}}>
                   <SVGHamburger />
@@ -24,11 +25,13 @@ define(function(require) {
         );
       } else {
         return (
-          <AddNewBehaviorToGroup
-            key="add-new-behavior-to-group"
-            groupId={this.props.groupId}
-            teamId={this.props.teamId}
-          />
+          <div className="align-r ptxl">
+            <AddNewBehaviorToGroup
+              key="add-new-behavior-to-group"
+              groupId={this.props.groupId}
+              teamId={this.props.teamId}
+            />
+          </div>
         );
       }
     }

@@ -5,6 +5,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorVersion = require('../models/behavior_version'),
+  BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
@@ -96,7 +97,7 @@ return React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
-    otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+    otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
     paramTypes: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         id: React.PropTypes.string.isRequired,
@@ -498,7 +499,7 @@ return React.createClass({
   },
 
   getTimestampedBehavior: function(behavior) {
-    return Object.assign({}, behavior, { createdAt: Date.now() });
+    return new BehaviorVersion(Object.assign({}, behavior, { createdAt: Date.now() }));
   },
 
   getVersions: function() {
@@ -855,6 +856,10 @@ return React.createClass({
     this.toggleActivePanel('helpForAWS');
   },
 
+  toggleBehaviorSwitcher: function() {
+    this.toggleActivePanel('behaviorSwitcher', true);
+  },
+
   checkIfModifiedAndTest: function() {
     const ref = this.isDataTypeBehavior() ? 'dataTypeTester' : 'behaviorTester';
     if (this.isModified()) {
@@ -1083,8 +1088,7 @@ return React.createClass({
   },
 
   countBehaviorsInGroup: function() {
-    // TODO: when other behaviors in the same group are hooked in, return the right value here
-    return 1;
+    return this.props.otherBehaviorsInGroup.length + 1;
   },
 
   hasUserParameters: function() {
@@ -1652,10 +1656,24 @@ return React.createClass({
             behaviorCount={this.countBehaviorsInGroup()}
             groupId={this.props.groupId}
             teamId={this.props.teamId}
+            onClick={this.toggleBehaviorSwitcher}
           />
         </PageHeading>
 
-      <form action={this.getFormAction()} method="POST" ref="behaviorForm">
+        <div className="position-fixed-right position-z-front bg-white border-left">
+          <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
+            <BehaviorSwitcher
+              ref="behaviorSwitcher"
+              behaviors={this.props.otherBehaviorsInGroup}
+              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
+              onToggle={this.toggleBehaviorSwitcher}
+              groupId={this.props.groupId}
+              teamId={this.props.teamId}
+            />
+          </Collapsible>
+        </div>
+
+        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
         {this.renderHiddenFormValues()}
 
