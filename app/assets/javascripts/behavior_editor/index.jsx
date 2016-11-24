@@ -821,7 +821,7 @@ return React.createClass({
   },
 
   exportVersion: function() {
-    window.location = '/export_behavior/' + encodeURIComponent(this.props.behaviorId);
+    window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.groupId).url;
   },
 
   toggleActiveDropdown: function(name) {

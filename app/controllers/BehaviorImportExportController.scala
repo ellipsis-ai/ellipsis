@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import export.{BehaviorVersionExporter, BehaviorVersionImporter, BehaviorVersionZipImporter}
+import export.{BehaviorGroupExporter, BehaviorVersionExporter, BehaviorVersionImporter, BehaviorVersionZipImporter}
 import json._
 import json.Formatting._
 import models.silhouette.EllipsisEnv
@@ -24,11 +24,11 @@ class BehaviorImportExportController @Inject() (
                                                ) extends ReAuthable {
 
   def export(id: String) = silhouette.SecuredAction.async { implicit request =>
-    BehaviorVersionExporter.maybeFor(id, request.identity, dataService).map { maybeExporter =>
+    BehaviorGroupExporter.maybeFor(id, request.identity, dataService).map { maybeExporter =>
       maybeExporter.map { exporter =>
         Ok.sendFile(exporter.getZipFile)
       }.getOrElse {
-        NotFound(s"Behavior not found: $id")
+        NotFound(s"Skill not found: $id")
       }
     }
   }
