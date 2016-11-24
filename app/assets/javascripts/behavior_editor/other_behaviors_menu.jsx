@@ -25,11 +25,13 @@ define(function(require) {
         );
       } else {
         return (
-          <AddNewBehaviorToGroup
-            key="add-new-behavior-to-group"
-            groupId={this.props.groupId}
-            teamId={this.props.teamId}
-          />
+          <div className="align-r ptxl">
+            <AddNewBehaviorToGroup
+              key="add-new-behavior-to-group"
+              groupId={this.props.groupId}
+              teamId={this.props.teamId}
+            />
+          </div>
         );
       }
     }

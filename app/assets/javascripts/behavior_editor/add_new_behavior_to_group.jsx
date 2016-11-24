@@ -13,11 +13,9 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="align-r ptxl">
-          <button
-            onClick={this.onAddNewBehavior}
-            className="button-s">Add another action to this skill</button>
-        </div>
+        <button
+          onClick={this.onAddNewBehavior}
+          className="button-s">Add another action to this skill</button>
       );
     }
   });
