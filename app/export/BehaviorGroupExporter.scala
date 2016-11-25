@@ -2,8 +2,11 @@ package export
 
 import java.io.File
 
+import json.BehaviorGroupConfig
+import json.Formatting._
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
+import play.api.libs.json.Json
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,7 +23,12 @@ case class BehaviorGroupExporter(
   val dirName = s"$parentPath/${behaviorGroup.id}"
   def zipFileName = s"$dirName.zip"
 
+  val config = BehaviorGroupConfig(behaviorGroup.id)
+
+  def configString: String = Json.prettyPrint(Json.toJson(config))
+
   protected def writeFiles(): Unit = {
+    writeFileFor("config.json", configString)
     behaviorGroup.maybeDescription.foreach { desc =>
       writeFileFor("README", desc)
     }
