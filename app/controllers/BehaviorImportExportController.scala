@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import export.{BehaviorGroupExporter, BehaviorVersionExporter, BehaviorVersionImporter, BehaviorVersionZipImporter}
+import export._
 import json._
 import json.Formatting._
 import models.silhouette.EllipsisEnv
@@ -65,14 +65,17 @@ class BehaviorImportExportController @Inject() (
           for {
             maybeTeam <- dataService.teams.find(info.teamId, request.identity)
             maybeImporter <- Future.successful(maybeTeam.map { team =>
-              BehaviorVersionZipImporter(team, request.identity, zipFile.ref.file, dataService)
+              BehaviorGroupZipImporter(team, request.identity, zipFile.ref.file, dataService)
             })
-            maybeBehaviorVersion <- maybeImporter.map { importer =>
+            maybeBehaviorGroup <- maybeImporter.map { importer =>
               importer.run
             }.getOrElse(Future.successful(None))
+            maybeBehavior <- maybeBehaviorGroup.map { group =>
+              dataService.behaviors.allForGroup(group).map(_.headOption)
+            }.getOrElse(Future.successful(None))
           } yield {
-            maybeBehaviorVersion.map { behaviorVersion =>
-              Redirect(routes.BehaviorEditorController.edit(behaviorVersion.behavior.id))
+            maybeBehavior.map { behavior =>
+              Redirect(routes.BehaviorEditorController.edit(behavior.id))
             }.getOrElse {
               NotFound(s"Team not found: ${info.teamId}")
             }
