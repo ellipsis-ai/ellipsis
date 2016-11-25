@@ -16,16 +16,17 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
-case class RawBehaviorGroup(id: String, name: String, teamId: String, createdAt: DateTime)
+case class RawBehaviorGroup(id: String, name: String, maybeImportedId: Option[String], teamId: String, createdAt: DateTime)
 
 class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavior_groups") {
 
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
+  def maybeImportedId = column[Option[String]]("imported_id")
   def teamId = column[String]("team_id")
   def createdAt = column[DateTime]("created_at")
 
-  def * = (id, name, teamId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
+  def * = (id, name, maybeImportedId, teamId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
 }
 
 class BehaviorGroupServiceImpl @Inject() (
@@ -36,8 +37,8 @@ class BehaviorGroupServiceImpl @Inject() (
 
   import BehaviorGroupQueries._
 
-  def createFor(name: String, team: Team): Future[BehaviorGroup] = {
-    val raw = RawBehaviorGroup(IDs.next, name, team.id, DateTime.now)
+  def createFor(name: String, maybeImportedId: Option[String], team: Team): Future[BehaviorGroup] = {
+    val raw = RawBehaviorGroup(IDs.next, name, maybeImportedId, team.id, DateTime.now)
     val action = (all += raw).map(_ => tuple2Group((raw, team)))
     dataService.run(action)
   }
@@ -85,7 +86,8 @@ class BehaviorGroupServiceImpl @Inject() (
     val firstGroup = groups.head
     val team = firstGroup.team
     val mergedName = groups.map(_.name).filter(_.trim.nonEmpty).mkString("-")
-    val rawMerged = RawBehaviorGroup(IDs.next, mergedName, team.id, DateTime.now)
+    val maybeImportedId = None // Don't think it makes sense to have an importedId for something merged
+    val rawMerged = RawBehaviorGroup(IDs.next, mergedName, maybeImportedId, team.id, DateTime.now)
     val action = (for {
       merged <- (all += rawMerged).map(_ => tuple2Group((rawMerged, team)))
       _ <- DBIO.sequence(groups.map { ea =>
