@@ -58,6 +58,9 @@ object Formatting {
   implicit val behaviorCategoryReads = Json.reads[BehaviorCategory]
   implicit val behaviorCategoryWrites = Json.writes[BehaviorCategory]
 
+  implicit val behaviorGroupConfigReads = Json.reads[BehaviorGroupConfig]
+  implicit val behaviorGroupConfigWrites = Json.writes[BehaviorGroupConfig]
+
   implicit val installedBehaviorReads = Json.reads[InstalledBehaviorData]
   implicit val installedBehaviorWrites = Json.writes[InstalledBehaviorData]
 
