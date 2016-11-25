@@ -3,10 +3,12 @@ package export
 import java.io.{ByteArrayOutputStream, File, FileInputStream}
 import java.util.zip.{ZipEntry, ZipInputStream}
 
-import json.BehaviorVersionData
+import json.{BehaviorGroupConfig, BehaviorVersionData}
+import json.Formatting._
 import models.team.Team
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,11 +43,14 @@ case class BehaviorGroupZipImporter(
 
     val versionFileRegex = """(actions|data_types)/([^/]+)/(.+)""".r
     val readmeRegex = """^README$""".r
+    val configRegex = """^config.json$""".r
 
     var groupName: String = ""
+    var maybePublishedId: Option[String] = None
 
     while (nextEntry != null) {
-      versionFileRegex.findFirstMatchIn(nextEntry.getName).foreach { firstMatch =>
+      val entryName = nextEntry.getName
+      versionFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val versionId = firstMatch.subgroups(1)
         val filename = firstMatch.subgroups(2)
         val map = versionStringMaps.get(versionId).getOrElse {
@@ -55,13 +60,22 @@ case class BehaviorGroupZipImporter(
         }
         map.put(filename, readDataFrom(zipInputStream))
       }
-      readmeRegex.findFirstMatchIn(nextEntry.getName).foreach { firstMatch =>
+      readmeRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         groupName = readDataFrom(zipInputStream)
+      }
+      configRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+        val data = readDataFrom(zipInputStream)
+        Json.parse(data).validate[BehaviorGroupConfig] match {
+          case JsSuccess(data, jsPath) => {
+            maybePublishedId = Some(data.publishedId)
+          }
+          case e: JsError =>
+        }
       }
       nextEntry = zipInputStream.getNextEntry
     }
 
-    dataService.behaviorGroups.createFor(groupName, team).flatMap { group =>
+    dataService.behaviorGroups.createFor(groupName, maybePublishedId, team).flatMap { group =>
       val importers = versionStringMaps.map { case(versionId, strings) =>
         val data = BehaviorVersionData.fromStrings(
           team.id,
