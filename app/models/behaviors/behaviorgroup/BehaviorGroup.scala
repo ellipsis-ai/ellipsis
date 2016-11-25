@@ -9,6 +9,11 @@ case class BehaviorGroup(
                           maybeImportedId: Option[String],
                           team: Team,
                           createdAt: DateTime) {
+
+  def exportName: String = {
+    Option(name.trim).filter(_.nonEmpty).getOrElse(id)
+  }
+
   // TODO: want this in model for real
   val maybeDescription = Some(name)
 }
