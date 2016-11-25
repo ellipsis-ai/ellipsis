@@ -20,7 +20,7 @@ case class BehaviorGroupExporter(
                                   parentPath: String
                                 ) extends Exporter {
 
-  val dirName = s"$parentPath/${behaviorGroup.id}"
+  val dirName = s"$parentPath/${behaviorGroup.exportName}"
   def zipFileName = s"$dirName.zip"
 
   val config = BehaviorGroupConfig(behaviorGroup.id)
@@ -61,8 +61,8 @@ object BehaviorGroupExporter {
         dataService.behaviors.allForGroup(group).map(Some(_))
       }.getOrElse(Future.successful(None))
       maybeExporters <- maybeBehaviors.map { behaviors =>
-        val groupId = maybeGroup.map(_.id).get
-        val parentPath = s"$mainParentPath/$groupId"
+        val exportName = maybeGroup.map(_.exportName).get
+        val parentPath = s"$mainParentPath/$exportName"
         Future.sequence(behaviors.map { behavior =>
           BehaviorVersionExporter.maybeFor(behavior.id, user, parentPath, dataService)
         }).map(e => Some(e.flatten))
