@@ -5,11 +5,14 @@
 )(implicit messages: Messages, r: RequestHeader)
 
 @import play.api.libs.json._
+@import play.filters.csrf._
 @import json.Formatting._
+
 
 @main("View your skills", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
-    routes.javascript.BehaviorEditorController.edit
+    routes.javascript.BehaviorEditorController.edit,
+    routes.javascript.ApplicationController.mergeBehaviorGroups
   )
   <div id="content" class="content">
     @views.html.behaviorTabs("view", teamAccess)
@@ -22,7 +25,8 @@
           var BehaviorListConfig = {
             containerId: 'behaviorListContainer',
             behaviorGroups: @Html(Json.toJson(behaviorGroups).toString),
-            behaviorVersions: @Html(Json.toJson(behaviorVersions).toString)
+            behaviorVersions: @Html(Json.toJson(behaviorVersions).toString),
+            csrfToken: "@CSRF.getToken(r).map(_.value)"
           };
         </script>
         <script data-main='@RemoteAssets.getUrl("javascripts/behavior_list/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>

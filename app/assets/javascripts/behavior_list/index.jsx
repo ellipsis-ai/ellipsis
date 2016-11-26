@@ -13,7 +13,8 @@ define(function(require) {
         name: React.PropTypes.string.isRequired,
         createdAt: React.PropTypes.number.isRequired
       })).isRequired,
-      behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired
+      behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
+      csrfToken: React.PropTypes.string.isRequired
     },
 
     getImportedStatusFromVersion: function(version) {
@@ -52,7 +53,8 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        versions: this.getVersions()
+        versions: this.getVersions(),
+        selectedGroupIds: []
       };
     },
 
@@ -66,11 +68,74 @@ define(function(require) {
       }
     },
 
+    getSelectedGroupIds: function() {
+      return this.state.selectedGroupIds || [];
+    },
+
+    isGroupSelected: function(groupId) {
+      return this.getSelectedGroupIds().indexOf(groupId) >= 0;
+    },
+
+    onGroupSelectionCheckboxChange: function(groupId) {
+      return function(event) {
+        var newGroupIds = this.getSelectedGroupIds().slice();
+        var index = newGroupIds.indexOf(groupId);
+        if (event.target.checked) {
+          if (index === -1) {
+            newGroupIds.push(groupId);
+          }
+        } else {
+          if (index >= 0) {
+            newGroupIds.splice(index, 1);
+          }
+        }
+        this.setState({
+          selectedGroupIds: newGroupIds
+        });
+      }.bind(this);
+    },
+
+    mergeBehaviorGroups: function() {
+      var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
+      var data = {
+        teamId: this.props.teamId,
+        behaviorGroupIds: this.getSelectedGroupIds()
+      };
+      fetch(url, {
+        credentials: 'same-origin',
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Csrf-Token': this.props.csrfToken
+        },
+        body: JSON.stringify(data)
+      }).then(response => {
+        window.location.reload();
+      })
+    },
+
+    renderGroupSelectionCheckbox: function(groupId) {
+      return (
+        <input
+          type="checkbox"
+          onChange={this.onGroupSelectionCheckboxChange(groupId)}
+          ref={groupId}
+          key={groupId}
+          checked={this.isGroupSelected(groupId)}
+        />
+      );
+    },
+
     getVersionRow: function(version, versionIndex, group) {
-      var borderAndSpacingClass = versionIndex === 0 ? "border-top pts " : "";
+      var isFirstVersion = versionIndex === 0;
+      var borderAndSpacingClass = isFirstVersion ? "border-top pts " : "";
       borderAndSpacingClass += (versionIndex === group.versions.length - 1 ? "pbs " : "pbxs ");
       return (
         <div className="column-row" key={`version-${group.id}-${versionIndex}`}>
+          <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>
+            {isFirstVersion ? this.renderGroupSelectionCheckbox(group.id) : ""}
+          </div>
           <div className={"column column-expand type-s type-wrap-words " + borderAndSpacingClass}>
             <BehaviorName version={version} />
           </div>
@@ -96,6 +161,14 @@ define(function(require) {
         return (
           <div className="column-group">
             <div className="column-row type-bold">
+              <div className="column column-shrink ptl type-l pbs">&nbsp;</div>
+              <div className="column column-expand ptl type-l pbs">
+                <button onClick={this.mergeBehaviorGroups}>Merge skills</button>
+              </div>
+              <div className="column column-shrink ptl type-l pbs">&nbsp;</div>
+            </div>
+            <div className="column-row type-bold">
+              <div className="column column-shrink ptl type-l pbs">&nbsp;</div>
               <div className="column column-expand ptl type-l pbs">What Ellipsis can do</div>
               <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
