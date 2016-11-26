@@ -101,4 +101,9 @@ class BehaviorGroupServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def delete(group: BehaviorGroup): Future[BehaviorGroup] = {
+    val action = rawFindQuery(group.id).delete
+    dataService.run(action).map(_ => group)
+  }
+
 }

@@ -98,8 +98,7 @@ define(function(require) {
       }.bind(this);
     },
 
-    mergeBehaviorGroups: function() {
-      var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
+    runSelectedBehaviorGroupsAction: function(url) {
       var data = {
         teamId: this.props.teamId,
         behaviorGroupIds: this.getSelectedGroupIds()
@@ -116,6 +115,16 @@ define(function(require) {
       }).then(response => {
         window.location.reload();
       })
+    },
+
+    mergeBehaviorGroups: function() {
+      var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
+      this.runSelectedBehaviorGroupsAction(url);
+    },
+
+    deleteBehaviorGroups: function() {
+      var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
+      this.runSelectedBehaviorGroupsAction(url);
     },
 
     renderGroupSelectionCheckbox: function(groupId) {
@@ -144,11 +153,30 @@ define(function(require) {
       });
     },
 
-    renderMergeAction: function() {
+    renderMergeAction: function(selectedCount) {
+      return function() {
+        return (
+          <DropdownMenu.Item
+            onClick={this.mergeBehaviorGroups}
+            label={`Merge ${selectedCount} skills`}
+          />
+        );
+      }.bind(this);
+    },
+
+    getLabelForDeleteAction: function(selectedCount) {
+      if (selectedCount === 1) {
+        return "Delete 1 skill";
+      } else {
+        return `Delete ${selectedCount} skills`;
+      }
+    },
+
+    renderDeleteAction: function(selectedCount) {
       return (
         <DropdownMenu.Item
-          onClick={this.mergeBehaviorGroups}
-          label="Merge skills"
+          onClick={this.deleteBehaviorGroups}
+          label={this.getLabelForDeleteAction(selectedCount)}
         />
       );
     },
@@ -167,7 +195,8 @@ define(function(require) {
           toggle={this.toggleActionsDropdown}
           menuClassName="width-20"
           >
-          {ifPresent(multipleSelected, this.renderMergeAction, () => null)}
+          {ifPresent(multipleSelected, this.renderMergeAction(selectedCount), () => null)}
+          {this.renderDeleteAction(selectedCount)}
           </DropdownMenu>
         );
       }
