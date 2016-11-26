@@ -131,16 +131,16 @@ class ApplicationController @Inject() (
     } yield result
   }
 
-  case class MergeBehaviorGroupsInfo(behaviorGroupIds: Seq[String])
+  case class SelectedBehaviorGroupsInfo(behaviorGroupIds: Seq[String])
 
-  private val mergeBehaviorGroupsForm = Form(
+  private val selectedBehaviorGroupsForm = Form(
     mapping(
       "behaviorGroupIds" -> seq(nonEmptyText)
-    )(MergeBehaviorGroupsInfo.apply)(MergeBehaviorGroupsInfo.unapply)
+    )(SelectedBehaviorGroupsInfo.apply)(SelectedBehaviorGroupsInfo.unapply)
   )
 
   def mergeBehaviorGroups = silhouette.SecuredAction.async { implicit request =>
-    mergeBehaviorGroupsForm.bindFromRequest.fold(
+    selectedBehaviorGroupsForm.bindFromRequest.fold(
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
@@ -151,6 +151,22 @@ class ApplicationController @Inject() (
           }).map(_.flatten)
           merged <- dataService.behaviorGroups.merge(groups)
         } yield Ok(Json.toJson(BehaviorGroupData(merged.id, merged.name, merged.createdAt)))
+      }
+    )
+  }
+
+  def deleteBehaviorGroups = silhouette.SecuredAction.async { implicit request =>
+    selectedBehaviorGroupsForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          groups <- Future.sequence(info.behaviorGroupIds.map { id =>
+            dataService.behaviorGroups.find(id)
+          }).map(_.flatten)
+          deleted <- Future.sequence(groups.map(dataService.behaviorGroups.delete))
+        } yield Ok("deleted")
       }
     )
   }

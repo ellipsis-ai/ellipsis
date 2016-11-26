@@ -12,7 +12,8 @@
 @main("View your skills", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.edit,
-    routes.javascript.ApplicationController.mergeBehaviorGroups
+    routes.javascript.ApplicationController.mergeBehaviorGroups,
+    routes.javascript.ApplicationController.deleteBehaviorGroups
   )
   <div id="content" class="content">
     @views.html.behaviorTabs("view", teamAccess)

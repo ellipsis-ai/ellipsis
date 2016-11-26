@@ -8,6 +8,7 @@ GET         /intro                                    @controllers.ApplicationCo
 GET         /install_skills                           @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 GET         /install_behaviors                        @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 POST        /merge_skills                             @controllers.ApplicationController.mergeBehaviorGroups
+POST        /delete_skills                            @controllers.ApplicationController.deleteBehaviorGroups
 
 GET         /new_skill                                @controllers.BehaviorEditorController.newForNormalBehavior(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
 GET         /new_behavior                             @controllers.BehaviorEditorController.newForNormalBehavior(groupId: Option[String] ?= None, teamId: Option[String] ?= None)

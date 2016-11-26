@@ -14,4 +14,6 @@ trait BehaviorGroupService {
 
   def merge(groups: Seq[BehaviorGroup]): Future[BehaviorGroup]
 
+  def delete(group: BehaviorGroup): Future[BehaviorGroup]
+
 }
