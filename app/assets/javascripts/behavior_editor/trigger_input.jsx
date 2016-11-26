@@ -6,7 +6,7 @@ var React = require('react'),
   Input = require('../form/input'),
   Collapsible = require('../collapsible'),
   ToggleGroup = require('../form/toggle_group'),
-  DropdownMenu = require('./dropdown_menu'),
+  DropdownMenu = require('../dropdown_menu'),
   Trigger = require('../models/trigger');
 require('whatwg-fetch');
 
