@@ -1,7 +1,7 @@
 define(function(require) {
 var React = require('react'),
-  CSS = require('../css'),
-  Event = require('../event');
+  CSS = require('./css'),
+  Event = require('./event');
 
 var BehaviorEditorDropdownMenu = React.createClass({
   propTypes: {

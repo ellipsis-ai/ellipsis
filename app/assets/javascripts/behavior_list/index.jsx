@@ -2,7 +2,9 @@ define(function(require) {
   var React = require('react'),
     BehaviorName = require('./behavior_name'),
     BehaviorVersion = require('../models/behavior_version'),
+    DropdownMenu = require('../dropdown_menu'),
     Formatter = require('../formatter'),
+    ifPresent = require('../if_present'),
     Sort = require('../sort'),
     SVGInstalled = require('../svg/installed');
 
@@ -54,7 +56,8 @@ define(function(require) {
     getInitialState: function() {
       return {
         versions: this.getVersions(),
-        selectedGroupIds: []
+        selectedGroupIds: [],
+        actionsDropdownIsOpen: false
       };
     },
 
@@ -127,6 +130,49 @@ define(function(require) {
       );
     },
 
+    getActionsLabel: function(selectedCount) {
+      if (selectedCount === 1) {
+        return "1 skill selected";
+      } else {
+        return `${selectedCount} skills selected`
+      }
+    },
+
+    toggleActionsDropdown: function() {
+      this.setState({
+        actionsDropdownIsOpen: !this.state.actionsDropdownIsOpen
+      });
+    },
+
+    renderMergeAction: function() {
+      return (
+        <DropdownMenu.Item
+          onClick={this.mergeBehaviorGroups}
+          label="Merge skills"
+        />
+      );
+    },
+
+    renderActions: function() {
+      var selectedCount = this.getSelectedGroupIds().length;
+      var multipleSelected = selectedCount > 1;
+      if (selectedCount === 0) {
+        return null;
+      } else {
+        return (
+        <DropdownMenu
+          openWhen={this.state.actionsDropdownIsOpen}
+          label={this.getActionsLabel(selectedCount)}
+          labelClassName="button-dropdown-trigger-borderless type-label type-weak button-s"
+          toggle={this.toggleActionsDropdown}
+          menuClassName="width-20"
+          >
+          {ifPresent(multipleSelected, this.renderMergeAction, () => null)}
+          </DropdownMenu>
+        );
+      }
+    },
+
     getVersionRow: function(version, versionIndex, group) {
       var isFirstVersion = versionIndex === 0;
       var borderAndSpacingClass = isFirstVersion ? "border-top pts " : "";
@@ -163,7 +209,7 @@ define(function(require) {
             <div className="column-row type-bold">
               <div className="column column-shrink ptl type-l pbs">&nbsp;</div>
               <div className="column column-expand ptl type-l pbs">
-                <button onClick={this.mergeBehaviorGroups}>Merge skills</button>
+                {this.renderActions()}
               </div>
               <div className="column column-shrink ptl type-l pbs">&nbsp;</div>
             </div>

@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    DropdownMenu = require('./dropdown_menu');
+    DropdownMenu = require('../dropdown_menu');
 
   return React.createClass({
     propTypes: {
