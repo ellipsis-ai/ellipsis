@@ -3,21 +3,19 @@ define(function(require) {
     AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
     BehaviorName = require('../behavior_list/behavior_name'),
     BehaviorVersion = require('../models/behavior_version'),
-    SVGXIcon = require('../svg/x'),
     Sort = require('../sort');
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',
     propTypes: {
+      heading: React.PropTypes.string.isRequired,
       behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       currentBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-      onToggle: React.PropTypes.func.isRequired,
-      groupId: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired
+      addNewUrl: React.PropTypes.string.isRequired
     },
 
     getBehaviorList: function() {
-      return Sort.arrayAlphabeticalBy(this.props.behaviors.concat(this.props.currentBehavior), (behavior) => behavior.getFirstTriggerText());
+      return Sort.arrayAlphabeticalBy(this.props.behaviors, (behavior) => behavior.getFirstTriggerText());
     },
 
     isCurrentVersion: function(version) {
@@ -26,17 +24,13 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="bg-white width-20 position-relative ptl">
+        <div className="bg-white width-20 position-relative pbl">
           <div className="phl">
             <div className="position-relative">
-              <div className="position-absolute position-top-right">
-                <button type="button" className="button-symbol button-s button-subtle" onClick={this.props.onToggle}><SVGXIcon /></button>
-              </div>
-              <h4 className="ptxs">{this.props.behaviors.length + 1} actions in this skill</h4>
+              <h4 className="ptxs">{this.props.heading}</h4>
               <div className="mvm">
                 <AddNewBehaviorToGroup
-                  groupId={this.props.groupId}
-                  teamId={this.props.teamId}
+                  url={this.props.addNewUrl}
                 />
               </div>
             </div>

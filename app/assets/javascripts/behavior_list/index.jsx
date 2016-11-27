@@ -53,7 +53,7 @@ define(function(require) {
     },
 
     sortVersionsByDataTypeName: function(versions) {
-      return Sort.arrayAlphabeticalBy(versions, (item) => item.dataTypeName);
+      return Sort.arrayAlphabeticalBy(versions, (item) => item.getDataTypeName());
     },
 
     sortVersionsByFirstTrigger: function(versions) {

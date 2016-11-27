@@ -8,8 +8,13 @@ define(function(require) {
       Object.assign(this, props);
     }
 
+    getDataTypeName() {
+      return this.config.dataTypeName;
+    }
+
     isDataType() {
-      return !!this.dataTypeName;
+      // empty string means it is a data type
+      return !(this.getDataTypeName() === null || this.getDataTypeName() === undefined);
     }
 
     findFirstTriggerIndexForDisplay() {
@@ -39,8 +44,7 @@ define(function(require) {
       return new BehaviorVersion(Object.assign({}, props, {
         params: Param.paramsFromJson(props.params || []),
         responseTemplate: ResponseTemplate.fromString(props.responseTemplate || ''),
-        triggers: Trigger.triggersFromJson(props.triggers || []),
-        dataTypeName: props.config.dataTypeName
+        triggers: Trigger.triggersFromJson(props.triggers || [])
       }));
     }
   }
