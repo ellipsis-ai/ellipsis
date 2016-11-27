@@ -3,19 +3,18 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
-      groupId: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired
+      url: React.PropTypes.string.isRequired
     },
 
     onAddNewBehavior: function() {
-      window.location.href = jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url;
+      window.location.href = this.props.url;
     },
 
     render: function() {
       return (
         <button
           onClick={this.onAddNewBehavior}
-          className="button-s">Add another action to this skill</button>
+          className="button-s">Add another</button>
       );
     }
   });

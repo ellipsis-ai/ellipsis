@@ -69,7 +69,7 @@ define(function(require) {
       return (
         <div className={this.props.disableWrapping ? "display-ellipsis" : ""}>
           <span className="link type-italic">
-            {`${version.dataTypeName}`}
+            {version.getDataTypeName() || "<unnamed data type>"}
           </span>
         </div>
       );

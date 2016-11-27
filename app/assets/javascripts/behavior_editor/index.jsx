@@ -36,6 +36,7 @@ var React = require('react'),
   TriggerHelp = require('./trigger_help'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
+  SVGXIcon = require('../svg/x'),
   SVGSettingsIcon = require('../svg/settings'),
   SVGWarning = require('../svg/warning'),
   Collapsible = require('../collapsible'),
@@ -1087,8 +1088,20 @@ return React.createClass({
     return this.state && this.state.hasModifiedTemplate;
   },
 
-  countBehaviorsInGroup: function() {
-    return this.props.otherBehaviorsInGroup.length + 1;
+  getAllBehaviors: function() {
+    return this.props.otherBehaviorsInGroup.concat([this.getTimestampedBehavior(this.state.behavior)]);
+  },
+
+  getActionBehaviors: function() {
+    return this.getAllBehaviors().filter(ea => !ea.isDataType());
+  },
+
+  getDataTypeBehaviors: function() {
+    return this.getAllBehaviors().filter(ea => ea.isDataType());
+  },
+
+  countActionBehaviorsInGroup: function() {
+    return this.getActionBehaviors().length;
   },
 
   hasUserParameters: function() {
@@ -1647,31 +1660,68 @@ return React.createClass({
     );
   },
 
+  renderPageHeading: function() {
+    return (
+      <PageHeading heading={this.getPageHeading()}>
+        <OtherBehaviorsMenu
+          behaviorCount={this.countActionBehaviorsInGroup()}
+          groupId={this.props.groupId}
+          teamId={this.props.teamId}
+          onClick={this.toggleBehaviorSwitcher}
+        />
+      </PageHeading>
+    );
+  },
+
+  getBehaviorSwitcherActionHeading: function() {
+    const count = this.getActionBehaviors().length;
+    return (count === 1) ?
+      `${count} action in this skill` :
+      `${count} actions in this skill`;
+  },
+
+  getBehaviorSwitcherDataTypeHeading: function() {
+    const count = this.getDataTypeBehaviors().length;
+    return (count === 1) ?
+      `${count} data type in this skill` :
+      `${count} data types in this skill`;
+  },
+
+  renderBehaviorSwitcher: function() {
+    return (
+      <div className="position-fixed-right position-z-front bg-white border-left">
+        <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
+          <div className="position-relative">
+            <div className="align-r pl">
+              <button type="button" className="button-symbol button-s button-subtle" onClick={this.toggleBehaviorSwitcher}><SVGXIcon /></button>
+            </div>
+            <BehaviorSwitcher
+              ref="behaviorSwitcher"
+              heading={this.getBehaviorSwitcherActionHeading()}
+              behaviors={this.getActionBehaviors()}
+              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
+              addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
+            />
+            <BehaviorSwitcher
+              ref="behaviorSwitcher"
+              heading={this.getBehaviorSwitcherDataTypeHeading()}
+              behaviors={this.getDataTypeBehaviors()}
+              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
+              addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
+            />
+          </div>
+        </Collapsible>
+      </div>
+    );
+  },
+
   renderNormalBehavior: function() {
     return (
 
       <div>
-        <PageHeading heading={this.getPageHeading()}>
-          <OtherBehaviorsMenu
-            behaviorCount={this.countBehaviorsInGroup()}
-            groupId={this.props.groupId}
-            teamId={this.props.teamId}
-            onClick={this.toggleBehaviorSwitcher}
-          />
-        </PageHeading>
+        {this.renderPageHeading()}
 
-        <div className="position-fixed-right position-z-front bg-white border-left">
-          <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
-            <BehaviorSwitcher
-              ref="behaviorSwitcher"
-              behaviors={this.props.otherBehaviorsInGroup}
-              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
-              onToggle={this.toggleBehaviorSwitcher}
-              groupId={this.props.groupId}
-              teamId={this.props.teamId}
-            />
-          </Collapsible>
-        </div>
+        {this.renderBehaviorSwitcher()}
 
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
@@ -1791,7 +1841,9 @@ return React.createClass({
   renderDataTypeBehavior: function() {
     return (
       <div>
-        <PageHeading heading={this.getPageHeading()} />
+        {this.renderPageHeading()}
+
+        {this.renderBehaviorSwitcher()}
 
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
