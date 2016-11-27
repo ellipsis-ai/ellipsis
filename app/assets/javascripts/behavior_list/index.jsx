@@ -185,7 +185,7 @@ define(function(require) {
       var selectedCount = this.getSelectedGroupIds().length;
       var multipleSelected = selectedCount > 1;
       if (selectedCount === 0) {
-        return null;
+        return "Skills";
       } else {
         return (
         <DropdownMenu
@@ -236,15 +236,8 @@ define(function(require) {
         return (
           <div className="column-group">
             <div className="column-row type-bold">
-              <div className="column column-shrink ptl type-l pbs">&nbsp;</div>
-              <div className="column column-expand ptl type-l pbs">
-                {this.renderActions()}
-              </div>
-              <div className="column column-shrink ptl type-l pbs">&nbsp;</div>
-            </div>
-            <div className="column-row type-bold">
-              <div className="column column-shrink ptl type-l pbs">&nbsp;</div>
-              <div className="column column-expand ptl type-l pbs">What Ellipsis can do</div>
+              <div className="column column-shrink pbs">&nbsp;</div>
+              <div className="column column-expand type-label align-b pbs">{this.renderActions()}</div>
               <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
             {groups.map(this.getBehaviorGroupRow)}
