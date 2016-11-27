@@ -99,7 +99,7 @@ object BehaviorEditorData {
       simpleTokenApis <- dataService.simpleTokenApis.allFor(teamAccess.maybeTargetTeam)
       linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUser(user, ws)
       paramTypes <- teamAccess.maybeTargetTeam.map { team =>
-        BehaviorParameterType.allFor(team, dataService)
+        BehaviorParameterType.allFor(maybeGroup, dataService)
       }.getOrElse(Future.successful(Seq()))
       paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
     } yield {
