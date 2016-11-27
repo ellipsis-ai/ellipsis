@@ -8,6 +8,10 @@ define(function(require) {
       Object.assign(this, props);
     }
 
+    isDataType() {
+      return !!this.dataTypeName;
+    }
+
     findFirstTriggerIndexForDisplay() {
       var firstTriggerIndex = this.triggers.findIndex(function(trigger) {
         return !!trigger.text && !trigger.isRegex;
@@ -35,7 +39,8 @@ define(function(require) {
       return new BehaviorVersion(Object.assign({}, props, {
         params: Param.paramsFromJson(props.params || []),
         responseTemplate: ResponseTemplate.fromString(props.responseTemplate || ''),
-        triggers: Trigger.triggersFromJson(props.triggers || [])
+        triggers: Trigger.triggersFromJson(props.triggers || []),
+        dataTypeName: props.config.dataTypeName
       }));
     }
   }

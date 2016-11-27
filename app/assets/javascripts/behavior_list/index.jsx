@@ -30,7 +30,7 @@ define(function(require) {
     },
 
     getVersions: function() {
-      return this.sortVersionsByFirstTrigger(this.props.behaviorVersions);
+      return this.props.behaviorVersions;
     },
 
     getBehaviorGroups: function() {
@@ -44,13 +44,26 @@ define(function(require) {
         }
         group.versions.push(version);
       });
+      groups = groups.map(ea => {
+        return { id: ea.id, versions: this.sortVersions(ea.versions) };
+      });
       return Sort.arrayAlphabeticalBy(groups, group => {
         return group.versions[0].getFirstTriggerText();
       });
     },
 
+    sortVersionsByDataTypeName: function(versions) {
+      return Sort.arrayAlphabeticalBy(versions, (item) => item.dataTypeName);
+    },
+
     sortVersionsByFirstTrigger: function(versions) {
       return Sort.arrayAlphabeticalBy(versions, (item) => item.getFirstTriggerText());
+    },
+
+    sortVersions: function(versions) {
+      var actionVersions = versions.filter(ea => !ea.isDataType());
+      var dataTypeVersions = versions.filter(ea => ea.isDataType());
+      return this.sortVersionsByFirstTrigger(actionVersions).concat(this.sortVersionsByDataTypeName(dataTypeVersions));
     },
 
     getInitialState: function() {
