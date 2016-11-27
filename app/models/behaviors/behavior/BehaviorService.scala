@@ -29,7 +29,13 @@ trait BehaviorService {
 
   def dataTypesForTeam(team: Team): Future[Seq[Behavior]] = {
     allForTeam(team).map { all =>
-      all.filter(_.maybeDataTypeName.isDefined)
+      all.filter(_.isDataType)
+    }
+  }
+
+  def dataTypesForGroup(group: BehaviorGroup): Future[Seq[Behavior]] = {
+    allForGroup(group).map { all =>
+      all.filter(_.isDataType)
     }
   }
 
