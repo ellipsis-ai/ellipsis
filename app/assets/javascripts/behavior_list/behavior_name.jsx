@@ -65,6 +65,24 @@ define(function(require) {
       );
     },
 
+    getDataTypeLabelFromVersion: function(version) {
+      return (
+        <div className={this.props.disableWrapping ? "display-ellipsis" : ""}>
+          <span className="link type-italic">
+            {`${version.dataTypeName}`}
+          </span>
+        </div>
+      );
+    },
+
+    getLabelFromVersion: function(version) {
+      if (version.isDataType()) {
+        return this.getDataTypeLabelFromVersion(version);
+      } else {
+        return this.getTriggersFromVersion(version);
+      }
+    },
+
     getDescriptionFromVersion: function(version) {
       if (version.description) {
         return (
@@ -77,7 +95,7 @@ define(function(require) {
       if (this.props.disableLink) {
         return (
           <div>
-            {this.getTriggersFromVersion(this.props.version)}
+            {this.getLabelFromVersion(this.props.version)}
             {this.getDescriptionFromVersion(this.props.version)}
           </div>
         );
@@ -86,7 +104,7 @@ define(function(require) {
           <div>
             <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.behaviorId).url}
               className="link-block">
-              {this.getTriggersFromVersion(this.props.version)}
+              {this.getLabelFromVersion(this.props.version)}
               {this.getDescriptionFromVersion(this.props.version)}
             </a>
           </div>

@@ -45,7 +45,7 @@ class ApplicationController @Inject() (
         }
       }.getOrElse(Seq()))
       maybeBehaviors <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.behaviors.regularForTeam(team).map { behaviors =>
+        dataService.behaviors.allForTeam(team).map { behaviors =>
           Some(behaviors)
         }
       }.getOrElse {
