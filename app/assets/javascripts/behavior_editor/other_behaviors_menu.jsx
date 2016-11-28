@@ -1,39 +1,32 @@
 define(function(require) {
   var React = require('react'),
-    AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
     SVGHamburger = require('../svg/hamburger');
 
   return React.createClass({
     propTypes: {
       behaviorCount: React.PropTypes.number.isRequired,
-      groupId: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired,
       onClick: React.PropTypes.func.isRequired
     },
 
-    render: function() {
-      if (this.props.behaviorCount > 1) {
-        return (
-          <div className="align-r ptxl">
-            <button type="button" className="button-tab" onClick={this.props.onClick}>
-              <span>{this.props.behaviorCount} actions in this skill</span>
-              <span className="display-inline-block align-b mlm" style={{height: "24px"}}>
-                  <SVGHamburger />
-                </span>
-            </button>
-          </div>
-        );
+    getButtonLabel: function() {
+      if (this.props.behaviorCount === 1) {
+        return `1 action in this skill`;
       } else {
-        return (
-          <div className="align-r ptxl">
-            <AddNewBehaviorToGroup
-              key="add-new-behavior-to-group"
-              groupId={this.props.groupId}
-              teamId={this.props.teamId}
-            />
-          </div>
-        );
+        return `${this.props.behaviorCount} actions in this skill`;
       }
+    },
+
+    render: function() {
+      return (
+        <div className="align-r ptxl">
+          <button type="button" className="button-tab" onClick={this.props.onClick}>
+            <span>{this.getButtonLabel()}</span>
+            <span className="display-inline-block align-b mlm" style={{height: "24px"}}>
+              <SVGHamburger />
+            </span>
+          </button>
+        </div>
+      );
     }
   });
 });
