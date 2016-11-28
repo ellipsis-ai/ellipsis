@@ -36,7 +36,6 @@ var React = require('react'),
   TriggerHelp = require('./trigger_help'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
-  SVGXIcon = require('../svg/x'),
   SVGSettingsIcon = require('../svg/settings'),
   SVGWarning = require('../svg/warning'),
   Collapsible = require('../collapsible'),
@@ -330,7 +329,7 @@ return React.createClass({
   },
 
   getPageHeading: function() {
-    return this.isDataTypeBehavior() ? "Edit data type" : "Edit skill";
+    return this.isDataTypeBehavior() ? "Edit data type" : "Edit skill action";
   },
 
   getRedirectValue: function() {
@@ -1671,59 +1670,25 @@ return React.createClass({
       <PageHeading heading={this.getPageHeading()}>
         <OtherBehaviorsMenu
           behaviorCount={this.countActionBehaviorsInGroup()}
-          groupId={this.props.groupId}
-          teamId={this.props.teamId}
           onClick={this.toggleBehaviorSwitcher}
         />
       </PageHeading>
     );
   },
 
-  getBehaviorSwitcherActionHeading: function() {
-    const count = this.getActionBehaviors().length;
-    return (count === 1) ?
-      `${count} action in this skill` :
-      `${count} actions in this skill`;
-  },
-
-  getBehaviorSwitcherDataTypeHeading: function() {
-    const count = this.getDataTypeBehaviors().length;
-    return (count === 1) ?
-      `${count} data type in this skill` :
-      `${count} data types in this skill`;
-  },
-
   renderBehaviorSwitcher: function() {
     return (
       <div className="position-fixed-right position-z-front bg-white border-left">
         <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
-          <div className="position-relative">
-            <div className="align-r pl">
-              <button type="button" className="button-symbol button-s button-subtle" onClick={this.toggleBehaviorSwitcher}><SVGXIcon /></button>
-            </div>
-            <div className="container pts">
-              <Input
-                className="form-input-borderless form-input-m type-bold mbn"
-                placeholder="Name this skill"
-                onChange={this.updateBehaviorGroupName}
-                value={this.getBehaviorGroupName()}
-              />
-            </div>
-            <BehaviorSwitcher
-              ref="behaviorSwitcher"
-              heading={this.getBehaviorSwitcherActionHeading()}
-              behaviors={this.getActionBehaviors()}
-              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
-              addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
-            />
-            <BehaviorSwitcher
-              ref="behaviorSwitcher"
-              heading={this.getBehaviorSwitcherDataTypeHeading()}
-              behaviors={this.getDataTypeBehaviors()}
-              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
-              addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
-            />
-          </div>
+          <BehaviorSwitcher
+            ref="behaviorSwitcher"
+            onToggle={this.toggleBehaviorSwitcher}
+            actionBehaviors={this.getActionBehaviors()}
+            dataTypeBehaviors={this.getDataTypeBehaviors()}
+            currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
+            groupId={this.props.groupId}
+            teamId={this.props.teamId}
+          />
         </Collapsible>
       </div>
     );

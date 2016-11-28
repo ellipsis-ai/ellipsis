@@ -1,50 +1,64 @@
 define(function(require) {
   var React = require('react'),
-    AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
-    BehaviorName = require('../behavior_list/behavior_name'),
+    BehaviorSwitcherGroup = require('./behavior_switcher_group'),
     BehaviorVersion = require('../models/behavior_version'),
-    Sort = require('../sort');
+    SVGXIcon = require('../svg/x');
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',
     propTypes: {
-      heading: React.PropTypes.string.isRequired,
-      behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-      currentBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-      addNewUrl: React.PropTypes.string.isRequired
+      onToggle: React.PropTypes.func.isRequired,
+      actionBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
+      dataTypeBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
+      currentBehavior: React.PropTypes.instanceOf(BehaviorVersion),
+      groupId: React.PropTypes.string.isRequired,
+      teamId: React.PropTypes.string.isRequired
     },
 
-    getBehaviorList: function() {
-      return Sort.arrayAlphabeticalBy(this.props.behaviors, (behavior) => behavior.getFirstTriggerText());
+    getActionsHeading: function() {
+      const count = this.props.actionBehaviors.length;
+      if (count === 0) {
+        return 'Skill actions';
+      } else if (count === 1) {
+        return '1 action in this skill';
+      } else {
+        return `${count} actions in this skill`;
+      }
     },
 
-    isCurrentVersion: function(version) {
-      return version.behaviorId === this.props.currentBehavior.behaviorId;
+    getDataTypesHeading: function() {
+      const count = this.props.dataTypeBehaviors.length;
+      if (count === 0) {
+        return 'Custom data types';
+      } else if (count === 1) {
+        return '1 custom data type';
+      } else {
+        return `${count} custom data types`;
+      }
     },
 
     render: function() {
       return (
-        <div className="bg-white width-20 position-relative pbl">
-          <div className="phl">
-            <div className="position-relative">
-              <h4 className="ptxs">{this.props.heading}</h4>
-              <div className="mvm">
-                <AddNewBehaviorToGroup
-                  url={this.props.addNewUrl}
-                />
-              </div>
-            </div>
+        <div className="position-relative width-20" ref="behaviorSwitcher">
+          <div className="align-r ptxs prxs">
+            <button type="button" className="button-symbol button-s button-subtle" onClick={this.props.onToggle}><SVGXIcon /></button>
           </div>
-          <div className="type-s border-bottom">
-            {this.getBehaviorList().map((version) => (
-              <div
-                key={`behavior-${version.behaviorId}`}
-                className={`border-top border-bottom pvs phl mbneg1 ${this.isCurrentVersion(version) ? "bg-blue-lighter border-blue" : ""}`}
-              >
-                <BehaviorName version={version} disableLink={this.isCurrentVersion(version)} disableWrapping={true} />
-              </div>
-            ))}
-          </div>
+          <BehaviorSwitcherGroup
+            ref="actionSwitcher"
+            heading={this.getActionsHeading()}
+            behaviors={this.props.actionBehaviors}
+            currentBehavior={this.props.currentBehavior}
+            addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
+            addNewLabel="Add a new action"
+          />
+          <BehaviorSwitcherGroup
+            ref="dataTypeSwitcher"
+            heading={this.getDataTypesHeading()}
+            behaviors={this.props.dataTypeBehaviors}
+            currentBehavior={this.props.currentBehavior}
+            addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
+            addNewLabel="Add a new data type"
+          />
         </div>
       );
     }
