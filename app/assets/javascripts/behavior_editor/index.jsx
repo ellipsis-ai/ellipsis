@@ -24,6 +24,7 @@ var React = require('react'),
   FixedFooter = require('../fixed_footer'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../form/input'),
+  ModalScrim = require('./modal_scrim'),
   Notification = require('../notifications/notification'),
   OtherBehaviorsMenu = require('./other_behaviors_menu'),
   PageHeading = require('./page_heading'),
@@ -1452,13 +1453,7 @@ return React.createClass({
   renderFooter: function() {
     return (
       <div>
-        <div
-          className={
-            "bg-scrim position-z-almost-front position-fixed-full " +
-            (this.hasModalPanel() ? "fade-in" : "display-none")
-          }
-          onClick={this.clearActivePanel}
-        ></div>
+        <ModalScrim isActive={this.hasModalPanel()} onClick={this.clearActivePanel} />
         <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
           <Collapsible ref="confirmUndo" revealWhen={this.getActivePanel() === 'confirmUndo'}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
