@@ -42,11 +42,27 @@ object BehaviorEditorData {
       maybeTeam <- maybeBehaviorVersionData.map { data =>
         dataService.teams.find(data.teamId, user)
       }.getOrElse(Future.successful(None))
+      maybeGroup <- maybeBehaviorVersionData.flatMap { data =>
+        data.groupId.map { gid =>
+          dataService.behaviorGroups.find(gid)
+        }
+      }.getOrElse(Future.successful(None))
       maybeEditorData <- (for {
         data <- maybeBehaviorVersionData
         team <- maybeTeam
       } yield {
-        buildFor(user, Some(data), data.groupId, team, maybeJustSaved, isForNewDataType = false, dataService, ws).map(Some(_))
+        buildFor(
+          user,
+          Some(data),
+          data.groupId,
+          maybeGroup.map(_.name),
+          maybeGroup.flatMap(_.maybeDescription),
+          team,
+          maybeJustSaved,
+          isForNewDataType = false,
+          dataService,
+          ws
+        ).map(Some(_))
       }).getOrElse(Future.successful(None))
     } yield maybeEditorData
   }
@@ -63,8 +79,22 @@ object BehaviorEditorData {
     val teamId = maybeTeamId.getOrElse(user.teamId)
     for {
       maybeTeam <- dataService.teams.find(teamId, user)
+      maybeGroup <- maybeGroupId.map { gid =>
+        dataService.behaviorGroups.find(gid)
+      }.getOrElse(Future.successful(None))
       maybeData <- maybeTeam.map { team =>
-        buildFor(user, None, maybeGroupId, team, None, isForNewDataType, dataService, ws).map(Some(_))
+        buildFor(
+          user,
+          None,
+          maybeGroupId,
+          maybeGroup.map(_.name),
+          maybeGroup.flatMap(_.maybeDescription),
+          team,
+          None,
+          isForNewDataType,
+          dataService,
+          ws
+        ).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield maybeData
   }
@@ -73,6 +103,8 @@ object BehaviorEditorData {
                 user: User,
                 maybeBehaviorVersionData: Option[BehaviorVersionData],
                 maybeGroupId: Option[String],
+                maybeGroupName: Option[String],
+                maybeGroupDescription: Option[String],
                 team: Team,
                 maybeJustSaved: Option[Boolean],
                 isForNewDataType: Boolean,
@@ -108,6 +140,8 @@ object BehaviorEditorData {
         BehaviorVersionData.buildFor(
           team.id,
           maybeGroupId,
+          maybeGroupName,
+          maybeGroupDescription,
           None,
           None,
           "",

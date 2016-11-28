@@ -65,6 +65,7 @@ return React.createClass({
   propTypes: {
     teamId: React.PropTypes.string.isRequired,
     groupId: React.PropTypes.string.isRequired,
+    groupName: React.PropTypes.string,
     behaviorId: React.PropTypes.string,
     description: React.PropTypes.string,
     functionBody: React.PropTypes.string,
@@ -1317,6 +1318,7 @@ return React.createClass({
     var initialBehavior = this.getInitialBehaviorFromProps(this.props);
     return {
       behavior: initialBehavior,
+      groupName: this.props.groupName,
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
@@ -1688,7 +1690,10 @@ return React.createClass({
             dataTypeBehaviors={this.getDataTypeBehaviors()}
             currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
             groupId={this.props.groupId}
+            groupName={this.props.groupName}
+            groupDescription={this.props.groupDescription}
             teamId={this.props.teamId}
+            csrfToken={this.props.csrfToken}
           />
         </Collapsible>
       </div>
