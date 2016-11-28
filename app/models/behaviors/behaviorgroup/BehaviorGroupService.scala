@@ -8,6 +8,8 @@ trait BehaviorGroupService {
 
   def createFor(name: String, maybeImportedId: Option[String], team: Team): Future[BehaviorGroup]
 
+  def save(behaviorGroup: BehaviorGroup): Future[BehaviorGroup]
+
   def allFor(team: Team): Future[Seq[BehaviorGroup]]
 
   def find(id: String): Future[Option[BehaviorGroup]]

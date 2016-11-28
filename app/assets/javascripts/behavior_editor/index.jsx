@@ -65,6 +65,7 @@ return React.createClass({
   propTypes: {
     teamId: React.PropTypes.string.isRequired,
     groupId: React.PropTypes.string.isRequired,
+    groupName: React.PropTypes.string,
     behaviorId: React.PropTypes.string,
     description: React.PropTypes.string,
     functionBody: React.PropTypes.string,
@@ -249,6 +250,10 @@ return React.createClass({
 
   getDataTypeName: function() {
     return this.getBehaviorConfig().dataTypeName;
+  },
+
+  getBehaviorGroupName: function() {
+    return this.state.groupName;
   },
 
   shouldForcePrivateResponse: function() {
@@ -1311,6 +1316,7 @@ return React.createClass({
     var initialBehavior = this.getInitialBehaviorFromProps(this.props);
     return {
       behavior: initialBehavior,
+      groupName: this.props.groupName,
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
@@ -1694,6 +1700,14 @@ return React.createClass({
           <div className="position-relative">
             <div className="align-r pl">
               <button type="button" className="button-symbol button-s button-subtle" onClick={this.toggleBehaviorSwitcher}><SVGXIcon /></button>
+            </div>
+            <div className="container pts">
+              <Input
+                className="form-input-borderless form-input-m type-bold mbn"
+                placeholder="Name this skill"
+                onChange={this.updateBehaviorGroupName}
+                value={this.getBehaviorGroupName()}
+              />
             </div>
             <BehaviorSwitcher
               ref="behaviorSwitcher"

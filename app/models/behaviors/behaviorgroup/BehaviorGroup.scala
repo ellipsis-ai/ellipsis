@@ -6,6 +6,7 @@ import org.joda.time.DateTime
 case class BehaviorGroup(
                           id: String,
                           name: String,
+                          maybeDescription: Option[String],
                           maybeImportedId: Option[String],
                           team: Team,
                           createdAt: DateTime) {
@@ -14,6 +15,14 @@ case class BehaviorGroup(
     Option(name.trim).filter(_.nonEmpty).getOrElse(id)
   }
 
-  // TODO: want this in model for real
-  val maybeDescription = Some(name)
+  def toRaw: RawBehaviorGroup = RawBehaviorGroup(
+    id,
+    name,
+    maybeDescription,
+    maybeImportedId,
+    team.id,
+    createdAt
+  )
+
+
 }

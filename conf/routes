@@ -35,6 +35,7 @@ POST        /test_skill_triggers                      @controllers.BehaviorEdito
 POST        /test_behavior_triggers                   @controllers.BehaviorEditorController.testTriggers
 POST        /test_skill_invocation                    @controllers.BehaviorEditorController.testInvocation
 POST        /test_behavior_invocation                 @controllers.BehaviorEditorController.testInvocation
+POST        /save_skill_name                          @controllers.BehaviorEditorController.saveBehaviorGroupName
 
 GET         /data_types                               @controllers.BehaviorBackedDataTypeController.list(teamId: Option[String] ?= None)
 

@@ -417,4 +417,36 @@ class BehaviorEditorController @Inject() (
     Ok(Json.toJson(Array(content)))
   }
 
+  case class BehaviorGroupNameInfo(groupId: String, name: String)
+
+  private val saveBehaviorGroupNameForm = Form(
+    mapping(
+      "groupId" -> nonEmptyText,
+      "name" -> text
+    )(BehaviorGroupNameInfo.apply)(BehaviorGroupNameInfo.unapply)
+  )
+
+  def saveBehaviorGroupName = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    saveBehaviorGroupNameForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.groupId)
+          maybeSaved <- maybeBehaviorGroup.map { group =>
+            dataService.behaviorGroups.save(group.copy(name = info.name)).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeSaved.map { saved =>
+            Ok("Success")
+          }.getOrElse {
+            NotFound(s"Skill not found: ${info.groupId}")
+          }
+        }
+      }
+    )
+  }
+
 }
