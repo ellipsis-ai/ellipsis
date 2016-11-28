@@ -18,21 +18,16 @@
   <div id="content" class="content">
     @views.html.behaviorTabs("view", teamAccess)
 
-    <div class="bg-white">
-      <div class="container pvxxl mobile-ptm">
+    <div id="behaviorListContainer"></div>
+    <script>
+      var BehaviorListConfig = {
+        containerId: 'behaviorListContainer',
+        behaviorGroups: @Html(Json.toJson(behaviorGroups).toString),
+        behaviorVersions: @Html(Json.toJson(behaviorVersions).toString),
+        csrfToken: "@CSRF.getToken(r).map(_.value)"
+      };
+    </script>
+    <script data-main='@RemoteAssets.getUrl("javascripts/behavior_list/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
 
-        <div id="behaviorListContainer"></div>
-        <script>
-          var BehaviorListConfig = {
-            containerId: 'behaviorListContainer',
-            behaviorGroups: @Html(Json.toJson(behaviorGroups).toString),
-            behaviorVersions: @Html(Json.toJson(behaviorVersions).toString),
-            csrfToken: "@CSRF.getToken(r).map(_.value)"
-          };
-        </script>
-        <script data-main='@RemoteAssets.getUrl("javascripts/behavior_list/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
-
-      </div>
-    </div>
   </div>
 }
