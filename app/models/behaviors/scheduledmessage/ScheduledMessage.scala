@@ -4,6 +4,8 @@ import models.team.Team
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.DateTime
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.accounts.slack.profile.SlackProfile
+import models.accounts.user.User
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.{SlackMessageContext, SlackMessageEvent}
 import services.{DataService, SlackService}
@@ -16,6 +18,7 @@ import scala.concurrent.Future
 case class ScheduledMessage(
                              id: String,
                              text: String,
+                             maybeUser: Option[User],
                              team: Team,
                              maybeChannelName: Option[String],
                              recurrence: Recurrence,
@@ -75,12 +78,25 @@ case class ScheduledMessage(
     dataService.slackBotProfiles.allFor(team).map(_.headOption)
   }
 
+  def maybeSlackProfile(dataService: DataService): Future[Option[SlackProfile]] = {
+    maybeUser.map { user =>
+      for {
+        maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
+        maybeSlackProfile <- maybeSlackLinkedAccount.map { linkedAccount =>
+          dataService.slackProfiles.find(linkedAccount.loginInfo)
+        }.getOrElse(Future.successful(None))
+      } yield maybeSlackProfile
+    }.getOrElse(Future.successful(None))
+  }
+
   // TODO: don't be slack-specific
   def send(slackService: SlackService, client: SlackRtmClient, profile: SlackBotProfile, dataService: DataService): Future[Unit] = {
     maybeChannelName.map { channelName =>
-      val message = Message("ts", channelName, profile.userId, text, None)
-      val context = SlackMessageContext(client, profile, message)
       for {
+        maybeSlackProfile <- maybeSlackProfile(dataService)
+        slackUserId <- Future.successful(maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId))
+        message <- Future.successful(Message("ts", channelName, slackUserId, text, None))
+        context <- Future.successful(SlackMessageContext(client, profile, message))
         results <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
         _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(DateTime.now))
       } yield {
@@ -102,6 +118,7 @@ case class ScheduledMessage(
     RawScheduledMessage(
       id,
       text,
+      maybeUser.map(_.id),
       team.id,
       maybeChannelName,
       recurrence.typeName,
