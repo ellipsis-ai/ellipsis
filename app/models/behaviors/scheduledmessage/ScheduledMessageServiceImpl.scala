@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs
+import models.accounts.user.{User, UserQueries}
 import models.team.{Team, TeamQueries}
 import org.joda.time.{DateTime, LocalTime}
 import services.DataService
@@ -16,6 +17,7 @@ import scala.concurrent.Future
 case class RawScheduledMessage(
                                 id: String,
                                 text: String,
+                                maybeUserId: Option[String],
                                 teamId: String,
                                 maybeChannelName: Option[String],
                                 recurrenceType: String,
@@ -34,6 +36,7 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
 
   def id = column[String]("id")
   def text = column[String]("text")
+  def maybeUserId = column[Option[String]]("user_id")
   def teamId = column[String]("team_id")
   def maybeChannelName = column[Option[String]]("channel_name")
   def recurrenceType = column[String]("recurrence_type")
@@ -50,6 +53,7 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
   def * = (
     id,
     text,
+    maybeUserId,
     teamId,
     maybeChannelName,
     recurrenceType,
@@ -73,13 +77,18 @@ class ScheduledMessageServiceImpl @Inject() (
 
   val all = TableQuery[ScheduledMessagesTable]
   val allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
+  val allWithUser = allWithTeam.joinLeft(UserQueries.all).on(_._1.maybeUserId === _.id)
 
-  def tuple2ScheduledMessage(tuple: (RawScheduledMessage, Team)): ScheduledMessage = {
-    val raw = tuple._1
-    val team = tuple._2
+  type TupleType = ((RawScheduledMessage, Team), Option[User])
+
+  def tuple2ScheduledMessage(tuple: TupleType): ScheduledMessage = {
+    val raw = tuple._1._1
+    val team = tuple._1._2
+    val maybeUser = tuple._2
     ScheduledMessage(
       raw.id,
       raw.text,
+      maybeUser,
       team,
       raw.maybeChannelName,
       Recurrence.buildFor(raw),
@@ -89,7 +98,7 @@ class ScheduledMessageServiceImpl @Inject() (
   }
 
   def uncompiledAllToBeSentQuery(when: Rep[DateTime]) = {
-    allWithTeam.filter(_._1.nextSentAt <= when)
+    allWithUser.filter { case((msg, team), user) =>  msg.nextSentAt <= when }
   }
   val allToBeSentQuery = Compiled(uncompiledAllToBeSentQuery _)
 
@@ -101,7 +110,7 @@ class ScheduledMessageServiceImpl @Inject() (
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
-    allWithTeam.filter { case(msg, team) => msg.teamId === teamId }
+    allWithUser.filter { case((msg, team), user) => msg.teamId === teamId }
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
@@ -125,11 +134,12 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def maybeCreateFor(text: String, recurrenceText: String, team: Team, maybeChannelName: Option[String]): Future[Option[ScheduledMessage]] = {
+  def maybeCreateFor(text: String, recurrenceText: String, user: User, team: Team, maybeChannelName: Option[String]): Future[Option[ScheduledMessage]] = {
     Recurrence.maybeFromText(recurrenceText).map { recurrence =>
       val newMessage = ScheduledMessage(
         IDs.next,
         text,
+        Some(user),
         team,
         maybeChannelName,
         recurrence,
