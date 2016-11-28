@@ -3,7 +3,8 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
-      url: React.PropTypes.string.isRequired
+      url: React.PropTypes.string.isRequired,
+      label: React.PropTypes.string
     },
 
     onAddNewBehavior: function() {
@@ -14,7 +15,7 @@ define(function(require) {
       return (
         <button
           onClick={this.onAddNewBehavior}
-          className="button-s">Add another</button>
+          className="button-s">{this.props.label || "Add another"}</button>
       );
     }
   });

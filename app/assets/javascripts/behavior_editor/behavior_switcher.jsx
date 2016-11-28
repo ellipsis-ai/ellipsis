@@ -11,7 +11,8 @@ define(function(require) {
       heading: React.PropTypes.string.isRequired,
       behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       currentBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-      addNewUrl: React.PropTypes.string.isRequired
+      addNewUrl: React.PropTypes.string.isRequired,
+      addNewLabel: React.PropTypes.string
     },
 
     getBehaviorList: function() {
@@ -24,15 +25,14 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="bg-white width-20 position-relative pbl">
+        <div className="pbxl">
           <div className="phl">
-            <div className="position-relative">
-              <h4 className="ptxs">{this.props.heading}</h4>
-              <div className="mvm">
-                <AddNewBehaviorToGroup
-                  url={this.props.addNewUrl}
-                />
-              </div>
+            <h4 className="mtm">{this.props.heading}</h4>
+            <div className="mvm">
+              <AddNewBehaviorToGroup
+                url={this.props.addNewUrl}
+                label={this.props.addNewLabel}
+              />
             </div>
           </div>
           <div className="type-s border-bottom">

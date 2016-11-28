@@ -325,7 +325,7 @@ return React.createClass({
   },
 
   getPageHeading: function() {
-    return this.isDataTypeBehavior() ? "Edit data type" : "Edit skill";
+    return this.isDataTypeBehavior() ? "Edit data type" : "Edit skill action";
   },
 
   getRedirectValue: function() {
@@ -1665,8 +1665,6 @@ return React.createClass({
       <PageHeading heading={this.getPageHeading()}>
         <OtherBehaviorsMenu
           behaviorCount={this.countActionBehaviorsInGroup()}
-          groupId={this.props.groupId}
-          teamId={this.props.teamId}
           onClick={this.toggleBehaviorSwitcher}
         />
       </PageHeading>
@@ -1675,39 +1673,49 @@ return React.createClass({
 
   getBehaviorSwitcherActionHeading: function() {
     const count = this.getActionBehaviors().length;
-    return (count === 1) ?
-      `${count} action in this skill` :
-      `${count} actions in this skill`;
+    if (count === 0) {
+      return 'Skill actions';
+    } else if (count === 1) {
+      return '1 action in this skill';
+    } else {
+      return `${count} actions in this skill`;
+    }
   },
 
   getBehaviorSwitcherDataTypeHeading: function() {
     const count = this.getDataTypeBehaviors().length;
-    return (count === 1) ?
-      `${count} data type in this skill` :
-      `${count} data types in this skill`;
+    if (count === 0) {
+      return 'Custom data types';
+    } else if (count === 1) {
+      return '1 custom data type';
+    } else {
+      return `${count} custom data types`;
+    }
   },
 
   renderBehaviorSwitcher: function() {
     return (
       <div className="position-fixed-right position-z-front bg-white border-left">
         <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
-          <div className="position-relative">
-            <div className="align-r pl">
+          <div className="position-relative width-20" ref="behaviorSwitcher">
+            <div className="align-r ptxs prxs">
               <button type="button" className="button-symbol button-s button-subtle" onClick={this.toggleBehaviorSwitcher}><SVGXIcon /></button>
             </div>
             <BehaviorSwitcher
-              ref="behaviorSwitcher"
+              ref="actionSwitcher"
               heading={this.getBehaviorSwitcherActionHeading()}
               behaviors={this.getActionBehaviors()}
               currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
               addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
+              addNewLabel="Add a new action"
             />
             <BehaviorSwitcher
-              ref="behaviorSwitcher"
+              ref="dataTypeSwitcher"
               heading={this.getBehaviorSwitcherDataTypeHeading()}
               behaviors={this.getDataTypeBehaviors()}
               currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
               addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
+              addNewLabel="Add a new data type"
             />
           </div>
         </Collapsible>
