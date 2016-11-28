@@ -5,7 +5,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorVersion = require('../models/behavior_version'),
-  BehaviorSwitcher = require('./behavior_switcher'),
+  BehaviorSwitcherGroup = require('./behavior_switcher_group'),
   BehaviorTester = require('./behavior_tester'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
@@ -1701,7 +1701,7 @@ return React.createClass({
             <div className="align-r ptxs prxs">
               <button type="button" className="button-symbol button-s button-subtle" onClick={this.toggleBehaviorSwitcher}><SVGXIcon /></button>
             </div>
-            <BehaviorSwitcher
+            <BehaviorSwitcherGroup
               ref="actionSwitcher"
               heading={this.getBehaviorSwitcherActionHeading()}
               behaviors={this.getActionBehaviors()}
@@ -1709,7 +1709,7 @@ return React.createClass({
               addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
               addNewLabel="Add a new action"
             />
-            <BehaviorSwitcher
+            <BehaviorSwitcherGroup
               ref="dataTypeSwitcher"
               heading={this.getBehaviorSwitcherDataTypeHeading()}
               behaviors={this.getDataTypeBehaviors()}

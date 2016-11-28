@@ -6,7 +6,7 @@ define(function(require) {
     Sort = require('../sort');
 
   return React.createClass({
-    displayName: 'BehaviorSwitcher',
+    displayName: 'BehaviorSwitcherGroup',
     propTypes: {
       heading: React.PropTypes.string.isRequired,
       behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
