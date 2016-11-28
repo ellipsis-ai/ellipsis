@@ -14,6 +14,8 @@ const ResponseTemplate = require('../app/assets/javascripts/models/response_temp
 const Trigger = require('../app/assets/javascripts/models/trigger');
 
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
+jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior = jest.fn(() => ({ url: '/mock_new_for_normal_behavior' }));
+jsRoutes.controllers.BehaviorEditorController.newForDataType = jest.fn(() => ({ url: '/mock_new_for_data_type' }));
 
 describe('BehaviorEditor', () => {
   const defaultConfig = {
