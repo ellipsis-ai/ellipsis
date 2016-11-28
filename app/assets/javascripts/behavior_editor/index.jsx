@@ -844,6 +844,12 @@ return React.createClass({
     });
   },
 
+  clearActivePanel: function() {
+    this.setState({
+      activePanel: null
+    });
+  },
+
   toggleAPISelectorMenu: function() {
     this.toggleActiveDropdown('apiSelectorDropdown');
   },
@@ -1446,7 +1452,13 @@ return React.createClass({
   renderFooter: function() {
     return (
       <div>
-        <div className={"bg-scrim position-z-almost-front position-fixed-full " + (this.hasModalPanel() ? "fade-in" : "display-none")}></div>
+        <div
+          className={
+            "bg-scrim position-z-almost-front position-fixed-full " +
+            (this.hasModalPanel() ? "fade-in" : "display-none")
+          }
+          onClick={this.clearActivePanel}
+        ></div>
         <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
           <Collapsible ref="confirmUndo" revealWhen={this.getActivePanel() === 'confirmUndo'}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
