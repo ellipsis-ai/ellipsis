@@ -2,9 +2,9 @@ define(function(require) {
   var React = require('react'),
     BehaviorName = require('./behavior_name'),
     BehaviorVersion = require('../models/behavior_version'),
-    DropdownMenu = require('../dropdown_menu'),
+    Collapsible = require('../collapsible'),
+    FixedFooter = require('../fixed_footer'),
     Formatter = require('../formatter'),
-    ifPresent = require('../if_present'),
     Sort = require('../sort'),
     SVGInstalled = require('../svg/installed');
 
@@ -70,8 +70,7 @@ define(function(require) {
     getInitialState: function() {
       return {
         versions: this.getVersions(),
-        selectedGroupIds: [],
-        actionsDropdownIsOpen: false
+        selectedGroupIds: []
       };
     },
 
@@ -110,6 +109,12 @@ define(function(require) {
           selectedGroupIds: newGroupIds
         });
       }.bind(this);
+    },
+
+    clearSelectedGroups: function() {
+      this.setState({
+        selectedGroupIds: []
+      });
     },
 
     runSelectedBehaviorGroupsAction: function(url) {
@@ -153,65 +158,20 @@ define(function(require) {
     },
 
     getActionsLabel: function(selectedCount) {
-      if (selectedCount === 1) {
+      if (selectedCount === 0) {
+        return "No skills selected";
+      } else if (selectedCount === 1) {
         return "1 skill selected";
       } else {
         return `${selectedCount} skills selected`;
       }
     },
 
-    toggleActionsDropdown: function() {
-      this.setState({
-        actionsDropdownIsOpen: !this.state.actionsDropdownIsOpen
-      });
-    },
-
-    renderMergeAction: function(selectedCount) {
-      return function() {
-        return (
-          <DropdownMenu.Item
-            onClick={this.mergeBehaviorGroups}
-            label={`Merge ${selectedCount} skills`}
-          />
-        );
-      }.bind(this);
-    },
-
     getLabelForDeleteAction: function(selectedCount) {
-      if (selectedCount === 1) {
-        return "Delete 1 skill";
+      if (selectedCount < 2) {
+        return "Delete skill";
       } else {
-        return `Delete ${selectedCount} skills`;
-      }
-    },
-
-    renderDeleteAction: function(selectedCount) {
-      return (
-        <DropdownMenu.Item
-          onClick={this.deleteBehaviorGroups}
-          label={this.getLabelForDeleteAction(selectedCount)}
-        />
-      );
-    },
-
-    renderActions: function() {
-      var selectedCount = this.getSelectedGroupIds().length;
-      var multipleSelected = selectedCount > 1;
-      if (selectedCount === 0) {
-        return "Skills";
-      } else {
-        return (
-        <DropdownMenu
-          openWhen={this.state.actionsDropdownIsOpen}
-          label={this.getActionsLabel(selectedCount)}
-          labelClassName="button-dropdown-trigger-borderless type-label type-weak button-s"
-          toggle={this.toggleActionsDropdown}
-          menuClassName="width-20"
-          >
-          {ifPresent(multipleSelected, this.renderMergeAction(selectedCount), () => null)}
-          {this.renderDeleteAction(selectedCount)}
-          </DropdownMenu>
-        );
+        return `Delete skills`;
       }
     },
 
@@ -250,7 +210,7 @@ define(function(require) {
           <div className="column-group">
             <div className="column-row type-bold">
               <div className="column column-shrink pbs">&nbsp;</div>
-              <div className="column column-expand type-label align-b pbs">{this.renderActions()}</div>
+              <div className="column column-expand type-label align-b pbs">Skills</div>
               <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
             {groups.map(this.getBehaviorGroupRow)}
@@ -259,7 +219,38 @@ define(function(require) {
       }
     },
 
-    render: function() {
+    renderActions: function() {
+      var selectedCount = this.getSelectedGroupIds().length;
+      return (
+        <div>
+          <button type="button"
+            className="button-primary mrs mbs"
+            onClick={this.clearSelectedGroups}
+          >
+            Cancel
+          </button>
+          <button type="button"
+            className="mrs mbs"
+            onClick={this.deleteBehaviorGroups}
+            disabled={selectedCount < 1}
+          >
+            {this.getLabelForDeleteAction(selectedCount)}
+          </button>
+          <button type="button"
+            className="mrl mbs"
+            onClick={this.mergeBehaviorGroups}
+            disabled={selectedCount < 2}
+          >
+            Merge skills
+          </button>
+          <div className="align-button mrs mbs type-italic type-weak">
+            {this.getActionsLabel(selectedCount)}
+          </div>
+        </div>
+      );
+    },
+
+    renderContent: function() {
       if (this.props.behaviorVersions.length > 0) {
         return (
           <div>
@@ -278,6 +269,26 @@ define(function(require) {
           </p>
         );
       }
+    },
+
+    render: function() {
+      return (
+        <div>
+          <div>
+            <div className="bg-white container pvxxl mobile-ptm">
+              {this.renderContent()}
+            </div>
+          </div>
+
+          <FixedFooter className="bg-white">
+            <Collapsible revealWhen={this.getSelectedGroupIds().length > 0}>
+              <div className="container ptm">
+                {this.renderActions()}
+              </div>
+            </Collapsible>
+          </FixedFooter>
+        </div>
+      );
     }
   });
 });
