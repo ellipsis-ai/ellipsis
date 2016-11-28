@@ -74,6 +74,8 @@ describe('BehaviorList', () => {
     "createdAt": 1466109904858
   });
   const defaultConfig = Object.freeze({
+    teamId: "abcdef",
+    csrfToken: "2",
     behaviorGroups: [
       {"id":"sfgsdf", "name":"", "createdAt": 1466109904858},
       {"id":"gsdfgsg", "name":"", "createdAt": 1466109904858},

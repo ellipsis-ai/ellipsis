@@ -9,7 +9,9 @@ define(function(require) {
     SVGInstalled = require('../svg/installed');
 
   return React.createClass({
+    displayName: "BehaviorList",
     propTypes: {
+      teamId: React.PropTypes.string.isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.shape({
         id: React.PropTypes.string.isRequired,
         name: React.PropTypes.string.isRequired,
@@ -125,9 +127,9 @@ define(function(require) {
           'Csrf-Token': this.props.csrfToken
         },
         body: JSON.stringify(data)
-      }).then(response => {
+      }).then(() => {
         window.location.reload();
-      })
+      });
     },
 
     mergeBehaviorGroups: function() {
@@ -156,7 +158,7 @@ define(function(require) {
       if (selectedCount === 1) {
         return "1 skill selected";
       } else {
-        return `${selectedCount} skills selected`
+        return `${selectedCount} skills selected`;
       }
     },
 
