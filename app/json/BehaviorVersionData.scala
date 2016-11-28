@@ -14,6 +14,8 @@ import scala.concurrent.Future
 case class BehaviorVersionData(
                                 teamId: String,
                                 groupId: Option[String],
+                                groupName: Option[String],
+                                groupDescription: Option[String],
                                 behaviorId: Option[String],
                                 description: Option[String],
                                 functionBody: String,
@@ -48,6 +50,8 @@ object BehaviorVersionData {
   def buildFor(
                 teamId: String,
                 groupId: Option[String],
+                groupName: Option[String],
+                groupDescription: Option[String],
                 behaviorId: Option[String],
                 description: Option[String],
                 functionBody: String,
@@ -69,6 +73,8 @@ object BehaviorVersionData {
     BehaviorVersionData(
       teamId,
       groupId,
+      groupName,
+      groupDescription,
       behaviorId,
       description,
       functionBody,
@@ -97,6 +103,8 @@ object BehaviorVersionData {
     val config = Json.parse(configString).validate[BehaviorConfig].get
     BehaviorVersionData.buildFor(
       teamId,
+      None,
+      None,
       None,
       None,
       maybeDescription,
@@ -159,6 +167,8 @@ object BehaviorVersionData {
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           behavior.maybeGroup.map(_.id),
+          behavior.maybeGroup.map(_.name),
+          behavior.maybeGroup.flatMap(_.maybeDescription),
           Some(behavior.id),
           behaviorVersion.maybeDescription,
           behaviorVersion.functionBody,

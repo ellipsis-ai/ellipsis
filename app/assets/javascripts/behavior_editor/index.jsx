@@ -251,10 +251,6 @@ return React.createClass({
     return this.getBehaviorConfig().dataTypeName;
   },
 
-  getBehaviorGroupName: function() {
-    return this.state.groupName;
-  },
-
   shouldForcePrivateResponse: function() {
     return !!this.getBehaviorConfig().forcePrivateResponse;
   },
@@ -1687,7 +1683,10 @@ return React.createClass({
             dataTypeBehaviors={this.getDataTypeBehaviors()}
             currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
             groupId={this.props.groupId}
+            groupName={this.props.groupName}
+            groupDescription={this.props.groupDescription}
             teamId={this.props.teamId}
+            csrfToken={this.props.csrfToken}
           />
         </Collapsible>
       </div>
