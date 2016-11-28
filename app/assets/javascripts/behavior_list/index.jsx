@@ -11,7 +11,6 @@ define(function(require) {
   return React.createClass({
     displayName: "BehaviorList",
     propTypes: {
-      teamId: React.PropTypes.string.isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.shape({
         id: React.PropTypes.string.isRequired,
         name: React.PropTypes.string.isRequired,
@@ -115,7 +114,6 @@ define(function(require) {
 
     runSelectedBehaviorGroupsAction: function(url) {
       var data = {
-        teamId: this.props.teamId,
         behaviorGroupIds: this.getSelectedGroupIds()
       };
       fetch(url, {
