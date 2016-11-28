@@ -5,7 +5,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorVersion = require('../models/behavior_version'),
-  BehaviorSwitcherGroup = require('./behavior_switcher_group'),
+  BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
@@ -36,7 +36,6 @@ var React = require('react'),
   TriggerHelp = require('./trigger_help'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
-  SVGXIcon = require('../svg/x'),
   SVGSettingsIcon = require('../svg/settings'),
   SVGWarning = require('../svg/warning'),
   Collapsible = require('../collapsible'),
@@ -1671,53 +1670,19 @@ return React.createClass({
     );
   },
 
-  getBehaviorSwitcherActionHeading: function() {
-    const count = this.getActionBehaviors().length;
-    if (count === 0) {
-      return 'Skill actions';
-    } else if (count === 1) {
-      return '1 action in this skill';
-    } else {
-      return `${count} actions in this skill`;
-    }
-  },
-
-  getBehaviorSwitcherDataTypeHeading: function() {
-    const count = this.getDataTypeBehaviors().length;
-    if (count === 0) {
-      return 'Custom data types';
-    } else if (count === 1) {
-      return '1 custom data type';
-    } else {
-      return `${count} custom data types`;
-    }
-  },
-
   renderBehaviorSwitcher: function() {
     return (
       <div className="position-fixed-right position-z-front bg-white border-left">
         <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
-          <div className="position-relative width-20" ref="behaviorSwitcher">
-            <div className="align-r ptxs prxs">
-              <button type="button" className="button-symbol button-s button-subtle" onClick={this.toggleBehaviorSwitcher}><SVGXIcon /></button>
-            </div>
-            <BehaviorSwitcherGroup
-              ref="actionSwitcher"
-              heading={this.getBehaviorSwitcherActionHeading()}
-              behaviors={this.getActionBehaviors()}
-              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
-              addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
-              addNewLabel="Add a new action"
-            />
-            <BehaviorSwitcherGroup
-              ref="dataTypeSwitcher"
-              heading={this.getBehaviorSwitcherDataTypeHeading()}
-              behaviors={this.getDataTypeBehaviors()}
-              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
-              addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
-              addNewLabel="Add a new data type"
-            />
-          </div>
+          <BehaviorSwitcher
+            ref="behaviorSwitcher"
+            onToggle={this.toggleBehaviorSwitcher}
+            actionBehaviors={this.getActionBehaviors()}
+            dataTypeBehaviors={this.getDataTypeBehaviors()}
+            currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
+            groupId={this.props.groupId}
+            teamId={this.props.teamId}
+          />
         </Collapsible>
       </div>
     );
