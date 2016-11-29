@@ -16,7 +16,10 @@ define(function(require) {
       groupName: React.PropTypes.string.isRequired,
       groupDescription: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
-      csrfToken: React.PropTypes.string.isRequired
+      onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
+      onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
+      onSaveBehaviorGroupName: React.PropTypes.func.isRequired,
+      onSaveBehaviorGroupDescription: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
@@ -37,55 +40,12 @@ define(function(require) {
       }
     },
 
-    postOptions: function(data) {
-      return {
-        credentials: 'same-origin',
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Csrf-Token': this.props.csrfToken
-        },
-        body: JSON.stringify(data)
-      };
-    },
-
     getBehaviorGroupName: function() {
-      return this.state.groupName;
-    },
-
-    onBehaviorGroupNameChange: function(name) {
-      this.setState({
-        groupName: name
-      });
-    },
-
-    saveBehaviorGroupName: function(name) {
-      var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupName().url;
-      var data = {
-        groupId: this.props.groupId,
-        name: name
-      };
-      fetch(url, this.postOptions(data)).then(() => this.onBehaviorGroupNameChange.bind(this, name));
+      return this.props.groupName;
     },
 
     getBehaviorGroupDescription: function() {
-      return this.state.groupDescription;
-    },
-
-    onBehaviorGroupDescriptionChange: function(desc) {
-      this.setState({
-        groupDescription: desc
-      });
-    },
-
-    saveBehaviorGroupDescription: function(desc) {
-      var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupDescription().url;
-      var data = {
-        groupId: this.props.groupId,
-        description: desc
-      };
-      fetch(url, this.postOptions(data)).then(() => this.onBehaviorGroupDescriptionChange.bind(this, name));
+      return this.props.groupDescription;
     },
 
     getDataTypesHeading: function() {
@@ -110,9 +70,9 @@ define(function(require) {
               <Input
                 className="form-input-borderless form-input-l type-bold mbn"
                 placeholder="Skill name (optional)"
-                onChange={this.onBehaviorGroupNameChange}
-                onBlur={this.saveBehaviorGroupName}
-                onEnter={this.saveBehaviorGroupName}
+                onChange={this.props.onBehaviorGroupNameChange}
+                onBlur={this.props.onSaveBehaviorGroupName}
+                onEnter={this.props.onSaveBehaviorGroupName}
                 value={this.getBehaviorGroupName()}
               />
             </div>
@@ -120,9 +80,9 @@ define(function(require) {
               <Input
                 className="form-input-borderless form-input-m mbn"
                 placeholder="Description (optional)"
-                onChange={this.onBehaviorGroupDescriptionChange}
-                onBlur={this.saveBehaviorGroupDescription}
-                onEnter={this.saveBehaviorGroupDescription}
+                onChange={this.props.onBehaviorGroupDescriptionChange}
+                onBlur={this.props.onSaveBehaviorGroupDescription}
+                onEnter={this.props.onSaveBehaviorGroupDescription}
                 value={this.getBehaviorGroupDescription()}
               />
             </div>
