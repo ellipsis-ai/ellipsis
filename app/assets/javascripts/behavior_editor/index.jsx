@@ -1000,6 +1000,51 @@ return React.createClass({
       });
   },
 
+  onBehaviorGroupNameChange: function(name) {
+    this.setState({
+      groupName: name
+    });
+  },
+
+  onBehaviorGroupDescriptionChange: function(desc) {
+    this.setState({
+      groupDescription: desc
+    });
+  },
+
+  jsonPostOptions: function(data) {
+    return {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Csrf-Token': this.props.csrfToken
+      },
+      body: JSON.stringify(data)
+    };
+  },
+
+  saveBehaviorGroupName: function(name) {
+    var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupName().url;
+    var data = {
+      groupId: this.props.groupId,
+      name: name
+    };
+    // TODO: error handling!
+    fetch(url, this.jsonPostOptions(data)).then(() => this.onBehaviorGroupNameChange.bind(this, name));
+  },
+
+  saveBehaviorGroupDescription: function(desc) {
+    var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupDescription().url;
+    var data = {
+      groupId: this.props.groupId,
+      description: desc
+    };
+    // TODO: error handling!
+    fetch(url, this.jsonPostOptions(data)).then(() => this.onBehaviorGroupDescriptionChange.bind(this, desc));
+  },
+
   updateParamAtIndexWithParam: function(index, newParam) {
     var oldParams = this.getBehaviorParams();
     var oldParamName = oldParams[index].name;
@@ -1320,6 +1365,7 @@ return React.createClass({
     return {
       behavior: initialBehavior,
       groupName: this.props.groupName,
+      groupDescription: this.props.groupDescription,
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
@@ -1691,10 +1737,13 @@ return React.createClass({
             dataTypeBehaviors={this.getDataTypeBehaviors()}
             currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
             groupId={this.props.groupId}
-            groupName={this.props.groupName}
-            groupDescription={this.props.groupDescription}
+            groupName={this.state.groupName}
+            groupDescription={this.state.groupDescription}
             teamId={this.props.teamId}
-            csrfToken={this.props.csrfToken}
+            onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
+            onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+            onSaveBehaviorGroupName={this.saveBehaviorGroupName}
+            onSaveBehaviorGroupDescription={this.saveBehaviorGroupDescription}
           />
         </Collapsible>
       </div>
