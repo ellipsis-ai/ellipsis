@@ -1715,19 +1715,26 @@ return React.createClass({
     }
   },
 
-  getPageDescription: function(optionalDescription, actionCount, dataTypeCount) {
-    var summary;
+  getPageSummary: function(actionCount, dataTypeCount) {
     if (actionCount === 1 && dataTypeCount === 1) {
-      summary = `1 action, 1 data type`;
+      return `1 action, 1 data type`;
     } else if (actionCount === 1 && dataTypeCount > 1) {
-      summary = `1 action, ${dataTypeCount} data types`;
+      return `1 action, ${dataTypeCount} data types`;
     } else if (actionCount > 1 && dataTypeCount === 0) {
-      summary = `${actionCount} actions`;
+      return `${actionCount} actions`;
     } else if (actionCount > 1 && dataTypeCount === 1) {
-      summary = `${actionCount} actions, 1 data type`;
+      return `${actionCount} actions, 1 data type`;
     } else if (actionCount > 1 && dataTypeCount > 1) {
-      summary = `${actionCount} actions, ${dataTypeCount} data types`;
+      return `${actionCount} actions, ${dataTypeCount} data types`;
+    } else if (actionCount === 0 && dataTypeCount > 1) {
+      return `${dataTypeCount} data types`;
+    } else { // only 1 action or only 1 data type
+      return null;
     }
+  },
+
+  getPageDescription: function(optionalDescription, actionCount, dataTypeCount) {
+    var summary = this.getPageSummary(actionCount, dataTypeCount);
     if (optionalDescription && summary) {
       return (
         <span> — {optionalDescription} <i>({summary})</i></span>
