@@ -20,9 +20,10 @@ case class BehaviorVersionExporter(
                                     parentPath: String
                                   ) extends Exporter {
 
-  val dirName = {
+  val fullPath = {
     val behaviorType = if (behaviorVersion.behavior.isDataType) { "data_types" } else { "actions" }
-    s"$parentPath/$behaviorType/${behaviorVersion.id}"
+    val dirName = behaviorVersion.behavior.maybeDataTypeName.getOrElse(behaviorVersion.id)
+    s"$parentPath/$behaviorType/$dirName"
   }
 
   def functionString: String = maybeFunction.getOrElse("")
