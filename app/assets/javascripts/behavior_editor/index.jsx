@@ -1963,7 +1963,9 @@ return React.createClass({
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
 
-          <div className="container">{this.getBehaviorHeading()}</div>
+          <div className="container pts">
+            {this.getBehaviorHeading()}
+          </div>
 
           <DataTypeNameInput
             name={this.getDataTypeName()}
