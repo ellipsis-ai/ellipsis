@@ -103,22 +103,25 @@ class BehaviorImportExportController @Inject() (
       },
       info => {
         val json = Json.parse(info.dataJson)
-        json.validate[BehaviorVersionData] match {
+        json.validate[BehaviorGroupData] match {
           case JsSuccess(data, jsPath) => {
             for {
-              maybeTeam <- dataService.teams.find(data.teamId, user)
+              maybeTeam <- dataService.teams.find(user.teamId)
               maybeImporter <- Future.successful(maybeTeam.map { team =>
-                BehaviorVersionImporter(team, user, data, dataService)
+                BehaviorGroupImporter(team, user, data, dataService)
               })
-              maybeBehaviorVersion <- maybeImporter.map { importer =>
+              maybeBehaviorGroup <- maybeImporter.map { importer =>
                 importer.run
               }.getOrElse(Future.successful(None))
+              maybeBehavior <- maybeBehaviorGroup.map { group =>
+                dataService.behaviors.allForGroup(group).map(_.headOption)
+              }.getOrElse(Future.successful(None))
             } yield {
-              maybeBehaviorVersion.map { behaviorVersion =>
+              maybeBehavior.map { behavior =>
                 if (request.headers.get("x-requested-with").contains("XMLHttpRequest")) {
-                  Ok(Json.obj("behaviorId" -> behaviorVersion.behavior.id))
+                  Ok(Json.obj("groupId" -> behavior.id))
                 } else {
-                  Redirect(routes.BehaviorEditorController.edit(behaviorVersion.behavior.id, justSaved = Some(true)))
+                  Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
                 }
               }.getOrElse {
                 NotFound("Behavior not found")

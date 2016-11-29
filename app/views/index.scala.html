@@ -1,7 +1,6 @@
 @(
   teamAccess: models.accounts.user.UserTeamAccess,
-  behaviorGroups: Seq[json.BehaviorGroupData],
-  behaviorVersions: Seq[json.BehaviorVersionData]
+  behaviorGroups: Seq[json.BehaviorGroupData]
 )(implicit messages: Messages, r: RequestHeader)
 
 @import play.api.libs.json._
@@ -23,7 +22,6 @@
       var BehaviorListConfig = {
         containerId: 'behaviorListContainer',
         behaviorGroups: @Html(Json.toJson(behaviorGroups).toString),
-        behaviorVersions: @Html(Json.toJson(behaviorVersions).toString),
         csrfToken: "@CSRF.getToken(r).map(_.value)"
       };
     </script>

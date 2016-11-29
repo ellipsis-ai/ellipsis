@@ -4,19 +4,20 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
-      installedBehaviors: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      teamId: React.PropTypes.string.isRequired,
+      installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       csrfToken: React.PropTypes.string.isRequired
     },
 
-    behaviorIsImported: function(importId) {
-      return this.getInstalledBehaviors().some(function(ea) {
+    behaviorGroupIsImported: function(importId) {
+      return this.getInstalledBehaviorGroups().some(function(ea) {
         return ea.importedId === importId;
       });
     },
 
-    getInstalledBehaviors: function() {
-      return this.state.installedBehaviors || [];
+    getInstalledBehaviorGroups: function() {
+      return this.state.installedBehaviorGroups || [];
     },
 
     getBehaviorGroups: function() {
@@ -24,40 +25,33 @@ define(function(require) {
     },
 
     getInitialState: function() {
-      var installed = this.props.installedBehaviors;
+      var installed = this.props.installedBehaviorGroups;
       return {
-        installedBehaviors: installed,
+        installedBehaviorGroups: installed,
         behaviorGroups: this.updateBehaviorGroupsWithLocalIds(this.props.behaviorGroups, function(publishedId) {
           var match = installed.find(function(ea) {
             return ea.importedId === publishedId;
           });
-          return match ? match.behaviorId : null;
+          return match ? match.groupId : null;
         })
       };
     },
 
     updateBehaviorGroupsWithLocalIds: function(groups, findMatchingLocalId) {
       return groups.map(function(group) {
-        var versionsWithLocalIds = group.behaviorVersions.map(function(behaviorVersion) {
-          var localId = findMatchingLocalId(behaviorVersion.config.publishedId);
-          if (localId !== null) {
-            return Object.assign({}, behaviorVersion, { localBehaviorId: localId });
-          } else {
-            return behaviorVersion;
-          }
-        }, this);
-        return Object.assign({}, group, { behaviorVersions: versionsWithLocalIds });
+        var localId = findMatchingLocalId(group.publishedId);
+        return Object.assign({}, group, { localGroupId: localId });
       }, this);
     },
 
-    onBehaviorImport: function(importId, localId) {
+    onBehaviorGroupImport: function(importId, localId) {
       var newState = {
         behaviorGroups: this.updateBehaviorGroupsWithLocalIds(this.getBehaviorGroups(), function(publishedId) {
           return publishedId === importId ? localId : null;
         })
       };
-      if (!this.behaviorIsImported(importId)) {
-        newState.installedBehaviors = this.state.installedBehaviors.concat({ behaviorId: localId, importedId: importId });
+      if (!this.behaviorGroupIsImported(importId)) {
+        newState.installedBehaviorGroups = this.state.installedBehaviorGroups.concat({ behaviorId: localId, importedId: importId });
       }
       this.setState(newState);
     },
@@ -72,9 +66,11 @@ define(function(require) {
                 csrfToken={this.props.csrfToken}
                 name={group.name}
                 description={group.description}
+                groupData={group}
+                teamId={this.props.teamId}
                 behaviors={group.behaviorVersions}
-                checkImported={this.behaviorIsImported}
-                onBehaviorImport={this.onBehaviorImport}
+                isImported={this.behaviorGroupIsImported(group)}
+                onBehaviorGroupImport={this.onBehaviorGroupImport}
               />
             );
           }, this)}

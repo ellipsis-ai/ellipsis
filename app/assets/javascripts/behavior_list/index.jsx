@@ -1,22 +1,16 @@
 define(function(require) {
   var React = require('react'),
     BehaviorName = require('./behavior_name'),
-    BehaviorVersion = require('../models/behavior_version'),
+    BehaviorGroup = require('../models/behavior_group'),
     Collapsible = require('../collapsible'),
     FixedFooter = require('../fixed_footer'),
     Formatter = require('../formatter'),
-    Sort = require('../sort'),
     SVGInstalled = require('../svg/installed');
 
   return React.createClass({
     displayName: "BehaviorList",
     propTypes: {
-      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.shape({
-        id: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired,
-        createdAt: React.PropTypes.number.isRequired
-      })).isRequired,
-      behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       csrfToken: React.PropTypes.string.isRequired
     },
 
@@ -30,46 +24,12 @@ define(function(require) {
       }
     },
 
-    getVersions: function() {
-      return this.props.behaviorVersions;
-    },
-
     getBehaviorGroups: function() {
-      var groups = [];
-      this.props.behaviorVersions.forEach(version => {
-        var gid = version.groupId;
-        var group = groups.find(ea => ea.id === gid);
-        if (!group) {
-          group = { id: gid, versions: [] };
-          groups.push(group);
-        }
-        group.versions.push(version);
-      });
-      groups = groups.map(ea => {
-        return { id: ea.id, versions: this.sortVersions(ea.versions) };
-      });
-      return Sort.arrayAlphabeticalBy(groups, group => {
-        return group.versions[0].getFirstTriggerText();
-      });
-    },
-
-    sortVersionsByDataTypeName: function(versions) {
-      return Sort.arrayAlphabeticalBy(versions, (item) => item.getDataTypeName());
-    },
-
-    sortVersionsByFirstTrigger: function(versions) {
-      return Sort.arrayAlphabeticalBy(versions, (item) => item.getFirstTriggerText());
-    },
-
-    sortVersions: function(versions) {
-      var actionVersions = versions.filter(ea => !ea.isDataType());
-      var dataTypeVersions = versions.filter(ea => ea.isDataType());
-      return this.sortVersionsByFirstTrigger(actionVersions).concat(this.sortVersionsByDataTypeName(dataTypeVersions));
+      return this.props.behaviorGroups;
     },
 
     getInitialState: function() {
       return {
-        versions: this.getVersions(),
         selectedGroupIds: []
       };
     },
@@ -178,7 +138,7 @@ define(function(require) {
     getVersionRow: function(version, versionIndex, group) {
       var isFirstVersion = versionIndex === 0;
       var borderAndSpacingClass = isFirstVersion ? "border-top pts " : "";
-      borderAndSpacingClass += (versionIndex === group.versions.length - 1 ? "pbs " : "pbxs ");
+      borderAndSpacingClass += (versionIndex === group.behaviorVersions.length - 1 ? "pbs " : "pbxs ");
       return (
         <div className="column-row" key={`version-${group.id}-${versionIndex}`}>
           <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>
@@ -198,7 +158,7 @@ define(function(require) {
     },
 
     getBehaviorGroupRow: function(group) {
-      return group.versions.map((ea, i) => {
+      return group.behaviorVersions.map((ea, i) => {
         return this.getVersionRow(ea, i, group);
       });
     },
@@ -251,7 +211,7 @@ define(function(require) {
     },
 
     renderContent: function() {
-      if (this.props.behaviorVersions.length > 0) {
+      if (this.props.behaviorGroups.length > 0) {
         return (
           <div>
             <p><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>

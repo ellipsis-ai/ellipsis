@@ -39,28 +39,16 @@ class ApplicationController @Inject() (
       }.getOrElse {
         Future.successful(None)
       }
-      groupData <- Future.successful(maybeBehaviorGroups.map { groups =>
-        groups.map { group =>
-          BehaviorGroupData(group.id, group.name, group.createdAt)
-        }
-      }.getOrElse(Seq()))
-      maybeBehaviors <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.behaviors.allForTeam(team).map { behaviors =>
-          Some(behaviors)
-        }
-      }.getOrElse {
-        Future.successful(None)
-      }
-      versionData <- Future.sequence(maybeBehaviors.map { behaviors =>
-        behaviors.map { behavior =>
-          BehaviorVersionData.maybeFor(behavior.id, user, dataService)
-        }
-      }.getOrElse(Seq())).map(_.flatten)
+      groupData <- maybeBehaviorGroups.map { groups =>
+        Future.sequence(groups.map { group =>
+          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+        }).map(_.flatten)
+      }.getOrElse(Future.successful(Seq()))
       result <- teamAccess.maybeTargetTeam.map { team =>
-        Future.successful(if (versionData.isEmpty) {
+        Future.successful(if (groupData.isEmpty) {
           Redirect(routes.ApplicationController.intro(maybeTeamId))
         } else {
-          Ok(views.html.index(teamAccess, groupData, versionData))
+          Ok(views.html.index(teamAccess, groupData))
         })
       }.getOrElse {
         reAuthFor(request, maybeTeamId)
@@ -68,14 +56,14 @@ class ApplicationController @Inject() (
     } yield result
   }
 
-  case class PublishedBehaviorInfo(published: Seq[BehaviorCategory], installedBehaviors: Seq[InstalledBehaviorData])
+  case class PublishedBehaviorInfo(published: Seq[BehaviorGroupData], installedBehaviors: Seq[InstalledBehaviorGroupData])
 
   private def withPublishedBehaviorInfoFor(team: Team, maybeBranch: Option[String]): Future[PublishedBehaviorInfo] = {
     dataService.behaviors.regularForTeam(team).map { behaviors =>
-      behaviors.map { ea => InstalledBehaviorData(ea.id, ea.maybeImportedId)}
+      behaviors.map { ea => InstalledBehaviorGroupData(ea.id, ea.maybeImportedId)}
     }.map { installedBehaviors =>
       val githubService = GithubService(team, ws, configuration, cache, dataService, maybeBranch)
-      PublishedBehaviorInfo(githubService.publishedBehaviorCategories, installedBehaviors)
+      PublishedBehaviorInfo(githubService.publishedBehaviorGroups, installedBehaviors)
     }
   }
 
@@ -140,6 +128,7 @@ class ApplicationController @Inject() (
   )
 
   def mergeBehaviorGroups = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
     selectedBehaviorGroupsForm.bindFromRequest.fold(
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
@@ -150,7 +139,12 @@ class ApplicationController @Inject() (
             dataService.behaviorGroups.find(id)
           }).map(_.flatten)
           merged <- dataService.behaviorGroups.merge(groups)
-        } yield Ok(Json.toJson(BehaviorGroupData(merged.id, merged.name, merged.createdAt)))
+          maybeData <- BehaviorGroupData.maybeFor(merged.id, user, None, dataService)
+        } yield maybeData.map { data =>
+          Ok(Json.toJson(data))
+        }.getOrElse {
+          NotFound("Merged skill not found")
+        }
       }
     )
   }
