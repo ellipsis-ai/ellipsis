@@ -1,3 +1,5 @@
+@import (reference) "measurements";
+
 /* Hard widths */
 
 .width {
@@ -36,3 +38,8 @@
   min-width: 40em !important;
 }
 
+@media (max-width: @mobile-max-width) {
+  .mobile-width-full {
+    width: 100% !important;
+  }
+}
