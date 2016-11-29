@@ -26,12 +26,11 @@ var React = require('react'),
   Input = require('../form/input'),
   ModalScrim = require('./modal_scrim'),
   Notification = require('../notifications/notification'),
-  OtherBehaviorsMenu = require('./other_behaviors_menu'),
-  PageHeading = require('./page_heading'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   SectionHeading = require('./section_heading'),
+  SVGHamburger = require('../svg/hamburger'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
@@ -324,10 +323,6 @@ return React.createClass({
         <span className="mobile-display-only">Manage</span>
       </span>
     );
-  },
-
-  getPageHeading: function() {
-    return this.isDataTypeBehavior() ? "Edit data type" : "Edit skill action";
   },
 
   getRedirectValue: function() {
@@ -1706,20 +1701,119 @@ return React.createClass({
     );
   },
 
-  renderPageHeading: function() {
+  getPageName: function(optionalName, actionCount) {
+    if (optionalName) {
+      return (
+        <span className="type-black">{optionalName}</span>
+      );
+    } else if (actionCount > 1) {
+      return 'Untitled skill';
+    } else if (actionCount === 1) {
+      return 'Edit skill';
+    } else {
+      return 'Edit data type';
+    }
+  },
+
+  getPageSummary: function(actionCount, dataTypeCount) {
+    if (actionCount === 1 && dataTypeCount === 1) {
+      return `1 action, 1 data type`;
+    } else if (actionCount === 1 && dataTypeCount > 1) {
+      return `1 action, ${dataTypeCount} data types`;
+    } else if (actionCount > 1 && dataTypeCount === 0) {
+      return `${actionCount} actions`;
+    } else if (actionCount > 1 && dataTypeCount === 1) {
+      return `${actionCount} actions, 1 data type`;
+    } else if (actionCount > 1 && dataTypeCount > 1) {
+      return `${actionCount} actions, ${dataTypeCount} data types`;
+    } else if (actionCount === 0 && dataTypeCount > 1) {
+      return `${dataTypeCount} data types`;
+    } else { // only 1 action or only 1 data type
+      return null;
+    }
+  },
+
+  getPageDescription: function(optionalDescription, actionCount, dataTypeCount) {
+    var summary = this.getPageSummary(actionCount, dataTypeCount);
+    if (optionalDescription && summary) {
+      return (
+        <span> — {optionalDescription} <i>({summary})</i></span>
+      );
+    } else if (optionalDescription && !summary) {
+      return (
+        <span> — {optionalDescription}</span>
+      );
+    } else if (summary) {
+      return (
+        <span> — <i>{summary}</i></span>
+      );
+    } else {
+      return null;
+    }
+  },
+
+  getPageHeading: function() {
+    var actionCount = this.getActionBehaviors().length;
+    var dataTypeCount = this.getDataTypeBehaviors().length;
+
     return (
-      <PageHeading heading={this.getPageHeading()}>
-        <OtherBehaviorsMenu
-          behaviorCount={this.countActionBehaviorsInGroup()}
-          onClick={this.toggleBehaviorSwitcher}
-        />
-      </PageHeading>
+      <span>
+        <span className="mrxs">
+          {this.getPageName(this.state.groupName, actionCount)}
+        </span>
+        <span className="type-m type-regular align-m type-weak">
+          {this.getPageDescription(this.state.groupDescription, actionCount, dataTypeCount)}
+        </span>
+      </span>
+    );
+  },
+
+  getBehaviorHeading: function() {
+    if (this.getAllBehaviors().length > 1) {
+      return (
+        <h3 className="type-weak mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit skill action"}</h3>
+      );
+    } else {
+      return null;
+    }
+  },
+
+  renderSmallPageHeading: function() {
+    return (
+      <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
+        <span className="display-inline-block align-m mrm" style={{ height: "18px" }}>
+          <SVGHamburger />
+        </span>
+        <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
+      </button>
+    );
+  },
+
+  renderLargePageHeading: function() {
+    return (
+      <button type="button" className="button-l button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
+        <span className="display-inline-block align-m mrm" style={{ height: "24px" }}>
+          <SVGHamburger />
+        </span>
+        <h3 className="display-inline-block align-m man">{this.getPageHeading()}</h3>
+      </button>
+    );
+  },
+
+  renderPageHeading: function() {
+    var hasSubTitle = this.getAllBehaviors().length > 1;
+    return (
+      <div className="bg-light border-bottom">
+        <div className="container pts type-weak">
+          {hasSubTitle ? this.renderSmallPageHeading() : this.renderLargePageHeading()}
+        </div>
+      </div>
     );
   },
 
   renderBehaviorSwitcher: function() {
     return (
-      <div className="position-fixed-right position-z-front bg-white border-left">
+      <div className="position-fixed-left position-z-front bg-white border-left">
         <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
           <BehaviorSwitcher
             ref="behaviorSwitcher"
@@ -1757,6 +1851,8 @@ return React.createClass({
         <div className="pbxxxl">
 
           <div className="container pts">
+            {this.getBehaviorHeading()}
+
             <Input
               className="form-input-borderless form-input-m type-bold mbn"
               placeholder="Add a description (optional)"
@@ -1873,6 +1969,10 @@ return React.createClass({
 
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
+
+          <div className="container pts">
+            {this.getBehaviorHeading()}
+          </div>
 
           <DataTypeNameInput
             name={this.getDataTypeName()}
