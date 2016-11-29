@@ -66,6 +66,7 @@ return React.createClass({
     teamId: React.PropTypes.string.isRequired,
     groupId: React.PropTypes.string.isRequired,
     groupName: React.PropTypes.string,
+    groupDescription: React.PropTypes.string,
     behaviorId: React.PropTypes.string,
     description: React.PropTypes.string,
     functionBody: React.PropTypes.string,
