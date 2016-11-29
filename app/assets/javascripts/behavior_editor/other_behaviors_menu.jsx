@@ -10,20 +10,20 @@ define(function(require) {
 
     getButtonLabel: function() {
       if (this.props.behaviorCount === 1) {
-        return `1 action in this skill`;
+        return `Edit skill`;
       } else {
-        return `${this.props.behaviorCount} actions in this skill`;
+        return `Edit skill with ${this.props.behaviorCount} actions`;
       }
     },
 
     render: function() {
       return (
-        <div className="align-r ptxl">
-          <button type="button" className="button-tab" onClick={this.props.onClick}>
-            <span>{this.getButtonLabel()}</span>
-            <span className="display-inline-block align-b mlm" style={{height: "24px"}}>
+        <div>
+          <button type="button" className="button-raw" onClick={this.props.onClick}>
+            <span className="display-inline-block align-b mrm" style={{height: "24px"}}>
               <SVGHamburger />
             </span>
+            <span>{this.getButtonLabel()}</span>
           </button>
         </div>
       );

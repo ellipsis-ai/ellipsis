@@ -250,7 +250,14 @@ button.button-tab {
   border-radius: 0;
   background-color: @almost-white;
   padding: @s @m;
-  color: @black;
+  color: inherit;
+  text-align: left;
+}
+
+button.button-tab-subtle {
+  background-color: transparent;
+  border-width: 0;
+  padding: @s 0;
 }
 
 button:focus,
@@ -275,6 +282,12 @@ button.button-tab:focus {
   padding-right: (@m - @border-width);
   border-color: @gray-dark;
   border-bottom-width: 0;
+}
+
+button.button-tab-subtle:focus {
+  border-width: 0 0 @border-width-thick 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 button.button-dropdown-trigger:focus,
