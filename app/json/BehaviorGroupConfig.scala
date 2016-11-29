@@ -1,3 +1,3 @@
 package json
 
-case class BehaviorGroupConfig(publishedId: String)
+case class BehaviorGroupConfig(name: String, publishedId: String)

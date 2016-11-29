@@ -6,10 +6,10 @@ import scala.reflect.io.Path
 
 trait Exporter {
 
-  val dirName: String
+  val fullPath: String
 
   protected def writeFileFor(filename: String, content: String): Unit = {
-    val writer = new PrintWriter(new File(s"$dirName/$filename"))
+    val writer = new PrintWriter(new File(s"$fullPath/$filename"))
     writer.write(content)
     writer.close()
   }
@@ -17,7 +17,7 @@ trait Exporter {
   protected def writeFiles(): Unit
 
   def createDirectory(): Unit = {
-    val path = Path(dirName)
+    val path = Path(fullPath)
     path.deleteRecursively()
     path.createDirectory()
     writeFiles()

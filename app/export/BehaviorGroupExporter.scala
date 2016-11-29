@@ -20,10 +20,10 @@ case class BehaviorGroupExporter(
                                   parentPath: String
                                 ) extends Exporter {
 
-  val dirName = s"$parentPath/${behaviorGroup.exportName}"
-  def zipFileName = s"$dirName.zip"
+  val fullPath = s"$parentPath/${behaviorGroup.exportName}"
+  def zipFileName = s"$fullPath.zip"
 
-  val config = BehaviorGroupConfig(behaviorGroup.id)
+  val config = BehaviorGroupConfig(behaviorGroup.name, behaviorGroup.id)
 
   def configString: String = Json.prettyPrint(Json.toJson(config))
 
@@ -41,7 +41,7 @@ case class BehaviorGroupExporter(
     createDirectory()
     val path = Path(zipFileName)
     path.delete()
-    Process(Seq("bash","-c",s"cd $dirName && zip -r $zipFileName *")).!
+    Process(Seq("bash","-c",s"cd $fullPath && zip -r $zipFileName *")).!
   }
 
   def getZipFile: File = {

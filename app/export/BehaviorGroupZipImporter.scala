@@ -41,11 +41,12 @@ case class BehaviorGroupZipImporter(
 
     val versionStringMaps = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, String]]()
 
-    val versionFileRegex = """(actions|data_types)/([^/]+)/(.+)""".r
-    val readmeRegex = """^README$""".r
-    val configRegex = """^config.json$""".r
+    val versionFileRegex = """^(actions|data_types)/([^/]+)/(.+)""".r
+    val readmeRegex = """^README$$""".r
+    val configRegex = """^config\.json$$""".r
 
     var groupName: String = ""
+    var groupDescription: String = ""
     var maybePublishedId: Option[String] = None
 
     while (nextEntry != null) {
@@ -61,12 +62,13 @@ case class BehaviorGroupZipImporter(
         map.put(filename, readDataFrom(zipInputStream))
       }
       readmeRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
-        groupName = readDataFrom(zipInputStream)
+        groupDescription = readDataFrom(zipInputStream)
       }
       configRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val data = readDataFrom(zipInputStream)
         Json.parse(data).validate[BehaviorGroupConfig] match {
           case JsSuccess(data, jsPath) => {
+            groupName = data.name
             maybePublishedId = Some(data.publishedId)
           }
           case e: JsError =>
@@ -75,7 +77,7 @@ case class BehaviorGroupZipImporter(
       nextEntry = zipInputStream.getNextEntry
     }
 
-    dataService.behaviorGroups.createFor(groupName, maybePublishedId, team).flatMap { group =>
+    dataService.behaviorGroups.createFor(groupName, groupDescription, maybePublishedId, team).flatMap { group =>
       val importers = versionStringMaps.map { case(versionId, strings) =>
         val data = BehaviorVersionData.fromStrings(
           team.id,
