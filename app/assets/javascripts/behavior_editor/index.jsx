@@ -969,16 +969,7 @@ return React.createClass({
       teamId: this.props.teamId,
       variables: envVars
     };
-    fetch(url, {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Csrf-Token': this.props.csrfToken
-      },
-      body: JSON.stringify({ teamId: this.props.teamId, dataJson: JSON.stringify(data) })
-    })
+    fetch(url, this.jsonPostOptions({ teamId: this.props.teamId, dataJson: JSON.stringify(data) }))
       .then((response) => response.json())
       .then((json) => {
         this.hideActivePanel();
