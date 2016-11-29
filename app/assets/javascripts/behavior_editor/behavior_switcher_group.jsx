@@ -3,6 +3,7 @@ define(function(require) {
     AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
     BehaviorName = require('../behavior_list/behavior_name'),
     BehaviorVersion = require('../models/behavior_version'),
+    ifPresent = require('../if_present'),
     Sort = require('../sort');
 
   return React.createClass({
@@ -12,7 +13,8 @@ define(function(require) {
       behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       currentBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
       addNewUrl: React.PropTypes.string.isRequired,
-      addNewLabel: React.PropTypes.string
+      addNewLabel: React.PropTypes.string,
+      emptyMessage: React.PropTypes.string.isRequired
     },
 
     getBehaviorList: function() {
@@ -25,24 +27,30 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="pbxl">
+        <div className="mtxl mbxxxl">
           <div className="phl">
-            <h4 className="mtm">{this.props.heading}</h4>
-            <div className="mvm">
-              <AddNewBehaviorToGroup
-                url={this.props.addNewUrl}
-                label={this.props.addNewLabel}
-              />
+            <div className="columns columns-elastic">
+              <div className="column column-expand">
+                <h4>{this.props.heading}</h4>
+              </div>
+              <div className="column column-shrink">
+                <AddNewBehaviorToGroup
+                  url={this.props.addNewUrl}
+                  label={this.props.addNewLabel}
+                />
+              </div>
             </div>
           </div>
-          <div className="type-s border-bottom">
-            {this.getBehaviorList().map((version) => (
+          <div className="type-s">
+            {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version) => (
               <div
                 key={`behavior-${version.behaviorId}`}
                 className={`border-top border-bottom pvs phl mbneg1 ${this.isCurrentVersion(version) ? "bg-blue-lighter border-blue" : ""}`}
               >
                 <BehaviorName version={version} disableLink={this.isCurrentVersion(version)} disableWrapping={true} />
               </div>
+            )), () => (
+              <p className="phl type-weak">{this.props.emptyMessage}</p>
             ))}
           </div>
         </div>

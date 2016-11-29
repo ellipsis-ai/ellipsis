@@ -23,7 +23,7 @@ define(function(require) {
       return {
         groupName: this.props.groupName,
         groupDescription: this.props.groupDescription
-      }
+      };
     },
 
     getActionsHeading: function() {
@@ -101,39 +101,46 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="position-relative width-20" ref="behaviorSwitcher">
+        <div className="position-relative width-30 mobile-width-full" ref="behaviorSwitcher">
           <div className="align-r ptxs prxs">
             <button type="button" className="button-symbol button-s button-subtle" onClick={this.props.onToggle}><SVGXIcon /></button>
           </div>
-          <div className="pbl">
-            <div className="phl pts">
+          <div className="phl mbxl">
+            <div className="mbs">
               <Input
                 className="form-input-borderless form-input-l type-bold mbn"
-                placeholder="Name this skill"
+                placeholder="Skill name (optional)"
                 onChange={this.onBehaviorGroupNameChange}
                 onBlur={this.saveBehaviorGroupName}
                 onEnter={this.saveBehaviorGroupName}
                 value={this.getBehaviorGroupName()}
               />
             </div>
-            <div className="phl pts">
+            <div className="mbs">
               <Input
                 className="form-input-borderless form-input-m mbn"
-                placeholder="Describe this skill"
+                placeholder="Description (optional)"
                 onChange={this.onBehaviorGroupDescriptionChange}
                 onBlur={this.saveBehaviorGroupDescription}
                 onEnter={this.saveBehaviorGroupDescription}
                 value={this.getBehaviorGroupDescription()}
               />
             </div>
+
+            <p className="type-s type-weak mtl">
+              <span>Skills may include one or more related actions, each providing a response to certain triggers. </span>
+              <span>Actions can share user input and data types.</span>
+            </p>
           </div>
+
           <BehaviorSwitcherGroup
             ref="actionSwitcher"
             heading={this.getActionsHeading()}
             behaviors={this.props.actionBehaviors}
             currentBehavior={this.props.currentBehavior}
             addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
-            addNewLabel="Add a new action"
+            addNewLabel="Add new action"
+            emptyMessage="No actions in this skill"
           />
           <BehaviorSwitcherGroup
             ref="dataTypeSwitcher"
@@ -141,7 +148,8 @@ define(function(require) {
             behaviors={this.props.dataTypeBehaviors}
             currentBehavior={this.props.currentBehavior}
             addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
-            addNewLabel="Add a new data type"
+            addNewLabel="Add new data type"
+            emptyMessage="No data types in this skill"
           />
         </div>
       );

@@ -15,7 +15,7 @@ define(function(require) {
       return (
         <button
           onClick={this.onAddNewBehavior}
-          className="button-s">{this.props.label || "Add another"}</button>
+          className="button-s button-shrink">{this.props.label || "Add another"}</button>
       );
     }
   });
