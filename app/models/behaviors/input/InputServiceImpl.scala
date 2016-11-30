@@ -57,20 +57,19 @@ class InputServiceImpl @Inject() (
     data.groupId.map { gid =>
       dataService.behaviorGroups.find(gid)
     }.getOrElse(Future.successful(None)).flatMap { maybeGroup =>
-      val raw =
-        RawInput(
-          IDs.next,
-          data.name,
-          data.maybeNonEmptyQuestion,
-          data.paramType.map(_.id).getOrElse(TextType.id),
-          data.isSavedForTeam,
-          data.isSavedForUser,
-          maybeGroup.map(_.id)
-        )
       val action = for {
         maybeParamType <- DBIO.from(data.paramType.map { paramTypeData =>
           BehaviorParameterType.find(paramTypeData.id, team, dataService)
         }.getOrElse(Future.successful(None)))
+        raw <- DBIO.successful(RawInput(
+          IDs.next,
+          data.name,
+          data.maybeNonEmptyQuestion,
+          maybeParamType.map(_.id).getOrElse(TextType.id),
+          data.isSavedForTeam,
+          data.isSavedForUser,
+          maybeGroup.map(_.id)
+        ))
         input <- (all += raw).map { _ =>
           Input(
             raw.id,
