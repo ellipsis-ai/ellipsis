@@ -10,10 +10,11 @@ define(function(require) {
       csrfToken: React.PropTypes.string.isRequired
     },
 
-    isImported: function(group) {
-      return this.getInstalledBehaviorGroups().some(function(ea) {
+    getLocalId: function(group) {
+      const installed = this.getInstalledBehaviorGroups().find(ea => {
         return ea.importedId === group.publishedId;
       });
+      return installed ? installed.groupId : null;
     },
 
     getInstalledBehaviorGroups: function() {
@@ -51,7 +52,7 @@ define(function(require) {
                 groupData={group}
                 teamId={this.props.teamId}
                 behaviors={group.behaviorVersions}
-                isImported={this.isImported(group)}
+                localId={this.getLocalId(group)}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
               />
             );

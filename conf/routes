@@ -15,6 +15,7 @@ GET         /new_behavior                             @controllers.BehaviorEdito
 GET         /new_data_type                            @controllers.BehaviorEditorController.newForDataType(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
 GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
 GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
+GET         /edit_behavior_group/:id                  @controllers.BehaviorEditorController.editGroup(id: String)
 GET         /export_skill/:id                         @controllers.BehaviorImportExportController.export(id: String)
 GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
 GET         /import_skill_zip                         @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)

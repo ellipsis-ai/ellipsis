@@ -11,9 +11,9 @@ define(function(require) {
   return React.createClass({
     propTypes: {
       groupData: React.PropTypes.object.isRequired,
+      localId: React.PropTypes.string,
       teamId: React.PropTypes.string.isRequired,
       behaviors: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      isImported: React.PropTypes.bool.isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       description: React.PropTypes.string,
       name: React.PropTypes.string.isRequired,
@@ -30,15 +30,8 @@ define(function(require) {
       return this.state.importing;
     },
 
-    behaviorAlreadyImported: function() {
-      return !!this.props.isImported;
-    },
-
-    behaviorIsImported: function(behavior) {
-      if (!behavior.config || !behavior.config.publishedId) {
-        return false;
-      }
-      return this.props.checkImported(behavior.config.publishedId);
+    isImported: function() {
+      return !!this.props.localId;
     },
 
     importBehavior: function() {
@@ -67,7 +60,7 @@ define(function(require) {
     },
 
     getGithubLink: function() {
-      if (false/*this.getLocalGroupId()*/) {
+      if (this.isImported()) {
         return null;
       } else {
         return (
@@ -84,6 +77,24 @@ define(function(require) {
       return this.props.groupData.githubUrl;
     },
 
+    getLocalBehaviorEditLink: function() {
+      if (this.isImporting()) {
+        return (
+          <span className="mhm fade-in type-weak type-bold">Installing…</span>
+        );
+      } else if (this.props.localId) {
+        var url = jsRoutes.controllers.BehaviorEditorController.editGroup(this.props.localId).url;
+        return (
+          <a
+            className="mhm fade-in"
+            href={url}
+          >Edit installed version</a>
+        );
+      } else {
+        return null;
+      }
+    },
+
     getInstallButton: function() {
       if (this.isImporting()) {
         return (
@@ -91,7 +102,7 @@ define(function(require) {
             <SVGInstalling />
           </button>
         );
-      } else if (this.props.isImported) {
+      } else if (this.isImported()) {
         return (
           <button title="Already installed" type="button" className="button-raw button-s" disabled="disabled" style={{ width: 40, height: 24 }}>
             <SVGInstalled />
@@ -119,8 +130,8 @@ define(function(require) {
                   <span className="type-l">{this.props.name}</span>
                   <span className="type-regular type-weak"> &nbsp; – &nbsp; {this.props.description}</span>
                   {this.getGithubLink()}
-                  {/*{this.getLocalBehaviorEditLink()}*/}
-                  {this.behaviorAlreadyImported() ? /* TODO: update/re-install buttons */
+                  {this.getLocalBehaviorEditLink()}
+                  {this.isImported() ? /* TODO: update/re-install buttons */
                     "" : ""}
                 </h4>
                 {this.getBehaviors().map(function(behavior, index) {
