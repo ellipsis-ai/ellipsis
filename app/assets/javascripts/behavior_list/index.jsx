@@ -113,6 +113,7 @@ define(function(require) {
           ref={groupId}
           key={groupId}
           checked={this.isGroupSelected(groupId)}
+          className="align-t"
         />
       );
     },
@@ -135,14 +136,18 @@ define(function(require) {
       }
     },
 
-    getVersionRow: function(version, versionIndex, group) {
-      var isFirstVersion = versionIndex === 0;
-      var borderAndSpacingClass = isFirstVersion ? "border-top pts " : "";
+    groupHasTitle: function(group) {
+      return !!(group.name || group.description);
+    },
+
+    renderBehaviorVersionRow: function(version, versionIndex, group) {
+      var isFirstRow = versionIndex === 0 && !this.groupHasTitle(group);
+      var borderAndSpacingClass = isFirstRow ? "border-top pts " : "";
       borderAndSpacingClass += (versionIndex === group.behaviorVersions.length - 1 ? "pbs " : "pbxs ");
       return (
         <div className="column-row" key={`version-${group.id}-${versionIndex}`}>
           <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>
-            {isFirstVersion ? this.renderGroupSelectionCheckbox(group.id) : ""}
+            {isFirstRow ? this.renderGroupSelectionCheckbox(group.id) : ""}
           </div>
           <div className={"column column-expand type-s type-wrap-words " + borderAndSpacingClass}>
             <BehaviorName version={version} />
@@ -157,13 +162,51 @@ define(function(require) {
       );
     },
 
-    getBehaviorGroupRow: function(group) {
-      return group.behaviorVersions.map((ea, i) => {
-        return this.getVersionRow(ea, i, group);
-      });
+    renderBehaviorGroupTitle: function(optionalName, optionalDescription) {
+      if (optionalName && optionalDescription) {
+        return (
+          <h4 className="man">
+            <span>{optionalName}</span>
+            <span className="mhs type-weak">·</span>
+            <span className="type-regular">{optionalDescription}</span>
+          </h4>
+        );
+      } else if (optionalName) {
+        return (
+          <h4 className="man">{optionalName}</h4>
+        );
+      } else if (optionalDescription) {
+        return (
+          <h4 className="type-regular man">{optionalDescription}</h4>
+        );
+      } else {
+        return null;
+      }
     },
 
-    getBehaviorGroupRows: function() {
+    renderBehaviorGroupTitleRow: function(group) {
+      if (this.groupHasTitle(group)) {
+        return (
+          <div className="column-row" key={`group-${group.id}-title`}>
+            <div className="column column-shrink border-top pts pbxs">{this.renderGroupSelectionCheckbox(group.id)}</div>
+            <div className="column column-expand border-top pts pbxs">{this.renderBehaviorGroupTitle(group.name, group.description)}</div>
+            <div className="column column-shrink border-top pts pbxs"></div>
+            <div className="column column-shrink border-top pts pbxs"></div>
+          </div>
+        );
+      } else {
+        return null;
+      }
+    },
+
+    renderBehaviorGroup: function(group) {
+      var versionRows = group.behaviorVersions.map((ea, i) => {
+        return this.renderBehaviorVersionRow(ea, i, group);
+      });
+      return [this.renderBehaviorGroupTitleRow(group)].concat(versionRows);
+    },
+
+    renderBehaviorGroups: function() {
       var groups = this.getBehaviorGroups();
       if (groups.length > 0) {
         return (
@@ -173,7 +216,7 @@ define(function(require) {
               <div className="column column-expand type-label align-b pbs">Skills</div>
               <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
-            {groups.map(this.getBehaviorGroupRow)}
+            {groups.map(this.renderBehaviorGroup)}
           </div>
         );
       }
@@ -217,7 +260,7 @@ define(function(require) {
             <p><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>
 
             <div className="columns columns-elastic mobile-columns-float">
-              {this.getBehaviorGroupRows()}
+              {this.renderBehaviorGroups()}
             </div>
           </div>
         );
