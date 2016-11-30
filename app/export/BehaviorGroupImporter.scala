@@ -18,11 +18,11 @@ case class BehaviorGroupImporter(
 
   def run: Future[Option[BehaviorGroup]] = {
 
-    dataService.behaviorGroups.createFor(data.name, data.description, None, team).flatMap { group =>
-      val behaviorVersionsWithGroup = data.behaviorVersions.map { ea =>
-        ea.copy(groupId = Some(group.id))
+    dataService.behaviorGroups.createFor(data.name, data.description, data.publishedId, team).flatMap { group =>
+      val behaviorVersionsWithGroupInfo = data.behaviorVersions.map { ea =>
+        ea.copy(groupId = Some(group.id), importedId = data.publishedId)
       }
-      val importers = behaviorVersionsWithGroup.map { versionData =>
+      val importers = behaviorVersionsWithGroupInfo.map { versionData =>
         BehaviorVersionImporter(team, user, versionData, dataService)
       }
 

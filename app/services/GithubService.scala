@@ -1,11 +1,12 @@
 package services
 
 import json._
+import json.Formatting._
 import models.team.Team
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.duration._
@@ -128,18 +129,30 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     }
   }
 
+  private def fetchGroupConfigFor(configUrl: String): Future[Option[BehaviorGroupConfig]] = {
+    fetchTextFor(configUrl).map { configText =>
+      Json.parse(configText).validate[BehaviorGroupConfig] match {
+        case JsSuccess(data, jsPath) => Some(data)
+        case e: JsError => None
+      }
+    }
+  }
+
   private def fetchGroupDataFor(groupUrl: String, groupPath: String): Future[Option[BehaviorGroupData]] = {
     withTreeFor(groupUrl).flatMap { maybeTree =>
       (for {
         tree <- maybeTree
         readmeUrl <- urlForTreeFileNamed("README", tree)
+        configUrl <- urlForTreeFileNamed("config.json", tree)
       } yield {
           (for {
             readme <- fetchTextFor(readmeUrl)
+            maybeConfig <- fetchGroupConfigFor(configUrl)
             behaviors <- fetchBehaviorsFor(groupUrl, groupPath)
           } yield {
             val githubUrl = githubUrlForGroupPath(groupPath)
-            BehaviorGroupData(None, groupPath, readme, behaviors, Some(githubUrl), DateTime.now)
+            val maybePublishedId = maybeConfig.map(_.publishedId)
+            BehaviorGroupData(None, groupPath, readme, behaviors, Some(githubUrl), None, maybePublishedId, DateTime.now)
           }).map(Some(_))
         }).getOrElse(Future.successful(None))
     }

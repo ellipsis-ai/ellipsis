@@ -14,6 +14,8 @@ case class BehaviorGroupData(
                               description: String,
                               behaviorVersions: Seq[BehaviorVersionData],
                               githubUrl: Option[String],
+                              importedId: Option[String],
+                              publishedId: Option[String],
                               createdAt: DateTime
                             ) extends Ordered[BehaviorGroupData] {
 
@@ -46,6 +48,8 @@ object BehaviorGroupData {
         group.maybeDescription.getOrElse(""),
         versionsData,
         maybeGithubUrl,
+        group.maybeImportedId,
+        None,
         group.createdAt
       )
     }

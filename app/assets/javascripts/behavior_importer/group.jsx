@@ -58,7 +58,7 @@ define(function(require) {
         this.setState({
           importing: false
         });
-        this.props.onBehaviorGroupImport(this.props.groupData.config.publishedId, json.behaviorId);
+        this.props.onBehaviorGroupImport(json);
       }.bind(this));
     },
 
@@ -91,7 +91,7 @@ define(function(require) {
             <SVGInstalling />
           </button>
         );
-      } else if (this.behaviorAlreadyImported()) {
+      } else if (this.props.isImported) {
         return (
           <button title="Already installed" type="button" className="button-raw button-s" disabled="disabled" style={{ width: 40, height: 24 }}>
             <SVGInstalled />
@@ -105,30 +105,6 @@ define(function(require) {
         );
       }
     },
-
-    // getLocalBehaviorEditLink: function() {
-    //   if (this.isImporting()) {
-    //     return (
-    //       <span className="mhm fade-in type-weak type-bold">Installing…</span>
-    //     );
-    //   }
-    //   var localGroupId = this.getLocalGroupId();
-    //   if (localGroupId) {
-    //     var url = jsRoutes.controllers.BehaviorEditorController.edit(localGroupId).url;
-    //     return (
-    //       <a
-    //         className="mhm fade-in"
-    //         href={url}
-    //       >Edit installed version</a>
-    //     );
-    //   } else {
-    //     return null;
-    //   }
-    // },
-    //
-    // getLocalGroupId: function() {
-    //   return this.props.groupData.localGroupId;
-    // },
 
     render: function() {
       return (

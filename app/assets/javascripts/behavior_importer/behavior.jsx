@@ -17,7 +17,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="column column-expand type-s">
+        <div className="column column-expand type-s phl">
           {this.props.triggers.map(function(trigger, index) {
             return (
               <span key={"trigger" + index}

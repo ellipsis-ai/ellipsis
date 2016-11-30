@@ -10,9 +10,9 @@ define(function(require) {
       csrfToken: React.PropTypes.string.isRequired
     },
 
-    behaviorGroupIsImported: function(importId) {
+    isImported: function(group) {
       return this.getInstalledBehaviorGroups().some(function(ea) {
-        return ea.importedId === importId;
+        return ea.importedId === group.publishedId;
       });
     },
 
@@ -25,34 +25,16 @@ define(function(require) {
     },
 
     getInitialState: function() {
-      var installed = this.props.installedBehaviorGroups;
       return {
-        installedBehaviorGroups: installed,
-        behaviorGroups: this.updateBehaviorGroupsWithLocalIds(this.props.behaviorGroups, function(publishedId) {
-          var match = installed.find(function(ea) {
-            return ea.importedId === publishedId;
-          });
-          return match ? match.groupId : null;
-        })
+        installedBehaviorGroups: this.props.installedBehaviorGroups,
+        behaviorGroups: this.props.behaviorGroups
       };
     },
 
-    updateBehaviorGroupsWithLocalIds: function(groups, findMatchingLocalId) {
-      return groups.map(function(group) {
-        var localId = findMatchingLocalId(group.publishedId);
-        return Object.assign({}, group, { localGroupId: localId });
-      }, this);
-    },
-
-    onBehaviorGroupImport: function(importId, localId) {
+    onBehaviorGroupImport: function(installedGroup) {
       var newState = {
-        behaviorGroups: this.updateBehaviorGroupsWithLocalIds(this.getBehaviorGroups(), function(publishedId) {
-          return publishedId === importId ? localId : null;
-        })
+        installedBehaviorGroups: this.getBehaviorGroups().concat([installedGroup])
       };
-      if (!this.behaviorGroupIsImported(importId)) {
-        newState.installedBehaviorGroups = this.state.installedBehaviorGroups.concat({ behaviorId: localId, importedId: importId });
-      }
       this.setState(newState);
     },
 
@@ -69,7 +51,7 @@ define(function(require) {
                 groupData={group}
                 teamId={this.props.teamId}
                 behaviors={group.behaviorVersions}
-                isImported={this.behaviorGroupIsImported(group)}
+                isImported={this.isImported(group)}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
               />
             );

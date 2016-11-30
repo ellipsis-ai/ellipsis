@@ -117,11 +117,15 @@ class BehaviorImportExportController @Inject() (
                 dataService.behaviors.allForGroup(group).map(_.headOption)
               }.getOrElse(Future.successful(None))
             } yield {
-              maybeBehavior.map { behavior =>
+              maybeBehaviorGroup.map { behaviorGroup =>
                 if (request.headers.get("x-requested-with").contains("XMLHttpRequest")) {
-                  Ok(Json.obj("groupId" -> behavior.id))
+                  Ok(Json.toJson(InstalledBehaviorGroupData(behaviorGroup.id, behaviorGroup.maybeImportedId)))
                 } else {
-                  Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
+                  maybeBehavior.map{ behavior =>
+                    Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
+                  }.getOrElse {
+                    Redirect(routes.ApplicationController.index())
+                  }
                 }
               }.getOrElse {
                 NotFound("Behavior not found")

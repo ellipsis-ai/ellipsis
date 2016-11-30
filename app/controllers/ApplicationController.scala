@@ -59,11 +59,11 @@ class ApplicationController @Inject() (
   case class PublishedBehaviorInfo(published: Seq[BehaviorGroupData], installedBehaviors: Seq[InstalledBehaviorGroupData])
 
   private def withPublishedBehaviorInfoFor(team: Team, maybeBranch: Option[String]): Future[PublishedBehaviorInfo] = {
-    dataService.behaviors.regularForTeam(team).map { behaviors =>
-      behaviors.map { ea => InstalledBehaviorGroupData(ea.id, ea.maybeImportedId)}
-    }.map { installedBehaviors =>
+    dataService.behaviorGroups.allFor(team).map { groups =>
+      groups.map { ea => InstalledBehaviorGroupData(ea.id, ea.maybeImportedId)}
+    }.map { installedGroups =>
       val githubService = GithubService(team, ws, configuration, cache, dataService, maybeBranch)
-      PublishedBehaviorInfo(githubService.publishedBehaviorGroups, installedBehaviors)
+      PublishedBehaviorInfo(githubService.publishedBehaviorGroups, installedGroups)
     }
   }
 
