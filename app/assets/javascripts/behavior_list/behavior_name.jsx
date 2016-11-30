@@ -67,10 +67,9 @@ define(function(require) {
 
     getDataTypeLabelFromVersion: function(version) {
       return (
-        <div className={this.props.disableWrapping ? "display-ellipsis" : ""}>
-          <span className="link type-italic">
-            {version.getDataTypeName() || "<unnamed data type>"}
-          </span>
+        <div className={"type-italic " + (this.props.disableWrapping ? "display-ellipsis" : "")}>
+          <span className="link">{version.getDataTypeName()}</span>
+          <span className="type-weak"> (data type)</span>
         </div>
       );
     },
