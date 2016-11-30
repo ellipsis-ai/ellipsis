@@ -26,7 +26,7 @@ case class BehaviorGroupData(
   def isMisc: Boolean = name == "Miscellaneous"
 
   lazy val sortedActionBehaviorVersions = {
-    behaviorVersions.filter(_.isDataType).sortBy(_.maybeFirstTrigger)
+    behaviorVersions.filterNot(_.isDataType).sortBy(_.maybeFirstTrigger)
   }
 
   lazy val maybeFirstActionBehaviorVersion: Option[BehaviorVersionData] = sortedActionBehaviorVersions.headOption
@@ -34,9 +34,24 @@ case class BehaviorGroupData(
 
   import scala.math.Ordered.orderingToOrdered
   def compare(that: BehaviorGroupData): Int = {
-    (this.isMisc, this.name, this.maybeFirstTrigger) compare (that.isMisc, that.name, that.maybeFirstTrigger)
+    if (this.isMisc && !that.isMisc) {
+      1
+    } else if (!this.isMisc && that.isMisc) {
+      -1
+    } else if (this.name.isEmpty && !that.name.isEmpty) {
+      1
+    } else if (!this.name.isEmpty && that.name.isEmpty) {
+      -1
+    } else if (!this.name.isEmpty && !that.name.isEmpty) {
+      this.name compare that.name
+    } else if (this.maybeFirstTrigger.isEmpty && that.maybeFirstTrigger.isDefined) {
+      1
+    } else if (this.maybeFirstTrigger.isDefined && that.maybeFirstTrigger.isEmpty) {
+      -1
+    } else {
+      this.maybeFirstTrigger compare that.maybeFirstTrigger
+    }
   }
-
 }
 
 object BehaviorGroupData {
