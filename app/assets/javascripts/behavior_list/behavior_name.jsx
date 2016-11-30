@@ -8,7 +8,8 @@ define(function(require) {
     propTypes: {
       version: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
       disableLink: React.PropTypes.bool,
-      disableWrapping: React.PropTypes.bool
+      disableWrapping: React.PropTypes.bool,
+      labelDataType: React.PropTypes.bool
     },
 
     getLabelFromTrigger: function(trigger) {
@@ -69,7 +70,9 @@ define(function(require) {
       return (
         <div className={"type-italic " + (this.props.disableWrapping ? "display-ellipsis" : "")}>
           <span className="link">{version.getDataTypeName()}</span>
-          <span className="type-weak"> (data type)</span>
+          {this.props.labelDataType ? (
+            <span className="type-weak"> (data type)</span>
+          ) : null}
         </div>
       );
     },

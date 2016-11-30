@@ -150,7 +150,7 @@ define(function(require) {
             {isFirstRow ? this.renderGroupSelectionCheckbox(group.id) : ""}
           </div>
           <div className={"column column-expand type-s type-wrap-words " + borderAndSpacingClass}>
-            <BehaviorName version={version} />
+            <BehaviorName version={version} labelDataType={true} />
           </div>
           <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>
             {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}
