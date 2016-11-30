@@ -1,10 +1,12 @@
 package services
 
 import json._
+import json.Formatting._
 import models.team.Team
+import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.duration._
@@ -102,11 +104,15 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     }
   }
 
-  private def githubUrlForBehaviorPath(categoryPath: String, behaviorPath: String): String = {
-    s"${WEB_URL}/${USER_NAME}/${REPO_NAME}/tree/$branch/published/$categoryPath/$behaviorPath"
+  private def githubUrlForGroupPath(groupPath: String): String = {
+    s"${WEB_URL}/${USER_NAME}/${REPO_NAME}/tree/$branch/published/$groupPath"
   }
 
-  private def fetchBehaviorDataFor(behaviorUrl: String, behaviorPath: String, categoryPath: String): Future[Option[BehaviorVersionData]] = {
+  private def githubUrlForBehaviorPath(categoryPath: String, behaviorType: String, behaviorPath: String): String = {
+    s"${githubUrlForGroupPath(categoryPath)}/$behaviorType/$behaviorPath"
+  }
+
+  private def fetchBehaviorDataFor(behaviorUrl: String, behaviorPath: String, behaviorType: String, categoryPath: String): Future[Option[BehaviorVersionData]] = {
     withTreeFor(behaviorUrl).flatMap { maybeTree =>
       (for {
         tree <- maybeTree
@@ -116,26 +122,37 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
         triggersUrl <- urlForTreeFileNamed("triggers.json", tree)
         paramsUrl <- urlForTreeFileNamed("params.json", tree)
       } yield {
-        val githubUrl = githubUrlForBehaviorPath(categoryPath, behaviorPath)
+        val githubUrl = githubUrlForBehaviorPath(categoryPath, behaviorType, behaviorPath)
         val maybeDescriptionUrl = urlForTreeFileNamed("README", tree)
         BehaviorCode(githubUrl, configUrl, maybeDescriptionUrl, functionUrl, responseUrl, triggersUrl, paramsUrl).fetchData.map(Some(_))
       }).getOrElse(Future.successful(None))
     }
   }
 
-  private def fetchCategoryDataFor(categoryUrl: String, categoryPath: String): Future[Option[BehaviorCategory]] = {
-    withTreeFor(categoryUrl).flatMap { maybeTree =>
+  private def fetchGroupConfigFor(configUrl: String): Future[Option[BehaviorGroupConfig]] = {
+    fetchTextFor(configUrl).map { configText =>
+      Json.parse(configText).validate[BehaviorGroupConfig] match {
+        case JsSuccess(data, jsPath) => Some(data)
+        case e: JsError => None
+      }
+    }
+  }
+
+  private def fetchGroupDataFor(groupUrl: String, groupPath: String): Future[Option[BehaviorGroupData]] = {
+    withTreeFor(groupUrl).flatMap { maybeTree =>
       (for {
         tree <- maybeTree
         readmeUrl <- urlForTreeFileNamed("README", tree)
+        configUrl <- urlForTreeFileNamed("config.json", tree)
       } yield {
           (for {
             readme <- fetchTextFor(readmeUrl)
-            behaviors <- fetchBehaviorsFor(categoryUrl, categoryPath)
+            maybeConfig <- fetchGroupConfigFor(configUrl)
+            behaviors <- fetchBehaviorsFor(groupUrl, groupPath)
           } yield {
-            val (regular, dataTypes) = behaviors.partition(_.config.dataTypeName.isEmpty)
-            val regularWithDataTypesAttached = regular.map(_.copyWithAttachedDataTypesFrom(dataTypes))
-            BehaviorCategory(categoryPath, readme, regularWithDataTypesAttached)
+            val githubUrl = githubUrlForGroupPath(groupPath)
+            val maybePublishedId = maybeConfig.map(_.publishedId)
+            BehaviorGroupData(None, groupPath, readme, behaviors, Some(githubUrl), None, maybePublishedId, DateTime.now)
           }).map(Some(_))
         }).getOrElse(Future.successful(None))
     }
@@ -143,46 +160,57 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
 
   def fetchBehaviorsFor(categoryUrl: String, categoryPath: String): Future[Seq[BehaviorVersionData]] = {
     for {
-      behaviorUrls <- fetchTreeUrlsFor(categoryUrl)
-      behaviorPaths <- fetchPathsFor(categoryUrl)
+      urls <- fetchTreeUrlsFor(categoryUrl)
+      paths <- fetchPathsFor(categoryUrl)
       behaviorData <- {
-        val eventualBehaviorData = behaviorUrls.zip(behaviorPaths).map { case (url, path) =>
-          fetchBehaviorDataFor(url, path, categoryPath)
+        val eventualBehaviorData: Seq[Future[Seq[BehaviorVersionData]]] = urls.zip(paths).map { case (url, path) =>
+          path match {
+            case "data_types" | "actions" => {
+              for {
+                behaviorUrls <- fetchTreeUrlsFor(url)
+                behaviorPaths <- fetchPathsFor(url)
+                data <- Future.sequence(behaviorUrls.zip(behaviorPaths).map { case (behaviorUrl, behaviorPath) =>
+                  fetchBehaviorDataFor(behaviorUrl, behaviorPath, path, categoryPath)
+                }).map(_.flatten)
+              } yield data
+            }
+            case _ => Future.successful(Seq())
+          }
         }
         Future.sequence(eventualBehaviorData).map(_.flatten)
       }
     } yield behaviorData
   }
 
-  def fetchPublishedBehaviorCategories: Future[Seq[BehaviorCategory]] = {
+  def fetchPublishedBehaviorGroups: Future[Seq[BehaviorGroupData]] = {
     for {
       maybePublishedUrl <- fetchPublishedUrl
-      categoryUrls <- maybePublishedUrl.map { publishedUrl =>
+      groupUrls <- maybePublishedUrl.map { publishedUrl =>
         fetchTreeUrlsFor(publishedUrl)
       }.getOrElse(Future.successful(Seq()))
-      categoryPaths <- maybePublishedUrl.map { publishedUrl =>
+      groupPaths <- maybePublishedUrl.map { publishedUrl =>
         fetchPathsFor(publishedUrl)
       }.getOrElse(Future.successful(Seq()))
-      categoryData <- {
-        val eventualCategoryData = categoryUrls.zip(categoryPaths).map((fetchCategoryDataFor _).tupled)
-        Future.sequence(eventualCategoryData).map(_.flatten)
+      groupData <- {
+        val eventualGroupData = groupUrls.zip(groupPaths).map((fetchGroupDataFor _).tupled)
+        Future.sequence(eventualGroupData).map(_.flatten)
       }
-    } yield categoryData
+    } yield groupData
   }
 
-  def blockingFetchPublishedBehaviorCategories: Seq[BehaviorCategory] = {
-    Await.result(fetchPublishedBehaviorCategories, 20.seconds)
+  def blockingFetchPublishedBehaviorGroups: Seq[BehaviorGroupData] = {
+    Await.result(fetchPublishedBehaviorGroups, 20.seconds)
   }
 
-  def publishedBehaviorCategories: Seq[BehaviorCategory] = {
-    val categories = if (shouldTryCache) {
-      cache.getOrElse[Seq[BehaviorCategory]](PUBLISHED_BEHAVIORS_KEY, cacheTimeout) {
-        blockingFetchPublishedBehaviorCategories
+  def publishedBehaviorGroups: Seq[BehaviorGroupData] = {
+    val behaviorGroups = if (shouldTryCache) {
+      cache.getOrElse[Seq[BehaviorGroupData]](PUBLISHED_BEHAVIORS_KEY, cacheTimeout) {
+        blockingFetchPublishedBehaviorGroups
       }
     } else {
-      blockingFetchPublishedBehaviorCategories
+      blockingFetchPublishedBehaviorGroups
     }
-    categories.map(_.copyForTeam(team)).sorted
+    behaviorGroups.map(_.copyForTeam(team)).sorted
   }
 
 }

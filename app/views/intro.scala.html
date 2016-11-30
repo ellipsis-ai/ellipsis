@@ -1,7 +1,7 @@
 @(
   teamAccess: models.accounts.user.UserTeamAccess,
-  behaviorCategories: Seq[json.BehaviorCategory],
-  installedBehaviors: Seq[json.InstalledBehaviorData]
+  behaviorGroups: Seq[json.BehaviorGroupData],
+  installedBehaviors: Seq[json.InstalledBehaviorGroupData]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
@@ -57,7 +57,7 @@
           installedBehaviors: @Html(Json.toJson(installedBehaviors).toString),
           containerId: 'importerContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
-          behaviorGroups: @Html(Json.toJson(behaviorCategories).toString)
+          behaviorGroups: @Html(Json.toJson(behaviorGroups).toString)
         };
       </script>
     <script data-main='@RemoteAssets.getUrl("javascripts/behavior_importer/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>

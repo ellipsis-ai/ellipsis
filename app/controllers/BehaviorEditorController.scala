@@ -85,6 +85,21 @@ class BehaviorEditorController @Inject() (
     }
   }
 
+  def editGroup(id: String) = silhouette.SecuredAction.async { implicit request =>
+    for {
+      maybeGroup <- dataService.behaviorGroups.find(id)
+      maybeBehavior <- maybeGroup.map { group =>
+        dataService.behaviors.allForGroup(group).map(_.headOption)
+      }.getOrElse(Future.successful(None))
+    } yield {
+      maybeBehavior.map { behavior =>
+        Redirect(routes.BehaviorEditorController.edit(behavior.id))
+      }.getOrElse {
+        NotFound("")
+      }
+    }
+  }
+
   case class SaveBehaviorInfo(
                                dataJson: String,
                                maybeRedirect: Option[String],

@@ -37,6 +37,10 @@ case class BehaviorVersionData(
   def copyWithAttachedDataTypesFrom(dataTypes: Seq[BehaviorVersionData]): BehaviorVersionData = {
     copy(params = params.map(_.copyWithAttachedDataTypeFrom(dataTypes)))
   }
+
+  lazy val isDataType: Boolean = config.dataTypeName.isDefined
+
+  lazy val maybeFirstTrigger: Option[String] = triggers.map(_.text.toLowerCase).sorted.headOption
 }
 
 object BehaviorVersionData {
