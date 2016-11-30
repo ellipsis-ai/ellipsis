@@ -33,7 +33,7 @@ class BehaviorGroupServiceSpec extends PlaySpec with DBMixin with OneAppPerSuite
   }
 
   def newSavedBehaviorGroupFor(team: Team): BehaviorGroup = {
-    runNow(dataService.behaviorGroups.createFor("", None, team))
+    runNow(dataService.behaviorGroups.createFor("", "", None, team))
   }
 
   "BehaviorGroupService.merge" should {
