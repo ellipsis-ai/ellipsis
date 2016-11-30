@@ -1,6 +1,7 @@
 jest.unmock('../app/assets/javascripts/behavior_list/index');
 jest.unmock('../app/assets/javascripts/sort');
 jest.unmock('../app/assets/javascripts/models/behavior_version');
+jest.unmock('../app/assets/javascripts/models/behavior_group');
 jest.unmock('../app/assets/javascripts/models/param');
 jest.unmock('../app/assets/javascripts/models/response_template');
 jest.unmock('../app/assets/javascripts/models/trigger');
@@ -8,7 +9,7 @@ jest.unmock('../app/assets/javascripts/models/trigger');
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorList = require('../app/assets/javascripts/behavior_list/index');
-const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
+const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group');
 
 describe('BehaviorList', () => {
   jsRoutes.controllers.BehaviorEditorController.edit = function() { return '/edit'; };
@@ -73,14 +74,12 @@ describe('BehaviorList', () => {
     "config": {},
     "createdAt": 1466109904858
   });
+  const group1 = Object.freeze({id:"sfgsdf", name:"", description: "", behaviorVersions: [behaviorVersionTask1], createdAt: 1466109904858});
+  const group2 = Object.freeze({id:"gsdfgsg", name:"", description: "", behaviorVersions: [behaviorVersionTask2], createdAt: 1466109904858});
+  const group3 = Object.freeze({id:"jfghjfg", name:"", description: "", behaviorVersions: [behaviorVersionKnowledge1], createdAt: 1466109904858});
   const defaultConfig = Object.freeze({
     csrfToken: "2",
-    behaviorGroups: [
-      {"id":"sfgsdf", "name":"", "createdAt": 1466109904858},
-      {"id":"gsdfgsg", "name":"", "createdAt": 1466109904858},
-      {"id":"jfghjfg", "name":"", "createdAt": 1466109904858}
-    ],
-    behaviorVersions: [behaviorVersionTask1, behaviorVersionTask2, behaviorVersionKnowledge1].map((ea) => BehaviorVersion.fromJson(ea))
+    behaviorGroups: [group1, group2, group3].map((ea) => BehaviorGroup.fromJson(ea))
   });
 
   function createBehaviorList(config) {
