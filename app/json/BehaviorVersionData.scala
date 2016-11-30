@@ -36,7 +36,7 @@ case class BehaviorVersionData(
 
   lazy val isDataType: Boolean = config.dataTypeName.isDefined
 
-  lazy val maybeFirstTrigger: Option[String] = triggers.map(_.text.toLowerCase).sorted.headOption
+  lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption
 }
 
 object BehaviorVersionData {
