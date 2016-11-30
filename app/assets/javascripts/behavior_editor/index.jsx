@@ -1737,15 +1737,26 @@ return React.createClass({
     var summary = this.getPageSummary(actionCount, dataTypeCount);
     if (optionalDescription && summary) {
       return (
-        <span> — {optionalDescription} <i>({summary})</i></span>
+        <span>
+          <span className="mhs">·</span>
+          <span className="type-black">{optionalDescription}</span>
+          <span className="mhs">·</span>
+          <i>({summary})</i>
+        </span>
       );
     } else if (optionalDescription && !summary) {
       return (
-        <span> — {optionalDescription}</span>
+        <span>
+          <span className="mhs">·</span>
+          <span className="type-black">{optionalDescription}</span>
+        </span>
       );
     } else if (summary) {
       return (
-        <span> — <i>{summary}</i></span>
+        <span>
+          <span className="mhs">·</span>
+          <i>{summary}</i>
+        </span>
       );
     } else {
       return null;
@@ -1758,10 +1769,10 @@ return React.createClass({
 
     return (
       <span>
-        <span className="mrxs">
+        <span className="align-m">
           {this.getPageName(this.state.groupName, actionCount)}
         </span>
-        <span className="type-m type-regular align-m type-weak">
+        <span className="type-m type-regular align-m">
           {this.getPageDescription(this.state.groupDescription, actionCount, dataTypeCount)}
         </span>
       </span>
@@ -1781,7 +1792,7 @@ return React.createClass({
   renderSmallPageHeading: function() {
     return (
       <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
-        <span className="display-inline-block align-m mrm" style={{ height: "18px" }}>
+        <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
           <SVGHamburger />
         </span>
         <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
