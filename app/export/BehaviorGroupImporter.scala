@@ -22,7 +22,9 @@ case class BehaviorGroupImporter(
       val behaviorVersionsWithGroupInfo = data.behaviorVersions.map { ea =>
         ea.copy(groupId = Some(group.id), importedId = data.publishedId)
       }
-      val importers = behaviorVersionsWithGroupInfo.map { versionData =>
+      // import the data types first
+      val (dataTypes, actions) = behaviorVersionsWithGroupInfo.partition(_.isDataType)
+      val importers = (dataTypes ++ actions).map { versionData =>
         BehaviorVersionImporter(team, user, versionData, dataService)
       }
 

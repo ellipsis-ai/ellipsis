@@ -67,7 +67,6 @@ class BehaviorParameterServiceImpl @Inject() (
       _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
       newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
         DBIO.from(for {
-          paramTypeData <- data.paramType.map(Future.successful).getOrElse(BehaviorParameterTypeData.from(TextType, dataService))
           param <- createFor(data.inputData, i + 1, behaviorVersion)
           _ <- if (data.isShared) {
             Future.successful({})

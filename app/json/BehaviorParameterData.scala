@@ -22,8 +22,4 @@ case class BehaviorParameterData(
     groupId
   )
 
-  def copyWithAttachedDataTypeFrom(dataTypes: Seq[BehaviorVersionData]): BehaviorParameterData = {
-    copy(paramType = paramType.map(_.copyWithAttachedDataTypeFrom(dataTypes)))
-  }
-
 }

@@ -19,12 +19,6 @@ case class BehaviorVersionImporter(
   def run: Future[Option[BehaviorVersion]] = {
     for {
       version <- for {
-        dataTypeVersionData <- Future.successful {
-          data.params.flatMap(_.paramType.flatMap(_.behavior))
-        }
-        prereqs <- Future.sequence(dataTypeVersionData.map { versionData =>
-          BehaviorVersionImporter(team, user, versionData, dataService).run
-        }).map(_.flatten)
         maybeGroup <- data.groupId.map { gid =>
           dataService.behaviorGroups.find(gid)
         }.getOrElse(Future.successful(None))
