@@ -32,24 +32,22 @@ case class BehaviorGroupData(
   lazy val maybeFirstActionBehaviorVersion: Option[BehaviorVersionData] = sortedActionBehaviorVersions.headOption
   lazy val maybeFirstTrigger: Option[String] = maybeFirstActionBehaviorVersion.flatMap(_.maybeFirstTrigger)
 
+  lazy val maybeSortString: Option[String] = {
+    if (!this.name.isEmpty) {
+      Some(this.name.toLowerCase)
+    } else {
+      this.maybeFirstTrigger
+    }
+  }
+
   import scala.math.Ordered.orderingToOrdered
   def compare(that: BehaviorGroupData): Int = {
-    if (this.isMisc && !that.isMisc) {
+    if (this.maybeSortString.isEmpty && that.maybeSortString.isDefined) {
       1
-    } else if (!this.isMisc && that.isMisc) {
-      -1
-    } else if (this.name.isEmpty && !that.name.isEmpty) {
-      1
-    } else if (!this.name.isEmpty && that.name.isEmpty) {
-      -1
-    } else if (!this.name.isEmpty && !that.name.isEmpty) {
-      this.name compare that.name
-    } else if (this.maybeFirstTrigger.isEmpty && that.maybeFirstTrigger.isDefined) {
-      1
-    } else if (this.maybeFirstTrigger.isDefined && that.maybeFirstTrigger.isEmpty) {
+    } else if (this.maybeSortString.isDefined && that.maybeSortString.isEmpty) {
       -1
     } else {
-      this.maybeFirstTrigger compare that.maybeFirstTrigger
+      this.maybeSortString compare that.maybeSortString
     }
   }
 }
