@@ -42,7 +42,7 @@ class ApplicationController @Inject() (
       groupData <- maybeBehaviorGroups.map { groups =>
         Future.sequence(groups.map { group =>
           BehaviorGroupData.maybeFor(group.id, user, None, dataService)
-        }).map(_.flatten)
+        }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
       result <- teamAccess.maybeTargetTeam.map { team =>
         Future.successful(if (groupData.isEmpty) {

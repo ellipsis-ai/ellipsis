@@ -25,8 +25,17 @@ case class BehaviorGroupData(
 
   def isMisc: Boolean = name == "Miscellaneous"
 
+  lazy val sortedActionBehaviorVersions = {
+    behaviorVersions.filter(_.isDataType).sortBy(_.maybeFirstTrigger)
+  }
+
+  lazy val maybeFirstActionBehaviorVersion: Option[BehaviorVersionData] = sortedActionBehaviorVersions.headOption
+  lazy val maybeFirstTrigger: Option[String] = maybeFirstActionBehaviorVersion.flatMap(_.maybeFirstTrigger)
+
   import scala.math.Ordered.orderingToOrdered
-  def compare(that: BehaviorGroupData): Int = (this.isMisc, this.name) compare (that.isMisc, that.name)
+  def compare(that: BehaviorGroupData): Int = {
+    (this.isMisc, this.name, this.maybeFirstTrigger) compare (that.isMisc, that.name, that.maybeFirstTrigger)
+  }
 
 }
 
@@ -40,7 +49,9 @@ object BehaviorGroupData {
       }.getOrElse(Future.successful(Seq()))
       versionsData <- Future.sequence(behaviors.map { ea =>
         BehaviorVersionData.maybeFor(ea.id, user, dataService)
-      }).map(_.flatten)
+      }).map(_.flatten.sortBy { ea =>
+        (ea.isDataType, ea.maybeFirstTrigger)
+      })
     } yield maybeGroup.map { group =>
       BehaviorGroupData(
         Some(group.id),
