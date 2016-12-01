@@ -34,7 +34,7 @@ define(function(require) {
 
     onBehaviorGroupImport: function(installedGroup) {
       var newState = {
-        installedBehaviorGroups: this.getBehaviorGroups().concat([installedGroup])
+        installedBehaviorGroups: this.getInstalledBehaviorGroups().concat([installedGroup])
       };
       this.setState(newState);
     },
