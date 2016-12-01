@@ -6,8 +6,6 @@ define(function(require) {
     SVGInstalling = require('../svg/installing'),
     Behavior = require('./behavior');
 
-  require('whatwg-fetch');
-
   return React.createClass({
     propTypes: {
       groupData: React.PropTypes.object.isRequired,

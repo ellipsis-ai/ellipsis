@@ -2,8 +2,8 @@
 
 requirejs(['../common'], function() {
   requirejs(
-    ['core-js', 'react', 'react-dom', './behavior_editor/index', './models/behavior_version'],
-    function(Core, React, ReactDOM, BehaviorEditor, BehaviorVersion) {
+    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './behavior_editor/index', './models/behavior_version'],
+    function(Core, Fetch, React, ReactDOM, BehaviorEditor, BehaviorVersion) {
       var config = Object.assign({}, BehaviorEditorConfiguration);
       var additionalData = {
         csrfToken: config.csrfToken,

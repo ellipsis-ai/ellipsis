@@ -48,7 +48,6 @@ var React = require('react'),
   Magic8Ball = require('../magic_8_ball'),
   oauth2ApplicationShape = require('./oauth2_application_shape');
   require('codemirror/mode/markdown/markdown');
-  require('whatwg-fetch');
 
 var AWSEnvVariableStrings = {
   accessKeyName: "AWS Access Key",

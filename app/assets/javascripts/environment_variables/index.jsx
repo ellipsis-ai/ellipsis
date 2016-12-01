@@ -4,7 +4,6 @@ define(function(require) {
     Setter = require('./setter'),
     ifPresent = require('../if_present'),
     Sort = require('../sort');
-    require('whatwg-fetch');
 
   return React.createClass({
     displayName: 'EnvironmentVariableList',

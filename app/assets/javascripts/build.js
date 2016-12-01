@@ -59,7 +59,8 @@ requirejs.config({
         'javascript-debounce',
         'react',
         'react-dom',
-        'urijs'
+        'urijs',
+        'whatwg-fetch'
       ]
     }, {
       name: 'behavior_editor/loader',
