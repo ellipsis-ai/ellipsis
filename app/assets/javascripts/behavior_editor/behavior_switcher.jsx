@@ -29,34 +29,12 @@ define(function(require) {
       };
     },
 
-    getActionsHeading: function() {
-      const count = this.props.actionBehaviors.length;
-      if (count === 0) {
-        return 'Skill actions';
-      } else if (count === 1) {
-        return '1 action in this skill';
-      } else {
-        return `${count} actions in this skill`;
-      }
-    },
-
     getBehaviorGroupName: function() {
       return this.props.groupName;
     },
 
     getBehaviorGroupDescription: function() {
       return this.props.groupDescription;
-    },
-
-    getDataTypesHeading: function() {
-      const count = this.props.dataTypeBehaviors.length;
-      if (count === 0) {
-        return 'Custom data types';
-      } else if (count === 1) {
-        return '1 custom data type';
-      } else {
-        return `${count} custom data types`;
-      }
     },
 
     render: function() {
@@ -95,7 +73,7 @@ define(function(require) {
 
           <BehaviorSwitcherGroup
             ref="actionSwitcher"
-            heading={this.getActionsHeading()}
+            heading="Actions"
             behaviors={this.props.actionBehaviors}
             currentBehavior={this.props.currentBehavior}
             addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
@@ -104,7 +82,7 @@ define(function(require) {
           />
           <BehaviorSwitcherGroup
             ref="dataTypeSwitcher"
-            heading={this.getDataTypesHeading()}
+            heading="Custom data types"
             behaviors={this.props.dataTypeBehaviors}
             currentBehavior={this.props.currentBehavior}
             addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
