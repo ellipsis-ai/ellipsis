@@ -8,7 +8,6 @@ var React = require('react'),
   ToggleGroup = require('../form/toggle_group'),
   DropdownMenu = require('../dropdown_menu'),
   Trigger = require('../models/trigger');
-require('whatwg-fetch');
 
 return React.createClass({
   propTypes: {
