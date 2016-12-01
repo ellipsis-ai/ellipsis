@@ -1,4 +1,4 @@
-/* global BehaviorImporterConfig:false */
+/* global BehaviorGroupImporterConfig:false */
 
 requirejs(['../common'], function() {
   requirejs(['core-js', 'react', 'react-dom', './behavior_importer/index'], function(Core, React, ReactDOM, BehaviorImporter) {
