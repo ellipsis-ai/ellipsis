@@ -47,7 +47,7 @@ define(function(require) {
                 key={`behavior-${version.behaviorId}`}
                 className={`border-top border-bottom pvs phl mbneg1 ${this.isCurrentVersion(version) ? "bg-blue-lighter border-blue" : ""}`}
               >
-                <BehaviorName version={version} disableLink={this.isCurrentVersion(version)} disableWrapping={true} />
+                <BehaviorName version={version} disableLink={this.isCurrentVersion(version)} beConcise={true} />
               </div>
             )), () => (
               <p className="phl type-weak">{this.props.emptyMessage}</p>

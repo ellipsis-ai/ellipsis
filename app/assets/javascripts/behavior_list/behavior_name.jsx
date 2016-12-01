@@ -8,7 +8,7 @@ define(function(require) {
     propTypes: {
       version: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
       disableLink: React.PropTypes.bool,
-      disableWrapping: React.PropTypes.bool,
+      beConcise: React.PropTypes.bool,
       labelDataType: React.PropTypes.bool
     },
 
@@ -58,17 +58,21 @@ define(function(require) {
       var firstTrigger = version.triggers[firstTriggerIndex];
       var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTriggerIndex);
       return (
-        <div className={this.props.disableWrapping ? "display-ellipsis" : ""}>
+        <div className={this.props.beConcise ? "display-ellipsis" : ""}>
           {this.getLabelFromTrigger(firstTrigger)}
-          {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
-          {this.getRegexTriggerLabelFromTriggers(otherTriggers)}
+          {this.props.beConcise ? null : (
+            <span>
+              {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
+              {this.getRegexTriggerLabelFromTriggers(otherTriggers)}
+            </span>
+          )}
         </div>
       );
     },
 
     getDataTypeLabelFromVersion: function(version) {
       return (
-        <div className={"type-italic " + (this.props.disableWrapping ? "display-ellipsis" : "")}>
+        <div className={"type-italic " + (this.props.beConcise ? "display-ellipsis" : "")}>
           <span className="link">{version.getDataTypeName()}</span>
           {this.props.labelDataType ? (
             <span className="type-weak"> (data type)</span>
@@ -98,7 +102,7 @@ define(function(require) {
         return (
           <div>
             {this.getLabelFromVersion(this.props.version)}
-            {this.getDescriptionFromVersion(this.props.version)}
+            {this.props.beConcise ? null : this.getDescriptionFromVersion(this.props.version)}
           </div>
         );
       } else {
@@ -107,7 +111,7 @@ define(function(require) {
             <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.behaviorId).url}
               className="link-block">
               {this.getLabelFromVersion(this.props.version)}
-              {this.getDescriptionFromVersion(this.props.version)}
+              {this.props.beConcise ? null : this.getDescriptionFromVersion(this.props.version)}
             </a>
           </div>
         );
