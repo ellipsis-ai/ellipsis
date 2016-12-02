@@ -98,9 +98,7 @@ class InputServiceImpl @Inject() (
       maybeExisting <- maybeGroup.map { group =>
         data.id.map(find).getOrElse(Future.successful(None))
       }.getOrElse(Future.successful(None))
-      maybeParamType <- maybeExisting.map { existing =>
-        maybeParamTypeFor(data, team)
-      }.getOrElse(Future.successful(None))
+      maybeParamType <- maybeParamTypeFor(data, team)
       input <- maybeExisting.map { existing =>
         val raw = existing.copy(
           name = data.name,
