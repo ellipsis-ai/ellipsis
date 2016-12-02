@@ -58,6 +58,10 @@ define(function() {
       return !!this.groupId;
     }
 
+    isSaved() {
+      return this.isSavedForUser || this.isSavedForTeam;
+    }
+
     clone(props) {
       return new Param(Object.assign({}, this, props));
     }

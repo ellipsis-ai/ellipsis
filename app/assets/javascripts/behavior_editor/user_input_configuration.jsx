@@ -105,7 +105,7 @@ define(function(require) {
       } else {
         return (
           <DropdownMenu
-            label="Re-use an input from another action"
+            label="Use a saved answer from another action"
             labelClassName="button-s button-color"
             toggle={this.props.toggleReuseParamDropdown}
             openWhen={this.props.openReuseParamDropdownWhen}
@@ -130,7 +130,10 @@ define(function(require) {
                     </p>
                   </div>
                   <div className="column column-shrink align-m mobile-mtm">
-                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add inputs</button>
+                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add an input</button>
+                  </div>
+                  <div className="column column-shrink align-m mobile-mtm">
+                    {this.renderReuseParameter()}
                   </div>
                 </div>
               </div>

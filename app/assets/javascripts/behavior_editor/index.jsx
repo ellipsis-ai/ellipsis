@@ -142,12 +142,13 @@ return React.createClass({
     return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
   },
 
-  getOtherParametersInGroup: function() {
+  getOtherSavedParametersInGroup: function() {
     const currentInputIds = this.getBehaviorParams().map(ea => ea.inputId);
     return this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
       return arr.concat(ea.params);
     }, [])
       .filter(ea => currentInputIds.indexOf(ea.inputId) === -1)
+      .filter(ea => ea.isSaved())
       .map(ea => ea.clone({groupId: this.props.groupId}));
   },
 
@@ -1916,7 +1917,7 @@ return React.createClass({
             triggers={this.getBehaviorTriggers()}
             isFinishedBehavior={this.isFinishedBehavior()}
             behaviorHasCode={this.state.revealCodeEditor}
-            otherParametersInGroup={this.getOtherParametersInGroup()}
+            otherParametersInGroup={this.getOtherSavedParametersInGroup()}
             toggleReuseParamDropdown={this.toggleReuseParamMenu}
             openReuseParamDropdownWhen={this.getActiveDropdown() === 'reuseParamDropdown'}
             onReuseParam={this.addParam}
