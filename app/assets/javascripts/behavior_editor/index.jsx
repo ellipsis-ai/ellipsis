@@ -142,6 +142,12 @@ return React.createClass({
     return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
   },
 
+  getOtherParametersInGroup: function() {
+    return this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
+      return arr.concat(ea.params);
+    }, [])
+  },
+
   getAllOAuth2Applications: function() {
     return this.props.oauth2Applications || [];
   },
@@ -846,6 +852,10 @@ return React.createClass({
     this.setState({
       activePanel: null
     });
+  },
+
+  toggleReuseParamMenu: function() {
+    this.toggleActiveDropdown('reuseParamDropdown');
   },
 
   toggleAPISelectorMenu: function() {
@@ -1899,6 +1909,9 @@ return React.createClass({
             triggers={this.getBehaviorTriggers()}
             isFinishedBehavior={this.isFinishedBehavior()}
             behaviorHasCode={this.state.revealCodeEditor}
+            otherParametersInGroup={this.getOtherParametersInGroup()}
+            toggleReuseParamDropdown={this.toggleReuseParamMenu}
+            openReuseParamDropdownWhen={this.getActiveDropdown() === 'reuseParamDropdown'}
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>

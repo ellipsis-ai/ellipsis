@@ -53,14 +53,18 @@ class InputServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  private def maybeParamTypeFor(data: InputData, team: Team): Future[Option[BehaviorParameterType]] = {
+    data.paramType.map { paramTypeData =>
+      BehaviorParameterType.find(paramTypeData.id, team, dataService)
+    }.getOrElse(Future.successful(None))
+  }
+
   def createFor(data: InputData, team: Team): Future[Input] = {
     data.groupId.map { gid =>
       dataService.behaviorGroups.find(gid)
     }.getOrElse(Future.successful(None)).flatMap { maybeGroup =>
       val action = for {
-        maybeParamType <- DBIO.from(data.paramType.map { paramTypeData =>
-          BehaviorParameterType.find(paramTypeData.id, team, dataService)
-        }.getOrElse(Future.successful(None)))
+        maybeParamType <- DBIO.from(maybeParamTypeFor(data, team))
         raw <- DBIO.successful(RawInput(
           IDs.next,
           data.name,
@@ -87,13 +91,28 @@ class InputServiceImpl @Inject() (
   }
 
   def ensureFor(data: InputData, team: Team): Future[Input] = {
-    (if (data.isShared) {
-      data.id.map(find).getOrElse(Future.successful(None))
-    } else {
-      Future.successful(None)
-    }).flatMap { maybeExisting =>
-      maybeExisting.map(Future.successful).getOrElse(createFor(data, team))
-    }
+    for {
+      maybeGroup <- data.groupId.map { gid =>
+        dataService.behaviorGroups.find(gid)
+      }.getOrElse(Future.successful(None))
+      maybeExisting <- maybeGroup.map { group =>
+        data.id.map(find).getOrElse(Future.successful(None))
+      }.getOrElse(Future.successful(None))
+      maybeParamType <- maybeExisting.map { existing =>
+        maybeParamTypeFor(data, team)
+      }.getOrElse(Future.successful(None))
+      input <- maybeExisting.map { existing =>
+        val raw = existing.copy(
+          name = data.name,
+          maybeQuestion = data.maybeNonEmptyQuestion,
+          paramType = maybeParamType.getOrElse(TextType),
+          isSavedForTeam = data.isSavedForTeam,
+          isSavedForUser = data.isSavedForUser
+        ).toRaw
+        val action = uncompiledFindRawQuery(existing.id).update(raw).map { _ => existing }
+        dataService.run(action)
+      }.getOrElse(createFor(data, team))
+    } yield input
   }
 
   def allForGroup(group: BehaviorGroup): Future[Seq[Input]] = {
