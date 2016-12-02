@@ -1933,7 +1933,7 @@ return React.createClass({
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
             <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
-              <div className="container">
+              <div className="container container-wide">
                 <div className="columns columns-elastic mobile-columns-float">
                   <div className="column column-expand">
                     <p className="mbn">

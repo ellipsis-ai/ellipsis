@@ -76,7 +76,7 @@ define(function(require) {
         <div>
           <Collapsible revealWhen={!this.hasParams()}>
             <div className="bg-blue-lighter border-top border-blue pvl">
-              <div className="container">
+              <div className="container container-wide">
                 <div className="columns columns-elastic mobile-columns-float">
                   <div className="column column-expand">
                     <p className="mbn">
