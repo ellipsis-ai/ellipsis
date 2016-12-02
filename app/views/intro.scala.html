@@ -1,7 +1,7 @@
 @(
   teamAccess: models.accounts.user.UserTeamAccess,
   behaviorGroups: Seq[json.BehaviorGroupData],
-  installedBehaviors: Seq[json.InstalledBehaviorGroupData]
+  installedBehaviorGroups: Seq[json.InstalledBehaviorGroupData]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
@@ -11,7 +11,7 @@
 @main("Welcome to Ellipsis", Some(teamAccess), "intro") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorImportExportController.doImport,
-    routes.javascript.BehaviorEditorController.edit
+    routes.javascript.BehaviorEditorController.editGroup
   )
   <div id="content" class="content">
     <div class="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
@@ -53,8 +53,9 @@
       </div>
     </div>
     <script>
-        var BehaviorImporterConfig = {
-          installedBehaviors: @Html(Json.toJson(installedBehaviors).toString),
+        var BehaviorGroupImporterConfig = {
+          teamId: '@(teamAccess.maybeTargetTeam.getOrElse(""))',
+          installedBehaviorGroups: @Html(Json.toJson(installedBehaviorGroups).toString),
           containerId: 'importerContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
           behaviorGroups: @Html(Json.toJson(behaviorGroups).toString)
