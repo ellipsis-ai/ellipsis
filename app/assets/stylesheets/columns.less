@@ -1,4 +1,5 @@
 @import (reference) "measurements";
+@import (reference) "whitespace";
 
 .columns::after {
   content: ' ';
@@ -131,8 +132,10 @@
   }
 }
 
+@containerWidth: 80rem;
+
 .container {
-  max-width: 80rem;
+  max-width: @containerWidth;
   padding-left: @xl;
   padding-right: @xl;
 }
@@ -140,6 +143,31 @@
 .container-c {
   margin-left: auto;
   margin-right: auto;
+}
+
+.column-page-sidebar {
+  width: 25%;
+  max-width: @containerWidth * 0.25;
+}
+
+.column-page-main {
+  width: 75%;
+  padding-left: @l;
+  max-width: @containerWidth * 0.75;
+}
+
+.column-page-main-wide {
+  max-width: none;
+}
+
+@media (max-width: @mobile-max-width) {
+  .column-page-sidebar,
+  .column-page-main {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
 
 .flex-columns {

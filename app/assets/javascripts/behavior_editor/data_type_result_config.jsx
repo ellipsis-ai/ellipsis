@@ -23,7 +23,7 @@ define(function(require) {
       return (
         <div className="container ptxl pbxxxl">
           <div className="columns">
-            <div className="column column-one-quarter mobile-column-full mts mbxxl mobile-mbs">
+            <div className="column column-page-sidebar mts mbxxl mobile-mbs">
               <SectionHeading number="2">How to prompt the user</SectionHeading>
               <Checklist disabledWhen={false}>
                 <Checklist.Item checkedWhen={!this.props.usesSearch}>
@@ -36,7 +36,7 @@ define(function(require) {
                 </Checklist.Item>
               </Checklist>
             </div>
-            <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+            <div className="column column-page-main mbxxl">
               <div className="mbm">
                 <ToggleGroup className="align-m">
                   <ToggleGroup.Item

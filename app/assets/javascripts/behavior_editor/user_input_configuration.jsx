@@ -97,7 +97,7 @@ define(function(require) {
             <hr className="mtn full-bleed thin bg-gray-light" />
 
             <div className="columns container">
-              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+              <div className="column column-page-sidebar mbxxl mobile-mbs">
                 <SectionHeading number="2">Collect input</SectionHeading>
 
                 <Checklist disabledWhen={this.props.isFinishedBehavior}>
@@ -115,7 +115,7 @@ define(function(require) {
                   </Checklist.Item>
                 </Checklist>
               </div>
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+              <div className="column column-page-main mbxxl">
                 <div>
                   <div className="mbm">
                     {this.props.userParams.map((param, paramIndex) => (

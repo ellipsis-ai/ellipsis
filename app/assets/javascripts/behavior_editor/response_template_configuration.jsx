@@ -98,9 +98,9 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="columns container">
+        <div className="columns phxl">
 
-          <div className="column column-one-quarter mobile-column-full mbxl mobile-mbs type-s ptxxl">
+          <div className="column column-page-sidebar mbxl mobile-mbs type-s ptxxl">
 
             <SectionHeading number={this.props.sectionNumber}>Then respond</SectionHeading>
 
@@ -117,7 +117,7 @@ define(function(require) {
             {this.getTemplateDataHelp()}
           </div>
 
-          <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxxl">
+          <div className="column column-page-main column-page-main-wide mbxxxl">
             <div className="mtxxl border-top border-left border-right border-light pas">
               <ToggleGroup className="form-toggle-group-s align-m">
                 <ToggleGroup.Item

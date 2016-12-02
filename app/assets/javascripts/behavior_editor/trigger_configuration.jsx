@@ -71,7 +71,7 @@ define(function(require) {
     render: function() {
       return (
         <div className="columns container ptxl">
-          <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+          <div className="column column-page-sidebar mbxxl mobile-mbs">
             <SectionHeading number="1">When someone says</SectionHeading>
 
             <Checklist disabledWhen={this.props.isFinishedBehavior}>
@@ -87,7 +87,7 @@ define(function(require) {
             </Checklist>
 
           </div>
-          <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+          <div className="column column-page-main mbxxl">
             <div className="mbm">
               {this.props.triggers.map(function(trigger, index) {
                 return (

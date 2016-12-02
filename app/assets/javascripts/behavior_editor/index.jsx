@@ -1556,11 +1556,11 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
-            <div className="box-action">
-              <div className="container phn">
+            <div className="box-action phn">
+              <div className="container">
                 <div className="columns">
-                  <div className="column column-one-quarter mobile-column-full"></div>
-                  <div className="column column-three-quarters mobile-column-full plxl">
+                  <div className="column column-page-sidebar"></div>
+                  <div className="column column-page-main">
                     <EnvVariableSetter
                       ref="envVariableSetterPanel"
                       vars={this.getEnvVariables()}
@@ -1574,11 +1574,11 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>
-            <div className="box-action">
-              <div className="container phn">
+            <div className="box-action phn">
+              <div className="container">
                 <div className="columns">
-                  <div className="column column-one-quarter mobile-column-full"></div>
-                  <div className="column column-three-quarters mobile-column-full plxl">
+                  <div className="column column-page-sidebar"></div>
+                  <div className="column column-page-main">
                     <EnvVariableAdder
                       ref="envVariableAdderPanel"
                       onCancelClick={this.hideActivePanel}
@@ -1629,7 +1629,7 @@ return React.createClass({
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
-            <div className="container ptm">
+            <div className="phxl ptm">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
                   <DynamicLabelButton
@@ -1953,8 +1953,8 @@ return React.createClass({
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
 
-            <div className="columns container">
-              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs ptxxl">
+            <div className="columns phxl">
+              <div className="column column-page-sidebar mbxxl mobile-mbs ptxxl">
                 <CodeEditorHelp
                   sectionNumber={this.hasUserParameters() ? "3" : "2"}
                   isFinishedBehavior={this.isFinishedBehavior()}
@@ -1965,7 +1965,7 @@ return React.createClass({
                 />
               </div>
 
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln">
+              <div className="column column-page-main column-page-main-wide">
                 {this.renderCodeEditor()}
               </div>
             </div>
@@ -2025,9 +2025,9 @@ return React.createClass({
 
           <hr className="man thin bg-gray-light" />
 
-          <div className="container pbxxxl">
+          <div className="phxl pbxxxl">
             <div className="columns">
-              <div className="column column-one-quarter mobile-column-full ptxl mbxxl mobile-mbs">
+              <div className="column column-page-sidebar ptxl mbxxl mobile-mbs">
 
                 <SectionHeading number="3">Run code to generate a list</SectionHeading>
 
@@ -2038,7 +2038,7 @@ return React.createClass({
 
               </div>
 
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+              <div className="column column-page-main column-page-main-wide mbxxl">
                 {this.renderCodeEditor()}
               </div>
             </div>
