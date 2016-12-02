@@ -1420,7 +1420,7 @@ return React.createClass({
   renderCodeEditor: function() {
     return (
       <div>
-        <div className="border-top border-left border-right border-light mtxxl ptm">
+        <div className="border-top border-left border-right border-light mtxxl mobile-mtn ptm">
           <div className="type-s">
             <div className="plxxxl prs mbm">
               <APISelectorMenu
@@ -1629,7 +1629,7 @@ return React.createClass({
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
-            <div className="phxl ptm">
+            <div className="container container-wide ptm">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
                   <DynamicLabelButton
@@ -1841,7 +1841,7 @@ return React.createClass({
     var hasSubTitle = this.getAllBehaviors().length > 1;
     return (
       <div className="bg-light border-bottom">
-        <div className="phxl pts type-weak">
+        <div className="container container-wide pts type-weak">
           {hasSubTitle ? this.renderSmallPageHeading() : this.renderLargePageHeading()}
         </div>
       </div>
@@ -1953,8 +1953,8 @@ return React.createClass({
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
 
-            <div className="columns phxl">
-              <div className="column column-page-sidebar mbxxl mobile-mbs ptxxl">
+            <div className="columns container container-wide flex-columns mobile-flex-no-columns">
+              <div className="flex-column flex-column-left column column-page-sidebar mbxxl mobile-mbs ptxxl">
                 <CodeEditorHelp
                   sectionNumber={this.hasUserParameters() ? "3" : "2"}
                   isFinishedBehavior={this.isFinishedBehavior()}
@@ -1965,7 +1965,7 @@ return React.createClass({
                 />
               </div>
 
-              <div className="column column-page-main column-page-main-wide">
+              <div className="flex-column flex-column-left column column-page-main column-page-main-wide">
                 {this.renderCodeEditor()}
               </div>
             </div>
@@ -2025,9 +2025,9 @@ return React.createClass({
 
           <hr className="man thin bg-gray-light" />
 
-          <div className="phxl pbxxxl">
-            <div className="columns">
-              <div className="column column-page-sidebar ptxl mbxxl mobile-mbs">
+          <div className="container container-wide pbxxxl">
+            <div className="columns flex-columns mobile-flex-no-columns">
+              <div className="flex-column flex-column-left column column-page-sidebar ptxl mbxxl mobile-mbs">
 
                 <SectionHeading number="3">Run code to generate a list</SectionHeading>
 
@@ -2038,7 +2038,7 @@ return React.createClass({
 
               </div>
 
-              <div className="column column-page-main column-page-main-wide mbxxl">
+              <div className="flex-column flex-column-left column column-page-main column-page-main-wide mbxxl">
                 {this.renderCodeEditor()}
               </div>
             </div>

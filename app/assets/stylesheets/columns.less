@@ -145,6 +145,10 @@
   margin-right: auto;
 }
 
+.container-wide {
+  max-width: none;
+}
+
 .column-page-sidebar {
   width: 25%;
   max-width: @containerWidth * 0.25;
@@ -177,6 +181,7 @@
   justify-content: center;
   align-content: center;
   align-items: stretch;
+  box-sizing: border-box;
 }
 
 .flex-column {
@@ -189,12 +194,19 @@
 
 .flex-column-center {
   order: 2;
-  width: 72rem;
+  width: @containerWidth;
   padding: 0;
 }
 
+
 .flex-column-right {
   order: 3;
+}
+
+@media (max-width: @mobile-max-width) {
+  .mobile-flex-no-columns {
+    flex-flow: column;
+  }
 }
 
 @media (max-width: (1296px + @xl*2)) {
