@@ -278,14 +278,14 @@ define(function(require) {
       return (
         <div>
           <div>
-            <div className="bg-white container pvxxl mobile-ptm">
+            <div className="bg-white container container-c pvxxl mobile-ptm">
               {this.renderContent()}
             </div>
           </div>
 
           <FixedFooter className="bg-white">
             <Collapsible revealWhen={this.getSelectedGroupIds().length > 0}>
-              <div className="container ptm">
+              <div className="container container-c ptm">
                 {this.renderActions()}
               </div>
             </Collapsible>

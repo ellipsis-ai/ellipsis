@@ -65,12 +65,12 @@ define(function(require) {
       return (
         <div>
           <div className="bg-light">
-            <div className="container pbm">
+            <div className="phxl pbm">
               {this.renderHeader()}
             </div>
           </div>
           <div className="flex-columns">
-            <div className="container flex-column flex-column-left prn">
+            <div className="flex-column flex-column-left phxl prn">
               <div className="columns">
                 <div className="column column-one-quarter">
                   <SettingsMenu activePage="oauthApplications"/>

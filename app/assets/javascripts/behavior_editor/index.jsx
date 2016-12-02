@@ -1560,7 +1560,7 @@ return React.createClass({
               <div className="container phn">
                 <div className="columns">
                   <div className="column column-one-quarter mobile-column-full"></div>
-                  <div className="column column-three-quarters  mobile-column-full">
+                  <div className="column column-three-quarters mobile-column-full plxl">
                     <EnvVariableSetter
                       ref="envVariableSetterPanel"
                       vars={this.getEnvVariables()}
@@ -1574,13 +1574,22 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>
-            <EnvVariableAdder
-              ref="envVariableAdderPanel"
-              onCancelClick={this.hideActivePanel}
-              onSave={this.addEnvVar}
-              prompt={this.state.envVariableAdderPrompt}
-              existingNames={this.getEnvVariableNames()}
-            />
+            <div className="box-action">
+              <div className="container phn">
+                <div className="columns">
+                  <div className="column column-one-quarter mobile-column-full"></div>
+                  <div className="column column-three-quarters mobile-column-full plxl">
+                    <EnvVariableAdder
+                      ref="envVariableAdderPanel"
+                      onCancelClick={this.hideActivePanel}
+                      onSave={this.addEnvVar}
+                      prompt={this.state.envVariableAdderPrompt}
+                      existingNames={this.getEnvVariableNames()}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </Collapsible>
 
           <Collapsible revealWhen={this.getActivePanel() === 'behaviorTester'}>
@@ -1832,7 +1841,7 @@ return React.createClass({
     var hasSubTitle = this.getAllBehaviors().length > 1;
     return (
       <div className="bg-light border-bottom">
-        <div className="container pts type-weak">
+        <div className="phxl pts type-weak">
           {hasSubTitle ? this.renderSmallPageHeading() : this.renderLargePageHeading()}
         </div>
       </div>

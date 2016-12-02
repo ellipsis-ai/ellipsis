@@ -76,12 +76,12 @@ define(function(require) {
       return (
         <div className="flex-row-cascade">
           <div className="bg-light">
-            <div className="container pbm">
+            <div className="phxl pbm">
               {this.renderHeader()}
             </div>
           </div>
           <div className="flex-columns flex-row-expand">
-            <div className="container flex-column flex-column-left flex-rows prn">
+            <div className="flex-column flex-column-left flex-rows phxl prn">
               <div className="columns flex-columns flex-row-expand">
                 <div className="column column-one-quarter flex-column">
                   <SettingsMenu activePage="environmentVariables"/>

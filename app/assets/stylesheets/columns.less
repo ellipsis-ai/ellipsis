@@ -137,6 +137,11 @@
   padding-right: @xl;
 }
 
+.container-c {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .flex-columns {
   display: flex;
   flex-flow: row;
@@ -165,13 +170,13 @@
 }
 
 @media (max-width: (1296px + @xl*2)) {
-  .flex-column-center {
+  .flex-column-primary {
     width: 100%;
     padding-left: @xl;
     padding-right: @xl;
   }
 
-  .flex-column-left, .flex-column-right {
+  .flex-column-padding-only {
     display: none;
   }
 }
