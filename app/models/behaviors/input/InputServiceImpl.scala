@@ -107,7 +107,8 @@ class InputServiceImpl @Inject() (
           maybeQuestion = data.maybeNonEmptyQuestion,
           paramType = maybeParamType.getOrElse(TextType),
           isSavedForTeam = data.isSavedForTeam,
-          isSavedForUser = data.isSavedForUser
+          isSavedForUser = data.isSavedForUser,
+          maybeBehaviorGroup = maybeGroup
         ).toRaw
         val action = uncompiledFindRawQuery(existing.id).update(raw).map { _ => existing }
         dataService.run(action)

@@ -28,7 +28,8 @@ define(function(require) {
       behaviorHasCode: React.PropTypes.bool.isRequired,
       otherParametersInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)),
       toggleReuseParamDropdown: React.PropTypes.func.isRequired,
-      openReuseParamDropdownWhen: React.PropTypes.bool.isRequired
+      openReuseParamDropdownWhen: React.PropTypes.bool.isRequired,
+      onReuseParam: React.PropTypes.func.isRequired
     },
 
     onChange: function(index, data) {
@@ -77,24 +78,22 @@ define(function(require) {
 
     renderReuseParamLabel: function(param) {
       return (
-        <div className="columns">
-          <div className="column-row">
-            <div className="type-bold column column-shrink">{param.name}</div>
-            <div className="column column-expand">{param.question}</div>
-          </div>
+        <div className="columns columns-elastic">
+          <div className="type-bold column column-shrink">{param.name}</div>
+          <div className="column column-expand">{param.question}</div>
         </div>
       );
     },
 
     onReuseParam: function(param) {
-
+      this.props.onReuseParam(param);
     },
 
     renderReuseParamOption: function(param, index) {
       return (
         <DropdownMenu.Item
           key={`reuse-param-option-${index}`}
-          onClick={this.onReuseParam}
+          onClick={this.onReuseParam.bind(this, param)}
           label={this.renderReuseParamLabel(param)}
         />
       );
@@ -104,7 +103,7 @@ define(function(require) {
       return (
         <DropdownMenu
           label="Re-use an input from another action"
-          labelClassName="button-s"
+          labelClassName="button-s button-color"
           toggle={this.props.toggleReuseParamDropdown}
           openWhen={this.props.openReuseParamDropdownWhen}
         >

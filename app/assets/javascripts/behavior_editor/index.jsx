@@ -145,7 +145,7 @@ return React.createClass({
   getOtherParametersInGroup: function() {
     return this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
       return arr.concat(ea.params);
-    }, [])
+    }, []).map(ea => ea.clone({groupId: this.props.groupId}));
   },
 
   getAllOAuth2Applications: function() {
@@ -528,15 +528,19 @@ return React.createClass({
     return new Param(Object.assign({ paramType: this.props.paramTypes[0] }, optionalValues));
   },
 
-  addParam: function() {
+  addParam: function(param) {
+    var newParams = this.getBehaviorParams().concat([param]);
+    this.setBehaviorProp('params', newParams, this.focusOnLastParam);
+  },
+
+  addNewParam: function() {
     var newParamIndex = this.getBehaviorParams().length + 1;
     while (this.getBehaviorParams().some(function(param) {
       return param.name === 'userInput' + newParamIndex;
     })) {
       newParamIndex++;
     }
-    var newParams = this.getBehaviorParams().concat([this.createNewParam({ name: 'userInput' + newParamIndex })]);
-    this.setBehaviorProp('params', newParams, this.focusOnLastParam);
+    this.addParam(this.createNewParam({ name: 'userInput' + newParamIndex }));
   },
 
   addParams: function(newParamNames) {
@@ -1299,7 +1303,7 @@ return React.createClass({
     if (index + 1 < this.getBehaviorParams().length) {
       this.focusOnParamIndex(index + 1);
     } else if (this.getBehaviorParams()[index].question) {
-      this.addParam();
+      this.addNewParam();
     }
   },
 
@@ -1900,7 +1904,7 @@ return React.createClass({
             ref="userInputConfiguration"
             onParamChange={this.updateParamAtIndexWithParam}
             onParamDelete={this.deleteParamAtIndex}
-            onParamAdd={this.addParam}
+            onParamAdd={this.addNewParam}
             onParamNameFocus={this.onParamNameFocus}
             onParamNameBlur={this.onParamNameBlur}
             onEnterKey={this.onParamEnterKey}
@@ -1912,6 +1916,7 @@ return React.createClass({
             otherParametersInGroup={this.getOtherParametersInGroup()}
             toggleReuseParamDropdown={this.toggleReuseParamMenu}
             openReuseParamDropdownWhen={this.getActiveDropdown() === 'reuseParamDropdown'}
+            onReuseParam={this.addParam}
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
