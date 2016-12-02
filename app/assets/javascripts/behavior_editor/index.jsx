@@ -587,7 +587,7 @@ return React.createClass({
     var panel = this.refs.leftPanel;
     var scrim = this.refs.scrim.getElement();
     if (form && panel && scrim) {
-      var topStyle = `${form.offsetTop + this.getFixedTitleHeight()}px`;
+      var topStyle = `${form.offsetTop}px`;
       panel.style.top = topStyle;
       scrim.style.top = topStyle;
     }
@@ -598,9 +598,8 @@ return React.createClass({
   },
 
   getFixedTitleHeight: function() {
-    var pageTitle = this.refs.pageTitle;
-    if (pageTitle && pageTitle.className.split(' ').some((ea) => /^position-fixed/.test(ea))) {
-      return pageTitle.offsetHeight;
+    if (this.refs.pageTitle) {
+      return this.refs.pageTitle.offsetHeight;
     } else {
       return 0;
     }
@@ -1355,6 +1354,7 @@ return React.createClass({
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.document.addEventListener('focus', this.handleModalFocus, true);
+    this.refs.pageTitleLayoutReplacer.style.height = `${this.getFixedTitleHeight()}px`;
   },
 
   getInitialBehaviorFromProps: function(props) {
@@ -1855,17 +1855,14 @@ return React.createClass({
     return (
       <div>
         <div ref="pageTitle"
-          className={
-            "bg-light border-bottom " +
-            (this.getActivePanel() === 'behaviorSwitcher' ? "position-fixed-top position-z-almost-front" : "")
-          }
+          className="bg-light border-bottom position-fixed-top position-z-almost-front"
           style={{ top: `${this.getHeaderHeight()}px` }}
         >
           <div className="container container-wide pts type-weak">
             {hasSubTitle ? this.renderSmallPageHeading() : this.renderLargePageHeading()}
           </div>
         </div>
-        <div style={{ height: `${this.getFixedTitleHeight()}px` }}></div>
+        <div ref="pageTitleLayoutReplacer" style={{ height: `${this.getFixedTitleHeight()}px` }}></div>
       </div>
     );
   },
