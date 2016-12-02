@@ -14,9 +14,14 @@ define(function(require) {
       }
     },
 
+    getElement: function() {
+      return this.refs.scrim;
+    },
+
     render: function() {
       return (
         <div
+          ref="scrim"
           className={
             "bg-scrim position-z-almost-front position-fixed-full " +
             (this.props.isActive ? "fade-in" : "display-none")

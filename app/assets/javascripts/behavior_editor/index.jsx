@@ -582,6 +582,17 @@ return React.createClass({
     this.setBehaviorProp('triggers', triggers);
   },
 
+  fixLeftPanelPosition: function() {
+    var form = this.refs.behaviorForm;
+    var panel = this.refs.leftPanel;
+    var scrim = this.refs.scrim.getElement();
+    if (form && panel && scrim) {
+      var topStyle = `${form.offsetTop}px`;
+      panel.style.top = topStyle;
+      scrim.style.top = topStyle;
+    }
+  },
+
   focusOnFirstPossibleElement: function(parentElement) {
     var tabSelector = 'a[href], area[href], input:not([disabled]), button:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, object, embed, *[tabindex], *[contenteditable]';
     var firstFocusableElement = parentElement.querySelector(tabSelector);
@@ -831,6 +842,9 @@ return React.createClass({
 
   toggleActivePanel: function(name, beModal, optionalCallback) {
     var alreadyOpen = this.getActivePanel() === name;
+    if (!alreadyOpen) {
+      this.refs.scrim.getElement().style.top = '';
+    }
     this.setState({
       activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
     }, optionalCallback || function() {
@@ -860,7 +874,11 @@ return React.createClass({
   },
 
   toggleBehaviorSwitcher: function() {
-    this.toggleActivePanel('behaviorSwitcher', true);
+    this.toggleActivePanel('behaviorSwitcher', true, () => {
+      if (this.getActivePanel() === 'behaviorSwitcher') {
+        this.fixLeftPanelPosition();
+      }
+    });
   },
 
   checkIfModifiedAndTest: function() {
@@ -1487,7 +1505,7 @@ return React.createClass({
   renderFooter: function() {
     return (
       <div>
-        <ModalScrim isActive={this.hasModalPanel()} onClick={this.clearActivePanel} />
+        <ModalScrim ref="scrim" isActive={this.hasModalPanel()} onClick={this.clearActivePanel} />
         <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
           <Collapsible ref="confirmUndo" revealWhen={this.getActivePanel() === 'confirmUndo'}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
@@ -1823,7 +1841,7 @@ return React.createClass({
 
   renderBehaviorSwitcher: function() {
     return (
-      <div className="position-fixed-left position-z-front bg-white border-left">
+      <div ref="leftPanel" className="position-fixed-left position-z-front bg-white border-left">
         <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
           <BehaviorSwitcher
             ref="behaviorSwitcher"

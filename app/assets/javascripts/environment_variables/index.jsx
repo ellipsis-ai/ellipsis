@@ -81,7 +81,7 @@ define(function(require) {
             </div>
           </div>
           <div className="flex-columns flex-row-expand">
-            <div className="container flex-column flex-column-center flex-rows">
+            <div className="container flex-column flex-column-left flex-rows prn">
               <div className="columns flex-columns flex-row-expand">
                 <div className="column column-one-quarter flex-column">
                   <SettingsMenu activePage="environmentVariables"/>
@@ -93,7 +93,6 @@ define(function(require) {
                 </div>
               </div>
             </div>
-            <div className="flex-column flex-column-left"></div>
             <div className="flex-column flex-column-right bg-white"></div>
           </div>
         </div>

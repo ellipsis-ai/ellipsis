@@ -43,7 +43,7 @@ define(function(require) {
           <div className="align-r ptxs prxs">
             <button type="button" className="button-symbol button-s button-subtle" onClick={this.props.onToggle}><SVGXIcon /></button>
           </div>
-          <div className="phl mbxl">
+          <div className="phxl mbxl">
             <div className="mbs">
               <Input
                 className="form-input-borderless form-input-l type-bold mbn"

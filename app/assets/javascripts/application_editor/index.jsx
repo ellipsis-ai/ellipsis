@@ -209,7 +209,7 @@ define(function(require) {
           </div>
 
           <div className="flex-columns">
-            <div className="container flex-column flex-column-center">
+            <div className="container flex-column flex-column-left prn">
               <div className="columns">
                 <div className="column column-one-quarter">
                   <SettingsMenu activePage="oauthApplications" />
@@ -224,7 +224,6 @@ define(function(require) {
                 </div>
               </div>
             </div>
-            <div className="flex-column flex-column-left"></div>
             <div className="flex-column flex-column-right bg-white"></div>
           </div>
 

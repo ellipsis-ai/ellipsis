@@ -28,7 +28,7 @@ define(function(require) {
     render: function() {
       return (
         <div className="mtxl mbxxxl">
-          <div className="phl">
+          <div className="phxl">
             <div className="columns columns-elastic">
               <div className="column column-expand">
                 <h4>{this.props.heading}</h4>
@@ -45,12 +45,12 @@ define(function(require) {
             {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version) => (
               <div
                 key={`behavior-${version.behaviorId}`}
-                className={`border-top border-bottom pvs phl mbneg1 ${this.isCurrentVersion(version) ? "bg-blue-lighter border-blue" : ""}`}
+                className={`border-top border-bottom pvs phxl mbneg1 ${this.isCurrentVersion(version) ? "bg-blue-lighter border-blue" : ""}`}
               >
                 <BehaviorName version={version} disableLink={this.isCurrentVersion(version)} beConcise={true} />
               </div>
             )), () => (
-              <p className="phl type-weak">{this.props.emptyMessage}</p>
+              <p className="phxl type-weak">{this.props.emptyMessage}</p>
             ))}
           </div>
         </div>
