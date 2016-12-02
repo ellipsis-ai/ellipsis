@@ -100,16 +100,20 @@ define(function(require) {
     },
 
     renderReuseParameter: function() {
-      return (
-        <DropdownMenu
-          label="Re-use an input from another action"
-          labelClassName="button-s button-color"
-          toggle={this.props.toggleReuseParamDropdown}
-          openWhen={this.props.openReuseParamDropdownWhen}
-        >
-          {this.props.otherParametersInGroup.map( (ea, i) => this.renderReuseParamOption(ea, i))}
-        </DropdownMenu>
-      );
+      if (this.props.otherParametersInGroup.length === 0) {
+        return null;
+      } else {
+        return (
+          <DropdownMenu
+            label="Re-use an input from another action"
+            labelClassName="button-s button-color"
+            toggle={this.props.toggleReuseParamDropdown}
+            openWhen={this.props.openReuseParamDropdownWhen}
+          >
+            {this.props.otherParametersInGroup.map((ea, i) => this.renderReuseParamOption(ea, i))}
+          </DropdownMenu>
+        );
+      }
     },
 
     render: function() {

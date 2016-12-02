@@ -143,9 +143,12 @@ return React.createClass({
   },
 
   getOtherParametersInGroup: function() {
+    const currentInputIds = this.getBehaviorParams().map(ea => ea.inputId);
     return this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
       return arr.concat(ea.params);
-    }, []).map(ea => ea.clone({groupId: this.props.groupId}));
+    }, [])
+      .filter(ea => currentInputIds.indexOf(ea.inputId) === -1)
+      .map(ea => ea.clone({groupId: this.props.groupId}));
   },
 
   getAllOAuth2Applications: function() {
