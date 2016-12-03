@@ -109,6 +109,7 @@ define(function(require) {
             labelClassName="button-s button-color"
             toggle={this.props.toggleReuseParamDropdown}
             openWhen={this.props.openReuseParamDropdownWhen}
+            menuClassName="width-20"
           >
             {this.props.otherParametersInGroup.map((ea, i) => this.renderReuseParamOption(ea, i))}
           </DropdownMenu>
