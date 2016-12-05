@@ -168,7 +168,9 @@ class BehaviorEditorController @Inject() (
                 behaviorVersionData <- maybeBehaviorVersionData
               } yield {
                 if (info.maybeRedirect.contains("newOAuth2Application")) {
-                  Redirect(routes.OAuth2ApplicationController.newApp(maybeRequiredOAuth2ApiConfig.map(_.id), Some(data.teamId), Some(behavior.id)))
+                  val maybeApiId = maybeRequiredOAuth2ApiConfig.map(_.api.id)
+                  val maybeRecommendedScope = maybeRequiredOAuth2ApiConfig.flatMap(_.maybeRecommendedScope)
+                  Redirect(routes.OAuth2ApplicationController.newApp(maybeApiId, maybeRecommendedScope, Some(data.teamId), Some(behavior.id)))
                 } else {
                   render {
                     case Accepts.Html() => Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))

@@ -44,25 +44,19 @@ class OAuth2ApplicationController @Inject() (
     }
   }
 
-  def newApp(maybeRequiredOAuth2ApiConfigId: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def newApp(maybeApiId: Option[String], maybeRecommendedScope: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
-      maybeRequiredOAuth2ApiConfig <- maybeRequiredOAuth2ApiConfigId.map { id =>
-        dataService.requiredOAuth2ApiConfigs.find(id)
-      }.getOrElse(Future.successful(None))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        val maybeApiId = maybeRequiredOAuth2ApiConfig.map(_.api.id)
-        val maybeRecommendedScope = maybeRequiredOAuth2ApiConfig.flatMap(_.maybeRecommendedScope)
         Ok(views.html.newOAuth2Application(
           teamAccess,
           apis.map(api => OAuth2ApiData.from(api)),
           IDs.next,
           maybeApiId,
           maybeRecommendedScope,
-          maybeRequiredOAuth2ApiConfigId,
           maybeBehaviorId)
         )
       }.getOrElse {
@@ -101,7 +95,6 @@ class OAuth2ApplicationController @Inject() (
                                     id: String,
                                     name: String,
                                     apiId: String,
-                                    maybeRequiredOAuth2ApiConfigId: Option[String],
                                     clientId: String,
                                     clientSecret: String,
                                     maybeScope: Option[String],
@@ -114,7 +107,6 @@ class OAuth2ApplicationController @Inject() (
       "id" -> nonEmptyText,
       "name" -> nonEmptyText,
       "apiId" -> nonEmptyText,
-      "requiredOAuth2ApiConfigId" -> optional(nonEmptyText),
       "clientId" -> nonEmptyText,
       "clientSecret" -> nonEmptyText,
       "scope" -> optional(nonEmptyText),
@@ -147,13 +139,16 @@ class OAuth2ApplicationController @Inject() (
               }.getOrElse(Future.successful(None))
             }
           }.getOrElse(Future.successful(None))
-          maybeRequired <- info.maybeRequiredOAuth2ApiConfigId.map { requiredId =>
-            dataService.requiredOAuth2ApiConfigs.find(requiredId).flatMap { maybeExisting =>
-              maybeExisting.map { existing =>
-                dataService.requiredOAuth2ApiConfigs.save(existing.copy(maybeApplication = maybeApplication)).map(Some(_))
-              }.getOrElse(Future.successful(None))
-            }
-          }.getOrElse(Future.successful(None))
+          requireOAuth2Applications <- (for {
+            behaviorVersion <- maybeBehaviorVersion
+            group <- behaviorVersion.behavior.maybeGroup
+            api <- maybeApi
+          } yield {
+            dataService.requiredOAuth2ApiConfigs.allFor(api, group)
+          }).getOrElse(Future.successful(Seq()))
+          _ <- Future.sequence(requireOAuth2Applications.map { ea =>
+            dataService.requiredOAuth2ApiConfigs.save(ea.copy(maybeApplication = maybeApplication))
+          })
         } yield {
           maybeApplication.map { application =>
             info.maybeBehaviorId.map { behaviorId =>
