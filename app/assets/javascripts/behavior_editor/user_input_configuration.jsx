@@ -99,17 +99,18 @@ define(function(require) {
       );
     },
 
-    renderReuseParameter: function() {
+    renderReuseParameter: function(optionalProperties) {
+      var props = Object.assign({}, optionalProperties);
       if (this.props.otherParametersInGroup.length === 0) {
         return null;
       } else {
         return (
           <DropdownMenu
-            label="Use a saved answer from another action"
-            labelClassName="button-s button-color"
+            label={props.label || "Use a saved answer from another action"}
+            labelClassName={"button-s button-color " + (props.labelClassName || "")}
             toggle={this.props.toggleReuseParamDropdown}
             openWhen={this.props.openReuseParamDropdownWhen}
-            menuClassName="width-20"
+            menuClassName={"width-20 " + (props.menuClassName || "")}
           >
             {this.props.otherParametersInGroup.map((ea, i) => this.renderReuseParamOption(ea, i))}
           </DropdownMenu>
@@ -130,11 +131,11 @@ define(function(require) {
                       <span>to clarify what kind of input will come from the trigger.</span>
                     </p>
                   </div>
-                  <div className="column column-shrink align-m mobile-mtm">
-                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add an input</button>
-                  </div>
-                  <div className="column column-shrink align-m mobile-mtm">
-                    {this.renderReuseParameter()}
+                  <div className="column column-shrink align-r align-m mobile-align-l mobile-mtm display-ellipsis mobile-display-no-ellipsis">
+                    <button type="button" className="button-s mbs mobile-mrm" onClick={this.props.onParamAdd}>Add an input</button>
+                    <span className="display-inline-block mbs">
+                      {this.renderReuseParameter({ labelClassName: "mlm mobile-mln" })}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -189,10 +190,12 @@ define(function(require) {
                     ))}
                   </div>
                   <div>
-                    <button type="button" className="button-s mrm" onClick={this.props.onParamAdd}>
+                    <button type="button" className="button-s mrm mbs" onClick={this.props.onParamAdd}>
                       Add another input
                     </button>
-                    {this.renderReuseParameter()}
+                    <span className="display-inline-block mbs">
+                      {this.renderReuseParameter()}
+                    </span>
                   </div>
                 </div>
               </div>
