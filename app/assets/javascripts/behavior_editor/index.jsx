@@ -30,6 +30,7 @@ var React = require('react'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   SectionHeading = require('./section_heading'),
+  SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   SVGHamburger = require('../svg/hamburger'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
@@ -888,8 +889,8 @@ return React.createClass({
     });
   },
 
-  toggleReuseParamMenu: function() {
-    this.toggleActiveDropdown('reuseParamDropdown');
+  toggleSharedAnswerInputSelector: function() {
+    this.toggleActivePanel('sharedAnswerInputSelector', true);
   },
 
   toggleAPISelectorMenu: function() {
@@ -1647,6 +1648,17 @@ return React.createClass({
             />
           </Collapsible>
 
+          {this.getOtherSavedParametersInGroup().length > 0 ? (
+            <Collapsible revealWhen={this.getActivePanel() === 'sharedAnswerInputSelector'}>
+              <SharedAnswerInputSelector
+                ref="sharedAnswerInputSelector"
+                onToggle={this.toggleSharedAnswerInputSelector}
+                onSelect={this.addParam}
+                params={this.getOtherSavedParametersInGroup()}
+              />
+            </Collapsible>
+          ) : null}
+
           <Collapsible ref="saving" revealWhen={this.isSaving()}>
             <div className="box-action">
               <div className="container phn">
@@ -1971,10 +1983,8 @@ return React.createClass({
             triggers={this.getBehaviorTriggers()}
             isFinishedBehavior={this.isFinishedBehavior()}
             behaviorHasCode={this.state.revealCodeEditor}
-            otherParametersInGroup={this.getOtherSavedParametersInGroup()}
-            toggleReuseParamDropdown={this.toggleReuseParamMenu}
-            openReuseParamDropdownWhen={this.getActiveDropdown() === 'reuseParamDropdown'}
-            onReuseParam={this.addParam}
+            hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
+            onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
