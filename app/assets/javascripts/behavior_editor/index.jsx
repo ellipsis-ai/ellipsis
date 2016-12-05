@@ -1855,7 +1855,7 @@ return React.createClass({
     return (
       <div>
         <div ref="pageTitle"
-          className="bg-light border-bottom position-fixed-top position-z-almost-front"
+          className="bg-white border-bottom position-fixed-top position-z-almost-front"
           style={{ top: `${this.getHeaderHeight()}px` }}
         >
           <div className="container container-wide pts type-weak">
