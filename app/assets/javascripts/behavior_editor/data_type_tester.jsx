@@ -126,7 +126,7 @@ define(function(require) {
           <div className="box-action">
             <div className="container phn">
               <div className="columns mtl">
-                <div className="column column-one-quarter mobile-column-full">
+                <div className="column column-page-sidebar">
                   <h4 className="type-weak">Test the data type</h4>
                 </div>
                 <div className="column column-three-quarters pll mobile-pln mobile-column-full">

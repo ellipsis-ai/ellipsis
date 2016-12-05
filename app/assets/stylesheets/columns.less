@@ -1,4 +1,5 @@
 @import (reference) "measurements";
+@import (reference) "whitespace";
 
 .columns::after {
   content: ' ';
@@ -131,12 +132,46 @@
   }
 }
 
+@containerWidth: 80rem;
+
 .container {
-  max-width: 72rem;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: @containerWidth;
   padding-left: @xl;
   padding-right: @xl;
+}
+
+.container-c {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.container-wide {
+  max-width: none;
+}
+
+.column-page-sidebar {
+  width: 25%;
+  max-width: @containerWidth * 0.25;
+}
+
+.column-page-main {
+  width: 75%;
+  padding-left: @l;
+  max-width: @containerWidth * 0.75;
+}
+
+.column-page-main-wide {
+  max-width: none;
+}
+
+@media (max-width: @mobile-max-width) {
+  .column-page-sidebar,
+  .column-page-main {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
 
 .flex-columns {
@@ -146,6 +181,7 @@
   justify-content: center;
   align-content: center;
   align-items: stretch;
+  box-sizing: border-box;
 }
 
 .flex-column {
@@ -158,22 +194,29 @@
 
 .flex-column-center {
   order: 2;
-  width: 72rem;
+  width: @containerWidth;
   padding: 0;
 }
+
 
 .flex-column-right {
   order: 3;
 }
 
+@media (max-width: @mobile-max-width) {
+  .mobile-flex-no-columns {
+    flex-flow: column;
+  }
+}
+
 @media (max-width: (1296px + @xl*2)) {
-  .flex-column-center {
+  .flex-column-primary {
     width: 100%;
     padding-left: @xl;
     padding-right: @xl;
   }
 
-  .flex-column-left, .flex-column-right {
+  .flex-column-padding-only {
     display: none;
   }
 }

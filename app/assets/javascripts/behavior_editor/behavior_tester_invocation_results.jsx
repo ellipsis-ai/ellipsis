@@ -75,7 +75,7 @@ define(function(require) {
         <div className="box-help">
           <div className="container phn">
             <div className="columns">
-              <div className="column column-one-quarter mobile-column-full">
+              <div className="column column-page-sidebar">
                 <h4 className="type-weak mvs">Response log</h4>
                 {this.props.resultStatus || null}
               </div>

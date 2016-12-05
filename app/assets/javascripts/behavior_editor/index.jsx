@@ -596,6 +596,29 @@ return React.createClass({
     this.setBehaviorProp('triggers', triggers);
   },
 
+  fixLeftPanelPosition: function() {
+    var form = this.refs.behaviorForm;
+    var panel = this.refs.leftPanel;
+    var scrim = this.refs.scrim.getElement();
+    if (form && panel && scrim) {
+      var topStyle = `${form.offsetTop}px`;
+      panel.style.top = topStyle;
+      scrim.style.top = topStyle;
+    }
+  },
+
+  getHeaderHeight: function() {
+    return document.getElementById('main-header').offsetHeight;
+  },
+
+  getFixedTitleHeight: function() {
+    if (this.refs.pageTitle) {
+      return this.refs.pageTitle.offsetHeight;
+    } else {
+      return 0;
+    }
+  },
+
   focusOnFirstPossibleElement: function(parentElement) {
     var tabSelector = 'a[href], area[href], input:not([disabled]), button:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, object, embed, *[tabindex], *[contenteditable]';
     var firstFocusableElement = parentElement.querySelector(tabSelector);
@@ -845,6 +868,9 @@ return React.createClass({
 
   toggleActivePanel: function(name, beModal, optionalCallback) {
     var alreadyOpen = this.getActivePanel() === name;
+    if (!alreadyOpen) {
+      this.refs.scrim.getElement().style.top = '';
+    }
     this.setState({
       activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
     }, optionalCallback || function() {
@@ -878,7 +904,11 @@ return React.createClass({
   },
 
   toggleBehaviorSwitcher: function() {
-    this.toggleActivePanel('behaviorSwitcher', true);
+    this.toggleActivePanel('behaviorSwitcher', true, () => {
+      if (this.getActivePanel() === 'behaviorSwitcher') {
+        this.fixLeftPanelPosition();
+      }
+    });
   },
 
   checkIfModifiedAndTest: function() {
@@ -1342,6 +1372,7 @@ return React.createClass({
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.document.addEventListener('focus', this.handleModalFocus, true);
+    this.refs.pageTitleLayoutReplacer.style.height = `${this.getFixedTitleHeight()}px`;
   },
 
   getInitialBehaviorFromProps: function(props) {
@@ -1420,7 +1451,7 @@ return React.createClass({
   renderCodeEditor: function() {
     return (
       <div>
-        <div className="border-top border-left border-right border-light mtxxl ptm">
+        <div className="border-top border-left border-right border-light mtxxl mobile-mtn ptm">
           <div className="type-s">
             <div className="plxxxl prs mbm">
               <APISelectorMenu
@@ -1505,7 +1536,7 @@ return React.createClass({
   renderFooter: function() {
     return (
       <div>
-        <ModalScrim isActive={this.hasModalPanel()} onClick={this.clearActivePanel} />
+        <ModalScrim ref="scrim" isActive={this.hasModalPanel()} onClick={this.clearActivePanel} />
         <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
           <Collapsible ref="confirmUndo" revealWhen={this.getActivePanel() === 'confirmUndo'}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
@@ -1556,11 +1587,11 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
-            <div className="box-action">
-              <div className="container phn">
+            <div className="box-action phn">
+              <div className="container">
                 <div className="columns">
-                  <div className="column column-one-quarter mobile-column-full"></div>
-                  <div className="column column-three-quarters  mobile-column-full">
+                  <div className="column column-page-sidebar"></div>
+                  <div className="column column-page-main">
                     <EnvVariableSetter
                       ref="envVariableSetterPanel"
                       vars={this.getEnvVariables()}
@@ -1574,13 +1605,22 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>
-            <EnvVariableAdder
-              ref="envVariableAdderPanel"
-              onCancelClick={this.hideActivePanel}
-              onSave={this.addEnvVar}
-              prompt={this.state.envVariableAdderPrompt}
-              existingNames={this.getEnvVariableNames()}
-            />
+            <div className="box-action phn">
+              <div className="container">
+                <div className="columns">
+                  <div className="column column-page-sidebar"></div>
+                  <div className="column column-page-main">
+                    <EnvVariableAdder
+                      ref="envVariableAdderPanel"
+                      onCancelClick={this.hideActivePanel}
+                      onSave={this.addEnvVar}
+                      prompt={this.state.envVariableAdderPrompt}
+                      existingNames={this.getEnvVariableNames()}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </Collapsible>
 
           <Collapsible revealWhen={this.getActivePanel() === 'behaviorTester'}>
@@ -1620,7 +1660,7 @@ return React.createClass({
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
-            <div className="container ptm">
+            <div className="container container-wide ptm">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
                   <DynamicLabelButton
@@ -1725,8 +1765,10 @@ return React.createClass({
       );
     } else if (actionCount > 1) {
       return 'Untitled skill';
-    } else if (actionCount === 1) {
-      return 'Edit skill';
+    } else if (actionCount === 1 && this.isExistingBehavior()) {
+      return 'Skill';
+    } else if (actionCount === 1 && !this.isExistingBehavior()) {
+      return 'New skill';
     } else {
       return 'Edit data type';
     }
@@ -1745,7 +1787,11 @@ return React.createClass({
       return `${actionCount} actions, ${dataTypeCount} data types`;
     } else if (actionCount === 0 && dataTypeCount > 1) {
       return `${dataTypeCount} data types`;
-    } else { // only 1 action or only 1 data type
+    } else if (actionCount === 1 && dataTypeCount === 0 && this.isExistingBehavior()) {
+      return `1 action`;
+    } else if (actionCount === 0 && dataTypeCount === 1 && this.isExistingBehavior()) {
+      return `1 data type`;
+    } else {
       return null;
     }
   },
@@ -1758,7 +1804,7 @@ return React.createClass({
           <span className="mhs">·</span>
           <span className="type-black">{optionalDescription}</span>
           <span className="mhs">·</span>
-          <i>({summary})</i>
+          <i>{summary}</i>
         </span>
       );
     } else if (optionalDescription && !summary) {
@@ -1799,49 +1845,37 @@ return React.createClass({
   getBehaviorHeading: function() {
     if (this.getAllBehaviors().length > 1) {
       return (
-        <h3 className="type-weak mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit skill action"}</h3>
+        <h4 className="type-weak mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h4>
       );
     } else {
       return null;
     }
   },
 
-  renderSmallPageHeading: function() {
-    return (
-      <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
-        <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
-          <SVGHamburger />
-        </span>
-        <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
-      </button>
-    );
-  },
-
-  renderLargePageHeading: function() {
-    return (
-      <button type="button" className="button-l button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
-        <span className="display-inline-block align-m mrm" style={{ height: "24px" }}>
-          <SVGHamburger />
-        </span>
-        <h3 className="display-inline-block align-m man">{this.getPageHeading()}</h3>
-      </button>
-    );
-  },
-
   renderPageHeading: function() {
-    var hasSubTitle = this.getAllBehaviors().length > 1;
     return (
-      <div className="bg-light border-bottom">
-        <div className="container pts type-weak">
-          {hasSubTitle ? this.renderSmallPageHeading() : this.renderLargePageHeading()}
+      <div>
+        <div ref="pageTitle"
+          className="bg-white border-bottom position-fixed-top position-z-almost-front"
+          style={{ top: `${this.getHeaderHeight()}px` }}
+        >
+          <div className="container container-wide pts type-weak">
+            <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
+              <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
+                <SVGHamburger />
+              </span>
+              <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
+            </button>
+          </div>
         </div>
+        <div ref="pageTitleLayoutReplacer" style={{ height: `${this.getFixedTitleHeight()}px` }}></div>
       </div>
     );
   },
 
   renderBehaviorSwitcher: function() {
     return (
-      <div className="position-fixed-left position-z-front bg-white border-left">
+      <div ref="leftPanel" className="position-fixed-left position-z-front bg-white border-left">
         <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
           <BehaviorSwitcher
             ref="behaviorSwitcher"
@@ -1928,7 +1962,7 @@ return React.createClass({
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
             <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
-              <div className="container">
+              <div className="container container-wide">
                 <div className="columns columns-elastic mobile-columns-float">
                   <div className="column column-expand">
                     <p className="mbn">
@@ -1948,8 +1982,8 @@ return React.createClass({
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
 
-            <div className="columns container">
-              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs ptxxl">
+            <div className="columns container container-wide flex-columns mobile-flex-no-columns">
+              <div className="flex-column flex-column-left column column-page-sidebar mbxxl mobile-mbs ptxxl">
                 <CodeEditorHelp
                   sectionNumber={this.hasUserParameters() ? "3" : "2"}
                   isFinishedBehavior={this.isFinishedBehavior()}
@@ -1960,7 +1994,7 @@ return React.createClass({
                 />
               </div>
 
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln">
+              <div className="flex-column flex-column-left column column-page-main column-page-main-wide">
                 {this.renderCodeEditor()}
               </div>
             </div>
@@ -2020,9 +2054,9 @@ return React.createClass({
 
           <hr className="man thin bg-gray-light" />
 
-          <div className="container pbxxxl">
-            <div className="columns">
-              <div className="column column-one-quarter mobile-column-full ptxl mbxxl mobile-mbs">
+          <div className="container container-wide pbxxxl">
+            <div className="columns flex-columns mobile-flex-no-columns">
+              <div className="flex-column flex-column-left column column-page-sidebar ptxl mbxxl mobile-mbs">
 
                 <SectionHeading number="3">Run code to generate a list</SectionHeading>
 
@@ -2033,7 +2067,7 @@ return React.createClass({
 
               </div>
 
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+              <div className="flex-column flex-column-left column column-page-main column-page-main-wide mbxxl">
                 {this.renderCodeEditor()}
               </div>
             </div>

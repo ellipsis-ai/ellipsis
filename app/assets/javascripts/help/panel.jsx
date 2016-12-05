@@ -10,14 +10,14 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="box-help type-s pts mobile-position-fixed-full">
-        <div className="container position-relative columns phn">
-          <div className="column column-one-quarter mobile-column-full mts mobile-prxxl">
+      <div className="box-help type-s pts mobile-position-fixed-full container container-wide">
+        <div className="position-relative columns">
+          <div className="column column-page-sidebar mts mobile-prxxl">
             <h4 className="type-weak">
               {this.props.heading}
             </h4>
           </div>
-          <div className="column column-three-quarters mobile-column-full mts pll prxxl mobile-pln mobile-mtn">
+          <div className="column column-page-main mts prxxl mobile-mtn">
             <div className="position-absolute position-top-right">
               <HelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
             </div>
