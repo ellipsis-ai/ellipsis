@@ -105,7 +105,7 @@ describe('BehaviorEditor', () => {
 
   describe('getBehaviorParams', () => {
     it('returns the defined parameters', () => {
-      editorConfig.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234" }];
+      editorConfig.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234", groupId: null }];
       let editor = createEditor(editorConfig);
       expect(editor.getBehaviorParams()).toEqual(editorConfig.params);
     });
@@ -175,10 +175,10 @@ describe('BehaviorEditor', () => {
       }];
       const editor = createEditor(editorConfig);
       editor.focusOnParamIndex = jest.fn();
-      editor.addParam = jest.fn();
+      editor.addNewParam = jest.fn();
       editor.onParamEnterKey(0);
       expect(editor.focusOnParamIndex.mock.calls[0][0]).toBe(1);
-      expect(editor.addParam.mock.calls.length).toBe(0);
+      expect(editor.addNewParam.mock.calls.length).toBe(0);
     });
 
     it('adds a param if this is the last one and it has a question', () => {
@@ -189,10 +189,10 @@ describe('BehaviorEditor', () => {
       }];
       const editor = createEditor(editorConfig);
       editor.focusOnParamIndex = jest.fn();
-      editor.addParam = jest.fn();
+      editor.addNewParam = jest.fn();
       editor.onParamEnterKey(1);
       expect(editor.focusOnParamIndex.mock.calls.length).toBe(0);
-      expect(editor.addParam.mock.calls.length).toBe(1);
+      expect(editor.addNewParam.mock.calls.length).toBe(1);
     });
 
     it('does nothing if this is the last one and has no question', () => {
@@ -203,10 +203,10 @@ describe('BehaviorEditor', () => {
       }];
       const editor = createEditor(editorConfig);
       editor.focusOnParamIndex = jest.fn();
-      editor.addParam = jest.fn();
+      editor.addNewParam = jest.fn();
       editor.onParamEnterKey(1);
       expect(editor.focusOnParamIndex.mock.calls.length).toBe(0);
-      expect(editor.addParam.mock.calls.length).toBe(0);
+      expect(editor.addNewParam.mock.calls.length).toBe(0);
     });
   });
 

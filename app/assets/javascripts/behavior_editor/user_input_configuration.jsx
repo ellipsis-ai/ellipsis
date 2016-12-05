@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     SectionHeading = require('./section_heading'),
+    DropdownMenu = require('../dropdown_menu'),
     UserInputDefinition = require('./user_input_definition'),
     Checklist = require('./checklist'),
     Collapsible = require('../collapsible'),
@@ -24,7 +25,11 @@ define(function(require) {
       ).isRequired,
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
       isFinishedBehavior: React.PropTypes.bool.isRequired,
-      behaviorHasCode: React.PropTypes.bool.isRequired
+      behaviorHasCode: React.PropTypes.bool.isRequired,
+      otherParametersInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)),
+      toggleReuseParamDropdown: React.PropTypes.func.isRequired,
+      openReuseParamDropdownWhen: React.PropTypes.bool.isRequired,
+      onReuseParam: React.PropTypes.func.isRequired
     },
 
     onChange: function(index, data) {
@@ -71,6 +76,47 @@ define(function(require) {
       return this.props.triggers.some((trigger) => trigger.isRegex);
     },
 
+    renderReuseParamLabel: function(param) {
+      return (
+        <div className="columns columns-elastic">
+          <div className="type-bold column column-shrink">{param.name}</div>
+          <div className="column column-expand">{param.question}</div>
+        </div>
+      );
+    },
+
+    onReuseParam: function(param) {
+      this.props.onReuseParam(param);
+    },
+
+    renderReuseParamOption: function(param, index) {
+      return (
+        <DropdownMenu.Item
+          key={`reuse-param-option-${index}`}
+          onClick={this.onReuseParam.bind(this, param)}
+          label={this.renderReuseParamLabel(param)}
+        />
+      );
+    },
+
+    renderReuseParameter: function() {
+      if (this.props.otherParametersInGroup.length === 0) {
+        return null;
+      } else {
+        return (
+          <DropdownMenu
+            label="Use a saved answer from another action"
+            labelClassName="button-s button-color"
+            toggle={this.props.toggleReuseParamDropdown}
+            openWhen={this.props.openReuseParamDropdownWhen}
+            menuClassName="width-20"
+          >
+            {this.props.otherParametersInGroup.map((ea, i) => this.renderReuseParamOption(ea, i))}
+          </DropdownMenu>
+        );
+      }
+    },
+
     render: function() {
       return (
         <div>
@@ -85,7 +131,10 @@ define(function(require) {
                     </p>
                   </div>
                   <div className="column column-shrink align-m mobile-mtm">
-                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add inputs</button>
+                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add an input</button>
+                  </div>
+                  <div className="column column-shrink align-m mobile-mtm">
+                    {this.renderReuseParameter()}
                   </div>
                 </div>
               </div>
@@ -140,9 +189,10 @@ define(function(require) {
                     ))}
                   </div>
                   <div>
-                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>
+                    <button type="button" className="button-s mrm" onClick={this.props.onParamAdd}>
                       Add another input
                     </button>
+                    {this.renderReuseParameter()}
                   </div>
                 </div>
               </div>

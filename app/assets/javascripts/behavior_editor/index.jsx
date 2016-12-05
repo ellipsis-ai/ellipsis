@@ -141,6 +141,16 @@ return React.createClass({
     return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
   },
 
+  getOtherSavedParametersInGroup: function() {
+    const currentInputIds = this.getBehaviorParams().map(ea => ea.inputId);
+    return this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
+      return arr.concat(ea.params);
+    }, [])
+      .filter(ea => currentInputIds.indexOf(ea.inputId) === -1)
+      .filter(ea => ea.isSaved())
+      .map(ea => ea.clone({groupId: this.props.groupId}));
+  },
+
   getAllOAuth2Applications: function() {
     return this.props.oauth2Applications || [];
   },
@@ -521,15 +531,19 @@ return React.createClass({
     return new Param(Object.assign({ paramType: this.props.paramTypes[0] }, optionalValues));
   },
 
-  addParam: function() {
+  addParam: function(param) {
+    var newParams = this.getBehaviorParams().concat([param]);
+    this.setBehaviorProp('params', newParams, this.focusOnLastParam);
+  },
+
+  addNewParam: function() {
     var newParamIndex = this.getBehaviorParams().length + 1;
     while (this.getBehaviorParams().some(function(param) {
       return param.name === 'userInput' + newParamIndex;
     })) {
       newParamIndex++;
     }
-    var newParams = this.getBehaviorParams().concat([this.createNewParam({ name: 'userInput' + newParamIndex })]);
-    this.setBehaviorProp('params', newParams, this.focusOnLastParam);
+    this.addParam(this.createNewParam({ name: 'userInput' + newParamIndex }));
   },
 
   addParams: function(newParamNames) {
@@ -845,6 +859,10 @@ return React.createClass({
     this.setState({
       activePanel: null
     });
+  },
+
+  toggleReuseParamMenu: function() {
+    this.toggleActiveDropdown('reuseParamDropdown');
   },
 
   toggleAPISelectorMenu: function() {
@@ -1288,7 +1306,7 @@ return React.createClass({
     if (index + 1 < this.getBehaviorParams().length) {
       this.focusOnParamIndex(index + 1);
     } else if (this.getBehaviorParams()[index].question) {
-      this.addParam();
+      this.addNewParam();
     }
   },
 
@@ -1889,7 +1907,7 @@ return React.createClass({
             ref="userInputConfiguration"
             onParamChange={this.updateParamAtIndexWithParam}
             onParamDelete={this.deleteParamAtIndex}
-            onParamAdd={this.addParam}
+            onParamAdd={this.addNewParam}
             onParamNameFocus={this.onParamNameFocus}
             onParamNameBlur={this.onParamNameBlur}
             onEnterKey={this.onParamEnterKey}
@@ -1898,6 +1916,10 @@ return React.createClass({
             triggers={this.getBehaviorTriggers()}
             isFinishedBehavior={this.isFinishedBehavior()}
             behaviorHasCode={this.state.revealCodeEditor}
+            otherParametersInGroup={this.getOtherSavedParametersInGroup()}
+            toggleReuseParamDropdown={this.toggleReuseParamMenu}
+            openReuseParamDropdownWhen={this.getActiveDropdown() === 'reuseParamDropdown'}
+            onReuseParam={this.addParam}
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>

@@ -15,7 +15,8 @@ define(function() {
         paramType: null,
         isSavedForTeam: false,
         isSavedForUser: false,
-        inputId: null
+        inputId: null,
+        groupId: null
       }, props);
 
       if (!initialProps.paramType) {
@@ -45,8 +46,20 @@ define(function() {
         inputId: {
           value: initialProps.inputId,
           enumerable: true
+        },
+        groupId: {
+          value: initialProps.groupId,
+          enumerable: true
         }
       });
+    }
+
+    isShared() {
+      return !!this.groupId;
+    }
+
+    isSaved() {
+      return this.isSavedForUser || this.isSavedForTeam;
     }
 
     clone(props) {

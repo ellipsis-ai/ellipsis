@@ -26,6 +26,6 @@ case class Input(
   }
 
   def toRaw: RawInput = {
-    RawInput(id, name, maybeQuestion, paramType.name, isSavedForTeam, isSavedForUser, maybeBehaviorGroup.map(_.id))
+    RawInput(id, name, maybeQuestion, paramType.id, isSavedForTeam, isSavedForUser, maybeBehaviorGroup.map(_.id))
   }
 }
