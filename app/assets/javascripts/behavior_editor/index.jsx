@@ -1747,8 +1747,10 @@ return React.createClass({
       );
     } else if (actionCount > 1) {
       return 'Untitled skill';
-    } else if (actionCount === 1) {
-      return 'Edit skill';
+    } else if (actionCount === 1 && this.isExistingBehavior()) {
+      return 'Skill';
+    } else if (actionCount === 1 && !this.isExistingBehavior()) {
+      return 'New skill';
     } else {
       return 'Edit data type';
     }
@@ -1767,7 +1769,11 @@ return React.createClass({
       return `${actionCount} actions, ${dataTypeCount} data types`;
     } else if (actionCount === 0 && dataTypeCount > 1) {
       return `${dataTypeCount} data types`;
-    } else { // only 1 action or only 1 data type
+    } else if (actionCount === 1 && dataTypeCount === 0 && this.isExistingBehavior()) {
+      return `1 action`;
+    } else if (actionCount === 0 && dataTypeCount === 1 && this.isExistingBehavior()) {
+      return `1 data type`;
+    } else {
       return null;
     }
   },
@@ -1780,7 +1786,7 @@ return React.createClass({
           <span className="mhs">·</span>
           <span className="type-black">{optionalDescription}</span>
           <span className="mhs">·</span>
-          <i>({summary})</i>
+          <i>{summary}</i>
         </span>
       );
     } else if (optionalDescription && !summary) {
@@ -1821,37 +1827,14 @@ return React.createClass({
   getBehaviorHeading: function() {
     if (this.getAllBehaviors().length > 1) {
       return (
-        <h3 className="type-weak mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit skill action"}</h3>
+        <h4 className="type-weak mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h4>
       );
     } else {
       return null;
     }
   },
 
-  renderSmallPageHeading: function() {
-    return (
-      <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
-        <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
-          <SVGHamburger />
-        </span>
-        <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
-      </button>
-    );
-  },
-
-  renderLargePageHeading: function() {
-    return (
-      <button type="button" className="button-l button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
-        <span className="display-inline-block align-m mrm" style={{ height: "24px" }}>
-          <SVGHamburger />
-        </span>
-        <h3 className="display-inline-block align-m man">{this.getPageHeading()}</h3>
-      </button>
-    );
-  },
-
   renderPageHeading: function() {
-    var hasSubTitle = this.getAllBehaviors().length > 1;
     return (
       <div>
         <div ref="pageTitle"
@@ -1859,7 +1842,12 @@ return React.createClass({
           style={{ top: `${this.getHeaderHeight()}px` }}
         >
           <div className="container container-wide pts type-weak">
-            {hasSubTitle ? this.renderSmallPageHeading() : this.renderLargePageHeading()}
+            <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
+              <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
+                <SVGHamburger />
+              </span>
+              <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
+            </button>
           </div>
         </div>
         <div ref="pageTitleLayoutReplacer" style={{ height: `${this.getFixedTitleHeight()}px` }}></div>

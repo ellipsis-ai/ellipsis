@@ -252,6 +252,7 @@ button.button-tab {
   padding: @s @m;
   color: inherit;
   text-align: left;
+  min-width: 0;
 }
 
 button.button-tab-subtle {
@@ -286,8 +287,8 @@ button.button-tab:focus {
 
 button.button-tab-subtle:focus {
   border-width: 0 0 @border-width-thick 0;
-  padding-left: 0;
-  padding-right: 0;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
 
 button.button-dropdown-trigger:focus,
