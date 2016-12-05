@@ -608,7 +608,8 @@ return React.createClass({
   },
 
   getHeaderHeight: function() {
-    return document.getElementById('main-header').offsetHeight;
+    var mainHeader = document.getElementById('main-header');
+    return mainHeader ? mainHeader.offsetHeight : 0;
   },
 
   getFixedTitleHeight: function() {
