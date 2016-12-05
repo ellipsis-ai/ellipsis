@@ -62,7 +62,7 @@ return React.createClass({
 
   propTypes: {
     teamId: React.PropTypes.string.isRequired,
-    groupId: React.PropTypes.string.isRequired,
+    groupId: React.PropTypes.string,
     groupName: React.PropTypes.string,
     groupDescription: React.PropTypes.string,
     behaviorId: React.PropTypes.string,
@@ -1399,8 +1399,8 @@ return React.createClass({
     var initialBehavior = this.getInitialBehaviorFromProps(this.props);
     return {
       behavior: initialBehavior,
-      groupName: this.props.groupName,
-      groupDescription: this.props.groupDescription,
+      groupName: this.props.groupName || "",
+      groupDescription: this.props.groupDescription || "",
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
@@ -1853,6 +1853,27 @@ return React.createClass({
     }
   },
 
+  shouldShowBehaviorSwitcher: function() {
+    return !!this.props.groupId;
+  },
+
+  renderPageHeadingContent: function() {
+    if (this.shouldShowBehaviorSwitcher()) {
+      return (
+        <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
+          <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
+            <SVGHamburger />
+          </span>
+          <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
+        </button>
+      );
+    } else {
+      return (
+        <h4 className="man">{this.getPageHeading()}</h4>
+      );
+    }
+  },
+
   renderPageHeading: function() {
     return (
       <div>
@@ -1861,12 +1882,7 @@ return React.createClass({
           style={{ top: `${this.getHeaderHeight()}px` }}
         >
           <div className="container container-wide pts type-weak">
-            <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
-              <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
-                <SVGHamburger />
-              </span>
-              <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
-            </button>
+            {this.renderPageHeadingContent()}
           </div>
         </div>
         <div ref="pageTitleLayoutReplacer" style={{ height: `${this.getFixedTitleHeight()}px` }}></div>
@@ -1875,27 +1891,31 @@ return React.createClass({
   },
 
   renderBehaviorSwitcher: function() {
-    return (
-      <div ref="leftPanel" className="position-fixed-left position-z-front bg-white border-left">
-        <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
-          <BehaviorSwitcher
-            ref="behaviorSwitcher"
-            onToggle={this.toggleBehaviorSwitcher}
-            actionBehaviors={this.getActionBehaviors()}
-            dataTypeBehaviors={this.getDataTypeBehaviors()}
-            currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
-            groupId={this.props.groupId}
-            groupName={this.state.groupName}
-            groupDescription={this.state.groupDescription}
-            teamId={this.props.teamId}
-            onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
-            onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
-            onSaveBehaviorGroupName={this.saveBehaviorGroupName}
-            onSaveBehaviorGroupDescription={this.saveBehaviorGroupDescription}
-          />
-        </Collapsible>
-      </div>
-    );
+    if (this.shouldShowBehaviorSwitcher()) {
+      return (
+        <div ref="leftPanel" className="position-fixed-left position-z-front bg-white border-left">
+          <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
+            <BehaviorSwitcher
+              ref="behaviorSwitcher"
+              onToggle={this.toggleBehaviorSwitcher}
+              actionBehaviors={this.getActionBehaviors()}
+              dataTypeBehaviors={this.getDataTypeBehaviors()}
+              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
+              groupId={this.props.groupId}
+              groupName={this.state.groupName}
+              groupDescription={this.state.groupDescription}
+              teamId={this.props.teamId}
+              onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
+              onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+              onSaveBehaviorGroupName={this.saveBehaviorGroupName}
+              onSaveBehaviorGroupDescription={this.saveBehaviorGroupDescription}
+            />
+          </Collapsible>
+        </div>
+      );
+    } else {
+      return null;
+    }
   },
 
   renderNormalBehavior: function() {
