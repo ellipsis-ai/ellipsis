@@ -1399,7 +1399,7 @@ return React.createClass({
     return {
       behavior: initialBehavior,
       groupName: this.props.groupName || "",
-      groupDescription: this.props.groupDescription,
+      groupDescription: this.props.groupDescription || "",
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
@@ -1868,7 +1868,7 @@ return React.createClass({
       );
     } else {
       return (
-        <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
+        <h4 className="man">{this.getPageHeading()}</h4>
       );
     }
   },
