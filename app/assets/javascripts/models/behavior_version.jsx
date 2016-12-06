@@ -5,7 +5,19 @@ define(function(require) {
 
   class BehaviorVersion {
     constructor(props) {
-      Object.assign(this, props);
+      Object.defineProperties(this, {
+        groupId: { value: props.groupId, enumerable: true },
+        teamId: { value: props.teamId, enumerable: true },
+        behaviorId: { value: props.behaviorId, enumerable: true },
+        description: { value: props.description, enumerable: true },
+        functionBody: { value: props.functionBody, enumerable: true },
+        responseTemplate: { value: props.responseTemplate, enumerable: true },
+        params: { value: props.params, enumerable: true },
+        triggers: { value: props.triggers, enumerable: true },
+        config: { value: props.config, enumerable: true },
+        knownEnvVarsUsed: { value: props.knownEnvVarsUsed, enumerable: true },
+        createdAt: { value: props.createdAt, enumerable: false }
+      });
     }
 
     getDataTypeName() {
@@ -34,6 +46,10 @@ define(function(require) {
       } else {
         return "";
       }
+    }
+
+    isIdenticalToVersion(behaviorVersion) {
+      return JSON.stringify(this) === JSON.stringify(behaviorVersion);
     }
 
     clone(props) {
