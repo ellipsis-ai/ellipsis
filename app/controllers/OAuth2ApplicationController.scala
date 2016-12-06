@@ -146,9 +146,14 @@ class OAuth2ApplicationController @Inject() (
           } yield {
             dataService.requiredOAuth2ApiConfigs.allFor(api, group)
           }).getOrElse(Future.successful(Seq()))
-          _ <- Future.sequence(requireOAuth2Applications.map { ea =>
-            dataService.requiredOAuth2ApiConfigs.save(ea.copy(maybeApplication = maybeApplication))
-          })
+          _ <- Future.sequence {
+            requireOAuth2Applications.
+              filter(_.maybeApplication.isEmpty).
+              filter(_.maybeRecommendedScope == maybeApplication.flatMap(_.maybeScope)).
+              map { ea =>
+                dataService.requiredOAuth2ApiConfigs.save(ea.copy(maybeApplication = maybeApplication))
+              }
+          }
         } yield {
           maybeApplication.map { application =>
             info.maybeBehaviorId.map { behaviorId =>
