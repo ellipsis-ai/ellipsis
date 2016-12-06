@@ -12,7 +12,8 @@ case class BehaviorGroup(
                           createdAt: DateTime) {
 
   def exportName: String = {
-    Option(name.trim).filter(_.nonEmpty).getOrElse(id)
+    val safeName = name.trim.replaceAll("""\s""", "_").replaceAll("""[^A-Za-z0-9_-]""", "")
+    Option(safeName).filter(_.nonEmpty).getOrElse(id)
   }
 
   def toRaw: RawBehaviorGroup = RawBehaviorGroup(
