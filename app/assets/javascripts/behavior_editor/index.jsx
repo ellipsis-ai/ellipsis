@@ -1010,24 +1010,40 @@ return React.createClass({
     };
   },
 
-  saveBehaviorGroupName: function(name) {
+  saveBehaviorGroupName: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupName().url;
     var data = {
       groupId: this.props.behavior.groupId,
-      name: name
+      name: this.state.groupName
     };
     // TODO: error handling!
-    fetch(url, this.jsonPostOptions(data)).then(() => this.onBehaviorGroupNameChange.bind(this, name));
+    fetch(url, this.jsonPostOptions(data)).then(() => {
+      this.setState({ lastSavedGroupName: this.state.groupName });
+    });
   },
 
-  saveBehaviorGroupDescription: function(desc) {
+  saveBehaviorGroupDescription: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupDescription().url;
     var data = {
       groupId: this.props.behavior.groupId,
-      description: desc
+      description: this.state.groupDescription
     };
     // TODO: error handling!
-    fetch(url, this.jsonPostOptions(data)).then(() => this.onBehaviorGroupDescriptionChange.bind(this, desc));
+    fetch(url, this.jsonPostOptions(data)).then(() => {
+      this.setState({ lastSavedGroupDescription: this.state.groupDescription });
+    });
+  },
+
+  saveBehaviorGroupDetailChanges: function() {
+    this.saveBehaviorGroupName();
+    this.saveBehaviorGroupDescription();
+  },
+
+  cancelBehaviorGroupDetailChanges: function() {
+    this.setState({
+      groupName: this.state.lastSavedGroupName,
+      groupDescription: this.state.lastSavedGroupDescription
+    });
   },
 
   updateParamAtIndexWithParam: function(index, newParam) {
@@ -1326,6 +1342,8 @@ return React.createClass({
       behavior: initialBehavior,
       groupName: this.props.groupName || "",
       groupDescription: this.props.groupDescription || "",
+      lastSavedGroupName: this.props.groupName || "",
+      lastSavedGroupDescription: this.props.groupDescription || "",
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
@@ -1770,10 +1788,10 @@ return React.createClass({
     return (
       <span>
         <span className="align-m">
-          {this.getPageName(this.state.groupName, actionCount)}
+          {this.getPageName(this.state.lastSavedGroupName, actionCount)}
         </span>
         <span className="type-m type-regular align-m">
-          {this.getPageDescription(this.state.groupDescription, actionCount, dataTypeCount)}
+          {this.getPageDescription(this.state.lastSavedGroupDescription, actionCount, dataTypeCount)}
         </span>
       </span>
     );
@@ -1839,12 +1857,14 @@ return React.createClass({
               currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
               groupId={this.props.behavior.groupId}
               groupName={this.state.groupName}
+              lastSavedGroupName={this.state.lastSavedGroupName}
               groupDescription={this.state.groupDescription}
+              lastSavedGroupDescription={this.state.lastSavedGroupDescription}
               teamId={this.props.teamId}
               onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
               onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
-              onSaveBehaviorGroupName={this.saveBehaviorGroupName}
-              onSaveBehaviorGroupDescription={this.saveBehaviorGroupDescription}
+              onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
+              onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
             />
           </Collapsible>
         </div>
