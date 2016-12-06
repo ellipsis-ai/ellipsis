@@ -1890,7 +1890,7 @@ return React.createClass({
     return (
       <div>
         <div ref="pageTitle"
-          className="bg-white border-bottom position-fixed-top position-z-almost-front"
+          className="bg-white-translucent border-bottom position-fixed-top position-z-almost-front"
           style={{ top: `${this.getHeaderHeight()}px` }}
         >
           <div className="container container-wide pts type-weak">
@@ -1905,7 +1905,7 @@ return React.createClass({
   renderBehaviorSwitcher: function() {
     if (this.shouldShowBehaviorSwitcher()) {
       return (
-        <div ref="leftPanel" className="position-fixed-left position-z-front bg-white border-left">
+        <div ref="leftPanel" className="position-fixed-left position-z-front bg-white-translucent border-left">
           <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
             <BehaviorSwitcher
               ref="behaviorSwitcher"
