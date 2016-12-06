@@ -81,7 +81,7 @@ define(function(require) {
             className={"button-s " + (props.className || "")}
             onClick={this.props.onToggleSharedAnswer}
           >
-            Use a saved answer from another action
+            Use a saved answer from another action…
           </button>
         );
       } else {
