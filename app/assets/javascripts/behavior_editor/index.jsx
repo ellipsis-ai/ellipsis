@@ -771,18 +771,13 @@ return React.createClass({
 
   showVersionIndex: function(versionIndex, optionalCallback) {
     var version = this.getVersions()[versionIndex];
+    var newBehavior = Object.assign({}, version, {
+      groupId: this.props.groupId,
+      teamId: this.props.teamId,
+      behaviorId: this.props.behaviorId
+    });
     this.setState({
-      behavior: {
-        groupId: this.props.groupId,
-        teamId: this.props.teamId,
-        behaviorId: this.props.behaviorId,
-        functionBody: version.functionBody,
-        responseTemplate: version.responseTemplate,
-        params: version.params,
-        triggers: version.triggers,
-        config: version.config,
-        knownEnvVarsUsed: version.knownEnvVarsUsed
-      },
+      behavior: this.getBehaviorFromProps(newBehavior),
       revealCodeEditor: !!version.functionBody,
       justSaved: false
     }, optionalCallback);
@@ -1377,7 +1372,7 @@ return React.createClass({
     this.refs.pageTitleLayoutReplacer.style.height = `${this.getFixedTitleHeight()}px`;
   },
 
-  getInitialBehaviorFromProps: function(props) {
+  getBehaviorFromProps: function(props) {
     return {
       groupId: props.groupId,
       teamId: props.teamId,
@@ -1386,10 +1381,16 @@ return React.createClass({
       functionBody: props.functionBody,
       responseTemplate: props.responseTemplate,
       params: props.params,
-      triggers: this.getInitialTriggersFromProps(props),
+      triggers: props.triggers,
       config: props.config,
       knownEnvVarsUsed: props.knownEnvVarsUsed
     };
+  },
+
+  getInitialBehaviorFromProps: function(props) {
+    return this.getBehaviorFromProps(Object.assign({}, props, {
+      triggers: this.getInitialTriggersFromProps(props)
+    }));
   },
 
   getInitialEnvVariables: function() {
