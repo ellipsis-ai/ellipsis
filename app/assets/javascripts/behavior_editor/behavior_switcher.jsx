@@ -77,9 +77,9 @@ define(function(require) {
 
     getEditButtonLabel: function() {
       if (this.hasSavedNameOrDescription()) {
-        return "Edit name/description";
+        return "Edit title/description";
       } else {
-        return "Add name/description";
+        return "Add title/description";
       }
     },
 
