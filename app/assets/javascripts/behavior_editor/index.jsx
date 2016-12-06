@@ -63,39 +63,9 @@ return React.createClass({
 
   propTypes: {
     teamId: React.PropTypes.string.isRequired,
-    groupId: React.PropTypes.string,
     groupName: React.PropTypes.string,
     groupDescription: React.PropTypes.string,
-    behaviorId: React.PropTypes.string,
-    description: React.PropTypes.string,
-    functionBody: React.PropTypes.string,
-    responseTemplate: React.PropTypes.instanceOf(ResponseTemplate),
-    params: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)),
-    triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)),
-    config: React.PropTypes.shape({
-      aws: React.PropTypes.shape({
-        accessKeyName: React.PropTypes.string,
-        secretKeyName: React.PropTypes.string,
-        regionName: React.PropTypes.string
-      }),
-      requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(
-        React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          apiId: React.PropTypes.string.isRequired,
-          recommendedScope: React.PropTypes.string,
-          application: oauth2ApplicationShape
-        })
-      ),
-      requiredSimpleTokenApis: React.PropTypes.arrayOf(
-        React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          apiId: React.PropTypes.string.isRequired,
-          name: React.PropTypes.string.isRequired
-        })
-      ),
-      forcePrivateResponse: React.PropTypes.bool
-    }),
-    knownEnvVarsUsed: React.PropTypes.arrayOf(React.PropTypes.string),
+    behavior: React.PropTypes.instanceOf(BehaviorVersion),
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
@@ -149,7 +119,7 @@ return React.createClass({
     }, [])
       .filter(ea => currentInputIds.indexOf(ea.inputId) === -1)
       .filter(ea => ea.isSaved())
-      .map(ea => ea.clone({groupId: this.props.groupId}));
+      .map(ea => ea.clone({ groupId: this.props.behavior.groupId }));
   },
 
   getAllOAuth2Applications: function() {
@@ -159,8 +129,8 @@ return React.createClass({
   getRequiredOAuth2ApiConfigs: function() {
     if (this.state) {
       return this.getBehaviorConfig()['requiredOAuth2ApiConfigs'] || [];
-    } else if (this.props.config) {
-      return this.props.config.requiredOAuth2ApiConfigs || [];
+    } else if (this.props.behavior.config) {
+      return this.props.behavior.config.requiredOAuth2ApiConfigs || [];
     } else {
       return [];
     }
@@ -173,8 +143,8 @@ return React.createClass({
   getRequiredSimpleTokenApis: function() {
     if (this.state) {
       return this.getBehaviorConfig()['requiredSimpleTokenApis'] || [];
-    } else if (this.props.config) {
-      return this.props.config.requiredSimpleTokenApis || [];
+    } else if (this.props.behavior.config) {
+      return this.props.behavior.config.requiredSimpleTokenApis || [];
     } else {
       return [];
     }
@@ -189,8 +159,8 @@ return React.createClass({
   getAWSConfig: function() {
     if (this.state) {
       return this.getBehaviorConfig()['aws'];
-    } else if (this.props.config) {
-      return this.props.config.aws;
+    } else if (this.props.behavior.config) {
+      return this.props.behavior.config.aws;
     } else {
       return undefined;
     }
@@ -209,7 +179,7 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('description') || "";
     } else {
-      return this.props.description || "";
+      return this.props.behavior.description || "";
     }
   },
 
@@ -217,7 +187,7 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('functionBody') || "";
     } else {
-      return this.props.functionBody || "";
+      return this.props.behavior.functionBody || "";
     }
   },
 
@@ -225,7 +195,7 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('params') || [];
     } else {
-      return this.props.params || [];
+      return this.props.behavior.params || [];
     }
   },
 
@@ -234,7 +204,7 @@ return React.createClass({
   },
 
   getBehaviorTemplate: function() {
-    var template = this.state ? this.getBehaviorProp('responseTemplate') : this.props.responseTemplate;
+    var template = this.state ? this.getBehaviorProp('responseTemplate') : this.props.behavior.responseTemplate;
     if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
       return this.getDefaultBehaviorTemplate();
     } else {
@@ -246,7 +216,7 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('triggers');
     } else {
-      return this.getInitialTriggersFromProps(this.props);
+      return this.getInitialTriggersFromBehavior(this.props.behavior);
     }
   },
 
@@ -254,7 +224,7 @@ return React.createClass({
     if (this.state) {
       return this.getBehaviorProp('config');
     } else {
-      return this.props.config;
+      return this.props.behavior.config;
     }
   },
 
@@ -345,7 +315,7 @@ return React.createClass({
 
   buildEnvVarNotifications: function() {
     return this.getEnvVariables().
-      filter((ea) => this.props.knownEnvVarsUsed.includes(ea.name)).
+      filter((ea) => this.props.behavior.knownEnvVarsUsed.includes(ea.name)).
       filter((ea) => !ea.isAlreadySavedWithValue).
       map((ea) => ({
         kind: "env_var_not_defined",
@@ -487,9 +457,9 @@ return React.createClass({
     });
   },
 
-  getInitialTriggersFromProps: function(props) {
-    if (props.triggers && props.triggers.length > 0) {
-      return props.triggers;
+  getInitialTriggersFromBehavior: function(behavior) {
+    if (behavior.triggers && behavior.triggers.length > 0) {
+      return behavior.triggers;
     } else if (!this.isDataTypeBehavior()) {
       return [new Trigger()];
     } else {
@@ -507,7 +477,7 @@ return React.createClass({
   },
 
   getTimestampedBehavior: function(behavior) {
-    return new BehaviorVersion(Object.assign({}, behavior, { createdAt: Date.now() }));
+    return behavior.clone({ createdAt: Date.now() });
   },
 
   getVersions: function() {
@@ -639,7 +609,7 @@ return React.createClass({
   },
 
   loadVersions: function() {
-    var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.props.behaviorId).url;
+    var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.props.behavior.behaviorId).url;
     this.setState({
       versionsLoadStatus: 'loading'
     });
@@ -771,13 +741,13 @@ return React.createClass({
 
   showVersionIndex: function(versionIndex, optionalCallback) {
     var version = this.getVersions()[versionIndex];
-    var newBehaviorProps = Object.assign({}, version, {
-      groupId: this.props.groupId,
-      teamId: this.props.teamId,
-      behaviorId: this.props.behaviorId
+    var newBehavior = version.clone({
+      groupId: this.props.behavior.groupId,
+      teamId: this.props.behavior.teamId,
+      behaviorId: this.props.behavior.behaviorId
     });
     this.setState({
-      behavior: this.getBehaviorFromProps(newBehaviorProps),
+      behavior: newBehavior,
       revealCodeEditor: !!version.functionBody,
       justSaved: false
     }, optionalCallback);
@@ -802,7 +772,7 @@ return React.createClass({
   },
 
   setBehaviorProps: function(props, callback) {
-    var newBehavior = Object.assign({}, this.state.behavior, props);
+    var newBehavior = this.state.behavior.clone(props);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     if (this.state.justSaved) {
@@ -853,7 +823,7 @@ return React.createClass({
   },
 
   exportVersion: function() {
-    window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.groupId).url;
+    window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.behavior.groupId).url;
   },
 
   toggleActiveDropdown: function(name) {
@@ -1058,7 +1028,7 @@ return React.createClass({
   saveBehaviorGroupName: function(name) {
     var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupName().url;
     var data = {
-      groupId: this.props.groupId,
+      groupId: this.props.behavior.groupId,
       name: name
     };
     // TODO: error handling!
@@ -1068,7 +1038,7 @@ return React.createClass({
   saveBehaviorGroupDescription: function(desc) {
     var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupDescription().url;
     var data = {
-      groupId: this.props.groupId,
+      groupId: this.props.behavior.groupId,
       description: desc
     };
     // TODO: error handling!
@@ -1136,7 +1106,7 @@ return React.createClass({
   },
 
   undoChanges: function() {
-    var newBehavior = this.getInitialBehaviorFromProps(this.props);
+    var newBehavior = this.getInitialBehavior(this.props.behavior);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     this.setState({
@@ -1205,15 +1175,15 @@ return React.createClass({
   },
 
   isExistingBehavior: function() {
-    return !!this.props.behaviorId;
+    return !!this.props.behavior.behaviorId;
   },
 
   isFinishedBehavior: function() {
-    return this.isExistingBehavior() && !!(this.props.functionBody || this.props.responseTemplate.text);
+    return this.isExistingBehavior() && !!(this.props.behavior.functionBody || this.props.behavior.responseTemplate.text);
   },
 
   isModified: function() {
-    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialBehaviorFromProps(this.props));
+    var currentMatchesInitial = this.state.behavior.isIdenticalToVersion(this.getInitialBehavior(this.props.behavior));
     var previewingVersions = this.getActivePanel() === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
   },
@@ -1224,29 +1194,12 @@ return React.createClass({
 
   shouldFilterCurrentVersion: function() {
     var firstTwoVersions = this.getVersions().slice(0, 2);
-    return firstTwoVersions.length === 2 && this.versionEqualsVersion(firstTwoVersions[0], firstTwoVersions[1]);
+    return firstTwoVersions.length === 2 &&
+      firstTwoVersions[0].isIdenticalToVersion(firstTwoVersions[1]);
   },
 
   shouldRevealCodeEditor: function() {
-    return !!(this.props.shouldRevealCodeEditor || this.props.functionBody);
-  },
-
-  versionEqualsVersion: function(version1, version2) {
-    var shallow1 = JSON.stringify({
-      functionBody: version1.functionBody,
-      responseTemplate: version1.responseTemplate,
-      params: version1.params,
-      triggers: version1.triggers,
-      config: version1.config
-    });
-    var shallow2 = JSON.stringify({
-      functionBody: version2.functionBody,
-      responseTemplate: version2.responseTemplate,
-      params: version2.params,
-      triggers: version2.triggers,
-      config: version2.config
-    });
-    return shallow1 === shallow2;
+    return !!(this.props.shouldRevealCodeEditor || this.props.behavior.functionBody);
   },
 
   versionsMaybeLoaded: function() {
@@ -1372,25 +1325,10 @@ return React.createClass({
     this.refs.pageTitleLayoutReplacer.style.height = `${this.getFixedTitleHeight()}px`;
   },
 
-  getBehaviorFromProps: function(props) {
-    return {
-      groupId: props.groupId,
-      teamId: props.teamId,
-      behaviorId: props.behaviorId,
-      description: props.description,
-      functionBody: props.functionBody,
-      responseTemplate: props.responseTemplate,
-      params: props.params,
-      triggers: props.triggers,
-      config: props.config,
-      knownEnvVarsUsed: props.knownEnvVarsUsed
-    };
-  },
-
-  getInitialBehaviorFromProps: function(props) {
-    return this.getBehaviorFromProps(Object.assign({}, props, {
-      triggers: this.getInitialTriggersFromProps(props)
-    }));
+  getInitialBehavior: function(behavior) {
+    return behavior.clone({
+      triggers: this.getInitialTriggersFromBehavior(behavior)
+    });
   },
 
   getInitialEnvVariables: function() {
@@ -1398,7 +1336,7 @@ return React.createClass({
   },
 
   getInitialState: function() {
-    var initialBehavior = this.getInitialBehaviorFromProps(this.props);
+    var initialBehavior = this.getInitialBehavior(this.props.behavior);
     return {
       behavior: initialBehavior,
       groupName: this.props.groupName || "",
@@ -1409,7 +1347,7 @@ return React.createClass({
       justSaved: this.props.justSaved,
       envVariables: this.getInitialEnvVariables(),
       revealCodeEditor: this.shouldRevealCodeEditor(),
-      hasModifiedTemplate: !!(this.props.responseTemplate && this.props.responseTemplate.text),
+      hasModifiedTemplate: !!(this.props.behavior.responseTemplate && this.props.behavior.responseTemplate.text),
       notifications: this.buildNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null,
@@ -1423,7 +1361,7 @@ return React.createClass({
   },
 
   componentWillReceiveProps: function(nextProps) {
-    var newBehaviorVersion = this.getInitialBehaviorFromProps(nextProps);
+    var newBehaviorVersion = this.getInitialBehavior(nextProps.behavior);
     this.setState({
       activePanel: null,
       justSaved: true,
@@ -1631,7 +1569,7 @@ return React.createClass({
               ref="behaviorTester"
               triggers={this.getBehaviorTriggers()}
               params={this.getBehaviorParams()}
-              behaviorId={this.props.behaviorId}
+              behaviorId={this.props.behavior.behaviorId}
               csrfToken={this.props.csrfToken}
               onDone={this.toggleBehaviorTester}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
@@ -1641,7 +1579,7 @@ return React.createClass({
           <Collapsible revealWhen={this.getActivePanel() === 'dataTypeTester'}>
             <DataTypeTester
               ref="dataTypeTester"
-              behaviorId={this.props.behaviorId}
+              behaviorId={this.props.behavior.behaviorId}
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
               onDone={this.toggleDataTypeTester}
@@ -1761,12 +1699,12 @@ return React.createClass({
       <div>
         <form className="pbxxxl" ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+          <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
         </form>
 
         <form className="pbxxxl" ref="cloneBehaviorForm" action="/clone_behavior" method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+          <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
         </form>
       </div>
     );
@@ -1867,7 +1805,7 @@ return React.createClass({
   },
 
   shouldShowBehaviorSwitcher: function() {
-    return !!this.props.groupId;
+    return !!this.props.behavior.groupId;
   },
 
   renderPageHeadingContent: function() {
@@ -1914,7 +1852,7 @@ return React.createClass({
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
-              groupId={this.props.groupId}
+              groupId={this.props.behavior.groupId}
               groupName={this.state.groupName}
               groupDescription={this.state.groupDescription}
               teamId={this.props.teamId}

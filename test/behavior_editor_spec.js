@@ -78,13 +78,13 @@ describe('BehaviorEditor', () => {
     it('returns the defined triggers', () => {
       editorConfig.triggers = [{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }];
       let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggersFromProps(editor.props)).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
+      expect(editor.getInitialTriggersFromBehavior(editor.props)).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
     });
 
     it('returns a single blank trigger when no triggers are defined', () => {
       delete editorConfig.triggers;
       let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggersFromProps(editor.props)).toEqual([new Trigger()]);
+      expect(editor.getInitialTriggersFromBehavior(editor.props)).toEqual([new Trigger()]);
     });
   });
 
