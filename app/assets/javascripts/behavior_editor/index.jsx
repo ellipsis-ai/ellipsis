@@ -65,7 +65,7 @@ return React.createClass({
     teamId: React.PropTypes.string.isRequired,
     groupName: React.PropTypes.string,
     groupDescription: React.PropTypes.string,
-    behavior: React.PropTypes.instanceOf(BehaviorVersion),
+    behavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
