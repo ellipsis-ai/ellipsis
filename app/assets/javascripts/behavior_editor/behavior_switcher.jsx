@@ -43,8 +43,7 @@ define(function(require) {
     },
 
     saveNameAndDescription: function() {
-      if (this.props.groupName !== this.props.lastSavedGroupName ||
-        this.props.groupDescription !== this.props.lastSavedGroupDescription) {
+      if (this.groupDetailsHaveUnsavedChanges()) {
         this.props.onSaveBehaviorGroupDetails();
       }
       this.toggleSkillDetails();
@@ -57,6 +56,11 @@ define(function(require) {
 
     hasSavedNameOrDescription: function() {
       return !!(this.props.lastSavedGroupName || this.props.lastSavedGroupDescription);
+    },
+
+    groupDetailsHaveUnsavedChanges: function() {
+      return this.props.groupName !== this.props.lastSavedGroupName ||
+        this.props.groupDescription !== this.props.lastSavedGroupDescription;
     },
 
     isSimpleSkill: function() {
@@ -198,7 +202,11 @@ define(function(require) {
                 />
               </div>
               <div className="mtxl">
-                <button type="button" onClick={this.saveNameAndDescription} className="button-s button-primary mrs mbs">
+                <button type="button"
+                  onClick={this.saveNameAndDescription}
+                  className="button-s button-primary mrs mbs"
+                  disabled={!this.groupDetailsHaveUnsavedChanges()}
+                >
                   Save
                 </button>
                 <button type="button" onClick={this.cancelNameAndDescription} className="button-s mbs">
