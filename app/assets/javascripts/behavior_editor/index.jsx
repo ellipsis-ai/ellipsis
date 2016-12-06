@@ -176,35 +176,27 @@ return React.createClass({
   },
 
   getBehaviorDescription: function() {
-    if (this.state) {
-      return this.getBehaviorProp('description') || "";
-    } else {
-      return this.props.behavior.description || "";
-    }
+    return this.getBehaviorProp('description') || "";
   },
 
   getBehaviorFunctionBody: function() {
-    if (this.state) {
-      return this.getBehaviorProp('functionBody') || "";
-    } else {
-      return this.props.behavior.functionBody || "";
-    }
+    return this.getBehaviorProp('functionBody') || "";
   },
 
   getBehaviorParams: function() {
-    if (this.state) {
-      return this.getBehaviorProp('params') || [];
-    } else {
-      return this.props.behavior.params || [];
-    }
+    return this.getBehaviorProp('params') || [];
   },
 
   getBehaviorProp: function(key) {
-    return this.state.behavior[key];
+    if (this.state) {
+      return this.state.behavior[key];
+    } else {
+      return this.props.behavior[key];
+    }
   },
 
   getBehaviorTemplate: function() {
-    var template = this.state ? this.getBehaviorProp('responseTemplate') : this.props.behavior.responseTemplate;
+    var template = this.getBehaviorProp('responseTemplate');
     if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
       return this.getDefaultBehaviorTemplate();
     } else {
@@ -213,19 +205,11 @@ return React.createClass({
   },
 
   getBehaviorTriggers: function() {
-    if (this.state) {
-      return this.getBehaviorProp('triggers');
-    } else {
-      return this.getInitialTriggersFromBehavior(this.props.behavior);
-    }
+    return this.getBehaviorProp('triggers') || this.getInitialTriggersFromBehavior(this.props.behavior);
   },
 
   getBehaviorConfig: function() {
-    if (this.state) {
-      return this.getBehaviorProp('config');
-    } else {
-      return this.props.behavior.config;
-    }
+    return this.getBehaviorProp('config');
   },
 
   getDataTypeName: function() {
