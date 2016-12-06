@@ -7,6 +7,7 @@ import json.RequiredOAuth2ApiConfigData
 import models.IDs
 import models.accounts.oauth2api.{OAuth2Api, OAuth2ApiQueries}
 import models.accounts.oauth2application.OAuth2ApplicationQueries
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import services.DataService
 import slick.driver.PostgresDriver.api._
@@ -66,6 +67,18 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
   def allFor(behaviorVersion: BehaviorVersion): Future[Seq[RequiredOAuth2ApiConfig]] = {
     val action = allForQuery(behaviorVersion.id).result.map(r => r.map(tuple2Required))
     dataService.run(action)
+  }
+
+  def allFor(api: OAuth2Api, behaviorGroup: BehaviorGroup): Future[Seq[RequiredOAuth2ApiConfig]] = {
+    for {
+      behaviors <- dataService.behaviors.allForGroup(behaviorGroup)
+      versions <- Future.sequence(behaviors.map { ea =>
+        dataService.behaviors.maybeCurrentVersionFor(ea)
+      }).map(_.flatten)
+      required <- Future.sequence(versions.map { ea =>
+        allFor(api, ea)
+      }).map(_.flatten)
+    } yield required
   }
 
   def uncompiledAllForApiAndVersionQuery(apiId: Rep[String], behaviorVersionId: Rep[String]) = {

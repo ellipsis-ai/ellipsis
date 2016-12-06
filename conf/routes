@@ -45,7 +45,7 @@ POST        /submit_environment_variables             @controllers.EnvironmentVa
 POST        /delete_environment_variable              @controllers.EnvironmentVariablesController.delete
 
 GET         /list_oauth2_applications                 @controllers.OAuth2ApplicationController.list(teamId: Option[String] ?= None)
-GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(requiredOAuth2ApiConfigId: Option[String] ?= None, teamId: Option[String] ?= None, behaviorId: Option[String] ?= None)
+GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(apiId: Option[String] ?= None, recommendedScope: Option[String] ?= None, teamId: Option[String] ?= None, behaviorId: Option[String] ?= None)
 GET         /edit_oauth2_application/:id              @controllers.OAuth2ApplicationController.edit(id: String, teamId: Option[String] ?= None)
 POST        /save_oauth2_application                  @controllers.OAuth2ApplicationController.save
 
