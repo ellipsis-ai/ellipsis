@@ -3,7 +3,7 @@ var React = require('react'),
   DeleteButton = require('./delete_button'),
   Input = require('../form/input'),
   Select = require('../form/select'),
-  SVGWarning = require('../svg/warning'),
+  SVGTip = require('../svg/tip'),
   Param = require('../models/param'),
   ifPresent = require('../if_present');
 
@@ -111,11 +111,11 @@ return React.createClass({
   renderIsSharedNotification: function() {
     if (this.props.param.isShared()) {
       return (
-        <div className="box-warning">
-          <span className="display-inline-block mrs align-b type-yellow" style={{ width: 22, height: 24 }}>
-            <SVGWarning />
+        <div className="box-tip border-left border-right">
+          <span className="display-inline-block mrs align-b type-pink" style={{ height: 24 }}>
+            <SVGTip />
           </span>
-          <span className="type-s">This input is shared with other actions</span>
+          <span className="type-s">This input is shared with other actions.</span>
         </div>
       );
     } else {
@@ -125,7 +125,8 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="border border-light">
+      <div>
+      <div className={"border border-light " + (this.props.param.isShared() ? "mbneg1" : "")}>
         <div className="bg-white plm pbm">
           <div className="columns columns-elastic">
             <div className="column column-expand align-form-input">
@@ -183,7 +184,8 @@ return React.createClass({
             {ifPresent(this.isConfigurable(), this.renderConfigureAction, () => null)}
           </div>
         </div>
-        {this.renderIsSharedNotification()}
+      </div>
+      {this.renderIsSharedNotification()}
       </div>
     );
   }

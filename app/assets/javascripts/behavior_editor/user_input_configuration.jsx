@@ -1,7 +1,6 @@
 define(function(require) {
   var React = require('react'),
     SectionHeading = require('./section_heading'),
-    DropdownMenu = require('../dropdown_menu'),
     UserInputDefinition = require('./user_input_definition'),
     Checklist = require('./checklist'),
     Collapsible = require('../collapsible'),
@@ -26,10 +25,8 @@ define(function(require) {
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       behaviorHasCode: React.PropTypes.bool.isRequired,
-      otherParametersInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)),
-      toggleReuseParamDropdown: React.PropTypes.func.isRequired,
-      openReuseParamDropdownWhen: React.PropTypes.bool.isRequired,
-      onReuseParam: React.PropTypes.func.isRequired
+      hasSharedAnswers: React.PropTypes.bool.isRequired,
+      onToggleSharedAnswer: React.PropTypes.func.isRequired
     },
 
     onChange: function(index, data) {
@@ -76,45 +73,19 @@ define(function(require) {
       return this.props.triggers.some((trigger) => trigger.isRegex);
     },
 
-    renderReuseParamLabel: function(param) {
-      return (
-        <div className="columns columns-elastic">
-          <div className="type-bold column column-shrink">{param.name}</div>
-          <div className="column column-expand">{param.question}</div>
-        </div>
-      );
-    },
-
-    onReuseParam: function(param) {
-      this.props.onReuseParam(param);
-    },
-
-    renderReuseParamOption: function(param, index) {
-      return (
-        <DropdownMenu.Item
-          key={`reuse-param-option-${index}`}
-          onClick={this.onReuseParam.bind(this, param)}
-          label={this.renderReuseParamLabel(param)}
-        />
-      );
-    },
-
     renderReuseParameter: function(optionalProperties) {
       var props = Object.assign({}, optionalProperties);
-      if (this.props.otherParametersInGroup.length === 0) {
-        return null;
-      } else {
+      if (this.props.hasSharedAnswers) {
         return (
-          <DropdownMenu
-            label={props.label || "Use a saved answer from another action"}
-            labelClassName={"button-s button-color " + (props.labelClassName || "")}
-            toggle={this.props.toggleReuseParamDropdown}
-            openWhen={this.props.openReuseParamDropdownWhen}
-            menuClassName={"width-20 " + (props.menuClassName || "")}
+          <button type="button"
+            className={"button-s " + (props.className || "")}
+            onClick={this.props.onToggleSharedAnswer}
           >
-            {this.props.otherParametersInGroup.map((ea, i) => this.renderReuseParamOption(ea, i))}
-          </DropdownMenu>
+            Use a saved answer from another action…
+          </button>
         );
+      } else {
+        return null;
       }
     },
 
@@ -122,20 +93,18 @@ define(function(require) {
       return (
         <div>
           <Collapsible revealWhen={!this.hasParams()}>
-            <div className="bg-blue-lighter border-top border-blue pvl">
+            <div className="bg-blue-lighter border-top border-blue ptl pbs">
               <div className="container container-wide">
                 <div className="columns columns-elastic mobile-columns-float">
                   <div className="column column-expand">
-                    <p className="mbn">
+                    <p className="mbs">
                       <span>You can add inputs to ask for additional information from the user, or </span>
                       <span>to clarify what kind of input will come from the trigger.</span>
                     </p>
                   </div>
-                  <div className="column column-shrink align-r align-m mobile-align-l mobile-mtm display-ellipsis mobile-display-no-ellipsis">
+                  <div className="column column-shrink align-r align-m mobile-align-l display-ellipsis mobile-display-no-ellipsis">
                     <button type="button" className="button-s mbs mobile-mrm" onClick={this.props.onParamAdd}>Add an input</button>
-                    <span className="display-inline-block mbs">
-                      {this.renderReuseParameter({ labelClassName: "mlm mobile-mln" })}
-                    </span>
+                    {this.renderReuseParameter({ className: "mlm mobile-mln mbs" })}
                   </div>
                 </div>
               </div>
@@ -193,9 +162,7 @@ define(function(require) {
                     <button type="button" className="button-s mrm mbs" onClick={this.props.onParamAdd}>
                       Add another input
                     </button>
-                    <span className="display-inline-block mbs">
-                      {this.renderReuseParameter()}
-                    </span>
+                    {this.renderReuseParameter({ className: "mbs" })}
                   </div>
                 </div>
               </div>
