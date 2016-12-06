@@ -858,6 +858,7 @@ return React.createClass({
     this.toggleActivePanel('behaviorSwitcher', true, () => {
       if (this.getActivePanel() === 'behaviorSwitcher') {
         this.fixLeftPanelPosition();
+        this.refs.behaviorSwitcher.focus();
       }
     });
   },
@@ -1781,7 +1782,7 @@ return React.createClass({
   getBehaviorHeading: function() {
     if (this.getAllBehaviors().length > 1) {
       return (
-        <h4 className="type-weak mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h4>
+        <h3 className="type-blue-faded mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h3>
       );
     } else {
       return null;
