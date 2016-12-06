@@ -93,16 +93,16 @@ define(function(require) {
       return (
         <div>
           <Collapsible revealWhen={!this.hasParams()}>
-            <div className="bg-blue-lighter border-top border-blue pvl">
+            <div className="bg-blue-lighter border-top border-blue ptl pbs">
               <div className="container container-wide">
                 <div className="columns columns-elastic mobile-columns-float">
                   <div className="column column-expand">
-                    <p className="mbn">
+                    <p className="mbs">
                       <span>You can add inputs to ask for additional information from the user, or </span>
                       <span>to clarify what kind of input will come from the trigger.</span>
                     </p>
                   </div>
-                  <div className="column column-shrink align-r align-m mobile-align-l mobile-mtm display-ellipsis mobile-display-no-ellipsis">
+                  <div className="column column-shrink align-r align-m mobile-align-l display-ellipsis mobile-display-no-ellipsis">
                     <button type="button" className="button-s mbs mobile-mrm" onClick={this.props.onParamAdd}>Add an input</button>
                     {this.renderReuseParameter({ className: "mlm mobile-mln mbs" })}
                   </div>
