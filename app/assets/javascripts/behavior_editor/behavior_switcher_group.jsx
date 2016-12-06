@@ -27,7 +27,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="mtxl mbxxxl">
+        <div className="mtxl mbxxl">
           <div className="container container-wide">
             <div className="columns columns-elastic">
               <div className="column column-expand">
