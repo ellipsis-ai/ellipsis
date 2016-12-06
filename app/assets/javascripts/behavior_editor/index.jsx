@@ -771,13 +771,13 @@ return React.createClass({
 
   showVersionIndex: function(versionIndex, optionalCallback) {
     var version = this.getVersions()[versionIndex];
-    var newBehavior = Object.assign({}, version, {
+    var newBehaviorProps = Object.assign({}, version, {
       groupId: this.props.groupId,
       teamId: this.props.teamId,
       behaviorId: this.props.behaviorId
     });
     this.setState({
-      behavior: this.getBehaviorFromProps(newBehavior),
+      behavior: this.getBehaviorFromProps(newBehaviorProps),
       revealCodeEditor: !!version.functionBody,
       justSaved: false
     }, optionalCallback);
