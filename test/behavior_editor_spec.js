@@ -16,6 +16,10 @@ const Trigger = require('../app/assets/javascripts/models/trigger');
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
 jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior = jest.fn(() => ({ url: '/mock_new_for_normal_behavior' }));
 jsRoutes.controllers.BehaviorEditorController.newForDataType = jest.fn(() => ({ url: '/mock_new_for_data_type' }));
+jsRoutes.controllers.BehaviorEditorController.delete = jest.fn(() => ({ url: '/mock_delete_behavior' }));
+jsRoutes.controllers.BehaviorEditorController.duplicate = jest.fn(() => ({ url: '/mock_duplicate_behavior' }));
+jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => ({ url: '/mock_delete_behavior_group' }));
+
 
 describe('BehaviorEditor', () => {
   const defaultConfig = {
