@@ -1676,7 +1676,7 @@ return React.createClass({
                     >
                       <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
                       <DropdownMenu.Item onClick={this.exportVersion} label="Export this skill" />
-                      <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this skill" />
+                      <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this action" />
                       <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete this action" />
                       <DropdownMenu.Item onClick={this.confirmDeleteBehaviorGroup} label="Delete the whole skill" />
                     </DropdownMenu>
