@@ -14,6 +14,7 @@
 }
 @main(titleForBehaviorData(data), Some(data.teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
+    routes.javascript.ApplicationController.deleteBehaviorGroups,
     routes.javascript.BehaviorEditorController.edit,
     routes.javascript.BehaviorEditorController.save,
     routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
@@ -24,6 +25,8 @@
     routes.javascript.BehaviorEditorController.newForDataType,
     routes.javascript.BehaviorEditorController.saveBehaviorGroupName,
     routes.javascript.BehaviorEditorController.saveBehaviorGroupDescription,
+    routes.javascript.BehaviorEditorController.delete,
+    routes.javascript.BehaviorEditorController.duplicate,
     routes.javascript.EnvironmentVariablesController.submit,
     routes.javascript.OAuth2ApplicationController.newApp,
     routes.javascript.APIAccessController.linkCustomOAuth2Service,

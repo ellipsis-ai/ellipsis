@@ -523,6 +523,10 @@ return React.createClass({
     this.toggleActivePanel('confirmDeleteBehavior', true);
   },
 
+  confirmDeleteBehaviorGroup: function() {
+    this.toggleActivePanel('confirmDeleteBehaviorGroup', true);
+  },
+
   confirmDeleteCode: function() {
     this.toggleActivePanel('confirmDeleteCode', true);
   },
@@ -533,6 +537,10 @@ return React.createClass({
 
   deleteBehavior: function() {
     this.refs.deleteBehaviorForm.submit();
+  },
+
+  deleteBehaviorGroup: function() {
+    this.refs.deleteBehaviorGroupForm.submit();
   },
 
   deleteCode: function() {
@@ -1490,7 +1498,13 @@ return React.createClass({
 
           <Collapsible ref="confirmDeleteBehavior" revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
-              <p>Are you sure you want to delete this skill?</p>
+              <p>Are you sure you want to delete this action?</p>
+            </ConfirmActionPanel>
+          </Collapsible>
+
+          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.getActivePanel() === 'confirmDeleteBehaviorGroup'}>
+            <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehaviorGroup} onCancelClick={this.hideActivePanel}>
+              <p>Are you sure you want to delete this skill and all of its actions and data types?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
@@ -1663,7 +1677,8 @@ return React.createClass({
                       <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
                       <DropdownMenu.Item onClick={this.exportVersion} label="Export this skill" />
                       <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this skill" />
-                      <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete skill" />
+                      <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete this action" />
+                      <DropdownMenu.Item onClick={this.confirmDeleteBehaviorGroup} label="Delete the whole skill" />
                     </DropdownMenu>
                   ) : null}
                 </div>
@@ -1700,12 +1715,17 @@ return React.createClass({
   renderHiddenForms: function() {
     return (
       <div>
-        <form className="pbxxxl" ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
+        <form className="pbxxxl" ref="deleteBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.delete().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
         </form>
 
-        <form className="pbxxxl" ref="cloneBehaviorForm" action="/clone_behavior" method="POST">
+        <form className="pbxxxl" ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
+          <CsrfTokenHiddenInput value={this.props.csrfToken} />
+          <input type="hidden" name="behaviorGroupIds[0]" value={this.props.behavior.groupId} />
+        </form>
+
+        <form className="pbxxxl" ref="cloneBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.duplicate().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
         </form>
