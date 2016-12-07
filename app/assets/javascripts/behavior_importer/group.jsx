@@ -78,13 +78,13 @@ define(function(require) {
     getLocalBehaviorEditLink: function() {
       if (this.isImporting()) {
         return (
-          <span className="mhm fade-in type-weak type-bold">Installing…</span>
+          <span className="fade-in type-weak type-bold">Installing…</span>
         );
       } else if (this.props.localId) {
         var url = jsRoutes.controllers.BehaviorEditorController.editGroup(this.props.localId).url;
         return (
           <a
-            className="mhm fade-in"
+            className="fade-in"
             href={url}
           >Edit installed version</a>
         );
@@ -96,19 +96,19 @@ define(function(require) {
     getInstallButton: function() {
       if (this.isImporting()) {
         return (
-          <button title="Installing, please wait…" type="button" className="button-raw button-s" disabled="disabled" style={{ width: 40, height: 24 }}>
+          <button title="Installing, please wait…" type="button" className="button-raw mbxs" disabled="disabled" style={{ width: 40, height: 24 }}>
             <SVGInstalling />
           </button>
         );
       } else if (this.isImported()) {
         return (
-          <button title="Already installed" type="button" className="button-raw button-s" disabled="disabled" style={{ width: 40, height: 24 }}>
+          <button title="Already installed" type="button" className="button-raw mbxs" disabled="disabled" style={{ width: 40, height: 24 }}>
             <SVGInstalled />
           </button>
         );
       } else {
         return (
-          <button title="Install this skill" type="button" className="button-raw button-s" onClick={this.importBehavior} style={{ width: 40, height: 24 }}>
+          <button title="Install this skill" type="button" className="button-raw mbxs" onClick={this.importBehavior} style={{ width: 40, height: 24 }}>
             <SVGInstall />
           </button>
         );
@@ -123,15 +123,17 @@ define(function(require) {
           <input type="hidden" name="dataJson" value={JSON.stringify(this.props.groupData)} />
           <div className={"columns columns-elastic mbm " + (this.isImporting() ? "pulse" : "")}>
               <div className="ptxl mobile-pts">
-                <h4 className="border-bottom mtm pbm">
-                  <span className="phl">{this.getInstallButton()}</span>
-                  <span className="type-l">{this.props.name}</span>
-                  <span className="type-regular type-weak"> &nbsp; – &nbsp; {this.props.description}</span>
-                  {this.getGithubLink()}
-                  {this.getLocalBehaviorEditLink()}
+                <h3 className="border-bottom mtm pbm">
+                  <span className="mrl display-inline-block align-t">{this.getInstallButton()}</span>
+                  <span className="align-m display-inline-block">{this.props.name}</span>
+                  <span className="mrm align-m display-inline-block type-m type-regular type-weak"> &nbsp; · &nbsp; {this.props.description}</span>
+                  <span className="mrm align-m display-inline-block type-m">
+                    {this.getGithubLink()}
+                    {this.getLocalBehaviorEditLink()}
+                  </span>
                   {this.isImported() ? /* TODO: update/re-install buttons */
                     "" : ""}
-                </h4>
+                </h3>
                 {this.getBehaviors().map(function(behavior, index) {
                   return (
                     <Behavior
