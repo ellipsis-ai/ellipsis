@@ -14,10 +14,10 @@ define(function(require) {
       csrfToken: React.PropTypes.string.isRequired
     },
 
-    getImportedStatusFromVersion: function(version) {
-      if (version.importedId) {
+    getImportedStatusFromGroupOrVersion: function(groupOrVersion) {
+      if (groupOrVersion.importedId) {
         return (
-          <span title="Installed from ellipsis.ai" className="mtxs display-inline-block" style={{ width: 30, height: 18 }}>
+          <span title="Installed from ellipsis.ai" className="mls display-inline-block align-m" style={{ width: 30, height: 18 }}>
             <SVGInstalled />
           </span>
         );
@@ -118,6 +118,12 @@ define(function(require) {
       );
     },
 
+    renderPlaceholderCheckbox: function() {
+      return (
+        <input type="checkbox" disabled={true} className="visibility-hidden align-t" />
+      );
+    },
+
     getActionsLabel: function(selectedCount) {
       if (selectedCount === 0) {
         return "No skills selected";
@@ -146,17 +152,17 @@ define(function(require) {
       borderAndSpacingClass += (versionIndex === group.behaviorVersions.length - 1 ? "pbs " : "pbxs ");
       return (
         <div className="column-row" key={`version-${group.id}-${versionIndex}`}>
-          <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>
-            {isFirstRow ? this.renderGroupSelectionCheckbox(group.id) : ""}
-          </div>
           <div className={"column column-expand type-s type-wrap-words " + borderAndSpacingClass}>
-            <BehaviorName version={version} labelDataType={true} />
+            <div className="columns columns-elastic">
+              <div className="column column-shrink prs">
+                {isFirstRow ? this.renderGroupSelectionCheckbox(group.id) : this.renderPlaceholderCheckbox()}
+              </div>
+              <div className="column column-expand"><BehaviorName version={version} labelDataType={true} /></div>
+            </div>
           </div>
           <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>
             {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}
-          </div>
-          <div className={"column column-shrink mobile-display-none " + borderAndSpacingClass}>
-            {this.getImportedStatusFromVersion(version)}
+            {this.getImportedStatusFromGroupOrVersion(version)}
           </div>
         </div>
       );
@@ -188,10 +194,15 @@ define(function(require) {
       if (this.groupHasTitle(group)) {
         return (
           <div className="column-row" key={`group-${group.id}-title`}>
-            <div className="column column-shrink border-top pts pbxs">{this.renderGroupSelectionCheckbox(group.id)}</div>
-            <div className="column column-expand border-top pts pbxs">{this.renderBehaviorGroupTitle(group.name, group.description)}</div>
-            <div className="column column-shrink border-top pts pbxs"></div>
-            <div className="column column-shrink border-top pts pbxs"></div>
+            <div className="column column-expand border-top pts pbxs">
+              <div className="columns columns-elastic">
+                <div className="column column-shrink prs">{this.renderGroupSelectionCheckbox(group.id)}</div>
+                <div className="column column-expand">{this.renderBehaviorGroupTitle(group.name, group.description)}</div>
+              </div>
+            </div>
+            <div className="column column-shrink border-top pts pbxs align-r mobile-display-none">
+              {this.getImportedStatusFromGroupOrVersion(group)}
+            </div>
           </div>
         );
       } else {
@@ -212,7 +223,6 @@ define(function(require) {
         return (
           <div className="column-group">
             <div className="column-row type-bold">
-              <div className="column column-shrink pbs">&nbsp;</div>
               <div className="column column-expand type-label align-b pbs">Skills</div>
               <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
