@@ -160,7 +160,12 @@ class ApplicationController @Inject() (
             dataService.behaviorGroups.find(id)
           }).map(_.flatten)
           deleted <- Future.sequence(groups.map(dataService.behaviorGroups.delete))
-        } yield Ok("deleted")
+        } yield {
+          render {
+            case Accepts.Html() => Redirect(routes.ApplicationController.index())
+            case Accepts.Json() => Ok("deleted")
+          }
+        }
       }
     )
   }
