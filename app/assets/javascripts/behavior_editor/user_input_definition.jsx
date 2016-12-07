@@ -102,12 +102,6 @@ return React.createClass({
     }
   },
 
-  renderConfigureAction: function() {
-    return (
-      <button type="button" className="button-s button-shrink" onClick={this.configureType}>Edit type…</button>
-    );
-  },
-
   renderIsSharedNotification: function() {
     if (this.props.param.isShared()) {
       return (
@@ -127,7 +121,7 @@ return React.createClass({
     return (
       <div>
       <div className={"border border-light " + (this.props.param.isShared() ? "mbneg1" : "")}>
-        <div className="bg-white plm pbm">
+        <div className="bg-white plm pbxs">
           <div className="columns columns-elastic">
             <div className="column column-expand align-form-input">
               <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
@@ -162,7 +156,7 @@ return React.createClass({
             />
           </div>
           <div className="prsymbol mts">
-            <Select className="form-select-s form-select-light align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
+            <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
               <option value={EACH_TIME}>
                 Ask each time the skill is run
               </option>
@@ -173,15 +167,17 @@ return React.createClass({
                 Ask each user once, save their answers
               </option>
             </Select>
-            <span className="display-inline-block align-m type-s type-weak mrm">and allow data type</span>
-            <Select className="form-select-s form-select-light align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
+            <span className="display-inline-block align-m type-s type-weak mrm mbs">and allow data type</span>
+            <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
               {this.props.paramTypes.map((paramType) => (
                 <option value={paramType.id} key={this.keyFor(paramType)}>
                   {paramType.name}
                 </option>
               ))}
             </Select>
-            {ifPresent(this.isConfigurable(), this.renderConfigureAction, () => null)}
+            {ifPresent(this.isConfigurable(), () => (
+              <button type="button" className="button-s button-shrink mbs" onClick={this.configureType}>Edit type…</button>
+            ))}
           </div>
         </div>
       </div>

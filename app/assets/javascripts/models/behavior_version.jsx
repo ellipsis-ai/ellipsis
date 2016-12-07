@@ -16,7 +16,8 @@ define(function(require) {
         triggers: { value: props.triggers, enumerable: true },
         config: { value: props.config, enumerable: true },
         knownEnvVarsUsed: { value: props.knownEnvVarsUsed, enumerable: true },
-        createdAt: { value: props.createdAt, enumerable: false }
+        createdAt: { value: props.createdAt, enumerable: false },
+        importedId: { value: props.importedId, enumerable: false }
       });
     }
 
