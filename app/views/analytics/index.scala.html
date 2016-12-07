@@ -1,10 +1,16 @@
 @(teams: Seq[models.team.Team])(implicit r: RequestHeader)
 
-@import helper._
 
 <p>Teams count: @teams.length </p>
-<ul>
+<table border="1">
+  <tr>
+    <th>Name</th>
+    <th>Id</th>
+  </tr>
   @teams.map { fn =>
-  <li>@fn.name</li>
+  <tr>
+    <td>@fn.name</td>
+    <td>@fn.id</td>
+  </tr>
   }
-</ul>
+</table>

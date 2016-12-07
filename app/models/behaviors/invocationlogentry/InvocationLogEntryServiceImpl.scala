@@ -2,7 +2,6 @@ package models.behaviors.invocationlogentry
 
 import javax.inject.Inject
 
-import com.github.nscala_time.time.OrderingImplicits.DateTimeOrdering
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs

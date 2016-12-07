@@ -8,8 +8,8 @@
     </encoder>
   </appender>
 
-  <logger name="play" level="WARN" />
-  <logger name="application" level="WARN" />
+  <logger name="play" level="INFO" />
+  <logger name="application" level="INFO" />
 
   <logger name="slick.jdbc" level="WARN" />
 

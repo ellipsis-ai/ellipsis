@@ -130,6 +130,9 @@ http://localhost:9200/_plugin/head/
 http://localhost:5601
 http://localhost:5601/app/sense
 
+You should have a DynamoDb Local running on port 8000, try out the shell at:
+
+http://localhost:8000/shell
 
 #### Run the app
 The app is run using Activator the run_app script is just a wrapper that invokes
@@ -148,21 +151,30 @@ $ ./actw console
 #### Run a query in the console
 ```scala
 import play.api._
-
 val env = Environment(new java.io.File("."), this.getClass.getClassLoader, Mode.Dev)
 val context = ApplicationLoader.createContext(env)
 val loader = ApplicationLoader(context)
 val app = loader.load(context)
 Play.start(app)
 
-import services.DataService
+import services.{AWSDynamoDBService, DataService}
 
 val dataService = app.injector.instanceOf(classOf[DataService])
+val dynService = app.injector.instanceOf(classOf[AWSDynamoDBService])
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 Await.result(dataService.teams.find("foo"), 10.seconds)
+```
+
+#### Run tests
+```bash
+./actw test
+```
+
+```bash
+./actw "testOnly controllers.api.dev.v1.SmallStorageControllerSpec"
 ```
 
 #### Debug the app

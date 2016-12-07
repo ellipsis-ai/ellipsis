@@ -45,11 +45,10 @@ function ellipsisResourceStorage(opt) {
         ellipsis: ellipsis,
         onSuccess: (response, body) => {
           // Clone the resource object as it make it easier to use the function
-          deferred.resolve({ resource: JSON.parse(JSON.stringify(resource)), result: response });
+          deferred.resolve(JSON.parse(JSON.stringify(resource)));
         },
-        onError: (response, body) => {
-          // Clone the resource object as it make it easier to use the function
-          deferred.resolve({ resource: JSON.parse(JSON.stringify(resource)), result: response });
+        onError: (error, response, body) => {
+          deferred.reject(new Error("Oops something went wrong: " + response + "," + body));
         },
       });
       return deferred.promise;
@@ -62,11 +61,10 @@ function ellipsisResourceStorage(opt) {
         itemType: "resource",
         ellipsis: ellipsis,
         onSuccess: (response, body) => {
-          deferred.resolve(JSON.parse(body));
+          deferred.resolve(JSON.parse(JSON.parse(body)));
         },
-        onError: (response, body) => {
-          // In case we cannot find the record we return undefined
-          deferred.resolve(body);
+        onError: (error, response, body) => {
+          deferred.reject(new Error("Oops something went wrong: " + JSON.stringify(response, null, 2) + ", " + body));
         }
       });
       return deferred.promise;

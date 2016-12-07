@@ -74,13 +74,19 @@ GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @con
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp
 
+# Web Admin
+GET         /analytics                                @controllers.AnalyticsController.index
+
+# Default Storage
 GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorage.getItem(itemId: String, itemType: String, token: String)
-#NOCSRF
 POST        /put_item                                 @controllers.DefaultStorage.putItem
-#NOCSRF[
 POST        /api/post_message                         @controllers.APIController.postMessage
 
-GET         /analytics                                @controllers.AnalyticsController.index
+
+# API for developers
+GET         /api/dev/v1/small_storage/:token          @controllers.api.dev.v1.SmallStorageController.show(token: String)
+GET         /api/dev/v1/small_storage/items/:token    @controllers.api.dev.v1.small_storage.ItemsController.index(token: String)
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)

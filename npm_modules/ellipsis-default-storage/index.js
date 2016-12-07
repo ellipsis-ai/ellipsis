@@ -21,18 +21,20 @@ module.exports = {
             request.
                 post({
                     url: args.ellipsis.apiBaseUrl + "/put_item",
-                    form: {itemId: args.itemId, itemType: args.itemType, token: args.ellipsis.token, item: args.item}
+                    form: {
+                      itemId: args.itemId,
+                      itemType: args.itemType,
+                      token: args.ellipsis.token,
+                      item: args.item
+                    }
                 }, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         if (args.onSuccess) {
-                            console.log("success");
                             args.onSuccess(response, body);
                         }
                     } else {
                         if (args.onError) {
-                            console.log("ERROR");
-                            console.log(error);
-                            args.onError(error);
+                            args.onError(error, response.statusCode, body);
                         }
                     }
                 }
@@ -56,7 +58,7 @@ module.exports = {
                         }
                     } else {
                         if (args.onError) {
-                            args.onError(error || `An error occurred with response code ${response.statusCode}`);
+                            args.onError(error, response.statusCode, body);;
                         }
                     }
                 }

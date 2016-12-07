@@ -14,6 +14,7 @@
     "underscore": "1.8.3"
   },
   "devDependencies": {
-    "jasmine-node": "1.14.5"
+    "aws-sdk": "*",
+    "jasmine": "2.5.2"
   }
 }
