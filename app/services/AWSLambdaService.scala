@@ -22,6 +22,10 @@ trait AWSLambdaService extends AWSService {
 
   def listFunctionNames: Future[Seq[String]]
 
+  case class PartitionedFunctionNames(current: Seq[String], missing: Seq[String], obsolete: Seq[String])
+
+  def partionedFunctionNames: Future[PartitionedFunctionNames]
+
   def functionWithParams(params: Array[String], functionBody: String): String
 
   def invoke(

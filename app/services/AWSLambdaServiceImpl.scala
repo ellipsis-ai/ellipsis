@@ -67,6 +67,18 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
+  def partionedFunctionNames: Future[PartitionedFunctionNames] = {
+    for {
+      allFunctionNames <- listFunctionNames
+      currentVersionIdsWithFunction <- dataService.behaviorVersions.currentIdsWithFunction
+    } yield {
+      val missing = currentVersionIdsWithFunction.diff(allFunctionNames)
+      val current = currentVersionIdsWithFunction.intersect(allFunctionNames)
+      val obsolete = allFunctionNames.diff(currentVersionIdsWithFunction)
+      PartitionedFunctionNames(current, missing, obsolete)
+    }
+  }
+
   private def contextParamDataFor(
                                    environmentVariables: Seq[EnvironmentVariable],
                                    userInfo: UserInfo,
