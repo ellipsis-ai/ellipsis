@@ -34,6 +34,7 @@
     (function() {
       var userMenuButton = document.getElementById('main-user-menu-button');
       var userMenu = document.getElementById('main-user-menu');
+      var navBar = document.getElementById('main-header');
       var addClass = function(el, className) {
         var classes = el.className.replace(/\s+/g, ' ').split(' ');
         if (!classes.find(function(cl) { return cl.trim() === className; })) {
@@ -51,8 +52,12 @@
         userMenu.style.display = oldStyle === 'none' ? '' : 'none';
         if (oldStyle === 'none') {
           addClass(userMenuButton, 'button-dropdown-trigger-menu-open');
+          removeClass(navBar, 'position-z-almost-front');
+          addClass(navBar, 'position-z-front');
         } else {
           removeClass(userMenuButton, 'button-dropdown-trigger-menu-open');
+          removeClass(navBar, 'position-z-front');
+          addClass(navBar, 'position-z-almost-front');
         }
         event.stopPropagation();
         event.preventDefault();
@@ -61,6 +66,8 @@
         if (userMenu.style.display !== 'none') {
           userMenu.style.display = 'none';
           removeClass(userMenuButton, 'button-dropdown-trigger-menu-open');
+          removeClass(navBar, 'position-z-front');
+          addClass(navBar, 'position-z-almost-front');
         }
       });
     })();
