@@ -33,14 +33,8 @@ class AdminController @Inject() (
 
   def lambdaFunctions() = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
-      for {
-        allFunctionNames <- lambdaService.listFunctionNames
-        currentVersionIdsWithFunction <- dataService.behaviorVersions.currentIdsWithFunction
-      } yield {
-        val missing = currentVersionIdsWithFunction.diff(allFunctionNames)
-        val current = currentVersionIdsWithFunction.intersect(allFunctionNames)
-        val obsolete = allFunctionNames.diff(currentVersionIdsWithFunction)
-        Ok(views.html.admin.listLambdaFunctions(missing, current, obsolete))
+      lambdaService.partionedFunctionNames.map { partitioned =>
+        Ok(views.html.admin.listLambdaFunctions(partitioned.missing, partitioned.current, partitioned.obsolete))
       }
     })
   }
