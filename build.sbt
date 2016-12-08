@@ -48,9 +48,11 @@ libraryDependencies ++= Seq(
   "com.atlassian.commonmark" % "commonmark" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",
-  "com.joestelmach" % "natty" % "0.11"
-  //"com.github.mumoshu" %% "play2-memcached-play24" % "0.7.0"
+  "com.joestelmach" % "natty" % "0.11",
+  "com.evojam" %% "play-elastic4s" % "0.3.1"
 )
+
+resolvers += Resolver.url("Typesafe Ivy releases", url("https://repo.typesafe.com/typesafe/ivy-releases"))(Resolver.ivyStylePatterns)
 
 javaOptions in Test += "-Dconfig.file=conf/test.conf"
 

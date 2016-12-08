@@ -1,0 +1,16 @@
+New log file opened at Thu Dec 08 08:30:59 PST 2016 by 29741@veloce.local
+Taking next connection to: 53202
+New client attempting to connect on port: 53211-53202
+  Address = /172.16.0.17:53202
+This client on port 53211 has uuid 82803b38-c4cb-4f31-b89a-57c1ee03c40d configName play-fork-run humanReadableName Play Fork Run protocolVersion 1 featureTags Vector()
+Connected Clients: play-fork-run-82803b38-c4cb-4f31-b89a-57c1ee03c40d
+Taking next connection to: 53202
+Checking to see if clients are empty...
+We have 1 non-daemon clients, continuing serving connections.
+Taking next connection to: 53202
+Checking to see if clients are empty...
+We have 1 non-daemon clients, continuing serving connections.
+Taking next connection to: 53202
+Checking to see if clients are empty...
+We have 1 non-daemon clients, continuing serving connections.
+Taking next connection to: 53202
