@@ -69,4 +69,23 @@ object MessageTrigger {
     }
   }
 
+  private def textBeginsWithAlphanumeric(text: String) = {
+    """^[A-Za-z0-9]""".r.findFirstMatchIn(text).isDefined
+  }
+
+  private def textContainsTemplateParam(text: String) = {
+    """\{.+\}""".r.findFirstMatchIn(text).isDefined
+  }
+
+  def sortKeyFor(text: String, isRegex: Boolean): (Int, String) = {
+    if (isRegex) {
+      (3, text)
+    } else if (!textBeginsWithAlphanumeric(text)) {
+      (2, text)
+    } else if (textContainsTemplateParam(text)) {
+      (1, text)
+    } else {
+      (0, text)
+    }
+  }
 }
