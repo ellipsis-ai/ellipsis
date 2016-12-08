@@ -11,25 +11,24 @@ case class BehaviorTriggerData(
     """^[A-Za-z0-9]""".r.findFirstMatchIn(this.text).isDefined
   }
 
-  private def containsNonRegexParam = {
+  private def containsTemplateParam = {
     """\{.+\}""".r.findFirstMatchIn(this.text).isDefined
   }
 
-  private def sortString: String = {
+  private def sortKey: (Int, String) = {
     if (this.isRegex) {
-      "3 " ++ this.text
-    } else if (this.beginsWithAlphanumeric) {
-      if (this.containsNonRegexParam) {
-        "1 " ++ this.text
-      } else {
-        "0 " ++ this.text
-      }
+      (3, this.text)
+    } else if (!this.beginsWithAlphanumeric) {
+      (2, this.text)
+    } else if (this.containsTemplateParam) {
+      (1, this.text)
     } else {
-      "2 " ++ this.text
+      (0, this.text)
     }
   }
 
+  import scala.math.Ordered.orderingToOrdered
   def compare(that: BehaviorTriggerData): Int = {
-    this.sortString compare that.sortString
+    this.sortKey compare that.sortKey
   }
 }
