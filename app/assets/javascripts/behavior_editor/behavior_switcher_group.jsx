@@ -47,7 +47,12 @@ define(function(require) {
                 key={`behavior-${version.behaviorId}`}
                 className={`border-top border-bottom pvs container container-wide mbneg1 ${this.isCurrentVersion(version) ? "bg-blue-lighter border-blue" : ""}`}
               >
-                <BehaviorName version={version} disableLink={this.isCurrentVersion(version)} beConcise={true} />
+                <BehaviorName
+                  version={version}
+                  disableLink={this.isCurrentVersion(version)}
+                  limitTriggers={true}
+                  omitDescription={true}
+                />
               </div>
             )), () => (
               <p className="container container-wide type-weak">{this.props.emptyMessage}</p>
