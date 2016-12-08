@@ -30,3 +30,4 @@ tags
 .ctags
 actw
 .byebug_history
+/.sbtserver
