@@ -122,6 +122,25 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
       matches(trigger, "Double quotes are \"cool\"") mustBe true
     }
 
+    "sortKey" should {
+      "return the pattern if it starts with an alphanumeric character" in {
+        val trigger = triggerFor("hurray")
+        trigger.sortKey mustBe "hurray"
+      }
+
+      "return the pattern prefixed with ~ when it doesn't start with an alphanumeric character" in {
+        val trigger = triggerFor(":tada:")
+        trigger.sortKey mustBe "~:tada:"
+      }
+
+      "sort alphanumerics before everything else" in {
+        val trigger1 = triggerFor(":tada:")
+        val trigger2 = triggerFor("a is for apple")
+        val trigger3 = triggerFor("1 for the money")
+        Array(trigger1, trigger2, trigger3).sortBy(_.sortKey) mustBe Array(trigger3, trigger2, trigger1)
+      }
+    }
+
   }
 
 }

@@ -184,7 +184,7 @@ object BehaviorVersionData {
               ea.input.maybeBehaviorGroup.map(_.id)
             )
           },
-          triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>
+          triggers.sortBy(ea => (ea.sortRank, ea.sortKey)).map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
           config,
