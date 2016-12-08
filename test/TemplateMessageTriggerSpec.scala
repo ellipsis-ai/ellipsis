@@ -121,7 +121,6 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
       val trigger = triggerFor("Double quotes are “cool”")
       matches(trigger, "Double quotes are \"cool\"") mustBe true
     }
-
   }
 
 }

@@ -16,8 +16,6 @@ case class TemplateMessageTrigger(
 
   val shouldTreatAsRegex: Boolean = false
 
-  val sortRank: Int = 1
-
   val pattern: String = template
 
   def regex: Regex = {
