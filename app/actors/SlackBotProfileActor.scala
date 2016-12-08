@@ -3,7 +3,7 @@ package actors
 import javax.inject.Inject
 
 import akka.actor.Actor
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import services.{DataService, SlackService}
 
 import scala.concurrent.duration._
@@ -20,7 +20,7 @@ class SlackBotProfileActor @Inject() (
 
   val tick = context.system.scheduler.schedule(Duration.Zero, 10 seconds, self, "tick")
 
-  var nextCutoff: DateTime = DateTime.now
+  var nextCutoff: LocalDateTime = LocalDateTime.now
 
   override def postStop() = {
     tick.cancel()
@@ -29,7 +29,7 @@ class SlackBotProfileActor @Inject() (
   def receive = {
     case "tick" => {
       val cutoff = nextCutoff
-      nextCutoff = DateTime.now.minusSeconds(1)
+      nextCutoff = LocalDateTime.now.minusSeconds(1)
       val startFuture = dataService.slackBotProfiles.allSince(cutoff).map { profiles =>
         profiles.foreach { profile =>
           slackService.startFor(profile)

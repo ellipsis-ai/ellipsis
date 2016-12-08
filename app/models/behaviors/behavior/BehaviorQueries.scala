@@ -2,7 +2,7 @@ package models.behaviors.behavior
 
 import models.behaviors.behaviorgroup.BehaviorGroupQueries
 import models.team.{Team, TeamQueries}
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 object BehaviorQueries {
 

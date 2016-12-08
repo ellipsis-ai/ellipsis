@@ -1,7 +1,7 @@
 package models.behaviors.invocationlogentry
 
 import models.behaviors.behaviorversion.BehaviorVersion
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 
 case class InvocationLogEntry(
                                id: String,
@@ -12,5 +12,5 @@ case class InvocationLogEntry(
                                context: String,
                                maybeUserIdForContext: Option[String],
                                runtimeInMilliseconds: Long,
-                               createdAt: DateTime
+                               createdAt: LocalDateTime
                              )

@@ -7,7 +7,7 @@ import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterQ
 import models.behaviors.conversations.conversation.{Conversation, ConversationQueries}
 import play.api.cache.CacheApi
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

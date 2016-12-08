@@ -1,6 +1,6 @@
 package models.accounts.slack.profile
 
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 object SlackProfileQueries {
 

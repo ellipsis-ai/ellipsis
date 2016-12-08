@@ -9,7 +9,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorparameter.{BehaviorParameterType, TextType}
 import models.team.Team
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

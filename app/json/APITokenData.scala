@@ -1,13 +1,13 @@
 package json
 
 import models.apitoken.APIToken
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 
 case class APITokenData(
                          id: String,
                          label: String,
-                         lastUsed: Option[DateTime],
-                         createdAt: DateTime,
+                         lastUsed: Option[LocalDateTime],
+                         createdAt: LocalDateTime,
                          isRevoked: Boolean
                        )
 

@@ -2,11 +2,10 @@ package models.accounts.slack.botprofile
 
 import javax.inject.{Inject, Provider}
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.team.Team
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -16,7 +15,7 @@ class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_
   def teamId = column[String]("team_id")
   def slackTeamId = column[String]("slack_team_id")
   def token = column[String]("token")
-  def createdAt = column[DateTime]("created_at")
+  def createdAt = column[LocalDateTime]("created_at")
 
   def * = (userId, teamId, slackTeamId, token, createdAt) <> ((SlackBotProfile.apply _).tupled, SlackBotProfile.unapply _)
 
@@ -55,12 +54,12 @@ class SlackBotProfileServiceImpl @Inject() (
     dataService.run(allForSlackTeamQuery(slackTeamId).result)
   }
 
-  def uncompiledAllSinceQuery(when: Rep[DateTime]) = {
+  def uncompiledAllSinceQuery(when: Rep[LocalDateTime]) = {
     all.filter(_.createdAt >= when)
   }
   val allSinceQuery = Compiled(uncompiledAllSinceQuery _)
 
-  def allSince(when: DateTime): Future[Seq[SlackBotProfile]] = {
+  def allSince(when: LocalDateTime): Future[Seq[SlackBotProfile]] = {
     dataService.run(allSinceQuery(when).result)
   }
 
@@ -78,7 +77,7 @@ class SlackBotProfileServiceImpl @Inject() (
         } yield profile
       }
       case None => DBIO.from(dataService.teams.create(slackTeamName)).flatMap { team =>
-        val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, DateTime.now)
+        val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, LocalDateTime.now)
         (all += newProfile).map { _ => newProfile }
       }
     }

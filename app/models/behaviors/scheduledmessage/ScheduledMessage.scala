@@ -2,7 +2,7 @@ package models.behaviors.scheduledmessage
 
 import models.team.Team
 import org.joda.time.format.DateTimeFormat
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -22,11 +22,11 @@ case class ScheduledMessage(
                              team: Team,
                              maybeChannelName: Option[String],
                              recurrence: Recurrence,
-                             nextSentAt: DateTime,
-                             createdAt: DateTime
+                             nextSentAt: LocalDateTime,
+                             createdAt: LocalDateTime
                            ) {
 
-  def followingSentAt: DateTime = recurrence.nextAfter(nextSentAt)
+  def followingSentAt: LocalDateTime = recurrence.nextAfter(nextSentAt)
 
   def successResponse: String = {
     s"""OK, I will run `$text` ${recurrence.displayString.trim}.
@@ -51,10 +51,10 @@ case class ScheduledMessage(
   }
 
   val nextRunDateFormatter = DateTimeFormat.forPattern("MMMM d, yyyy")
-  def nextRunDateStringFor(when: DateTime): String = {
-    val clarifier = if (when.toLocalDate == DateTime.now.toLocalDate) {
+  def nextRunDateStringFor(when: LocalDateTime): String = {
+    val clarifier = if (when.toLocalDate == LocalDateTime.now.toLocalDate) {
       " (today)"
-    } else if (when.toLocalDate == DateTime.now.plusDays(1).toLocalDate) {
+    } else if (when.toLocalDate == LocalDateTime.now.plusDays(1).toLocalDate) {
       " (tomorrow)"
     } else {
       ""
@@ -62,9 +62,9 @@ case class ScheduledMessage(
 
     when.toString(nextRunDateFormatter) ++ clarifier
   }
-  def nextRunTimeStringFor(when: DateTime): String = when.toString(Recurrence.timeFormatter)
+  def nextRunTimeStringFor(when: LocalDateTime): String = when.toString(Recurrence.timeFormatter)
 
-  def nextRunStringFor(when: DateTime): String = s"${nextRunDateStringFor(when)} at ${nextRunTimeStringFor(when)}"
+  def nextRunStringFor(when: LocalDateTime): String = s"${nextRunDateStringFor(when)} at ${nextRunTimeStringFor(when)}"
 
   def nextRunsString: String = {
     s"""The next two runs will be:
@@ -98,7 +98,7 @@ case class ScheduledMessage(
         message <- Future.successful(Message("ts", channelName, slackUserId, text, None))
         context <- Future.successful(SlackMessageContext(client, profile, message))
         results <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
-        _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(DateTime.now))
+        _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(LocalDateTime.now))
       } yield {
         results.foreach { result =>
           if (result.hasText) {
@@ -110,7 +110,7 @@ case class ScheduledMessage(
     }.getOrElse(Future.successful(Unit))
   }
 
-  def withUpdatedNextTriggeredFor(when: DateTime): ScheduledMessage = {
+  def withUpdatedNextTriggeredFor(when: LocalDateTime): ScheduledMessage = {
     this.copy(nextSentAt = recurrence.nextAfter(when))
   }
 

@@ -2,17 +2,15 @@ package models.behaviors.invocationlogentry
 
 import javax.inject.Inject
 
-import com.github.nscala_time.time.OrderingImplicits.DateTimeOrdering
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs
 import models.behaviors.BotResult
 import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import models.behaviors.events.MessageEvent
 import models.team.Team
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,7 +24,7 @@ case class RawInvocationLogEntry(
                                   context: String,
                                   maybeUserIdForContext: Option[String],
                                   runtimeInMilliseconds: Long,
-                                  createdAt: DateTime
+                                  createdAt: LocalDateTime
                                 )
 
 class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](tag, "invocation_log_entries") {
@@ -39,7 +37,7 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def context = column[String]("context")
   def maybeUserIdForContext = column[Option[String]]("user_id_for_context")
   def runtimeInMilliseconds = column[Long]("runtime_in_milliseconds")
-  def createdAt = column[DateTime]("created_at")
+  def createdAt = column[LocalDateTime]("created_at")
 
   def * = (id, behaviorVersionId, resultType, messageText, resultText, context, maybeUserIdForContext, runtimeInMilliseconds, createdAt) <>
     ((RawInvocationLogEntry.apply _).tupled, RawInvocationLogEntry.unapply _)
@@ -54,7 +52,7 @@ class InvocationLogEntryServiceImpl @Inject() (
   val all = TableQuery[InvocationLogEntriesTable]
   val allWithVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
 
-  val truncateDate = SimpleFunction.binary[String, DateTime, DateTime]("date_trunc")
+  val truncateDate = SimpleFunction.binary[String, LocalDateTime, LocalDateTime]("date_trunc")
 
   type TupleType = (RawInvocationLogEntry, BehaviorVersionQueries.TupleType)
 
@@ -73,7 +71,7 @@ class InvocationLogEntryServiceImpl @Inject() (
     )
   }
 
-  def countsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
+  def countsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
     val action = allWithVersion.
       filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
       groupBy { case(entry, ((version, _), ((behavior, team), _))) => team.id }.
@@ -84,7 +82,7 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def uniqueInvokingUserCountsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
+  def uniqueInvokingUserCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
     val action = allWithVersion.
       filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
       groupBy { case(entry, ((version, _), ((behavior, team), _))) => (team.id, entry.maybeUserIdForContext.getOrElse("<no user>")) }.
@@ -97,7 +95,7 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def uniqueInvokedBehaviorCountsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
+  def uniqueInvokedBehaviorCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
     val action = allWithVersion.
       filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
       groupBy { case(entry, ((version, _), ((behavior, team), _))) => (team.id, behavior.id) }.
@@ -110,14 +108,14 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def uncompiledForTeamForDateQuery(teamId: Rep[String], date: Rep[DateTime]) = {
+  def uncompiledForTeamForDateQuery(teamId: Rep[String], date: Rep[LocalDateTime]) = {
     allWithVersion.
       filter { case(entry, ((version, user), ((behavior, team), _))) => teamId === team.id}.
       filter { case(entry, _) => truncateDate("day", entry.createdAt) === date }
   }
   val forTeamForDateQuery = Compiled(uncompiledForTeamForDateQuery _)
 
-  def forTeamForDate(team: Team, date: DateTime): Future[Seq[InvocationLogEntry]] = {
+  def forTeamForDate(team: Team, date: LocalDateTime): Future[Seq[InvocationLogEntry]] = {
     val action = forTeamForDateQuery(team.id, date).result.map { r =>
       r.map(tuple2Entry)
     }
@@ -141,7 +139,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         event.context.name,
         maybeUserIdForContext,
         runtimeInMilliseconds,
-        DateTime.now
+        LocalDateTime.now
       )
 
     val action = (all += raw).map { _ =>

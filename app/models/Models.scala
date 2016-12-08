@@ -6,7 +6,7 @@ import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 @Singleton
 class Models @Inject() (appLifecycle: ApplicationLifecycle) {

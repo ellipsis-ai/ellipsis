@@ -1,6 +1,6 @@
 package models.accounts.user
 
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 class UsersTable(tag: Tag) extends Table[User](tag, "users") {
 

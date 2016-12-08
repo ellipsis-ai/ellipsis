@@ -2,7 +2,7 @@ package json
 
 import models.accounts.user.User
 import models.team.Team
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,7 +16,7 @@ case class BehaviorGroupData(
                               githubUrl: Option[String],
                               importedId: Option[String],
                               publishedId: Option[String],
-                              createdAt: DateTime
+                              createdAt: LocalDateTime
                             ) extends Ordered[BehaviorGroupData] {
 
   def copyForTeam(team: Team): BehaviorGroupData = {

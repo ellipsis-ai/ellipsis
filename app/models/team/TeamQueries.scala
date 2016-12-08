@@ -1,6 +1,6 @@
 package models.team
 
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 class TeamsTable(tag: Tag) extends Table[Team](tag, "teams") {
 

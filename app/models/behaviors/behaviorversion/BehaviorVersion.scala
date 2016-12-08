@@ -7,7 +7,7 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.team.Team
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import play.api.libs.json.{JsValue, Json}
 import play.api.Configuration
 import services.AWSLambdaConstants._
@@ -22,7 +22,7 @@ case class BehaviorVersion(
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
                             maybeAuthor: Option[User],
-                            createdAt: DateTime
+                            createdAt: LocalDateTime
                           ) {
 
   val team: Team = behavior.team

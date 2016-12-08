@@ -1,11 +1,11 @@
 package models.behaviors.invocationtoken
 
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 
 case class InvocationToken(
                             id: String,
                             teamId: String,
-                            createdAt: DateTime
+                            createdAt: LocalDateTime
                           ) {
-  def isExpired: Boolean = createdAt.isBefore(DateTime.now.minusSeconds(10))
+  def isExpired: Boolean = createdAt.isBefore(LocalDateTime.now.minusSeconds(10))
 }

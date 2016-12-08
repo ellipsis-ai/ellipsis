@@ -8,7 +8,7 @@ import models.IDs
 import models.accounts.user.User
 import play.api.Configuration
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

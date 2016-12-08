@@ -2,15 +2,14 @@ package models.behaviors.behaviorgroup
 
 import javax.inject.Inject
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs
 import models.behaviors.behavior.{Behavior, BehaviorQueries}
 import models.behaviors.input.{Input, InputQueries}
 import models.team.Team
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,7 +21,7 @@ case class RawBehaviorGroup(
                              maybeDescription: Option[String],
                              maybeImportedId: Option[String],
                              teamId: String,
-                             createdAt: DateTime
+                             createdAt: LocalDateTime
                            )
 
 class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavior_groups") {
@@ -32,7 +31,7 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
   def maybeDescription = column[Option[String]]("description")
   def maybeImportedId = column[Option[String]]("imported_id")
   def teamId = column[String]("team_id")
-  def createdAt = column[DateTime]("created_at")
+  def createdAt = column[LocalDateTime]("created_at")
 
   def * = (id, name, maybeDescription, maybeImportedId, teamId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
 }
@@ -46,7 +45,7 @@ class BehaviorGroupServiceImpl @Inject() (
   import BehaviorGroupQueries._
 
   def createFor(name: String, description: String, maybeImportedId: Option[String], team: Team): Future[BehaviorGroup] = {
-    val raw = RawBehaviorGroup(IDs.next, name, Some(description), maybeImportedId, team.id, DateTime.now)
+    val raw = RawBehaviorGroup(IDs.next, name, Some(description), maybeImportedId, team.id, LocalDateTime.now)
     val action = (all += raw).map(_ => tuple2Group((raw, team)))
     dataService.run(action)
   }
@@ -102,7 +101,7 @@ class BehaviorGroupServiceImpl @Inject() (
     val descriptions = groups.flatMap(_.maybeDescription).filter(_.trim.nonEmpty)
     val mergedDescription = if (descriptions.isEmpty) { None } else { Some(descriptions.mkString("\n")) }
     val maybeImportedId = None // Don't think it makes sense to have an importedId for something merged
-    val rawMerged = RawBehaviorGroup(IDs.next, mergedName, mergedDescription, maybeImportedId, team.id, DateTime.now)
+    val rawMerged = RawBehaviorGroup(IDs.next, mergedName, mergedDescription, maybeImportedId, team.id, LocalDateTime.now)
     val action = (for {
       merged <- (all += rawMerged).map(_ => tuple2Group((rawMerged, team)))
       _ <- DBIO.sequence(groups.map { ea =>
