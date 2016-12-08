@@ -7,7 +7,7 @@ import json.{BehaviorParameterData, BehaviorParameterTypeData, InputData}
 import models.IDs
 import models.behaviors.behaviorversion.BehaviorVersion
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

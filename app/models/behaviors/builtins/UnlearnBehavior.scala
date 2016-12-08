@@ -4,7 +4,6 @@ import com.amazonaws.AmazonServiceException
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.MessageContext
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

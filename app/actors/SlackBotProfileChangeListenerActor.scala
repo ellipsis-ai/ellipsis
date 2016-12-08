@@ -4,12 +4,12 @@ import javax.inject.Inject
 
 import akka.actor.Actor
 import models.accounts.slack.botprofile.SlackBotProfile
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import org.postgresql.{PGConnection, PGNotification}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import services.{DataService, SlackService}
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -24,12 +24,14 @@ class SlackBotProfileChangeListenerActor @Inject() (
                                                      val slackService: SlackService
                                                    ) extends Actor {
 
+  import json.Formatting._
+
   implicit val slackBotProfileReads: Reads[SlackBotProfile] = (
     (JsPath \ "user_id").read[String] and
       (JsPath \ "team_id").read[String] and
       (JsPath \ "slack_team_id").read[String] and
       (JsPath \ "token").read[String] and
-      (JsPath \ "created_at").read[DateTime]
+      (JsPath \ "created_at").read[LocalDateTime]
     )(SlackBotProfile.apply _)
 
   val tick = context.system.scheduler.schedule(500 millis, 1000 millis, self, "tick")

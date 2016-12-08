@@ -2,7 +2,7 @@ package models.behaviors.behaviorparameter
 
 import models.behaviors.behaviorversion.BehaviorVersionQueries
 import models.behaviors.input.InputQueries
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 object BehaviorParameterQueries {
 

@@ -3,7 +3,7 @@ package models.behaviors.input
 import models.behaviors.behavior.BehaviorQueries
 import models.behaviors.behaviorgroup.BehaviorGroupQueries
 import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType, TextType}
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 object InputQueries {
 

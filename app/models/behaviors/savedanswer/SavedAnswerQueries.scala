@@ -1,7 +1,7 @@
 package models.behaviors.savedanswer
 
 import models.behaviors.input.InputQueries
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 object SavedAnswerQueries {
 

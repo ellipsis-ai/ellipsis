@@ -4,7 +4,7 @@ import models.behaviors.behavior.Behavior
 import models.team.Team
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import services.PostgresDataService
-import slick.driver.PostgresDriver.api.{Database => PostgresDatabase}
+import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import support.DBMixin
 
 class BehaviorVersionSpec extends PlaySpec with DBMixin with OneAppPerSuite {

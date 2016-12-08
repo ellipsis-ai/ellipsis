@@ -8,10 +8,10 @@ import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.events.{MessageContext, SlackMessageContext}
 import models.IDs
 import models.team.Team
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import services.DataService
 import slack.api.ApiError
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -65,7 +65,7 @@ class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) ext
     dataService.linkedAccounts.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
       maybeLinkedAccount.map(Future.successful).getOrElse {
         save(createOnTeamWithId(teamId)).flatMap { user =>
-          dataService.linkedAccounts.save(LinkedAccount(user, loginInfo, DateTime.now))
+          dataService.linkedAccounts.save(LinkedAccount(user, loginInfo, LocalDateTime.now))
         }
       }.map(_.user)
     }

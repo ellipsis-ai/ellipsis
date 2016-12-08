@@ -2,7 +2,6 @@ package models.behaviors.behavior
 
 import javax.inject.Inject
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs
 import models.accounts.user.User
@@ -10,9 +9,9 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageContext
 import models.team.Team
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import services.{AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -25,7 +24,7 @@ case class RawBehavior(
                         maybeCurrentVersionId: Option[String],
                         maybeImportedId: Option[String],
                         maybeDataTypeName: Option[String],
-                        createdAt: DateTime
+                        createdAt: LocalDateTime
                       )
 
 class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
@@ -36,7 +35,7 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
   def maybeCurrentVersionId = column[Option[String]]("current_version_id")
   def maybeImportedId = column[Option[String]]("imported_id")
   def maybeDataTypeName = column[Option[String]]("data_type_name")
-  def createdAt = column[DateTime]("created_at")
+  def createdAt = column[LocalDateTime]("created_at")
 
   def * = (id, teamId, groupId, maybeCurrentVersionId, maybeImportedId, maybeDataTypeName, createdAt) <>
     ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
@@ -90,7 +89,7 @@ class BehaviorServiceImpl @Inject() (
   }
 
   def createFor(group: BehaviorGroup, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
-    val raw = RawBehavior(IDs.next, group.team.id, Some(group.id), None, maybeImportedId, maybeDataTypeName, DateTime.now)
+    val raw = RawBehavior(IDs.next, group.team.id, Some(group.id), None, maybeImportedId, maybeDataTypeName, LocalDateTime.now)
 
     val action = (all += raw).map { _ =>
       Behavior(raw.id, group.team, Some(group), raw.maybeCurrentVersionId, raw.maybeImportedId, raw.maybeDataTypeName, raw.createdAt)

@@ -2,7 +2,6 @@ package models.accounts.linkedoauth2token
 
 import javax.inject.{Inject, Provider}
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.accounts.user.User
 import models.accounts.oauth2application.OAuth2ApplicationQueries
 import org.joda.time.DateTime
@@ -10,7 +9,7 @@ import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.WSClient
 import play.api.mvc.Results
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

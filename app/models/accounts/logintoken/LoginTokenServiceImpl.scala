@@ -2,13 +2,12 @@ package models.accounts.logintoken
 
 import javax.inject.Inject
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.accounts.user.User
 import models.IDs
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -17,7 +16,7 @@ class LoginTokensTable(tag: Tag) extends Table[LoginToken](tag, "login_tokens") 
   def value = column[String]("value")
   def userId = column[String]("user_id")
   def isUsed = column[Boolean]("is_used")
-  def createdAt = column[DateTime]("created_at")
+  def createdAt = column[LocalDateTime]("created_at")
 
   def * = (value, userId, isUsed, createdAt) <> ((LoginToken.apply _).tupled, LoginToken.unapply _)
 }
@@ -42,7 +41,7 @@ class LoginTokenServiceImpl @Inject() (dataServiceProvider: Provider[DataService
   }
 
   def createFor(user: User): Future[LoginToken] = {
-    val instance = LoginToken(IDs.next, user.id, isUsed = false, DateTime.now)
+    val instance = LoginToken(IDs.next, user.id, isUsed = false, LocalDateTime.now)
     dataService.run((all += instance).map(_ => instance))
   }
 

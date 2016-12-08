@@ -2,13 +2,12 @@ package models.behaviors.invocationtoken
 
 import javax.inject.Inject
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs
 import models.team.Team
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -17,7 +16,7 @@ class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invoc
 
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
-  def createdAt = column[DateTime]("created_at")
+  def createdAt = column[LocalDateTime]("created_at")
 
   def * = (id, teamId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
 }
@@ -40,7 +39,7 @@ class InvocationTokenServiceImpl @Inject() (
   }
 
   def createFor(team: Team): Future[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, team.id, DateTime.now)
+    val newInstance = InvocationToken(IDs.next, team.id, LocalDateTime.now)
     dataService.run((all += newInstance).map(_ => newInstance))
   }
 

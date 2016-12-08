@@ -1,7 +1,7 @@
 package models.behaviors.behaviorgroup
 
 import models.team.Team
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 
 case class BehaviorGroup(
                           id: String,
@@ -9,7 +9,7 @@ case class BehaviorGroup(
                           maybeDescription: Option[String],
                           maybeImportedId: Option[String],
                           team: Team,
-                          createdAt: DateTime) {
+                          createdAt: LocalDateTime) {
 
   def exportName: String = {
     val safeName = name.trim.replaceAll("""\s""", "_").replaceAll("""[^A-Za-z0-9_-]""", "")

@@ -2,7 +2,7 @@ package models.behaviors.conversations.conversation
 
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.triggers.messagetrigger.MessageTriggerQueries
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 object ConversationQueries {
 

@@ -7,7 +7,7 @@ import models.accounts.slack.SlackProvider
 import models.accounts.slack.profile.SlackProfile
 import models.team.Team
 import modules.ActorModule
-import org.joda.time.DateTime
+import org.joda.time.LocalDateTime
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -35,7 +35,7 @@ class LinkedAccountServiceSpec extends PlaySpec with DBMixin with OneAppPerSuite
   }
 
   def newSavedLinkedAccountFor(user: User): Future[LinkedAccount] = {
-    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, IDs.next), DateTime.now)
+    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, IDs.next), LocalDateTime.now)
     dataService.linkedAccounts.save(account)
   }
 

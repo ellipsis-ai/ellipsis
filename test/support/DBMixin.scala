@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
 import services.PostgresDataService
-import slick.driver.PostgresDriver.api.{Database => PostgresDatabase, _}
+import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}

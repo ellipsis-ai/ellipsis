@@ -2,13 +2,12 @@ package models.accounts.oauth2token
 
 import javax.inject.{Inject, Provider}
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.accounts.slack.profile.SlackProfileQueries
 import org.joda.time.DateTime
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

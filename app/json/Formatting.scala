@@ -1,8 +1,37 @@
 package json
 
-import play.api.libs.json.Json
+import org.joda.time.LocalDateTime
+import play.api.data.validation.ValidationError
+import play.api.libs.json._
 
 object Formatting {
+
+  def jodaLocalDateTimeReads(pattern: String, corrector: String => String = identity): Reads[LocalDateTime] = new Reads[LocalDateTime] {
+
+    import org.joda.time.format.{ DateTimeFormat, ISODateTimeFormat }
+
+    val df = if (pattern == "") ISODateTimeFormat.localDateOptionalTimeParser else DateTimeFormat.forPattern(pattern)
+
+    def reads(json: JsValue): JsResult[LocalDateTime] = json match {
+      case JsString(s) => parseDateTime(corrector(s)) match {
+        case Some(dt) => JsSuccess(dt)
+        case None => JsError(Seq(JsPath() -> Seq(ValidationError("Expected joda local datetime", pattern))))
+      }
+      case _ => JsError(Seq(JsPath() -> Seq(ValidationError("Expected joda local datetime"))))
+    }
+
+    private def parseDateTime(input: String): Option[LocalDateTime] =
+      scala.util.control.Exception.allCatch[LocalDateTime] opt (LocalDateTime.parse(input, df))
+  }
+
+  def jodaLocalDateTimeWrites(pattern: String): Writes[org.joda.time.LocalDateTime] = new Writes[org.joda.time.LocalDateTime] {
+    def writes(d: org.joda.time.LocalDateTime): JsValue = JsString(d.toString(pattern))
+  }
+
+  val dateTimePattern = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+
+  implicit val localDateTimeFormat =
+    Format[LocalDateTime](jodaLocalDateTimeReads(dateTimePattern), jodaLocalDateTimeWrites(dateTimePattern))
 
   implicit val behaviorParameterTypeReads = Json.reads[BehaviorParameterTypeData]
   implicit val behaviorParameterTypeWrites = Json.writes[BehaviorParameterTypeData]

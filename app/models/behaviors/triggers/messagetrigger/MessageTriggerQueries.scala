@@ -4,7 +4,7 @@ import models.accounts.user.User
 import models.behaviors.behavior.BehaviorQueries
 import models.behaviors.behaviorversion.{BehaviorVersionQueries, RawBehaviorVersion}
 import models.behaviors.triggers.{RegexMessageTrigger, TemplateMessageTrigger}
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 object MessageTriggerQueries {
 
