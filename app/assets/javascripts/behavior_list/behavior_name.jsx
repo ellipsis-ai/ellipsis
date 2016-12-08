@@ -8,7 +8,8 @@ define(function(require) {
     propTypes: {
       version: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
       disableLink: React.PropTypes.bool,
-      beConcise: React.PropTypes.bool,
+      omitDescription: React.PropTypes.bool,
+      limitTriggers: React.PropTypes.bool,
       labelDataType: React.PropTypes.bool
     },
 
@@ -58,21 +59,21 @@ define(function(require) {
       var firstTrigger = version.triggers[firstTriggerIndex];
       var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTriggerIndex);
       return (
-        <div className={this.props.beConcise ? "display-ellipsis" : ""}>
+        <span>
           {this.getLabelFromTrigger(firstTrigger)}
-          {this.props.beConcise ? null : (
+          {this.props.limitTriggers ? null : (
             <span>
               {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
               {this.getRegexTriggerLabelFromTriggers(otherTriggers)}
             </span>
           )}
-        </div>
+        </span>
       );
     },
 
     getDataTypeLabelFromVersion: function(version) {
       return (
-        <div className={"type-italic " + (this.props.beConcise ? "display-ellipsis" : "")}>
+        <div className={"type-italic " + (this.props.limitTriggers ? "display-ellipsis" : "")}>
           <span className="link">{version.getDataTypeName()}</span>
           {this.props.labelDataType ? (
             <span className="type-weak"> (data type)</span>
@@ -90,8 +91,10 @@ define(function(require) {
     },
 
     getDescriptionFromVersion: function(version) {
-      if (version.description) {
-        return (
+      if (!this.props.omitDescription && version.description) {
+        return this.props.limitTriggers ? (
+          <span className="type-italic type-weak pbxs"> &nbsp;·&nbsp; {version.description}</span>
+        ) : (
           <div className="type-italic type-weak pbxs ">{version.description}</div>
         );
       }
@@ -100,18 +103,18 @@ define(function(require) {
     render: function() {
       if (this.props.disableLink) {
         return (
-          <div>
+          <div className={this.props.limitTriggers ? "display-ellipsis" : ""}>
             {this.getLabelFromVersion(this.props.version)}
-            {this.props.beConcise ? null : this.getDescriptionFromVersion(this.props.version)}
+            {this.getDescriptionFromVersion(this.props.version)}
           </div>
         );
       } else {
         return (
-          <div>
+          <div className={this.props.limitTriggers ? "display-ellipsis" : ""}>
             <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.behaviorId).url}
               className="link-block">
               {this.getLabelFromVersion(this.props.version)}
-              {this.props.beConcise ? null : this.getDescriptionFromVersion(this.props.version)}
+              {this.getDescriptionFromVersion(this.props.version)}
             </a>
           </div>
         );
