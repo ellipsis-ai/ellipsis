@@ -31,7 +31,7 @@ case class DisplayHelpBehavior(
         case _ => Future.successful(Seq())
       }
     } yield {
-      val nonRegexTriggers = triggers.filter({ ea => !ea.shouldTreatAsRegex })
+      val nonRegexTriggers = triggers.filter({ ea => !ea.shouldTreatAsRegex }).sortBy((trigger) => MessageTrigger.sortKeyFor(trigger.pattern, trigger.shouldTreatAsRegex))
       val namedTriggers =
         if (nonRegexTriggers.isEmpty)
           triggerStringFor(triggers.head)
