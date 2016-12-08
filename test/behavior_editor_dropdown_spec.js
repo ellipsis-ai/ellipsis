@@ -1,8 +1,8 @@
-jest.unmock('../app/assets/javascripts/behavior_editor/dropdown_menu');
+jest.unmock('../app/assets/javascripts/dropdown_menu');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
-const DropdownMenu = require('../app/assets/javascripts/behavior_editor/dropdown_menu');
+const DropdownMenu = require('../app/assets/javascripts/dropdown_menu');
 
 describe('DropdownMenu', () => {
   let toggled = false;

@@ -31,8 +31,8 @@
     <link rel="icon" href="/assets/images/favicon-16x16.png" sizes="16x16">
   </head>
   <body class="bg-lightest flex-rows flex-rows-viewport">
-    <header class='@("border-emphasis-bottom type-white " + navBgColorForPage + navBorderColorForPage)'>
-      <div class="container">
+    <header id="main-header" class='@("position-fixed-top position-z-almost-front border-emphasis-bottom type-white " + navBgColorForPage + navBorderColorForPage)'>
+      <div class="container container-wide">
         @views.html.mainNav(maybeTeamAccess)
       </div>
     </header>
@@ -46,4 +46,10 @@
     @content
   </body>
   <script>window.document.body.addEventListener('touchstart', function() {})</script>
+  <script>
+  (function() {
+    var header = document.getElementById('main-header');
+    document.body.style.paddingTop = header.offsetHeight + 'px';
+   })();
+  </script>
 </html>

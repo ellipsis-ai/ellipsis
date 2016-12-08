@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import export.{BehaviorVersionExporter, BehaviorVersionImporter, BehaviorVersionZipImporter}
+import export._
 import json._
 import json.Formatting._
 import models.silhouette.EllipsisEnv
@@ -24,11 +24,11 @@ class BehaviorImportExportController @Inject() (
                                                ) extends ReAuthable {
 
   def export(id: String) = silhouette.SecuredAction.async { implicit request =>
-    BehaviorVersionExporter.maybeFor(id, request.identity, dataService).map { maybeExporter =>
+    BehaviorGroupExporter.maybeFor(id, request.identity, dataService).map { maybeExporter =>
       maybeExporter.map { exporter =>
         Ok.sendFile(exporter.getZipFile)
       }.getOrElse {
-        NotFound(s"Behavior not found: $id")
+        NotFound(s"Skill not found: $id")
       }
     }
   }
@@ -65,14 +65,17 @@ class BehaviorImportExportController @Inject() (
           for {
             maybeTeam <- dataService.teams.find(info.teamId, request.identity)
             maybeImporter <- Future.successful(maybeTeam.map { team =>
-              BehaviorVersionZipImporter(team, request.identity, zipFile.ref.file, dataService)
+              BehaviorGroupZipImporter(team, request.identity, zipFile.ref.file, dataService)
             })
-            maybeBehaviorVersion <- maybeImporter.map { importer =>
+            maybeBehaviorGroup <- maybeImporter.map { importer =>
               importer.run
             }.getOrElse(Future.successful(None))
+            maybeBehavior <- maybeBehaviorGroup.map { group =>
+              dataService.behaviors.allForGroup(group).map(_.headOption)
+            }.getOrElse(Future.successful(None))
           } yield {
-            maybeBehaviorVersion.map { behaviorVersion =>
-              Redirect(routes.BehaviorEditorController.edit(behaviorVersion.behavior.id))
+            maybeBehavior.map { behavior =>
+              Redirect(routes.BehaviorEditorController.edit(behavior.id))
             }.getOrElse {
               NotFound(s"Team not found: ${info.teamId}")
             }
@@ -100,22 +103,29 @@ class BehaviorImportExportController @Inject() (
       },
       info => {
         val json = Json.parse(info.dataJson)
-        json.validate[BehaviorVersionData] match {
+        json.validate[BehaviorGroupData] match {
           case JsSuccess(data, jsPath) => {
             for {
-              maybeTeam <- dataService.teams.find(data.teamId, user)
+              maybeTeam <- dataService.teams.find(user.teamId)
               maybeImporter <- Future.successful(maybeTeam.map { team =>
-                BehaviorVersionImporter(team, user, data, dataService)
+                BehaviorGroupImporter(team, user, data, dataService)
               })
-              maybeBehaviorVersion <- maybeImporter.map { importer =>
+              maybeBehaviorGroup <- maybeImporter.map { importer =>
                 importer.run
               }.getOrElse(Future.successful(None))
+              maybeBehavior <- maybeBehaviorGroup.map { group =>
+                dataService.behaviors.allForGroup(group).map(_.headOption)
+              }.getOrElse(Future.successful(None))
             } yield {
-              maybeBehaviorVersion.map { behaviorVersion =>
+              maybeBehaviorGroup.map { behaviorGroup =>
                 if (request.headers.get("x-requested-with").contains("XMLHttpRequest")) {
-                  Ok(Json.obj("behaviorId" -> behaviorVersion.behavior.id))
+                  Ok(Json.toJson(InstalledBehaviorGroupData(behaviorGroup.id, behaviorGroup.maybeImportedId)))
                 } else {
-                  Redirect(routes.BehaviorEditorController.edit(behaviorVersion.behavior.id, justSaved = Some(true)))
+                  maybeBehavior.map{ behavior =>
+                    Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
+                  }.getOrElse {
+                    Redirect(routes.ApplicationController.index())
+                  }
                 }
               }.getOrElse {
                 NotFound("Behavior not found")

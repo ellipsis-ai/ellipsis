@@ -208,7 +208,7 @@ define(function(require) {
                 {this.getVars().map((v, index) => {
                   return (
                     <div className="column-row" key={`envVar${index}`}>
-                      <div className="column column-one-quarter mobile-column-full type-monospace pvxs mobile-pbn">
+                      <div className="column column-page-sidebar type-monospace pvxs mobile-pbn">
                         <div className={
                           "type-monospace display-ellipsis " +
                           (v.isAlreadySavedWithValue ? "" : "align-button")
@@ -216,7 +216,7 @@ define(function(require) {
                           {v.name}
                         </div>
                       </div>
-                      <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
+                      <div className="column column-page-main pvxs mobile-ptn">
                         {this.getValueInputForVar(v, index)}
                       </div>
                     </div>

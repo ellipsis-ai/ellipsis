@@ -24,11 +24,22 @@
   display: inline-block;
 }
 
+.display-block {
+  display: block;
+}
+
 .display-ellipsis {
   display: block;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+}
+
+@media (max-width: @mobile-max-width) {
+  .mobile-display-no-ellipsis {
+    display: block;
+    white-space: normal;
+  }
 }
 
 .display-limit-width {

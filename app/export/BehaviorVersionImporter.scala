@@ -18,23 +18,17 @@ case class BehaviorVersionImporter(
 
   def run: Future[Option[BehaviorVersion]] = {
     for {
-      maybeExisting <- data.config.publishedId.map { publishedId =>
-        dataService.behaviors.findWithImportedId(publishedId, team)
-      }.getOrElse(Future.successful(None))
-      version <- maybeExisting.map { existing =>
-        Future.successful(None)
-      }.getOrElse {
-        for {
-          dataTypeVersionData <- Future.successful {
-            data.params.flatMap(_.paramType.flatMap(_.behavior))
-          }
-          prereqs <- Future.sequence(dataTypeVersionData.map { versionData =>
-            BehaviorVersionImporter(team, user, versionData, dataService).run
-          }).map(_.flatten)
-          behavior <- dataService.behaviors.createFor(team, data.config.publishedId, data.config.dataTypeName)
-          version <- dataService.behaviorVersions.createFor(behavior, Some(user), data)
-        } yield Some(version)
-      }
+      version <- for {
+        maybeGroup <- data.groupId.map { gid =>
+          dataService.behaviorGroups.find(gid)
+        }.getOrElse(Future.successful(None))
+        behavior <- maybeGroup.map { group =>
+          dataService.behaviors.createFor(group, data.config.publishedId, data.config.dataTypeName)
+        }.getOrElse {
+          dataService.behaviors.createFor(team, data.config.publishedId, data.config.dataTypeName)
+        }
+        version <- dataService.behaviorVersions.createFor(behavior, Some(user), data)
+      } yield Some(version)
     } yield version
   }
 

@@ -1,5 +1,6 @@
 package models.behaviors.scheduledmessage
 
+import models.accounts.user.User
 import models.team.Team
 
 import scala.concurrent.Future
@@ -15,6 +16,7 @@ trait ScheduledMessageService {
   def maybeCreateFor(
                       text: String,
                       recurrenceText: String,
+                      user: User,
                       team: Team,
                       maybeChannelName: Option[String]
                     ): Future[Option[ScheduledMessage]]

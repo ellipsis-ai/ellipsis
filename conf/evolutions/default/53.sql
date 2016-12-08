@@ -1,7 +1,11 @@
+-- noinspection SqlDialectInspectionForFile
+
+-- noinspection SqlNoDataSourceInspectionForFile
+
 # --- !Ups
 
-ALTER TABLE teams ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE behavior_groups ADD COLUMN imported_id TEXT;
 
 # --- !Downs
 
-ALTER TABLE teams DROP COLUMN created_at;
+ALTER TABLE behavior_groups DROP COLUMN imported_id;

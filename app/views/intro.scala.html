@@ -1,7 +1,7 @@
 @(
   teamAccess: models.accounts.user.UserTeamAccess,
-  behaviorCategories: Seq[json.BehaviorCategory],
-  installedBehaviors: Seq[json.InstalledBehaviorData]
+  behaviorGroups: Seq[json.BehaviorGroupData],
+  installedBehaviorGroups: Seq[json.InstalledBehaviorGroupData]
   )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
@@ -11,11 +11,11 @@
 @main("Welcome to Ellipsis", Some(teamAccess), "intro") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorImportExportController.doImport,
-    routes.javascript.BehaviorEditorController.edit
+    routes.javascript.BehaviorEditorController.editGroup
   )
   <div id="content" class="content">
     <div class="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
-      <div class="container">
+      <div class="container container-c">
         <p class="type-l type-white">
           Ellipsis is a customizable chat bot that helps your team be more productive.
           Teach your bot to do tasks and provide answers in response to your prompts.
@@ -23,10 +23,10 @@
       </div>
     </div>
 
-    <div class="container mtxxl mobile-mtxs">
+    <div class="container container-c mtxxl mobile-mtxs">
 
       <div class="columns">
-        <div class="column column-one-quarter mobile-column-full mts mbxxl mobile-mvn">
+        <div class="column column-page-sidebar mts mbxxl mobile-mvn">
           <h3 class="type-weak">To get started…</h3>
 
           <h4 class="position-relative">
@@ -45,7 +45,7 @@
             <li>Each skill can run node.js code to produce a result, or simply respond with text.</li>
           </ul>
         </div>
-        <div class="column column-three-quarters mobile-column-full plxxl mobile-pln">
+        <div class="column column-page-main">
           <div class="bg-white border border-radius phxl pbxl">
             <div id="importerContainer"></div>
           </div>
@@ -53,11 +53,12 @@
       </div>
     </div>
     <script>
-        var BehaviorImporterConfig = {
-          installedBehaviors: @Html(Json.toJson(installedBehaviors).toString),
+        var BehaviorGroupImporterConfig = {
+          teamId: '@(teamAccess.maybeTargetTeam.getOrElse(""))',
+          installedBehaviorGroups: @Html(Json.toJson(installedBehaviorGroups).toString),
           containerId: 'importerContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
-          behaviorGroups: @Html(Json.toJson(behaviorCategories).toString)
+          behaviorGroups: @Html(Json.toJson(behaviorGroups).toString)
         };
       </script>
     <script data-main='@RemoteAssets.getUrl("javascripts/behavior_importer/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>

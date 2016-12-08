@@ -1,5 +1,4 @@
-define(function(require) {
-  require('whatwg-fetch');
+define(function() {
 
   function testInvocationUrl() {
     return jsRoutes.controllers.BehaviorEditorController.testInvocation().url;

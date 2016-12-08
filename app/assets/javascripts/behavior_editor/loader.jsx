@@ -2,29 +2,19 @@
 
 requirejs(['../common'], function() {
   requirejs(
-    ['core-js', 'react', 'react-dom', './behavior_editor/index', './models/behavior_version'],
-    function(Core, React, ReactDOM, BehaviorEditor, BehaviorVersion) {
-      var config = Object.assign({}, BehaviorEditorConfiguration);
-      var additionalData = {
-        csrfToken: config.csrfToken,
-        envVariables: config.envVariables,
-        paramTypes: config.paramTypes,
-        oauth2Applications: config.oauth2Applications,
-        oauth2Apis: config.oauth2Apis,
-        simpleTokenApis: config.simpleTokenApis,
-        linkedOAuth2ApplicationIds: config.linkedOAuth2ApplicationIds,
-        justSaved: config.justSaved,
-        notifications: config.notifications,
+    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './behavior_editor/index', './models/behavior_version'],
+    function(Core, Fetch, React, ReactDOM, BehaviorEditor, BehaviorVersion) {
+      var config = Object.assign({}, BehaviorEditorConfiguration, {
+        otherBehaviorsInGroup: BehaviorEditorConfiguration.otherBehaviorsInGroup.map((ea) => BehaviorVersion.fromJson(ea)),
         onSave: reload
-      };
+      });
 
       function reload(newData, justSaved) {
-        var combinedData = Object.assign({}, newData, additionalData);
-        if (justSaved) {
-          combinedData.justSaved = true;
-        }
-        var behaviorEditorProps = BehaviorVersion.fromJson(combinedData);
-        var myBehaviorEditor = React.createElement(BehaviorEditor, behaviorEditorProps);
+        var props = Object.assign({}, config, newData, {
+          behavior: BehaviorVersion.fromJson(newData),
+          justSaved: !!justSaved
+        });
+        var myBehaviorEditor = React.createElement(BehaviorEditor, props);
         ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
       }
 

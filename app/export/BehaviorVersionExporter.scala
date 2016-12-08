@@ -16,15 +16,20 @@ case class BehaviorVersionExporter(
                                     paramsData: Seq[BehaviorParameterData],
                                     triggersData: Seq[BehaviorTriggerData],
                                     config: BehaviorConfig,
-                                    responseTemplate: String
+                                    responseTemplate: String,
+                                    parentPath: String
                                   ) extends Exporter {
+
+  val fullPath = {
+    val behaviorType = if (behaviorVersion.behavior.isDataType) { "data_types" } else { "actions" }
+    val dirName = behaviorVersion.behavior.maybeDataTypeName.getOrElse(behaviorVersion.id)
+    s"$parentPath/$behaviorType/$dirName"
+  }
 
   def functionString: String = maybeFunction.getOrElse("")
   def paramsString: String = Json.prettyPrint(Json.toJson(paramsData))
   def triggersString: String = Json.prettyPrint(Json.toJson(triggersData))
   def configString: String = Json.prettyPrint(Json.toJson(config))
-
-  val exportId = behaviorVersion.id
 
   protected def writeFiles(): Unit = {
     behaviorVersion.maybeDescription.foreach { desc =>
@@ -41,7 +46,7 @@ case class BehaviorVersionExporter(
 
 object BehaviorVersionExporter {
 
-  def maybeFor(behaviorId: String, user: User, dataService: DataService): Future[Option[BehaviorVersionExporter]] = {
+  def maybeFor(behaviorId: String, user: User, parentPath: String, dataService: DataService): Future[Option[BehaviorVersionExporter]] = {
     for {
       maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
@@ -71,7 +76,9 @@ object BehaviorVersionExporter {
           versionData.params,
           versionData.triggers,
           configForExport,
-          versionData.responseTemplate)
+          versionData.responseTemplate,
+          parentPath
+        )
       }
     }
   }

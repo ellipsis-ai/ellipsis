@@ -2,6 +2,8 @@ define(function(require) {
 var React = require('react'),
   DeleteButton = require('./delete_button'),
   Input = require('../form/input'),
+  Select = require('../form/select'),
+  SVGTip = require('../svg/tip'),
   Param = require('../models/param'),
   ifPresent = require('../if_present');
 
@@ -35,8 +37,7 @@ return React.createClass({
     this.props.onChange(this.props.param.clone({ name: Param.formatName(newName) }));
   },
 
-  onParamTypeChange: function(event) {
-    var newTypeId = event.target.value;
+  onParamTypeChange: function(newTypeId) {
     var newType = this.props.paramTypes.find(ea => ea.id === newTypeId);
     this.props.onChange(this.props.param.clone({ paramType: newType }));
   },
@@ -45,8 +46,7 @@ return React.createClass({
     this.props.onChange(this.props.param.clone({ question: newQuestion }));
   },
 
-  onSaveOptionChange: function(event) {
-    var newOption = event.target.value;
+  onSaveOptionChange: function(newOption) {
     var changedProps = { isSavedForTeam: false, isSavedForUser: false };
     if (newOption === PER_TEAM) {
       changedProps.isSavedForTeam = true;
@@ -102,70 +102,86 @@ return React.createClass({
     }
   },
 
-  renderConfigureAction: function() {
-    return (
-      <button type="button" className="button-s button-shrink" onClick={this.configureType}>configure</button>
-    );
+  renderIsSharedNotification: function() {
+    if (this.props.param.isShared()) {
+      return (
+        <div className="box-tip border-left border-right">
+          <span className="display-inline-block mrs align-b type-pink" style={{ height: 24 }}>
+            <SVGTip />
+          </span>
+          <span className="type-s">This input is shared with other actions.</span>
+        </div>
+      );
+    } else {
+      return null;
+    }
   },
 
   render: function() {
     return (
-      <div className="border border-light bg-white plm pbm">
-        <div className="columns columns-elastic">
-          <div className="column column-expand align-form-input">
-            <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
+      <div>
+      <div className={"border border-light " + (this.props.param.isShared() ? "mbneg1" : "")}>
+        <div className="bg-white plm pbxs">
+          <div className="columns columns-elastic">
+            <div className="column column-expand align-form-input">
+              <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
+              <Input
+                ref="name"
+                className="form-input-borderless type-monospace type-s width-10 mrm"
+                placeholder="userInput"
+                value={this.props.param.name}
+                onChange={this.onNameChange}
+                onFocus={this.props.onNameFocus}
+                onBlur={this.props.onNameBlur}
+              />
+              {this.getParamSource()}
+            </div>
+            <div className="column column-shrink">
+              <DeleteButton
+                onClick={this.onDeleteClick}
+                title={this.props.param.name ? `Delete the “${this.props.param.name}” input` : "Delete this input"}
+              />
+            </div>
+          </div>
+          <div className="prsymbol">
             <Input
-              ref="name"
-              className="form-input-borderless type-monospace type-s width-10 mrm"
-              placeholder="userInput"
-              value={this.props.param.name}
-              onChange={this.onNameChange}
-              onFocus={this.props.onNameFocus}
-              onBlur={this.props.onNameBlur}
-            />
-            {this.getParamSource()}
-          </div>
-          <div className="column column-shrink">
-            <DeleteButton
-              onClick={this.onDeleteClick}
-              title={this.props.param.name ? `Delete the “${this.props.param.name}” input` : "Delete this input"}
+              id={"question" + this.props.id}
+              ref="question"
+              placeholder="Write a question to ask the user for this input"
+              autoFocus={this.props.shouldGrabFocus}
+              value={this.props.param.question}
+              onChange={this.onQuestionChange}
+              onEnterKey={this.props.onEnterKey}
+              className="form-input-borderless"
             />
           </div>
-        </div>
-        <div className="prsymbol">
-          <Input
-            id={"question" + this.props.id}
-            ref="question"
-            placeholder="Write a question to ask the user for this input"
-            autoFocus={this.props.shouldGrabFocus}
-            value={this.props.param.question}
-            onChange={this.onQuestionChange}
-            onEnterKey={this.props.onEnterKey}
-            className="form-input-borderless"
-          />
-        </div>
-        <div className="prsymbol mts">
-          <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
-            <option value={EACH_TIME}>
-              Ask each time the skill is run
-            </option>
-            <option value={PER_TEAM}>
-              Ask once and save the answer for the whole team
-            </option>
-            <option value={PER_USER}>
-              Ask each user once and save their answer
-            </option>
-          </select>
-          <span className="display-inline-block align-m type-s type-weak mrm">of type</span>
-          <select className="form-select form-select-s min-width-10 align-m mrm" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
-            {this.props.paramTypes.map((paramType) => (
-              <option value={paramType.id} key={this.keyFor(paramType)}>
-                {paramType.name}
+          <div className="prsymbol mts">
+            <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
+              <option value={EACH_TIME}>
+                Ask each time the skill is run
               </option>
+              <option value={PER_TEAM}>
+                Ask once, save the answer for the whole team
+              </option>
+              <option value={PER_USER}>
+                Ask each user once, save their answers
+              </option>
+            </Select>
+            <span className="display-inline-block align-m type-s type-weak mrm mbs">and allow data type</span>
+            <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
+              {this.props.paramTypes.map((paramType) => (
+                <option value={paramType.id} key={this.keyFor(paramType)}>
+                  {paramType.name}
+                </option>
+              ))}
+            </Select>
+            {ifPresent(this.isConfigurable(), () => (
+              <button type="button" className="button-s button-shrink mbs" onClick={this.configureType}>Edit type…</button>
             ))}
-          </select>
-          {ifPresent(this.isConfigurable(), this.renderConfigureAction, () => null)}
+          </div>
         </div>
+      </div>
+      {this.renderIsSharedNotification()}
       </div>
     );
   }

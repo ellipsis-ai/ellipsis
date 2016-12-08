@@ -5,6 +5,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorVersion = require('../models/behavior_version'),
+  BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
@@ -17,18 +18,20 @@ var React = require('react'),
   DataTypeNameInput = require('./data_type_name_input'),
   DataTypeResultConfig = require('./data_type_result_config'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
-  DropdownMenu = require('./dropdown_menu'),
+  DropdownMenu = require('../dropdown_menu'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
   FixedFooter = require('../fixed_footer'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../form/input'),
+  ModalScrim = require('./modal_scrim'),
   Notification = require('../notifications/notification'),
-  PageHeading = require('./page_heading'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   SectionHeading = require('./section_heading'),
+  SharedAnswerInputSelector = require('./shared_answer_input_selector'),
+  SVGHamburger = require('../svg/hamburger'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
@@ -46,7 +49,6 @@ var React = require('react'),
   Magic8Ball = require('../magic_8_ball'),
   oauth2ApplicationShape = require('./oauth2_application_shape');
   require('codemirror/mode/markdown/markdown');
-  require('whatwg-fetch');
 
 var AWSEnvVariableStrings = {
   accessKeyName: "AWS Access Key",
@@ -61,39 +63,13 @@ return React.createClass({
 
   propTypes: {
     teamId: React.PropTypes.string.isRequired,
-    behaviorId: React.PropTypes.string,
-    description: React.PropTypes.string,
-    functionBody: React.PropTypes.string,
-    responseTemplate: React.PropTypes.instanceOf(ResponseTemplate),
-    params: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)),
-    triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)),
-    config: React.PropTypes.shape({
-      aws: React.PropTypes.shape({
-        accessKeyName: React.PropTypes.string,
-        secretKeyName: React.PropTypes.string,
-        regionName: React.PropTypes.string
-      }),
-      requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(
-        React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          apiId: React.PropTypes.string.isRequired,
-          recommendedScope: React.PropTypes.string,
-          application: oauth2ApplicationShape
-        })
-      ),
-      requiredSimpleTokenApis: React.PropTypes.arrayOf(
-        React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          apiId: React.PropTypes.string.isRequired,
-          name: React.PropTypes.string.isRequired
-        })
-      ),
-      forcePrivateResponse: React.PropTypes.bool
-    }),
-    knownEnvVarsUsed: React.PropTypes.arrayOf(React.PropTypes.string),
+    groupName: React.PropTypes.string,
+    groupDescription: React.PropTypes.string,
+    behavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
+    otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
     paramTypes: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         id: React.PropTypes.string.isRequired,
@@ -136,6 +112,16 @@ return React.createClass({
     return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
   },
 
+  getOtherSavedParametersInGroup: function() {
+    const currentInputIds = this.getBehaviorParams().map(ea => ea.inputId);
+    return this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
+      return arr.concat(ea.params);
+    }, [])
+      .filter(ea => currentInputIds.indexOf(ea.inputId) === -1)
+      .filter(ea => ea.isSaved())
+      .map(ea => ea.clone({ groupId: this.props.behavior.groupId }));
+  },
+
   getAllOAuth2Applications: function() {
     return this.props.oauth2Applications || [];
   },
@@ -143,8 +129,8 @@ return React.createClass({
   getRequiredOAuth2ApiConfigs: function() {
     if (this.state) {
       return this.getBehaviorConfig()['requiredOAuth2ApiConfigs'] || [];
-    } else if (this.props.config) {
-      return this.props.config.requiredOAuth2ApiConfigs || [];
+    } else if (this.props.behavior.config) {
+      return this.props.behavior.config.requiredOAuth2ApiConfigs || [];
     } else {
       return [];
     }
@@ -157,8 +143,8 @@ return React.createClass({
   getRequiredSimpleTokenApis: function() {
     if (this.state) {
       return this.getBehaviorConfig()['requiredSimpleTokenApis'] || [];
-    } else if (this.props.config) {
-      return this.props.config.requiredSimpleTokenApis || [];
+    } else if (this.props.behavior.config) {
+      return this.props.behavior.config.requiredSimpleTokenApis || [];
     } else {
       return [];
     }
@@ -173,8 +159,8 @@ return React.createClass({
   getAWSConfig: function() {
     if (this.state) {
       return this.getBehaviorConfig()['aws'];
-    } else if (this.props.config) {
-      return this.props.config.aws;
+    } else if (this.props.behavior.config) {
+      return this.props.behavior.config.aws;
     } else {
       return undefined;
     }
@@ -190,35 +176,27 @@ return React.createClass({
   },
 
   getBehaviorDescription: function() {
-    if (this.state) {
-      return this.getBehaviorProp('description') || "";
-    } else {
-      return this.props.description || "";
-    }
+    return this.getBehaviorProp('description') || "";
   },
 
   getBehaviorFunctionBody: function() {
-    if (this.state) {
-      return this.getBehaviorProp('functionBody') || "";
-    } else {
-      return this.props.functionBody || "";
-    }
+    return this.getBehaviorProp('functionBody') || "";
   },
 
   getBehaviorParams: function() {
-    if (this.state) {
-      return this.getBehaviorProp('params') || [];
-    } else {
-      return this.props.params || [];
-    }
+    return this.getBehaviorProp('params') || [];
   },
 
   getBehaviorProp: function(key) {
-    return this.state.behavior[key];
+    if (this.state) {
+      return this.state.behavior[key];
+    } else {
+      return this.props.behavior[key];
+    }
   },
 
   getBehaviorTemplate: function() {
-    var template = this.state ? this.getBehaviorProp('responseTemplate') : this.props.responseTemplate;
+    var template = this.getBehaviorProp('responseTemplate');
     if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
       return this.getDefaultBehaviorTemplate();
     } else {
@@ -227,19 +205,11 @@ return React.createClass({
   },
 
   getBehaviorTriggers: function() {
-    if (this.state) {
-      return this.getBehaviorProp('triggers');
-    } else {
-      return this.getInitialTriggersFromProps(this.props);
-    }
+    return this.getBehaviorProp('triggers') || this.getInitialTriggersFromBehavior(this.props.behavior);
   },
 
   getBehaviorConfig: function() {
-    if (this.state) {
-      return this.getBehaviorProp('config');
-    } else {
-      return this.props.config;
-    }
+    return this.getBehaviorProp('config');
   },
 
   getDataTypeName: function() {
@@ -319,10 +289,6 @@ return React.createClass({
     );
   },
 
-  getPageHeading: function() {
-    return this.isDataTypeBehavior() ? "Edit data type" : "Edit skill";
-  },
-
   getRedirectValue: function() {
     return this.state.redirectValue;
   },
@@ -333,7 +299,7 @@ return React.createClass({
 
   buildEnvVarNotifications: function() {
     return this.getEnvVariables().
-      filter((ea) => this.props.knownEnvVarsUsed.includes(ea.name)).
+      filter((ea) => this.props.behavior.knownEnvVarsUsed.includes(ea.name)).
       filter((ea) => !ea.isAlreadySavedWithValue).
       map((ea) => ({
         kind: "env_var_not_defined",
@@ -475,9 +441,9 @@ return React.createClass({
     });
   },
 
-  getInitialTriggersFromProps: function(props) {
-    if (props.triggers && props.triggers.length > 0) {
-      return props.triggers;
+  getInitialTriggersFromBehavior: function(behavior) {
+    if (behavior.triggers && behavior.triggers.length > 0) {
+      return behavior.triggers;
     } else if (!this.isDataTypeBehavior()) {
       return [new Trigger()];
     } else {
@@ -495,7 +461,7 @@ return React.createClass({
   },
 
   getTimestampedBehavior: function(behavior) {
-    return Object.assign({}, behavior, { createdAt: Date.now() });
+    return behavior.clone({ createdAt: Date.now() });
   },
 
   getVersions: function() {
@@ -520,15 +486,19 @@ return React.createClass({
     return new Param(Object.assign({ paramType: this.props.paramTypes[0] }, optionalValues));
   },
 
-  addParam: function() {
+  addParam: function(param) {
+    var newParams = this.getBehaviorParams().concat([param]);
+    this.setBehaviorProp('params', newParams, this.focusOnLastParam);
+  },
+
+  addNewParam: function() {
     var newParamIndex = this.getBehaviorParams().length + 1;
     while (this.getBehaviorParams().some(function(param) {
       return param.name === 'userInput' + newParamIndex;
     })) {
       newParamIndex++;
     }
-    var newParams = this.getBehaviorParams().concat([this.createNewParam({ name: 'userInput' + newParamIndex })]);
-    this.setBehaviorProp('params', newParams, this.focusOnLastParam);
+    this.addParam(this.createNewParam({ name: 'userInput' + newParamIndex }));
   },
 
   addParams: function(newParamNames) {
@@ -553,6 +523,10 @@ return React.createClass({
     this.toggleActivePanel('confirmDeleteBehavior', true);
   },
 
+  confirmDeleteBehaviorGroup: function() {
+    this.toggleActivePanel('confirmDeleteBehaviorGroup', true);
+  },
+
   confirmDeleteCode: function() {
     this.toggleActivePanel('confirmDeleteCode', true);
   },
@@ -563,6 +537,10 @@ return React.createClass({
 
   deleteBehavior: function() {
     this.refs.deleteBehaviorForm.submit();
+  },
+
+  deleteBehaviorGroup: function() {
+    this.refs.deleteBehaviorGroupForm.submit();
   },
 
   deleteCode: function() {
@@ -579,6 +557,30 @@ return React.createClass({
   deleteTriggerAtIndex: function(index) {
     var triggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getBehaviorTriggers(), index);
     this.setBehaviorProp('triggers', triggers);
+  },
+
+  fixLeftPanelPosition: function() {
+    var form = this.refs.behaviorForm;
+    var panel = this.refs.leftPanel;
+    var scrim = this.refs.scrim.getElement();
+    if (form && panel && scrim) {
+      var topStyle = `${form.offsetTop}px`;
+      panel.style.top = topStyle;
+      scrim.style.top = topStyle;
+    }
+  },
+
+  getHeaderHeight: function() {
+    var mainHeader = document.getElementById('main-header');
+    return mainHeader ? mainHeader.offsetHeight : 0;
+  },
+
+  getFixedTitleHeight: function() {
+    if (this.refs.pageTitle) {
+      return this.refs.pageTitle.offsetHeight;
+    } else {
+      return 0;
+    }
   },
 
   focusOnFirstPossibleElement: function(parentElement) {
@@ -599,7 +601,7 @@ return React.createClass({
   },
 
   loadVersions: function() {
-    var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.props.behaviorId).url;
+    var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.props.behavior.behaviorId).url;
     this.setState({
       versionsLoadStatus: 'loading'
     });
@@ -731,17 +733,13 @@ return React.createClass({
 
   showVersionIndex: function(versionIndex, optionalCallback) {
     var version = this.getVersions()[versionIndex];
+    var newBehavior = version.clone({
+      groupId: this.props.behavior.groupId,
+      teamId: this.props.behavior.teamId,
+      behaviorId: this.props.behavior.behaviorId
+    });
     this.setState({
-      behavior: {
-        teamId: this.props.teamId,
-        behaviorId: this.props.behaviorId,
-        functionBody: version.functionBody,
-        responseTemplate: version.responseTemplate,
-        params: version.params,
-        triggers: version.triggers,
-        config: version.config,
-        knownEnvVarsUsed: version.knownEnvVarsUsed
-      },
+      behavior: newBehavior,
       revealCodeEditor: !!version.functionBody,
       justSaved: false
     }, optionalCallback);
@@ -766,7 +764,7 @@ return React.createClass({
   },
 
   setBehaviorProps: function(props, callback) {
-    var newBehavior = Object.assign({}, this.state.behavior, props);
+    var newBehavior = this.state.behavior.clone(props);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     if (this.state.justSaved) {
@@ -817,7 +815,7 @@ return React.createClass({
   },
 
   exportVersion: function() {
-    window.location = '/export_behavior/' + encodeURIComponent(this.props.behaviorId);
+    window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.behavior.groupId).url;
   },
 
   toggleActiveDropdown: function(name) {
@@ -829,6 +827,9 @@ return React.createClass({
 
   toggleActivePanel: function(name, beModal, optionalCallback) {
     var alreadyOpen = this.getActivePanel() === name;
+    if (!alreadyOpen) {
+      this.refs.scrim.getElement().style.top = '';
+    }
     this.setState({
       activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
     }, optionalCallback || function() {
@@ -837,6 +838,16 @@ return React.createClass({
         this.focusOnPrimaryOrFirstPossibleElement(activeModal);
       }
     });
+  },
+
+  clearActivePanel: function() {
+    this.setState({
+      activePanel: null
+    });
+  },
+
+  toggleSharedAnswerInputSelector: function() {
+    this.toggleActivePanel('sharedAnswerInputSelector', true);
   },
 
   toggleAPISelectorMenu: function() {
@@ -849,6 +860,15 @@ return React.createClass({
 
   toggleAWSHelp: function() {
     this.toggleActivePanel('helpForAWS');
+  },
+
+  toggleBehaviorSwitcher: function() {
+    this.toggleActivePanel('behaviorSwitcher', true, () => {
+      if (this.getActivePanel() === 'behaviorSwitcher') {
+        this.fixLeftPanelPosition();
+        this.refs.behaviorSwitcher.focus();
+      }
+    });
   },
 
   checkIfModifiedAndTest: function() {
@@ -951,16 +971,7 @@ return React.createClass({
       teamId: this.props.teamId,
       variables: envVars
     };
-    fetch(url, {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Csrf-Token': this.props.csrfToken
-      },
-      body: JSON.stringify({ teamId: this.props.teamId, dataJson: JSON.stringify(data) })
-    })
+    fetch(url, this.jsonPostOptions({ teamId: this.props.teamId, dataJson: JSON.stringify(data) }))
       .then((response) => response.json())
       .then((json) => {
         this.hideActivePanel();
@@ -980,6 +991,67 @@ return React.createClass({
           options.errorCallback();
         }
       });
+  },
+
+  onBehaviorGroupNameChange: function(name) {
+    this.setState({
+      groupName: name
+    });
+  },
+
+  onBehaviorGroupDescriptionChange: function(desc) {
+    this.setState({
+      groupDescription: desc
+    });
+  },
+
+  jsonPostOptions: function(data) {
+    return {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Csrf-Token': this.props.csrfToken
+      },
+      body: JSON.stringify(data)
+    };
+  },
+
+  saveBehaviorGroupName: function() {
+    var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupName().url;
+    var data = {
+      groupId: this.props.behavior.groupId,
+      name: this.state.groupName
+    };
+    // TODO: error handling!
+    fetch(url, this.jsonPostOptions(data)).then(() => {
+      this.setState({ lastSavedGroupName: this.state.groupName });
+    });
+  },
+
+  saveBehaviorGroupDescription: function() {
+    var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupDescription().url;
+    var data = {
+      groupId: this.props.behavior.groupId,
+      description: this.state.groupDescription
+    };
+    // TODO: error handling!
+    fetch(url, this.jsonPostOptions(data)).then(() => {
+      this.setState({ lastSavedGroupDescription: this.state.groupDescription });
+    });
+  },
+
+  saveBehaviorGroupDetailChanges: function() {
+    this.saveBehaviorGroupName();
+    this.saveBehaviorGroupDescription();
+  },
+
+  cancelBehaviorGroupDetailChanges: function() {
+    this.setState({
+      groupName: this.state.lastSavedGroupName,
+      groupDescription: this.state.lastSavedGroupDescription
+    });
   },
 
   updateParamAtIndexWithParam: function(index, newParam) {
@@ -1043,7 +1115,7 @@ return React.createClass({
   },
 
   undoChanges: function() {
-    var newBehavior = this.getInitialBehaviorFromProps(this.props);
+    var newBehavior = this.getInitialBehavior(this.props.behavior);
     var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     this.setState({
@@ -1078,6 +1150,22 @@ return React.createClass({
     return this.state && this.state.hasModifiedTemplate;
   },
 
+  getAllBehaviors: function() {
+    return this.props.otherBehaviorsInGroup.concat([this.getTimestampedBehavior(this.state.behavior)]);
+  },
+
+  getActionBehaviors: function() {
+    return this.getAllBehaviors().filter(ea => !ea.isDataType());
+  },
+
+  getDataTypeBehaviors: function() {
+    return this.getAllBehaviors().filter(ea => ea.isDataType());
+  },
+
+  countActionBehaviorsInGroup: function() {
+    return this.getActionBehaviors().length;
+  },
+
   hasUserParameters: function() {
     return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
@@ -1096,15 +1184,15 @@ return React.createClass({
   },
 
   isExistingBehavior: function() {
-    return !!this.props.behaviorId;
+    return !!this.props.behavior.behaviorId;
   },
 
   isFinishedBehavior: function() {
-    return this.isExistingBehavior() && !!(this.props.functionBody || this.props.responseTemplate.text);
+    return this.isExistingBehavior() && !!(this.props.behavior.functionBody || this.props.behavior.responseTemplate.text);
   },
 
   isModified: function() {
-    var currentMatchesInitial = JSON.stringify(this.state.behavior) === JSON.stringify(this.getInitialBehaviorFromProps(this.props));
+    var currentMatchesInitial = this.state.behavior.isIdenticalToVersion(this.getInitialBehavior(this.props.behavior));
     var previewingVersions = this.getActivePanel() === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
   },
@@ -1115,29 +1203,12 @@ return React.createClass({
 
   shouldFilterCurrentVersion: function() {
     var firstTwoVersions = this.getVersions().slice(0, 2);
-    return firstTwoVersions.length === 2 && this.versionEqualsVersion(firstTwoVersions[0], firstTwoVersions[1]);
+    return firstTwoVersions.length === 2 &&
+      firstTwoVersions[0].isIdenticalToVersion(firstTwoVersions[1]);
   },
 
   shouldRevealCodeEditor: function() {
-    return !!(this.props.shouldRevealCodeEditor || this.props.functionBody);
-  },
-
-  versionEqualsVersion: function(version1, version2) {
-    var shallow1 = JSON.stringify({
-      functionBody: version1.functionBody,
-      responseTemplate: version1.responseTemplate,
-      params: version1.params,
-      triggers: version1.triggers,
-      config: version1.config
-    });
-    var shallow2 = JSON.stringify({
-      functionBody: version2.functionBody,
-      responseTemplate: version2.responseTemplate,
-      params: version2.params,
-      triggers: version2.triggers,
-      config: version2.config
-    });
-    return shallow1 === shallow2;
+    return !!(this.props.shouldRevealCodeEditor || this.props.behavior.functionBody);
   },
 
   versionsMaybeLoaded: function() {
@@ -1224,7 +1295,7 @@ return React.createClass({
     if (index + 1 < this.getBehaviorParams().length) {
       this.focusOnParamIndex(index + 1);
     } else if (this.getBehaviorParams()[index].question) {
-      this.addParam();
+      this.addNewParam();
     }
   },
 
@@ -1260,20 +1331,13 @@ return React.createClass({
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.document.addEventListener('focus', this.handleModalFocus, true);
+    this.refs.pageTitleLayoutReplacer.style.height = `${this.getFixedTitleHeight()}px`;
   },
 
-  getInitialBehaviorFromProps: function(props) {
-    return {
-      teamId: props.teamId,
-      behaviorId: props.behaviorId,
-      description: props.description,
-      functionBody: props.functionBody,
-      responseTemplate: props.responseTemplate,
-      params: props.params,
-      triggers: this.getInitialTriggersFromProps(props),
-      config: props.config,
-      knownEnvVarsUsed: props.knownEnvVarsUsed
-    };
+  getInitialBehavior: function(behavior) {
+    return behavior.clone({
+      triggers: this.getInitialTriggersFromBehavior(behavior)
+    });
   },
 
   getInitialEnvVariables: function() {
@@ -1281,16 +1345,20 @@ return React.createClass({
   },
 
   getInitialState: function() {
-    var initialBehavior = this.getInitialBehaviorFromProps(this.props);
+    var initialBehavior = this.getInitialBehavior(this.props.behavior);
     return {
       behavior: initialBehavior,
+      groupName: this.props.groupName || "",
+      groupDescription: this.props.groupDescription || "",
+      lastSavedGroupName: this.props.groupName || "",
+      lastSavedGroupDescription: this.props.groupDescription || "",
       activeDropdown: null,
       activePanel: null,
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
       envVariables: this.getInitialEnvVariables(),
       revealCodeEditor: this.shouldRevealCodeEditor(),
-      hasModifiedTemplate: !!(this.props.responseTemplate && this.props.responseTemplate.text),
+      hasModifiedTemplate: !!(this.props.behavior.responseTemplate && this.props.behavior.responseTemplate.text),
       notifications: this.buildNotifications(),
       versions: [this.getTimestampedBehavior(initialBehavior)],
       versionsLoadStatus: null,
@@ -1304,7 +1372,7 @@ return React.createClass({
   },
 
   componentWillReceiveProps: function(nextProps) {
-    var newBehaviorVersion = this.getInitialBehaviorFromProps(nextProps);
+    var newBehaviorVersion = this.getInitialBehavior(nextProps.behavior);
     this.setState({
       activePanel: null,
       justSaved: true,
@@ -1335,7 +1403,7 @@ return React.createClass({
   renderCodeEditor: function() {
     return (
       <div>
-        <div className="border-top border-left border-right border-light mtxxl ptm">
+        <div className="border-top border-left border-right border-light mtxxl mobile-mtn ptm">
           <div className="type-s">
             <div className="plxxxl prs mbm">
               <APISelectorMenu
@@ -1420,7 +1488,7 @@ return React.createClass({
   renderFooter: function() {
     return (
       <div>
-        <div className={"bg-scrim position-z-almost-front position-fixed-full " + (this.hasModalPanel() ? "fade-in" : "display-none")}></div>
+        <ModalScrim ref="scrim" isActive={this.hasModalPanel()} onClick={this.clearActivePanel} />
         <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
           <Collapsible ref="confirmUndo" revealWhen={this.getActivePanel() === 'confirmUndo'}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
@@ -1430,7 +1498,13 @@ return React.createClass({
 
           <Collapsible ref="confirmDeleteBehavior" revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
-              <p>Are you sure you want to delete this skill?</p>
+              <p>Are you sure you want to delete this action?</p>
+            </ConfirmActionPanel>
+          </Collapsible>
+
+          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.getActivePanel() === 'confirmDeleteBehaviorGroup'}>
+            <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehaviorGroup} onCancelClick={this.hideActivePanel}>
+              <p>Are you sure you want to delete this skill and all of its actions and data types?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
@@ -1471,11 +1545,11 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
-            <div className="box-action">
-              <div className="container phn">
+            <div className="box-action phn">
+              <div className="container">
                 <div className="columns">
-                  <div className="column column-one-quarter mobile-column-full"></div>
-                  <div className="column column-three-quarters  mobile-column-full">
+                  <div className="column column-page-sidebar"></div>
+                  <div className="column column-page-main">
                     <EnvVariableSetter
                       ref="envVariableSetterPanel"
                       vars={this.getEnvVariables()}
@@ -1489,13 +1563,22 @@ return React.createClass({
           </Collapsible>
 
           <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>
-            <EnvVariableAdder
-              ref="envVariableAdderPanel"
-              onCancelClick={this.hideActivePanel}
-              onSave={this.addEnvVar}
-              prompt={this.state.envVariableAdderPrompt}
-              existingNames={this.getEnvVariableNames()}
-            />
+            <div className="box-action phn">
+              <div className="container">
+                <div className="columns">
+                  <div className="column column-page-sidebar"></div>
+                  <div className="column column-page-main">
+                    <EnvVariableAdder
+                      ref="envVariableAdderPanel"
+                      onCancelClick={this.hideActivePanel}
+                      onSave={this.addEnvVar}
+                      prompt={this.state.envVariableAdderPrompt}
+                      existingNames={this.getEnvVariableNames()}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </Collapsible>
 
           <Collapsible revealWhen={this.getActivePanel() === 'behaviorTester'}>
@@ -1503,7 +1586,7 @@ return React.createClass({
               ref="behaviorTester"
               triggers={this.getBehaviorTriggers()}
               params={this.getBehaviorParams()}
-              behaviorId={this.props.behaviorId}
+              behaviorId={this.props.behavior.behaviorId}
               csrfToken={this.props.csrfToken}
               onDone={this.toggleBehaviorTester}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
@@ -1513,13 +1596,24 @@ return React.createClass({
           <Collapsible revealWhen={this.getActivePanel() === 'dataTypeTester'}>
             <DataTypeTester
               ref="dataTypeTester"
-              behaviorId={this.props.behaviorId}
+              behaviorId={this.props.behavior.behaviorId}
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
               onDone={this.toggleDataTypeTester}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
             />
           </Collapsible>
+
+          {this.getOtherSavedParametersInGroup().length > 0 ? (
+            <Collapsible revealWhen={this.getActivePanel() === 'sharedAnswerInputSelector'}>
+              <SharedAnswerInputSelector
+                ref="sharedAnswerInputSelector"
+                onToggle={this.toggleSharedAnswerInputSelector}
+                onSelect={this.addParam}
+                params={this.getOtherSavedParametersInGroup()}
+              />
+            </Collapsible>
+          ) : null}
 
           <Collapsible ref="saving" revealWhen={this.isSaving()}>
             <div className="box-action">
@@ -1535,7 +1629,7 @@ return React.createClass({
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
-            <div className="container ptm">
+            <div className="container container-wide ptm">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
                   <DynamicLabelButton
@@ -1582,8 +1676,9 @@ return React.createClass({
                     >
                       <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
                       <DropdownMenu.Item onClick={this.exportVersion} label="Export this skill" />
-                      <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this skill" />
-                      <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete skill" />
+                      <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this action" />
+                      <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete this action" />
+                      <DropdownMenu.Item onClick={this.confirmDeleteBehaviorGroup} label="Delete the whole skill" />
                     </DropdownMenu>
                   ) : null}
                 </div>
@@ -1620,26 +1715,194 @@ return React.createClass({
   renderHiddenForms: function() {
     return (
       <div>
-        <form className="pbxxxl" ref="deleteBehaviorForm" action="/delete_behavior" method="POST">
+        <form className="pbxxxl" ref="deleteBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.delete().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+          <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
         </form>
 
-        <form className="pbxxxl" ref="cloneBehaviorForm" action="/clone_behavior" method="POST">
+        <form className="pbxxxl" ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.props.behaviorId} />
+          <input type="hidden" name="behaviorGroupIds[0]" value={this.props.behavior.groupId} />
+        </form>
+
+        <form className="pbxxxl" ref="cloneBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.duplicate().url} method="POST">
+          <CsrfTokenHiddenInput value={this.props.csrfToken} />
+          <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
         </form>
       </div>
     );
+  },
+
+  getPageName: function(optionalName, actionCount) {
+    if (optionalName) {
+      return (
+        <span className="type-black">{optionalName}</span>
+      );
+    } else if (actionCount > 1) {
+      return 'Untitled skill';
+    } else if (actionCount === 1 && this.isExistingBehavior()) {
+      return 'Skill';
+    } else if (actionCount === 1 && !this.isExistingBehavior()) {
+      return 'New skill';
+    } else {
+      return 'Edit data type';
+    }
+  },
+
+  getPageSummary: function(actionCount, dataTypeCount) {
+    if (actionCount === 1 && dataTypeCount === 1) {
+      return `1 action, 1 data type`;
+    } else if (actionCount === 1 && dataTypeCount > 1) {
+      return `1 action, ${dataTypeCount} data types`;
+    } else if (actionCount > 1 && dataTypeCount === 0) {
+      return `${actionCount} actions`;
+    } else if (actionCount > 1 && dataTypeCount === 1) {
+      return `${actionCount} actions, 1 data type`;
+    } else if (actionCount > 1 && dataTypeCount > 1) {
+      return `${actionCount} actions, ${dataTypeCount} data types`;
+    } else if (actionCount === 0 && dataTypeCount > 1) {
+      return `${dataTypeCount} data types`;
+    } else if (actionCount === 1 && dataTypeCount === 0 && this.isExistingBehavior()) {
+      return `1 action`;
+    } else if (actionCount === 0 && dataTypeCount === 1 && this.isExistingBehavior()) {
+      return `1 data type`;
+    } else {
+      return null;
+    }
+  },
+
+  getPageDescription: function(optionalDescription, actionCount, dataTypeCount) {
+    var summary = this.getPageSummary(actionCount, dataTypeCount);
+    if (optionalDescription && summary) {
+      return (
+        <span>
+          <span className="mhs">·</span>
+          <span className="type-black">{optionalDescription}</span>
+          <span className="mhs">·</span>
+          <i>{summary}</i>
+        </span>
+      );
+    } else if (optionalDescription && !summary) {
+      return (
+        <span>
+          <span className="mhs">·</span>
+          <span className="type-black">{optionalDescription}</span>
+        </span>
+      );
+    } else if (summary) {
+      return (
+        <span>
+          <span className="mhs">·</span>
+          <i>{summary}</i>
+        </span>
+      );
+    } else {
+      return null;
+    }
+  },
+
+  getPageHeading: function() {
+    var actionCount = this.getActionBehaviors().length;
+    var dataTypeCount = this.getDataTypeBehaviors().length;
+
+    return (
+      <span>
+        <span className="align-m">
+          {this.getPageName(this.state.lastSavedGroupName, actionCount)}
+        </span>
+        <span className="type-m type-regular align-m">
+          {this.getPageDescription(this.state.lastSavedGroupDescription, actionCount, dataTypeCount)}
+        </span>
+      </span>
+    );
+  },
+
+  getBehaviorHeading: function() {
+    if (this.getAllBehaviors().length > 1) {
+      return (
+        <h3 className="type-blue-faded mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h3>
+      );
+    } else {
+      return null;
+    }
+  },
+
+  shouldShowBehaviorSwitcher: function() {
+    return !!this.props.behavior.groupId;
+  },
+
+  renderPageHeadingContent: function() {
+    if (this.shouldShowBehaviorSwitcher()) {
+      return (
+        <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
+          <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
+            <SVGHamburger />
+          </span>
+          <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
+        </button>
+      );
+    } else {
+      return (
+        <h4 className="man">{this.getPageHeading()}</h4>
+      );
+    }
+  },
+
+  renderPageHeading: function() {
+    return (
+      <div>
+        <div ref="pageTitle"
+          className="bg-white-translucent border-bottom position-fixed-top position-z-almost-front"
+          style={{ top: `${this.getHeaderHeight()}px` }}
+        >
+          <div className="container container-wide pts type-weak">
+            {this.renderPageHeadingContent()}
+          </div>
+        </div>
+        <div ref="pageTitleLayoutReplacer" style={{ height: `${this.getFixedTitleHeight()}px` }}></div>
+      </div>
+    );
+  },
+
+  renderBehaviorSwitcher: function() {
+    if (this.shouldShowBehaviorSwitcher()) {
+      return (
+        <div ref="leftPanel" className="position-fixed-left position-z-front bg-white-translucent border-left">
+          <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
+            <BehaviorSwitcher
+              ref="behaviorSwitcher"
+              onToggle={this.toggleBehaviorSwitcher}
+              actionBehaviors={this.getActionBehaviors()}
+              dataTypeBehaviors={this.getDataTypeBehaviors()}
+              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
+              groupId={this.props.behavior.groupId}
+              groupName={this.state.groupName}
+              lastSavedGroupName={this.state.lastSavedGroupName}
+              groupDescription={this.state.groupDescription}
+              lastSavedGroupDescription={this.state.lastSavedGroupDescription}
+              teamId={this.props.teamId}
+              onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
+              onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+              onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
+              onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
+            />
+          </Collapsible>
+        </div>
+      );
+    } else {
+      return null;
+    }
   },
 
   renderNormalBehavior: function() {
     return (
 
       <div>
-        <PageHeading heading={this.getPageHeading()} />
+        {this.renderPageHeading()}
 
-      <form action={this.getFormAction()} method="POST" ref="behaviorForm">
+        {this.renderBehaviorSwitcher()}
+
+        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
         {this.renderHiddenFormValues()}
 
@@ -1647,6 +1910,8 @@ return React.createClass({
         <div className="pbxxxl">
 
           <div className="container pts">
+            {this.getBehaviorHeading()}
+
             <Input
               className="form-input-borderless form-input-m type-bold mbn"
               placeholder="Add a description (optional)"
@@ -1673,7 +1938,7 @@ return React.createClass({
             ref="userInputConfiguration"
             onParamChange={this.updateParamAtIndexWithParam}
             onParamDelete={this.deleteParamAtIndex}
-            onParamAdd={this.addParam}
+            onParamAdd={this.addNewParam}
             onParamNameFocus={this.onParamNameFocus}
             onParamNameBlur={this.onParamNameBlur}
             onEnterKey={this.onParamEnterKey}
@@ -1682,6 +1947,8 @@ return React.createClass({
             triggers={this.getBehaviorTriggers()}
             isFinishedBehavior={this.isFinishedBehavior()}
             behaviorHasCode={this.state.revealCodeEditor}
+            hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
+            onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
@@ -1690,7 +1957,7 @@ return React.createClass({
 
           <Collapsible revealWhen={!this.state.revealCodeEditor}>
             <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
-              <div className="container">
+              <div className="container container-wide">
                 <div className="columns columns-elastic mobile-columns-float">
                   <div className="column column-expand">
                     <p className="mbn">
@@ -1710,8 +1977,8 @@ return React.createClass({
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
 
-            <div className="columns container">
-              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs ptxxl">
+            <div className="columns container container-wide flex-columns mobile-flex-no-columns">
+              <div className="flex-column flex-column-left column column-page-sidebar mbxxl mobile-mbs ptxxl">
                 <CodeEditorHelp
                   sectionNumber={this.hasUserParameters() ? "3" : "2"}
                   isFinishedBehavior={this.isFinishedBehavior()}
@@ -1722,7 +1989,7 @@ return React.createClass({
                 />
               </div>
 
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln">
+              <div className="flex-column flex-column-left column column-page-main column-page-main-wide">
                 {this.renderCodeEditor()}
               </div>
             </div>
@@ -1757,10 +2024,16 @@ return React.createClass({
   renderDataTypeBehavior: function() {
     return (
       <div>
-        <PageHeading heading={this.getPageHeading()} />
+        {this.renderPageHeading()}
+
+        {this.renderBehaviorSwitcher()}
 
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
+
+          <div className="container pts">
+            {this.getBehaviorHeading()}
+          </div>
 
           <DataTypeNameInput
             name={this.getDataTypeName()}
@@ -1776,9 +2049,9 @@ return React.createClass({
 
           <hr className="man thin bg-gray-light" />
 
-          <div className="container pbxxxl">
-            <div className="columns">
-              <div className="column column-one-quarter mobile-column-full ptxl mbxxl mobile-mbs">
+          <div className="container container-wide pbxxxl">
+            <div className="columns flex-columns mobile-flex-no-columns">
+              <div className="flex-column flex-column-left column column-page-sidebar ptxl mbxxl mobile-mbs">
 
                 <SectionHeading number="3">Run code to generate a list</SectionHeading>
 
@@ -1789,7 +2062,7 @@ return React.createClass({
 
               </div>
 
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+              <div className="flex-column flex-column-left column column-page-main column-page-main-wide mbxxl">
                 {this.renderCodeEditor()}
               </div>
             </div>

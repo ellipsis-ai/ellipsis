@@ -4,7 +4,6 @@
   applicationId: String,
   maybeApiId: Option[String],
   maybeRecommendedScope: Option[String],
-  maybeRequiredOAuth2ApiConfigId: Option[String],
   maybeBehaviorId: Option[String]
   )(implicit messages: Messages, r: RequestHeader)
 
@@ -27,7 +26,6 @@
         applicationId: "@applicationId",
         applicationApiId: "@maybeApiId.getOrElse("")",
         recommendedScope: "@maybeRecommendedScope.getOrElse("")",
-        requiredOAuth2ApiConfigId: "@maybeRequiredOAuth2ApiConfigId.getOrElse("")",
         behaviorId: "@maybeBehaviorId.getOrElse("")"
       };
     </script>

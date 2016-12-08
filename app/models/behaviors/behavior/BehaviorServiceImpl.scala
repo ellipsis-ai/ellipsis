@@ -84,6 +84,11 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def allForGroup(group: BehaviorGroup): Future[Seq[Behavior]] = {
+    val action = allForGroupQuery(group.id).result.map(_.map(tuple2Behavior))
+    dataService.run(action)
+  }
+
   def createFor(group: BehaviorGroup, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
     val raw = RawBehavior(IDs.next, group.team.id, Some(group.id), None, maybeImportedId, maybeDataTypeName, DateTime.now)
 
@@ -96,7 +101,7 @@ class BehaviorServiceImpl @Inject() (
 
   def createFor(team: Team, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
     for {
-      group <- dataService.behaviorGroups.createFor("", team)
+      group <- dataService.behaviorGroups.createFor("", "", maybeImportedId, team)
       behavior <- createFor(group, maybeImportedId, maybeDataTypeName)
     } yield behavior
   }

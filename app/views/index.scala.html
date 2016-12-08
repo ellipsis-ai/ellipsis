@@ -1,33 +1,31 @@
 @(
   teamAccess: models.accounts.user.UserTeamAccess,
-  behaviorGroups: Seq[json.BehaviorGroupData],
-  behaviorVersions: Seq[json.BehaviorVersionData]
+  behaviorGroups: Seq[json.BehaviorGroupData]
 )(implicit messages: Messages, r: RequestHeader)
 
 @import play.api.libs.json._
+@import play.filters.csrf._
 @import json.Formatting._
+
 
 @main("View your skills", Some(teamAccess)) {
   @helper.javascriptRouter("jsRoutes")(
-    routes.javascript.BehaviorEditorController.edit
+    routes.javascript.BehaviorEditorController.edit,
+    routes.javascript.ApplicationController.mergeBehaviorGroups,
+    routes.javascript.ApplicationController.deleteBehaviorGroups
   )
   <div id="content" class="content">
     @views.html.behaviorTabs("view", teamAccess)
 
-    <div class="bg-white">
-      <div class="container pvxxl mobile-ptm">
+    <div id="behaviorListContainer"></div>
+    <script>
+      var BehaviorListConfig = {
+        containerId: 'behaviorListContainer',
+        behaviorGroups: @Html(Json.toJson(behaviorGroups).toString),
+        csrfToken: "@CSRF.getToken(r).map(_.value)"
+      };
+    </script>
+    <script data-main='@RemoteAssets.getUrl("javascripts/behavior_list/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
 
-        <div id="behaviorListContainer"></div>
-        <script>
-          var BehaviorListConfig = {
-            containerId: 'behaviorListContainer',
-            behaviorGroups: @Html(Json.toJson(behaviorGroups).toString),
-            behaviorVersions: @Html(Json.toJson(behaviorVersions).toString)
-          };
-        </script>
-        <script data-main='@RemoteAssets.getUrl("javascripts/behavior_list/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
-
-      </div>
-    </div>
   </div>
 }

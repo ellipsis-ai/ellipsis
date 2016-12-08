@@ -30,6 +30,10 @@ class MockAWSLambdaService @Inject() (
 
   override def listFunctionNames: Future[Seq[String]] = Future.successful(Seq())
 
+  def partionedFunctionNames: Future[PartitionedFunctionNames] = {
+    Future.successful(PartitionedFunctionNames(Seq(), Seq(), Seq()))
+  }
+
   override def deleteFunction(functionName: String): Future[Unit] = Future.successful({})
 
   override def deployFunctionFor(

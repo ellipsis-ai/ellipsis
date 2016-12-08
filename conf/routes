@@ -7,11 +7,15 @@ GET         /                                         @controllers.ApplicationCo
 GET         /intro                                    @controllers.ApplicationController.intro(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 GET         /install_skills                           @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 GET         /install_behaviors                        @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
-GET         /new_skill                                @controllers.BehaviorEditorController.newForNormalBehavior(teamId: Option[String] ?= None)
-GET         /new_behavior                             @controllers.BehaviorEditorController.newForNormalBehavior(teamId: Option[String] ?= None)
-GET         /new_data_type                            @controllers.BehaviorEditorController.newForDataType(teamId: Option[String] ?= None)
+POST        /merge_skills                             @controllers.ApplicationController.mergeBehaviorGroups
+POST        /delete_skills                            @controllers.ApplicationController.deleteBehaviorGroups
+
+GET         /new_skill                                @controllers.BehaviorEditorController.newForNormalBehavior(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
+GET         /new_behavior                             @controllers.BehaviorEditorController.newForNormalBehavior(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
+GET         /new_data_type                            @controllers.BehaviorEditorController.newForDataType(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
 GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
 GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
+GET         /edit_behavior_group/:id                  @controllers.BehaviorEditorController.editGroup(id: String)
 GET         /export_skill/:id                         @controllers.BehaviorImportExportController.export(id: String)
 GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
 GET         /import_skill_zip                         @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)
@@ -32,6 +36,8 @@ POST        /test_skill_triggers                      @controllers.BehaviorEdito
 POST        /test_behavior_triggers                   @controllers.BehaviorEditorController.testTriggers
 POST        /test_skill_invocation                    @controllers.BehaviorEditorController.testInvocation
 POST        /test_behavior_invocation                 @controllers.BehaviorEditorController.testInvocation
+POST        /save_skill_name                          @controllers.BehaviorEditorController.saveBehaviorGroupName
+POST        /save_skill_description                   @controllers.BehaviorEditorController.saveBehaviorGroupDescription
 
 GET         /data_types                               @controllers.BehaviorBackedDataTypeController.list(teamId: Option[String] ?= None)
 
@@ -39,7 +45,7 @@ POST        /submit_environment_variables             @controllers.EnvironmentVa
 POST        /delete_environment_variable              @controllers.EnvironmentVariablesController.delete
 
 GET         /list_oauth2_applications                 @controllers.OAuth2ApplicationController.list(teamId: Option[String] ?= None)
-GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(requiredOAuth2ApiConfigId: Option[String] ?= None, teamId: Option[String] ?= None, behaviorId: Option[String] ?= None)
+GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(apiId: Option[String] ?= None, recommendedScope: Option[String] ?= None, teamId: Option[String] ?= None, behaviorId: Option[String] ?= None)
 GET         /edit_oauth2_application/:id              @controllers.OAuth2ApplicationController.edit(id: String, teamId: Option[String] ?= None)
 POST        /save_oauth2_application                  @controllers.OAuth2ApplicationController.save
 
@@ -70,6 +76,8 @@ POST        /admin/redeploy/:versionId                @controllers.AdminControll
 
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
 GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @controllers.VisibilityAPIController.forTeamForDate(token: String, teamName: String, year: String, month: String, day: String)
+
+GET         /health_check                             @controllers.HealthController.check
 
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp

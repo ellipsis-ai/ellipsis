@@ -15,12 +15,14 @@ define(function() {
         paramType: null,
         isSavedForTeam: false,
         isSavedForUser: false,
-        inputId: null
+        inputId: null,
+        groupId: null
       }, props);
 
-      if (!initialProps.paramType) {
-        throw(new Error("New Param object must have a param type set"));
-      }
+      // TODO: We can re-enable this once all published skills have params with param types
+      // if (!initialProps.paramType) {
+      //   throw(new Error("New Param object must have a param type set"));
+      // }
       Object.defineProperties(this, {
         name: {
           value: initialProps.name,
@@ -45,8 +47,20 @@ define(function() {
         inputId: {
           value: initialProps.inputId,
           enumerable: true
+        },
+        groupId: {
+          value: initialProps.groupId,
+          enumerable: true
         }
       });
+    }
+
+    isShared() {
+      return !!this.groupId;
+    }
+
+    isSaved() {
+      return this.isSavedForUser || this.isSavedForTeam;
     }
 
     clone(props) {

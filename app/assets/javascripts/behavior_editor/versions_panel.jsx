@@ -1,6 +1,8 @@
 define(function(require) {
 var React = require('react'),
-  Formatter = require('../formatter');
+  Formatter = require('../formatter'),
+  BehaviorVersion = require('../models/behavior_version'),
+  Select = require('../form/select');
 
 return React.createClass({
   propTypes: {
@@ -10,7 +12,7 @@ return React.createClass({
     onSwitchVersions: React.PropTypes.func.isRequired,
     openMenuWhen: React.PropTypes.bool.isRequired,
     shouldFilterCurrentVersion: React.PropTypes.bool,
-    versions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
+    versions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired
   },
   getVersionText: function(versionIndex) {
     var text;
@@ -90,8 +92,8 @@ return React.createClass({
       this.selectVersionIndex(selectedIndex + 1);
     }
   },
-  onSelectVersion: function(event) {
-    var newIndex = parseInt(event.target.value, 10);
+  onSelectVersion: function(newValue) {
+    var newIndex = parseInt(newValue, 10);
     if (!isNaN(newIndex)) {
       this.selectVersionIndex(newIndex);
     }
@@ -122,10 +124,13 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="box-action">
-        <div className="container phn">
+      <div className="box-action phn">
+        <div className="container">
           <div className="columns">
-            <div className="column">
+            <div className="column column-page-sidebar">
+              <h4 className="type-weak">Select a version to restore</h4>
+            </div>
+            <div className="column column-page-main">
               <div>
                 <button type="button" disabled={this.oldestVersionSelected()}
                   className="mrs mbs"
@@ -145,26 +150,26 @@ return React.createClass({
                 >Current ►|</button>
               </div>
               <div>
-                <select
-                  className="form-select width-30 mrs mbs"
+                <Select
+                  className="width-30 mrs mbs"
                   onChange={this.onSelectVersion}
                   value={this.getSelectedVersionIndex()}
                 >
                   {this.getVersionsMenu()}
-                </select>
+                </Select>
               </div>
-            </div>
-            <div className="column column-right align-r mobile-column-full mobile-align-l">
-              <button type="button" disabled={this.currentVersionSelected()}
-                className={"mrs mbs " + (this.state.isRestoring ? "button-activated" : "")}
-                onClick={this.restore}
-              >
-                <span className="button-labels">
-                  <span className="button-normal-label">Restore</span>
-                  <span className="button-activated-label">Restoring…</span>
-                </span>
-              </button>
-              <button className="button-primary mbs" type="button" onClick={this.cancel}>Cancel</button>
+              <div className="ptxl">
+                <button type="button" disabled={this.currentVersionSelected()}
+                  className={"mrs mbs " + (this.state.isRestoring ? "button-activated" : "")}
+                  onClick={this.restore}
+                >
+                  <span className="button-labels">
+                    <span className="button-normal-label">Restore</span>
+                    <span className="button-activated-label">Restoring…</span>
+                  </span>
+                </button>
+                <button className="button-primary mbs" type="button" onClick={this.cancel}>Cancel</button>
+              </div>
             </div>
           </div>
         </div>

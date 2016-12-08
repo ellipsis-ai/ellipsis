@@ -1,13 +1,13 @@
 define(function(require) {
 var React = require('react'),
-  CSS = require('../css'),
-  Event = require('../event');
+  CSS = require('./css'),
+  Event = require('./event');
 
 var BehaviorEditorDropdownMenu = React.createClass({
   propTypes: {
     children: React.PropTypes.node.isRequired,
     labelClassName: React.PropTypes.string,
-    label: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
+    label: React.PropTypes.node.isRequired,
     onDownArrow: React.PropTypes.func,
     onUpArrow: React.PropTypes.func,
     openWhen: React.PropTypes.bool.isRequired,
@@ -90,7 +90,7 @@ var BehaviorEditorDropdownMenu = React.createClass({
         >
           {this.props.label}
         </button>
-        <div className="position-relative">
+        <div className="popup-dropdown-container position-relative">
           <ul className={
             "type-s popup popup-dropdown-menu " +
             (this.props.menuClassName || "") +

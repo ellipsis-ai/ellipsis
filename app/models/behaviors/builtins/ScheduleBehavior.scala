@@ -25,9 +25,10 @@ case class ScheduleBehavior(
 
   def result: Future[BotResult] = {
     for {
-      maybeTeam <- dataService.teams.find(messageContext.teamId)
+      user <- messageContext.ensureUser(dataService)
+      maybeTeam <- dataService.teams.find(user.teamId)
       maybeScheduledMessage <- maybeTeam.map { team =>
-        dataService.scheduledMessages.maybeCreateFor(text, recurrence, team, maybeChannel)
+        dataService.scheduledMessages.maybeCreateFor(text, recurrence, user, team, maybeChannel)
       }.getOrElse(Future.successful(None))
     } yield {
       val responseText = maybeScheduledMessage.map { scheduledMessage =>

@@ -139,8 +139,8 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="box-action">
-          <div className="container phn">
+        <div>
+          <div>
             {this.getPrompt()}
 
             <div className="form-grouped-inputs">

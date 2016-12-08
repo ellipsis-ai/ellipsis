@@ -1,143 +1,36 @@
 define(function(require) {
   var React = require('react'),
+    BehaviorName = require('./behavior_name'),
+    BehaviorGroup = require('../models/behavior_group'),
+    Collapsible = require('../collapsible'),
+    FixedFooter = require('../fixed_footer'),
     Formatter = require('../formatter'),
-    ImmutableObjectUtils = require('../immutable_object_utils'),
-    Sort = require('../sort'),
     SVGInstalled = require('../svg/installed');
 
   return React.createClass({
+    displayName: "BehaviorList",
     propTypes: {
-      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.shape({
-        id: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired,
-        createdAt: React.PropTypes.number.isRequired
-      })).isRequired,
-      behaviorVersions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
+      csrfToken: React.PropTypes.string.isRequired
     },
 
-    getTriggerTextFromTrigger: function(trigger) {
-      return trigger.requiresMention ?
-        `...${trigger.text}` :
-        trigger.text;
-    },
-
-    getDisplayTriggerFromVersion: function(version) {
-      var firstTriggerIndex = version.triggers.findIndex(function(trigger) {
-        return !!trigger.text && !trigger.isRegex;
-      });
-      if (firstTriggerIndex === -1) {
-        firstTriggerIndex = 0;
-      }
-      var firstTrigger = version.triggers[firstTriggerIndex];
-      var text = firstTrigger && firstTrigger.text ? firstTrigger.text : "";
-      var label = text ?
-        (<span className="link type-monospace">{this.getTriggerTextFromTrigger(firstTrigger)}</span>) :
-        (<span className="link type-italic">(New skill)</span>);
-      return {
-        index: firstTriggerIndex,
-        label: label,
-        text: text
-      };
-    },
-
-    getNonRegexTriggerLabelsFromTriggers: function(triggers) {
-      return triggers.filter(function (trigger) {
-        return !trigger.isRegex;
-      }).map(function (trigger, index) {
-        if (trigger.text) {
-          return (
-            <span className="type-monospace" key={"regularTrigger" + index}>
-              <span className="type-disabled"> · </span>
-              <span>{this.getTriggerTextFromTrigger(trigger)}</span>
-            </span>
-          );
-        } else {
-          return null;
-        }
-      }, this);
-    },
-
-    getRegexTriggerLabelFromTriggers: function(triggers) {
-      var regexTriggerCount = triggers.filter(function(trigger) {
-        return !!trigger.isRegex;
-      }).length;
-
-      var text = regexTriggerCount === 1 ?
-          "also matches another pattern" :
-          "also matches " + regexTriggerCount + " other patterns";
-
-      if (regexTriggerCount > 0) {
+    getImportedStatusFromGroupOrVersion: function(groupOrVersion) {
+      if (groupOrVersion.importedId) {
         return (
-          <span>
-            <span className="type-monospace type-disabled"> · </span>
-            <span className="type-italic">{text}</span>
-          </span>
-        );
-      } else {
-        return null;
-      }
-    },
-
-    getTriggersFromVersion: function(version) {
-      var firstTrigger = this.getDisplayTriggerFromVersion(version);
-      var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTrigger.index);
-      return (
-        <div>
-          <a href={jsRoutes.controllers.BehaviorEditorController.edit(version.behaviorId).url}
-            className="link-block">
-            {firstTrigger.label}
-            {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
-            {this.getRegexTriggerLabelFromTriggers(otherTriggers)}
-          </a>
-        </div>
-      );
-    },
-
-    getDescriptionFromVersion: function(version) {
-      if (version.description) {
-        return (
-          <div className="type-italic type-weak pbxs ">{version.description}</div>
-        );
-      }
-    },
-
-    getImportedStatusFromVersion: function(version) {
-      if (version.importedId) {
-        return (
-          <span title="Installed from ellipsis.ai" className="mtxs display-inline-block" style={{ width: 30, height: 18 }}>
+          <span title="Installed from ellipsis.ai" className="mls display-inline-block align-m" style={{ width: 30, height: 18 }}>
             <SVGInstalled />
           </span>
         );
       }
     },
 
-    getVersions: function() {
-      return this.sortVersionsByFirstTrigger(this.props.behaviorVersions);
-    },
-
     getBehaviorGroups: function() {
-      var groups = [];
-      this.props.behaviorVersions.forEach(version => {
-        var gid = version.groupId;
-        var group = groups.find(ea => ea.id === gid);
-        if (!group) {
-          group = { id: gid, versions: [] };
-          groups.push(group);
-        }
-        group.versions.push(version);
-      });
-      return Sort.arrayAlphabeticalBy(groups, group => {
-        return this.getDisplayTriggerFromVersion(group.versions[0]).text;
-      });
-    },
-
-    sortVersionsByFirstTrigger: function(versions) {
-      return Sort.arrayAlphabeticalBy(versions, (item) => this.getDisplayTriggerFromVersion(item).text);
+      return this.props.behaviorGroups;
     },
 
     getInitialState: function() {
       return {
-        versions: this.getVersions()
+        selectedGroupIds: []
       };
     },
 
@@ -151,54 +44,233 @@ define(function(require) {
       }
     },
 
-    getVersionRow: function(version, versionIndex, group) {
-      var borderAndSpacingClass = versionIndex === 0 ? "border-top pts " : "";
-      borderAndSpacingClass += (versionIndex === group.versions.length - 1 ? "pbs " : "pbxs ");
+    getSelectedGroupIds: function() {
+      return this.state.selectedGroupIds || [];
+    },
+
+    isGroupSelected: function(groupId) {
+      return this.getSelectedGroupIds().indexOf(groupId) >= 0;
+    },
+
+    onGroupSelectionCheckboxChange: function(groupId) {
+      return function(event) {
+        var newGroupIds = this.getSelectedGroupIds().slice();
+        var index = newGroupIds.indexOf(groupId);
+        if (event.target.checked) {
+          if (index === -1) {
+            newGroupIds.push(groupId);
+          }
+        } else {
+          if (index >= 0) {
+            newGroupIds.splice(index, 1);
+          }
+        }
+        this.setState({
+          selectedGroupIds: newGroupIds
+        });
+      }.bind(this);
+    },
+
+    clearSelectedGroups: function() {
+      this.setState({
+        selectedGroupIds: []
+      });
+    },
+
+    runSelectedBehaviorGroupsAction: function(url) {
+      var data = {
+        behaviorGroupIds: this.getSelectedGroupIds()
+      };
+      fetch(url, {
+        credentials: 'same-origin',
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Csrf-Token': this.props.csrfToken
+        },
+        body: JSON.stringify(data)
+      }).then(() => {
+        window.location.reload();
+      });
+    },
+
+    mergeBehaviorGroups: function() {
+      var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
+      this.runSelectedBehaviorGroupsAction(url);
+    },
+
+    deleteBehaviorGroups: function() {
+      var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
+      this.runSelectedBehaviorGroupsAction(url);
+    },
+
+    renderGroupSelectionCheckbox: function(groupId) {
+      return (
+        <input
+          type="checkbox"
+          onChange={this.onGroupSelectionCheckboxChange(groupId)}
+          ref={groupId}
+          key={groupId}
+          checked={this.isGroupSelected(groupId)}
+          className="align-t"
+        />
+      );
+    },
+
+    renderPlaceholderCheckbox: function() {
+      return (
+        <input type="checkbox" disabled={true} className="visibility-hidden align-t" />
+      );
+    },
+
+    getActionsLabel: function(selectedCount) {
+      if (selectedCount === 0) {
+        return "No skills selected";
+      } else if (selectedCount === 1) {
+        return "1 skill selected";
+      } else {
+        return `${selectedCount} skills selected`;
+      }
+    },
+
+    getLabelForDeleteAction: function(selectedCount) {
+      if (selectedCount < 2) {
+        return "Delete skill";
+      } else {
+        return `Delete skills`;
+      }
+    },
+
+    groupHasTitle: function(group) {
+      return !!(group.name || group.description);
+    },
+
+    renderBehaviorVersionRow: function(version, versionIndex, group) {
+      var isFirstRow = versionIndex === 0 && !this.groupHasTitle(group);
+      var borderAndSpacingClass = isFirstRow ? "border-top pts " : "";
+      borderAndSpacingClass += (versionIndex === group.behaviorVersions.length - 1 ? "pbs " : "pbxs ");
       return (
         <div className="column-row" key={`version-${group.id}-${versionIndex}`}>
           <div className={"column column-expand type-s type-wrap-words " + borderAndSpacingClass}>
-            {this.getTriggersFromVersion(version)}
-            {this.getDescriptionFromVersion(version)}
+            <div className="columns columns-elastic">
+              <div className="column column-shrink prs">
+                {isFirstRow ? this.renderGroupSelectionCheckbox(group.id) : this.renderPlaceholderCheckbox()}
+              </div>
+              <div className="column column-expand"><BehaviorName version={version} labelDataType={true} /></div>
+            </div>
           </div>
           <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>
             {Formatter.formatTimestampRelativeIfRecent(version.createdAt)}
-          </div>
-          <div className={"column column-shrink mobile-display-none " + borderAndSpacingClass}>
-            {this.getImportedStatusFromVersion(version)}
+            {this.getImportedStatusFromGroupOrVersion(version)}
           </div>
         </div>
       );
     },
 
-    getBehaviorGroupRow: function(group) {
-      return group.versions.map((ea, i) => {
-        return this.getVersionRow(ea, i, group);
-      });
+    renderBehaviorGroupTitle: function(optionalName, optionalDescription) {
+      if (optionalName && optionalDescription) {
+        return (
+          <h4 className="man">
+            <span>{optionalName}</span>
+            <span className="mhs type-weak">·</span>
+            <span className="type-regular">{optionalDescription}</span>
+          </h4>
+        );
+      } else if (optionalName) {
+        return (
+          <h4 className="man">{optionalName}</h4>
+        );
+      } else if (optionalDescription) {
+        return (
+          <h4 className="type-regular man">{optionalDescription}</h4>
+        );
+      } else {
+        return null;
+      }
     },
 
-    getBehaviorGroupRows: function() {
+    renderBehaviorGroupTitleRow: function(group) {
+      if (this.groupHasTitle(group)) {
+        return (
+          <div className="column-row" key={`group-${group.id}-title`}>
+            <div className="column column-expand border-top pts pbxs">
+              <div className="columns columns-elastic">
+                <div className="column column-shrink prs">{this.renderGroupSelectionCheckbox(group.id)}</div>
+                <div className="column column-expand">{this.renderBehaviorGroupTitle(group.name, group.description)}</div>
+              </div>
+            </div>
+            <div className="column column-shrink border-top pts pbxs align-r mobile-display-none">
+              {this.getImportedStatusFromGroupOrVersion(group)}
+            </div>
+          </div>
+        );
+      } else {
+        return null;
+      }
+    },
+
+    renderBehaviorGroup: function(group) {
+      var versionRows = group.behaviorVersions.map((ea, i) => {
+        return this.renderBehaviorVersionRow(ea, i, group);
+      });
+      return [this.renderBehaviorGroupTitleRow(group)].concat(versionRows);
+    },
+
+    renderBehaviorGroups: function() {
       var groups = this.getBehaviorGroups();
       if (groups.length > 0) {
         return (
           <div className="column-group">
             <div className="column-row type-bold">
-              <div className="column column-expand ptl type-l pbs">What Ellipsis can do</div>
+              <div className="column column-expand type-label align-b pbs">Skills</div>
               <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
             </div>
-            {groups.map(this.getBehaviorGroupRow)}
+            {groups.map(this.renderBehaviorGroup)}
           </div>
         );
       }
     },
 
-    render: function() {
-      if (this.props.behaviorVersions.length > 0) {
+    renderActions: function() {
+      var selectedCount = this.getSelectedGroupIds().length;
+      return (
+        <div>
+          <button type="button"
+            className="button-primary mrs mbs"
+            onClick={this.clearSelectedGroups}
+          >
+            Cancel
+          </button>
+          <button type="button"
+            className="mrs mbs"
+            onClick={this.deleteBehaviorGroups}
+            disabled={selectedCount < 1}
+          >
+            {this.getLabelForDeleteAction(selectedCount)}
+          </button>
+          <button type="button"
+            className="mrl mbs"
+            onClick={this.mergeBehaviorGroups}
+            disabled={selectedCount < 2}
+          >
+            Merge skills
+          </button>
+          <div className="align-button mrs mbs type-italic type-weak">
+            {this.getActionsLabel(selectedCount)}
+          </div>
+        </div>
+      );
+    },
+
+    renderContent: function() {
+      if (this.props.behaviorGroups.length > 0) {
         return (
           <div>
             <p><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>
 
             <div className="columns columns-elastic mobile-columns-float">
-              {this.getBehaviorGroupRows()}
+              {this.renderBehaviorGroups()}
             </div>
           </div>
         );
@@ -210,6 +282,26 @@ define(function(require) {
           </p>
         );
       }
+    },
+
+    render: function() {
+      return (
+        <div>
+          <div>
+            <div className="bg-white container container-c pvxxl mobile-ptm">
+              {this.renderContent()}
+            </div>
+          </div>
+
+          <FixedFooter className="bg-white">
+            <Collapsible revealWhen={this.getSelectedGroupIds().length > 0}>
+              <div className="container container-c ptm">
+                {this.renderActions()}
+              </div>
+            </Collapsible>
+          </FixedFooter>
+        </div>
+      );
     }
   });
 });

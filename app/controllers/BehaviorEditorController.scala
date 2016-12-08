@@ -31,9 +31,13 @@ class BehaviorEditorController @Inject() (
                                            val ws: WSClient
                                          ) extends ReAuthable {
 
-  private def newBehavior(isForDataType: Boolean, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  private def newBehavior(
+                           isForDataType: Boolean,
+                           maybeGroupId: Option[String],
+                           maybeTeamId: Option[String]
+                         ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    BehaviorEditorData.buildForNew(user, maybeTeamId, isForDataType, dataService, ws).flatMap { maybeEditorData =>
+    BehaviorEditorData.buildForNew(user, maybeGroupId, maybeTeamId, isForDataType, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
         Future.successful(Ok(views.html.editBehavior(editorData)))
       }.getOrElse {
@@ -52,9 +56,13 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  def newForNormalBehavior(maybeTeamId: Option[String]) = newBehavior(isForDataType = false, maybeTeamId)
+  def newForNormalBehavior(maybeGroupId: Option[String], maybeTeamId: Option[String]) = {
+    newBehavior(isForDataType = false, maybeGroupId, maybeTeamId)
+  }
 
-  def newForDataType(maybeTeamId: Option[String]) = newBehavior(isForDataType = true, maybeTeamId)
+  def newForDataType(maybeGroupId: Option[String], maybeTeamId: Option[String]) = {
+    newBehavior(isForDataType = true, maybeGroupId, maybeTeamId)
+  }
 
   def edit(id: String, maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
@@ -73,6 +81,21 @@ class BehaviorEditorController @Inject() (
 
           withAuthDiscarded(request, response)
         }
+      }
+    }
+  }
+
+  def editGroup(id: String) = silhouette.SecuredAction.async { implicit request =>
+    for {
+      maybeGroup <- dataService.behaviorGroups.find(id)
+      maybeBehavior <- maybeGroup.map { group =>
+        dataService.behaviors.allForGroup(group).map(_.headOption)
+      }.getOrElse(Future.successful(None))
+    } yield {
+      maybeBehavior.map { behavior =>
+        Redirect(routes.BehaviorEditorController.edit(behavior.id))
+      }.getOrElse {
+        NotFound("")
       }
     }
   }
@@ -104,11 +127,18 @@ class BehaviorEditorController @Inject() (
             val maybeDataTypeName = data.config.dataTypeName
             for {
               teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
+              maybeBehaviorGroup <- data.groupId.map { groupId =>
+                dataService.behaviorGroups.find(groupId)
+              }.getOrElse(Future.successful(None))
               maybeBehavior <- data.behaviorId.map { behaviorId =>
                 dataService.behaviors.find(behaviorId, user)
               }.getOrElse {
                 teamAccess.maybeTargetTeam.map { team =>
-                  dataService.behaviors.createFor(team, None, maybeDataTypeName).map(Some(_))
+                  maybeBehaviorGroup.map { behaviorGroup =>
+                    dataService.behaviors.createFor(behaviorGroup, None, maybeDataTypeName).map(Some(_))
+                  }.getOrElse {
+                    dataService.behaviors.createFor(team, None, maybeDataTypeName).map(Some(_))
+                  }
                 }.getOrElse(Future.successful(None))
               }
               maybeBehaviorVersion <- maybeBehavior.map { behavior =>
@@ -138,7 +168,9 @@ class BehaviorEditorController @Inject() (
                 behaviorVersionData <- maybeBehaviorVersionData
               } yield {
                 if (info.maybeRedirect.contains("newOAuth2Application")) {
-                  Redirect(routes.OAuth2ApplicationController.newApp(maybeRequiredOAuth2ApiConfig.map(_.id), Some(data.teamId), Some(behavior.id)))
+                  val maybeApiId = maybeRequiredOAuth2ApiConfig.map(_.api.id)
+                  val maybeRecommendedScope = maybeRequiredOAuth2ApiConfig.flatMap(_.maybeRecommendedScope)
+                  Redirect(routes.OAuth2ApplicationController.newApp(maybeApiId, maybeRecommendedScope, Some(data.teamId), Some(behavior.id)))
                 } else {
                   render {
                     case Accepts.Html() => Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
@@ -240,6 +272,8 @@ class BehaviorEditorController @Inject() (
           BehaviorVersionData.buildFor(
             version.team.id,
             behavior.maybeGroup.map(_.id),
+            behavior.maybeGroup.map(_.name),
+            behavior.maybeGroup.flatMap(_.maybeDescription),
             Some(behavior.id),
             version.maybeDescription,
             version.functionBody,
@@ -400,6 +434,68 @@ class BehaviorEditorController @Inject() (
       Array()
     }
     Ok(Json.toJson(Array(content)))
+  }
+
+  case class BehaviorGroupNameInfo(groupId: String, name: String)
+
+  private val saveBehaviorGroupNameForm = Form(
+    mapping(
+      "groupId" -> nonEmptyText,
+      "name" -> text
+    )(BehaviorGroupNameInfo.apply)(BehaviorGroupNameInfo.unapply)
+  )
+
+  def saveBehaviorGroupName = silhouette.SecuredAction.async { implicit request =>
+    saveBehaviorGroupNameForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.groupId)
+          maybeSaved <- maybeBehaviorGroup.map { group =>
+            dataService.behaviorGroups.save(group.copy(name = info.name)).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeSaved.map { saved =>
+            Ok("Success")
+          }.getOrElse {
+            NotFound(s"Skill not found: ${info.groupId}")
+          }
+        }
+      }
+    )
+  }
+
+  case class BehaviorGroupDescriptionInfo(groupId: String, description: String)
+
+  private val saveBehaviorGroupDescriptionForm = Form(
+    mapping(
+      "groupId" -> nonEmptyText,
+      "description" -> text
+    )(BehaviorGroupDescriptionInfo.apply)(BehaviorGroupDescriptionInfo.unapply)
+  )
+
+  def saveBehaviorGroupDescription = silhouette.SecuredAction.async { implicit request =>
+    saveBehaviorGroupDescriptionForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.groupId)
+          maybeSaved <- maybeBehaviorGroup.map { group =>
+            dataService.behaviorGroups.save(group.copy(maybeDescription = Some(info.description))).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeSaved.map { saved =>
+            Ok("Success")
+          }.getOrElse {
+            NotFound(s"Skill not found: ${info.groupId}")
+          }
+        }
+      }
+    )
   }
 
 }

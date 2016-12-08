@@ -24,7 +24,9 @@ define(function(require) {
       ).isRequired,
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
       isFinishedBehavior: React.PropTypes.bool.isRequired,
-      behaviorHasCode: React.PropTypes.bool.isRequired
+      behaviorHasCode: React.PropTypes.bool.isRequired,
+      hasSharedAnswers: React.PropTypes.bool.isRequired,
+      onToggleSharedAnswer: React.PropTypes.func.isRequired
     },
 
     onChange: function(index, data) {
@@ -71,21 +73,38 @@ define(function(require) {
       return this.props.triggers.some((trigger) => trigger.isRegex);
     },
 
+    renderReuseParameter: function(optionalProperties) {
+      var props = Object.assign({}, optionalProperties);
+      if (this.props.hasSharedAnswers) {
+        return (
+          <button type="button"
+            className={"button-s " + (props.className || "")}
+            onClick={this.props.onToggleSharedAnswer}
+          >
+            Use a saved answer from another action…
+          </button>
+        );
+      } else {
+        return null;
+      }
+    },
+
     render: function() {
       return (
         <div>
           <Collapsible revealWhen={!this.hasParams()}>
-            <div className="bg-blue-lighter border-top border-blue pvl">
-              <div className="container">
+            <div className="bg-blue-lighter border-top border-blue ptl pbs">
+              <div className="container container-wide">
                 <div className="columns columns-elastic mobile-columns-float">
                   <div className="column column-expand">
-                    <p className="mbn">
+                    <p className="mbs">
                       <span>You can add inputs to ask for additional information from the user, or </span>
                       <span>to clarify what kind of input will come from the trigger.</span>
                     </p>
                   </div>
-                  <div className="column column-shrink align-m mobile-mtm">
-                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>Add inputs</button>
+                  <div className="column column-shrink align-r align-m mobile-align-l display-ellipsis mobile-display-no-ellipsis">
+                    <button type="button" className="button-s mbs mobile-mrm" onClick={this.props.onParamAdd}>Add an input</button>
+                    {this.renderReuseParameter({ className: "mlm mobile-mln mbs" })}
                   </div>
                 </div>
               </div>
@@ -97,7 +116,7 @@ define(function(require) {
             <hr className="mtn full-bleed thin bg-gray-light" />
 
             <div className="columns container">
-              <div className="column column-one-quarter mobile-column-full mbxxl mobile-mbs">
+              <div className="column column-page-sidebar mbxxl mobile-mbs">
                 <SectionHeading number="2">Collect input</SectionHeading>
 
                 <Checklist disabledWhen={this.props.isFinishedBehavior}>
@@ -115,7 +134,7 @@ define(function(require) {
                   </Checklist.Item>
                 </Checklist>
               </div>
-              <div className="column column-three-quarters mobile-column-full pll mobile-pln mbxxl">
+              <div className="column column-page-main mbxxl">
                 <div>
                   <div className="mbm">
                     {this.props.userParams.map((param, paramIndex) => (
@@ -140,9 +159,10 @@ define(function(require) {
                     ))}
                   </div>
                   <div>
-                    <button type="button" className="button-s" onClick={this.props.onParamAdd}>
+                    <button type="button" className="button-s mrm mbs" onClick={this.props.onParamAdd}>
                       Add another input
                     </button>
+                    {this.renderReuseParameter({ className: "mbs" })}
                   </div>
                 </div>
               </div>

@@ -36,6 +36,10 @@ define(function() {
       return names;
     }
 
+    get displayText() {
+      return this.requiresMention ? `...${this.text}` : this.text;
+    }
+
     hasNonRegexParams() {
       return !this.isRegex && /\{.+?\}/.test(this.text);
     }

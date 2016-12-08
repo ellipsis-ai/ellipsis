@@ -1,23 +1,11 @@
 package json
 
-import play.api.libs.json.{JsPath, Json, Reads, Writes}
-import play.api.libs.functional.syntax._
+import play.api.libs.json.Json
 
 object Formatting {
 
-  implicit lazy val behaviorParameterTypeReads: Reads[BehaviorParameterTypeData] = (
-    (JsPath \ "id").read[String] and
-      (JsPath \ "name").read[String] and
-      (JsPath \ "needsConfig").readNullable[Boolean] and
-      (JsPath \ "behavior").lazyReadNullable(behaviorVersionReads)
-    )(BehaviorParameterTypeData.apply _)
-
-  implicit lazy val behaviorParameterTypeWrites: Writes[BehaviorParameterTypeData] = (
-    (JsPath \ "id").write[String] and
-      (JsPath \ "name").write[String] and
-      (JsPath \ "needsConfig").writeNullable[Boolean] and
-      (JsPath \ "behavior").lazyWriteNullable(behaviorVersionWrites)
-    )(unlift(BehaviorParameterTypeData.unapply))
+  implicit val behaviorParameterTypeReads = Json.reads[BehaviorParameterTypeData]
+  implicit val behaviorParameterTypeWrites = Json.writes[BehaviorParameterTypeData]
 
   implicit val behaviorParameterReads = Json.reads[BehaviorParameterData]
   implicit val behaviorParameterWrites = Json.writes[BehaviorParameterData]
@@ -55,11 +43,11 @@ object Formatting {
   implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
   implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
 
-  implicit val behaviorCategoryReads = Json.reads[BehaviorCategory]
-  implicit val behaviorCategoryWrites = Json.writes[BehaviorCategory]
+  implicit val behaviorGroupConfigReads = Json.reads[BehaviorGroupConfig]
+  implicit val behaviorGroupConfigWrites = Json.writes[BehaviorGroupConfig]
 
-  implicit val installedBehaviorReads = Json.reads[InstalledBehaviorData]
-  implicit val installedBehaviorWrites = Json.writes[InstalledBehaviorData]
+  implicit val installedBehaviorReads = Json.reads[InstalledBehaviorGroupData]
+  implicit val installedBehaviorWrites = Json.writes[InstalledBehaviorGroupData]
 
   implicit val environmentVariableReads = Json.reads[EnvironmentVariableData]
   implicit val environmentVariableWrites = Json.writes[EnvironmentVariableData]

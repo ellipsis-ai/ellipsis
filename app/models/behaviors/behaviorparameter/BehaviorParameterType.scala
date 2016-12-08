@@ -2,6 +2,7 @@ package models.behaviors.behaviorparameter
 
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageEvent
 import models.team.Team
@@ -351,6 +352,14 @@ object BehaviorParameterType {
 
   def allFor(team: Team, dataService: DataService): Future[Seq[BehaviorParameterType]] = {
     dataService.behaviors.dataTypesForTeam(team).map { behaviorBacked =>
+      allBuiltin ++ behaviorBacked.map(BehaviorBackedDataType.apply)
+    }
+  }
+
+  def allFor(maybeBehaviorGroup: Option[BehaviorGroup], dataService: DataService): Future[Seq[BehaviorParameterType]] = {
+    maybeBehaviorGroup.map { group =>
+      dataService.behaviors.dataTypesForGroup(group)
+    }.getOrElse(Future.successful(Seq())).map { behaviorBacked =>
       allBuiltin ++ behaviorBacked.map(BehaviorBackedDataType.apply)
     }
   }

@@ -30,6 +30,8 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
           BehaviorVersionData.buildFor(
             behavior.team.id,
             behavior.maybeGroup.map(_.id),
+            behavior.maybeGroup.map(_.name),
+            behavior.maybeGroup.flatMap(_.maybeDescription),
             Some(behavior.id),
             None,
             "",

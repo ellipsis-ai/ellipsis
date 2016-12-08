@@ -4,19 +4,21 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
-      installedBehaviors: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      teamId: React.PropTypes.string.isRequired,
+      installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       csrfToken: React.PropTypes.string.isRequired
     },
 
-    behaviorIsImported: function(importId) {
-      return this.getInstalledBehaviors().some(function(ea) {
-        return ea.importedId === importId;
+    getLocalId: function(group) {
+      const installed = this.getInstalledBehaviorGroups().find(ea => {
+        return ea.importedId === group.publishedId;
       });
+      return installed ? installed.groupId : null;
     },
 
-    getInstalledBehaviors: function() {
-      return this.state.installedBehaviors || [];
+    getInstalledBehaviorGroups: function() {
+      return this.state.installedBehaviorGroups || [];
     },
 
     getBehaviorGroups: function() {
@@ -24,41 +26,16 @@ define(function(require) {
     },
 
     getInitialState: function() {
-      var installed = this.props.installedBehaviors;
       return {
-        installedBehaviors: installed,
-        behaviorGroups: this.updateBehaviorGroupsWithLocalIds(this.props.behaviorGroups, function(publishedId) {
-          var match = installed.find(function(ea) {
-            return ea.importedId === publishedId;
-          });
-          return match ? match.behaviorId : null;
-        })
+        installedBehaviorGroups: this.props.installedBehaviorGroups,
+        behaviorGroups: this.props.behaviorGroups
       };
     },
 
-    updateBehaviorGroupsWithLocalIds: function(groups, findMatchingLocalId) {
-      return groups.map(function(group) {
-        var versionsWithLocalIds = group.behaviorVersions.map(function(behaviorVersion) {
-          var localId = findMatchingLocalId(behaviorVersion.config.publishedId);
-          if (localId !== null) {
-            return Object.assign({}, behaviorVersion, { localBehaviorId: localId });
-          } else {
-            return behaviorVersion;
-          }
-        }, this);
-        return Object.assign({}, group, { behaviorVersions: versionsWithLocalIds });
-      }, this);
-    },
-
-    onBehaviorImport: function(importId, localId) {
+    onBehaviorGroupImport: function(installedGroup) {
       var newState = {
-        behaviorGroups: this.updateBehaviorGroupsWithLocalIds(this.getBehaviorGroups(), function(publishedId) {
-          return publishedId === importId ? localId : null;
-        })
+        installedBehaviorGroups: this.getInstalledBehaviorGroups().concat([installedGroup])
       };
-      if (!this.behaviorIsImported(importId)) {
-        newState.installedBehaviors = this.state.installedBehaviors.concat({ behaviorId: localId, importedId: importId });
-      }
       this.setState(newState);
     },
 
@@ -72,9 +49,10 @@ define(function(require) {
                 csrfToken={this.props.csrfToken}
                 name={group.name}
                 description={group.description}
-                behaviors={group.behaviorVersions}
-                checkImported={this.behaviorIsImported}
-                onBehaviorImport={this.onBehaviorImport}
+                groupData={group}
+                teamId={this.props.teamId}
+                localId={this.getLocalId(group)}
+                onBehaviorGroupImport={this.onBehaviorGroupImport}
               />
             );
           }, this)}

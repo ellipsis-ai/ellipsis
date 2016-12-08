@@ -9,21 +9,14 @@ import scala.concurrent.Future
 case class BehaviorParameterTypeData(
                                       id: String,
                                       name: String,
-                                      needsConfig: Option[Boolean],
-                                      behavior: Option[BehaviorVersionData]
-                                    ) {
-
-  def copyWithAttachedDataTypeFrom(dataTypes: Seq[BehaviorVersionData]): BehaviorParameterTypeData = {
-    copy(behavior = dataTypes.find(_.config.publishedId.contains(id)))
-  }
-
-}
+                                      needsConfig: Option[Boolean]
+                                    )
 
 object BehaviorParameterTypeData {
 
   def from(paramType: BehaviorParameterType, dataService: DataService): Future[BehaviorParameterTypeData] = {
     paramType.needsConfig(dataService).map { needsConfig =>
-      BehaviorParameterTypeData(paramType.id, paramType.name, Some(needsConfig), None)
+      BehaviorParameterTypeData(paramType.id, paramType.name, Some(needsConfig))
     }
   }
 
