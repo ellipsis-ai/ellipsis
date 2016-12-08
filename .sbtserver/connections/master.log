@@ -1,0 +1,7 @@
+New log file opened at Thu Dec 08 10:09:51 PST 2016 by 32573@veloce.local
+Taking next connection to: 59238
+New client attempting to connect on port: 59290-59238
+  Address = /172.16.0.17:59238
+This client on port 59290 has uuid 5f82a393-56c4-4508-a8fb-5760ab87e541 configName play-fork-run humanReadableName Play Fork Run protocolVersion 1 featureTags Vector()
+Connected Clients: play-fork-run-5f82a393-56c4-4508-a8fb-5760ab87e541
+Taking next connection to: 59238

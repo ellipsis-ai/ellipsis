@@ -7,6 +7,7 @@ core/
 /modules
 /project/project
 /project/target
+/project/.sbtserver
 /target
 tmp/
 test-result
@@ -29,4 +30,3 @@ tags
 .ctags
 actw
 .byebug_history
-
