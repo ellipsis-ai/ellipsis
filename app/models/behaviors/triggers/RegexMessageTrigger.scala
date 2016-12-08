@@ -24,9 +24,6 @@ case class RegexMessageTrigger(
 
   val shouldTreatAsRegex: Boolean = true
 
-  val sortRank: Int = 2
-  val sortKey: String = pattern
-
   protected def paramIndexMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]] = {
     0.to(regex.pattern.matcher("").groupCount()).map { i =>
       Some(i)

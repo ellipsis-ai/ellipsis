@@ -16,8 +16,6 @@ trait MessageTrigger extends Trigger {
   val requiresBotMention: Boolean
   val shouldTreatAsRegex: Boolean
   val isCaseSensitive: Boolean
-  val sortRank: Int
-  val sortKey: String
 
   protected def paramIndexMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]]
 

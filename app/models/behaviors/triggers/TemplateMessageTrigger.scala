@@ -16,17 +16,7 @@ case class TemplateMessageTrigger(
 
   val shouldTreatAsRegex: Boolean = false
 
-  val sortRank: Int = 1
-
   val pattern: String = template
-
-  val sortKey: String = {
-    if ("""^[A-Za-z0-9]""".r.findFirstMatchIn(pattern).isDefined) {
-      pattern
-    } else {
-      "~" ++ pattern
-    }
-  }
 
   def regex: Regex = {
     var pattern = template
