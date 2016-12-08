@@ -4,14 +4,13 @@ define(function(require) {
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
     SVGInstalling = require('../svg/installing'),
-    Behavior = require('./behavior');
+    BehaviorName = require('../behavior_list/behavior_name');
 
   return React.createClass({
     propTypes: {
       groupData: React.PropTypes.object.isRequired,
       localId: React.PropTypes.string,
       teamId: React.PropTypes.string.isRequired,
-      behaviors: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       description: React.PropTypes.string,
       name: React.PropTypes.string.isRequired,
@@ -54,7 +53,7 @@ define(function(require) {
     },
 
     getBehaviors: function() {
-      return this.props.behaviors || [];
+      return this.props.groupData.behaviorVersions.filter((version) => !version.isDataType()) || [];
     },
 
     getGithubLink: function() {
@@ -132,17 +131,18 @@ define(function(require) {
                   {this.isImported() ? /* TODO: update/re-install buttons */
                     "" : ""}
                 </h4>
+                <div className="type-s">
                 {this.getBehaviors().map(function(behavior, index) {
                   return (
-                    <Behavior
+                    <BehaviorName
                       key={"behavior" + index}
-                      behaviorData={behavior}
-                      csrfToken={this.props.csrfToken}
-                      triggers={behavior.triggers}
-                      onBehaviorGroupImport={this.props.onBehaviorGroupImport}
+                      version={behavior}
+                      disableLink={true}
+                      limitTriggers={true}
                     />
                   );
                 }, this)}
+                </div>
               </div>
             </div>
           </form>

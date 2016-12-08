@@ -51,7 +51,6 @@ define(function(require) {
                 description={group.description}
                 groupData={group}
                 teamId={this.props.teamId}
-                behaviors={group.behaviorVersions}
                 localId={this.getLocalId(group)}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
               />
