@@ -133,7 +133,7 @@ define(function(require) {
                   {this.isImported() ? /* TODO: update/re-install buttons */
                     "" : ""}
                 </h3>
-                <div className="type-s">
+                <div className="type-s display-limit-width">
                 {this.getBehaviors().map(function(behavior, index) {
                   return (
                     <BehaviorName
