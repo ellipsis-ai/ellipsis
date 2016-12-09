@@ -35,6 +35,7 @@ var React = require('react'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
+  UniqueBy = require('../unique_by'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
@@ -114,12 +115,13 @@ return React.createClass({
 
   getOtherSavedParametersInGroup: function() {
     const currentInputIds = this.getBehaviorParams().map(ea => ea.inputId);
-    return this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
+    const all = this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
       return arr.concat(ea.params);
     }, [])
       .filter(ea => currentInputIds.indexOf(ea.inputId) === -1)
       .filter(ea => ea.isSaved())
       .map(ea => ea.clone({ groupId: this.props.behavior.groupId }));
+    return UniqueBy.forArray(all, 'inputId');
   },
 
   getAllOAuth2Applications: function() {

@@ -4,7 +4,8 @@ jest
   .unmock('../app/assets/javascripts/models/param')
   .unmock('../app/assets/javascripts/models/response_template')
   .unmock('../app/assets/javascripts/models/trigger')
-  .unmock('../app/assets/javascripts/sort');
+  .unmock('../app/assets/javascripts/sort')
+  .unmock('../app/assets/javascripts/unique_by');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
@@ -294,6 +295,47 @@ describe('BehaviorEditor', () => {
       let newParam = editor.createNewParam({ name: "clownCar", question: "how did twitter propel itself?" });
       expect(newParam.name).toEqual("clownCar");
       expect(newParam.question).toEqual("how did twitter propel itself?");
+    });
+  });
+
+  describe('getOtherSavedParametersInGroup', () => {
+    it("returns the (unique by inputId) saved params", () => {
+      const groupId = editorConfig.behavior.groupId;
+      const inputId = "abcd12345";
+      const savedAnswerParam = {
+        name: 'foo',
+        question: '',
+        paramType: editorConfig.paramTypes[0],
+        isSavedForTeam: false,
+        isSavedForUser: true,
+        inputId: inputId,
+        groupId: groupId
+      };
+      const otherBehaviorsInGroup = [
+          {
+            behaviorId: "2",
+            functionBody: "",
+            responseTemplate: "",
+            params: [savedAnswerParam],
+            triggers: [],
+            config: {},
+            knownEnvVarsUsed: [],
+            groupId: groupId
+          },
+          {
+            behaviorId: "3",
+            functionBody: "",
+            responseTemplate: "",
+            params: [savedAnswerParam],
+            triggers: [],
+            config: {},
+            knownEnvVarsUsed: [],
+            groupId: groupId
+          }
+        ].map(ea => BehaviorVersion.fromJson(ea));
+      let config = Object.assign({}, editorConfig, { otherBehaviorsInGroup: otherBehaviorsInGroup });
+      let editor = createEditor(config);
+      expect(editor.getOtherSavedParametersInGroup()).toEqual([otherBehaviorsInGroup[0].params[0]]);
     });
   });
 });
