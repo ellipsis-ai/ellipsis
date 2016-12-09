@@ -51,7 +51,10 @@ define(function(require) {
           triggerErrorOccurred: false
         });
       }
-      if (JSON.stringify(this.props.params) !== JSON.stringify(newProps.params)) {
+      if (this.props.params.some((param, index) => {
+        return !newProps.params[index] ||
+          !param.isSameNameAndTypeAs(newProps.params[index]);
+      })) {
         this.setState({
           paramValues: {}
         });

@@ -63,6 +63,11 @@ define(function() {
       return this.isSavedForUser || this.isSavedForTeam;
     }
 
+    isSameNameAndTypeAs(otherParam) {
+      return this.name === otherParam.name &&
+        this.paramType.id === otherParam.paramType.id;
+    }
+
     clone(props) {
       return new Param(Object.assign({}, this, props));
     }
