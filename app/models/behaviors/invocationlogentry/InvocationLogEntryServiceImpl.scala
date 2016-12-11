@@ -52,8 +52,6 @@ class InvocationLogEntryServiceImpl @Inject() (
   val all = TableQuery[InvocationLogEntriesTable]
   val allWithVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
 
-  val truncateDate = SimpleFunction.binary[String, LocalDateTime, LocalDateTime]("date_trunc")
-
   type TupleType = (RawInvocationLogEntry, BehaviorVersionQueries.TupleType)
 
   def tuple2Entry(tuple: TupleType): InvocationLogEntry = {
@@ -71,47 +69,59 @@ class InvocationLogEntryServiceImpl @Inject() (
     )
   }
 
-  def countsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
-    val action = allWithVersion.
-      filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
+  def uncompiledCountsForDateQuery(date: Rep[LocalDateTime]) = {
+    allWithVersion.
+      filter { case(entry, _) => entry.createdAt.trunc("day") === date }.
       groupBy { case(entry, ((version, _), ((behavior, team), _))) => team.id }.
       map { case(teamId, q) =>
         (teamId, q.length)
-      }.
-      result
+      }
+  }
+  val countsForDateQuery = Compiled(uncompiledCountsForDateQuery _)
+
+  def countsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
+    val action = countsForDateQuery(date).result
     dataService.run(action)
   }
 
-  def uniqueInvokingUserCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
-    val action = allWithVersion.
-      filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
+  def uncompiledUniqueInvokingUserCountsForDateQuery(date: Rep[LocalDateTime]) = {
+    allWithVersion.
+      filter { case(entry, _) => entry.createdAt.trunc("day") === date }.
       groupBy { case(entry, ((version, _), ((behavior, team), _))) => (team.id, entry.maybeUserIdForContext.getOrElse("<no user>")) }.
       map { case((teamId, userId), q) =>
         (teamId, userId, 1)
       }.
       groupBy { case(teamId, _, _) => teamId }.
-      map { case(teamId, q) => (teamId, q.map(_._3).sum.getOrElse(0)) }.
-      result
+      map { case(teamId, q) => (teamId, q.map(_._3).sum.getOrElse(0)) }
+  }
+  val uniqueInvokingUserCountsForDateQuery = Compiled(uncompiledUniqueInvokingUserCountsForDateQuery _)
+
+  def uniqueInvokingUserCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
+    val action = uniqueInvokingUserCountsForDateQuery(date).result
     dataService.run(action)
   }
 
-  def uniqueInvokedBehaviorCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
-    val action = allWithVersion.
-      filter { case(entry, _) => truncateDate("day", entry.createdAt) === truncateDate("day", date) }.
+  def uncompiledUniqueInvokedBehaviorCountsForDateQuery(date: Rep[LocalDateTime]) = {
+    allWithVersion.
+      filter { case(entry, _) => entry.createdAt.trunc("day") === date }.
       groupBy { case(entry, ((version, _), ((behavior, team), _))) => (team.id, behavior.id) }.
       map { case((teamId, behaviorId), q) =>
         (teamId, behaviorId, 1)
       }.
       groupBy { case(teamId, _, _) => teamId }.
-      map { case(teamId, q) => (teamId, q.map(_._3).sum.getOrElse(0)) }.
-      result
+      map { case(teamId, q) => (teamId, q.map(_._3).sum.getOrElse(0)) }
+  }
+  val uniqueInvokedBehaviorCountsForDateQuery = Compiled(uncompiledUniqueInvokedBehaviorCountsForDateQuery _)
+
+  def uniqueInvokedBehaviorCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
+    val action = uniqueInvokedBehaviorCountsForDateQuery(date).result
     dataService.run(action)
   }
 
   def uncompiledForTeamForDateQuery(teamId: Rep[String], date: Rep[LocalDateTime]) = {
     allWithVersion.
       filter { case(entry, ((version, user), ((behavior, team), _))) => teamId === team.id}.
-      filter { case(entry, _) => truncateDate("day", entry.createdAt) === date }
+      filter { case(entry, _) => entry.createdAt.trunc("day") === date }
   }
   val forTeamForDateQuery = Compiled(uncompiledForTeamForDateQuery _)
 
