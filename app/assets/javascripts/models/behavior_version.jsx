@@ -13,6 +13,7 @@ define(function(require) {
         functionBody: { value: props.functionBody, enumerable: true },
         responseTemplate: { value: props.responseTemplate, enumerable: true },
         params: { value: props.params, enumerable: true },
+        simpleListName: { value: props.simpleListName, enumerable: true },
         triggers: { value: props.triggers, enumerable: true },
         config: { value: props.config, enumerable: true },
         knownEnvVarsUsed: { value: props.knownEnvVarsUsed, enumerable: true },

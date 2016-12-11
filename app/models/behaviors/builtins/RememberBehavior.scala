@@ -38,7 +38,7 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
             qaExtractor.possibleAnswerContent,
             Seq(),
             triggerData,
-            BehaviorConfig(None, None, None, None, None, None),
+            BehaviorConfig(None, None, None, None, None, None, None),
             None,
             None,
             None,

@@ -28,6 +28,7 @@ import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.savedanswer.SavedAnswerService
+import models.storage.simplelist.SimpleListService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -65,6 +66,7 @@ trait DataService {
   val collectedParameterValues: CollectedParameterValueService
   val scheduledMessages: ScheduledMessageService
   val invocationLogEntries: InvocationLogEntryService
+  val simpleLists: SimpleListService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T

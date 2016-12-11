@@ -37,6 +37,8 @@ case class BehaviorVersion(
 
   def description: String = maybeDescription.getOrElse("")
 
+  def maybeSimpleListName: Option[String] = None
+
   def functionBody: String = maybeFunctionBody.getOrElse("")
 
   def functionName: String = id

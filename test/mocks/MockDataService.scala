@@ -30,6 +30,7 @@ import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.savedanswer.SavedAnswerService
+import models.storage.simplelist.SimpleListService
 import models.team.TeamService
 import org.scalatest.mock.MockitoSugar
 import slick.dbio.DBIO
@@ -70,6 +71,7 @@ class MockDataService extends DataService with MockitoSugar {
   val collectedParameterValues = mock[CollectedParameterValueService]
   val scheduledMessages = mock[ScheduledMessageService]
   val invocationLogEntries = mock[InvocationLogEntryService]
+  val simpleLists = mock[SimpleListService]
 
   private def dontCallMe = throw new Exception("Don't call me")
 

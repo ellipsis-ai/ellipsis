@@ -163,7 +163,7 @@ object BehaviorVersionData {
         }
         val requiredOAuth2ApiConfigData = requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
         val requiredSimpleTokenApiData = requiredSimpleTokenApis.map(ea => RequiredSimpleTokenApiData.from(ea))
-        val config = BehaviorConfig(maybePublishedId, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
+        val config = BehaviorConfig(maybePublishedId, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName, behaviorVersion.maybeSimpleListName)
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           behavior.maybeGroup.map(_.id),

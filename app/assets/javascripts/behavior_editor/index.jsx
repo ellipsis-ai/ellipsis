@@ -37,6 +37,7 @@ var React = require('react'),
   TriggerHelp = require('./trigger_help'),
   UniqueBy = require('../unique_by'),
   UserInputConfiguration = require('./user_input_configuration'),
+  SimpleListConfiguration = require('./simple_list_configuration'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
   SVGWarning = require('../svg/warning'),
@@ -470,15 +471,24 @@ return React.createClass({
     return this.state.versions;
   },
 
-  getResponseTemplateSectionNumber: function() {
+  getCodeEditorSectionNumber: function() {
     var hasParams = this.hasUserParameters();
-    var hasCode = this.state.revealCodeEditor;
-    if (hasParams && hasCode) {
-      return "4";
-    } else if (hasParams || hasCode) {
-      return "3";
+    var hasSimpleList = this.state.isEditingListName;
+    if (hasSimpleList) {
+      return 4;
+    } else if (hasParams) {
+      return 3;
     } else {
-      return "2";
+      return 2;
+    }
+  },
+
+  getResponseTemplateSectionNumber: function() {
+    var codeEditorSectionNumber = this.getCodeEditorSectionNumber();
+    if (this.state.revealCodeEditor) {
+      return codeEditorSectionNumber + 1;
+    } else {
+      return codeEditorSectionNumber;
     }
   },
 
@@ -742,6 +752,7 @@ return React.createClass({
     });
     this.setState({
       behavior: newBehavior,
+      isEditingListName: !!version.config.simpleListName,
       revealCodeEditor: !!version.functionBody,
       justSaved: false
     }, optionalCallback);
@@ -902,6 +913,12 @@ return React.createClass({
 
   toggleBoilerplateHelp: function() {
     this.toggleActivePanel('helpForBoilerplateParameters');
+  },
+
+  toggleEditSimpleListName: function() {
+    this.setState({
+      isEditingListName: !this.state.isEditingListName
+    });
   },
 
   toggleCodeEditor: function() {
@@ -1123,6 +1140,7 @@ return React.createClass({
     this.setState({
       behavior: newBehavior,
       versions: newVersions,
+      isEditingListName: !!this.behavior.config.simpleListName,
       revealCodeEditor: this.shouldRevealCodeEditor()
     }, () => {
       this.hideActivePanel();
@@ -1313,6 +1331,10 @@ return React.createClass({
     });
   },
 
+  onSimpleListNameChange: function(name) {
+    this.setConfigProperty('simpleListName', name);
+  },
+
   resetNotificationsImmediately: function() {
     var newNotifications = this.buildNotifications();
     var newKinds = newNotifications.map(ea => ea.kind);
@@ -1359,6 +1381,7 @@ return React.createClass({
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
       envVariables: this.getInitialEnvVariables(),
+      isEditingListName: !!initialBehavior.config.simpleListName,
       revealCodeEditor: this.shouldRevealCodeEditor(),
       hasModifiedTemplate: !!(this.props.behavior.responseTemplate && this.props.behavior.responseTemplate.text),
       notifications: this.buildNotifications(),
@@ -1953,6 +1976,16 @@ return React.createClass({
             onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
           />
 
+          <SimpleListConfiguration
+            ref="simpleListConfiguration"
+            behaviorHasParams={this.getBehaviorParams().length > 0}
+            listName={this.getBehaviorConfig()['simpleListName']}
+            isEditingListName={this.state.isEditingListName}
+            existingLists={[]}
+            onListNameChange={this.onSimpleListNameChange}
+            onEditListName={this.toggleEditSimpleListName}
+          />
+
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
             <hr className="man thin bg-gray-light" />
           </Collapsible>
@@ -1982,7 +2015,7 @@ return React.createClass({
             <div className="columns container container-wide flex-columns mobile-flex-no-columns">
               <div className="flex-column flex-column-left column column-page-sidebar mbxxl mobile-mbs ptxxl">
                 <CodeEditorHelp
-                  sectionNumber={this.hasUserParameters() ? "3" : "2"}
+                  sectionNumber={this.getCodeEditorSectionNumber().toString()}
                   isFinishedBehavior={this.isFinishedBehavior()}
                   functionBody={this.getBehaviorFunctionBody()}
                   onToggleHelp={this.toggleBoilerplateHelp}
@@ -2008,7 +2041,7 @@ return React.createClass({
             onChangeForcePrivateResponse={this.updateForcePrivateResponse}
             onCursorChange={this.ensureCursorVisible}
             userParams={this.getBehaviorParams()}
-            sectionNumber={this.getResponseTemplateSectionNumber()}
+            sectionNumber={this.getResponseTemplateSectionNumber().toString()}
           />
 
         </div> {/* End of container */}

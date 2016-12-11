@@ -302,7 +302,8 @@ class BehaviorEditorController @Inject() (
               maybeRequiredOAuth2ApiConfigsData,
               maybeRequiredSimpleTokenApisData,
               Some(version.forcePrivateResponse),
-              behavior.maybeDataTypeName
+              behavior.maybeDataTypeName,
+              version.maybeSimpleListName
             ),
             behavior.maybeImportedId,
             None,
@@ -492,6 +493,38 @@ class BehaviorEditorController @Inject() (
             Ok("Success")
           }.getOrElse {
             NotFound(s"Skill not found: ${info.groupId}")
+          }
+        }
+      }
+    )
+  }
+
+  case class EnsureSimpleListInfo(name: String, teamId: String)
+
+  private val ensureSimpleListForm = Form(
+    mapping(
+      "name" -> nonEmptyText,
+      "teamId" -> nonEmptyText
+    )(EnsureSimpleListInfo.apply)(EnsureSimpleListInfo.unapply)
+  )
+
+  def ensureSimpleList = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    ensureSimpleListForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
+          maybeList <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.simpleLists.ensureFor(team, info.name).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeList.map { list =>
+            Ok("Success")
+          }.getOrElse {
+            NotFound("")
           }
         }
       }

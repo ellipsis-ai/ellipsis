@@ -31,6 +31,7 @@ import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.savedanswer.SavedAnswerService
+import models.storage.simplelist.SimpleListService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -68,7 +69,8 @@ class PostgresDataService @Inject() (
                                       val conversationsProvider: Provider[ConversationService],
                                       val collectedParameterValuesProvider: Provider[CollectedParameterValueService],
                                       val scheduledMessagesProvider: Provider[ScheduledMessageService],
-                                      val invocationLogEntriesProvider: Provider[InvocationLogEntryService]
+                                      val invocationLogEntriesProvider: Provider[InvocationLogEntryService],
+                                      val simpleListsProvider: Provider[SimpleListService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -101,6 +103,7 @@ class PostgresDataService @Inject() (
   val collectedParameterValues = collectedParameterValuesProvider.get
   val scheduledMessages = scheduledMessagesProvider.get
   val invocationLogEntries = invocationLogEntriesProvider.get
+  val simpleLists = simpleListsProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)
