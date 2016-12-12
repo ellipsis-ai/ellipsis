@@ -1,5 +1,6 @@
 package models.behaviors.behaviorparameter
 
+import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
@@ -156,9 +157,15 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   }
 
   def isValid(text: String, context: BehaviorParameterContext) = {
-    val json = Json.parse(text)
-    extractValidValueFrom(json).map { validValue =>
-      isSavedAnswerValid(validValue, context)
+    val maybeJson = try {
+      Some(Json.parse(text))
+    } catch {
+      case e: JsonParseException => None
+    }
+    maybeJson.flatMap { json =>
+      extractValidValueFrom(json).map { validValue =>
+        isSavedAnswerValid(validValue, context)
+      }
     }.getOrElse {
       cachedValidValueFor(text, context).map { _ =>
         Future.successful(true)
