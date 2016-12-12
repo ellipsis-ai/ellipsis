@@ -577,18 +577,11 @@ return React.createClass({
     return mainHeader ? mainHeader.offsetHeight : 0;
   },
 
-  _fixHeaderHeight: function() {
+  fixHeaderHeight: debounce(function() {
     if (this.refs.pageTitle) {
       this.refs.pageTitle.style.top = `${this.getHeaderHeight()}px`;
     }
-  },
-
-  fixHeaderHeight: function() {
-    if (this.fixHeaderHeightTimer) {
-      window.clearTimeout(this.fixHeaderHeightTimer);
-    }
-    this.fixHeaderHeightTimer = window.setTimeout(this._fixHeaderHeight, 25);
-  },
+  }, 50),
 
   getFixedTitleHeight: function() {
     if (this.refs.pageTitle) {
