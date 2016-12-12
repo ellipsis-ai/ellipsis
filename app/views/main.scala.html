@@ -50,7 +50,17 @@
   <script>
   (function() {
     var header = document.getElementById('main-header');
-    document.body.style.paddingTop = header.offsetHeight + 'px';
+    var timerId;
+    function adjustPadding() {
+      if (timerId) {
+        window.clearTimeout(timerId);
+      }
+      timerId = window.setTimeout(function() {
+        document.body.style.paddingTop = header.offsetHeight + 'px'
+      }, 25);
+    }
+    window.addEventListener('resize', adjustPadding);
+    adjustPadding();
    })();
   </script>
 </html>
