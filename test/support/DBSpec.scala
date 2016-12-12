@@ -5,13 +5,17 @@ import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
 import services.{AWSLambdaService, PostgresDataService, SlackService}
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase, _}
-import json.InputData
+import json.{BehaviorParameterData, BehaviorParameterTypeData, InputData}
 import mocks.{MockAWSLambdaService, MockSlackService}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorparameter.BehaviorParameter
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
+import models.behaviors.savedanswer.SavedAnswer
+import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
 import modules.ActorModule
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
@@ -45,6 +49,28 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
   def newSavedInputFor(group: BehaviorGroup): Input = {
     val data = InputData(Some(IDs.next), IDs.next, None, "", false, false, Some(group.id))
     runNow(dataService.inputs.createFor(data, group.team))
+  }
+
+  def newSavedAnswerFor(input: Input, user: User): SavedAnswer = {
+    runNow(dataService.savedAnswers.ensureFor(input, "answer", user))
+  }
+
+  def newSavedParamFor(
+                        version: BehaviorVersion,
+                        maybeType: Option[BehaviorParameterTypeData] = None,
+                        isSavedForTeam: Option[Boolean] = None,
+                        isSavedForUser: Option[Boolean] = None
+                      ): BehaviorParameter = {
+    val data = Seq(BehaviorParameterData("param", maybeType, "", isSavedForTeam = isSavedForTeam, isSavedForUser = isSavedForUser, None, None))
+    runNow(dataService.behaviorParameters.ensureFor(version, data)).head
+  }
+
+  def newSavedTriggerFor(version: BehaviorVersion): MessageTrigger = {
+    runNow(dataService.messageTriggers.createFor(version, "foo", false, false, false))
+  }
+
+  def newSavedVersionFor(behavior: Behavior): BehaviorVersion = {
+    runNow(dataService.behaviorVersions.createFor(behavior, None))
   }
 
   def newSavedBehaviorFor(group: BehaviorGroup): Behavior = {
