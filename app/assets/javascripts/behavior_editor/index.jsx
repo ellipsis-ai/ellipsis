@@ -1778,15 +1778,15 @@ return React.createClass({
     if (optionalDescription && summary) {
       return (
         <span>
-          <span className="mhs">·</span>
-          <span className="type-black">{optionalDescription}</span>
+          <span className="mhs mobile-display-none">·</span>
+          <span className="type-black mobile-display-none">{optionalDescription}</span>
           <span className="mhs">·</span>
           <i>{summary}</i>
         </span>
       );
     } else if (optionalDescription && !summary) {
       return (
-        <span>
+        <span className="mobile-display-none">
           <span className="mhs">·</span>
           <span className="type-black">{optionalDescription}</span>
         </span>
@@ -1854,7 +1854,7 @@ return React.createClass({
     return (
       <div>
         <div ref="pageTitle"
-          className="bg-white-translucent border-bottom position-fixed-top position-z-almost-front"
+          className="bg-white-translucent border-bottom position-fixed-top position-z-almost-front display-ellipsis display-limit-width"
           style={{ top: `${this.getHeaderHeight()}px` }}
         >
           <div className="container container-wide pts type-weak">
