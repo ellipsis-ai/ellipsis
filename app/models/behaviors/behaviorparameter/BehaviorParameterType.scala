@@ -116,7 +116,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     }.getOrElse {
       fetchMatchFor(text, context)
     }.map { maybeValidValue =>
-      maybeValidValue.map(_.id)
+      maybeValidValue.map(v => Json.toJson(v).toString)
     }
   }
 
@@ -136,16 +136,35 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]
+  implicit val validValueWrites = Json.writes[ValidValue]
   case class ValidValueWithNumericId(id: Long, label: String)
   implicit val validValueWithNumericIdReads = Json.reads[ValidValueWithNumericId]
+  implicit val validValueWithNumericIdWrites = Json.writes[ValidValueWithNumericId]
 
   val team = behavior.team
 
+  def isSavedAnswerValid(value: ValidValue, context: BehaviorParameterContext): Future[Boolean] = {
+    usesSearch(context).flatMap { usesSearch =>
+      if (usesSearch) {
+        fetchValidValues(Some(value.label), context).map { values =>
+          values.exists(_.id == value.id)
+        }
+      } else {
+        fetchMatchFor(value.id, context).map(_.isDefined)
+      }
+    }
+  }
+
   def isValid(text: String, context: BehaviorParameterContext) = {
-    cachedValidValueFor(text, context).map { value =>
-      Future.successful(true)
+    val json = Json.parse(text)
+    extractValidValueFrom(json).map { validValue =>
+      isSavedAnswerValid(validValue, context)
     }.getOrElse {
-      fetchMatchFor(text, context).map(_.isDefined)
+      cachedValidValueFor(text, context).map { _ =>
+        Future.successful(true)
+      }.getOrElse {
+        fetchMatchFor(text, context).map(_.isDefined)
+      }
     }
   }
 
@@ -218,22 +237,26 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     } yield maybeResult
   }
 
-  private def extractValidValues(result: SuccessResult): Seq[ValidValue] = {
-    result.result.as[Seq[JsObject]].flatMap { ea =>
-      ea.validate[ValidValue] match {
-        case JsSuccess(data, jsPath) => Some(data)
-        case e: JsError => {
-          ea.validate[ValidValueWithNumericId] match {
-            case JsSuccess(data, jsPath) => Some(ValidValue(data.id.toString, data.label))
-            case e: JsError => None
-          }
+  private def extractValidValueFrom(json: JsValue): Option[ValidValue] = {
+    json.validate[ValidValue] match {
+      case JsSuccess(data, jsPath) => Some(data)
+      case e: JsError => {
+        json.validate[ValidValueWithNumericId] match {
+          case JsSuccess(data, jsPath) => Some(ValidValue(data.id.toString, data.label))
+          case e: JsError => None
         }
       }
     }
   }
 
-  private def fetchValidValues(context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
-    fetchValidValuesResult(None, context).map { maybeResult =>
+  private def extractValidValues(result: SuccessResult): Seq[ValidValue] = {
+    result.result.as[Seq[JsObject]].flatMap { ea =>
+      extractValidValueFrom(ea)
+    }
+  }
+
+  private def fetchValidValues(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
+    fetchValidValuesResult(maybeSearchQuery, context).map { maybeResult =>
       maybeResult.map {
         case r: SuccessResult => extractValidValues(r)
         case r: BotResult => Seq()
@@ -249,7 +272,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   }
 
   private def fetchMatchFor(text: String, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
-    fetchValidValues(context).map { validValues =>
+    fetchValidValues(None, context).map { validValues =>
       validValues.find {
         v => v.id == text || textMatchesLabel(text, v.label, context)
       }
@@ -313,11 +336,15 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     }
   }
 
+  private def usesSearch(context: BehaviorParameterContext): Future[Boolean] = {
+    context.dataService.behaviors.hasSearchParam(this.behavior)
+  }
+
   override def promptFor(
                            maybePreviousCollectedValue: Option[String],
                            context: BehaviorParameterContext
                          ): Future[String] = {
-    context.dataService.behaviors.hasSearchParam(this.behavior).flatMap { usesSearch =>
+    usesSearch(context).flatMap { usesSearch =>
       if (usesSearch) {
         promptForSearchCase(maybePreviousCollectedValue, context)
       } else {
@@ -327,7 +354,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   }
 
   override def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
-    context.dataService.behaviors.hasSearchParam(this.behavior).flatMap { usesSearch =>
+    usesSearch(context).flatMap { usesSearch =>
       if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
         val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
         val searchQuery = event.context.relevantMessageText
