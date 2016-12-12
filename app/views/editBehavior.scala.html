@@ -12,7 +12,7 @@
     "Edit skill"
   }
 }
-@main(titleForBehaviorData(data), Some(data.teamAccess)) {
+@main(titleForBehaviorData(data), Some(data.teamAccess), selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.ApplicationController.deleteBehaviorGroups,
     routes.javascript.BehaviorEditorController.edit,

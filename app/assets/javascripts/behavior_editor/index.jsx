@@ -577,6 +577,12 @@ return React.createClass({
     return mainHeader ? mainHeader.offsetHeight : 0;
   },
 
+  fixHeaderHeight: debounce(function() {
+    if (this.refs.pageTitle) {
+      this.refs.pageTitle.style.top = `${this.getHeaderHeight()}px`;
+    }
+  }, 50),
+
   getFixedTitleHeight: function() {
     if (this.refs.pageTitle) {
       return this.refs.pageTitle.offsetHeight;
@@ -1333,6 +1339,7 @@ return React.createClass({
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.document.addEventListener('focus', this.handleModalFocus, true);
+    window.addEventListener('resize', this.fixHeaderHeight, false);
     this.refs.pageTitleLayoutReplacer.style.height = `${this.getFixedTitleHeight()}px`;
   },
 

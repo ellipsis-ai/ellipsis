@@ -5,7 +5,7 @@
 
 @import play.filters.csrf._
 
-@main("Environment variables", Some(teamAccess)) {
+@main("Environment variables", Some(teamAccess), selectedNav = "settings") {
   @views.html.settingsRoutes()
   <div id="content" class="content flex-row-cascade">
     <div id="environmentVariableList" class="flex-row-cascade"></div>

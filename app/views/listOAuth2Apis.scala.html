@@ -3,7 +3,7 @@
   apis: Seq[models.accounts.oauth2api.OAuth2Api]
 )(implicit messages: Messages, r: RequestHeader)
 
-@main("APIs", Some(teamAccess)) {
+@main("APIs", Some(teamAccess), selectedNav = "settings") {
   <div id="content" class="content">
     <div class="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
       <div class="container">
