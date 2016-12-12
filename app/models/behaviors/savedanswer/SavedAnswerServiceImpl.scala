@@ -71,10 +71,14 @@ class SavedAnswerServiceImpl @Inject() (
   }
 
   def maybeFor(user: User, param: BehaviorParameter): Future[Option[SavedAnswer]] = {
-    val action = maybeForQuery(maybeUserIdFor(param.input, user), param.input.id).result.map { r =>
-      r.headOption.map(tuple2SavedAnswer)
+    if (param.input.isSaved) {
+      val action = maybeForQuery(maybeUserIdFor(param.input, user), param.input.id).result.map { r =>
+        r.headOption.map(tuple2SavedAnswer)
+      }
+      dataService.run(action)
+    } else {
+      Future.successful(None)
     }
-    dataService.run(action)
   }
 
   def allFor(user: User, params: Seq[BehaviorParameter]): Future[Seq[SavedAnswer]] = {

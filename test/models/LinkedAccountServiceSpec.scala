@@ -5,30 +5,13 @@ import models.accounts.user.User
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackProvider
 import models.accounts.slack.profile.SlackProfile
-import models.team.Team
-import modules.ActorModule
 import org.joda.time.LocalDateTime
-import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
-import services.PostgresDataService
-import support.DBMixin
+import support.DBSpec
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class LinkedAccountServiceSpec extends PlaySpec with DBMixin with OneAppPerSuite {
-
-  override implicit lazy val app: Application =
-    new GuiceApplicationBuilder().
-      disable[ActorModule].
-      build()
-
-  val dataService = app.injector.instanceOf(classOf[PostgresDataService])
-
-  // TODO: use mocks once data service work is done
-
-  def newSavedTeam: Future[Team] = dataService.teams.create(IDs.next)
+class LinkedAccountServiceSpec extends DBSpec {
 
   def newSavedUserFor(teamId: String): Future[User] = {
     dataService.users.createFor(teamId)
@@ -41,8 +24,7 @@ class LinkedAccountServiceSpec extends PlaySpec with DBMixin with OneAppPerSuite
 
   def newSavedLinkedAccount: LinkedAccount = {
     runNow(for {
-      team <- newSavedTeam
-      user <- newSavedUserFor(team.id)
+      user <- newSavedUserFor(newSavedTeam.id)
       linkedAccount <- newSavedLinkedAccountFor(user)
     } yield linkedAccount)
   }

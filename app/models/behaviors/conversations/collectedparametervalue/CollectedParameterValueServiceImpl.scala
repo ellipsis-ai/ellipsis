@@ -89,4 +89,8 @@ class CollectedParameterValueServiceImpl @Inject() (
     }
   }
 
+  def deleteAll(): Future[Unit] = {
+    dataService.run(all.delete).map(_ => Unit)
+  }
+
 }
