@@ -2,7 +2,7 @@
 @(
   teamAccess: models.accounts.user.UserTeamAccess
 )(implicit r: RequestHeader)
-<div class="column column-shrink align-r pts pbxs">
+<div class="column column-shrink align-r pts mobile-ptxs pbxs mobile-pbn">
   <form action='@routes.SocialAuthController.signOut()' method="POST" id="main-user-menu-container">
     @CSRF.formField
   <span class="link-light">
