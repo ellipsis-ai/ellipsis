@@ -1876,7 +1876,8 @@ return React.createClass({
   renderBehaviorSwitcher: function() {
     if (this.shouldShowBehaviorSwitcher()) {
       return (
-        <div ref="leftPanel" className="position-fixed-left position-z-front bg-white-translucent border-left">
+        <div ref="leftPanel" className={"position-fixed-left position-z-front bg-white-translucent " +
+        (this.getActivePanel() === 'behaviorSwitcher' ? "border-right" : "")}>
           <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
             <BehaviorSwitcher
               ref="behaviorSwitcher"
