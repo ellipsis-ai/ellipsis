@@ -78,4 +78,9 @@ class ConversationServiceImpl @Inject() (
     val action = cancelQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
     dataService.run(action)
   }
+
+  def deleteAll(): Future[Unit] = {
+    dataService.run(all.delete).map(_ => Unit)
+  }
+
 }
