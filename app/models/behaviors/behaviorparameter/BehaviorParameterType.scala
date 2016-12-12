@@ -116,7 +116,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     }.getOrElse {
       fetchMatchFor(text, context)
     }.map { maybeValidValue =>
-      maybeValidValue.map(_.id)
+      maybeValidValue.map(v => Json.toJson(v).toString)
     }
   }
 
@@ -136,16 +136,23 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]
+  implicit val validValueWrites = Json.writes[ValidValue]
   case class ValidValueWithNumericId(id: Long, label: String)
   implicit val validValueWithNumericIdReads = Json.reads[ValidValueWithNumericId]
+  implicit val validValueWithNumericIdWrites = Json.writes[ValidValueWithNumericId]
 
   val team = behavior.team
 
   def isValid(text: String, context: BehaviorParameterContext) = {
-    cachedValidValueFor(text, context).map { value =>
+    val json = Json.parse(text)
+    extractValidValueFrom(json).map { _ =>
       Future.successful(true)
     }.getOrElse {
-      fetchMatchFor(text, context).map(_.isDefined)
+      cachedValidValueFor(text, context).map { _ =>
+        Future.successful(true)
+      }.getOrElse {
+        fetchMatchFor(text, context).map(_.isDefined)
+      }
     }
   }
 
@@ -218,17 +225,21 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     } yield maybeResult
   }
 
-  private def extractValidValues(result: SuccessResult): Seq[ValidValue] = {
-    result.result.as[Seq[JsObject]].flatMap { ea =>
-      ea.validate[ValidValue] match {
-        case JsSuccess(data, jsPath) => Some(data)
-        case e: JsError => {
-          ea.validate[ValidValueWithNumericId] match {
-            case JsSuccess(data, jsPath) => Some(ValidValue(data.id.toString, data.label))
-            case e: JsError => None
-          }
+  private def extractValidValueFrom(json: JsValue): Option[ValidValue] = {
+    json.validate[ValidValue] match {
+      case JsSuccess(data, jsPath) => Some(data)
+      case e: JsError => {
+        json.validate[ValidValueWithNumericId] match {
+          case JsSuccess(data, jsPath) => Some(ValidValue(data.id.toString, data.label))
+          case e: JsError => None
         }
       }
+    }
+  }
+
+  private def extractValidValues(result: SuccessResult): Seq[ValidValue] = {
+    result.result.as[Seq[JsObject]].flatMap { ea =>
+      extractValidValueFrom(ea)
     }
   }
 
