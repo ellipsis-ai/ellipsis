@@ -144,19 +144,23 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
 
   val team = behavior.team
 
-  def isSavedAnswerValid(value: ValidValue, context: BehaviorParameterContext): Future[Boolean] = {
+  def maybeValidValueForSavedAnswer(value: ValidValue, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch) {
         fetchValidValues(Some(value.label), context).map { values =>
-          values.exists(_.id == value.id)
+          values.find(_.id == value.id)
         }
       } else {
-        fetchMatchFor(value.id, context).map(_.isDefined)
+        fetchMatchFor(value.id, context)
       }
     }
   }
 
   def isValid(text: String, context: BehaviorParameterContext) = {
+    maybeValidValueFor(text, context).map(_.isDefined)
+  }
+
+  def maybeValidValueFor(text: String, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
     val maybeJson = try {
       Some(Json.parse(text))
     } catch {
@@ -164,13 +168,13 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     }
     maybeJson.flatMap { json =>
       extractValidValueFrom(json).map { validValue =>
-        isSavedAnswerValid(validValue, context)
+        maybeValidValueForSavedAnswer(validValue, context)
       }
     }.getOrElse {
-      cachedValidValueFor(text, context).map { _ =>
-        Future.successful(true)
+      cachedValidValueFor(text, context).map { v =>
+        Future.successful(Some(v))
       }.getOrElse {
-        fetchMatchFor(text, context).map(_.isDefined)
+        fetchMatchFor(text, context)
       }
     }
   }
@@ -208,16 +212,10 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   }
 
   def prepareForInvocation(text: String, context: BehaviorParameterContext) = {
-    val eventualMaybeMatch = cachedValidValueFor(text, context).map { validValue =>
-      Future.successful(Some(validValue))
-    }.getOrElse {
-      fetchMatchFor(text, context)
-    }
-
-    eventualMaybeMatch.map { maybeMatch =>
-      maybeMatch.
-        map { v => JsObject(Map("id" -> JsString(v.id), "label" -> JsString(v.label))) }.
-        getOrElse(JsString(text))
+    maybeValidValueFor(text, context).map { maybeValidValue =>
+      maybeValidValue.map { vv =>
+        JsObject(Map("id" -> JsString(vv.id), "label" -> JsString(vv.label)))
+      }.getOrElse(JsString(text))
     }
   }
 
