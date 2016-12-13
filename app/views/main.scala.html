@@ -34,7 +34,7 @@
   <body class="bg-lightest flex-rows flex-rows-viewport">
     <header id="main-header" class='@("position-fixed-top position-z-almost-front border-emphasis-bottom type-white " + navBgColorForPage + navBorderColorForPage)'>
       <div class="container container-wide prm mobile-prs">
-        @views.html.mainNav(config.maybeTeamAccess, selectedNav)
+        @views.html.mainNav(config, selectedNav)
       </div>
     </header>
     <script>
