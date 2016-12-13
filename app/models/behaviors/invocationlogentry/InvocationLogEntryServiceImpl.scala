@@ -4,13 +4,14 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import models.IDs
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import models.behaviors.events.MessageEvent
 import models.team.Team
 import org.joda.time.LocalDateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import play.api.libs.json.{JsArray, JsValue}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -20,6 +21,7 @@ case class RawInvocationLogEntry(
                                   behaviorVersionId: String,
                                   resultType: String,
                                   messageText: String,
+                                  maybeParamValues: Option[JsValue],
                                   resultText: String,
                                   context: String,
                                   maybeUserIdForContext: Option[String],
@@ -33,13 +35,14 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def behaviorVersionId = column[String]("behavior_version_id")
   def resultType = column[String]("result_type")
   def messageText = column[String]("message_text")
+  def maybeParamValues = column[Option[JsValue]]("param_values")
   def resultText = column[String]("result_text")
   def context = column[String]("context")
   def maybeUserIdForContext = column[Option[String]]("user_id_for_context")
   def runtimeInMilliseconds = column[Long]("runtime_in_milliseconds")
   def createdAt = column[LocalDateTime]("created_at")
 
-  def * = (id, behaviorVersionId, resultType, messageText, resultText, context, maybeUserIdForContext, runtimeInMilliseconds, createdAt) <>
+  def * = (id, behaviorVersionId, resultType, messageText, maybeParamValues, resultText, context, maybeUserIdForContext, runtimeInMilliseconds, createdAt) <>
     ((RawInvocationLogEntry.apply _).tupled, RawInvocationLogEntry.unapply _)
 }
 
@@ -61,6 +64,7 @@ class InvocationLogEntryServiceImpl @Inject() (
       BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
       raw.resultType,
       raw.messageText,
+      raw.maybeParamValues,
       raw.resultText,
       raw.context,
       raw.maybeUserIdForContext,
@@ -134,6 +138,7 @@ class InvocationLogEntryServiceImpl @Inject() (
 
   def createFor(
                  behaviorVersion: BehaviorVersion,
+                 parametersWithValues: Seq[ParameterWithValue],
                  result: BotResult,
                  event: MessageEvent,
                  maybeUserIdForContext: Option[String],
@@ -145,6 +150,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         behaviorVersion.id,
         result.resultType.toString,
         event.context.fullMessageText,
+        Some(JsArray(parametersWithValues.map(_.logEntryJson))),
         result.fullText,
         event.context.name,
         maybeUserIdForContext,
@@ -158,6 +164,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         behaviorVersion,
         raw.resultType,
         raw.messageText,
+        raw.maybeParamValues,
         raw.resultText,
         raw.context,
         raw.maybeUserIdForContext,

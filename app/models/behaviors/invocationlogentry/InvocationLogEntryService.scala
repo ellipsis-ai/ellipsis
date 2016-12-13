@@ -1,6 +1,6 @@
 package models.behaviors.invocationlogentry
 
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.MessageEvent
 import models.team.Team
@@ -20,6 +20,7 @@ trait InvocationLogEntryService {
 
   def createFor(
                  behaviorVersion: BehaviorVersion,
+                 parametersWithValues: Seq[ParameterWithValue],
                  result: BotResult,
                  event: MessageEvent,
                  maybeUserIdForContext: Option[String],
