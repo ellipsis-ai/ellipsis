@@ -16,6 +16,7 @@ case class BehaviorEditorData(
                                environmentVariables: Seq[EnvironmentVariableData],
                                otherBehaviorsInGroup: Seq[BehaviorVersionData],
                                paramTypes: Seq[BehaviorParameterTypeData],
+                               savedAnswers: Seq[InputSavedAnswerData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
                                simpleTokenApis: Seq[SimpleTokenApiData],
@@ -134,6 +135,13 @@ object BehaviorEditorData {
         BehaviorParameterType.allFor(maybeGroup, dataService)
       }.getOrElse(Future.successful(Seq()))
       paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
+      inputSavedAnswerData <- maybeBehaviorVersionData.map { behaviorVersionData =>
+        Future.sequence(behaviorVersionData.params.flatMap { param =>
+          param.inputId.map { inputId =>
+            InputSavedAnswerData.maybeFor(inputId, user, dataService)
+          }
+        }).map(_.flatten)
+      }.getOrElse(Future.successful(Seq()))
     } yield {
       val maybeDataTypeName = if (isForNewDataType) { Some("") } else { None }
       val versionData = maybeBehaviorVersionData.getOrElse {
@@ -161,6 +169,7 @@ object BehaviorEditorData {
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         otherBehaviorsInGroupData,
         paramTypeData,
+        inputSavedAnswerData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
         simpleTokenApis.map(SimpleTokenApiData.from),

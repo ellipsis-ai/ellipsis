@@ -30,7 +30,9 @@
     routes.javascript.EnvironmentVariablesController.submit,
     routes.javascript.OAuth2ApplicationController.newApp,
     routes.javascript.APIAccessController.linkCustomOAuth2Service,
-    routes.javascript.BehaviorImportExportController.export
+    routes.javascript.BehaviorImportExportController.export,
+    routes.javascript.SavedAnswerController.resetForTeam,
+    routes.javascript.SavedAnswerController.resetForUser
   )
   <div id="content" class="content">
     <div>
@@ -45,6 +47,7 @@
           envVariables: @Html(Json.toJson(data.environmentVariables).toString),
           otherBehaviorsInGroup: @Html(Json.toJson(data.otherBehaviorsInGroup).toString),
           paramTypes: @Html(Json.toJson(data.paramTypes).toString),
+          savedAnswers: @Html(Json.toJson(data.savedAnswers).toString),
           oauth2Applications: @Html(Json.toJson(data.oauth2Applications).toString),
           oauth2Apis: @Html(Json.toJson(data.oauth2Apis).toString),
           simpleTokenApis: @Html(Json.toJson(data.simpleTokenApis).toString),
