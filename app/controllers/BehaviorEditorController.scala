@@ -39,12 +39,12 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     BehaviorEditorData.buildForNew(user, maybeGroupId, maybeTeamId, isForDataType, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.html.editBehavior(editorData)))
+        Future.successful(Ok(views.html.editBehavior(viewConfig(Some(editorData.teamAccess)), editorData)))
       }.getOrElse {
         dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
           val response = NotFound(
             views.html.notFound(
-              Some(teamAccess),
+              viewConfig(Some(teamAccess)),
               Some("Skill not found"),
               Some("The skill you are trying to access could not be found."),
               Some(reAuthLinkFor(request, None))
@@ -68,12 +68,12 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     BehaviorEditorData.buildForEdit(user, id, maybeJustSaved, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.html.editBehavior(editorData)))
+        Future.successful(Ok(views.html.editBehavior(viewConfig(Some(editorData.teamAccess)), editorData)))
       }.getOrElse {
         dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
           val response = NotFound(
             views.html.notFound(
-              Some(teamAccess),
+              viewConfig(Some(teamAccess)),
               Some("Skill not found"),
               Some("The skill you are trying to access could not be found."),
               Some(reAuthLinkFor(request, None))
@@ -180,7 +180,7 @@ class BehaviorEditorController @Inject() (
               }).getOrElse {
                 NotFound(
                   views.html.notFound(
-                    Some(teamAccess),
+                    viewConfig(Some(teamAccess)),
                     Some("Skill not found"),
                     Some("The skill you were trying to save could not be found."
                     )

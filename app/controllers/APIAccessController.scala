@@ -111,14 +111,14 @@ class APIAccessController @Inject() (
             reAuthFor(request, maybeApplication.map(_.teamId))
           }
         }
-      }.getOrElse(Future.successful(NotFound(views.html.notFound(None, Some("Can't find OAuth2 application"), None, None))))
+      }.getOrElse(Future.successful(NotFound(views.html.notFound(viewConfig(None), Some("Can't find OAuth2 application"), None, None))))
     } yield result
   }
 
   def authenticated(message: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     dataService.teams.find(user.teamId).map { maybeTeam =>
-      Ok(views.html.authenticated(maybeTeam, message))
+      Ok(views.html.authenticated(viewConfig(None), maybeTeam, message))
     }
   }
 

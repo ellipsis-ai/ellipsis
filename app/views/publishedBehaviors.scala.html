@@ -1,5 +1,5 @@
 @(
-  teamAccess: models.accounts.user.UserTeamAccess,
+  config: ViewConfig,
   behaviorGroups: Seq[json.BehaviorGroupData],
   installedBehaviorGroups: Seq[json.InstalledBehaviorGroupData]
   )(implicit messages: Messages, r: RequestHeader)
@@ -8,13 +8,13 @@
 @import play.api.libs.json._
 @import json.Formatting._
 
-@main("Published skills", Some(teamAccess), selectedNav = "skills") {
+@main("Published skills", config, selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorImportExportController.doImport,
     routes.javascript.BehaviorEditorController.editGroup
   )
   <div id="content" class="content">
-    @views.html.behaviorTabs("install", teamAccess)
+    @config.maybeTeamAccess.map(teamAccess => views.html.behaviorTabs("install", teamAccess))
     <div>
       <div class="bg-white container container-c pbxxl">
         <div id="importerContainer"></div>
@@ -22,7 +22,7 @@
     </div>
     <script>
       var BehaviorGroupImporterConfig = {
-        teamId: '@(teamAccess.maybeTargetTeam.getOrElse(""))',
+        teamId: '@config.maybeTargetTeamId.getOrElse("")',
         installedBehaviorGroups: @Html(Json.toJson(installedBehaviorGroups).toString),
         containerId: 'importerContainer',
         csrfToken: "@CSRF.getToken(r).map(_.value)",

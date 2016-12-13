@@ -44,7 +44,7 @@ class APITokenController @Inject() (
     for {
       teamAccess <- dataService.users.teamAccessFor(user, None)
       tokens <- dataService.apiTokens.allFor(user)
-    } yield Ok(views.html.api.listTokens(teamAccess, tokens.map(APITokenData.from), maybeJustCreatedTokenId))
+    } yield Ok(views.html.api.listTokens(viewConfig(Some(teamAccess)), tokens.map(APITokenData.from), maybeJustCreatedTokenId))
 
   }
 

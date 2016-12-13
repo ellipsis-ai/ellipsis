@@ -6,6 +6,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import json.Formatting._
 import models.silhouette.EllipsisEnv
+import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -18,7 +19,8 @@ import scala.concurrent.Future
 class EnvironmentVariablesController @Inject() (
                                                  val messagesApi: MessagesApi,
                                                  val silhouette: Silhouette[EllipsisEnv],
-                                                 val dataService: DataService
+                                                 val dataService: DataService,
+                                                 val configuration: Configuration
                                                ) extends ReAuthable {
 
   case class EnvironmentVariablesInfo(teamId: String, dataJson: String)
@@ -106,7 +108,7 @@ class EnvironmentVariablesController @Inject() (
       teamAccess.maybeTargetTeam.map { team =>
         val envVars = maybeEnvironmentVariables.map(envVars => envVars).getOrElse(Seq())
         val jsonData = Json.toJson(EnvironmentVariablesData(team.id, envVars.map(ea => EnvironmentVariableData.withoutValueFor(ea))))
-        Ok(views.html.listEnvironmentVariables(teamAccess, jsonData.toString))
+        Ok(views.html.listEnvironmentVariables(viewConfig(Some(teamAccess)), jsonData.toString))
       }.getOrElse{
         NotFound("Team not accessible")
       }

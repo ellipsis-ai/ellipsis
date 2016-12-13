@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models.silhouette.EllipsisEnv
+import play.api.Configuration
 import play.api.i18n.MessagesApi
 import services.DataService
 
@@ -13,7 +14,8 @@ import scala.concurrent.Future
 class BehaviorBackedDataTypeController @Inject() (
                                                   val messagesApi: MessagesApi,
                                                   val silhouette: Silhouette[EllipsisEnv],
-                                                  val dataService: DataService
+                                                  val dataService: DataService,
+                                                  val configuration: Configuration
                                                 ) extends ReAuthable {
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -25,12 +27,7 @@ class BehaviorBackedDataTypeController @Inject() (
       }.getOrElse(Future.successful(Seq()))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(
-          views.html.behaviorBackedDataTypeList(
-            teamAccess,
-            dataTypes
-          )
-        )
+        Ok(views.html.behaviorBackedDataTypeList(viewConfig(Some(teamAccess)), dataTypes))
       }.getOrElse{
         NotFound("Team not accessible")
       }

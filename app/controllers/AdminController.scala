@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import models.silhouette.EllipsisEnv
+import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.mvc.{AnyContent, Result}
 import services.{AWSLambdaService, DataService}
@@ -16,7 +17,8 @@ class AdminController @Inject() (
                                   val messagesApi: MessagesApi,
                                   val silhouette: Silhouette[EllipsisEnv],
                                   val dataService: DataService,
-                                  val lambdaService: AWSLambdaService
+                                  val lambdaService: AWSLambdaService,
+                                  val configuration: Configuration
                                 ) extends ReAuthable {
 
   private def withIsAdminCheck(
@@ -26,7 +28,7 @@ class AdminController @Inject() (
       if (isAdmin) {
         fn()
       } else {
-        Future.successful(NotFound(views.html.notFound(None, None, None)))
+        Future.successful(NotFound(views.html.notFound(viewConfig(None), None, None)))
       }
     }
   }

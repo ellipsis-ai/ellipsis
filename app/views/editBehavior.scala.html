@@ -1,4 +1,5 @@
 @(
+  config: ViewConfig,
   data: json.BehaviorEditorData
 )(implicit messages: Messages, r: RequestHeader)
 
@@ -12,7 +13,7 @@
     "Edit skill"
   }
 }
-@main(titleForBehaviorData(data), Some(data.teamAccess), selectedNav = "skills") {
+@main(titleForBehaviorData(data), config, selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.ApplicationController.deleteBehaviorGroups,
     routes.javascript.BehaviorEditorController.edit,

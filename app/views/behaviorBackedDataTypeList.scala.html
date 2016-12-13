@@ -1,11 +1,9 @@
 @(
-  teamAccess: models.accounts.user.UserTeamAccess,
+  config: ViewConfig,
   dataTypes: Seq[models.behaviors.behavior.Behavior]
 )(implicit messages: Messages, r: RequestHeader)
 
-@import helper._
-
-@main("Data types", Some(teamAccess)) {
+@main("Data types", config) {
   <div id="content" class="content">
     <div class="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
       <div class="container">
@@ -21,8 +19,12 @@
       </li>
     }
     </ul>
-    <div className="prsymbol mobile-prn align-r mobile-align-l">
-      <a href="@routes.BehaviorEditorController.newForDataType(teamAccess.maybeAdminAccessToTeamId)" className="button-s">Create a new data type</a>
+    <div class="prsymbol mobile-prn align-r mobile-align-l">
+      @config.maybeTeamAccess.map { teamAccess =>
+        <a href="@routes.BehaviorEditorController.newForDataType(teamAccess.maybeAdminAccessToTeamId)" class="button-s">
+          Create a new data type
+        </a>
+      }
     </div>
   </div>
 }
