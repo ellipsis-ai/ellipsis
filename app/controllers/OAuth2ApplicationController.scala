@@ -7,6 +7,7 @@ import json._
 import models._
 import models.accounts.oauth2application.OAuth2Application
 import models.silhouette.EllipsisEnv
+import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -18,7 +19,8 @@ import scala.concurrent.Future
 class OAuth2ApplicationController @Inject() (
                                               val messagesApi: MessagesApi,
                                               val silhouette: Silhouette[EllipsisEnv],
-                                              val dataService: DataService
+                                              val dataService: DataService,
+                                              val configuration: Configuration
                                             ) extends ReAuthable {
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -33,7 +35,7 @@ class OAuth2ApplicationController @Inject() (
       teamAccess.maybeTargetTeam.map { team =>
         Ok(
           views.html.listOAuth2Applications(
-            teamAccess,
+            viewConfig(Some(teamAccess)),
             apis.map(api => OAuth2ApiData.from(api)),
             applications.map(app => OAuth2ApplicationData.from(app))
           )
@@ -52,7 +54,7 @@ class OAuth2ApplicationController @Inject() (
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
         Ok(views.html.newOAuth2Application(
-          teamAccess,
+          viewConfig(Some(teamAccess)),
           apis.map(api => OAuth2ApiData.from(api)),
           IDs.next,
           maybeApiId,
@@ -78,11 +80,11 @@ class OAuth2ApplicationController @Inject() (
         team <- teamAccess.maybeTargetTeam
         application <- maybeApplication
       } yield {
-        Ok(views.html.editOAuth2Application(teamAccess, apis.map(api => OAuth2ApiData.from(api)), application))
+        Ok(views.html.editOAuth2Application(viewConfig(Some(teamAccess)), apis.map(api => OAuth2ApiData.from(api)), application))
       }).getOrElse {
         NotFound(
           views.html.notFound(
-            Some(teamAccess),
+            viewConfig(Some(teamAccess)),
             Some("OAuth2 application not found"),
             Some("The OAuth2 application you are trying to access could not be found."),
             Some(reAuthLinkFor(request, None))

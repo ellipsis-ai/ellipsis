@@ -1,11 +1,11 @@
 @(
-  maybeTeamAccess: Option[models.accounts.user.UserTeamAccess],
+  config: ViewConfig,
   maybeHeading: Option[String],
   maybeErrorMessage: Option[String],
   maybeSignInLink: Option[Call] = None
 )(implicit messages: Messages, r: RequestHeader)
 
-@main(maybeHeading.getOrElse("Page not found"), maybeTeamAccess) {
+@main(maybeHeading.getOrElse("Page not found"), config) {
 
 <div id="content" class="content">
   <div class="bg-pink border-emphasis-bottom border-pink bg-large-logo">
@@ -37,7 +37,7 @@
           </p>
           <p>
             It may have been removed,
-            or you may not have access to it @maybeTeamAccess.map { teamAccess =>
+            or you may not have access to it @config.maybeTeamAccess.map { teamAccess =>
               while signed into this team (<b>@teamAccess.loggedInTeam.name</b>)
             } @maybeSignInLink.map { link =>
               . You may want to try <a href="@link">signing in with a different team</a> if you have more than one account.

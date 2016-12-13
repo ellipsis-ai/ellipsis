@@ -48,7 +48,7 @@ class ApplicationController @Inject() (
         Future.successful(if (groupData.isEmpty) {
           Redirect(routes.ApplicationController.intro(maybeTeamId))
         } else {
-          Ok(views.html.index(teamAccess, groupData))
+          Ok(views.html.index(viewConfig(Some(teamAccess)), groupData))
         })
       }.getOrElse {
         reAuthFor(request, maybeTeamId)
@@ -81,7 +81,7 @@ class ApplicationController @Inject() (
           Future.successful(
             Ok(
               views.html.intro(
-                teamAccess,
+                viewConfig(Some(teamAccess)),
                 data.published,
                 data.installedBehaviors
               )
@@ -107,7 +107,7 @@ class ApplicationController @Inject() (
           Future.successful(
             Ok(
               views.html.publishedBehaviors(
-                teamAccess,
+                viewConfig(Some(teamAccess)),
                 data.published,
                 data.installedBehaviors
               )

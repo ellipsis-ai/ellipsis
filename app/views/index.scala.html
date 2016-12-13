@@ -1,5 +1,5 @@
 @(
-  teamAccess: models.accounts.user.UserTeamAccess,
+  config: ViewConfig,
   behaviorGroups: Seq[json.BehaviorGroupData]
 )(implicit messages: Messages, r: RequestHeader)
 
@@ -7,15 +7,14 @@
 @import play.filters.csrf._
 @import json.Formatting._
 
-
-@main("View your skills", Some(teamAccess), selectedNav = "skills") {
+@main("View your skills", config, selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.edit,
     routes.javascript.ApplicationController.mergeBehaviorGroups,
     routes.javascript.ApplicationController.deleteBehaviorGroups
   )
   <div id="content" class="content">
-    @views.html.behaviorTabs("view", teamAccess)
+    @config.maybeTeamAccess.map(teamAccess => views.html.behaviorTabs("view", teamAccess))
 
     <div id="behaviorListContainer"></div>
     <script>
