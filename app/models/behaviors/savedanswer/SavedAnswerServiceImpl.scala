@@ -87,11 +87,28 @@ class SavedAnswerServiceImpl @Inject() (
     }).map(_.flatten)
   }
 
+  def allFor(input: Input): Future[Seq[SavedAnswer]] = {
+    val action = allForInputQuery(input.id).result.map { r =>
+      r.map(tuple2SavedAnswer)
+    }
+    dataService.run(action)
+  }
+
   def updateForInputId(maybeOldInputId: Option[String], newInputId: String): Future[Unit] = {
     maybeOldInputId.map { oldInputId =>
       val action = all.filter(_.inputId === oldInputId).map(_.inputId).update(newInputId).map(_ => {})
       dataService.run(action)
     }.getOrElse(Future.successful({}))
+  }
+
+  def deleteForUser(input: Input, user: User): Future[Int] = {
+    val action = uncompiledRawFindQueryFor(input.id, Some(user.id)).delete
+    dataService.run(action)
+  }
+
+  def deleteAllFor(input: Input): Future[Int] = {
+    val action = rawFindQueryIgnoringUserFor(input.id).delete
+    dataService.run(action)
   }
 
 }
