@@ -1,5 +1,6 @@
 package models.behaviors.invocationlogentry
 
+import models.behaviors.behavior.Behavior
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.MessageEvent
@@ -17,6 +18,8 @@ trait InvocationLogEntryService {
   def uniqueInvokedBehaviorCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]]
 
   def forTeamForDate(team: Team, date: LocalDateTime): Future[Seq[InvocationLogEntry]]
+
+  def allForBehavior(behavior: Behavior): Future[Seq[InvocationLogEntry]]
 
   def createFor(
                  behaviorVersion: BehaviorVersion,

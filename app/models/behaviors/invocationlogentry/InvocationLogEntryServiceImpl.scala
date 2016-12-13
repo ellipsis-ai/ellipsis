@@ -11,6 +11,7 @@ import models.team.Team
 import org.joda.time.LocalDateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behavior.Behavior
 import play.api.libs.json.{JsArray, JsValue}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -134,6 +135,25 @@ class InvocationLogEntryServiceImpl @Inject() (
       r.map(tuple2Entry)
     }
     dataService.run(action)
+  }
+
+  def uncompiledAllForBehaviorVersionQuery(behaviorVersionId: Rep[String]) = {
+    allWithVersion.filter { case(entry, _) => entry.behaviorVersionId === behaviorVersionId }
+  }
+  val allForBehaviorVersionQuery = Compiled(uncompiledAllForBehaviorVersionQuery _)
+
+  def allForBehaviorVersion(behaviorVersion: BehaviorVersion): Future[Seq[InvocationLogEntry]] = {
+    val action = allForBehaviorVersionQuery(behaviorVersion.id).result.map { r =>
+      r.map(tuple2Entry)
+    }
+    dataService.run(action)
+  }
+
+  def allForBehavior(behavior: Behavior): Future[Seq[InvocationLogEntry]] = {
+    for {
+      versions <- dataService.behaviorVersions.allFor(behavior)
+      entries <- Future.sequence(versions.map(allForBehaviorVersion)).map(_.flatten)
+    } yield entries
   }
 
   def createFor(
