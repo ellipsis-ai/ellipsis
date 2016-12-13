@@ -40,6 +40,9 @@ POST        /save_skill_name                          @controllers.BehaviorEdito
 POST        /save_skill_description                   @controllers.BehaviorEditorController.saveBehaviorGroupDescription
 POST        /ensure_simple_list                       @controllers.BehaviorEditorController.ensureSimpleList
 
+POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
+POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
+
 GET         /data_types                               @controllers.BehaviorBackedDataTypeController.list(teamId: Option[String] ?= None)
 
 POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit

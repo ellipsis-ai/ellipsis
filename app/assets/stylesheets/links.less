@@ -43,6 +43,18 @@ a.link-block:hover {
 }
 
 .link-light:hover {
-  color: @white-faded;
+  color: @pink-light;
+  text-decoration: none;
+}
+
+.link-pink,
+.link-pink:link,
+.link-pink:visited {
+  color: @pink-medium;
+  .light-antialiasing();
+}
+
+.link-pink:hover {
+  color: @pink-light;
   text-decoration: none;
 }

@@ -14,6 +14,12 @@ trait SavedAnswerService {
 
   def allFor(user: User, params: Seq[BehaviorParameter]): Future[Seq[SavedAnswer]]
 
+  def allFor(input: Input): Future[Seq[SavedAnswer]]
+
   def updateForInputId(maybeOldInputId: Option[String], newInputId: String): Future[Unit]
+
+  def deleteForUser(input: Input, user: User): Future[Int]
+
+  def deleteAllFor(input: Input): Future[Int]
 
 }

@@ -587,6 +587,12 @@ return React.createClass({
     return mainHeader ? mainHeader.offsetHeight : 0;
   },
 
+  fixHeaderHeight: debounce(function() {
+    if (this.refs.pageTitle) {
+      this.refs.pageTitle.style.top = `${this.getHeaderHeight()}px`;
+    }
+  }, 50),
+
   getFixedTitleHeight: function() {
     if (this.refs.pageTitle) {
       return this.refs.pageTitle.offsetHeight;
@@ -1355,6 +1361,7 @@ return React.createClass({
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.document.addEventListener('focus', this.handleModalFocus, true);
+    window.addEventListener('resize', this.fixHeaderHeight, false);
     this.refs.pageTitleLayoutReplacer.style.height = `${this.getFixedTitleHeight()}px`;
   },
 
@@ -1801,15 +1808,15 @@ return React.createClass({
     if (optionalDescription && summary) {
       return (
         <span>
-          <span className="mhs">·</span>
-          <span className="type-black">{optionalDescription}</span>
+          <span className="mhs mobile-display-none">·</span>
+          <span className="type-black mobile-display-none">{optionalDescription}</span>
           <span className="mhs">·</span>
           <i>{summary}</i>
         </span>
       );
     } else if (optionalDescription && !summary) {
       return (
-        <span>
+        <span className="mobile-display-none">
           <span className="mhs">·</span>
           <span className="type-black">{optionalDescription}</span>
         </span>
@@ -1877,7 +1884,7 @@ return React.createClass({
     return (
       <div>
         <div ref="pageTitle"
-          className="bg-white-translucent border-bottom position-fixed-top position-z-almost-front"
+          className="bg-white-translucent border-bottom position-fixed-top position-z-almost-front display-ellipsis display-limit-width"
           style={{ top: `${this.getHeaderHeight()}px` }}
         >
           <div className="container container-wide pts type-weak">
@@ -1892,7 +1899,8 @@ return React.createClass({
   renderBehaviorSwitcher: function() {
     if (this.shouldShowBehaviorSwitcher()) {
       return (
-        <div ref="leftPanel" className="position-fixed-left position-z-front bg-white-translucent border-left">
+        <div ref="leftPanel" className={"position-fixed-left position-z-front bg-white-translucent " +
+        (this.getActivePanel() === 'behaviorSwitcher' ? "border-right" : "")}>
           <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
             <BehaviorSwitcher
               ref="behaviorSwitcher"

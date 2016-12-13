@@ -30,6 +30,11 @@ object SavedAnswerQueries {
   }
   val rawFindQueryFor = Compiled(uncompiledRawFindQueryFor _)
 
+  def uncompiledRawFindQueryIgnoringUserFor(inputId: Rep[String]) = {
+    all.filter(_.inputId === inputId)
+  }
+  val rawFindQueryIgnoringUserFor = Compiled(uncompiledRawFindQueryIgnoringUserFor _)
+
   def uncompiledMaybeForQuery(maybeUserId: Rep[Option[String]], inputId: Rep[String]) = {
     allWithInput.
       filter { case(saved, _) => (saved.maybeUserId.isEmpty && maybeUserId.isEmpty) || saved.maybeUserId === maybeUserId }.
@@ -37,4 +42,8 @@ object SavedAnswerQueries {
   }
   val maybeForQuery = Compiled(uncompiledMaybeForQuery _)
 
+  def uncompiledAllForInputQuery(inputId: Rep[String]) = {
+    allWithInput.filter { case(saved, _) => saved.inputId === inputId }
+  }
+  val allForInputQuery = Compiled(uncompiledAllForInputQuery _)
 }

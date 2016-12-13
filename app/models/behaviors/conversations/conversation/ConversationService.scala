@@ -14,4 +14,6 @@ trait ConversationService {
     maybeConversation.map(cancel).getOrElse(Future.successful({}))
   }
 
+  def deleteAll(): Future[Unit]
+
 }

@@ -8,7 +8,7 @@
 @import json.Formatting._
 
 
-@main("View your skills", Some(teamAccess)) {
+@main("View your skills", Some(teamAccess), selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.edit,
     routes.javascript.ApplicationController.mergeBehaviorGroups,
