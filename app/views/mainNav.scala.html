@@ -11,17 +11,9 @@
 }
 <div class="columns columns-elastic">
   <div class="column column-expand pts mobile-ptxs">
-    @if(config.isDevelopment) {
-      <div class="align-button mrl type-label paxs mbs type-white bg-blue border-radius">Dev</div>
-    }
     <a class="link-pink display-inline-block align-b mrs"
       href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
-      @if(config.maybeTeamAccess.exists(_.isAdminAccess)) {
-        <div class="type-l mobile-ptxs pbxs">👻</div>
-      } else {
-        <div class="mobile-display-none" style="height: 40px">@views.html.logo()</div>
-        <div class="mobile-display-only" style="height: 36px">@views.html.logoSymbol()</div>
-      }
+      @views.html.mainLogo(config)
     </a>
 
     <a class="@tabClassFor("skills")"
