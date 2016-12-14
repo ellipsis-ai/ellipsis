@@ -8,6 +8,7 @@ define(function(require) {
     Trigger = require('../models/trigger');
 
   return React.createClass({
+    displayName: 'UserInputConfiguration',
     propTypes: {
       onParamChange: React.PropTypes.func.isRequired,
       onParamDelete: React.PropTypes.func.isRequired,
@@ -26,7 +27,15 @@ define(function(require) {
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       behaviorHasCode: React.PropTypes.bool.isRequired,
       hasSharedAnswers: React.PropTypes.bool.isRequired,
-      onToggleSharedAnswer: React.PropTypes.func.isRequired
+      onToggleSharedAnswer: React.PropTypes.func.isRequired,
+      savedAnswers: React.PropTypes.arrayOf(
+        React.PropTypes.shape({
+          inputId: React.PropTypes.string.isRequired,
+          userAnswerCount: React.PropTypes.number.isRequired,
+          myValueString: React.PropTypes.string
+        })
+      ).isRequired,
+      onToggleSavedAnswer: React.PropTypes.func.isRequired
     },
 
     onChange: function(index, data) {
@@ -71,6 +80,10 @@ define(function(require) {
 
     hasRegexTriggers: function() {
       return this.props.triggers.some((trigger) => trigger.isRegex);
+    },
+
+    getSavedAnswersFor: function(inputId) {
+      return this.props.savedAnswers.find((answers) => answers.inputId === inputId);
     },
 
     renderReuseParameter: function(optionalProperties) {
@@ -151,6 +164,8 @@ define(function(require) {
                           onNameBlur={this.onNameBlur.bind(this, paramIndex)}
                           numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
                           id={paramIndex}
+                          savedAnswers={this.getSavedAnswersFor(param.inputId)}
+                          onToggleSavedAnswer={this.props.onToggleSavedAnswer}
                         />
                         {paramIndex + 1 < this.props.userParams.length ? (
                           <div className="pvxs type-label type-disabled align-c">and</div>
