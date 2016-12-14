@@ -11,7 +11,7 @@ import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.LocalDateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
-import play.api.libs.json.{JsString, JsValue}
+import play.api.libs.json.{JsObject, JsString, JsValue}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
@@ -30,6 +30,8 @@ case class ParameterWithValue(
 
   def hasValidValue: Boolean = maybeValue.exists(_.isValid)
   def hasInvalidValue: Boolean = maybeValue.exists(v => !v.isValid)
+
+  def logEntryJson: JsValue = JsObject(Map(parameter.name -> preparedValue))
 }
 
 case class BehaviorResponse(
@@ -77,6 +79,7 @@ case class BehaviorResponse(
       val runtimeInMilliseconds = LocalDateTime.now.toDate.getTime - startTime.toDate.getTime
       dataService.invocationLogEntries.createFor(
         behaviorVersion,
+        parametersWithValues,
         result,
         event,
         Some(event.context.userIdForContext),

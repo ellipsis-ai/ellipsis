@@ -90,6 +90,9 @@ GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorag
 POST        /put_item                                 @controllers.DefaultStorage.putItem
 #NOCSRF
 POST        /api/post_message                         @controllers.APIController.postMessage
+#NOCSRF
+GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String)
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)
