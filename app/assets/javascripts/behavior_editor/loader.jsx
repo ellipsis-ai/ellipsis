@@ -6,19 +6,46 @@ requirejs(['../common'], function() {
     function(Core, Fetch, React, ReactDOM, BehaviorEditor, BehaviorVersion) {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
         otherBehaviorsInGroup: BehaviorEditorConfiguration.otherBehaviorsInGroup.map((ea) => BehaviorVersion.fromJson(ea)),
-        onSave: reload
+        onSave: onSaveBehavior,
+        onForgetSavedAnswerForInput: resetSavedAnswerForInput
       });
 
-      function reload(newData, justSaved) {
+      var currentProps;
+
+      function onSaveBehavior(newData) {
         var props = Object.assign({}, config, newData, {
           behavior: BehaviorVersion.fromJson(newData),
-          justSaved: !!justSaved
+          justSaved: true
         });
-        var myBehaviorEditor = React.createElement(BehaviorEditor, props);
-        ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
+        reload(props);
       }
 
-      reload(config.data, false);
+      function reload(props) {
+        var myBehaviorEditor = React.createElement(BehaviorEditor, props);
+        ReactDOM.render(myBehaviorEditor, document.getElementById(config.containerId));
+        currentProps = props;
+      }
+
+      function resetSavedAnswerForInput(inputId, numAnswersDeleted) {
+        var newSavedAnswers = currentProps.savedAnswers.map((ea) => {
+          if (ea.inputId === inputId) {
+            return Object.assign({}, ea, {
+              myValueString: null,
+              userAnswerCount: ea.userAnswerCount - numAnswersDeleted
+            });
+          } else {
+            return ea;
+          }
+        });
+        reload(Object.assign({}, currentProps, {
+          savedAnswers: newSavedAnswers
+        }));
+      }
+
+      reload(Object.assign({}, config, config.data, {
+        behavior: BehaviorVersion.fromJson(config.data),
+        justSaved: false
+      }));
     }
   );
 });

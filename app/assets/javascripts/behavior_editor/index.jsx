@@ -29,6 +29,7 @@ var React = require('react'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
+  SavedAnswerEditor = require('./saved_answer_editor'),
   SectionHeading = require('./section_heading'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   SVGHamburger = require('../svg/hamburger'),
@@ -98,6 +99,7 @@ return React.createClass({
       })
     ).isRequired,
     onSave: React.PropTypes.func.isRequired,
+    onForgetSavedAnswerForInput: React.PropTypes.func.isRequired,
     onLoad: React.PropTypes.func
   },
 
@@ -296,6 +298,14 @@ return React.createClass({
         <span className="mobile-display-only">Manage</span>
       </span>
     );
+  },
+
+  getParamWithSavedAnswers: function() {
+    if (this.state.selectedSavedAnswerInputId) {
+      return this.getBehaviorParams().find((param) => param.inputId === this.state.selectedSavedAnswerInputId);
+    } else {
+      return null;
+    }
   },
 
   getRedirectValue: function() {
@@ -714,7 +724,7 @@ return React.createClass({
       .then((json) => {
         if (json.behaviorId) {
           let newProps = Object.assign({}, json, { onLoad: optionalCallback });
-          this.props.onSave(newProps, true);
+          this.props.onSave(newProps);
         } else {
           this.onSaveError();
         }
@@ -937,6 +947,18 @@ return React.createClass({
     this.toggleActiveDropdown('manageBehavior');
   },
 
+  toggleSavedAnswerEditor: function(savedAnswerId) {
+    if (this.getActivePanel() === 'savedAnswerEditor') {
+      this.toggleActivePanel('savedAnswerEditor', true, () => {
+        this.setState({ selectedSavedAnswerInputId: null });
+      });
+    } else {
+      this.setState({ selectedSavedAnswerInputId: savedAnswerId }, () => {
+        this.toggleActivePanel('savedAnswerEditor', true, () => null);
+      });
+    }
+  },
+
   toggleTriggerHelp: function() {
     this.toggleActivePanel('helpForTriggerParameters');
   },
@@ -1006,6 +1028,29 @@ return React.createClass({
           options.errorCallback();
         }
       });
+  },
+
+  forgetSavedAnswerRequest: function(url, inputId) {
+    var data = {
+      inputId: inputId
+    };
+    fetch(url, this.jsonPostOptions(data))
+      .then((response) => response.json())
+      .then((json) => {
+        if (json.numDeleted > 0) {
+          this.props.onForgetSavedAnswerForInput(inputId, json.numDeleted);
+        }
+      });
+  },
+
+  forgetSavedAnswerForUser: function(inputId) {
+    var url = jsRoutes.controllers.SavedAnswerController.resetForUser().url;
+    this.forgetSavedAnswerRequest(url, inputId);
+  },
+
+  forgetSavedAnswersForTeam: function(inputId) {
+    var url = jsRoutes.controllers.SavedAnswerController.resetForTeam().url;
+    this.forgetSavedAnswerRequest(url, inputId);
   },
 
   onBehaviorGroupNameChange: function(name) {
@@ -1383,25 +1428,28 @@ return React.createClass({
       redirectValue: "",
       requiredOAuth2ApiConfigId: "",
       paramNameToSync: null,
-      error: null
+      error: null,
+      selectedSavedAnswerInputId: null
     };
   },
 
   componentWillReceiveProps: function(nextProps) {
-    var newBehaviorVersion = this.getInitialBehavior(nextProps.behavior);
-    this.setState({
-      activePanel: null,
-      justSaved: true,
-      behavior: newBehaviorVersion,
-      versions: [this.getTimestampedBehavior(newBehaviorVersion)],
-      versionsLoadStatus: null,
-      error: null
-    });
-    if (typeof(nextProps.onLoad) === 'function') {
-      nextProps.onLoad();
-    }
-    if (newBehaviorVersion.behaviorId) {
-      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newBehaviorVersion.behaviorId).url);
+    if (nextProps.behavior !== this.props.behavior) {
+      var newBehaviorVersion = this.getInitialBehavior(nextProps.behavior);
+      this.setState({
+        activePanel: null,
+        justSaved: true,
+        behavior: newBehaviorVersion,
+        versions: [this.getTimestampedBehavior(newBehaviorVersion)],
+        versionsLoadStatus: null,
+        error: null
+      });
+      if (typeof(nextProps.onLoad) === 'function') {
+        nextProps.onLoad();
+      }
+      if (newBehaviorVersion.behaviorId) {
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newBehaviorVersion.behaviorId).url);
+      }
     }
   },
 
@@ -1630,6 +1678,17 @@ return React.createClass({
               />
             </Collapsible>
           ) : null}
+
+          <Collapsible revealWhen={this.getActivePanel() === 'savedAnswerEditor'}>
+            <SavedAnswerEditor
+              ref="savedAnswerEditor"
+              onToggle={this.toggleSavedAnswerEditor}
+              savedAnswers={this.props.savedAnswers}
+              selectedParam={this.getParamWithSavedAnswers()}
+              onForgetSavedAnswerForUser={this.forgetSavedAnswerForUser}
+              onForgetSavedAnswersForTeam={this.forgetSavedAnswersForTeam}
+            />
+          </Collapsible>
 
           <Collapsible ref="saving" revealWhen={this.isSaving()}>
             <div className="box-action">
@@ -1967,6 +2026,7 @@ return React.createClass({
             hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
             onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
             savedAnswers={this.props.savedAnswers}
+            onToggleSavedAnswer={this.toggleSavedAnswerEditor}
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>

@@ -34,7 +34,8 @@ define(function(require) {
           userAnswerCount: React.PropTypes.number.isRequired,
           myValueString: React.PropTypes.string
         })
-      ).isRequired
+      ).isRequired,
+      onToggleSavedAnswer: React.PropTypes.func.isRequired
     },
 
     onChange: function(index, data) {
@@ -164,6 +165,7 @@ define(function(require) {
                           numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
                           id={paramIndex}
                           savedAnswers={this.getSavedAnswersFor(param.inputId)}
+                          onToggleSavedAnswer={this.props.onToggleSavedAnswer}
                         />
                         {paramIndex + 1 < this.props.userParams.length ? (
                           <div className="pvxs type-label type-disabled align-c">and</div>

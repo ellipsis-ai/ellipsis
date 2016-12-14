@@ -35,7 +35,8 @@ return React.createClass({
     savedAnswers: React.PropTypes.shape({
       myValueString: React.PropTypes.string,
       userAnswerCount: React.PropTypes.number.isRequired
-    })
+    }),
+    onToggleSavedAnswer: React.PropTypes.func.isRequired
   },
 
   onNameChange: function(newName) {
@@ -107,29 +108,25 @@ return React.createClass({
     }
   },
 
-  hasSavedAnswers: function() {
-    return this.getSavedAnswerCount() > 0;
-  },
-
   getSavedAnswerCount: function() {
     return this.props.savedAnswers ?
       this.props.savedAnswers.userAnswerCount : 0;
   },
 
-  hasMetaInfo: function() {
-    return this.props.param.isShared() || this.hasSavedAnswers();
+  onToggleSavedAnswer: function() {
+    this.props.onToggleSavedAnswer(this.props.param.inputId);
   },
 
   renderSavedInfo: function() {
     var isShared = this.props.param.isShared();
-    var count = this.getSavedAnswerCount();
-    if (this.hasMetaInfo()) {
+    var savedAnswerCount = this.getSavedAnswerCount();
+    if (isShared || savedAnswerCount > 0) {
       return (
         <div className="box-tip mbneg1">
-          {count > 0 ? (
+          {savedAnswerCount > 0 ? (
             <span className="type-s mrm">
-              <button type="button" className="button-s button-shrink">
-                {count === 1 ? "1 saved answer" : `${count} saved answers`}
+              <button type="button" className="button-s button-shrink" onClick={this.onToggleSavedAnswer}>
+                {savedAnswerCount === 1 ? "1 saved answer" : `${savedAnswerCount} saved answers`}
               </button>
             </span>
           ) : null}
