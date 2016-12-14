@@ -7,6 +7,7 @@ import export._
 import json._
 import json.Formatting._
 import models.silhouette.EllipsisEnv
+import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -20,7 +21,8 @@ class BehaviorImportExportController @Inject() (
                                                  val messagesApi: MessagesApi,
                                                  val silhouette: Silhouette[EllipsisEnv],
                                                  val dataService: DataService,
-                                                 val lambdaService: AWSLambdaService
+                                                 val lambdaService: AWSLambdaService,
+                                                 val configuration: Configuration
                                                ) extends ReAuthable {
 
   def export(id: String) = silhouette.SecuredAction.async { implicit request =>
@@ -37,7 +39,7 @@ class BehaviorImportExportController @Inject() (
     val user = request.identity
     dataService.users.teamAccessFor(user, maybeTeamId).map { teamAccess =>
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.importBehaviorZip(teamAccess))
+        Ok(views.html.importBehaviorZip(viewConfig(Some(teamAccess))))
       }.getOrElse {
         NotFound(s"No accessible team")
       }}

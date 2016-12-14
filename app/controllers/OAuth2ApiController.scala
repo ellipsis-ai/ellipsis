@@ -6,6 +6,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import models.accounts.oauth2api.{OAuth2Api, OAuth2GrantType}
 import models.silhouette.EllipsisEnv
+import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -17,7 +18,8 @@ import scala.concurrent.Future
 class OAuth2ApiController @Inject() (
                                       val messagesApi: MessagesApi,
                                       val silhouette: Silhouette[EllipsisEnv],
-                                      val dataService: DataService
+                                      val dataService: DataService,
+                                      val configuration: Configuration
                                     ) extends ReAuthable {
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -29,7 +31,7 @@ class OAuth2ApiController @Inject() (
       teamAccess.maybeTargetTeam.map { team =>
         Ok(
           views.html.listOAuth2Apis(
-            teamAccess,
+            viewConfig(Some(teamAccess)),
             apis
           )
         )
@@ -43,7 +45,7 @@ class OAuth2ApiController @Inject() (
     val user = request.identity
     dataService.users.teamAccessFor(user, maybeTeamId).map { teamAccess =>
       teamAccess.maybeTargetTeam.map { _ =>
-        Ok(views.html.oAuth2Api(teamAccess, None, OAuth2GrantType.values))
+        Ok(views.html.oAuth2Api(viewConfig(Some(teamAccess)), None, OAuth2GrantType.values))
       }.getOrElse {
         NotFound("Team not accessible")
       }
@@ -57,7 +59,7 @@ class OAuth2ApiController @Inject() (
       maybeApi <- dataService.oauth2Apis.find(apiId)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.oAuth2Api(teamAccess, maybeApi, OAuth2GrantType.values))
+        Ok(views.html.oAuth2Api(viewConfig(Some(teamAccess)), maybeApi, OAuth2GrantType.values))
       }.getOrElse {
         NotFound("Team not accessible")
       }

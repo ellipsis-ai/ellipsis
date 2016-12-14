@@ -1,12 +1,12 @@
 @(
   title: String,
-  maybeTeamAccess: Option[models.accounts.user.UserTeamAccess],
+  config: ViewConfig,
   pageId: String = "",
   selectedNav: String = ""
-  )(content: Html)(implicit messages: Messages, r: RequestHeader)
+)(content: Html)(implicit messages: Messages, r: RequestHeader)
 
 @navBorderColorForPage = @{if (pageId == "intro") " border-blue-medium " else " border-pink "}
-@navBgColorForPage = @{if (maybeTeamAccess.exists(_.isAdminAccess)) " bg-pink " else " bg-black "}
+@navBgColorForPage = @{if (config.maybeTeamAccess.exists(_.isAdminAccess)) " bg-pink " else " bg-black "}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -34,7 +34,7 @@
   <body class="bg-lightest flex-rows flex-rows-viewport">
     <header id="main-header" class='@("position-fixed-top position-z-almost-front border-emphasis-bottom type-white " + navBgColorForPage + navBorderColorForPage)'>
       <div class="container container-wide prm mobile-prs">
-        @views.html.mainNav(maybeTeamAccess, selectedNav)
+        @views.html.mainNav(config, selectedNav)
       </div>
     </header>
     <script>

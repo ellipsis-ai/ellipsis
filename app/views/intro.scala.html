@@ -1,5 +1,5 @@
 @(
-  teamAccess: models.accounts.user.UserTeamAccess,
+  config: ViewConfig,
   behaviorGroups: Seq[json.BehaviorGroupData],
   installedBehaviorGroups: Seq[json.InstalledBehaviorGroupData]
   )(implicit messages: Messages, r: RequestHeader)
@@ -8,7 +8,7 @@
 @import play.api.libs.json._
 @import json.Formatting._
 
-@main("Welcome to Ellipsis", Some(teamAccess), pageId = "intro", selectedNav = "skills") {
+@main("Welcome to Ellipsis", config, pageId = "intro", selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorImportExportController.doImport,
     routes.javascript.BehaviorEditorController.editGroup
@@ -36,7 +36,12 @@
             <div class="arrow-right mobile-display-none"></div>
           </h4>
 
-          <h4>Or else <a href='@routes.BehaviorEditorController.newForNormalBehavior(teamAccess.maybeAdminAccessToTeamId)'>teach Ellipsis something brand new.</a></h4>
+          @config.maybeTeamAccess.map { teamAccess =>
+            <h4>
+              Or else <a href='@routes.BehaviorEditorController.newForNormalBehavior(teamAccess.maybeAdminAccessToTeamId)'>
+              teach Ellipsis something brand new.</a>
+            </h4>
+          }
 
           <ul class="type-s list-space-s checklist type-weak">
             <li>Skills instruct your bot how to do repetitive or cumbersome tasks, and what
@@ -54,7 +59,7 @@
     </div>
     <script>
         var BehaviorGroupImporterConfig = {
-          teamId: '@(teamAccess.maybeTargetTeam.getOrElse(""))',
+          teamId: '@config.maybeTargetTeamId.getOrElse("")',
           installedBehaviorGroups: @Html(Json.toJson(installedBehaviorGroups).toString),
           containerId: 'importerContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
