@@ -10,10 +10,10 @@ requirejs(['../common'], function() {
         onForgetSavedAnswerForInput: resetSavedAnswerForInput
       });
 
-      var currentProps;
+      var currentProps = config;
 
       function onSaveBehavior(newData) {
-        var props = Object.assign({}, config, newData, {
+        var props = Object.assign({}, currentProps, newData, {
           behavior: BehaviorVersion.fromJson(newData),
           justSaved: true
         });
