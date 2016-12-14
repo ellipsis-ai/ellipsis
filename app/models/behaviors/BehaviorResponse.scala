@@ -31,7 +31,6 @@ case class ParameterWithValue(
   def hasValidValue: Boolean = maybeValue.exists(_.isValid)
   def hasInvalidValue: Boolean = maybeValue.exists(v => !v.isValid)
 
-  def logEntryJson: JsValue = JsObject(Map(parameter.name -> preparedValue))
 }
 
 case class BehaviorResponse(

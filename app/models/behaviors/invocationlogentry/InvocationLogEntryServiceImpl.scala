@@ -12,7 +12,7 @@ import org.joda.time.LocalDateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behavior.Behavior
-import play.api.libs.json.{JsArray, JsValue}
+import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -170,7 +170,9 @@ class InvocationLogEntryServiceImpl @Inject() (
         behaviorVersion.id,
         result.resultType.toString,
         event.context.fullMessageText,
-        JsArray(parametersWithValues.map(_.logEntryJson)),
+        Json.toJson(parametersWithValues.map { ea =>
+          ea.parameter.name -> ea.preparedValue
+        }.toMap),
         result.fullText,
         event.context.name,
         maybeUserIdForContext,
