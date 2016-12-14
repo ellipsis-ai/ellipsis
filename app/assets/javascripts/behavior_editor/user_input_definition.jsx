@@ -12,6 +12,7 @@ var React = require('react'),
   var PER_USER = "per_user";
 
 return React.createClass({
+  displayName: 'UserInputDefinition',
   propTypes: {
     id: React.PropTypes.oneOfType([
       React.PropTypes.number,
@@ -30,7 +31,11 @@ return React.createClass({
     onNameFocus: React.PropTypes.func.isRequired,
     onNameBlur: React.PropTypes.func.isRequired,
     numLinkedTriggers: React.PropTypes.number.isRequired,
-    shouldGrabFocus: React.PropTypes.bool
+    shouldGrabFocus: React.PropTypes.bool,
+    savedAnswers: React.PropTypes.shape({
+      myValueString: React.PropTypes.string,
+      userAnswerCount: React.PropTypes.number.isRequired
+    })
   },
 
   onNameChange: function(newName) {
@@ -102,25 +107,48 @@ return React.createClass({
     }
   },
 
-  renderIsSharedNotification: function() {
-    if (this.props.param.isShared()) {
+  hasSavedAnswers: function() {
+    return this.getSavedAnswerCount() > 0;
+  },
+
+  getSavedAnswerCount: function() {
+    return this.props.savedAnswers ?
+      this.props.savedAnswers.userAnswerCount : 0;
+  },
+
+  hasMetaInfo: function() {
+    return this.props.param.isShared() || this.hasSavedAnswers();
+  },
+
+  renderSavedInfo: function() {
+    var isShared = this.props.param.isShared();
+    var count = this.getSavedAnswerCount();
+    if (this.hasMetaInfo()) {
       return (
-        <div className="box-tip border-left border-right">
-          <span className="display-inline-block mrs align-b type-pink" style={{ height: 24 }}>
-            <SVGTip />
-          </span>
-          <span className="type-s">This input is shared with other actions.</span>
+        <div className="box-tip mbneg1">
+          {count > 0 ? (
+            <span className="type-s mrm">
+              <button type="button" className="button-s button-shrink">
+                {count === 1 ? "1 saved answer" : `${count} saved answers`}
+              </button>
+            </span>
+          ) : null}
+          {isShared ? (
+            <span>
+              <span className="display-inline-block align-b type-pink mrs" style={{ height: 24 }}>
+                <SVGTip />
+              </span>
+              <span className="type-s mrm">This input is shared with other actions.</span>
+            </span>
+          ) : null}
         </div>
       );
-    } else {
-      return null;
     }
   },
 
   render: function() {
     return (
-      <div>
-      <div className={"border border-light " + (this.props.param.isShared() ? "mbneg1" : "")}>
+      <div className="border border-light">
         <div className="bg-white plm pbxs">
           <div className="columns columns-elastic">
             <div className="column column-expand align-form-input">
@@ -180,8 +208,7 @@ return React.createClass({
             ))}
           </div>
         </div>
-      </div>
-      {this.renderIsSharedNotification()}
+        {this.renderSavedInfo()}
       </div>
     );
   }

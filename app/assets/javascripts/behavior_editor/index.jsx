@@ -90,6 +90,13 @@ return React.createClass({
     linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool,
+    savedAnswers: React.PropTypes.arrayOf(
+      React.PropTypes.shape({
+        inputId: React.PropTypes.string.isRequired,
+        userAnswerCount: React.PropTypes.number.isRequired,
+        myValueString: React.PropTypes.string
+      })
+    ).isRequired,
     onSave: React.PropTypes.func.isRequired,
     onLoad: React.PropTypes.func
   },
@@ -1959,6 +1966,7 @@ return React.createClass({
             behaviorHasCode={this.state.revealCodeEditor}
             hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
             onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
+            savedAnswers={this.props.savedAnswers}
           />
 
           <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
