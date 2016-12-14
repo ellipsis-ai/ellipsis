@@ -66,7 +66,8 @@ describe('BehaviorEditor', () => {
     shouldRevealCodeEditor: true,
     onSave: jest.fn(),
     otherBehaviorsInGroup: [],
-    savedAnswers: []
+    savedAnswers: [],
+    onForgetSavedAnswerForInput: jest.fn()
   };
 
   let editorConfig;
