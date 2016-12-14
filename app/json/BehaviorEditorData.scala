@@ -100,6 +100,22 @@ object BehaviorEditorData {
     } yield maybeData
   }
 
+  private def inputSavedAnswerDataFor(
+                               maybeBehaviorVersionData: Option[BehaviorVersionData],
+                               otherBehaviorsInGroupData: Seq[BehaviorVersionData],
+                               user: User,
+                               dataService: DataService
+                             ): Future[Seq[InputSavedAnswerData]] = {
+    val behaviorVersionDataForGroup = otherBehaviorsInGroupData ++ maybeBehaviorVersionData.map(Seq(_)).getOrElse(Seq())
+    Future.sequence(behaviorVersionDataForGroup.map { behaviorVersionData =>
+      Future.sequence(behaviorVersionData.params.flatMap { param =>
+        param.inputId.map { inputId =>
+          InputSavedAnswerData.maybeFor(inputId, user, dataService)
+        }
+      }).map(_.flatten)
+    }).map(_.flatten.distinct)
+  }
+
   def buildFor(
                 user: User,
                 maybeBehaviorVersionData: Option[BehaviorVersionData],
@@ -135,13 +151,7 @@ object BehaviorEditorData {
         BehaviorParameterType.allFor(maybeGroup, dataService)
       }.getOrElse(Future.successful(Seq()))
       paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
-      inputSavedAnswerData <- maybeBehaviorVersionData.map { behaviorVersionData =>
-        Future.sequence(behaviorVersionData.params.flatMap { param =>
-          param.inputId.map { inputId =>
-            InputSavedAnswerData.maybeFor(inputId, user, dataService)
-          }
-        }).map(_.flatten)
-      }.getOrElse(Future.successful(Seq()))
+      inputSavedAnswerData <- inputSavedAnswerDataFor(maybeBehaviorVersionData, otherBehaviorsInGroupData, user, dataService)
     } yield {
       val maybeDataTypeName = if (isForNewDataType) { Some("") } else { None }
       val versionData = maybeBehaviorVersionData.getOrElse {
