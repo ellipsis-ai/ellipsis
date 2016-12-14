@@ -42,43 +42,43 @@ import play.api.libs.ws.WSClient
 class ServiceModule extends AbstractModule with ScalaModule {
 
   override def configure() = {
-    bind[DataService].to(classOf[PostgresDataService])
+    bind[DataService].to[PostgresDataService]
 
-    bind[UserService].to(classOf[UserServiceImpl])
-    bind[LoginTokenService].to(classOf[LoginTokenServiceImpl])
-    bind[LinkedAccountService].to(classOf[LinkedAccountServiceImpl])
-    bind[TeamService].to(classOf[TeamServiceImpl])
-    bind[APITokenService].to(classOf[APITokenServiceImpl])
-    bind[TeamEnvironmentVariableService].to(classOf[TeamEnvironmentVariableServiceImpl])
-    bind[UserEnvironmentVariableService].to(classOf[UserEnvironmentVariableServiceImpl])
-    bind[InvocationTokenService].to(classOf[InvocationTokenServiceImpl])
-    bind[LinkedOAuth2TokenService].to(classOf[LinkedOAuth2TokenServiceImpl])
-    bind[LinkedSimpleTokenService].to(classOf[LinkedSimpleTokenServiceImpl])
-    bind[OAuth2ApiService].to(classOf[OAuth2ApiServiceImpl])
-    bind[OAuth2ApplicationService].to(classOf[OAuth2ApplicationServiceImpl])
-    bind[SimpleTokenApiService].to(classOf[SimpleTokenApiServiceImpl])
-    bind[SlackProfileService].to(classOf[SlackProfileServiceImpl])
-    bind[SlackBotProfileService].to(classOf[SlackBotProfileServiceImpl])
-    bind[OAuth2TokenService].to(classOf[OAuth2TokenServiceImpl])
-    bind[BehaviorGroupService].to(classOf[BehaviorGroupServiceImpl])
-    bind[BehaviorService].to(classOf[BehaviorServiceImpl])
-    bind[BehaviorVersionService].to(classOf[BehaviorVersionServiceImpl])
-    bind[BehaviorParameterService].to(classOf[BehaviorParameterServiceImpl])
-    bind[InputService].to(classOf[InputServiceImpl])
-    bind[SavedAnswerService].to(classOf[SavedAnswerServiceImpl])
-    bind[MessageTriggerService].to(classOf[MessageTriggerServiceImpl])
-    bind[AWSConfigService].to(classOf[AWSConfigServiceImpl])
-    bind[RequiredOAuth2ApiConfigService].to(classOf[RequiredOAuth2ApiConfigServiceImpl])
-    bind[RequiredSimpleTokenApiService].to(classOf[RequiredSimpleTokenApiServiceImpl])
-    bind[ConversationService].to(classOf[ConversationServiceImpl])
-    bind[CollectedParameterValueService].to(classOf[CollectedParameterValueServiceImpl])
-    bind[ScheduledMessageService].to(classOf[ScheduledMessageServiceImpl])
-    bind[InvocationLogEntryService].to(classOf[InvocationLogEntryServiceImpl])
+    bind[UserService].to[UserServiceImpl]
+    bind[LoginTokenService].to[LoginTokenServiceImpl]
+    bind[LinkedAccountService].to[LinkedAccountServiceImpl]
+    bind[TeamService].to[TeamServiceImpl]
+    bind[APITokenService].to[APITokenServiceImpl]
+    bind[TeamEnvironmentVariableService].to[TeamEnvironmentVariableServiceImpl]
+    bind[UserEnvironmentVariableService].to[UserEnvironmentVariableServiceImpl]
+    bind[InvocationTokenService].to[InvocationTokenServiceImpl]
+    bind[LinkedOAuth2TokenService].to[LinkedOAuth2TokenServiceImpl]
+    bind[LinkedSimpleTokenService].to[LinkedSimpleTokenServiceImpl]
+    bind[OAuth2ApiService].to[OAuth2ApiServiceImpl]
+    bind[OAuth2ApplicationService].to[OAuth2ApplicationServiceImpl]
+    bind[SimpleTokenApiService].to[SimpleTokenApiServiceImpl]
+    bind[SlackProfileService].to[SlackProfileServiceImpl]
+    bind[SlackBotProfileService].to[SlackBotProfileServiceImpl]
+    bind[OAuth2TokenService].to[OAuth2TokenServiceImpl]
+    bind[BehaviorGroupService].to[BehaviorGroupServiceImpl]
+    bind[BehaviorService].to[BehaviorServiceImpl]
+    bind[BehaviorVersionService].to[BehaviorVersionServiceImpl]
+    bind[BehaviorParameterService].to[BehaviorParameterServiceImpl]
+    bind[InputService].to[InputServiceImpl]
+    bind[SavedAnswerService].to[SavedAnswerServiceImpl]
+    bind[MessageTriggerService].to[MessageTriggerServiceImpl]
+    bind[AWSConfigService].to[AWSConfigServiceImpl]
+    bind[RequiredOAuth2ApiConfigService].to[RequiredOAuth2ApiConfigServiceImpl]
+    bind[RequiredSimpleTokenApiService].to[RequiredSimpleTokenApiServiceImpl]
+    bind[ConversationService].to[ConversationServiceImpl]
+    bind[CollectedParameterValueService].to[CollectedParameterValueServiceImpl]
+    bind[ScheduledMessageService].to[ScheduledMessageServiceImpl]
+    bind[InvocationLogEntryService].to[InvocationLogEntryServiceImpl]
 
-    bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
-    bind(classOf[AWSLogsService]).to(classOf[AWSLogsServiceImpl])
-    bind(classOf[Models]).asEagerSingleton()
-    bind(classOf[SlackService]).to(classOf[SlackServiceImpl]).asEagerSingleton()
+    bind[AWSLambdaService].to[AWSLambdaServiceImpl]
+    bind[AWSLogsService].to[AWSLogsServiceImpl]
+    bind[Models].asEagerSingleton()
+    bind[SlackService].to[SlackServiceImpl].asEagerSingleton()
   }
 
   @Provides
