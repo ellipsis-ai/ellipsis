@@ -9,7 +9,7 @@ case class InvocationLogEntry(
                                behaviorVersion: BehaviorVersion,
                                resultType: String,
                                messageText: String,
-                               maybeParamValues: Option[JsValue],
+                               paramValues: JsValue,
                                resultText: String,
                                context: String,
                                maybeUserIdForContext: Option[String],

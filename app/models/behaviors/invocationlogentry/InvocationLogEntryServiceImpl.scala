@@ -22,7 +22,7 @@ case class RawInvocationLogEntry(
                                   behaviorVersionId: String,
                                   resultType: String,
                                   messageText: String,
-                                  maybeParamValues: Option[JsValue],
+                                  paramValues: JsValue,
                                   resultText: String,
                                   context: String,
                                   maybeUserIdForContext: Option[String],
@@ -36,14 +36,14 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def behaviorVersionId = column[String]("behavior_version_id")
   def resultType = column[String]("result_type")
   def messageText = column[String]("message_text")
-  def maybeParamValues = column[Option[JsValue]]("param_values")
+  def paramValues = column[JsValue]("param_values")
   def resultText = column[String]("result_text")
   def context = column[String]("context")
   def maybeUserIdForContext = column[Option[String]]("user_id_for_context")
   def runtimeInMilliseconds = column[Long]("runtime_in_milliseconds")
   def createdAt = column[LocalDateTime]("created_at")
 
-  def * = (id, behaviorVersionId, resultType, messageText, maybeParamValues, resultText, context, maybeUserIdForContext, runtimeInMilliseconds, createdAt) <>
+  def * = (id, behaviorVersionId, resultType, messageText, paramValues, resultText, context, maybeUserIdForContext, runtimeInMilliseconds, createdAt) <>
     ((RawInvocationLogEntry.apply _).tupled, RawInvocationLogEntry.unapply _)
 }
 
@@ -65,7 +65,7 @@ class InvocationLogEntryServiceImpl @Inject() (
       BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
       raw.resultType,
       raw.messageText,
-      raw.maybeParamValues,
+      raw.paramValues,
       raw.resultText,
       raw.context,
       raw.maybeUserIdForContext,
@@ -170,7 +170,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         behaviorVersion.id,
         result.resultType.toString,
         event.context.fullMessageText,
-        Some(JsArray(parametersWithValues.map(_.logEntryJson))),
+        JsArray(parametersWithValues.map(_.logEntryJson)),
         result.fullText,
         event.context.name,
         maybeUserIdForContext,
@@ -184,7 +184,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         behaviorVersion,
         raw.resultType,
         raw.messageText,
-        raw.maybeParamValues,
+        raw.paramValues,
         raw.resultText,
         raw.context,
         raw.maybeUserIdForContext,
