@@ -27,6 +27,14 @@ define(function(require) {
         (!answer.myValueString && answer.userAnswerCount > 0);
     },
 
+    isSavedForTeam: function() {
+      return this.props.selectedParam && this.props.selectedParam.isSavedForTeam;
+    },
+
+    isSavedForUser: function() {
+      return this.props.selectedParam && this.props.selectedParam.isSavedForUser;
+    },
+
     forgetUserAnswer: function(answer) {
       this.props.onForgetSavedAnswerForUser(answer.inputId);
     },
@@ -37,24 +45,37 @@ define(function(require) {
 
     renderForgetUserAnswerButton: function(answer) {
       return (
-        <button type="button" className="button-s mbs"
+        <button type="button" className="mrs mbs"
           onClick={this.forgetUserAnswer.bind(this, answer)}
           disabled={!answer.myValueString}
         >
-          Forget this answer
+          Forget your answer
         </button>
       );
     },
 
     renderForgetTeamAnswersButton: function(answer) {
       return (
-        <button type="button" className="button-s mbs"
+        <button type="button" className="mrs mbs"
           disabled={answer.userAnswerCount === 0}
           onClick={this.forgetTeamAnswers.bind(this, answer)}
         >
-          {this.otherUsersAnswersSaved(answer) ? "Forget everyone’s answers" : "Forget this answer"}
+          {this.otherUsersAnswersSaved(answer) ? "Forget all answers" : "Forget this answer"}
         </button>
       );
+    },
+
+    renderForgetButtons: function(answer) {
+      var includeTeamButton = this.isSavedForTeam() ||
+        this.isSavedForUser() && this.otherUsersAnswersSaved(answer);
+      if (answer) {
+        return (
+          <span>
+            {this.isSavedForUser() ? this.renderForgetUserAnswerButton(answer) : null}
+            {includeTeamButton ? this.renderForgetTeamAnswersButton(answer) : null}
+          </span>
+        );
+      }
     },
 
     render: function() {
@@ -85,7 +106,7 @@ define(function(require) {
                         <div><i>{selectedParam.question}</i></div>
                       </div>
 
-                      {selectedParam.isSavedForUser ? (
+                      {this.isSavedForUser() ? (
                         <div className="mbl">
                           <h6 className="display-inline-block mbn">Total number of answers:</h6>
                           <span>
@@ -94,19 +115,17 @@ define(function(require) {
                               <span className="type-weak"> (yours)</span>
                             ) : null}
                           </span>
-                          <div className="mtxs">
-                            {this.otherUsersAnswersSaved(answer) ? this.renderForgetTeamAnswersButton(answer) : null}
-                          </div>
                         </div>
                       ) : null}
 
                       <div className="mbl">
-                        <h6>{selectedParam.isSavedForTeam ? "Saved answer for the team:" : "Your saved answer:" }</h6>
-                        <div className="box-code-example display-inline-block mbs mrm">
+                        <h6 className="display-inline-block mbn mrs">{this.isSavedForTeam() ? "Saved answer for the team:" : "Your saved answer:" }</h6>
+                        <div className="box-code-example display-inline-block" style={{
+                          maxHeight: "6.5em",
+                          overflow: "auto"
+                        }}>
                           {answer.myValueString || (<span className="type-disabled">(none)</span>)}
                         </div>
-
-                        {selectedParam.isSavedForUser ? this.renderForgetUserAnswerButton(answer) : this.renderForgetTeamAnswersButton(answer)}
                       </div>
 
                     </div>
@@ -114,9 +133,8 @@ define(function(require) {
                   ) : null}
 
                   <div className="mtxl">
-                    <button type="button" onClick={this.props.onToggle}>
-                      Done
-                    </button>
+                    <button type="button" className="button-primary mrs mbs" onClick={this.props.onToggle}>Done</button>
+                    {this.renderForgetButtons(answer)}
                   </div>
 
                 </div>

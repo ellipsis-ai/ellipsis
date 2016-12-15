@@ -121,8 +121,8 @@ return React.createClass({
 
   getSavedAnswerSummary: function() {
     var answer = this.props.savedAnswers;
-    var count = answer.userAnswerCount;
-    var userHasAnswered = !!answer.myValueString;
+    var count = this.getSavedAnswerCount();
+    var userHasAnswered = answer && answer.myValueString;
     if (this.props.param.isSavedForTeam) {
       if (count > 0) {
         return "1 answer saved";
