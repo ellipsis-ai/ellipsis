@@ -10,6 +10,7 @@ import play.api.libs.json.{JsNull, JsValue, Json}
 import play.api.mvc.Action
 import json.Formatting._
 import models.behaviors.invocationlogentry.InvocationLogEntry
+import org.joda.time.format.DateTimeFormat
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -49,7 +50,26 @@ class InvocationLogController @Inject() (
   }
   implicit val logEntryWrites = Json.writes[LogEntryData]
 
-  def getLogs(behaviorId: String, token: String) = Action.async { implicit request =>
+  private val EARLIEST = LocalDateTime.parse("2016-01-01")
+  private val LATEST = LocalDateTime.now
+  private val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+
+  private def maybeTimestampFor(maybeString: Option[String]): Option[LocalDateTime] = {
+    try {
+      maybeString.map { str =>
+        LocalDateTime.parse(str, formatter)
+      }
+    } catch {
+      case e: IllegalArgumentException => None
+    }
+  }
+
+  def getLogs(
+               behaviorId: String,
+               token: String,
+               maybeFrom: Option[String],
+               maybeTo: Option[String]
+             ) = Action.async { implicit request =>
     for {
       maybeTeam <- dataService.teams.findForToken(token)
       maybeBehaviorWithoutAccessCheck <- dataService.behaviors.findWithoutAccessCheck(behaviorId)
@@ -57,7 +77,9 @@ class InvocationLogController @Inject() (
         maybeTeam.contains(behavior.team)
       })
       maybeLogEntries <- maybeBehavior.map { behavior =>
-        dataService.invocationLogEntries.allForBehavior(behavior).map { entries =>
+        val from = maybeTimestampFor(maybeFrom).getOrElse(EARLIEST)
+        val to = maybeTimestampFor(maybeTo).getOrElse(LATEST)
+        dataService.invocationLogEntries.allForBehavior(behavior, from, to).map { entries =>
           Some(entries.filterNot(_.paramValues == JsNull))
         }
       }.getOrElse(Future.successful(None))
