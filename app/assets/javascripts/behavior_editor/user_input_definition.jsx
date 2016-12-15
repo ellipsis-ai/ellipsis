@@ -4,6 +4,7 @@ var React = require('react'),
   Input = require('../form/input'),
   Select = require('../form/select'),
   SVGTip = require('../svg/tip'),
+  SVGInfo = require('../svg/info'),
   Param = require('../models/param'),
   ifPresent = require('../if_present');
 
@@ -113,31 +114,68 @@ return React.createClass({
       this.props.savedAnswers.userAnswerCount : 0;
   },
 
+  paramSavesAnswers: function() {
+    return this.props.param.isSavedForTeam ||
+        this.props.param.isSavedForUser;
+  },
+
+  getSavedAnswerSummary: function() {
+    var answer = this.props.savedAnswers;
+    var count = answer.userAnswerCount;
+    var userHasAnswered = !!answer.myValueString;
+    if (this.props.param.isSavedForTeam) {
+      if (count > 0) {
+        return "1 answer saved";
+      } else {
+        return "No answer saved yet";
+      }
+    } else {
+      if (count === 1 && userHasAnswered) {
+        return "1 answer saved (yours)";
+      } else if (count === 1 && !userHasAnswered) {
+        return "1 answer saved (another person)";
+      } else if (count === 2 && userHasAnswered) {
+        return "2 answers saved (including yours)";
+      } else if (count > 2 && userHasAnswered) {
+        return `${count} answers saved (including yours)`;
+      } else if (count > 1) {
+        return `${count} answers saved (for other people)`;
+      } else {
+        return "No answers saved yet";
+      }
+    }
+  },
+
   onToggleSavedAnswer: function() {
     this.props.onToggleSavedAnswer(this.props.param.inputId);
   },
 
-  renderSavedInfo: function() {
-    var isShared = this.props.param.isShared();
-    var savedAnswerCount = this.getSavedAnswerCount();
-    if (isShared || savedAnswerCount > 0) {
+  renderSavedAnswerInfo: function() {
+    if (this.paramSavesAnswers()) {
+      return (
+        <div className="type-s mtxs mrm mbs">
+          <span className="display-inline-block align-b type-pink mrs" style={{ height: 24 }}>
+            <SVGInfo />
+          </span>
+          <span className="mrs type-weak">{this.getSavedAnswerSummary()}</span>
+          <button type="button" className="button-s button-shrink"
+            disabled={this.getSavedAnswerCount() === 0}
+            onClick={this.onToggleSavedAnswer}>
+            Details
+          </button>
+        </div>
+      );
+    }
+  },
+
+  renderSharingInfo: function() {
+    if (this.props.param.isShared()) {
       return (
         <div className="box-tip mbneg1">
-          {savedAnswerCount > 0 ? (
-            <span className="type-s mrm">
-              <button type="button" className="button-s button-shrink" onClick={this.onToggleSavedAnswer}>
-                {savedAnswerCount === 1 ? "1 saved answer" : `${savedAnswerCount} saved answers`}
-              </button>
-            </span>
-          ) : null}
-          {isShared ? (
-            <span>
-              <span className="display-inline-block align-b type-pink mrs" style={{ height: 24 }}>
-                <SVGTip />
-              </span>
-              <span className="type-s mrm">This input is shared with other actions.</span>
-            </span>
-          ) : null}
+          <span className="display-inline-block align-b type-pink mrs" style={{ height: 24 }}>
+            <SVGTip />
+          </span>
+          <span className="type-s mrm">This input is shared with other actions.</span>
         </div>
       );
     }
@@ -152,7 +190,7 @@ return React.createClass({
               <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
               <Input
                 ref="name"
-                className="form-input-borderless type-monospace type-s width-10 mrm"
+                className="form-input-borderless type-monospace type-s width-15 mrm"
                 placeholder="userInput"
                 value={this.props.param.name}
                 onChange={this.onNameChange}
@@ -204,8 +242,9 @@ return React.createClass({
               <button type="button" className="button-s button-shrink mbs" onClick={this.configureType}>Edit type…</button>
             ))}
           </div>
+          {this.renderSavedAnswerInfo()}
         </div>
-        {this.renderSavedInfo()}
+        {this.renderSharingInfo()}
       </div>
     );
   }
