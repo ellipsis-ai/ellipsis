@@ -40,7 +40,7 @@ class EventHandler @Inject() (
   }
 
   def isCancelConversationMessage(text: String): Boolean = {
-    Seq("…stop", "…cancel").contains(text)
+    Seq("…stop", "…cancel", "...stop", "...cancel").contains(text)
   }
 
   def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
