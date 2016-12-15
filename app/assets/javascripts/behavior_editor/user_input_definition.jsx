@@ -171,7 +171,7 @@ return React.createClass({
   renderSharingInfo: function() {
     if (this.props.param.isShared()) {
       return (
-        <div className="box-tip mbneg1">
+        <div className="box-tip mbneg1 plm">
           <span className="display-inline-block align-b type-pink mrs" style={{ height: 24 }}>
             <SVGTip />
           </span>
