@@ -108,8 +108,8 @@ class BehaviorImportExportController @Inject() (
         json.validate[BehaviorGroupData] match {
           case JsSuccess(data, jsPath) => {
             for {
-              maybeTeam <- dataService.teams.find(user.teamId)
-              maybeImporter <- Future.successful(maybeTeam.map { team =>
+              teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
+              maybeImporter <- Future.successful(teamAccess.maybeTargetTeam.map { team =>
                 BehaviorGroupImporter(team, user, data, dataService)
               })
               maybeBehaviorGroup <- maybeImporter.map { importer =>
