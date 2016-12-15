@@ -19,7 +19,7 @@ trait InvocationLogEntryService {
 
   def forTeamForDate(team: Team, date: LocalDateTime): Future[Seq[InvocationLogEntry]]
 
-  def allForBehavior(behavior: Behavior): Future[Seq[InvocationLogEntry]]
+  def allForBehavior(behavior: Behavior, from: LocalDateTime, to: LocalDateTime): Future[Seq[InvocationLogEntry]]
 
   def createFor(
                  behaviorVersion: BehaviorVersion,

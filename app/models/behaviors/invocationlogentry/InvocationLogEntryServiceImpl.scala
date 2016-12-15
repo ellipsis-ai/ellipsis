@@ -137,22 +137,32 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def uncompiledAllForBehaviorVersionQuery(behaviorVersionId: Rep[String]) = {
-    allWithVersion.filter { case(entry, _) => entry.behaviorVersionId === behaviorVersionId }
+  def uncompiledAllForBehaviorVersionQuery(
+                                            behaviorVersionId: Rep[String],
+                                            from: Rep[LocalDateTime],
+                                            to: Rep[LocalDateTime]
+                                          ) = {
+    allWithVersion.
+      filter { case(entry, _) => entry.behaviorVersionId === behaviorVersionId }.
+      filter { case(entry, _) => entry.createdAt >= from && entry.createdAt <= to }
   }
   val allForBehaviorVersionQuery = Compiled(uncompiledAllForBehaviorVersionQuery _)
 
-  def allForBehaviorVersion(behaviorVersion: BehaviorVersion): Future[Seq[InvocationLogEntry]] = {
-    val action = allForBehaviorVersionQuery(behaviorVersion.id).result.map { r =>
+  def allForBehaviorVersion(
+                             behaviorVersion: BehaviorVersion,
+                             from: LocalDateTime,
+                             to: LocalDateTime
+                           ): Future[Seq[InvocationLogEntry]] = {
+    val action = allForBehaviorVersionQuery(behaviorVersion.id, from, to).result.map { r =>
       r.map(tuple2Entry)
     }
     dataService.run(action)
   }
 
-  def allForBehavior(behavior: Behavior): Future[Seq[InvocationLogEntry]] = {
+  def allForBehavior(behavior: Behavior, from: LocalDateTime, to: LocalDateTime): Future[Seq[InvocationLogEntry]] = {
     for {
       versions <- dataService.behaviorVersions.allFor(behavior)
-      entries <- Future.sequence(versions.map(allForBehaviorVersion)).map(_.flatten)
+      entries <- Future.sequence(versions.map(ea => allForBehaviorVersion(ea, from, to))).map(_.flatten)
     } yield entries
   }
 
