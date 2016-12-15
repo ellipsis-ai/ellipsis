@@ -221,13 +221,13 @@ return React.createClass({
           <div className="prsymbol mts">
             <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
               <option value={EACH_TIME}>
-                Ask each time the skill is run
+                Ask each time action is triggered
               </option>
               <option value={PER_TEAM}>
-                Ask once, save the answer for the whole team
+                Ask once for the team, then re-use the answer
               </option>
               <option value={PER_USER}>
-                Ask each user once, save their answers
+                Ask once for each user, then re-use the answer
               </option>
             </Select>
             <span className="display-inline-block align-m type-s type-weak mrm mbs">and allow data type</span>
