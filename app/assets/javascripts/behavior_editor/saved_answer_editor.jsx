@@ -119,8 +119,8 @@ define(function(require) {
                       ) : null}
 
                       <div className="mbl">
-                        <h6 className="display-inline-block mbn mrs">{this.isSavedForTeam() ? "Saved answer for the team:" : "Your saved answer:" }</h6>
-                        <div className="box-code-example display-inline-block" style={{
+                        <h6 className="display-inline-block mbn mrs align-m">{this.isSavedForTeam() ? "Saved answer for the team:" : "Your saved answer:" }</h6>
+                        <div className="box-code-example display-inline-block align-m" style={{
                           maxHeight: "6.5em",
                           overflow: "auto"
                         }}>
