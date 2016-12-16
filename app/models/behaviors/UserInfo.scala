@@ -23,13 +23,13 @@ case class LinkedInfo(externalSystem: String, accessToken: String) {
 
 }
 
-case class MessageInfo(medium: String, userId: String, details: JsObject)
+case class MessageInfo(medium: String, channel: Option[String], userId: String, details: JsObject)
 
 object MessageInfo {
 
   def buildFor(context: MessageContext, ws: WSClient, dataService: DataService): Future[MessageInfo] = {
     context.detailsFor(ws, dataService).map { details =>
-      MessageInfo(context.name, context.userIdForContext, details)
+      MessageInfo(context.name, context.maybeChannel, context.userIdForContext, details)
     }
   }
 
