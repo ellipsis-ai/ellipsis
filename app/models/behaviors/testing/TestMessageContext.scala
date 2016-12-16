@@ -24,6 +24,7 @@ case class TestMessageContext(
   override def relevantMessageText: String = fullMessageText
   val userIdForContext = user.id
   val name = "test"
+  val maybeChannel = None
   val isResponseExpected = true
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = Future.successful(None)

@@ -29,6 +29,7 @@ case class SlackMessageContext(
 
   lazy val botId: String = client.state.self.id
   lazy val name: String = Conversation.SLACK_CONTEXT
+  lazy val maybeChannel: Option[String] = Some(message.channel)
   def conversationContextForChannel(channel: String) = Conversation.SLACK_CONTEXT ++ "#" ++ channel
   override val conversationContext = conversationContextForChannel(message.channel)
   override def conversationContextFor(behaviorVersion: BehaviorVersion): String = {

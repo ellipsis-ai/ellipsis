@@ -20,6 +20,7 @@ case class APIMessageContext(
   val fullMessageText = messageText
 
   lazy val name: String = Conversation.API_CONTEXT
+  lazy val maybeChannel = Some(channel)
   lazy val userIdForContext: String = name
 
   val includesBotMention: Boolean = true
