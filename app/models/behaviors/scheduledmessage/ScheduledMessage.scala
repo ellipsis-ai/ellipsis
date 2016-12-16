@@ -21,6 +21,7 @@ case class ScheduledMessage(
                              maybeUser: Option[User],
                              team: Team,
                              maybeChannelName: Option[String],
+                             isForIndividualMembers: Boolean,
                              recurrence: Recurrence,
                              nextSentAt: LocalDateTime,
                              createdAt: LocalDateTime
@@ -89,23 +90,55 @@ case class ScheduledMessage(
     }.getOrElse(Future.successful(None))
   }
 
+  def sendForIndividualMembers(
+                                channelName: String,
+                                slackService: SlackService,
+                                client: SlackRtmClient,
+                                profile: SlackBotProfile,
+                                dataService: DataService
+                              ): Future[Unit] = {
+    client.apiClient.getChannelInfo(channelName).members.map { members =>
+      val otherMembers = members.filterNot(ea => ea == profile.userId)
+      val dmChannels = otherMembers.flatMap { ea =>
+        client.apiClient.listIms.find(_.user == ea).map(_.id)
+      }
+      Future.sequence(dmChannels.map { ea =>
+        sendFor(ea, slackService, client, profile, dataService)
+      }).map(_ => {})
+    }.getOrElse(Future.successful({}))
+  }
+
   // TODO: don't be slack-specific
+  def sendFor(
+               channelName: String,
+               slackService: SlackService,
+               client: SlackRtmClient,
+               profile: SlackBotProfile,
+               dataService: DataService
+             ): Future[Unit] = {
+    for {
+      maybeSlackProfile <- maybeSlackProfile(dataService)
+      slackUserId <- Future.successful(maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId))
+      message <- Future.successful(Message("ts", channelName, slackUserId, text, None))
+      context <- Future.successful(SlackMessageContext(client, profile, message))
+      results <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
+      _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(LocalDateTime.now))
+    } yield {
+      results.foreach { result =>
+        if (result.hasText) {
+          scheduleInfoResultFor(result).sendIn(context, None, None)
+        }
+        result.sendIn(context, None, None)
+      }
+    }
+  }
+
   def send(slackService: SlackService, client: SlackRtmClient, profile: SlackBotProfile, dataService: DataService): Future[Unit] = {
     maybeChannelName.map { channelName =>
-      for {
-        maybeSlackProfile <- maybeSlackProfile(dataService)
-        slackUserId <- Future.successful(maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId))
-        message <- Future.successful(Message("ts", channelName, slackUserId, text, None))
-        context <- Future.successful(SlackMessageContext(client, profile, message))
-        results <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
-        _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(LocalDateTime.now))
-      } yield {
-        results.foreach { result =>
-          if (result.hasText) {
-            scheduleInfoResultFor(result).sendIn(context, None, None)
-          }
-          result.sendIn(context, None, None)
-        }
+      if (isForIndividualMembers) {
+        sendForIndividualMembers(channelName, slackService, client, profile, dataService)
+      } else {
+        sendFor(channelName, slackService, client, profile, dataService)
       }
     }.getOrElse(Future.successful(Unit))
   }
@@ -121,6 +154,7 @@ case class ScheduledMessage(
       maybeUser.map(_.id),
       team.id,
       maybeChannelName,
+      isForIndividualMembers,
       recurrence.typeName,
       recurrence.frequency,
       recurrence.maybeTimeOfDay,

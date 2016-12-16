@@ -18,7 +18,8 @@ trait ScheduledMessageService {
                       recurrenceText: String,
                       user: User,
                       team: Team,
-                      maybeChannelName: Option[String]
+                      maybeChannelName: Option[String],
+                      isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledMessage]]
 
   def deleteFor(text: String, team: Team): Future[Boolean]

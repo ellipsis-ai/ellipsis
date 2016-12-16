@@ -10,6 +10,7 @@ import scala.concurrent.Future
 
 case class ScheduleBehavior(
                              text: String,
+                             isForIndividualMembers: Boolean,
                              recurrence: String,
                              messageContext: MessageContext,
                              lambdaService: AWSLambdaService,
@@ -28,7 +29,7 @@ case class ScheduleBehavior(
       user <- messageContext.ensureUser(dataService)
       maybeTeam <- dataService.teams.find(user.teamId)
       maybeScheduledMessage <- maybeTeam.map { team =>
-        dataService.scheduledMessages.maybeCreateFor(text, recurrence, user, team, maybeChannel)
+        dataService.scheduledMessages.maybeCreateFor(text, recurrence, user, team, maybeChannel, isForIndividualMembers)
       }.getOrElse(Future.successful(None))
     } yield {
       val responseText = maybeScheduledMessage.map { scheduledMessage =>
