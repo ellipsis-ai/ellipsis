@@ -6,7 +6,7 @@ import com.google.inject.Provider
 import models.IDs
 import models.accounts.user.{User, UserQueries}
 import models.team.{Team, TeamQueries}
-import org.joda.time.{DateTime, LocalDateTime, LocalTime}
+import org.joda.time.{LocalDateTime, LocalTime}
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
@@ -19,6 +19,7 @@ case class RawScheduledMessage(
                                 maybeUserId: Option[String],
                                 teamId: String,
                                 maybeChannelName: Option[String],
+                                isForIndividualMembers: Boolean,
                                 recurrenceType: String,
                                 frequency: Int,
                                 maybeTimeOfDay: Option[LocalTime],
@@ -38,6 +39,7 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
   def maybeUserId = column[Option[String]]("user_id")
   def teamId = column[String]("team_id")
   def maybeChannelName = column[Option[String]]("channel_name")
+  def isForIndividualMembers = column[Boolean]("is_for_individual_members")
   def recurrenceType = column[String]("recurrence_type")
   def frequency = column[Int]("frequency")
   def maybeTimeOfDay = column[Option[LocalTime]]("time_of_day")
@@ -55,6 +57,7 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
     maybeUserId,
     teamId,
     maybeChannelName,
+    isForIndividualMembers,
     recurrenceType,
     frequency,
     maybeTimeOfDay,
@@ -90,6 +93,7 @@ class ScheduledMessageServiceImpl @Inject() (
       maybeUser,
       team,
       raw.maybeChannelName,
+      raw.isForIndividualMembers,
       Recurrence.buildFor(raw),
       raw.nextSentAt,
       raw.createdAt
@@ -133,7 +137,14 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def maybeCreateFor(text: String, recurrenceText: String, user: User, team: Team, maybeChannelName: Option[String]): Future[Option[ScheduledMessage]] = {
+  def maybeCreateFor(
+                      text: String,
+                      recurrenceText: String,
+                      user: User,
+                      team: Team,
+                      maybeChannelName: Option[String],
+                      isForIndividualMembers: Boolean
+                    ): Future[Option[ScheduledMessage]] = {
     Recurrence.maybeFromText(recurrenceText).map { recurrence =>
       val newMessage = ScheduledMessage(
         IDs.next,
@@ -141,6 +152,7 @@ class ScheduledMessageServiceImpl @Inject() (
         Some(user),
         team,
         maybeChannelName,
+        isForIndividualMembers,
         recurrence,
         recurrence.initialAfter(LocalDateTime.now),
         LocalDateTime.now
