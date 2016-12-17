@@ -40,7 +40,7 @@ class VisibilityAPIController @Inject() (
   def invocationCountsForDate(token: String, year: String, month: String, day: String) = Action.async { implicit request =>
     val date = dateFor(year, month, day)
     for {
-      maybeTeam <- dataService.teams.findForToken(token)
+      maybeTeam <- dataService.teams.findForInvocationToken(token)
       isAdmin <- maybeTeam.map { team =>
         dataService.teams.isAdmin(team)
       }.getOrElse(Future.successful(false))
@@ -76,7 +76,7 @@ class VisibilityAPIController @Inject() (
   def forTeamForDate(token: String, targetTeamName: String, year: String, month: String, day: String) = Action.async { implicit request =>
     val date = dateFor(year, month, day)
     for {
-      maybeRequestingTeam <- dataService.teams.findForToken(token)
+      maybeRequestingTeam <- dataService.teams.findForInvocationToken(token)
       isAdmin <- maybeRequestingTeam.map { team =>
         dataService.teams.isAdmin(team)
       }.getOrElse(Future.successful(false))

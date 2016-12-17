@@ -71,7 +71,7 @@ class InvocationLogController @Inject() (
                maybeTo: Option[String]
              ) = Action.async { implicit request =>
     for {
-      maybeTeam <- dataService.teams.findForToken(token)
+      maybeTeam <- dataService.teams.findForInvocationToken(token)
       maybeBehaviorWithoutAccessCheck <- dataService.behaviors.findWithoutAccessCheck(behaviorId)
       maybeBehavior <- Future.successful(maybeBehaviorWithoutAccessCheck.filter { behavior =>
         maybeTeam.contains(behavior.team)
