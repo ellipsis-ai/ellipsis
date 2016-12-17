@@ -22,10 +22,10 @@ case class TestMessageContext(
 
   val messageBuffer: ArrayBuffer[String] = new ArrayBuffer()
   override def relevantMessageText: String = fullMessageText
-  val userIdForContext = user.id
-  val name = "test"
-  val maybeChannel = None
-  val maybeDMChannel = None
+  lazy val userIdForContext = user.id
+  lazy val name = "test"
+  lazy val maybeChannel = None
+  lazy val maybeDMChannel = None
   val isResponseExpected = true
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = Future.successful(None)
