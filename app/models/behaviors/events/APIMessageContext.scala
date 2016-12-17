@@ -2,6 +2,7 @@ package models.behaviors.events
 
 import models.SlackMessageFormatter
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.accounts.slack.profile.SlackProfile
 import models.behaviors.conversations.conversation.Conversation
 import services.DataService
 import slack.rtm.SlackRtmClient
@@ -12,16 +13,17 @@ case class APIMessageContext(
                               client: SlackRtmClient,
                               profile: SlackBotProfile,
                               channel: String,
-                              messageText: String
+                              messageText: String,
+                              maybeSlackProfile: Option[SlackProfile]
                               ) extends MessageContext {
 
   val teamId: String = profile.teamId
 
   val fullMessageText = messageText
 
-  lazy val name: String = Conversation.API_CONTEXT
+  lazy val name: String = maybeSlackProfile.map(_.loginInfo.providerID).getOrElse(Conversation.API_CONTEXT)
   lazy val maybeChannel = Some(channel)
-  lazy val userIdForContext: String = name
+  lazy val userIdForContext: String = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(name)
 
   val includesBotMention: Boolean = true
 

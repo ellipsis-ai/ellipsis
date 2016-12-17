@@ -99,7 +99,7 @@ class APIController @Inject() (
             slackClient <- maybeSlackClient
             botProfile <- maybeBotProfile
           } yield {
-              APIMessageEvent(APIMessageContext(slackClient, botProfile, info.channel, info.message))
+              APIMessageEvent(APIMessageContext(slackClient, botProfile, info.channel, info.message, maybeSlackProfile))
             })
           result <- maybeEvent.map { event =>
             eventHandler.handle(event, None).map { results =>
