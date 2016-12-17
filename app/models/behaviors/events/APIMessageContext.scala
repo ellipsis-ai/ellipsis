@@ -7,6 +7,7 @@ import models.behaviors.conversations.conversation.Conversation
 import services.DataService
 import slack.rtm.SlackRtmClient
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 case class APIMessageContext(
@@ -23,6 +24,12 @@ case class APIMessageContext(
 
   lazy val name: String = maybeSlackProfile.map(_.loginInfo.providerID).getOrElse(Conversation.API_CONTEXT)
   lazy val maybeChannel = Some(channel)
+  def maybeDMChannel = {
+    maybeSlackProfile.flatMap { slackProfile =>
+      client.apiClient.listIms.find(_.user == slackProfile.loginInfo.providerKey).map(_.id)
+
+    }
+  }
   lazy val userIdForContext: String = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(name)
 
   val includesBotMention: Boolean = true

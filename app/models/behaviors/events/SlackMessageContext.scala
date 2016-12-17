@@ -30,16 +30,6 @@ case class SlackMessageContext(
   lazy val botId: String = client.state.self.id
   lazy val name: String = Conversation.SLACK_CONTEXT
   lazy val maybeChannel: Option[String] = Some(message.channel)
-  def conversationContextForChannel(channel: String) = Conversation.SLACK_CONTEXT ++ "#" ++ channel
-  override val conversationContext = conversationContextForChannel(message.channel)
-  override def conversationContextFor(behaviorVersion: BehaviorVersion): String = {
-    val maybeChannel = if (behaviorVersion.forcePrivateResponse) {
-      maybeDMChannel
-    } else {
-      None
-    }
-    conversationContextForChannel(maybeChannel.getOrElse(message.channel))
-  }
   def maybeChannelFromConversationContext(context: String): Option[String] = {
     s"""${Conversation.SLACK_CONTEXT}#(\\S+)""".r.findFirstMatchIn(context).flatMap { m =>
       m.subgroups.headOption

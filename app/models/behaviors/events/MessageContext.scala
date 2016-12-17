@@ -48,8 +48,19 @@ trait MessageContext extends Context {
 
   val name: String
   val maybeChannel: Option[String]
-  val conversationContext: String = name
-  def conversationContextFor(behaviorVersion: BehaviorVersion) = conversationContext
+  val conversationContext = conversationContextForChannel(maybeChannel.getOrElse(""))
+  def conversationContextForChannel(channel: String) = name ++ "#" ++ channel
+  def maybeDMChannel: Option[String]
+
+  def conversationContextFor(behaviorVersion: BehaviorVersion): String = {
+    val maybeChannelToUse = if (behaviorVersion.forcePrivateResponse) {
+      maybeDMChannel
+    } else {
+      maybeChannel
+    }
+    conversationContextForChannel(maybeChannelToUse.getOrElse(""))
+  }
+
   def userIdForContext: String
   val teamId: String
   val isResponseExpected: Boolean
