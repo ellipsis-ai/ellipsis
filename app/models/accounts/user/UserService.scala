@@ -23,4 +23,6 @@ trait UserService extends IdentityService[User] {
   def isAdmin(user: User): Future[Boolean]
 
   def maybeNameFor(user: User, slackMessageContext: SlackMessageContext): Future[Option[String]]
+
+  def findForInvocationToken(tokenId: String): Future[Option[User]]
 }

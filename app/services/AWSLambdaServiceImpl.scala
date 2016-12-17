@@ -111,7 +111,8 @@ class AWSLambdaServiceImpl @Inject() (
                       successFn: InvokeResult => BotResult
                     ): Future[BotResult] = {
     for {
-      token <- dataService.invocationTokens.createFor(team)
+      user <- event.context.ensureUser(dataService)
+      token <- dataService.invocationTokens.createFor(user)
       userInfo <- event.context.userInfo(ws, dataService)
       result <- {
         val oauth2ApplicationsNeedingRefresh =

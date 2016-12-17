@@ -1,12 +1,13 @@
 package models.behaviors.invocationtoken
 
-import models.team.Team
+import models.accounts.user.User
+
 import scala.concurrent.Future
 
 trait InvocationTokenService {
 
   def find(id: String): Future[Option[InvocationToken]]
 
-  def createFor(team: Team): Future[InvocationToken]
+  def createFor(user: User): Future[InvocationToken]
 
 }

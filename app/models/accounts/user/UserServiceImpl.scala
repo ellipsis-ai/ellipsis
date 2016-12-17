@@ -12,11 +12,15 @@ import org.joda.time.LocalDateTime
 import services.DataService
 import slack.api.ApiError
 import drivers.SlickPostgresDriver.api._
+import play.api.Configuration
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) extends UserService {
+class UserServiceImpl @Inject() (
+                                  dataServiceProvider: Provider[DataService],
+                                  configuration: Configuration
+                                ) extends UserService {
 
   def dataService = dataServiceProvider.get
 
@@ -112,6 +116,26 @@ class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) ext
         }
       }
     } yield maybeName
+  }
+
+  def findForInvocationToken(tokenId: String): Future[Option[User]] = {
+    for {
+      maybeToken <- dataService.invocationTokens.find(tokenId)
+      maybeUser <- maybeToken.map { token =>
+        if (token.isExpired) {
+          Future.successful(None)
+        } else {
+          find(token.userId)
+        }
+      }.getOrElse {
+        if (configuration.getString("application.version").contains("Development")) {
+          // in dev, if not found, we assume the tokenId is a user ID
+          find(tokenId)
+        } else {
+          Future.successful(None)
+        }
+      }
+    } yield maybeUser
   }
 
 }

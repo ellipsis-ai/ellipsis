@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import models.accounts.user.User
 import models.behaviors.SimpleTextResult
 import models.behaviors.events.{APIMessageContext, APIMessageEvent, EventHandler}
 import play.api.Configuration
@@ -27,7 +28,7 @@ class APIController @Inject() (
                                 val eventHandler: EventHandler)
   extends EllipsisController {
 
-  class InvalidAPITokenException extends Exception
+  class InvalidTokenException extends Exception
 
   case class PostMessageInfo(
                               message: String,
@@ -45,6 +46,30 @@ class APIController @Inject() (
     )(PostMessageInfo.apply)(PostMessageInfo.unapply)
   )
 
+  private def maybeUserForApiToken(token: String): Future[Option[User]] = {
+    for {
+      maybeToken <- dataService.apiTokens.find(token)
+      maybeValidToken <- maybeToken.map { token =>
+        if (token.isValid) {
+          dataService.apiTokens.use(token).map(_ => Some(token))
+        } else {
+          Future.successful(None)
+        }
+      }.getOrElse(Future.successful(None))
+
+      maybeUser <- maybeValidToken.map { token =>
+        dataService.users.find(token.userId)
+      }.getOrElse(Future.successful(None))
+    } yield maybeUser
+  }
+
+  private def maybeUserForToken(token: String): Future[Option[User]] = {
+    for {
+      maybeUserForApiToken <- maybeUserForApiToken(token)
+      maybeUserForInvocationToken <- dataService.users.findForInvocationToken(token)
+    } yield maybeUserForApiToken.orElse(maybeUserForInvocationToken)
+  }
+
   def postMessage = Action.async { implicit request =>
     postMessageForm.bindFromRequest.fold(
       formWithErrors => {
@@ -52,24 +77,12 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          maybeToken <- dataService.apiTokens.find(info.token)
-          maybeUser <- maybeToken.map { token =>
-            dataService.users.find(token.userId)
-          }.getOrElse(Future.successful(None))
-          _ <- maybeToken.map { token =>
-            if (token.isValid) {
-              dataService.apiTokens.use(token).map(_ => true)
-            } else {
-              Future.successful(false)
-            }
-          }.getOrElse(Future.successful(false)).map { shouldProceed =>
-            if (!shouldProceed) {
-              throw new InvalidAPITokenException()
-            }
-          }
+          maybeUser <- maybeUserForToken(info.token)
           maybeTeam <- maybeUser.map { user =>
             dataService.teams.find(user.teamId)
-          }.getOrElse(Future.successful(None))
+          }.getOrElse {
+            throw new InvalidTokenException()
+          }
           maybeBotProfile <- maybeTeam.map { team =>
             dataService.slackBotProfiles.allFor(team).map(_.headOption)
           }.getOrElse(Future.successful(None))
@@ -103,7 +116,7 @@ class APIController @Inject() (
         } yield result
 
         eventualResult.recover {
-          case e: InvalidAPITokenException => BadRequest("Invalid API token")
+          case e: InvalidTokenException => BadRequest("Invalid token")
         }
       }
     )

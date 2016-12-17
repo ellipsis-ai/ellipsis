@@ -16,7 +16,7 @@ trait TeamService {
 
   def find(id: String, user: User): Future[Option[Team]]
 
-  def findForToken(tokenId: String): Future[Option[Team]]
+  def findForInvocationToken(tokenId: String): Future[Option[Team]]
 
   def create(name: String): Future[Team]
 

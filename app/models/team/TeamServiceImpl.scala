@@ -49,23 +49,12 @@ class TeamServiceImpl @Inject() (
     }
   }
 
-  def findForToken(tokenId: String): Future[Option[Team]] = {
+  def findForInvocationToken(tokenId: String): Future[Option[Team]] = {
     for {
-      maybeToken <- dataService.invocationTokens.find(tokenId)
-      maybeTeam <- maybeToken.map { token =>
-        if (token.isExpired) {
-          Future.successful(None)
-        } else {
-          find(token.teamId)
-        }
-      }.getOrElse {
-        if (configuration.getString("application.version").contains("Development")) {
-          // in dev, if not found, we assume the tokenId is a teamId
-          find(tokenId)
-        } else {
-          Future.successful(None)
-        }
-      }
+      maybeUser <- dataService.users.findForInvocationToken(tokenId)
+      maybeTeam <- maybeUser.map { user =>
+        dataService.teams.find(user.teamId)
+      }.getOrElse(Future.successful(None))
     } yield maybeTeam
   }
 
