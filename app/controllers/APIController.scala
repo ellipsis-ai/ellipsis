@@ -63,13 +63,6 @@ class APIController @Inject() (
     } yield maybeUser
   }
 
-  private def maybeUserForToken(token: String): Future[Option[User]] = {
-    for {
-      maybeUserForApiToken <- maybeUserForApiToken(token)
-      maybeUserForInvocationToken <- dataService.users.findForInvocationToken(token)
-    } yield maybeUserForApiToken.orElse(maybeUserForInvocationToken)
-  }
-
   def postMessage = Action.async { implicit request =>
     postMessageForm.bindFromRequest.fold(
       formWithErrors => {
@@ -77,7 +70,9 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          maybeUser <- maybeUserForToken(info.token)
+          maybeUserForApiToken <- maybeUserForApiToken(info.token)
+          maybeUserForInvocationToken <- dataService.users.findForInvocationToken(info.token)
+          maybeUser <- Future.successful(maybeUserForApiToken.orElse(maybeUserForInvocationToken))
           maybeTeam <- maybeUser.map { user =>
             dataService.teams.find(user.teamId)
           }.getOrElse {
@@ -101,12 +96,15 @@ class APIController @Inject() (
           } yield {
               APIMessageEvent(APIMessageContext(slackClient, botProfile, info.channel, info.message, maybeSlackProfile))
             })
+          isInvokedExternally <- Future.successful(maybeUserForApiToken.isDefined)
           result <- maybeEvent.map { event =>
             eventHandler.handle(event, None).map { results =>
               results.foreach { result =>
-                maybeSlackProfile.foreach { slackProfile =>
-                  val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
-                  introResult.sendIn(event.context, None, None)
+                if (isInvokedExternally) {
+                  maybeSlackProfile.foreach { slackProfile =>
+                    val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
+                    introResult.sendIn(event.context, None, None)
+                  }
                 }
                 result.sendIn(event.context, None, None)
               }
