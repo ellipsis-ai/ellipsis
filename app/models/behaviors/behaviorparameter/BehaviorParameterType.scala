@@ -305,7 +305,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
             cancelAndRespondFor(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
           } else {
             context.maybeConversation.foreach { conversation =>
-              context.cache.set(valuesListCacheKeyFor(conversation, context.parameter), validValues, 5.minutes)
+              context.cache.set(valuesListCacheKeyFor(conversation, context.parameter), validValues)
             }
             val valuesPrompt = validValues.zipWithIndex.map { case (ea, i) =>
               s"\n\n$i. ${ea.label}"
