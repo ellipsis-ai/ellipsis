@@ -27,7 +27,6 @@ case class APIMessageContext(
   def maybeDMChannel = {
     maybeSlackProfile.flatMap { slackProfile =>
       client.apiClient.listIms.find(_.user == slackProfile.loginInfo.providerKey).map(_.id)
-
     }
   }
   lazy val userIdForContext: String = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(name)
