@@ -99,11 +99,13 @@ case class ScheduledMessage(
                               ): Future[Unit] = {
     client.apiClient.getChannelInfo(channelName).members.map { members =>
       val otherMembers = members.filterNot(ea => ea == profile.userId)
-      val dmChannels = otherMembers.flatMap { ea =>
-        client.apiClient.listIms.find(_.user == ea).map(_.id)
+      val withDMChannels: Seq[(String, String)] = otherMembers.flatMap { ea =>
+        client.apiClient.listIms.find(_.user == ea).map(_.id).map { dmChannel =>
+          (ea, dmChannel)
+        }
       }
-      Future.sequence(dmChannels.map { ea =>
-        sendFor(ea, slackService, client, profile, dataService)
+      Future.sequence(withDMChannels.map { case(slackUserId, dmChannel) =>
+        sendFor(dmChannel, slackUserId, slackService, client, profile, dataService)
       }).map(_ => {})
     }.getOrElse(Future.successful({}))
   }
@@ -111,14 +113,13 @@ case class ScheduledMessage(
   // TODO: don't be slack-specific
   def sendFor(
                channelName: String,
+               slackUserId: String,
                slackService: SlackService,
                client: SlackRtmClient,
                profile: SlackBotProfile,
                dataService: DataService
              ): Future[Unit] = {
     for {
-      maybeSlackProfile <- maybeSlackProfile(dataService)
-      slackUserId <- Future.successful(maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId))
       message <- Future.successful(Message("ts", channelName, slackUserId, text, None))
       context <- Future.successful(SlackMessageContext(client, profile, message))
       results <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
@@ -138,7 +139,10 @@ case class ScheduledMessage(
       if (isForIndividualMembers) {
         sendForIndividualMembers(channelName, slackService, client, profile, dataService)
       } else {
-        sendFor(channelName, slackService, client, profile, dataService)
+        maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
+          val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
+          sendFor(channelName, slackUserId, slackService, client, profile, dataService)
+        }
       }
     }.getOrElse(Future.successful(Unit))
   }
