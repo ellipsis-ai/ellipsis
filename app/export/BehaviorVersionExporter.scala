@@ -6,6 +6,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import play.api.libs.json.Json
 import services.DataService
+import utils.SafeFileName
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -23,7 +24,8 @@ case class BehaviorVersionExporter(
   val fullPath = {
     val behaviorType = if (behaviorVersion.behavior.isDataType) { "data_types" } else { "actions" }
     val dirName = behaviorVersion.behavior.maybeDataTypeName.getOrElse(behaviorVersion.id)
-    s"$parentPath/$behaviorType/$dirName"
+    val safeDirName = SafeFileName.forName(dirName)
+    s"$parentPath/$behaviorType/$safeDirName"
   }
 
   def functionString: String = maybeFunction.getOrElse("")

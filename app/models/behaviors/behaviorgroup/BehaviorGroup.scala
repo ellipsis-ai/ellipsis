@@ -2,6 +2,7 @@ package models.behaviors.behaviorgroup
 
 import models.team.Team
 import org.joda.time.LocalDateTime
+import utils.SafeFileName
 
 case class BehaviorGroup(
                           id: String,
@@ -12,8 +13,7 @@ case class BehaviorGroup(
                           createdAt: LocalDateTime) {
 
   def exportName: String = {
-    val safeName = name.trim.replaceAll("""\s""", "_").replaceAll("""[^A-Za-z0-9_-]""", "")
-    Option(safeName).filter(_.nonEmpty).getOrElse(id)
+    Option(SafeFileName.forName(name)).filter(_.nonEmpty).getOrElse(id)
   }
 
   def toRaw: RawBehaviorGroup = RawBehaviorGroup(
