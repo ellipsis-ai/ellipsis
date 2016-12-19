@@ -4,7 +4,7 @@ define(function(require) {
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
     SVGInstalling = require('../svg/installing'),
-    BehaviorName = require('../behavior_list/behavior_name');
+    ifPresent = require('../if_present');
 
   return React.createClass({
     propTypes: {
@@ -14,7 +14,9 @@ define(function(require) {
       csrfToken: React.PropTypes.string.isRequired,
       description: React.PropTypes.string,
       name: React.PropTypes.string.isRequired,
-      onBehaviorGroupImport: React.PropTypes.func.isRequired
+      icon: React.PropTypes.string,
+      onBehaviorGroupImport: React.PropTypes.func.isRequired,
+      onMoreInfoClick: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
@@ -74,10 +76,10 @@ define(function(require) {
       return this.props.groupData.githubUrl;
     },
 
-    getLocalBehaviorEditLink: function() {
+    getMoreInfoLink: function() {
       if (this.isImporting()) {
         return (
-          <span className="fade-in type-weak type-bold">Installing…</span>
+          <span className="fade-in type-weak">Installing…</span>
         );
       } else if (this.props.localId) {
         var url = jsRoutes.controllers.BehaviorEditorController.editGroup(this.props.localId).url;
@@ -85,30 +87,41 @@ define(function(require) {
           <a
             className="fade-in"
             href={url}
-          >Edit installed version</a>
+          >View installed version</a>
         );
       } else {
-        return null;
+        return (
+          <button type="button" className="button-raw button-s" onClick={this.props.onMoreInfoClick}>More info</button>
+        );
       }
     },
 
     getInstallButton: function() {
       if (this.isImporting()) {
         return (
-          <button title="Installing, please wait…" type="button" className="button-raw mbxs" disabled="disabled" style={{ width: 40, height: 24 }}>
-            <SVGInstalling />
+          <button title="Installing, please wait…" type="button" className="button-raw mbxs" disabled="disabled">
+            <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstalling /></span>
+            <span className="display-inline-block align-m">
+              Installing…
+            </span>
           </button>
         );
       } else if (this.isImported()) {
         return (
-          <button title="Already installed" type="button" className="button-raw mbxs" disabled="disabled" style={{ width: 40, height: 24 }}>
-            <SVGInstalled />
+          <button title="Already installed" type="button" className="button-raw mbxs" disabled="disabled" style={{ height: 24 }}>
+            <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstalled /></span>
+            <span className="display-inline-block align-m type-green">
+              Installed
+            </span>
           </button>
         );
       } else {
         return (
-          <button title="Install this skill" type="button" className="button-raw mbxs" onClick={this.importBehavior} style={{ width: 40, height: 24 }}>
-            <SVGInstall />
+          <button title="Install this skill" type="button" className="button-raw mbxs" onClick={this.importBehavior} style={{ height: 24 }}>
+            <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstall /></span>
+            <span className="display-inline-block align-m">
+              Install
+            </span>
           </button>
         );
       }
@@ -116,38 +129,30 @@ define(function(require) {
 
     render: function() {
       return (
-        <form ref="form" action={jsRoutes.controllers.BehaviorImportExportController.doImport().url} method="POST">
-          <input type="hidden" name="csrfToken" value={this.props.csrfToken} />
-          <input type="hidden" name="teamId" value={this.props.teamId} />
-          <input type="hidden" name="dataJson" value={JSON.stringify(this.props.groupData)} />
-          <div className={"columns columns-elastic mbm " + (this.isImporting() ? "pulse" : "")}>
-              <div className="ptxl mobile-pts">
-                <h3 className="border-bottom mtm pbm">
-                  <span className="mrl display-inline-block align-t">{this.getInstallButton()}</span>
-                  <span className="align-m display-inline-block">{this.props.name}</span>
-                  <span className="mrm align-m display-inline-block type-m type-regular type-weak"> &nbsp; · &nbsp; {this.props.description}</span>
-                  <span className="mrm align-m display-inline-block type-m">
-                    {this.getGithubLink()}
-                    {this.getLocalBehaviorEditLink()}
+        <div className="display-inline-block border border-radius bg-lightest width width-20 mobile-width-full mrxxl mbxxl phxl pvl">
+          <form ref="form" action={jsRoutes.controllers.BehaviorImportExportController.doImport().url} method="POST">
+            <input type="hidden" name="csrfToken" value={this.props.csrfToken} />
+            <input type="hidden" name="teamId" value={this.props.teamId} />
+            <input type="hidden" name="dataJson" value={JSON.stringify(this.props.groupData)} />
+            <div className={this.isImporting() ? "pulse" : ""}>
+              <div className="type-l display-ellipsis mbm">
+                {ifPresent(this.props.icon, (icon) => (
+                  <span style={{ width: "1em" }} className="display-inline-block mrm">
+                    {icon}
                   </span>
-                  {this.isImported() ? /* TODO: update/re-install buttons */
-                    "" : ""}
-                </h3>
-                <div className="type-s display-limit-width">
-                {this.getBehaviors().map(function(behavior, index) {
-                  return (
-                    <BehaviorName
-                      key={"behavior" + index}
-                      version={behavior}
-                      disableLink={true}
-                      limitTriggers={true}
-                    />
-                  );
-                }, this)}
-                </div>
+                ))}
+                {this.props.name}
+              </div>
+              <div className="mvm">{this.getInstallButton()}</div>
+              <p className="type-s mvm" style={{ height: "4rem", overflow: "hidden" }}>
+                {this.props.description}
+              </p>
+              <div className="type-s">
+                {this.getMoreInfoLink()}
               </div>
             </div>
           </form>
+        </div>
       );
     }
   });

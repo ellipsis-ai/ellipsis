@@ -41,7 +41,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div>
+        <div className="ptxxl">
           {this.getBehaviorGroups().map(function(group, index) {
             return (
               <Group
@@ -49,10 +49,12 @@ define(function(require) {
                 csrfToken={this.props.csrfToken}
                 name={group.name}
                 description={group.description}
+                icon={group.icon}
                 groupData={group}
                 teamId={this.props.teamId}
                 localId={this.getLocalId(group)}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
+                onMoreInfoClick={function(){}}
               />
             );
           }, this)}
