@@ -23,7 +23,7 @@ case class BehaviorGroupExporter(
   val fullPath = s"$parentPath/${behaviorGroup.exportName}"
   def zipFileName = s"$fullPath.zip"
 
-  val config = BehaviorGroupConfig(behaviorGroup.name, behaviorGroup.id)
+  val config = BehaviorGroupConfig(behaviorGroup.name, behaviorGroup.id, None)
 
   def configString: String = Json.prettyPrint(Json.toJson(config))
 

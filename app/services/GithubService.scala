@@ -153,7 +153,8 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
             val githubUrl = githubUrlForGroupPath(groupPath)
             val maybePublishedId = maybeConfig.map(_.publishedId)
             val name = maybeConfig.map(_.name).getOrElse(groupPath)
-            BehaviorGroupData(None, name, readme, behaviors, Some(githubUrl), None, maybePublishedId, LocalDateTime.now)
+            val icon = maybeConfig.flatMap(_.icon)
+            BehaviorGroupData(None, name, readme, icon, behaviors, Some(githubUrl), None, maybePublishedId, LocalDateTime.now)
           }).map(Some(_))
         }).getOrElse(Future.successful(None))
     }
