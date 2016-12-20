@@ -1,0 +1,14 @@
+{
+  "name": "ellipsis-post-message",
+  "version": "0.0.17",
+  "description": "Interface to post messages to ellipsis",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ellipsis Co. <a@ellipsis.ai> (http://ellipsis.ai)",
+  "license": "ISC",
+  "dependencies": {
+    "request": "latest"
+  }
+}
