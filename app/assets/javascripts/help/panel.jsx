@@ -10,7 +10,7 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="box-help type-s pts mobile-position-fixed-full container container-wide">
+      <div className="box-help type-s pts mobile-position-fixed-full container container-wide mbneg1">
         <div className="position-relative columns">
           <div className="column column-page-sidebar mts mobile-prxxl">
             <h4 className="type-weak">

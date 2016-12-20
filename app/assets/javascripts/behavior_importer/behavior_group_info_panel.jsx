@@ -8,8 +8,6 @@ define(function(require) {
     displayName: 'BehaviorGroupInfoPanel',
     propTypes: {
       groupData: React.PropTypes.object,
-      teamId: React.PropTypes.string.isRequired,
-      csrfToken: React.PropTypes.string.isRequired,
       onBehaviorGroupImport: React.PropTypes.func.isRequired,
       onToggle: React.PropTypes.func.isRequired
     },

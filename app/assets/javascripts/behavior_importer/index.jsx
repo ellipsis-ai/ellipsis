@@ -102,10 +102,9 @@ define(function(require) {
           </div>
 
           <ModalScrim isActive={this.state.revealMoreInfo} onClick={this.toggleInfoPanel} />
-          <FixedFooter className={this.state.revealMoreInfo ? "" : "display-none"}>
+          <FixedFooter>
             <Collapsible revealWhen={this.state.revealMoreInfo}>
               <BehaviorGroupInfoPanel
-                csrfToken={this.props.csrfToken}
                 groupData={this.getSelectedBehaviorGroup()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onToggle={this.toggleInfoPanel}
