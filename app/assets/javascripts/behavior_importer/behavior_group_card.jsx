@@ -31,26 +31,6 @@ define(function(require) {
       this.props.onBehaviorGroupImport(this.props.groupData);
     },
 
-    getMoreInfoLink: function() {
-      if (this.isImporting()) {
-        return (
-          <span className="fade-in type-weak">Installing…</span>
-        );
-      } else if (this.props.localId) {
-        var url = jsRoutes.controllers.BehaviorEditorController.editGroup(this.props.localId).url;
-        return (
-          <a
-            className="fade-in"
-            href={url}
-          >View installed version</a>
-        );
-      } else {
-        return (
-          <button type="button" className="button-raw button-s" onClick={this.toggleMoreInfo}>More info</button>
-        );
-      }
-    },
-
     toggleMoreInfo: function() {
       this.props.onMoreInfoClick(this.props.groupData);
     },
@@ -58,7 +38,7 @@ define(function(require) {
     getInstallButton: function() {
       if (this.isImporting()) {
         return (
-          <button title="Installing, please wait…" type="button" className="button-raw mbxs" disabled="disabled">
+          <button title="Installing, please wait…" type="button" className="button-raw button-no-wrap" disabled="disabled" style={{ height: 24 }}>
             <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstalling /></span>
             <span className="display-inline-block align-m">
               Installing…
@@ -67,7 +47,7 @@ define(function(require) {
         );
       } else if (this.isImported()) {
         return (
-          <button title="Already installed" type="button" className="button-raw mbxs" disabled="disabled" style={{ height: 24 }}>
+          <button title="Already installed" type="button" className="button-raw button-no-wrap" disabled="disabled" style={{ height: 24 }}>
             <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstalled /></span>
             <span className="display-inline-block align-m type-green">
               Installed
@@ -76,11 +56,43 @@ define(function(require) {
         );
       } else {
         return (
-          <button title="Install this skill" type="button" className="button-raw mbxs" onClick={this.importBehavior} style={{ height: 24 }}>
+          <button title="Install this skill" type="button" className="button-raw button-no-wrap" onClick={this.importBehavior} style={{ height: 24 }}>
             <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstall /></span>
             <span className="display-inline-block align-m">
               Install
             </span>
+          </button>
+        );
+      }
+    },
+
+    getDescription: function() {
+      return (
+        <div style={{ maxHeight: "4rem", overflow: "hidden" }}>{this.props.description}</div>
+      );
+    },
+
+    renderDescription: function() {
+      if (this.isImporting()) {
+        return (
+          <div>
+            {this.getDescription()}
+            <div className="type-disabled">More info</div>
+          </div>
+        );
+      } else if (this.isImported()) {
+        return (
+          <a href={jsRoutes.controllers.BehaviorEditorController.editGroup(this.props.localId).url}
+            className="link-block">
+            {this.getDescription()}
+            <div className="link">View installed version</div>
+          </a>
+        );
+      } else {
+        return (
+          <button type="button" className="button-block" onClick={this.toggleMoreInfo}>
+            {this.getDescription()}
+            <div className="link">More info</div>
           </button>
         );
       }
@@ -98,12 +110,11 @@ define(function(require) {
               ))}
               {this.props.name}
             </div>
-            <div className="mvm">{this.getInstallButton()}</div>
-            <p className="type-s mvm" style={{ height: "4rem", overflow: "hidden" }}>
-              {this.props.description}
-            </p>
-            <div className="type-s">
-              {this.getMoreInfoLink()}
+            <div className="type-s mvm" style={{ height: "5.3333rem", overflow: "hidden" }}>
+              {this.renderDescription()}
+            </div>
+            <div>
+              {this.getInstallButton()}
             </div>
           </div>
         </div>
