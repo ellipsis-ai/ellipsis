@@ -55,28 +55,6 @@ define(function(require) {
       }.bind(this));
     },
 
-    getBehaviors: function() {
-      return this.props.groupData.behaviorVersions.filter((version) => !version.isDataType()) || [];
-    },
-
-    getGithubLink: function() {
-      if (this.isImported()) {
-        return null;
-      } else {
-        return (
-          <a
-            className="mhm fade-in"
-            target="_blank"
-            href={this.getGithubUrl()}
-          >View on Github</a>
-        );
-      }
-    },
-
-    getGithubUrl: function() {
-      return this.props.groupData.githubUrl;
-    },
-
     getMoreInfoLink: function() {
       if (this.isImporting()) {
         return (
@@ -92,9 +70,13 @@ define(function(require) {
         );
       } else {
         return (
-          <button type="button" className="button-raw button-s" onClick={this.props.onMoreInfoClick}>More info</button>
+          <button type="button" className="button-raw button-s" onClick={this.toggleMoreInfo}>More info</button>
         );
       }
+    },
+
+    toggleMoreInfo: function() {
+      this.props.onMoreInfoClick(this.props.groupData);
     },
 
     getInstallButton: function() {

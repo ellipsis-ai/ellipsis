@@ -1,6 +1,10 @@
 define(function(require) {
   var React = require('react'),
-    BehaviorGroupCard = require('./behavior_group_card');
+    BehaviorGroupCard = require('./behavior_group_card'),
+    BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
+    Collapsible = require('../collapsible'),
+    FixedFooter = require('../fixed_footer'),
+    ModalScrim = require('../modal_scrim');
 
   return React.createClass({
     propTypes: {
@@ -28,7 +32,9 @@ define(function(require) {
     getInitialState: function() {
       return {
         installedBehaviorGroups: this.props.installedBehaviorGroups,
-        behaviorGroups: this.props.behaviorGroups
+        behaviorGroups: this.props.behaviorGroups,
+        selectedBehaviorGroup: null,
+        revealMoreInfo: false
       };
     },
 
@@ -36,6 +42,20 @@ define(function(require) {
       var newState = {
         installedBehaviorGroups: this.getInstalledBehaviorGroups().concat([installedGroup])
       };
+      this.setState(newState);
+    },
+
+    getSelectedBehaviorGroup: function() {
+      return this.state.selectedBehaviorGroup;
+    },
+
+    toggleInfoPanel: function(group) {
+      var newState = {
+        revealMoreInfo: !this.state.revealMoreInfo
+      };
+      if (group && group !== newState.selectedBehaviorGroup) {
+        newState.selectedBehaviorGroup = group;
+      }
       this.setState(newState);
     },
 
@@ -54,11 +74,23 @@ define(function(require) {
                   teamId={this.props.teamId}
                   localId={this.getLocalId(group)}
                   onBehaviorGroupImport={this.onBehaviorGroupImport}
-                  onMoreInfoClick={function(){}}
+                  onMoreInfoClick={this.toggleInfoPanel}
                 />
               </div>
             ))}
-        </div>
+          </div>
+
+          <ModalScrim isActive={this.state.revealMoreInfo} onClick={this.toggleInfoPanel} />
+          <FixedFooter className={this.state.revealMoreInfo ? "" : "display-none"}>
+            <Collapsible revealWhen={this.state.revealMoreInfo}>
+              <BehaviorGroupInfoPanel
+                csrfToken={this.props.csrfToken}
+                groupData={this.getSelectedBehaviorGroup()}
+                onBehaviorGroupImport={this.onBehaviorGroupImport}
+                onToggle={this.toggleInfoPanel}
+              />
+            </Collapsible>
+          </FixedFooter>
         </div>
       );
     }
