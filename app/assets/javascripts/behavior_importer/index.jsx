@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    Group = require('./group');
+    BehaviorGroupCard = require('./behavior_group_card');
 
   return React.createClass({
     propTypes: {
@@ -42,22 +42,23 @@ define(function(require) {
     render: function() {
       return (
         <div className="ptxxl">
-          {this.getBehaviorGroups().map(function(group, index) {
-            return (
-              <Group
-                key={"group" + index}
-                csrfToken={this.props.csrfToken}
-                name={group.name}
-                description={group.description}
-                icon={group.icon}
-                groupData={group}
-                teamId={this.props.teamId}
-                localId={this.getLocalId(group)}
-                onBehaviorGroupImport={this.onBehaviorGroupImport}
-                onMoreInfoClick={function(){}}
-              />
-            );
-          }, this)}
+          <div className="columns">
+            {this.getBehaviorGroups().map((group, index) => (
+              <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn" key={"group" + index}>
+                <BehaviorGroupCard
+                  csrfToken={this.props.csrfToken}
+                  name={group.name}
+                  description={group.description}
+                  icon={group.icon}
+                  groupData={group}
+                  teamId={this.props.teamId}
+                  localId={this.getLocalId(group)}
+                  onBehaviorGroupImport={this.onBehaviorGroupImport}
+                  onMoreInfoClick={function(){}}
+                />
+              </div>
+            ))}
+        </div>
         </div>
       );
     }

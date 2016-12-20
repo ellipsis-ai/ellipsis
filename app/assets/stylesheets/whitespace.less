@@ -107,6 +107,12 @@ So for example:
 .generate-two-sided(e(""));
 .generate-one-sided(e(""));
 
+@media (max-width: @narrow-max-width) {
+  .generate-all-sided(narrow-);
+  .generate-two-sided(narrow-);
+  .generate-one-sided(narrow-);
+}
+
 @media (max-width: @mobile-max-width) {
   .generate-all-sided(mobile-);
   .generate-two-sided(mobile-);

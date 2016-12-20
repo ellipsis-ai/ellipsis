@@ -7,6 +7,7 @@ define(function(require) {
     ifPresent = require('../if_present');
 
   return React.createClass({
+    displayName: 'BehaviorGroupCard',
     propTypes: {
       groupData: React.PropTypes.object.isRequired,
       localId: React.PropTypes.string,
@@ -129,7 +130,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="display-inline-block border border-radius bg-lightest width width-20 mobile-width-full mrxxl mbxxl phxl pvl">
+        <div className="border border-radius bg-lightest phxl pvl">
           <form ref="form" action={jsRoutes.controllers.BehaviorImportExportController.doImport().url} method="POST">
             <input type="hidden" name="csrfToken" value={this.props.csrfToken} />
             <input type="hidden" name="teamId" value={this.props.teamId} />
