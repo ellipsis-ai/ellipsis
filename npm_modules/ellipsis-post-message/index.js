@@ -12,7 +12,7 @@ module.exports = {
         throw msg;
       }
     } else {
-      const errorHandler = typeof args.error == "function" ? args.error : ellipsis.error;
+      const errorHandler = typeof args.error === "function" ? args.error : ellipsis.error;
       const message = args.message;
       if (!message) {
         errorHandler("You need to pass a `message` argument");
