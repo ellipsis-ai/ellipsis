@@ -9,6 +9,7 @@ import models.accounts.user.User
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.{SlackMessageContext, SlackMessageEvent}
 import services.{DataService, SlackService}
+import slack.api.ApiError
 import slack.models.Message
 import slack.rtm.SlackRtmClient
 
@@ -90,6 +91,24 @@ case class ScheduledMessage(
     }.getOrElse(Future.successful(None))
   }
 
+  private def swallowingChannelNotFound[T](fn: () => T): Option[T] = {
+    try {
+      Some(fn())
+    } catch {
+      case e: ApiError => if (e.code == "channel_not_found") {
+        None
+      } else {
+        throw e
+      }
+    }
+  }
+
+  private def getMembersFor(channelOrGroupId: String, client: SlackRtmClient): Seq[String] = {
+    val maybeChannel = swallowingChannelNotFound(() => client.apiClient.getChannelInfo(channelOrGroupId))
+    val maybeGroup = swallowingChannelNotFound(() => client.apiClient.getGroupInfo(channelOrGroupId))
+    maybeChannel.flatMap(_.members).orElse(maybeGroup.map(_.members)).getOrElse(Seq())
+  }
+
   def sendForIndividualMembers(
                                 channelName: String,
                                 slackService: SlackService,
@@ -97,17 +116,16 @@ case class ScheduledMessage(
                                 profile: SlackBotProfile,
                                 dataService: DataService
                               ): Future[Unit] = {
-    client.apiClient.getChannelInfo(channelName).members.map { members =>
-      val otherMembers = members.filterNot(ea => ea == profile.userId)
-      val withDMChannels: Seq[(String, String)] = otherMembers.flatMap { ea =>
-        client.apiClient.listIms.find(_.user == ea).map(_.id).map { dmChannel =>
-          (ea, dmChannel)
-        }
+    val members = getMembersFor(channelName, client)
+    val otherMembers = members.filterNot(ea => ea == profile.userId)
+    val withDMChannels: Seq[(String, String)] = otherMembers.flatMap { ea =>
+      client.apiClient.listIms.find(_.user == ea).map(_.id).map { dmChannel =>
+        (ea, dmChannel)
       }
-      Future.sequence(withDMChannels.map { case(slackUserId, dmChannel) =>
-        sendFor(dmChannel, slackUserId, slackService, client, profile, dataService)
-      }).map(_ => {})
-    }.getOrElse(Future.successful({}))
+    }
+    Future.sequence(withDMChannels.map { case(slackUserId, dmChannel) =>
+      sendFor(dmChannel, slackUserId, slackService, client, profile, dataService)
+    }).map(_ => {})
   }
 
   // TODO: don't be slack-specific
