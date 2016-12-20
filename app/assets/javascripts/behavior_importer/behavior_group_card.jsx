@@ -11,23 +11,16 @@ define(function(require) {
     propTypes: {
       groupData: React.PropTypes.object.isRequired,
       localId: React.PropTypes.string,
-      teamId: React.PropTypes.string.isRequired,
-      csrfToken: React.PropTypes.string.isRequired,
       description: React.PropTypes.string,
       name: React.PropTypes.string.isRequired,
       icon: React.PropTypes.string,
       onBehaviorGroupImport: React.PropTypes.func.isRequired,
-      onMoreInfoClick: React.PropTypes.func.isRequired
-    },
-
-    getInitialState: function() {
-      return {
-        importing: false
-      };
+      onMoreInfoClick: React.PropTypes.func.isRequired,
+      isImporting: React.PropTypes.bool
     },
 
     isImporting: function() {
-      return this.state.importing;
+      return this.props.isImporting;
     },
 
     isImported: function() {
@@ -35,24 +28,7 @@ define(function(require) {
     },
 
     importBehavior: function() {
-      this.setState({
-        importing: true
-      });
-      var headers = new Headers();
-      headers.append('x-requested-with', 'XMLHttpRequest');
-      fetch(jsRoutes.controllers.BehaviorImportExportController.doImport().url, {
-        credentials: 'same-origin',
-        headers: headers,
-        method: 'POST',
-        body: new FormData(this.refs.form)
-      }).then(function(response) {
-        return response.json();
-      }).then(function(json) {
-        this.setState({
-          importing: false
-        });
-        this.props.onBehaviorGroupImport(json);
-      }.bind(this));
+      this.props.onBehaviorGroupImport(this.props.groupData);
     },
 
     getMoreInfoLink: function() {
@@ -113,28 +89,23 @@ define(function(require) {
     render: function() {
       return (
         <div className="border border-radius bg-lightest phxl pvl">
-          <form ref="form" action={jsRoutes.controllers.BehaviorImportExportController.doImport().url} method="POST">
-            <input type="hidden" name="csrfToken" value={this.props.csrfToken} />
-            <input type="hidden" name="teamId" value={this.props.teamId} />
-            <input type="hidden" name="dataJson" value={JSON.stringify(this.props.groupData)} />
-            <div className={this.isImporting() ? "pulse" : ""}>
-              <div className="type-l display-ellipsis mbm">
-                {ifPresent(this.props.icon, (icon) => (
-                  <span style={{ width: "1em" }} className="display-inline-block mrm">
-                    {icon}
-                  </span>
-                ))}
-                {this.props.name}
-              </div>
-              <div className="mvm">{this.getInstallButton()}</div>
-              <p className="type-s mvm" style={{ height: "4rem", overflow: "hidden" }}>
-                {this.props.description}
-              </p>
-              <div className="type-s">
-                {this.getMoreInfoLink()}
-              </div>
+          <div className={this.isImporting() ? "pulse" : ""}>
+            <div className="type-l display-ellipsis mbm">
+              {ifPresent(this.props.icon, (icon) => (
+                <span style={{ width: "1em" }} className="display-inline-block mrm">
+                  {icon}
+                </span>
+              ))}
+              {this.props.name}
             </div>
-          </form>
+            <div className="mvm">{this.getInstallButton()}</div>
+            <p className="type-s mvm" style={{ height: "4rem", overflow: "hidden" }}>
+              {this.props.description}
+            </p>
+            <div className="type-s">
+              {this.getMoreInfoLink()}
+            </div>
+          </div>
         </div>
       );
     }

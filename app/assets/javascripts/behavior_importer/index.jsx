@@ -34,15 +34,37 @@ define(function(require) {
         installedBehaviorGroups: this.props.installedBehaviorGroups,
         behaviorGroups: this.props.behaviorGroups,
         selectedBehaviorGroup: null,
-        revealMoreInfo: false
+        revealMoreInfo: false,
+        importingList: []
       };
     },
 
-    onBehaviorGroupImport: function(installedGroup) {
-      var newState = {
-        installedBehaviorGroups: this.getInstalledBehaviorGroups().concat([installedGroup])
-      };
-      this.setState(newState);
+    onBehaviorGroupImport: function(groupToInstall) {
+      this.setState({
+        importingList: this.state.importingList.concat([groupToInstall])
+      });
+      var headers = new Headers();
+      headers.append('x-requested-with', 'XMLHttpRequest');
+      var body = new FormData();
+      body.append('csrfToken', this.props.csrfToken);
+      body.append('teamId', this.props.teamId);
+      body.append('dataJson', JSON.stringify(groupToInstall));
+      fetch(jsRoutes.controllers.BehaviorImportExportController.doImport().url, {
+        credentials: 'same-origin',
+        headers: headers,
+        method: 'POST',
+        body: body
+      }).then((response) => response.json())
+        .then((installedGroup) => {
+          this.setState({
+            importingList: this.state.importingList.filter((ea) => ea !== groupToInstall),
+            installedBehaviorGroups: this.getInstalledBehaviorGroups().concat([installedGroup])
+          });
+        });
+    },
+
+    isImporting: function(group) {
+      return this.state.importingList.some((ea) => ea === group);
     },
 
     getSelectedBehaviorGroup: function() {
@@ -66,15 +88,14 @@ define(function(require) {
             {this.getBehaviorGroups().map((group, index) => (
               <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn" key={"group" + index}>
                 <BehaviorGroupCard
-                  csrfToken={this.props.csrfToken}
                   name={group.name}
                   description={group.description}
                   icon={group.icon}
                   groupData={group}
-                  teamId={this.props.teamId}
                   localId={this.getLocalId(group)}
                   onBehaviorGroupImport={this.onBehaviorGroupImport}
                   onMoreInfoClick={this.toggleInfoPanel}
+                  isImporting={this.isImporting(group)}
                 />
               </div>
             ))}
