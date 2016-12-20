@@ -1,52 +1,48 @@
 const request = require('request');
 
-function findMissingArgs(keysToEnsure, args) {
-  const missing = [];
-  keysToEnsure.forEach(function(key) {
-    if (args[key] === undefined) {
-      missing.push(key)
-    }
-  });
-  return missing;
-}
-
 module.exports = {
 
   postMessage: function (args) {
-    const missing = findMissingArgs(["message", "ellipsis"], args);
-    if (missing.length > 0) {
+    const ellipsis = args.ellipsis;
+    if (typeof ellipsis !== "object") {
+      const msg = "You need to pass an `ellipsis` object through from an Ellipsis action";
       if (args.error) {
-        args.error("Missing values for: " + missing.join(", "));
+        args.error(msg);
+      } else {
+        throw msg;
       }
     } else {
-      const ellipsis = args.ellipsis;
-      const responseContext = args.responseContext ? args.responseContext : ellipsis.userInfo.messageInfo.medium;
-      const channel = args.channel ? args.channel : ellipsis.userInfo.messageInfo.channel;
-      request.
-        post({
-          url: ellipsis.apiBaseUrl + "/api/post_message",
-          form: {
-            message: args.message,
-            responseContext: responseContext,
-            channel: channel,
-            token: args.ellipsis.token
-          }
-        }, function (error, response, body) {
-          if (error) {
-            if (args.error) {
-              args.error(error);
+      const errorHandler = typeof args.error == "function" ? args.error : ellipsis.error;
+      const message = args.message;
+      if (!message) {
+        errorHandler("You need to pass a `message` argument");
+      } else {
+        const responseContext = args.responseContext ? args.responseContext : ellipsis.userInfo.messageInfo.medium;
+        const channel = args.channel ? args.channel : ellipsis.userInfo.messageInfo.channel;
+        request.
+          post({
+            url: ellipsis.apiBaseUrl + "/api/post_message",
+            form: {
+              message: message,
+              responseContext: responseContext,
+              channel: channel,
+              token: ellipsis.token
             }
-          } else {
-            if (response.statusCode != 200) {
-              args.error(response.statusCode + ": " + response.body);
+          }, function (error, response, body) {
+            if (error) {
+              errorHandler(error)
             } else {
-              if (args.success) {
-                args.success(response, body);
+              if (response.statusCode != 200) {
+                errorHandler(response.statusCode + ": " + response.body);
+              } else {
+                if (args.success) {
+                  args.success(response, body);
+                }
               }
             }
           }
-        }
-      );
+        );
+      }
     }
   }
 
