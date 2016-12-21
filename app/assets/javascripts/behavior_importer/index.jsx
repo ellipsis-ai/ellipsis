@@ -15,14 +15,20 @@ define(function(require) {
     },
 
     getLocalId: function(group) {
-      const installed = this.getInstalledBehaviorGroups().find(ea => {
-        return ea.importedId === group.publishedId;
-      });
+      const installed = this.getAllInstalledBehaviorGroups().find(ea => ea.importedId === group.publishedId);
       return installed ? installed.groupId : null;
     },
 
-    getInstalledBehaviorGroups: function() {
-      return this.state.installedBehaviorGroups || [];
+    getAllInstalledBehaviorGroups: function() {
+      return (this.props.installedBehaviorGroups || []).concat(this.getRecentlyInstalledBehaviorGroups());
+    },
+
+    getRecentlyInstalledBehaviorGroups: function() {
+      return this.state.recentlyInstalledBehaviorGroups;
+    },
+
+    hasRecentlyInstalledBehaviorGroups: function() {
+      return this.getRecentlyInstalledBehaviorGroups().length > 0;
     },
 
     getBehaviorGroups: function() {
@@ -31,7 +37,7 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        installedBehaviorGroups: this.props.installedBehaviorGroups,
+        recentlyInstalledBehaviorGroups: [],
         behaviorGroups: this.props.behaviorGroups,
         selectedBehaviorGroup: null,
         revealMoreInfo: false,
@@ -60,7 +66,7 @@ define(function(require) {
         .then((installedGroup) => {
           this.setState({
             importingList: this.state.importingList.filter((ea) => ea !== groupToInstall),
-            installedBehaviorGroups: this.getInstalledBehaviorGroups().concat([installedGroup])
+            recentlyInstalledBehaviorGroups: this.getRecentlyInstalledBehaviorGroups().concat([installedGroup])
           });
         });
     },
@@ -137,6 +143,10 @@ define(function(require) {
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onToggle={this.toggleInfoPanel}
               />
+            </Collapsible>
+
+            <Collapsible revealWhen={this.hasRecentlyInstalledBehaviorGroups() && !this.getActivePanel()}>
+              <div></div>
             </Collapsible>
           </FixedFooter>
         </div>
