@@ -33,6 +33,20 @@ define(function(require) {
         camel = "_" + camel;
       }
       return camel;
+    },
+
+    formatList: function(list, optionalMapper) {
+      var mapper = optionalMapper || ((ea) => ea);
+      if (list.length === 0) {
+        return "";
+      } else if (list.length === 1) {
+        return list.map(mapper).join("");
+      } else if (list.length === 2) {
+        return list.map(mapper).join(" and ");
+      } else if (list.length > 2) {
+        return list.slice(0, list.length - 1).map(mapper).join(", ") +
+            ", and " + list.slice(list.length - 1).map(mapper).join("");
+      }
     }
   };
 });
