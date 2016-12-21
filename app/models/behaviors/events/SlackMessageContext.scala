@@ -119,10 +119,6 @@ case class SlackMessageContext(
     } yield messages
   }
 
-  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(message.user, conversationContext, isDirectMessage(message.channel))
-  }
-
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
     super.ensureUser(dataService).flatMap { user =>
       dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)

@@ -6,6 +6,8 @@ trait ConversationService {
 
   def save(conversation: Conversation): Future[Conversation]
 
+  def allOngoingFor(userIdForContext: String, context: String, isPrivateMessage: Boolean): Future[Seq[Conversation]]
+
   def findOngoingFor(userIdForContext: String, context: String, isPrivateMessage: Boolean): Future[Option[Conversation]]
 
   def cancel(conversation: Conversation): Future[Unit]

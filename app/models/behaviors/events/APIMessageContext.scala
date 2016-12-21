@@ -10,6 +10,7 @@ import slack.rtm.SlackRtmClient
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
+// TODO: separate out slack and API concerns
 case class APIMessageContext(
                               client: SlackRtmClient,
                               profile: SlackBotProfile,
@@ -28,6 +29,9 @@ case class APIMessageContext(
     maybeSlackProfile.flatMap { slackProfile =>
       client.apiClient.listIms.find(_.user == slackProfile.loginInfo.providerKey).map(_.id)
     }
+  }
+  def isDirectMessage(channelId: String): Boolean = {
+    channelId.startsWith("D")
   }
   lazy val userIdForContext: String = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(name)
 
@@ -48,5 +52,4 @@ case class APIMessageContext(
     }
   }
 
-  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = Future.successful(None)
 }

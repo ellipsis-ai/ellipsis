@@ -140,7 +140,9 @@ case class ScheduledMessage(
     for {
       message <- Future.successful(Message("ts", channelName, slackUserId, text, None))
       context <- Future.successful(SlackMessageContext(client, profile, message))
-      results <- slackService.eventHandler.startInvokeConversationFor(SlackMessageEvent(context))
+      event <- Future.successful(SlackMessageEvent(context))
+      _ <- slackService.eventHandler.interruptOngoingConversationsFor(event)
+      results <- slackService.eventHandler.handle(event, None)
       _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(LocalDateTime.now))
     } yield {
       results.foreach { result =>
