@@ -39,15 +39,34 @@ class EventHandler @Inject() (
     }
   }
 
+  def interruptOngoingConversationsFor(event: MessageEvent): Future[Unit] = {
+    event.context.allOngoingConversations(dataService).flatMap { ongoing =>
+      Future.sequence(ongoing.map { ea =>
+        val cancelMessage =
+          s""":exclamation: I have something new to talk about, so I’m going to stop this conversation.
+             |
+                       |You can start it again by saying `${ea.trigger.pattern}`.
+                     """.stripMargin
+        cancelConversationResult(ea, cancelMessage).map { result =>
+          result.sendIn(event.context, None, None)
+        }
+      })
+    }.map(_ => {})
+  }
+
+  def cancelConversationResult(conversation: Conversation, withMessage: String): Future[BotResult] = {
+    conversation.cancel(dataService).map { _ =>
+      SimpleTextResult(withMessage, forcePrivateResponse = false)
+    }
+  }
+
   def isCancelConversationMessage(text: String): Boolean = {
     Seq("…stop", "…cancel", "...stop", "...cancel").contains(text)
   }
 
   def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
     if (isCancelConversationMessage(event.context.fullMessageText)) {
-      conversation.cancel(dataService).map { _ =>
-        SimpleTextResult(s"OK, I'll stop talking about `${conversation.trigger.pattern}`", forcePrivateResponse = false)
-      }
+      cancelConversationResult(conversation, s"OK, I'll stop talking about `${conversation.trigger.pattern}`")
     } else {
       conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
     }

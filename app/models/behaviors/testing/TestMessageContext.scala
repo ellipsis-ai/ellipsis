@@ -28,7 +28,7 @@ case class TestMessageContext(
   lazy val maybeDMChannel = None
   val isResponseExpected = true
 
-  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = Future.successful(None)
+  def isDirectMessage(channel: String): Boolean = false
 
   def sendMessage(
                    text: String,

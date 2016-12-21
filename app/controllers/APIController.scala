@@ -98,18 +98,21 @@ class APIController @Inject() (
             })
           isInvokedExternally <- Future.successful(maybeUserForApiToken.isDefined)
           result <- maybeEvent.map { event =>
-            eventHandler.handle(event, None).map { results =>
-              results.foreach { result =>
-                if (isInvokedExternally) {
-                  maybeSlackProfile.foreach { slackProfile =>
-                    val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
-                    introResult.sendIn(event.context, None, None)
+            for {
+              _ <- eventHandler.interruptOngoingConversationsFor(event)
+              result <- eventHandler.handle(event, None).map { results =>
+                results.foreach { result =>
+                  if (isInvokedExternally) {
+                    maybeSlackProfile.foreach { slackProfile =>
+                      val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
+                      introResult.sendIn(event.context, None, None)
+                    }
                   }
+                  result.sendIn(event.context, None, None)
                 }
-                result.sendIn(event.context, None, None)
+                Ok(Json.toJson(results.map(_.fullText)))
               }
-              Ok(Json.toJson(results.map(_.fullText)))
-            }
+            } yield result
           }.getOrElse(Future.successful(NotFound("")))
         } yield result
 
