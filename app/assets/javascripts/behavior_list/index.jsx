@@ -295,7 +295,7 @@ define(function(require) {
 
           <FixedFooter className="bg-white">
             <Collapsible revealWhen={this.getSelectedGroupIds().length > 0}>
-              <div className="container container-c ptm">
+              <div className="container container-c ptm border-top">
                 {this.renderActions()}
               </div>
             </Collapsible>

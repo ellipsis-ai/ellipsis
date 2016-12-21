@@ -110,7 +110,7 @@ define(function(require) {
       var notification = this.getNotificationForKind(this.props.notification.kind);
       return (
         <Collapsible revealWhen={!this.props.notification.hidden} animateInitialRender={true}>
-          <div className={"type-s phn position-z-above " + notification.containerClass} style={{ marginTop: -1 }}>
+          <div className={"type-s phn position-z-above mbneg1 " + notification.containerClass}>
             <div className="container">
               {notification.icon}
               {notification.message}

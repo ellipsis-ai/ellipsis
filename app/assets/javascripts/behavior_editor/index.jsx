@@ -24,7 +24,7 @@ var React = require('react'),
   FixedFooter = require('../fixed_footer'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../form/input'),
-  ModalScrim = require('./modal_scrim'),
+  ModalScrim = require('../modal_scrim'),
   Notification = require('../notifications/notification'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
@@ -1704,7 +1704,7 @@ return React.createClass({
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
-            <div className="container container-wide ptm">
+            <div className="container container-wide ptm border-top">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
                   <DynamicLabelButton

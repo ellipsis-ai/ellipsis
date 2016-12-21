@@ -212,7 +212,8 @@ button.button-symbol {
   text-align: center !important;
 }
 
-button.button-raw {
+button.button-raw,
+button.button-block {
   padding: 0;
   border: none;
   min-width: 0;
@@ -221,6 +222,20 @@ button.button-raw {
   font-style: inherit;
   line-height: inherit;
   height: auto;
+}
+
+button.button-no-wrap {
+  white-space: nowrap;
+}
+
+button.button-block {
+  display: block;
+  text-align: left;
+  color: inherit;
+}
+
+button.button-block .link {
+  color: @blue-medium-text;
 }
 
 button.button-s.button-symbol {
@@ -397,12 +412,18 @@ button.button-s.button-symbol:focus {
   padding-right: (@xs - @border-width-thick) !important;
 }
 
-button.button-raw:hover {
+button.button-raw:hover,
+button.button-block:hover .link {
   text-decoration: underline;
 }
 
-button.button-raw:focus {
+button.button-raw:focus,
+button.button-block:focus {
   padding: 0;
+}
+
+button.button-raw:focus,
+button.button-block:focus .link {
   color: @blue-medium-alt;
 }
 
@@ -419,9 +440,14 @@ button.button-subtle:active {
   border-color: @blue-dark !important;
 }
 
-button.button-raw:active {
+button.button-raw:active,
+button.button-block:active {
   border: none;
   background-color: transparent;
+}
+
+button.button-raw:active,
+button.button-block:active .link {
   color: @blue-dark;
 }
 

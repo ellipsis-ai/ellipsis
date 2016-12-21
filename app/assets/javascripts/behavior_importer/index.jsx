@@ -1,6 +1,10 @@
 define(function(require) {
   var React = require('react'),
-    Group = require('./group');
+    BehaviorGroupCard = require('./behavior_group_card'),
+    BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
+    Collapsible = require('../collapsible'),
+    FixedFooter = require('../fixed_footer'),
+    ModalScrim = require('../modal_scrim');
 
   return React.createClass({
     propTypes: {
@@ -28,34 +32,85 @@ define(function(require) {
     getInitialState: function() {
       return {
         installedBehaviorGroups: this.props.installedBehaviorGroups,
-        behaviorGroups: this.props.behaviorGroups
+        behaviorGroups: this.props.behaviorGroups,
+        selectedBehaviorGroup: null,
+        revealMoreInfo: false,
+        importingList: []
       };
     },
 
-    onBehaviorGroupImport: function(installedGroup) {
+    onBehaviorGroupImport: function(groupToInstall) {
+      this.setState({
+        importingList: this.state.importingList.concat([groupToInstall])
+      });
+      var headers = new Headers();
+      headers.append('x-requested-with', 'XMLHttpRequest');
+      var body = new FormData();
+      body.append('csrfToken', this.props.csrfToken);
+      body.append('teamId', this.props.teamId);
+      body.append('dataJson', JSON.stringify(groupToInstall));
+      fetch(jsRoutes.controllers.BehaviorImportExportController.doImport().url, {
+        credentials: 'same-origin',
+        headers: headers,
+        method: 'POST',
+        body: body
+      }).then((response) => response.json())
+        .then((installedGroup) => {
+          this.setState({
+            importingList: this.state.importingList.filter((ea) => ea !== groupToInstall),
+            installedBehaviorGroups: this.getInstalledBehaviorGroups().concat([installedGroup])
+          });
+        });
+    },
+
+    isImporting: function(group) {
+      return this.state.importingList.some((ea) => ea === group);
+    },
+
+    getSelectedBehaviorGroup: function() {
+      return this.state.selectedBehaviorGroup;
+    },
+
+    toggleInfoPanel: function(group) {
       var newState = {
-        installedBehaviorGroups: this.getInstalledBehaviorGroups().concat([installedGroup])
+        revealMoreInfo: !this.state.revealMoreInfo
       };
+      if (group && group !== newState.selectedBehaviorGroup) {
+        newState.selectedBehaviorGroup = group;
+      }
       this.setState(newState);
     },
 
     render: function() {
       return (
-        <div>
-          {this.getBehaviorGroups().map(function(group, index) {
-            return (
-              <Group
-                key={"group" + index}
-                csrfToken={this.props.csrfToken}
-                name={group.name}
-                description={group.description}
-                groupData={group}
-                teamId={this.props.teamId}
-                localId={this.getLocalId(group)}
+        <div className="ptxxl">
+          <div className="columns">
+            {this.getBehaviorGroups().map((group, index) => (
+              <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn" key={"group" + index}>
+                <BehaviorGroupCard
+                  name={group.name}
+                  description={group.description}
+                  icon={group.icon}
+                  groupData={group}
+                  localId={this.getLocalId(group)}
+                  onBehaviorGroupImport={this.onBehaviorGroupImport}
+                  onMoreInfoClick={this.toggleInfoPanel}
+                  isImporting={this.isImporting(group)}
+                />
+              </div>
+            ))}
+          </div>
+
+          <ModalScrim isActive={this.state.revealMoreInfo} onClick={this.toggleInfoPanel} />
+          <FixedFooter>
+            <Collapsible revealWhen={this.state.revealMoreInfo}>
+              <BehaviorGroupInfoPanel
+                groupData={this.getSelectedBehaviorGroup()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
+                onToggle={this.toggleInfoPanel}
               />
-            );
-          }, this)}
+            </Collapsible>
+          </FixedFooter>
         </div>
       );
     }
