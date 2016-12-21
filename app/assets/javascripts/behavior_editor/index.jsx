@@ -111,14 +111,14 @@ return React.createClass({
   },
 
   getActiveModalElement: function() {
-    if (this.state.activePanel && this.state.activePanel.name && this.state.activePanel.modal) {
+    if (this.state.activePanel && this.state.activePanel.name && this.state.activePanel.isModal) {
       return ReactDOM.findDOMNode(this.refs[this.state.activePanel.name]);
     } else {
       return null;
     }
   },
 
-  getActivePanel: function() {
+  getActivePanelName: function() {
     return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
   },
 
@@ -652,7 +652,7 @@ return React.createClass({
   handleEscKey: function() {
     if (this.getActiveDropdown()) {
       this.hideActiveDropdown();
-    } else if (this.getActivePanel()) {
+    } else if (this.getActivePanelName()) {
       this.hideActivePanel();
     }
   },
@@ -851,12 +851,12 @@ return React.createClass({
   },
 
   toggleActivePanel: function(name, beModal, optionalCallback) {
-    var alreadyOpen = this.getActivePanel() === name;
+    var alreadyOpen = this.getActivePanelName() === name;
     if (!alreadyOpen) {
       this.refs.scrim.getElement().style.top = '';
     }
     this.setState({
-      activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
+      activePanel: alreadyOpen ? null : { name: name, isModal: !!beModal }
     }, optionalCallback || function() {
       var activeModal = this.getActiveModalElement();
       if (activeModal) {
@@ -889,7 +889,7 @@ return React.createClass({
 
   toggleBehaviorSwitcher: function() {
     this.toggleActivePanel('behaviorSwitcher', true, () => {
-      if (this.getActivePanel() === 'behaviorSwitcher') {
+      if (this.getActivePanelName() === 'behaviorSwitcher') {
         this.fixLeftPanelPosition();
         this.refs.behaviorSwitcher.focus();
       }
@@ -909,7 +909,7 @@ return React.createClass({
 
   toggleTester: function(ref) {
     this.toggleActivePanel(ref, true, () => {
-      if (this.getActivePanel() === ref) {
+      if (this.getActivePanelName() === ref) {
         this.refs[ref].focus();
       }
     });
@@ -948,7 +948,7 @@ return React.createClass({
   },
 
   toggleSavedAnswerEditor: function(savedAnswerId) {
-    if (this.getActivePanel() === 'savedAnswerEditor') {
+    if (this.getActivePanelName() === 'savedAnswerEditor') {
       this.toggleActivePanel('savedAnswerEditor', true, () => {
         this.setState({ selectedSavedAnswerInputId: null });
       });
@@ -1203,7 +1203,7 @@ return React.createClass({
   },
 
   hasModalPanel: function() {
-    return !!(this.state.activePanel && this.state.activePanel.modal);
+    return !!(this.state.activePanel && this.state.activePanel.isModal);
   },
 
   hasModifiedTemplate: function() {
@@ -1253,12 +1253,12 @@ return React.createClass({
 
   isModified: function() {
     var currentMatchesInitial = this.state.behavior.isIdenticalToVersion(this.getInitialBehavior(this.props.behavior));
-    var previewingVersions = this.getActivePanel() === 'versionHistory';
+    var previewingVersions = this.getActivePanelName() === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
   },
 
   isSaving: function() {
-    return this.getActivePanel() === 'saving';
+    return this.getActivePanelName() === 'saving';
   },
 
   shouldFilterCurrentVersion: function() {
@@ -1499,7 +1499,7 @@ return React.createClass({
                   onChange={this.onAWSConfigChange}
                   onRemoveAWSConfig={this.toggleAWSConfig}
                   onToggleHelp={this.toggleAWSHelp}
-                  helpVisible={this.getActivePanel() === 'helpForAWS'}
+                  helpVisible={this.getActivePanelName() === 'helpForAWS'}
                 />
               </div>
             </Collapsible>
@@ -1507,7 +1507,7 @@ return React.createClass({
 
           <CodeHeader
             ref="codeHeader"
-            helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
+            helpVisible={this.getActivePanelName() === 'helpForBoilerplateParameters'}
             onToggleHelp={this.toggleBoilerplateHelp}
             userParams={this.getBehaviorParams()}
             systemParams={this.getSystemParams()}
@@ -1554,35 +1554,35 @@ return React.createClass({
       <div>
         <ModalScrim ref="scrim" isActive={this.hasModalPanel()} onClick={this.clearActivePanel} />
         <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
-          <Collapsible ref="confirmUndo" revealWhen={this.getActivePanel() === 'confirmUndo'}>
+          <Collapsible ref="confirmUndo" revealWhen={this.getActivePanelName() === 'confirmUndo'}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteBehavior" revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
+          <Collapsible ref="confirmDeleteBehavior" revealWhen={this.getActivePanelName() === 'confirmDeleteBehavior'}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
               <p>Are you sure you want to delete this action?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.getActivePanel() === 'confirmDeleteBehaviorGroup'}>
+          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.getActivePanelName() === 'confirmDeleteBehaviorGroup'}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehaviorGroup} onCancelClick={this.hideActivePanel}>
               <p>Are you sure you want to delete this skill and all of its actions and data types?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteCode" revealWhen={this.getActivePanel() === 'confirmDeleteCode'}>
+          <Collapsible ref="confirmDeleteCode" revealWhen={this.getActivePanelName() === 'confirmDeleteCode'}>
             <ConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.hideActivePanel}>
               <p>Are you sure you want to remove all of the code?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerParameters'}>
+          <Collapsible revealWhen={this.getActivePanelName() === 'helpForTriggerParameters'}>
             <TriggerHelp onCollapseClick={this.toggleTriggerHelp} />
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
+          <Collapsible revealWhen={this.getActivePanelName() === 'helpForBoilerplateParameters'}>
             <BoilerplateParameterHelp
               envVariableNames={this.getEnvVariableNames()}
               apiAccessTokens={this.getApiApplications()}
@@ -1591,11 +1591,11 @@ return React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'helpForAWS'}>
+          <Collapsible revealWhen={this.getActivePanelName() === 'helpForAWS'}>
             <AWSHelp onCollapseClick={this.toggleAWSHelp} />
           </Collapsible>
 
-          <Collapsible ref="versionHistory" revealWhen={this.getActivePanel() === 'versionHistory'}>
+          <Collapsible ref="versionHistory" revealWhen={this.getActivePanelName() === 'versionHistory'}>
             <VersionsPanel
               ref="versionsPanel"
               menuToggle={this.toggleVersionListMenu}
@@ -1608,7 +1608,7 @@ return React.createClass({
             />
           </Collapsible>
 
-          <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
+          <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanelName() === 'envVariableSetter'}>
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
@@ -1626,7 +1626,7 @@ return React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>
+          <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanelName() === 'envVariableAdder'}>
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
@@ -1645,7 +1645,7 @@ return React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'behaviorTester'}>
+          <Collapsible revealWhen={this.getActivePanelName() === 'behaviorTester'}>
             <BehaviorTester
               ref="behaviorTester"
               triggers={this.getBehaviorTriggers()}
@@ -1657,7 +1657,7 @@ return React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'dataTypeTester'}>
+          <Collapsible revealWhen={this.getActivePanelName() === 'dataTypeTester'}>
             <DataTypeTester
               ref="dataTypeTester"
               behaviorId={this.props.behavior.behaviorId}
@@ -1669,7 +1669,7 @@ return React.createClass({
           </Collapsible>
 
           {this.getOtherSavedParametersInGroup().length > 0 ? (
-            <Collapsible revealWhen={this.getActivePanel() === 'sharedAnswerInputSelector'}>
+            <Collapsible revealWhen={this.getActivePanelName() === 'sharedAnswerInputSelector'}>
               <SharedAnswerInputSelector
                 ref="sharedAnswerInputSelector"
                 onToggle={this.toggleSharedAnswerInputSelector}
@@ -1679,7 +1679,7 @@ return React.createClass({
             </Collapsible>
           ) : null}
 
-          <Collapsible revealWhen={this.getActivePanel() === 'savedAnswerEditor'}>
+          <Collapsible revealWhen={this.getActivePanelName() === 'savedAnswerEditor'}>
             <SavedAnswerEditor
               ref="savedAnswerEditor"
               onToggle={this.toggleSavedAnswerEditor}
@@ -1943,8 +1943,8 @@ return React.createClass({
     if (this.shouldShowBehaviorSwitcher()) {
       return (
         <div ref="leftPanel" className={"position-fixed-left position-z-front bg-white-translucent " +
-        (this.getActivePanel() === 'behaviorSwitcher' ? "border-right" : "")}>
-          <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
+        (this.getActivePanelName() === 'behaviorSwitcher' ? "border-right" : "")}>
+          <Collapsible revealWhen={this.getActivePanelName() === 'behaviorSwitcher'} isHorizontal={true}>
             <BehaviorSwitcher
               ref="behaviorSwitcher"
               onToggle={this.toggleBehaviorSwitcher}
@@ -2002,7 +2002,7 @@ return React.createClass({
             isFinishedBehavior={this.isFinishedBehavior()}
             triggers={this.getBehaviorTriggers()}
             onToggleHelp={this.toggleTriggerHelp}
-            helpVisible={this.getActivePanel() === 'helpForTriggerParameters'}
+            helpVisible={this.getActivePanelName() === 'helpForTriggerParameters'}
             onTriggerAdd={this.addTrigger}
             onTriggerChange={this.updateTriggerAtIndexWithTrigger}
             onTriggerDelete={this.deleteTriggerAtIndex}
@@ -2062,7 +2062,7 @@ return React.createClass({
                   isFinishedBehavior={this.isFinishedBehavior()}
                   functionBody={this.getBehaviorFunctionBody()}
                   onToggleHelp={this.toggleBoilerplateHelp}
-                  helpIsActive={this.getActivePanel() === 'helpForBoilerplateParameters'}
+                  helpIsActive={this.getActivePanelName() === 'helpForBoilerplateParameters'}
                   hasUserParameters={this.hasUserParameters()}
                 />
               </div>

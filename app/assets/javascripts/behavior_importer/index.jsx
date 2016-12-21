@@ -35,6 +35,8 @@ define(function(require) {
         behaviorGroups: this.props.behaviorGroups,
         selectedBehaviorGroup: null,
         revealMoreInfo: false,
+        activePanel: null,
+        previousActivePanel: null,
         importingList: []
       };
     },
@@ -71,14 +73,40 @@ define(function(require) {
       return this.state.selectedBehaviorGroup;
     },
 
+    getActivePanel: function() {
+      return this.state.activePanel;
+    },
+
+    getPreviousActivePanel: function() {
+      return this.state.previousActivePanel;
+    },
+
+    activePanelIsNamed: function(name) {
+      const panel = this.getActivePanel();
+      return !!(panel && panel.name === name);
+    },
+
+    activePanelIsModal: function() {
+      const panel = this.getActivePanel();
+      return !!(panel && panel.isModal);
+    },
+
+    toggleActivePanel: function(name, beModal, optionalCallback) {
+      var previousPanel = this.getPreviousActivePanel();
+      var newPanel = this.activePanelIsNamed(name) ? previousPanel : { name: name, isModal: !!beModal };
+      this.setState({
+        activePanel: newPanel,
+        previousActivePanel: this.getActivePanel()
+      }, optionalCallback);
+    },
+
     toggleInfoPanel: function(group) {
-      var newState = {
-        revealMoreInfo: !this.state.revealMoreInfo
-      };
-      if (group && group !== newState.selectedBehaviorGroup) {
-        newState.selectedBehaviorGroup = group;
+      if (group && group !== this.state.selectedBehaviorGroup) {
+        this.setState({
+          selectedBehaviorGroup: group
+        });
       }
-      this.setState(newState);
+      this.toggleActivePanel('revealMoreInfo', true);
     },
 
     render: function() {
@@ -101,9 +129,9 @@ define(function(require) {
             ))}
           </div>
 
-          <ModalScrim isActive={this.state.revealMoreInfo} onClick={this.toggleInfoPanel} />
+          <ModalScrim isActive={this.activePanelIsModal()} onClick={this.toggleInfoPanel} />
           <FixedFooter>
-            <Collapsible revealWhen={this.state.revealMoreInfo}>
+            <Collapsible revealWhen={this.activePanelIsNamed('revealMoreInfo')}>
               <BehaviorGroupInfoPanel
                 groupData={this.getSelectedBehaviorGroup()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
