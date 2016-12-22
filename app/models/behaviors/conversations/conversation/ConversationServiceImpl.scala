@@ -3,7 +3,7 @@ package models.behaviors.conversations.conversation
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
@@ -16,7 +16,7 @@ case class RawConversation(
                             conversationType: String,
                             context: String,
                             userIdForContext: String,
-                            startedAt: LocalDateTime,
+                            startedAt: DateTime,
                             state: String
                           )
 
@@ -27,7 +27,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
   def conversationType = column[String]("conversation_type")
   def context = column[String]("context")
   def userIdForContext = column[String]("user_id_for_context")
-  def startedAt = column[LocalDateTime]("started_at")
+  def startedAt = column[DateTime]("started_at")
   def state = column[String]("state")
 
   def * =

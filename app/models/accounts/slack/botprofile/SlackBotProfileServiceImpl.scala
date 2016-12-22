@@ -3,7 +3,7 @@ package models.accounts.slack.botprofile
 import javax.inject.{Inject, Provider}
 
 import models.team.Team
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
@@ -15,7 +15,7 @@ class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_
   def teamId = column[String]("team_id")
   def slackTeamId = column[String]("slack_team_id")
   def token = column[String]("token")
-  def createdAt = column[LocalDateTime]("created_at")
+  def createdAt = column[DateTime]("created_at")
 
   def * = (userId, teamId, slackTeamId, token, createdAt) <> ((SlackBotProfile.apply _).tupled, SlackBotProfile.unapply _)
 
@@ -54,12 +54,12 @@ class SlackBotProfileServiceImpl @Inject() (
     dataService.run(allForSlackTeamQuery(slackTeamId).result)
   }
 
-  def uncompiledAllSinceQuery(when: Rep[LocalDateTime]) = {
+  def uncompiledAllSinceQuery(when: Rep[DateTime]) = {
     all.filter(_.createdAt >= when)
   }
   val allSinceQuery = Compiled(uncompiledAllSinceQuery _)
 
-  def allSince(when: LocalDateTime): Future[Seq[SlackBotProfile]] = {
+  def allSince(when: DateTime): Future[Seq[SlackBotProfile]] = {
     dataService.run(allSinceQuery(when).result)
   }
 
@@ -77,7 +77,7 @@ class SlackBotProfileServiceImpl @Inject() (
         } yield profile
       }
       case None => DBIO.from(dataService.teams.create(slackTeamName)).flatMap { team =>
-        val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, LocalDateTime.now)
+        val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, DateTime.now)
         (all += newProfile).map { _ => newProfile }
       }
     }

@@ -1,13 +1,13 @@
 package models.environmentvariable
 
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import models.team.Team
 
 case class TeamEnvironmentVariable(
                                     name: String,
                                     value: String,
                                     team: Team,
-                                    createdAt: LocalDateTime
+                                    createdAt: DateTime
                                   ) extends EnvironmentVariable {
   def toRaw: RawTeamEnvironmentVariable = {
     RawTeamEnvironmentVariable(name, value, team.id, createdAt)

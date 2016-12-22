@@ -1,6 +1,6 @@
 package models.apitoken
 
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 
 case class APIToken(
@@ -8,8 +8,8 @@ case class APIToken(
                      label: String,
                      userId: String,
                      isRevoked: Boolean,
-                     maybeLastUsed: Option[LocalDateTime],
-                     createdAt: LocalDateTime
+                     maybeLastUsed: Option[DateTime],
+                     createdAt: DateTime
                    ) {
   val isValid: Boolean = !isRevoked
 

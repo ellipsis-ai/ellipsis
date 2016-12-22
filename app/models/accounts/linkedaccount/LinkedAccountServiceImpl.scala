@@ -5,20 +5,20 @@ import javax.inject._
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.slack.SlackProvider
 import models.accounts.user.{User, UserQueries}
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RawLinkedAccount(userId: String, loginInfo: LoginInfo, createdAt: LocalDateTime)
+case class RawLinkedAccount(userId: String, loginInfo: LoginInfo, createdAt: DateTime)
 
 class LinkedAccountsTable(tag: Tag) extends Table[RawLinkedAccount](tag, "linked_accounts") {
   def userId = column[String]("user_id")
   def providerId = column[String]("provider_id")
   def providerKey = column[String]("provider_key")
-  def createdAt = column[LocalDateTime]("created_at")
+  def createdAt = column[DateTime]("created_at")
 
   def loginInfo = (providerId, providerKey) <> (LoginInfo.tupled, LoginInfo.unapply _)
   def * = (userId, loginInfo, createdAt) <> (RawLinkedAccount.tupled, RawLinkedAccount.unapply _)
