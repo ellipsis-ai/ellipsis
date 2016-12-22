@@ -3,7 +3,7 @@ package services
 import json._
 import json.Formatting._
 import models.team.Team
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
@@ -154,7 +154,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
             val maybePublishedId = maybeConfig.map(_.publishedId)
             val name = maybeConfig.map(_.name).getOrElse(groupPath)
             val icon = maybeConfig.flatMap(_.icon)
-            BehaviorGroupData(None, name, readme, icon, behaviors, Some(githubUrl), None, maybePublishedId, LocalDateTime.now)
+            BehaviorGroupData(None, name, readme, icon, behaviors, Some(githubUrl), None, maybePublishedId, DateTime.now)
           }).map(Some(_))
         }).getOrElse(Future.successful(None))
     }

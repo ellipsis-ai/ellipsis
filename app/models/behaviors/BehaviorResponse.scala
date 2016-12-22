@@ -8,7 +8,7 @@ import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsObject, JsString, JsValue}
@@ -73,9 +73,9 @@ case class BehaviorResponse(
   }
 
   def resultForFilledOut: Future[BotResult] = {
-    val startTime = LocalDateTime.now
+    val startTime = DateTime.now
     dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event).flatMap { result =>
-      val runtimeInMilliseconds = LocalDateTime.now.toDate.getTime - startTime.toDate.getTime
+      val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
       dataService.invocationLogEntries.createFor(
         behaviorVersion,
         parametersWithValues,

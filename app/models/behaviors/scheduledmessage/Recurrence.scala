@@ -7,7 +7,7 @@ import java.util.{Calendar, Date, Locale}
 
 import com.joestelmach.natty._
 import org.joda.time.format.DateTimeFormat
-import org.joda.time.{DateTime, LocalDateTime, LocalTime, MonthDay}
+import org.joda.time.{DateTime, LocalTime, MonthDay}
 
 import scala.util.matching.Regex
 
@@ -20,9 +20,9 @@ sealed trait Recurrence {
   val maybeDayOfMonth: Option[Int] = None
   val maybeNthDayOfWeek: Option[Int] = None
   val maybeMonth: Option[Int] = None
-  def nextAfter(previous: LocalDateTime): LocalDateTime
-  def initialAfter(start: LocalDateTime): LocalDateTime
-  def withStandardAdjustments(when: LocalDateTime): LocalDateTime = when.withSecondOfMinute(0).withMillisOfSecond(0)
+  def nextAfter(previous: DateTime): DateTime
+  def initialAfter(start: DateTime): DateTime
+  def withStandardAdjustments(when: DateTime): DateTime = when.withSecondOfMinute(0).withMillisOfSecond(0)
   def displayString: String = ""
 }
 case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
@@ -32,12 +32,12 @@ case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
     s"every $frequencyString at $minuteOfHour minutes"
   }
 
-  def isEarlierInHour(when: LocalDateTime): Boolean = when.getMinuteOfHour < minuteOfHour
-  def isLaterInHour(when: LocalDateTime): Boolean = when.getMinuteOfHour > minuteOfHour
+  def isEarlierInHour(when: DateTime): Boolean = when.getMinuteOfHour < minuteOfHour
+  def isLaterInHour(when: DateTime): Boolean = when.getMinuteOfHour > minuteOfHour
 
-  def withAdjustments(when: LocalDateTime): LocalDateTime = withStandardAdjustments(when.withMinuteOfHour(minuteOfHour))
+  def withAdjustments(when: DateTime): DateTime = withStandardAdjustments(when.withMinuteOfHour(minuteOfHour))
 
-  def nextAfter(previous: LocalDateTime): LocalDateTime = {
+  def nextAfter(previous: DateTime): DateTime = {
     val hoursToAdd = if (isEarlierInHour(previous)) {
       frequency - 1
     } else {
@@ -46,7 +46,7 @@ case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
     withAdjustments(previous.plusHours(hoursToAdd))
   }
 
-  def initialAfter(start: LocalDateTime): LocalDateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (isLaterInHour(start)) {
       withAdjustments(start.plusHours(1))
     } else {
@@ -75,7 +75,7 @@ object Hourly {
         case minutesRegex(minutes) => Some(minutes.toInt)
         case _ => None
       }
-      Hourly(frequency, maybeMinuteOfHour.getOrElse(LocalDateTime.now.getMinuteOfHour))
+      Hourly(frequency, maybeMinuteOfHour.getOrElse(DateTime.now.getMinuteOfHour))
     }
   }
 }
@@ -87,11 +87,11 @@ trait RecurrenceWithTimeOfDay extends Recurrence {
   val secondOfMinute = timeOfDay.getSecondOfMinute
   val millisOfSecond = timeOfDay.getMillisOfSecond
 
-  override def withStandardAdjustments(when: LocalDateTime): LocalDateTime = {
+  override def withStandardAdjustments(when: DateTime): DateTime = {
     super.withStandardAdjustments(withTime(when))
   }
 
-  def withTime(when: LocalDateTime): LocalDateTime = {
+  def withTime(when: DateTime): DateTime = {
     when.withTime(hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond)
   }
 }
@@ -103,12 +103,12 @@ case class Daily(frequency: Int, timeOfDay: LocalTime) extends RecurrenceWithTim
     s"every $frequencyString at ${timeOfDay.toString(Recurrence.timeFormatter)}"
   }
 
-  def isEarlierInDay(when: LocalDateTime): Boolean = when.toLocalTime.isBefore(timeOfDay)
-  def isLaterInDay(when: LocalDateTime): Boolean = when.toLocalTime.isAfter(timeOfDay)
+  def isEarlierInDay(when: DateTime): Boolean = when.toLocalTime.isBefore(timeOfDay)
+  def isLaterInDay(when: DateTime): Boolean = when.toLocalTime.isAfter(timeOfDay)
 
-  def withAdjustments(when: LocalDateTime): LocalDateTime = withStandardAdjustments(when)
+  def withAdjustments(when: DateTime): DateTime = withStandardAdjustments(when)
 
-  def nextAfter(previous: LocalDateTime): LocalDateTime = {
+  def nextAfter(previous: DateTime): DateTime = {
     val daysToAdd = if (isEarlierInDay(previous)) {
       frequency - 1
     } else {
@@ -117,7 +117,7 @@ case class Daily(frequency: Int, timeOfDay: LocalTime) extends RecurrenceWithTim
     withAdjustments(previous.plusDays(daysToAdd))
   }
 
-  def initialAfter(start: LocalDateTime): LocalDateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (isLaterInDay(start)) {
       withAdjustments(start.plusDays(1))
     } else {
@@ -155,16 +155,16 @@ case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime) extends 
     s"every $frequencyString on ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
   }
 
-  def isEarlierInWeek(when: LocalDateTime): Boolean = {
+  def isEarlierInWeek(when: DateTime): Boolean = {
     when.getDayOfWeek < dayOfWeek || (when.getDayOfWeek == dayOfWeek && when.toLocalTime.isBefore(timeOfDay))
   }
-  def isLaterInWeek(when: LocalDateTime): Boolean = {
+  def isLaterInWeek(when: DateTime): Boolean = {
     when.getDayOfWeek > dayOfWeek || (when.getDayOfWeek == dayOfWeek && when.toLocalTime.isAfter(timeOfDay))
   }
 
-  def withAdjustments(when: LocalDateTime): LocalDateTime = withStandardAdjustments(when.withDayOfWeek(dayOfWeek))
+  def withAdjustments(when: DateTime): DateTime = withStandardAdjustments(when.withDayOfWeek(dayOfWeek))
 
-  def nextAfter(previous: LocalDateTime): LocalDateTime = {
+  def nextAfter(previous: DateTime): DateTime = {
     val weeksToAdd = if (isEarlierInWeek(previous)) {
       frequency - 1
     } else {
@@ -173,7 +173,7 @@ case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime) extends 
     withAdjustments(previous.plusWeeks(weeksToAdd))
   }
 
-  def initialAfter(start: LocalDateTime): LocalDateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (isLaterInWeek(start)) {
       withAdjustments(start.plusWeeks(1))
     } else {
@@ -201,7 +201,7 @@ object Weekly {
     maybeFrequency.map { frequency =>
       val maybeDayOfWeek = Recurrence.maybeDayOfWeekFrom(text)
       val maybeTime = Recurrence.maybeTimeFrom(text)
-      Weekly(frequency, maybeDayOfWeek.getOrElse(LocalDateTime.now.getDayOfWeek), maybeTime.getOrElse(Recurrence.currentAdjustedTime))
+      Weekly(frequency, maybeDayOfWeek.getOrElse(DateTime.now.getDayOfWeek), maybeTime.getOrElse(Recurrence.currentAdjustedTime))
     }
   }
 }
@@ -213,16 +213,16 @@ case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: Local
     s"every $frequencyString on the ${Recurrence.ordinalStringFor(dayOfMonth)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
   }
 
-  def isEarlierInMonth(when: LocalDateTime): Boolean = {
+  def isEarlierInMonth(when: DateTime): Boolean = {
     when.getDayOfMonth < dayOfMonth || (when.getDayOfMonth == dayOfMonth && when.toLocalTime.isBefore(timeOfDay))
   }
-  def isLaterInMonth(when: LocalDateTime): Boolean = {
+  def isLaterInMonth(when: DateTime): Boolean = {
     when.getDayOfMonth > dayOfMonth || (when.getDayOfMonth == dayOfMonth && when.toLocalTime.isAfter(timeOfDay))
   }
 
-  def withAdjustments(when: LocalDateTime): LocalDateTime = withStandardAdjustments(when.withDayOfMonth(dayOfMonth))
+  def withAdjustments(when: DateTime): DateTime = withStandardAdjustments(when.withDayOfMonth(dayOfMonth))
 
-  def nextAfter(previous: LocalDateTime): LocalDateTime = {
+  def nextAfter(previous: DateTime): DateTime = {
     val monthsToAdd = if (isEarlierInMonth(previous)) {
       frequency - 1
     } else {
@@ -231,7 +231,7 @@ case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: Local
     withAdjustments(previous.plusMonths(monthsToAdd))
   }
 
-  def initialAfter(start: LocalDateTime): LocalDateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (isLaterInMonth(start)) {
       withAdjustments(start.plusMonths(1))
     } else {
@@ -259,7 +259,7 @@ object MonthlyByDayOfMonth {
 
     Recurrence.maybeMonthlyFrequencyFrom(text).map { frequency =>
       val maybeDayOfMonth = maybeDayOfMonthFrom(text)
-      MonthlyByDayOfMonth(frequency, maybeDayOfMonth.getOrElse(LocalDateTime.now.getDayOfMonth), Recurrence.ensureTimeFrom(text))
+      MonthlyByDayOfMonth(frequency, maybeDayOfMonth.getOrElse(DateTime.now.getDayOfMonth), Recurrence.ensureTimeFrom(text))
     }
   }
 }
@@ -271,7 +271,7 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeO
     s"every $frequencyString on the ${Recurrence.ordinalStringFor(nth)} ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.toString(Recurrence.timeFormatter)}"
   }
 
-  def targetInMonthMatching(when: LocalDateTime): LocalDateTime = {
+  def targetInMonthMatching(when: DateTime): DateTime = {
     val firstOfTheMonth = when.withDayOfMonth(1)
     val weeksToAdd = if (firstOfTheMonth.getDayOfWeek <= dayOfWeek) {
       nth - 1
@@ -281,7 +281,7 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeO
     withStandardAdjustments(firstOfTheMonth.plusWeeks(weeksToAdd).withDayOfWeek(dayOfWeek))
   }
 
-  def nextAfter(previous: LocalDateTime): LocalDateTime = {
+  def nextAfter(previous: DateTime): DateTime = {
     val monthsToAdd = if (targetInMonthMatching(previous).isAfter(previous)) {
       frequency - 1
     } else {
@@ -290,7 +290,7 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeO
     targetInMonthMatching(previous.plusMonths(monthsToAdd))
   }
 
-  def initialAfter(start: LocalDateTime): LocalDateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (targetInMonthMatching(start).isBefore(start)) {
       targetInMonthMatching(start.plusMonths(1))
     } else {
@@ -332,20 +332,20 @@ case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime) exte
   val month = monthDay.getMonthOfYear
   val dayOfMonth = monthDay.getDayOfMonth
 
-  def isEarlierInYear(when: LocalDateTime): Boolean = {
+  def isEarlierInYear(when: DateTime): Boolean = {
     when.getMonthOfYear < month ||
       (when.getMonthOfYear == month && when.getDayOfMonth < dayOfMonth) ||
       (when.getMonthOfYear == month && when.getDayOfMonth == dayOfMonth && when.toLocalTime.isBefore(timeOfDay))
   }
-  def isLaterInYear(when: LocalDateTime): Boolean = {
+  def isLaterInYear(when: DateTime): Boolean = {
     when.getMonthOfYear > month ||
       (when.getMonthOfYear == month && when.getDayOfMonth > dayOfMonth) ||
       (when.getMonthOfYear == month && when.getDayOfMonth == dayOfMonth && when.toLocalTime.isAfter(timeOfDay))
   }
 
-  def withAdjustments(when: LocalDateTime): LocalDateTime = withStandardAdjustments(when.withMonthOfYear(month).withDayOfMonth(dayOfMonth))
+  def withAdjustments(when: DateTime): DateTime = withStandardAdjustments(when.withMonthOfYear(month).withDayOfMonth(dayOfMonth))
 
-  def nextAfter(previous: LocalDateTime): LocalDateTime = {
+  def nextAfter(previous: DateTime): DateTime = {
     val yearsToAdd = if (isEarlierInYear(previous)) {
       frequency - 1
     } else {
@@ -354,7 +354,7 @@ case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime) exte
     withAdjustments(previous.plusYears(yearsToAdd))
   }
 
-  def initialAfter(start: LocalDateTime): LocalDateTime = {
+  def initialAfter(start: DateTime): DateTime = {
     if (isLaterInYear(start)) {
       withAdjustments(start.plusYears(1))
     } else {
@@ -401,9 +401,9 @@ object Recurrence {
 
   val timeFormatter = DateTimeFormat.forPattern("h:mma z")
 
-  def currentAdjustedTime: LocalTime = LocalDateTime.now.toLocalTime.withSecondOfMinute(0).withMillisOfSecond(0)
+  def currentAdjustedTime: LocalTime = DateTime.now.toLocalTime.withSecondOfMinute(0).withMillisOfSecond(0)
   def currentMonthDay: MonthDay = {
-    val now = LocalDateTime.now
+    val now = DateTime.now
     new MonthDay(now.getMonthOfYear, now.getDayOfMonth)
   }
 

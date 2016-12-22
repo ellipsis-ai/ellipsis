@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import models.IDs
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.User
@@ -16,7 +16,7 @@ class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invoc
 
   def id = column[String]("id", O.PrimaryKey)
   def userId = column[String]("user_id")
-  def createdAt = column[LocalDateTime]("created_at")
+  def createdAt = column[DateTime]("created_at")
 
   def * = (id, userId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
 }
@@ -39,7 +39,7 @@ class InvocationTokenServiceImpl @Inject() (
   }
 
   def createFor(user: User): Future[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, user.id, LocalDateTime.now)
+    val newInstance = InvocationToken(IDs.next, user.id, DateTime.now)
     dataService.run((all += newInstance).map(_ => newInstance))
   }
 

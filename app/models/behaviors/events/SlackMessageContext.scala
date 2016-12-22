@@ -91,12 +91,26 @@ case class SlackMessageContext(
       // The Slack API considers sending an empty message to be an error rather than a no-op
       if (ea.nonEmpty) {
         if (isDirectMessage(channel) && channel != message.channel) {
-          apiClient.postChatMessage(message.channel, s"<@${message.user}> I've sent you a private message :sleuth_or_spy:", asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
+          apiClient.postChatMessage(
+            message.channel,
+            s"<@${message.user}> I've sent you a private message :sleuth_or_spy:",
+            asUser = Some(true)
+          )
         }
         if (!isDirectMessage(channel) && channel != message.channel) {
-          apiClient.postChatMessage(message.channel, s"<@${message.user}> OK, back to <#${channel}>", asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
+          apiClient.postChatMessage(
+            message.channel,
+            s"<@${message.user}> OK, back to <#${channel}>",
+            asUser = Some(true)
+          )
         }
-        apiClient.postChatMessage(channel, ea, asUser = Some(true), unfurlLinks = maybeShouldUnfurl, unfurlMedia = maybeShouldUnfurl)
+        apiClient.postChatMessage(
+          channel,
+          ea,
+          asUser = Some(true),
+          unfurlLinks = maybeShouldUnfurl,
+          unfurlMedia = Some(true)
+        )
       }
     }
   }
@@ -117,10 +131,6 @@ case class SlackMessageContext(
         }
       }.getOrElse(Seq()))
     } yield messages
-  }
-
-  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(message.user, conversationContext, isDirectMessage(message.channel))
   }
 
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {

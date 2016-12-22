@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import json.{InvocationLogEntryData, InvocationLogsByDayData}
 import json.Formatting._
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.i18n.MessagesApi
@@ -33,8 +33,8 @@ class VisibilityAPIController @Inject() (
 
   private val dateFormatter =  DateTimeFormat.forPattern("EEE, dd MMM yyyy").withLocale(java.util.Locale.ENGLISH)
 
-  private def dateFor(year: String, month: String, day: String): LocalDateTime = {
-    new LocalDateTime(year.toInt, month.toInt, day.toInt, 0, 0)
+  private def dateFor(year: String, month: String, day: String): DateTime = {
+    new DateTime(year.toInt, month.toInt, day.toInt, 0, 0)
   }
 
   def invocationCountsForDate(token: String, year: String, month: String, day: String) = Action.async { implicit request =>

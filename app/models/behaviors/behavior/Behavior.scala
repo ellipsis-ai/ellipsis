@@ -2,7 +2,7 @@ package models.behaviors.behavior
 
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import play.api.Configuration
 
 case class Behavior(
@@ -12,7 +12,7 @@ case class Behavior(
                      maybeCurrentVersionId: Option[String],
                      maybeImportedId: Option[String],
                      maybeDataTypeName: Option[String],
-                     createdAt: LocalDateTime
+                     createdAt: DateTime
                    ) {
 
   val isDataType = maybeDataTypeName.isDefined

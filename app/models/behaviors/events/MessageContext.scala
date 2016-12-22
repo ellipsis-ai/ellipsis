@@ -44,7 +44,16 @@ trait MessageContext extends Context {
   }
 
   def recentMessages(dataService: DataService): Future[Seq[String]] = Future.successful(Seq())
-  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]]
+
+  def isDirectMessage(channel: String): Boolean
+
+  def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
+    dataService.conversations.allOngoingFor(userIdForContext, conversationContext, maybeChannel.exists(isDirectMessage))
+  }
+
+  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
+    dataService.conversations.findOngoingFor(userIdForContext, conversationContext, maybeChannel.exists(isDirectMessage))
+  }
 
   val name: String
   val maybeChannel: Option[String]
