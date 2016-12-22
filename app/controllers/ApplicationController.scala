@@ -3,7 +3,9 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json._
+import models.accounts.user.UserTeamAccess
 import models.silhouette.EllipsisEnv
 import models.team.Team
 import play.api.Configuration
@@ -13,6 +15,7 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
+import play.api.mvc.{AnyContent, Result}
 import services.{AWSLambdaService, DataService, GithubService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -67,7 +70,11 @@ class ApplicationController @Inject() (
     }
   }
 
-  def intro(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
+  def installBehaviorGroupsWithView(
+                                     maybeTeamId: Option[String],
+                                     maybeBranch: Option[String] = None,
+                                     resultFn: (UserTeamAccess, PublishedBehaviorInfo) => Result
+                                   )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]) = {
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
@@ -75,48 +82,41 @@ class ApplicationController @Inject() (
         withPublishedBehaviorInfoFor(team, maybeBranch).map(Some(_))
       }.getOrElse(Future.successful(None))
       result <- (for {
-        team <- teamAccess.maybeTargetTeam
+        _ <- teamAccess.maybeTargetTeam
         data <- maybePublishedBehaviorInfo
       } yield {
-          Future.successful(
-            Ok(
-              views.html.intro(
-                viewConfig(Some(teamAccess)),
-                data.published,
-                data.installedBehaviors
-              )
-            )
-          )
-        }).getOrElse {
+        Future.successful(
+          resultFn(teamAccess, data)
+        )
+      }).getOrElse {
         reAuthFor(request, maybeTeamId)
       }
     } yield result
   }
 
+
+  def intro(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
+    installBehaviorGroupsWithView(maybeTeamId, maybeBranch, (teamAccess, data) => {
+      Ok(
+        views.html.intro(
+          viewConfig(Some(teamAccess)),
+          data.published,
+          data.installedBehaviors
+        )
+      )
+    })
+  }
+
   def installBehaviors(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
-    val user = request.identity
-    for {
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
-        withPublishedBehaviorInfoFor(team, maybeBranch).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      result <- (for {
-        team <- teamAccess.maybeTargetTeam
-        data <- maybePublishedBehaviorInfo
-      } yield {
-          Future.successful(
-            Ok(
-              views.html.publishedBehaviors(
-                viewConfig(Some(teamAccess)),
-                data.published,
-                data.installedBehaviors
-              )
-            )
-          )
-        }).getOrElse {
-        reAuthFor(request, maybeTeamId)
-      }
-    } yield result
+    installBehaviorGroupsWithView(maybeTeamId, maybeBranch, (teamAccess, data) => {
+      Ok(
+        views.html.publishedBehaviors(
+          viewConfig(Some(teamAccess)),
+          data.published,
+          data.installedBehaviors
+        )
+      )
+    })
   }
 
   case class SelectedBehaviorGroupsInfo(behaviorGroupIds: Seq[String])
