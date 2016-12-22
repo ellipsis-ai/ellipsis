@@ -13,7 +13,7 @@
     routes.javascript.ApplicationController.mergeBehaviorGroups,
     routes.javascript.ApplicationController.deleteBehaviorGroups
   )
-  <div id="content" class="content">
+  <div id="content" class="content bg-white">
     @config.maybeTeamAccess.map(teamAccess => views.html.behaviorTabs("view", teamAccess))
 
     <div id="behaviorListContainer"></div>

@@ -32,7 +32,7 @@ define(function(require) {
       }
       return (
         <div className="box-action phn">
-          <div className="container">
+          <div className="container container-c">
             <div className="columns">
               <div className="column column-page-sidebar">
                 <h3 className="mtn">

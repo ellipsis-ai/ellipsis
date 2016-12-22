@@ -8,12 +8,12 @@
 @import play.api.libs.json._
 @import json.Formatting._
 
-@main("Published skills", config, selectedNav = "skills") {
+@main("Install new skills", config, selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorImportExportController.doImport,
     routes.javascript.BehaviorEditorController.editGroup
   )
-  <div id="content" class="content">
+  <div id="content" class="content bg-white">
     @config.maybeTeamAccess.map(teamAccess => views.html.behaviorTabs("install", teamAccess))
     <div>
       <div class="bg-white container container-c pbxxl">
