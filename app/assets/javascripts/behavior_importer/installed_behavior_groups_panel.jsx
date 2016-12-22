@@ -7,7 +7,8 @@ define(function(require) {
     displayName: 'InstalledBehaviorGroupsPanel',
     propTypes: {
       installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      onToggle: React.PropTypes.func.isRequired
+      onToggle: React.PropTypes.func.isRequired,
+      slackTeamId: React.PropTypes.string
     },
 
     getInstalledBehaviorGroups: function() {
@@ -89,6 +90,14 @@ define(function(require) {
       }
     },
 
+    getSlackUrl: function() {
+      if (this.props.slackTeamId) {
+        return `slack://open?team=${this.props.slackTeamId}`;
+      } else {
+        return "slack://open";
+      }
+    },
+
     render: function() {
       var numGroups = this.getInstalledBehaviorGroups().length;
       if (numGroups === 0) {
@@ -123,7 +132,7 @@ define(function(require) {
             </ul>
 
             <div className="mtxl">
-              <a className="button mbs mrs" href="slack://open">Open your Slack team</a>
+              <a className="button mbs mrs" href={this.getSlackUrl()}>Open your Slack team</a>
 
               <button type="button" className="mbs mrs" onClick={this.props.onToggle}>Done</button>
             </div>

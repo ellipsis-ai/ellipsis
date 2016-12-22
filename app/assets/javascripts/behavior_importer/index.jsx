@@ -14,7 +14,8 @@ define(function(require) {
       teamId: React.PropTypes.string.isRequired,
       installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      csrfToken: React.PropTypes.string.isRequired
+      csrfToken: React.PropTypes.string.isRequired,
+      slackTeamId: React.PropTypes.string
     },
 
     getLocalId: function(group) {
@@ -176,6 +177,7 @@ define(function(require) {
               <InstalledBehaviorGroupsPanel
                 installedBehaviorGroups={this.getBehaviorGroupsJustInstalled()}
                 onToggle={this.toggleAfterInstallPanel}
+                slackTeamId={this.props.slackTeamId}
               />
             </Collapsible>
           </FixedFooter>

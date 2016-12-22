@@ -74,6 +74,11 @@ class ApplicationController @Inject() (
       maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
         withPublishedBehaviorInfoFor(team, maybeBranch).map(Some(_))
       }.getOrElse(Future.successful(None))
+      maybeSlackTeamId <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.slackBotProfiles.allFor(team).map { botProfiles =>
+          botProfiles.headOption.map(_.slackTeamId)
+        }
+      }.getOrElse(Future.successful(None))
       result <- (for {
         team <- teamAccess.maybeTargetTeam
         data <- maybePublishedBehaviorInfo
@@ -83,7 +88,8 @@ class ApplicationController @Inject() (
               views.html.intro(
                 viewConfig(Some(teamAccess)),
                 data.published,
-                data.installedBehaviors
+                data.installedBehaviors,
+                maybeSlackTeamId
               )
             )
           )
@@ -100,6 +106,11 @@ class ApplicationController @Inject() (
       maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
         withPublishedBehaviorInfoFor(team, maybeBranch).map(Some(_))
       }.getOrElse(Future.successful(None))
+      maybeSlackTeamId <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.slackBotProfiles.allFor(team).map { botProfiles =>
+          botProfiles.headOption.map(_.slackTeamId)
+        }
+      }.getOrElse(Future.successful(None))
       result <- (for {
         team <- teamAccess.maybeTargetTeam
         data <- maybePublishedBehaviorInfo
@@ -109,7 +120,8 @@ class ApplicationController @Inject() (
               views.html.publishedBehaviors(
                 viewConfig(Some(teamAccess)),
                 data.published,
-                data.installedBehaviors
+                data.installedBehaviors,
+                maybeSlackTeamId
               )
             )
           )
