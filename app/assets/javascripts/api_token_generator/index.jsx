@@ -54,12 +54,12 @@ define(function(require) {
       return this.props.justCreatedTokenId === token.id;
     },
 
-    getActivePanel: function() {
+    getActivePanelName: function() {
       return this.state.activePanel;
     },
 
     toggleApiHelp: function() {
-      this.setState({ activePanel: this.getActivePanel() === "ellipsisApiHelp" ? null : "ellipsisApiHelp" });
+      this.setState({ activePanel: this.getActivePanelName() === "ellipsisApiHelp" ? null : "ellipsisApiHelp" });
     },
 
     render: function() {
@@ -83,7 +83,7 @@ define(function(require) {
                   </p>
 
                   <p>
-                    <HelpButton className="mrs" onClick={this.toggleApiHelp} toggled={this.getActivePanel() === 'ellipsisApiHelp'} />
+                    <HelpButton className="mrs" onClick={this.toggleApiHelp} toggled={this.getActivePanelName() === 'ellipsisApiHelp'} />
                     <button type="button" className="button-raw" onClick={this.toggleApiHelp}>How to make requests</button>
                   </p>
 
@@ -98,7 +98,7 @@ define(function(require) {
           </div>
 
           <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
-            <Collapsible ref="ellipsisApiHelp" revealWhen={this.getActivePanel() === 'ellipsisApiHelp'}>
+            <Collapsible ref="ellipsisApiHelp" revealWhen={this.getActivePanelName() === 'ellipsisApiHelp'}>
               <HelpPanel
                 heading="Sending API requests to Ellipsis"
                 onCollapseClick={this.toggleApiHelp}

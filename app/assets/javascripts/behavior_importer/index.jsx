@@ -4,25 +4,37 @@ define(function(require) {
     BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
     Collapsible = require('../collapsible'),
     FixedFooter = require('../fixed_footer'),
+    InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
     ModalScrim = require('../modal_scrim');
+
+  var ANIMATION_DURATION = 0.25;
 
   return React.createClass({
     propTypes: {
       teamId: React.PropTypes.string.isRequired,
       installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      csrfToken: React.PropTypes.string.isRequired
+      csrfToken: React.PropTypes.string.isRequired,
+      slackTeamId: React.PropTypes.string
     },
 
     getLocalId: function(group) {
-      const installed = this.getInstalledBehaviorGroups().find(ea => {
-        return ea.importedId === group.publishedId;
-      });
+      const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.importedId === group.publishedId);
       return installed ? installed.groupId : null;
     },
 
-    getInstalledBehaviorGroups: function() {
-      return this.state.installedBehaviorGroups || [];
+    getAllInstalledBehaviorGroups: function() {
+      return (this.props.installedBehaviorGroups || []).concat(this.state.recentlyInstalledBehaviorGroups);
+    },
+
+    getBehaviorGroupsJustInstalled: function() {
+      return this.props.behaviorGroups.filter((group) => {
+        return this.state.recentlyInstalledBehaviorGroups.some((recent) => recent.importedId === group.publishedId);
+      });
+    },
+
+    hasRecentlyInstalledBehaviorGroups: function() {
+      return this.getBehaviorGroupsJustInstalled().length > 0;
     },
 
     getBehaviorGroups: function() {
@@ -31,11 +43,13 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        installedBehaviorGroups: this.props.installedBehaviorGroups,
+        recentlyInstalledBehaviorGroups: [],
         behaviorGroups: this.props.behaviorGroups,
         selectedBehaviorGroup: null,
-        revealMoreInfo: false,
-        importingList: []
+        activePanel: null,
+        previousActivePanel: null,
+        importingList: [],
+        footerHeight: 0
       };
     },
 
@@ -58,8 +72,11 @@ define(function(require) {
         .then((installedGroup) => {
           this.setState({
             importingList: this.state.importingList.filter((ea) => ea !== groupToInstall),
-            installedBehaviorGroups: this.getInstalledBehaviorGroups().concat([installedGroup])
+            recentlyInstalledBehaviorGroups: this.state.recentlyInstalledBehaviorGroups.concat([installedGroup])
           });
+          if (!this.activePanelIsNamed('afterInstall')) {
+            this.toggleAfterInstallPanel();
+          }
         });
     },
 
@@ -71,19 +88,60 @@ define(function(require) {
       return this.state.selectedBehaviorGroup;
     },
 
+    getActivePanel: function() {
+      return this.state.activePanel;
+    },
+
+    getPreviousActivePanel: function() {
+      return this.state.previousActivePanel;
+    },
+
+    activePanelIsNamed: function(name) {
+      const panel = this.getActivePanel();
+      return !!(panel && panel.name === name);
+    },
+
+    activePanelIsModal: function() {
+      const panel = this.getActivePanel();
+      return !!(panel && panel.isModal);
+    },
+
+    toggleActivePanel: function(name, beModal, optionalCallback) {
+      var previousPanel = this.getPreviousActivePanel();
+      var newPanel = this.activePanelIsNamed(name) ? previousPanel : { name: name, isModal: !!beModal };
+      this.setState({
+        activePanel: newPanel,
+        previousActivePanel: this.getActivePanel()
+      }, optionalCallback);
+    },
+
     toggleInfoPanel: function(group) {
-      var newState = {
-        revealMoreInfo: !this.state.revealMoreInfo
-      };
-      if (group && group !== newState.selectedBehaviorGroup) {
-        newState.selectedBehaviorGroup = group;
+      if (group && group !== this.state.selectedBehaviorGroup) {
+        this.setState({
+          selectedBehaviorGroup: group
+        });
       }
-      this.setState(newState);
+      this.toggleActivePanel('moreInfo', true);
+    },
+
+    toggleAfterInstallPanel: function() {
+      this.toggleActivePanel('afterInstall');
+    },
+
+    resetFooterHeight: function() {
+      var footerHeight = this.refs.footer.getHeight();
+      if (this.state.footerHeight !== footerHeight) {
+        this.setState({ footerHeight: footerHeight });
+      }
+    },
+
+    componentDidUpdate: function() {
+      window.setTimeout(() => { this.resetFooterHeight(); }, ANIMATION_DURATION * 1000);
     },
 
     render: function() {
       return (
-        <div className="ptxxl">
+        <div className="ptxxl" style={{ paddingBottom: `${this.state.footerHeight}px` }}>
           <div className="columns">
             {this.getBehaviorGroups().map((group, index) => (
               <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn" key={"group" + index}>
@@ -101,13 +159,24 @@ define(function(require) {
             ))}
           </div>
 
-          <ModalScrim isActive={this.state.revealMoreInfo} onClick={this.toggleInfoPanel} />
-          <FixedFooter>
-            <Collapsible revealWhen={this.state.revealMoreInfo}>
+          <ModalScrim isActive={this.activePanelIsModal()} onClick={this.toggleInfoPanel} />
+          <FixedFooter ref="footer">
+            <Collapsible revealWhen={this.activePanelIsNamed('moreInfo')} animationDuration={ANIMATION_DURATION}>
               <BehaviorGroupInfoPanel
                 groupData={this.getSelectedBehaviorGroup()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onToggle={this.toggleInfoPanel}
+              />
+            </Collapsible>
+
+            <Collapsible
+              revealWhen={this.hasRecentlyInstalledBehaviorGroups() && this.activePanelIsNamed('afterInstall')}
+              animationDuration={ANIMATION_DURATION}
+            >
+              <InstalledBehaviorGroupsPanel
+                installedBehaviorGroups={this.getBehaviorGroupsJustInstalled()}
+                onToggle={this.toggleAfterInstallPanel}
+                slackTeamId={this.props.slackTeamId}
               />
             </Collapsible>
           </FixedFooter>

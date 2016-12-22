@@ -57,7 +57,7 @@ define(function(require) {
       });
     },
 
-    getActivePanel: function() {
+    getActivePanelName: function() {
       return this.state.activePanel;
     },
 
@@ -89,7 +89,7 @@ define(function(require) {
 
                   <p>
                     <HelpButton className="mrs" onClick={this.toggleOAuth2ApplicationHelp}
-                      toggled={this.getActivePanel() === 'oAuth2ApplicationHelp'}/>
+                      toggled={this.getActivePanelName() === 'oAuth2ApplicationHelp'}/>
                     <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>
                       How API applications work
                     </button>
@@ -115,7 +115,7 @@ define(function(require) {
           </div>
 
           <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
-            <Collapsible ref="oAuth2ApplicationHelp" revealWhen={this.getActivePanel() === 'oAuth2ApplicationHelp'}>
+            <Collapsible ref="oAuth2ApplicationHelp" revealWhen={this.getActivePanelName() === 'oAuth2ApplicationHelp'}>
               {this.renderOAuth2ApplicationHelp()}
             </Collapsible>
           </footer>
