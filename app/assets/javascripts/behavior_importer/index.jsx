@@ -46,7 +46,6 @@ define(function(require) {
         recentlyInstalledBehaviorGroups: [],
         behaviorGroups: this.props.behaviorGroups,
         selectedBehaviorGroup: null,
-        moreInfo: false,
         activePanel: null,
         previousActivePanel: null,
         importingList: [],
