@@ -1,6 +1,6 @@
 package json
 
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 
 case class InvocationLogEntryData(
                                   behaviorId: String,
@@ -10,5 +10,5 @@ case class InvocationLogEntryData(
                                   context: String,
                                   maybeUserIdForContext: Option[String],
                                   runtimeInMilliseconds: Long,
-                                  createdAt: LocalDateTime
+                                  createdAt: DateTime
                                 )

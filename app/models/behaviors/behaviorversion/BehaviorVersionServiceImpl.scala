@@ -11,7 +11,7 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsValue, Json}
@@ -31,7 +31,7 @@ case class RawBehaviorVersion(
                                maybeResponseTemplate: Option[String],
                                forcePrivateResponse: Boolean,
                                maybeAuthorId: Option[String],
-                               createdAt: LocalDateTime
+                               createdAt: DateTime
                              )
 
 class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "behavior_versions") {
@@ -44,7 +44,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def maybeResponseTemplate = column[Option[String]]("response_template")
   def forcePrivateResponse = column[Boolean]("private_response")
   def maybeAuthorId = column[Option[String]]("author_id")
-  def createdAt = column[LocalDateTime]("created_at")
+  def createdAt = column[DateTime]("created_at")
 
   def * =
     (id, behaviorId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
@@ -108,7 +108,7 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def createFor(behavior: Behavior, maybeUser: Option[User]): Future[BehaviorVersion] = {
-    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), LocalDateTime.now)
+    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), DateTime.now)
 
     val action = (all += raw).map { _ =>
       BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)

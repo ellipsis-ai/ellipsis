@@ -5,21 +5,21 @@ import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.MessageEvent
 import models.team.Team
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 
 import scala.concurrent.Future
 
 trait InvocationLogEntryService {
 
-  def countsForDate(date: LocalDateTime): Future[Seq[(String, Int)]]
+  def countsForDate(date: DateTime): Future[Seq[(String, Int)]]
 
-  def uniqueInvokingUserCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]]
+  def uniqueInvokingUserCountsForDate(date: DateTime): Future[Seq[(String, Int)]]
 
-  def uniqueInvokedBehaviorCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]]
+  def uniqueInvokedBehaviorCountsForDate(date: DateTime): Future[Seq[(String, Int)]]
 
-  def forTeamForDate(team: Team, date: LocalDateTime): Future[Seq[InvocationLogEntry]]
+  def forTeamForDate(team: Team, date: DateTime): Future[Seq[InvocationLogEntry]]
 
-  def allForBehavior(behavior: Behavior, from: LocalDateTime, to: LocalDateTime): Future[Seq[InvocationLogEntry]]
+  def allForBehavior(behavior: Behavior, from: DateTime, to: DateTime): Future[Seq[InvocationLogEntry]]
 
   def createFor(
                  behaviorVersion: BehaviorVersion,

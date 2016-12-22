@@ -7,7 +7,7 @@ import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.team.Team
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import org.scalatest.mock.MockitoSugar
 import org.mockito.Mockito._
 import org.scalatestplus.play.PlaySpec
@@ -19,7 +19,7 @@ import scala.concurrent.Future
 
 class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
 
-  def newLoginTokenFor(user: User, isUsed: Boolean = false): LoginToken = LoginToken(IDs.next, user.id, isUsed, LocalDateTime.now)
+  def newLoginTokenFor(user: User, isUsed: Boolean = false): LoginToken = LoginToken(IDs.next, user.id, isUsed, DateTime.now)
 
   "APIAccessController.linkCustomOAuth2Service" should {
 

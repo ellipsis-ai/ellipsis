@@ -5,7 +5,7 @@ import javax.inject._
 import models.IDs
 import models.behaviors.behavior.BehaviorQueries
 import models.behaviors.behaviorgroup.{BehaviorGroupQueries, RawBehaviorGroup}
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
@@ -19,7 +19,7 @@ class EnsureGroups @Inject() (dataService: DataService) {
       behaviors <- dataService.run(BehaviorQueries.all.result)
       _ <- Future.sequence(behaviors.map { ea =>
         if (ea.groupId.isEmpty) {
-          val raw = RawBehaviorGroup(IDs.next, "", None, None, ea.teamId, LocalDateTime.now)
+          val raw = RawBehaviorGroup(IDs.next, "", None, None, ea.teamId, DateTime.now)
           dataService.run((BehaviorGroupQueries.all += raw).andThen {
             BehaviorQueries.all.filter(_.id === ea.id).map(_.groupId).update(Some(raw.id))
           })

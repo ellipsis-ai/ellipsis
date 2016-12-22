@@ -8,7 +8,7 @@ import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import models.behaviors.events.MessageEvent
 import models.team.Team
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behavior.Behavior
@@ -27,7 +27,7 @@ case class RawInvocationLogEntry(
                                   context: String,
                                   maybeUserIdForContext: Option[String],
                                   runtimeInMilliseconds: Long,
-                                  createdAt: LocalDateTime
+                                  createdAt: DateTime
                                 )
 
 class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](tag, "invocation_log_entries") {
@@ -41,7 +41,7 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def context = column[String]("context")
   def maybeUserIdForContext = column[Option[String]]("user_id_for_context")
   def runtimeInMilliseconds = column[Long]("runtime_in_milliseconds")
-  def createdAt = column[LocalDateTime]("created_at")
+  def createdAt = column[DateTime]("created_at")
 
   def * = (id, behaviorVersionId, resultType, messageText, paramValues, resultText, context, maybeUserIdForContext, runtimeInMilliseconds, createdAt) <>
     ((RawInvocationLogEntry.apply _).tupled, RawInvocationLogEntry.unapply _)
@@ -74,7 +74,7 @@ class InvocationLogEntryServiceImpl @Inject() (
     )
   }
 
-  def uncompiledCountsForDateQuery(date: Rep[LocalDateTime]) = {
+  def uncompiledCountsForDateQuery(date: Rep[DateTime]) = {
     allWithVersion.
       filter { case(entry, _) => entry.createdAt.trunc("day") === date }.
       groupBy { case(entry, ((version, _), ((behavior, team), _))) => team.id }.
@@ -84,12 +84,12 @@ class InvocationLogEntryServiceImpl @Inject() (
   }
   val countsForDateQuery = Compiled(uncompiledCountsForDateQuery _)
 
-  def countsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
+  def countsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
     val action = countsForDateQuery(date).result
     dataService.run(action)
   }
 
-  def uncompiledUniqueInvokingUserCountsForDateQuery(date: Rep[LocalDateTime]) = {
+  def uncompiledUniqueInvokingUserCountsForDateQuery(date: Rep[DateTime]) = {
     allWithVersion.
       filter { case(entry, _) => entry.createdAt.trunc("day") === date }.
       groupBy { case(entry, ((version, _), ((behavior, team), _))) => (team.id, entry.maybeUserIdForContext.getOrElse("<no user>")) }.
@@ -101,12 +101,12 @@ class InvocationLogEntryServiceImpl @Inject() (
   }
   val uniqueInvokingUserCountsForDateQuery = Compiled(uncompiledUniqueInvokingUserCountsForDateQuery _)
 
-  def uniqueInvokingUserCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
+  def uniqueInvokingUserCountsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
     val action = uniqueInvokingUserCountsForDateQuery(date).result
     dataService.run(action)
   }
 
-  def uncompiledUniqueInvokedBehaviorCountsForDateQuery(date: Rep[LocalDateTime]) = {
+  def uncompiledUniqueInvokedBehaviorCountsForDateQuery(date: Rep[DateTime]) = {
     allWithVersion.
       filter { case(entry, _) => entry.createdAt.trunc("day") === date }.
       groupBy { case(entry, ((version, _), ((behavior, team), _))) => (team.id, behavior.id) }.
@@ -118,19 +118,19 @@ class InvocationLogEntryServiceImpl @Inject() (
   }
   val uniqueInvokedBehaviorCountsForDateQuery = Compiled(uncompiledUniqueInvokedBehaviorCountsForDateQuery _)
 
-  def uniqueInvokedBehaviorCountsForDate(date: LocalDateTime): Future[Seq[(String, Int)]] = {
+  def uniqueInvokedBehaviorCountsForDate(date: DateTime): Future[Seq[(String, Int)]] = {
     val action = uniqueInvokedBehaviorCountsForDateQuery(date).result
     dataService.run(action)
   }
 
-  def uncompiledForTeamForDateQuery(teamId: Rep[String], date: Rep[LocalDateTime]) = {
+  def uncompiledForTeamForDateQuery(teamId: Rep[String], date: Rep[DateTime]) = {
     allWithVersion.
       filter { case(entry, ((version, user), ((behavior, team), _))) => teamId === team.id}.
       filter { case(entry, _) => entry.createdAt.trunc("day") === date }
   }
   val forTeamForDateQuery = Compiled(uncompiledForTeamForDateQuery _)
 
-  def forTeamForDate(team: Team, date: LocalDateTime): Future[Seq[InvocationLogEntry]] = {
+  def forTeamForDate(team: Team, date: DateTime): Future[Seq[InvocationLogEntry]] = {
     val action = forTeamForDateQuery(team.id, date).result.map { r =>
       r.map(tuple2Entry)
     }
@@ -139,8 +139,8 @@ class InvocationLogEntryServiceImpl @Inject() (
 
   def uncompiledAllForBehaviorVersionQuery(
                                             behaviorVersionId: Rep[String],
-                                            from: Rep[LocalDateTime],
-                                            to: Rep[LocalDateTime]
+                                            from: Rep[DateTime],
+                                            to: Rep[DateTime]
                                           ) = {
     allWithVersion.
       filter { case(entry, _) => entry.behaviorVersionId === behaviorVersionId }.
@@ -150,8 +150,8 @@ class InvocationLogEntryServiceImpl @Inject() (
 
   def allForBehaviorVersion(
                              behaviorVersion: BehaviorVersion,
-                             from: LocalDateTime,
-                             to: LocalDateTime
+                             from: DateTime,
+                             to: DateTime
                            ): Future[Seq[InvocationLogEntry]] = {
     val action = allForBehaviorVersionQuery(behaviorVersion.id, from, to).result.map { r =>
       r.map(tuple2Entry)
@@ -159,7 +159,7 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def allForBehavior(behavior: Behavior, from: LocalDateTime, to: LocalDateTime): Future[Seq[InvocationLogEntry]] = {
+  def allForBehavior(behavior: Behavior, from: DateTime, to: DateTime): Future[Seq[InvocationLogEntry]] = {
     for {
       versions <- dataService.behaviorVersions.allFor(behavior)
       entries <- Future.sequence(versions.map(ea => allForBehaviorVersion(ea, from, to))).map(_.flatten)
@@ -187,7 +187,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         event.context.name,
         maybeUserIdForContext,
         runtimeInMilliseconds,
-        LocalDateTime.now
+        DateTime.now
       )
 
     val action = (all += raw).map { _ =>

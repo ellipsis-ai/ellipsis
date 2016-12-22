@@ -5,7 +5,7 @@ import models.accounts.user.User
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackProvider
 import models.accounts.slack.profile.SlackProfile
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import support.DBSpec
 
 import scala.concurrent.Future
@@ -18,7 +18,7 @@ class LinkedAccountServiceSpec extends DBSpec {
   }
 
   def newSavedLinkedAccountFor(user: User): Future[LinkedAccount] = {
-    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, IDs.next), LocalDateTime.now)
+    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, IDs.next), DateTime.now)
     dataService.linkedAccounts.save(account)
   }
 

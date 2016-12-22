@@ -9,7 +9,7 @@ import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.input.Input
 import services.DataService
 import drivers.SlickPostgresDriver.api._
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -19,7 +19,7 @@ case class RawSavedAnswer(
                           inputId: String,
                           valueString: String,
                           maybeUserId: Option[String],
-                          createdAt: LocalDateTime
+                          createdAt: DateTime
                          )
 
 class SavedAnswersTable(tag: Tag) extends Table[RawSavedAnswer](tag, "saved_answers") {
@@ -28,7 +28,7 @@ class SavedAnswersTable(tag: Tag) extends Table[RawSavedAnswer](tag, "saved_answ
   def inputId = column[String]("input_id")
   def valueString = column[String]("value_string")
   def maybeUserId = column[Option[String]]("user_id")
-  def createdAt = column[LocalDateTime]("created_at")
+  def createdAt = column[DateTime]("created_at")
 
   def * = (id, inputId, valueString, maybeUserId, createdAt) <> ((RawSavedAnswer.apply _).tupled, RawSavedAnswer.unapply _)
 }
@@ -63,7 +63,7 @@ class SavedAnswerServiceImpl @Inject() (
         val updated = existing.copy(valueString = valueString)
         query.update(updated).map(_ => updated)
       }.getOrElse {
-        val raw = RawSavedAnswer(IDs.next, input.id, valueString, maybeUserId, LocalDateTime.now)
+        val raw = RawSavedAnswer(IDs.next, input.id, valueString, maybeUserId, DateTime.now)
         (all += raw).map(_ => raw)
       }
     } yield SavedAnswer(raw.id, input, valueString, maybeUserId, raw.createdAt)

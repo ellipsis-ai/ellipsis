@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 import services.DataService
 import com.mohiva.play.silhouette.api.util.Clock
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import play.api.Configuration
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -109,7 +109,7 @@ class SocialAuthController @Inject() (
                 dataService.users.createFor(botProfile.teamId)
               }
               eventualUser.flatMap { user =>
-                dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, LocalDateTime.now))
+                dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, DateTime.now))
               }
             }
           }
@@ -178,7 +178,7 @@ class SocialAuthController @Inject() (
                     dataService.users.createFor(teamId)
                   }
                   eventualUser.flatMap { user =>
-                    dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, LocalDateTime.now))
+                    dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, DateTime.now))
                   }
                 }
                 user <- Future.successful(linkedAccount.user)

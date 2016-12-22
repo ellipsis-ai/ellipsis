@@ -6,7 +6,7 @@ import com.google.inject.Provider
 import models.IDs
 import models.accounts.user.{User, UserQueries}
 import models.team.{Team, TeamQueries}
-import org.joda.time.{LocalDateTime, LocalTime}
+import org.joda.time.{DateTime, LocalTime}
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
@@ -28,8 +28,8 @@ case class RawScheduledMessage(
                                 maybeDayOfMonth: Option[Int],
                                 maybeNthDayOfWeek: Option[Int],
                                 maybeMonth: Option[Int],
-                                nextSentAt: LocalDateTime,
-                                createdAt: LocalDateTime
+                                nextSentAt: DateTime,
+                                createdAt: DateTime
                               )
 
 class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "scheduled_messages") {
@@ -48,8 +48,8 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
   def maybeDayOfMonth = column[Option[Int]]("day_of_month")
   def maybeNthDayOfWeek = column[Option[Int]]("nth_day_of_week")
   def maybeMonth = column[Option[Int]]("month")
-  def nextSentAt = column[LocalDateTime]("next_sent_at")
-  def createdAt = column[LocalDateTime]("created_at")
+  def nextSentAt = column[DateTime]("next_sent_at")
+  def createdAt = column[DateTime]("created_at")
 
   def * = (
     id,
@@ -100,13 +100,13 @@ class ScheduledMessageServiceImpl @Inject() (
     )
   }
 
-  def uncompiledAllToBeSentQuery(when: Rep[LocalDateTime]) = {
+  def uncompiledAllToBeSentQuery(when: Rep[DateTime]) = {
     allWithUser.filter { case((msg, team), user) =>  msg.nextSentAt <= when }
   }
   val allToBeSentQuery = Compiled(uncompiledAllToBeSentQuery _)
 
   def allToBeSent: Future[Seq[ScheduledMessage]] = {
-    val action = allToBeSentQuery(LocalDateTime.now).result.map { r =>
+    val action = allToBeSentQuery(DateTime.now).result.map { r =>
       r.map(tuple2ScheduledMessage)
     }
     dataService.run(action)
@@ -154,8 +154,8 @@ class ScheduledMessageServiceImpl @Inject() (
         maybeChannelName,
         isForIndividualMembers,
         recurrence,
-        recurrence.initialAfter(LocalDateTime.now),
-        LocalDateTime.now
+        recurrence.initialAfter(DateTime.now),
+        DateTime.now
       )
       save(newMessage).map(Some(_))
     }.getOrElse(Future.successful(None))

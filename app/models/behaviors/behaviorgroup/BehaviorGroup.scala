@@ -1,7 +1,7 @@
 package models.behaviors.behaviorgroup
 
 import models.team.Team
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import utils.SafeFileName
 
 case class BehaviorGroup(
@@ -10,7 +10,7 @@ case class BehaviorGroup(
                           maybeDescription: Option[String],
                           maybeImportedId: Option[String],
                           team: Team,
-                          createdAt: LocalDateTime) {
+                          createdAt: DateTime) {
 
   def exportName: String = {
     Option(SafeFileName.forName(name)).filter(_.nonEmpty).getOrElse(id)

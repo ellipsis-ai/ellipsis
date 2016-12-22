@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import models.accounts.user.{User, UserQueries}
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
@@ -15,7 +15,7 @@ case class RawUserEnvironmentVariable(
                                    name: String,
                                    value: String,
                                    userId: String,
-                                   createdAt: LocalDateTime
+                                   createdAt: DateTime
                                  )
 
 class UserEnvironmentVariablesTable(tag: Tag) extends Table[RawUserEnvironmentVariable](tag, "user_environment_variables") {
@@ -23,7 +23,7 @@ class UserEnvironmentVariablesTable(tag: Tag) extends Table[RawUserEnvironmentVa
   def name = column[String]("name")
   def value = column[String]("value")
   def userId = column[String]("user_id")
-  def createdAt = column[LocalDateTime]("created_at")
+  def createdAt = column[DateTime]("created_at")
 
   def * = (name, value, userId, createdAt) <> ((RawUserEnvironmentVariable.apply _).tupled, RawUserEnvironmentVariable.unapply _)
 }
@@ -64,12 +64,12 @@ class UserEnvironmentVariableServiceImpl @Inject() (
       query.result.flatMap { r =>
         r.headOption.map { existing =>
           maybeValue.map { value =>
-            val raw = RawUserEnvironmentVariable(name, value, user.id, LocalDateTime.now)
+            val raw = RawUserEnvironmentVariable(name, value, user.id, DateTime.now)
             query.update(raw).map(_ => raw)
           }.getOrElse(DBIO.successful(existing))
         }.getOrElse {
           val value = maybeValue.getOrElse("")
-          val raw = RawUserEnvironmentVariable(name, value, user.id, LocalDateTime.now)
+          val raw = RawUserEnvironmentVariable(name, value, user.id, DateTime.now)
           (all += raw).map(_ => raw)
         }.map { raw =>
           Some(UserEnvironmentVariable(raw.name, raw.value, user, raw.createdAt))

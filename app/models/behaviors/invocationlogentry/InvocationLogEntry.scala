@@ -1,7 +1,7 @@
 package models.behaviors.invocationlogentry
 
 import models.behaviors.behaviorversion.BehaviorVersion
-import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import play.api.libs.json.JsValue
 
 case class InvocationLogEntry(
@@ -14,5 +14,5 @@ case class InvocationLogEntry(
                                context: String,
                                maybeUserIdForContext: Option[String],
                                runtimeInMilliseconds: Long,
-                               createdAt: LocalDateTime
+                               createdAt: DateTime
                              )
