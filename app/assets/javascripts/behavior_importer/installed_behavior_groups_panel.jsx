@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
-    Formatter = require('../formatter');
+    Formatter = require('../formatter'),
+    SVGCheckmark = require('../svg/checkmark');
 
   return React.createClass({
     displayName: 'InstalledBehaviorGroupsPanel',
@@ -73,7 +74,7 @@ define(function(require) {
       if (groups.length === 1 && firstTrigger) {
         return (
           <li>
-            <span>Type <span className="box-chat-example">{firstTrigger}</span> </span>
+            <span>In your channel, type <span className="box-chat-example">{firstTrigger}</span> </span>
             <span>to try out the {groups[0].name} skill, or </span>
             <span className="box-chat-example">...help</span>
             <span> to see everything Ellipsis can do so far.</span>
@@ -82,7 +83,7 @@ define(function(require) {
       } else {
         return (
           <li>
-            <span>Type <span className="box-chat-example">...help</span> to see everything Ellipsis can do so far.</span>
+            <span>In your channel, type <span className="box-chat-example">...help</span> to see everything Ellipsis can do so far.</span>
           </li>
         );
       }
@@ -97,6 +98,9 @@ define(function(require) {
         <div className="bg-green-lightest border-emphasis-top border-green">
           <div className="bg-green-light">
             <div className="container container-c pvm">
+              <span className="type-green display-inline-block mrs" style={{ height: "24px" }}>
+                <SVGCheckmark />
+              </span>
               {this.getHeading()}
             </div>
           </div>
