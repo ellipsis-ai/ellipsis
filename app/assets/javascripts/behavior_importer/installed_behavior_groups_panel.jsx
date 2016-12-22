@@ -107,7 +107,7 @@ define(function(require) {
         <div className="bg-green-lightest border-emphasis-top border-green">
           <div className="bg-green-light">
             <div className="container container-c pvm">
-              <span className="type-green display-inline-block mrs" style={{ height: "24px" }}>
+              <span className="type-green display-inline-block mrs align-b" style={{ height: "24px" }}>
                 <SVGCheckmark />
               </span>
               {this.getHeading()}
