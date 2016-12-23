@@ -7,7 +7,7 @@ import models.accounts.user.User
 import models.IDs
 import models.accounts.linkedoauth2token.LinkedOAuth2Token
 import models.accounts.oauth2application.OAuth2Application
-import models.behaviors.events.{EventHandler, MessageEvent}
+import models.behaviors.events.EventHandler
 import models.silhouette.EllipsisEnv
 import org.joda.time.DateTime
 import play.api.Configuration
@@ -17,6 +17,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc.Results
 import services.DataService
+import services.slack.NewMessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -78,10 +79,10 @@ class APIAccessController @Inject() (
                   maybeLinkedToken.
                     map { _ =>
                       request.session.get("invocation-id").flatMap { invocationId =>
-                        cache.get[MessageEvent](invocationId).map { event =>
+                        cache.get[NewMessageEvent](invocationId).map { event =>
                           eventHandler.handle(event, None).map { results =>
-                            results.map(_.sendIn(event.context, None, None))
-                            Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.context.name}."))
+                            results.map(_.sendIn(event, None, None))
+                            Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.name}."))
                           }
                         }
                       }.getOrElse {

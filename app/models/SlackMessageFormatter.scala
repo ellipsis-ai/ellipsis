@@ -7,7 +7,7 @@ import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
 import org.commonmark.node.{AbstractVisitor, Image, Node}
 import org.commonmark.parser.Parser
-import slack.rtm.SlackRtmClient
+import slack.api.SlackApiClient
 
 class CommonmarkVisitor extends AbstractVisitor {
   override def visit(image: Image) {
@@ -15,7 +15,7 @@ class CommonmarkVisitor extends AbstractVisitor {
   }
 }
 
-case class SlackMessageFormatter(client: SlackRtmClient) {
+case class SlackMessageFormatter(client: SlackApiClient) {
 
   private val COMMONMARK_EXTENSIONS = util.Arrays.asList(StrikethroughExtension.create, AutolinkExtension.create)
 

@@ -2,8 +2,8 @@ package models.behaviors.builtins
 
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.{BotResult, SimpleTextResult}
-import models.behaviors.events.{MessageContext, SlackMessageContext}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
+import services.slack.{NewMessageEvent, NewSlackMessageEvent}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,7 +11,7 @@ import scala.concurrent.Future
 
 case class DisplayHelpBehavior(
                                 helpString: String,
-                                messageContext: MessageContext,
+                                event: NewMessageEvent,
                                 lambdaService: AWSLambdaService,
                                 dataService: DataService
                               ) extends BuiltinBehavior {
@@ -26,8 +26,8 @@ case class DisplayHelpBehavior(
   private def helpStringFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
     for {
       triggers <- dataService.messageTriggers.allFor(behaviorVersion)
-      authorNames <- messageContext match {
-        case c: SlackMessageContext => dataService.behaviors.authorNamesFor(behaviorVersion.behavior, c)
+      authorNames <- event match {
+        case e: NewSlackMessageEvent => dataService.behaviors.authorNamesFor(behaviorVersion.behavior, e)
         case _ => Future.successful(Seq())
       }
     } yield {
@@ -78,7 +78,7 @@ case class DisplayHelpBehavior(
   def result: Future[BotResult] = {
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
     for {
-      maybeTeam <- dataService.teams.find(messageContext.teamId)
+      maybeTeam <- dataService.teams.find(event.teamId)
       matchingTriggers <- maybeTeam.map { team =>
         maybeHelpSearch.map { helpSearch =>
           dataService.messageTriggers.allMatching(helpSearch, team)
@@ -97,9 +97,9 @@ case class DisplayHelpBehavior(
       val endingString = if (behaviorVersions.isEmpty) {
         s"""I’m just getting started here and can’t wait to learn.
            |
-           |You can ${messageContext.installLinkFor(lambdaService)} or ${messageContext.teachMeLinkFor(lambdaService)} yourself.""".stripMargin
+           |You can ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself.""".stripMargin
       } else {
-        s"You can also ${messageContext.installLinkFor(lambdaService)} or ${messageContext.teachMeLinkFor(lambdaService)} yourself."
+        s"You can also ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself."
       }
       val text = s"""
           |$skillsString

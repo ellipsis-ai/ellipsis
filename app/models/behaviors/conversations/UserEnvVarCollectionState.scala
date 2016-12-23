@@ -3,17 +3,17 @@ package models.behaviors.conversations
 import models.accounts.user.User
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
+import services.slack.NewMessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class UserEnvVarCollectionState(
                                       missingEnvVarNames: Seq[String],
-                                      event: MessageEvent,
+                                      event: NewMessageEvent,
                                       dataService: DataService,
                                       cache: CacheApi,
                                       configuration: Configuration
@@ -32,9 +32,9 @@ case class UserEnvVarCollectionState(
   def collectValueFrom(conversation: InvokeBehaviorConversation): Future[Conversation] = {
     for {
       maybeNextToCollect <- maybeNextToCollect
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       updatedConversation <- maybeNextToCollect.map { envVarName =>
-        dataService.userEnvironmentVariables.ensureFor(envVarName, Some(event.context.relevantMessageText), user).map(_ => conversation)
+        dataService.userEnvironmentVariables.ensureFor(envVarName, Some(event.relevantMessageText), user).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
       updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration)
     } yield updatedConversation
@@ -58,7 +58,7 @@ object UserEnvVarCollectionState {
   def from(
             user: User,
             conversation: Conversation,
-            event: MessageEvent,
+            event: NewMessageEvent,
             dataService: DataService,
             cache: CacheApi,
             configuration: Configuration

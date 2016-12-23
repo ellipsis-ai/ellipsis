@@ -2,7 +2,7 @@ package models.behaviors.builtins
 
 import com.amazonaws.AmazonServiceException
 import models.behaviors.{BotResult, SimpleTextResult}
-import models.behaviors.events.MessageContext
+import services.slack.NewMessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -10,7 +10,7 @@ import scala.concurrent.Future
 
 case class UnlearnBehavior(
                             patternString: String,
-                            messageContext: MessageContext,
+                            event: NewMessageEvent,
                             lambdaService: AWSLambdaService,
                             dataService: DataService
                             ) extends BuiltinBehavior {
@@ -18,7 +18,7 @@ case class UnlearnBehavior(
   def result: Future[BotResult] = {
     val eventualReply = try {
       for {
-        triggers <- dataService.messageTriggers.allWithExactPattern(patternString, messageContext.teamId)
+        triggers <- dataService.messageTriggers.allWithExactPattern(patternString, event.teamId)
         _ <- Future.sequence(triggers.map { trigger =>
           dataService.behaviorVersions.unlearn(trigger.behaviorVersion)
         })

@@ -28,7 +28,7 @@ case class TriggerTestReport(
 
   def json: JsValue = {
     val data = TriggerTestReportOutput(
-      event.context.fullMessageText,
+      event.fullMessageText,
       maybeActivatedTrigger.map(_.pattern),
       paramValues
     )

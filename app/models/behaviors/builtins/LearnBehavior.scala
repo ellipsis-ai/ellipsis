@@ -1,19 +1,19 @@
 package models.behaviors.builtins
 
 import models.behaviors.{BotResult, SimpleTextResult}
-import models.behaviors.events.MessageContext
+import services.slack.NewMessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.Future
 
 case class LearnBehavior(
-                          messageContext: MessageContext,
+                          event: NewMessageEvent,
                           lambdaService: AWSLambdaService,
                           dataService: DataService
                         ) extends BuiltinBehavior {
 
   def result: Future[BotResult] = {
-    Future.successful(SimpleTextResult(s"I love to learn. Come ${messageContext.teachMeLinkFor(lambdaService)}.", forcePrivateResponse = false))
+    Future.successful(SimpleTextResult(s"I love to learn. Come ${event.teachMeLinkFor(lambdaService)}.", forcePrivateResponse = false))
   }
 
 }

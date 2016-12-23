@@ -3,8 +3,8 @@ package models.behaviors.behavior
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.SlackMessageContext
 import models.team.Team
+import services.slack.NewSlackMessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -53,6 +53,6 @@ trait BehaviorService {
 
   def unlearn(behavior: Behavior): Future[Unit]
 
-  def authorNamesFor(behavior: Behavior, slackMessageContext: SlackMessageContext): Future[Seq[String]]
+  def authorNamesFor(behavior: Behavior, event: NewSlackMessageEvent): Future[Seq[String]]
 
 }

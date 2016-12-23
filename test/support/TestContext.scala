@@ -1,6 +1,6 @@
 package support
 
-import mocks.{MockAWSLambdaService, MockDataService, MockSlackService}
+import mocks.{MockAWSLambdaService, MockDataService}
 import models.IDs
 import models.accounts.user.User
 import models.team.Team
@@ -10,7 +10,7 @@ import play.api.cache.CacheApi
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService, SlackService}
+import services.{AWSLambdaService, DataService}
 
 trait TestContext {
 
@@ -18,7 +18,6 @@ trait TestContext {
 
   def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder().
-      overrides(bind[SlackService].to[MockSlackService]).
       overrides(bind[DataService].to[MockDataService]).
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       disable[ActorModule]

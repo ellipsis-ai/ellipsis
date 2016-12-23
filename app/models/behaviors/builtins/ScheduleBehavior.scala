@@ -1,7 +1,7 @@
 package models.behaviors.builtins
 
-import models.behaviors.events.{MessageContext, SlackMessageContext}
 import models.behaviors.{BotResult, SimpleTextResult}
+import services.slack.{NewMessageEvent, NewSlackMessageEvent}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,21 +12,21 @@ case class ScheduleBehavior(
                              text: String,
                              isForIndividualMembers: Boolean,
                              recurrence: String,
-                             messageContext: MessageContext,
+                             event: NewMessageEvent,
                              lambdaService: AWSLambdaService,
                              dataService: DataService
                              ) extends BuiltinBehavior {
 
   def maybeChannel: Option[String] = {
-    messageContext match {
-      case mc: SlackMessageContext => Some(mc.message.channel)
+    event match {
+      case e: NewSlackMessageEvent => Some(e.channel)
       case _ => None
     }
   }
 
   def result: Future[BotResult] = {
     for {
-      user <- messageContext.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       maybeTeam <- dataService.teams.find(user.teamId)
       maybeScheduledMessage <- maybeTeam.map { team =>
         dataService.scheduledMessages.maybeCreateFor(text, recurrence, user, team, maybeChannel, isForIndividualMembers)
