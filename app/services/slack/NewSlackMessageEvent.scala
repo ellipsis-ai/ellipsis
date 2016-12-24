@@ -86,14 +86,59 @@ case class NewSlackMessageEvent(
     }
   }
 
-  private def messageSegmentsFor(formattedText: String): Seq[String] = {
+  private def messageSegmentsFor(formattedText: String): List[String] = {
     if (formattedText.length < NewSlackMessageEvent.MAX_MESSAGE_LENGTH) {
-      Seq(formattedText)
+      List(formattedText)
     } else {
       val largestPossibleSegment = formattedText.substring(0, NewSlackMessageEvent.MAX_MESSAGE_LENGTH)
       val lastNewlineIndex = Math.max(largestPossibleSegment.lastIndexOf('\n'), largestPossibleSegment.lastIndexOf('\r'))
       val lastIndex = if (lastNewlineIndex < 0) { NewSlackMessageEvent.MAX_MESSAGE_LENGTH - 1 } else { lastNewlineIndex }
-      Seq(formattedText.substring(0, lastIndex)) ++ messageSegmentsFor(formattedText.substring(lastIndex + 1))
+      (formattedText.substring(0, lastIndex)) :: messageSegmentsFor(formattedText.substring(lastIndex + 1))
+    }
+  }
+
+  def sendPreamble(formattedText: String, channelToUse: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    if (formattedText.nonEmpty) {
+      for {
+        _ <- if (isDirectMessage(channelToUse) && channelToUse != channel) {
+          client.postChatMessage(
+            channel,
+            s"<@${user}> I've sent you a private message :sleuth_or_spy:",
+            asUser = Some(true)
+          )
+        } else {
+          Future.successful({})
+        }
+        _ <- if (!isDirectMessage(channelToUse) && channelToUse != channel) {
+          client.postChatMessage(
+            channel,
+            s"<@${user}> OK, back to <#${channelToUse}>",
+            asUser = Some(true)
+          )
+        } else {
+          Future.successful({})
+        }
+      } yield {}
+    } else {
+      Future.successful({})
+    }
+  }
+
+  def sendMessageSegmentsInOrder(
+                           segments: List[String],
+                           channelToUse: String,
+                           maybeShouldUnfurl: Option[Boolean]
+                         ): Future[Unit] = {
+    if (segments.isEmpty) {
+      Future.successful({})
+    } else {
+      client.postChatMessage(
+        channelToUse,
+        segments.head,
+        asUser = Some(true),
+        unfurlLinks = maybeShouldUnfurl,
+        unfurlMedia = Some(true)
+      ).flatMap { _ => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl)}
     }
   }
 
@@ -104,44 +149,11 @@ case class NewSlackMessageEvent(
                    maybeConversation: Option[Conversation]
                  )(implicit ec: ExecutionContext): Future[Unit] = {
     val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
-    channelForSend(forcePrivate, maybeConversation).flatMap { channelToUse =>
-      Future.sequence(
-        messageSegmentsFor(formattedText).map { ea =>
-          // The Slack API considers sending an empty message to be an error rather than a no-op
-          if (ea.nonEmpty) {
-            for {
-              _ <- if (isDirectMessage(channelToUse) && channelToUse != channel) {
-                client.postChatMessage(
-                  channel,
-                  s"<@${user}> I've sent you a private message :sleuth_or_spy:",
-                  asUser = Some(true)
-                )
-              } else {
-                Future.successful({})
-              }
-              _ <- if (!isDirectMessage(channelToUse) && channelToUse != channel) {
-                client.postChatMessage(
-                  channel,
-                  s"<@${user}> OK, back to <#${channelToUse}>",
-                  asUser = Some(true)
-                )
-              } else {
-                Future.successful({})
-              }
-              _ <- client.postChatMessage(
-                channelToUse,
-                ea,
-                asUser = Some(true),
-                unfurlLinks = maybeShouldUnfurl,
-                unfurlMedia = Some(true)
-              )
-            } yield {}
-          } else {
-            Future.successful({})
-          }
-        }
-      )
-    }.map(_ => {})
+    for {
+      channelToUse <- channelForSend(forcePrivate, maybeConversation)
+      _ <- sendPreamble(formattedText, channelToUse)
+      _ <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl)
+    } yield {}
   }
 
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
