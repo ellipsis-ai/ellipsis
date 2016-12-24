@@ -68,13 +68,11 @@ class SlackController @Inject() (
     })
   )
 
-  private def challengeResult(info: ChallengeRequestInfo): Future[Result] = {
-    Future.successful {
-      if (info.isValid) {
-        Ok(info.challenge)
-      } else {
-        Unauthorized("Bad token")
-      }
+  private def challengeResult(info: ChallengeRequestInfo): Result = {
+    if (info.isValid) {
+      Ok(info.challenge)
+    } else {
+      Unauthorized("Bad token")
     }
   }
 
@@ -114,7 +112,7 @@ class SlackController @Inject() (
     })
   )
 
-  private def eventResult(info: EventRequestInfo): Future[Result] = {
+  private def eventResult(info: EventRequestInfo): Result = {
     if (info.isValid) {
       for {
         maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
@@ -124,18 +122,19 @@ class SlackController @Inject() (
         }.getOrElse {
           Future.successful({})
         }
-      } yield Ok(":+1:")
+      } yield {}
+      Ok(":+1:")
     } else {
-      Future.successful(Unauthorized("Bad token"))
+      Unauthorized("Bad token")
     }
   }
 
-  def event = Action.async { implicit request =>
+  def event = Action { implicit request =>
     challengeRequestForm.bindFromRequest.fold(
       formWithErrors => {
         eventRequestForm.bindFromRequest.fold(
           formWithErrors => {
-            Future.successful(BadRequest(formWithErrors.errorsAsJson))
+            BadRequest(formWithErrors.errorsAsJson)
           },
           info => eventResult(info)
         )
