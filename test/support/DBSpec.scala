@@ -3,10 +3,10 @@ package support
 import com.typesafe.config.ConfigFactory
 import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
-import services.{AWSLambdaService, PostgresDataService, SlackService}
+import services.{AWSLambdaService, PostgresDataService}
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase, _}
 import json.{BehaviorParameterData, BehaviorParameterTypeData, InputData}
-import mocks.{MockAWSLambdaService, MockSlackService}
+import mocks.MockAWSLambdaService
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
@@ -35,7 +35,6 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
 
   override implicit lazy val app: Application =
     GuiceApplicationBuilder().
-      overrides(bind[SlackService].to[MockSlackService]).
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       disable[ActorModule].
       build()

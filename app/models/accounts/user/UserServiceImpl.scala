@@ -5,7 +5,6 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.linkedaccount.LinkedAccount
-import models.behaviors.events.{MessageContext, SlackMessageContext}
 import models.IDs
 import models.team.Team
 import org.joda.time.DateTime
@@ -13,6 +12,7 @@ import services.DataService
 import slack.api.ApiError
 import drivers.SlickPostgresDriver.api._
 import play.api.Configuration
+import services.slack.{NewMessageEvent, NewSlackMessageEvent}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -39,9 +39,9 @@ class UserServiceImpl @Inject() (
     dataService.run(findQueryFor(id).result.map(_.headOption))
   }
 
-  def findFromMessageContext(context: MessageContext, team: Team): Future[Option[User]] = {
-    context match {
-      case mc: SlackMessageContext => dataService.linkedAccounts.find(LoginInfo(mc.name, mc.userIdForContext), team.id).map { maybeLinked =>
+  def findFromMessageEvent(event: NewMessageEvent, team: Team): Future[Option[User]] = {
+    event match {
+      case slackEvent: NewSlackMessageEvent => dataService.linkedAccounts.find(LoginInfo(slackEvent.name, slackEvent.user), team.id).map { maybeLinked =>
         maybeLinked.map(_.user)
       }
       case _ => Future.successful(None)
@@ -103,18 +103,14 @@ class UserServiceImpl @Inject() (
     }
   }
 
-  def maybeNameFor(user: User, slackMessageContext: SlackMessageContext): Future[Option[String]] = {
+  def maybeNameFor(user: User, event: NewSlackMessageEvent): Future[Option[String]] = {
     for {
       maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-      maybeName <- Future {
-        maybeSlackAccount.flatMap { acc =>
-          try {
-            Some(slackMessageContext.client.apiClient.getUserInfo(acc.loginInfo.providerKey).name)
-          } catch {
-            case e: ApiError => None
-          }
+      maybeName <- maybeSlackAccount.map { acc =>
+        event.client.getUserInfo(acc.loginInfo.providerKey).map(info => Some(info.name)).recover {
+          case e: ApiError => None
         }
-      }
+      }.getOrElse(Future.successful(None))
     } yield maybeName
   }
 

@@ -1,4 +1,4 @@
-package models.behaviors.events
+package services.slack
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
@@ -9,15 +9,19 @@ import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
-trait MessageContext extends Context {
+trait NewMessageEvent {
+  val name: String
+  val userIdForContext: String
+  val teamId: String
   val fullMessageText: String
-
-  def relevantMessageText: String = MessageContext.ellipsisRegex.replaceFirstIn(fullMessageText, "")
-
   val includesBotMention: Boolean
+  val maybeChannel: Option[String]
+
+  def relevantMessageText: String = NewMessageEvent.ellipsisRegex.replaceFirstIn(fullMessageText, "")
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
@@ -37,42 +41,26 @@ trait MessageContext extends Context {
 
   def iDontKnowHowToRespondMessageFor(lambdaService: AWSLambdaService)(implicit ec: ExecutionContext): String = {
     s"""
-                   |I don't know how to respond to `$fullMessageText`
-                   |
+       |I don't know how to respond to `$fullMessageText`
+       |
                    |Type `@ellipsis: help` to see what I can do or ${teachMeLinkFor(lambdaService)}
     """.stripMargin
   }
 
   def recentMessages(dataService: DataService): Future[Seq[String]] = Future.successful(Seq())
 
-  def isDirectMessage(channel: String): Boolean
+  def sendMessage(
+                   text: String,
+                   forcePrivate: Boolean,
+                   maybeShouldUnfurl: Option[Boolean],
+                   maybeConversation: Option[Conversation]
+                 )(implicit ec: ExecutionContext): Future[Unit]
 
-  def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(userIdForContext, conversationContext, maybeChannel.exists(isDirectMessage))
+  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+
+  def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
+    dataService.users.ensureUserFor(loginInfo, teamId)
   }
-
-  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(userIdForContext, conversationContext, maybeChannel.exists(isDirectMessage))
-  }
-
-  val name: String
-  val maybeChannel: Option[String]
-  val conversationContext = conversationContextForChannel(maybeChannel.getOrElse(""))
-  def conversationContextForChannel(channel: String) = name ++ "#" ++ channel
-  def maybeDMChannel: Option[String]
-
-  def conversationContextFor(behaviorVersion: BehaviorVersion): String = {
-    val maybeChannelToUse = if (behaviorVersion.forcePrivateResponse) {
-      maybeDMChannel
-    } else {
-      maybeChannel
-    }
-    conversationContextForChannel(maybeChannelToUse.getOrElse(""))
-  }
-
-  def userIdForContext: String
-  val teamId: String
-  val isResponseExpected: Boolean
 
   def userInfo(ws: WSClient, dataService: DataService): Future[UserInfo] = {
     UserInfo.buildFor(this, teamId, ws, dataService)
@@ -86,15 +74,37 @@ trait MessageContext extends Context {
     Future.successful(JsObject(Seq()))
   }
 
-  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+  val isResponseExpected: Boolean
+  def isDirectMessage(channel: String): Boolean
 
-  def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
-    dataService.users.ensureUserFor(loginInfo, teamId)
+  val conversationContext = conversationContextForChannel(maybeChannel.getOrElse(""))
+  def conversationContextForChannel(channel: String) = name ++ "#" ++ channel
+
+  def eventualMaybeDMChannel: Future[Option[String]]
+
+  def conversationContextFor(behaviorVersion: BehaviorVersion): Future[String] = {
+    eventualMaybeDMChannel.map { maybeDMChannel =>
+      val maybeChannelToUse = if (behaviorVersion.forcePrivateResponse) {
+        maybeDMChannel
+      } else {
+        maybeChannel
+      }
+      conversationContextForChannel(maybeChannelToUse.getOrElse(""))
+    }
+  }
+
+  def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
+    dataService.conversations.allOngoingFor(userIdForContext, conversationContext, maybeChannel.exists(isDirectMessage))
+  }
+
+  def unformatTextFragment(text: String): String = {
+    // Override for client-specific code to strip formatting from text
+    text
   }
 
 }
 
-object MessageContext {
+object NewMessageEvent {
 
   def ellipsisRegex: Regex = """^(\.\.\.|…)""".r
 }

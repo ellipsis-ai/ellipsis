@@ -4,12 +4,12 @@ import models.IDs
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
+import services.slack.NewMessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,16 +41,16 @@ case class InvokeBehaviorConversation(
     }.head // There should always be a match
   }
 
-  def collectionStatesFor(event: MessageEvent, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Seq[CollectionState]] = {
+  def collectionStatesFor(event: NewMessageEvent, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Seq[CollectionState]] = {
     for {
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       simpleTokenState <- SimpleTokenCollectionState.from(user, this, event, dataService, cache, configuration)
       userEnvVarState <- UserEnvVarCollectionState.from(user, this, event, dataService, cache, configuration)
       paramState <- ParamCollectionState.from(this, event, dataService, cache, configuration)
     } yield Seq(simpleTokenState, userEnvVarState, paramState)
   }
 
-  def updateToNextState(event: MessageEvent, cache: CacheApi, dataService: DataService, configuration: Configuration): Future[Conversation] = {
+  def updateToNextState(event: NewMessageEvent, cache: CacheApi, dataService: DataService, configuration: Configuration): Future[Conversation] = {
     for {
       collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
       collectionStatesWithIsComplete <- Future.sequence(collectionStates.map { collectionState =>
@@ -67,7 +67,7 @@ case class InvokeBehaviorConversation(
     } yield updated
   }
 
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation] = {
+  def updateWith(event: NewMessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation] = {
     import Conversation._
 
     for {
@@ -82,7 +82,7 @@ case class InvokeBehaviorConversation(
   }
 
   def respond(
-               event: MessageEvent,
+               event: NewMessageEvent,
                lambdaService: AWSLambdaService,
                dataService: DataService,
                cache: CacheApi,

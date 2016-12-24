@@ -2,12 +2,12 @@ package models.behaviors.conversations.conversation
 
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
+import services.slack.NewMessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,9 +27,9 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
+  def updateWith(event: NewMessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
   def respond(
-               event: MessageEvent,
+               event: NewMessageEvent,
                lambdaService: AWSLambdaService,
                dataService: DataService,
                cache: CacheApi,
@@ -38,7 +38,7 @@ trait Conversation {
              ): Future[BotResult]
 
   def resultFor(
-                 event: MessageEvent,
+                 event: NewMessageEvent,
                  lambdaService: AWSLambdaService,
                  dataService: DataService,
                  cache: CacheApi,

@@ -1,22 +1,22 @@
 package models.behaviors.builtins
 
-import models.behaviors.events.MessageContext
 import models.behaviors.{BotResult, SimpleTextResult}
+import services.slack.NewMessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class UnscheduleBehavior(
-                             text: String,
-                             messageContext: MessageContext,
-                             lambdaService: AWSLambdaService,
-                             dataService: DataService
+                               text: String,
+                               event: NewMessageEvent,
+                               lambdaService: AWSLambdaService,
+                               dataService: DataService
                              ) extends BuiltinBehavior {
 
   def result: Future[BotResult] = {
     for {
-      maybeTeam <- dataService.teams.find(messageContext.teamId)
+      maybeTeam <- dataService.teams.find(event.teamId)
       didDelete <- maybeTeam.map { team =>
         dataService.scheduledMessages.deleteFor(text, team)
       }.getOrElse(Future.successful(false))

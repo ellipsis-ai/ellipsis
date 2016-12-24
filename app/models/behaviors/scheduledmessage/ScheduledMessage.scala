@@ -6,11 +6,11 @@ import org.joda.time.DateTime
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
+import models.behaviors.events.EventHandler
 import models.behaviors.{BotResult, SimpleTextResult}
-import models.behaviors.events.{SlackMessageContext, SlackMessageEvent}
-import services.{DataService, SlackService}
-import slack.api.ApiError
-import slack.models.Message
+import services.slack.NewSlackMessageEvent
+import services.DataService
+import slack.api.{ApiError, SlackApiClient}
 import slack.rtm.SlackRtmClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -91,10 +91,8 @@ case class ScheduledMessage(
     }.getOrElse(Future.successful(None))
   }
 
-  private def swallowingChannelNotFound[T](fn: () => T): Option[T] = {
-    try {
-      Some(fn())
-    } catch {
+  private def swallowingChannelNotFound[T](fn: () => Future[T]): Future[Option[T]] = {
+    fn().map(Some(_)).recover {
       case e: ApiError => if (e.code == "channel_not_found") {
         None
       } else {
@@ -103,65 +101,70 @@ case class ScheduledMessage(
     }
   }
 
-  private def getMembersFor(channelOrGroupId: String, client: SlackRtmClient): Seq[String] = {
-    val maybeChannel = swallowingChannelNotFound(() => client.apiClient.getChannelInfo(channelOrGroupId))
-    val maybeGroup = swallowingChannelNotFound(() => client.apiClient.getGroupInfo(channelOrGroupId))
-    maybeChannel.flatMap(_.members).orElse(maybeGroup.map(_.members)).getOrElse(Seq())
+  private def getMembersFor(channelOrGroupId: String, client: SlackApiClient): Future[Seq[String]] = {
+    for {
+      maybeChannel <- swallowingChannelNotFound(() => client.getChannelInfo(channelOrGroupId))
+      maybeGroup <- swallowingChannelNotFound(() => client.getGroupInfo(channelOrGroupId))
+    } yield {
+      maybeChannel.flatMap(_.members).orElse(maybeGroup.map(_.members)).getOrElse(Seq())
+    }
   }
 
   def sendForIndividualMembers(
                                 channelName: String,
-                                slackService: SlackService,
-                                client: SlackRtmClient,
+                                eventHandler: EventHandler,
+                                client: SlackApiClient,
                                 profile: SlackBotProfile,
                                 dataService: DataService
                               ): Future[Unit] = {
-    val members = getMembersFor(channelName, client)
-    val otherMembers = members.filterNot(ea => ea == profile.userId)
-    val withDMChannels: Seq[(String, String)] = otherMembers.flatMap { ea =>
-      client.apiClient.listIms.find(_.user == ea).map(_.id).map { dmChannel =>
-        (ea, dmChannel)
-      }
-    }
-    Future.sequence(withDMChannels.map { case(slackUserId, dmChannel) =>
-      sendFor(dmChannel, slackUserId, slackService, client, profile, dataService)
-    }).map(_ => {})
+    for {
+      members <- getMembersFor(channelName, client)
+      otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
+      withDMChannels <- Future.sequence(otherMembers.map { ea =>
+        client.listIms.map { ims =>
+          ims.find(_.user == ea).map(_.id).map { dmChannel =>
+            (ea, dmChannel)
+          }
+        }
+      }).map(_.flatten)
+      _ <- Future.sequence(withDMChannels.map { case(slackUserId, dmChannel) =>
+        sendFor(dmChannel, slackUserId, eventHandler, client, profile, dataService)
+      }).map(_ => {})
+    } yield {}
   }
 
   // TODO: don't be slack-specific
   def sendFor(
                channelName: String,
                slackUserId: String,
-               slackService: SlackService,
-               client: SlackRtmClient,
+               eventHandler: EventHandler,
+               client: SlackApiClient,
                profile: SlackBotProfile,
                dataService: DataService
              ): Future[Unit] = {
     for {
-      message <- Future.successful(Message("ts", channelName, slackUserId, text, None))
-      context <- Future.successful(SlackMessageContext(client, profile, message))
-      event <- Future.successful(SlackMessageEvent(context))
-      _ <- slackService.eventHandler.interruptOngoingConversationsFor(event)
-      results <- slackService.eventHandler.handle(event, None)
+      event <- Future.successful(NewSlackMessageEvent(profile, channelName, slackUserId, text, "ts"))
+      _ <- eventHandler.interruptOngoingConversationsFor(event)
+      results <- eventHandler.handle(event, None)
       _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(DateTime.now))
     } yield {
       results.foreach { result =>
         if (result.hasText) {
-          scheduleInfoResultFor(result).sendIn(context, None, None)
+          scheduleInfoResultFor(result).sendIn(event, None, None)
         }
-        result.sendIn(context, None, None)
+        result.sendIn(event, None, None)
       }
     }
   }
 
-  def send(slackService: SlackService, client: SlackRtmClient, profile: SlackBotProfile, dataService: DataService): Future[Unit] = {
+  def send(eventHandler: EventHandler, client: SlackApiClient, profile: SlackBotProfile, dataService: DataService): Future[Unit] = {
     maybeChannelName.map { channelName =>
       if (isForIndividualMembers) {
-        sendForIndividualMembers(channelName, slackService, client, profile, dataService)
+        sendForIndividualMembers(channelName, eventHandler, client, profile, dataService)
       } else {
         maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
           val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
-          sendFor(channelName, slackUserId, slackService, client, profile, dataService)
+          sendFor(channelName, slackUserId, eventHandler, client, profile, dataService)
         }
       }
     }.getOrElse(Future.successful(Unit))

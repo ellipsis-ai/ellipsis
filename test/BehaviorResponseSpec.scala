@@ -2,13 +2,13 @@ import models.IDs
 import models.behaviors.BehaviorResponse
 import models.behaviors.behaviorparameter.{BehaviorParameter, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{MessageContext, MessageEvent}
 import models.behaviors.input.Input
 import models.behaviors.triggers.TemplateMessageTrigger
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
+import services.slack.NewMessageEvent
 import support.TestContext
 
 import scala.concurrent.Future
@@ -19,10 +19,8 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar{
 
     "choose the most specific trigger" in new TestContext {
       running(app) {
-        val event = new MessageEvent {
-          val context: MessageContext = mock[MessageContext]
-        }
-        when(event.context.relevantMessageText).thenReturn("trigger me this batman")
+        val event = mock[NewMessageEvent]
+        when(event.relevantMessageText).thenReturn("trigger me this batman")
         val version = mock[BehaviorVersion]
         val generalTrigger = TemplateMessageTrigger(
           IDs.next,

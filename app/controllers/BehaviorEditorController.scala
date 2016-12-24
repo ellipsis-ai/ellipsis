@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
-import models.behaviors.testing.{InvocationTester, TestEvent, TestMessageContext, TriggerTester}
+import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -339,8 +339,8 @@ class BehaviorEditorController @Inject() (
             dataService.behaviors.maybeCurrentVersionFor(behavior)
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-            val context = TestMessageContext(user, behaviorVersion.team, info.message, includesBotMention = true)
-            TriggerTester(lambdaService, dataService, cache, ws, configuration).test(TestEvent(context), behaviorVersion).map(Some(_))
+            val event = TestEvent(user, behaviorVersion.team, info.message, includesBotMention = true)
+            TriggerTester(lambdaService, dataService, cache, ws, configuration).test(event, behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 
         } yield {

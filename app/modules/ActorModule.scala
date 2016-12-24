@@ -2,12 +2,10 @@ package modules
 
 import com.google.inject.AbstractModule
 import play.api.libs.concurrent.AkkaGuiceSupport
-import actors.{CleanUpLambdaActor, ScheduledMessageActor, SlackBotProfileActor, SlackBotProfileChangeListenerActor}
+import actors.{CleanUpLambdaActor, ScheduledMessageActor}
 
 class ActorModule extends AbstractModule with AkkaGuiceSupport {
   def configure() = {
-//    bindActor[SlackBotProfileChangeListenerActor](SlackBotProfileChangeListenerActor.name)
-    bindActor[SlackBotProfileActor](SlackBotProfileActor.name)
     bindActor[ScheduledMessageActor](ScheduledMessageActor.name)
     bindActor[CleanUpLambdaActor](CleanUpLambdaActor.name)
   }

@@ -1,7 +1,6 @@
 package services
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
-import models.behaviors.events.MessageEvent
 import models.Models
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
@@ -10,6 +9,7 @@ import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
+import services.slack.NewMessageEvent
 
 import scala.concurrent.Future
 
@@ -32,7 +32,7 @@ trait AWSLambdaService extends AWSService {
               behaviorVersion: BehaviorVersion,
               parametersWithValues: Seq[ParameterWithValue],
               environmentVariables: Seq[EnvironmentVariable],
-              event: MessageEvent
+              event: NewMessageEvent
               ): Future[BotResult]
 
   def deleteFunction(functionName: String): Future[Unit]

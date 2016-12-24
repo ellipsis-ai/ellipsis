@@ -4,10 +4,10 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
 import models.behaviors.savedanswer.SavedAnswer
 import play.api.Configuration
 import play.api.cache.CacheApi
+import services.slack.NewMessageEvent
 import services.{AWSLambdaConstants, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,7 +17,7 @@ case class ParamCollectionState(
                                 params: Seq[BehaviorParameter],
                                 collected: Seq[CollectedParameterValue],
                                 savedAnswers: Seq[SavedAnswer],
-                                event: MessageEvent,
+                                event: NewMessageEvent,
                                 dataService: DataService,
                                 cache: CacheApi,
                                 configuration: Configuration
@@ -93,7 +93,7 @@ object ParamCollectionState {
 
   def from(
             conversation: Conversation,
-            event: MessageEvent,
+            event: NewMessageEvent,
             dataService: DataService,
             cache: CacheApi,
             configuration: Configuration
@@ -101,7 +101,7 @@ object ParamCollectionState {
     for {
       params <- dataService.behaviorParameters.allFor(conversation.behaviorVersion)
       collected <- dataService.collectedParameterValues.allFor(conversation)
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       savedAnswers <- dataService.savedAnswers.allFor(user, params)
     } yield ParamCollectionState(params, collected, savedAnswers, event, dataService, cache, configuration)
   }

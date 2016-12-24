@@ -3,9 +3,9 @@ package models.behaviors.invocationlogentry
 import models.behaviors.behavior.Behavior
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.MessageEvent
 import models.team.Team
 import org.joda.time.DateTime
+import services.slack.NewMessageEvent
 
 import scala.concurrent.Future
 
@@ -25,7 +25,7 @@ trait InvocationLogEntryService {
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  result: BotResult,
-                 event: MessageEvent,
+                 event: NewMessageEvent,
                  maybeUserIdForContext: Option[String],
                  runtimeInMilliseconds: Long
                ): Future[InvocationLogEntry]

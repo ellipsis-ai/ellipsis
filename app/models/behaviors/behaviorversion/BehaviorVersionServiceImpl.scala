@@ -10,7 +10,6 @@ import models.IDs
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.MessageEvent
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -18,6 +17,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
+import services.slack.NewMessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -229,11 +229,11 @@ class BehaviorVersionServiceImpl @Inject() (
     }
   }
 
-  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: MessageEvent): Future[Option[BotResult]] = {
+  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: NewMessageEvent): Future[Option[BotResult]] = {
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingIn(behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
-      userInfo <- event.context.userInfo(ws, dataService)
+      userInfo <- event.userInfo(ws, dataService)
       notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)
@@ -246,7 +246,7 @@ class BehaviorVersionServiceImpl @Inject() (
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
-            event.context.ensureUser(dataService).flatMap { user =>
+            event.ensureUser(dataService).flatMap { user =>
               dataService.loginTokens.createFor(user).map { loginToken =>
                 OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
               }
@@ -260,11 +260,11 @@ class BehaviorVersionServiceImpl @Inject() (
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
-                 event: MessageEvent
+                 event: NewMessageEvent
                ): Future[BotResult] = {
     for {
       teamEnvVars <- dataService.teamEnvironmentVariables.allFor(behaviorVersion.team)
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       userEnvVars <- dataService.userEnvironmentVariables.allFor(user)
       result <- maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(Future.successful).getOrElse {

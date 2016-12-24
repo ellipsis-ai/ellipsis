@@ -4,7 +4,8 @@ import javax.inject.Inject
 
 import models.accounts.user.User
 import models.behaviors.SimpleTextResult
-import models.behaviors.events.{APIMessageContext, APIMessageEvent, EventHandler}
+import models.behaviors.events.EventHandler
+import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.data.Form
@@ -13,7 +14,8 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.Action
-import services.{DataService, SlackService}
+import services.slack.NewSlackMessageEvent
+import services.{DataService, SlackEventService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -24,7 +26,7 @@ class APIController @Inject() (
                                 val dataService: DataService,
                                 val ws: WSClient,
                                 val cache: CacheApi,
-                                val slackService: SlackService,
+                                val slackService: SlackEventService,
                                 val eventHandler: EventHandler)
   extends EllipsisController {
 
@@ -81,21 +83,23 @@ class APIController @Inject() (
           maybeBotProfile <- maybeTeam.map { team =>
             dataService.slackBotProfiles.allFor(team).map(_.headOption)
           }.getOrElse(Future.successful(None))
-          maybeSlackClient <- Future.successful(maybeBotProfile.flatMap { botProfile =>
-            slackService.clients.get(botProfile)
-          })
           maybeSlackLinkedAccount <- maybeUser.map { user =>
             dataService.linkedAccounts.maybeForSlackFor(user)
           }.getOrElse(Future.successful(None))
           maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
             dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
           }.getOrElse(Future.successful(None))
-          maybeEvent <- Future.successful(for {
-            slackClient <- maybeSlackClient
-            botProfile <- maybeBotProfile
-          } yield {
-              APIMessageEvent(APIMessageContext(slackClient, botProfile, info.channel, info.message, maybeSlackProfile))
-            })
+          maybeEvent <- Future.successful(
+            for {
+              botProfile <- maybeBotProfile
+            } yield NewSlackMessageEvent(
+              botProfile,
+              info.channel,
+              maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
+              info.message,
+              DateTime.now.toInstant.getMillis.toString
+            )
+          )
           isInvokedExternally <- Future.successful(maybeUserForApiToken.isDefined)
           result <- maybeEvent.map { event =>
             for {
@@ -105,10 +109,10 @@ class APIController @Inject() (
                   if (isInvokedExternally) {
                     maybeSlackProfile.foreach { slackProfile =>
                       val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
-                      introResult.sendIn(event.context, None, None)
+                      introResult.sendIn(event, None, None)
                     }
                   }
-                  result.sendIn(event.context, None, None)
+                  result.sendIn(event, None, None)
                 }
                 Ok(Json.toJson(results.map(_.fullText)))
               }

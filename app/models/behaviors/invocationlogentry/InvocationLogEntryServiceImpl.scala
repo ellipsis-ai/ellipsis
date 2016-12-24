@@ -6,13 +6,13 @@ import com.google.inject.Provider
 import models.IDs
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
-import models.behaviors.events.MessageEvent
 import models.team.Team
 import org.joda.time.DateTime
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behavior.Behavior
 import play.api.libs.json.{JsValue, Json}
+import services.slack.NewMessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -170,7 +170,7 @@ class InvocationLogEntryServiceImpl @Inject() (
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  result: BotResult,
-                 event: MessageEvent,
+                 event: NewMessageEvent,
                  maybeUserIdForContext: Option[String],
                  runtimeInMilliseconds: Long
                ): Future[InvocationLogEntry] = {
@@ -179,12 +179,12 @@ class InvocationLogEntryServiceImpl @Inject() (
         IDs.next,
         behaviorVersion.id,
         result.resultType.toString,
-        event.context.fullMessageText,
+        event.fullMessageText,
         Json.toJson(parametersWithValues.map { ea =>
           ea.parameter.name -> ea.preparedValue
         }.toMap),
         result.fullText,
-        event.context.name,
+        event.name,
         maybeUserIdForContext,
         runtimeInMilliseconds,
         DateTime.now

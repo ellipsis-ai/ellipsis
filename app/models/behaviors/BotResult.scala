@@ -6,15 +6,16 @@ import models.accounts.oauth2application.OAuth2Application
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageContext, MessageEvent}
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsDefined, JsValue}
 import services.AWSLambdaConstants._
+import services.slack.NewMessageEvent
 import services.AWSLambdaLogResult
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
@@ -30,11 +31,11 @@ sealed trait BotResult {
   def hasText: Boolean = fullText.trim.nonEmpty
 
   def sendIn(
-              context: MessageContext,
+              event: NewMessageEvent,
               maybeShouldUnfurl: Option[Boolean],
               maybeConversation: Option[Conversation]
-            ): Unit = {
-    context.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation)
+            ): Future[Unit] = {
+    event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation)
   }
 }
 
@@ -78,11 +79,12 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
   def text: String = ""
 
   override def sendIn(
-                       context: MessageContext,
+                       event: NewMessageEvent,
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation]
-                     ): Unit = {
+                     ): Future[Unit] = {
     // do nothing
+    Future.successful({})
   }
 
 }
@@ -208,7 +210,7 @@ class AWSDownResult extends BotResult {
 
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
-                               event: MessageEvent,
+                               event: NewMessageEvent,
                                loginToken: LoginToken,
                                cache: CacheApi,
                                configuration: Configuration
@@ -236,18 +238,18 @@ case class OAuth2TokenMissing(
   }
 
   override def sendIn(
-                       context: MessageContext,
+                       event: NewMessageEvent,
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation]
-                     ): Unit = {
+                     ): Future[Unit] = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(context, maybeShouldUnfurl, maybeConversation)
+    super.sendIn(event, maybeShouldUnfurl, maybeConversation)
   }
 }
 
 case class RequiredApiNotReady(
                                 required: RequiredOAuth2ApiConfig,
-                                event: MessageEvent,
+                                event: NewMessageEvent,
                                 cache: CacheApi,
                                 configuration: Configuration
                              ) extends BotResult {

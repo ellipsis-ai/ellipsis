@@ -1,8 +1,8 @@
 package models.behaviors.builtins
 
-import models.behaviors.events.MessageContext
 import models.behaviors.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, SimpleTextResult}
+import services.slack.NewMessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -10,9 +10,9 @@ import scala.concurrent.Future
 
 
 case class ListScheduledBehavior(
-                                 messageContext: MessageContext,
-                                 lambdaService: AWSLambdaService,
-                                 dataService: DataService
+                                  event: NewMessageEvent,
+                                  lambdaService: AWSLambdaService,
+                                  dataService: DataService
                                  ) extends BuiltinBehavior {
 
   lazy val noMessagesResponse: String =
@@ -34,7 +34,7 @@ case class ListScheduledBehavior(
 
   def result: Future[BotResult] = {
     for {
-      maybeTeam <- dataService.teams.find(messageContext.teamId)
+      maybeTeam <- dataService.teams.find(event.teamId)
       scheduled <- maybeTeam.map { team =>
         dataService.scheduledMessages.allForTeam(team)
       }.getOrElse(Future.successful(Seq()))

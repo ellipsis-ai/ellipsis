@@ -13,7 +13,6 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
-import models.behaviors.events.MessageEvent
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.behaviors.invocationtoken.InvocationToken
 import models.team.Team
@@ -21,6 +20,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
+import services.slack.NewMessageEvent
 import sun.misc.BASE64Decoder
 import utils.JavaFutureConverter
 
@@ -105,15 +105,15 @@ class AWSLambdaServiceImpl @Inject() (
                       functionName: String,
                       payloadData: Seq[(String, JsValue)],
                       team: Team,
-                      event: MessageEvent,
+                      event: NewMessageEvent,
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                       environmentVariables: Seq[EnvironmentVariable],
                       successFn: InvokeResult => BotResult
                     ): Future[BotResult] = {
     for {
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       token <- dataService.invocationTokens.createFor(user)
-      userInfo <- event.context.userInfo(ws, dataService)
+      userInfo <- event.userInfo(ws, dataService)
       result <- {
         val oauth2ApplicationsNeedingRefresh =
           requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
@@ -148,7 +148,7 @@ class AWSLambdaServiceImpl @Inject() (
               behaviorVersion: BehaviorVersion,
               parametersWithValues: Seq[ParameterWithValue],
               environmentVariables: Seq[EnvironmentVariable],
-              event: MessageEvent
+              event: NewMessageEvent
               ): Future[BotResult] = {
     for {
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)

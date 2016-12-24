@@ -1,23 +1,23 @@
 package models.behaviors.builtins
 
 import json.{BehaviorConfig, BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.MessageContext
 import models.behaviors._
+import services.slack.NewMessageEvent
 import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
+case class RememberBehavior(event: NewMessageEvent, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
   def result: Future[BotResult] = {
     for {
-      maybeTeam <- dataService.teams.find(messageContext.teamId)
+      maybeTeam <- dataService.teams.find(event.teamId)
       maybeUser <- maybeTeam.map { team =>
-        dataService.users.findFromMessageContext(messageContext, team)
+        dataService.users.findFromMessageEvent(event, team)
       }.getOrElse(Future.successful(None))
-      messages <- messageContext.recentMessages(dataService)
+      messages <- event.recentMessages(dataService)
       qaExtractor <- Future.successful(QuestionAnswerExtractor(messages))
       maybeBehavior <- maybeTeam.map { team =>
         dataService.behaviors.createFor(team, None, None).map(Some(_))

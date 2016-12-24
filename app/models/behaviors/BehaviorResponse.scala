@@ -6,13 +6,13 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
-import play.api.libs.json.{JsObject, JsString, JsValue}
+import play.api.libs.json.{JsString, JsValue}
 import play.api.libs.ws.WSClient
+import services.slack.NewMessageEvent
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,7 +34,7 @@ case class ParameterWithValue(
 }
 
 case class BehaviorResponse(
-                             event: MessageEvent,
+                             event: NewMessageEvent,
                              behaviorVersion: BehaviorVersion,
                              parametersWithValues: Seq[ParameterWithValue],
                              activatedTrigger: MessageTrigger,
@@ -51,14 +51,14 @@ case class BehaviorResponse(
 
   def hasAllUserEnvVarValues: Future[Boolean] = {
     for {
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       missing <- dataService.userEnvironmentVariables.missingFor(user, behaviorVersion, dataService)
     } yield missing.isEmpty
   }
 
   def hasAllSimpleTokens: Future[Boolean] = {
     for {
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       missing <- dataService.requiredSimpleTokenApis.missingFor(user, behaviorVersion)
     } yield missing.isEmpty
   }
@@ -81,7 +81,7 @@ case class BehaviorResponse(
         parametersWithValues,
         result,
         event,
-        Some(event.context.userIdForContext),
+        Some(event.userIdForContext),
         runtimeInMilliseconds
       ).map(_ => result)
     }
@@ -95,10 +95,11 @@ case class BehaviorResponse(
             resultForFilledOut
           } else {
             for {
+              context <- event.conversationContextFor(behaviorVersion)
               convo <- InvokeBehaviorConversation.createFor(
                 behaviorVersion,
-                event.context.conversationContextFor(behaviorVersion),
-                event.context.userIdForContext,
+                context,
+                event.userIdForContext,
                 activatedTrigger,
                 dataService
               )
@@ -119,7 +120,7 @@ case class BehaviorResponse(
 object BehaviorResponse {
 
   def parametersWithValuesFor(
-                               event: MessageEvent,
+                               event: NewMessageEvent,
                                behaviorVersion: BehaviorVersion,
                                paramValues: Map[String, String],
                                maybeConversation: Option[Conversation],
@@ -149,7 +150,7 @@ object BehaviorResponse {
   }
 
   def buildFor(
-                event: MessageEvent,
+                event: NewMessageEvent,
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
                 activatedTrigger: MessageTrigger,
@@ -166,7 +167,7 @@ object BehaviorResponse {
   }
 
   def allFor(
-                 event: MessageEvent,
+                 event: NewMessageEvent,
                  maybeTeam: Option[Team],
                  maybeLimitToBehavior: Option[Behavior],
                  lambdaService: AWSLambdaService,

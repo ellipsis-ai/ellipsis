@@ -3,9 +3,9 @@ package models.behaviors.triggers.messagetrigger
 import java.util.regex.PatternSyntaxException
 
 import models.behaviors.behaviorparameter.BehaviorParameter
-import models.behaviors.events.{Event, MessageEvent}
 import models.behaviors.triggers.Trigger
 import services.AWSLambdaConstants
+import services.slack.NewMessageEvent
 
 import scala.util.matching.Regex
 
@@ -38,22 +38,16 @@ trait MessageTrigger extends Trigger {
     }.getOrElse(Map())
   }
 
-  def invocationParamsFor(event: Event, params: Seq[BehaviorParameter]): Map[String, String] = {
-    event match {
-      case e: MessageEvent => invocationParamsFor(e.context.relevantMessageText, params)
-      case _ => Map()
-    }
+  def invocationParamsFor(event: NewMessageEvent, params: Seq[BehaviorParameter]): Map[String, String] = {
+    invocationParamsFor(event.relevantMessageText, params)
   }
 
   def matches(relevantMessageText: String, includesBotMention: Boolean): Boolean = {
     isValidRegex && regex.findFirstMatchIn(relevantMessageText).nonEmpty && (!requiresBotMention || includesBotMention)
   }
 
-  def isActivatedBy(event: Event): Boolean = {
-    event match {
-      case e: MessageEvent => matches(e.context.relevantMessageText, e.context.includesBotMention)
-      case _ => false
-    }
+  def isActivatedBy(event: NewMessageEvent): Boolean = {
+    matches(event.relevantMessageText, event.includesBotMention)
   }
 
 }

@@ -5,9 +5,9 @@ import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessR
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
 import models.team.Team
 import play.api.libs.json._
+import services.slack.NewMessageEvent
 import services.{AWSLambdaConstants, DataService}
 
 import scala.concurrent.duration._
@@ -43,13 +43,13 @@ sealed trait BehaviorParameterType {
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]]
 
-  def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
-    val potentialValue = event.context.relevantMessageText
+  def handleCollected(event: NewMessageEvent, context: BehaviorParameterContext): Future[Unit] = {
+    val potentialValue = event.relevantMessageText
     val input = context.parameter.input
     if (input.isSaved) {
       resolvedValueFor(potentialValue, context).flatMap { maybeValueToSave =>
         maybeValueToSave.map { valueToSave =>
-          event.context.ensureUser(context.dataService).flatMap { user =>
+          event.ensureUser(context.dataService).flatMap { user =>
             context.dataService.savedAnswers.ensureFor(input, valueToSave, user).map(_ => {})
           }
         }.getOrElse(Future.successful({}))
@@ -271,7 +271,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
 
   private def textMatchesLabel(text: String, label: String, context: BehaviorParameterContext): Boolean = {
     val lowercaseText = text.toLowerCase
-    val unformattedText = context.event.context.unformatTextFragment(text).toLowerCase
+    val unformattedText = context.event.unformatTextFragment(text).toLowerCase
     val lowercaseLabel = label.toLowerCase
     lowercaseLabel == lowercaseText || lowercaseLabel == unformattedText
   }
@@ -358,11 +358,11 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     }
   }
 
-  override def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
+  override def handleCollected(event: NewMessageEvent, context: BehaviorParameterContext): Future[Unit] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
         val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
-        val searchQuery = event.context.relevantMessageText
+        val searchQuery = event.relevantMessageText
         context.cache.set(key, searchQuery, 5.minutes)
         Future.successful({})
       } else {

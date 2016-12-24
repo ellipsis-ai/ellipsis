@@ -5,17 +5,17 @@ import models.accounts.simpletokenapi.SimpleTokenApi
 import models.accounts.user.User
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
+import services.slack.NewMessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class SimpleTokenCollectionState(
                                        missingTokenApis: Seq[SimpleTokenApi],
-                                       event: MessageEvent,
+                                       event: NewMessageEvent,
                                        dataService: DataService,
                                        cache: CacheApi,
                                        configuration: Configuration
@@ -32,9 +32,9 @@ case class SimpleTokenCollectionState(
   def collectValueFrom(conversation: InvokeBehaviorConversation): Future[Conversation] = {
     for {
       maybeNextToCollect <- maybeNextToCollect
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       updatedConversation <- maybeNextToCollect.map { api =>
-        val token = event.context.relevantMessageText.trim
+        val token = event.relevantMessageText.trim
         dataService.linkedSimpleTokens.save(LinkedSimpleToken(token, user.id, api)).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
       updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration)
@@ -65,7 +65,7 @@ object SimpleTokenCollectionState {
   def from(
             user: User,
             conversation: Conversation,
-            event: MessageEvent,
+            event: NewMessageEvent,
             dataService: DataService,
             cache: CacheApi,
             configuration: Configuration
