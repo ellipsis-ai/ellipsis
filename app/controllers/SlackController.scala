@@ -116,7 +116,6 @@ class SlackController @Inject() (
 
   private def eventResult(info: EventRequestInfo): Future[Result] = {
     if (info.isValid) {
-      println(s"received message from ${info.event.userId}")
       for {
         maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
         _ <- maybeProfile.map { profile =>
