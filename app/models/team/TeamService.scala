@@ -1,6 +1,7 @@
 package models.team
 
 import models.accounts.user.User
+import org.joda.time.DateTimeZone
 
 import scala.concurrent.Future
 
@@ -9,6 +10,8 @@ trait TeamService {
   def allTeams: Future[Seq[Team]]
 
   def setInitialNameFor(team: Team, name: String): Future[Team]
+
+  def setTimeZoneFor(team: Team, tz: DateTimeZone): Future[Team]
 
   def find(id: String): Future[Option[Team]]
 

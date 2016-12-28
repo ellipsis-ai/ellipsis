@@ -145,7 +145,8 @@ class ScheduledMessageServiceImpl @Inject() (
                       maybeChannelName: Option[String],
                       isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledMessage]] = {
-    Recurrence.maybeFromText(recurrenceText).map { recurrence =>
+    Recurrence.maybeFromText(recurrenceText, team.timeZone).map { recurrence =>
+      val now = DateTime.now.withZone(team.timeZone)
       val newMessage = ScheduledMessage(
         IDs.next,
         text,
@@ -154,8 +155,8 @@ class ScheduledMessageServiceImpl @Inject() (
         maybeChannelName,
         isForIndividualMembers,
         recurrence,
-        recurrence.initialAfter(DateTime.now),
-        DateTime.now
+        recurrence.initialAfter(now),
+        now
       )
       save(newMessage).map(Some(_))
     }.getOrElse(Future.successful(None))

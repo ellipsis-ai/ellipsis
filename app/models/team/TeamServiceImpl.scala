@@ -9,6 +9,7 @@ import models.accounts.user.User
 import play.api.Configuration
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import org.joda.time.DateTimeZone
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -58,7 +59,7 @@ class TeamServiceImpl @Inject() (
     } yield maybeTeam
   }
 
-  def create(name: String): Future[Team] = save(Team(IDs.next, name))
+  def create(name: String): Future[Team] = save(Team(IDs.next, name, None))
 
   def setInitialNameFor(team: Team, name: String): Future[Team] = {
     if (team.maybeNonEmptyName.isEmpty) {
@@ -66,6 +67,10 @@ class TeamServiceImpl @Inject() (
     } else {
       Future.successful(team)
     }
+  }
+
+  def setTimeZoneFor(team: Team, tz: DateTimeZone): Future[Team] = {
+    save(team.copy(maybeTimeZone = Some(tz)))
   }
 
   def save(team: Team): Future[Team] = {

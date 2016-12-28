@@ -27,17 +27,21 @@ case class ScheduledMessage(
                              createdAt: DateTime
                            ) {
 
-  def followingSentAt: DateTime = recurrence.nextAfter(nextSentAt)
+  val timeZone = team.timeZone
+
+  val nextSentAtInTimeZone: DateTime = nextSentAt.withZone(timeZone)
+
+  def followingSentAt: DateTime = recurrence.nextAfter(nextSentAtInTimeZone)
 
   def successResponse: String = {
-    s"""OK, I will run `$text` ${recurrence.displayString.trim}.
+    s"""OK, I will run `$text` ${recurrence.displayStringFor(timeZone).trim}.
         |
        |$nextRunsString
      """.stripMargin
   }
 
   def scheduleInfoResultFor(result: BotResult) = SimpleTextResult(
-    s"""I've been asked to run `$text` ${recurrence.displayString.trim}.
+    s"""I've been asked to run `$text` ${recurrence.displayStringFor(timeZone).trim}.
         |
        |For more details on what is scheduled, try `@ellipsis: scheduled`.
         |
@@ -45,7 +49,7 @@ case class ScheduledMessage(
      """.stripMargin, result.forcePrivateResponse)
 
   def listResponse: String = {
-    s"""`$text` ${recurrence.displayString.trim}
+    s"""`$text` ${recurrence.displayStringFor(timeZone).trim}
         |
        |$nextRunsString
      """.stripMargin
@@ -63,13 +67,13 @@ case class ScheduledMessage(
 
     when.toString(nextRunDateFormatter) ++ clarifier
   }
-  def nextRunTimeStringFor(when: DateTime): String = when.toString(Recurrence.timeFormatter)
+  def nextRunTimeStringFor(when: DateTime): String = when.toString(Recurrence.timeFormatterWithZone)
 
   def nextRunStringFor(when: DateTime): String = s"${nextRunDateStringFor(when)} at ${nextRunTimeStringFor(when)}"
 
   def nextRunsString: String = {
     s"""The next two runs will be:
-        | - ${nextRunStringFor(nextSentAt)}
+        | - ${nextRunStringFor(nextSentAtInTimeZone)}
         | - ${nextRunStringFor(followingSentAt)}
         |
      """.stripMargin

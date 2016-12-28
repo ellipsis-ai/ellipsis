@@ -1,14 +1,26 @@
 package models.team
 
 import drivers.SlickPostgresDriver.api._
+import org.joda.time.DateTimeZone
 
 class TeamsTable(tag: Tag) extends Table[Team](tag, "teams") {
 
+  implicit val dateTimeZoneColumnType = MappedColumnType.base[DateTimeZone, String](
+    { tz => tz.getID }, { str =>
+      try {
+        DateTimeZone.forID(str)
+      } catch {
+        case e: IllegalArgumentException => null
+      }
+    }
+  )
+
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
+  def maybeTimeZone = column[Option[DateTimeZone]]("time_zone")
 
   def * =
-    (id, name) <> ((Team.apply _).tupled, Team.unapply _)
+    (id, name, maybeTimeZone) <> ((Team.apply _).tupled, Team.unapply _)
 }
 
 object TeamQueries {

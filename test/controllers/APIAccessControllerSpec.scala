@@ -37,7 +37,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
 
     "Log user out and redirect to signin if not logged into the right team" in new TestContext {
       running(app) {
-        val someOtherTeam = Team(IDs.next, "")
+        val someOtherTeam = Team(IDs.next, "", None)
         val oauth2AppForOtherTeam = OAuth2Application(IDs.next, "", oauth2Api, IDs.next, IDs.next, None, someOtherTeam.id)
         when(dataService.oauth2Applications.find(oauth2AppForOtherTeam.id)).thenReturn(Future.successful(Some(oauth2AppForOtherTeam)))
         when(dataService.teams.find(someOtherTeam.id, user)).thenReturn(Future.successful(None))
