@@ -10,7 +10,7 @@ import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -25,7 +25,7 @@ class EventHandler @Inject() (
                                configuration: Configuration
                                ) {
 
-  def startInvokeConversationFor(event: NewMessageEvent): Future[Seq[BotResult]] = {
+  def startInvokeConversationFor(event: MessageEvent): Future[Seq[BotResult]] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       responses <- BehaviorResponse.allFor(event, maybeTeam, None, lambdaService, dataService, cache, ws, configuration)
@@ -39,7 +39,7 @@ class EventHandler @Inject() (
     }
   }
 
-  def interruptOngoingConversationsFor(event: NewMessageEvent): Future[Unit] = {
+  def interruptOngoingConversationsFor(event: MessageEvent): Future[Unit] = {
     event.allOngoingConversations(dataService).flatMap { ongoing =>
       Future.sequence(ongoing.map { ea =>
         val cancelMessage =
@@ -64,7 +64,7 @@ class EventHandler @Inject() (
     Seq("…stop", "…cancel", "...stop", "...cancel").contains(text)
   }
 
-  def handleInConversation(conversation: Conversation, event: NewMessageEvent): Future[BotResult] = {
+  def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
     if (isCancelConversationMessage(event.fullMessageText)) {
       cancelConversationResult(conversation, s"OK, I'll stop talking about `${conversation.trigger.pattern}`")
     } else {
@@ -72,7 +72,7 @@ class EventHandler @Inject() (
     }
   }
 
-  def handle(event: NewMessageEvent, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
+  def handle(event: MessageEvent, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     maybeConversation.map { conversation =>
       handleInConversation(conversation, event).map(Seq(_))
     }.getOrElse {

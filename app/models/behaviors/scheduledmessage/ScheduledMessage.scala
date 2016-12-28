@@ -8,10 +8,9 @@ import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.events.EventHandler
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.slack.NewSlackMessageEvent
+import services.slack.SlackMessageEvent
 import services.DataService
 import slack.api.{ApiError, SlackApiClient}
-import slack.rtm.SlackRtmClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -143,7 +142,7 @@ case class ScheduledMessage(
                dataService: DataService
              ): Future[Unit] = {
     for {
-      event <- Future.successful(NewSlackMessageEvent(profile, channelName, slackUserId, text, "ts"))
+      event <- Future.successful(SlackMessageEvent(profile, channelName, slackUserId, text, "ts"))
       _ <- eventHandler.interruptOngoingConversationsFor(event)
       results <- eventHandler.handle(event, None)
       _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(DateTime.now))

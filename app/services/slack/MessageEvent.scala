@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
-trait NewMessageEvent {
+trait MessageEvent {
   val name: String
   val userIdForContext: String
   val teamId: String
@@ -21,7 +21,7 @@ trait NewMessageEvent {
   val includesBotMention: Boolean
   val maybeChannel: Option[String]
 
-  def relevantMessageText: String = NewMessageEvent.ellipsisRegex.replaceFirstIn(fullMessageText, "")
+  def relevantMessageText: String = MessageEvent.ellipsisRegex.replaceFirstIn(fullMessageText, "")
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
@@ -104,7 +104,7 @@ trait NewMessageEvent {
 
 }
 
-object NewMessageEvent {
+object MessageEvent {
 
   def ellipsisRegex: Regex = """^(\.\.\.|…)""".r
 }

@@ -7,7 +7,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import play.api.libs.json._
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import services.{AWSLambdaConstants, DataService}
 
 import scala.concurrent.duration._
@@ -43,7 +43,7 @@ sealed trait BehaviorParameterType {
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]]
 
-  def handleCollected(event: NewMessageEvent, context: BehaviorParameterContext): Future[Unit] = {
+  def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
     val potentialValue = event.relevantMessageText
     val input = context.parameter.input
     if (input.isSaved) {
@@ -358,7 +358,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     }
   }
 
-  override def handleCollected(event: NewMessageEvent, context: BehaviorParameterContext): Future[Unit] = {
+  override def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
         val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)

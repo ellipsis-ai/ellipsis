@@ -1,13 +1,13 @@
 package models.behaviors.builtins
 
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.Future
 
 case class LearnBehavior(
-                          event: NewMessageEvent,
+                          event: MessageEvent,
                           lambdaService: AWSLambdaService,
                           dataService: DataService
                         ) extends BuiltinBehavior {

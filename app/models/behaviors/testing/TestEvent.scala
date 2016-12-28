@@ -6,7 +6,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import play.api.libs.ws.WSClient
 import services.DataService
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,7 +16,7 @@ case class TestEvent(
                       team: Team,
                       fullMessageText: String,
                       includesBotMention: Boolean
-                    ) extends NewMessageEvent {
+                    ) extends MessageEvent {
 
   val teamId = team.id
 

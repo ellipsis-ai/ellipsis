@@ -1,7 +1,7 @@
 package models.behaviors.builtins
 
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,7 +11,7 @@ import scala.concurrent.Future
 case class SetEnvironmentVariableBehavior(
                                            name: String,
                                            value: String,
-                                           event: NewMessageEvent,
+                                           event: MessageEvent,
                                            lambdaService: AWSLambdaService,
                                            dataService: DataService
                                            ) extends BuiltinBehavior {

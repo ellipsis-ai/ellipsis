@@ -6,7 +6,7 @@ import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
 import services.DataService
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -27,7 +27,7 @@ case class MessageInfo(medium: String, channel: Option[String], userId: String, 
 
 object MessageInfo {
 
-  def buildFor(event: NewMessageEvent, ws: WSClient, dataService: DataService): Future[MessageInfo] = {
+  def buildFor(event: MessageEvent, ws: WSClient, dataService: DataService): Future[MessageInfo] = {
     event.detailsFor(ws, dataService).map { details =>
       MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details)
     }
@@ -59,7 +59,7 @@ case class UserInfo(
 
 object UserInfo {
 
-  def buildFor(maybeUser: Option[User], event: NewMessageEvent, ws: WSClient, dataService: DataService): Future[UserInfo] = {
+  def buildFor(maybeUser: Option[User], event: MessageEvent, ws: WSClient, dataService: DataService): Future[UserInfo] = {
     for {
       linkedOAuth2Tokens <- maybeUser.map { user =>
         dataService.linkedOAuth2Tokens.allForUser(user, ws)
@@ -80,7 +80,7 @@ object UserInfo {
     }
   }
 
-  def buildFor(event: NewMessageEvent, teamId: String, ws: WSClient, dataService: DataService): Future[UserInfo] = {
+  def buildFor(event: MessageEvent, teamId: String, ws: WSClient, dataService: DataService): Future[UserInfo] = {
     for {
       maybeLinkedAccount <- dataService.linkedAccounts.find(event.loginInfo, teamId)
       maybeUser <- Future.successful(maybeLinkedAccount.map(_.user))

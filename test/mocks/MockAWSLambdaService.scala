@@ -13,7 +13,7 @@ import models.environmentvariable.EnvironmentVariable
 import org.scalatest.mock.MockitoSugar
 import play.api.Configuration
 import play.api.libs.ws.WSClient
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import services.{AWSLambdaService, AWSLogsService, DataService}
 
 import scala.concurrent.Future
@@ -49,7 +49,7 @@ class MockAWSLambdaService @Inject() (
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],
                        environmentVariables: Seq[EnvironmentVariable],
-                       event: NewMessageEvent
+                       event: MessageEvent
                      ): Future[BotResult] = Future.successful(mock[BotResult])
 
   override def functionWithParams(params: Array[String], functionBody: String): String = ""

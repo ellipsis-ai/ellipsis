@@ -14,7 +14,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.Action
-import services.slack.NewSlackMessageEvent
+import services.slack.SlackMessageEvent
 import services.{DataService, SlackEventService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -92,7 +92,7 @@ class APIController @Inject() (
           maybeEvent <- Future.successful(
             for {
               botProfile <- maybeBotProfile
-            } yield NewSlackMessageEvent(
+            } yield SlackMessageEvent(
               botProfile,
               info.channel,
               maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),

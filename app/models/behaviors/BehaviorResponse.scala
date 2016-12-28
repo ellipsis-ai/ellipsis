@@ -12,7 +12,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsString, JsValue}
 import play.api.libs.ws.WSClient
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,7 +34,7 @@ case class ParameterWithValue(
 }
 
 case class BehaviorResponse(
-                             event: NewMessageEvent,
+                             event: MessageEvent,
                              behaviorVersion: BehaviorVersion,
                              parametersWithValues: Seq[ParameterWithValue],
                              activatedTrigger: MessageTrigger,
@@ -120,7 +120,7 @@ case class BehaviorResponse(
 object BehaviorResponse {
 
   def parametersWithValuesFor(
-                               event: NewMessageEvent,
+                               event: MessageEvent,
                                behaviorVersion: BehaviorVersion,
                                paramValues: Map[String, String],
                                maybeConversation: Option[Conversation],
@@ -150,7 +150,7 @@ object BehaviorResponse {
   }
 
   def buildFor(
-                event: NewMessageEvent,
+                event: MessageEvent,
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
                 activatedTrigger: MessageTrigger,
@@ -167,14 +167,14 @@ object BehaviorResponse {
   }
 
   def allFor(
-                 event: NewMessageEvent,
-                 maybeTeam: Option[Team],
-                 maybeLimitToBehavior: Option[Behavior],
-                 lambdaService: AWSLambdaService,
-                 dataService: DataService,
-                 cache: CacheApi,
-                 ws: WSClient,
-                 configuration: Configuration
+              event: MessageEvent,
+              maybeTeam: Option[Team],
+              maybeLimitToBehavior: Option[Behavior],
+              lambdaService: AWSLambdaService,
+              dataService: DataService,
+              cache: CacheApi,
+              ws: WSClient,
+              configuration: Configuration
                ): Future[Seq[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>

@@ -7,20 +7,20 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.savedanswer.SavedAnswer
 import play.api.Configuration
 import play.api.cache.CacheApi
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import services.{AWSLambdaConstants, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class ParamCollectionState(
-                                params: Seq[BehaviorParameter],
-                                collected: Seq[CollectedParameterValue],
-                                savedAnswers: Seq[SavedAnswer],
-                                event: NewMessageEvent,
-                                dataService: DataService,
-                                cache: CacheApi,
-                                configuration: Configuration
+                                 params: Seq[BehaviorParameter],
+                                 collected: Seq[CollectedParameterValue],
+                                 savedAnswers: Seq[SavedAnswer],
+                                 event: MessageEvent,
+                                 dataService: DataService,
+                                 cache: CacheApi,
+                                 configuration: Configuration
                                ) extends CollectionState {
 
   val name = InvokeBehaviorConversation.COLLECT_PARAM_VALUES_STATE
@@ -93,7 +93,7 @@ object ParamCollectionState {
 
   def from(
             conversation: Conversation,
-            event: NewMessageEvent,
+            event: MessageEvent,
             dataService: DataService,
             cache: CacheApi,
             configuration: Configuration
