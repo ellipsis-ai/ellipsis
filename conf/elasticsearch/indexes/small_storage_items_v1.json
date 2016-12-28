@@ -1,0 +1,15 @@
+{
+  "aliases" : {
+    "small_storage_items" : {}
+  },
+  "settings" : {
+    "number_of_shards" : 1
+  },
+  "mappings" : {
+    "item-type" : {
+      "properties" : {
+        "id" : { "type" : "string", "index" : "not_analyzed" }
+      }
+    }
+  }
+}

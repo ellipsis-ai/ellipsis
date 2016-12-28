@@ -16,3 +16,4 @@ class MockSlackService extends SlackService with MockitoSugar {
   def stopFor(profile: SlackBotProfile): Unit = Unit
 
 }
+

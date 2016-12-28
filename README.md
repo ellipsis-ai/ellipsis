@@ -193,13 +193,5 @@ $ ./actw console
 And type the following scala: 
 
 ```scala
-import com.sksamuel.elastic4s.ElasticClient
-import com.sksamuel.elastic4s.ElasticsearchClientUri
-import com.sksamuel.elastic4s.ElasticDsl._
-
-val client = ElasticClient.transport(ElasticsearchClientUri("localhost", 9300))
-client.execute { index into "bands" / "artists" fields "name"->"coldplay" }.await
-val resp = client.execute { search in "bands" / "artists" query "coldplay" }.await
-println(resp)
 
 ```

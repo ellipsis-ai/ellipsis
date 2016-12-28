@@ -31,6 +31,7 @@ import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageT
 import models.environmentvariable._
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
 import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
+import models.small_storage.items.{ItemService, ItemServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import play.api.Configuration
 import play.api.i18n.MessagesApi
@@ -75,8 +76,12 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[ScheduledMessageService].to(classOf[ScheduledMessageServiceImpl])
     bind[InvocationLogEntryService].to(classOf[InvocationLogEntryServiceImpl])
 
+    bind[ItemService].to(classOf[ItemServiceImpl])
+
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[AWSLogsService]).to(classOf[AWSLogsServiceImpl])
+    bind(classOf[ElasticsearchService]).to(classOf[ElasticsearchServiceImpl])
+
     bind(classOf[Models]).asEagerSingleton()
     bind(classOf[SlackService]).to(classOf[SlackServiceImpl]).asEagerSingleton()
   }
