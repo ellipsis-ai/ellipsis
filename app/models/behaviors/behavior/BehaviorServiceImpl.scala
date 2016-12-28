@@ -11,7 +11,7 @@ import models.team.Team
 import org.joda.time.DateTime
 import services.{AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
-import services.slack.NewSlackMessageEvent
+import services.slack.SlackMessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -144,7 +144,7 @@ class BehaviorServiceImpl @Inject() (
     } yield {}
   }
 
-  def authorNamesFor(behavior: Behavior, event: NewSlackMessageEvent): Future[Seq[String]] = {
+  def authorNamesFor(behavior: Behavior, event: SlackMessageEvent): Future[Seq[String]] = {
     for {
       versions <- dataService.behaviorVersions.allFor(behavior)
       authors <- Future.successful(versions.flatMap(_.maybeAuthor).distinct)

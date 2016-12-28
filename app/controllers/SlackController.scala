@@ -10,7 +10,7 @@ import play.api.data.Forms.{mapping, nonEmptyText, seq}
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, Result}
 import play.utils.UriEncoding
-import services.slack.NewSlackMessageEvent
+import services.slack.SlackMessageEvent
 import services.{DataService, SlackEventService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -118,7 +118,7 @@ class SlackController @Inject() (
         maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
         _ <- maybeProfile.map { profile =>
           val event = info.event
-          slackEventService.onEvent(NewSlackMessageEvent(profile, event.channel, event.userId, event.text, event.ts))
+          slackEventService.onEvent(SlackMessageEvent(profile, event.channel, event.userId, event.text, event.ts))
         }.getOrElse {
           Future.successful({})
         }

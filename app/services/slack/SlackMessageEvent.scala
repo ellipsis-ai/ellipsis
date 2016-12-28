@@ -14,13 +14,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
-case class NewSlackMessageEvent(
+case class SlackMessageEvent(
                                  profile: SlackBotProfile,
                                  channel: String,
                                  user: String,
                                  text: String,
                                  ts: String
-                               ) extends NewMessageEvent with SlackEvent {
+                               ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
 
@@ -28,8 +28,8 @@ case class NewSlackMessageEvent(
 
   lazy val includesBotMention: Boolean = {
     isDirectMessage(channel) ||
-      NewSlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(text).nonEmpty ||
-      NewMessageEvent.ellipsisRegex.findFirstMatchIn(text).nonEmpty
+      SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(text).nonEmpty ||
+      MessageEvent.ellipsisRegex.findFirstMatchIn(text).nonEmpty
   }
 
   val isResponseExpected: Boolean = includesBotMention
@@ -87,12 +87,12 @@ case class NewSlackMessageEvent(
   }
 
   private def messageSegmentsFor(formattedText: String): List[String] = {
-    if (formattedText.length < NewSlackMessageEvent.MAX_MESSAGE_LENGTH) {
+    if (formattedText.length < SlackMessageEvent.MAX_MESSAGE_LENGTH) {
       List(formattedText)
     } else {
-      val largestPossibleSegment = formattedText.substring(0, NewSlackMessageEvent.MAX_MESSAGE_LENGTH)
+      val largestPossibleSegment = formattedText.substring(0, SlackMessageEvent.MAX_MESSAGE_LENGTH)
       val lastNewlineIndex = Math.max(largestPossibleSegment.lastIndexOf('\n'), largestPossibleSegment.lastIndexOf('\r'))
-      val lastIndex = if (lastNewlineIndex < 0) { NewSlackMessageEvent.MAX_MESSAGE_LENGTH - 1 } else { lastNewlineIndex }
+      val lastIndex = if (lastNewlineIndex < 0) { SlackMessageEvent.MAX_MESSAGE_LENGTH - 1 } else { lastNewlineIndex }
       (formattedText.substring(0, lastIndex)) :: messageSegmentsFor(formattedText.substring(lastIndex + 1))
     }
   }
@@ -191,7 +191,7 @@ case class NewSlackMessageEvent(
 
 }
 
-object NewSlackMessageEvent {
+object SlackMessageEvent {
 
   def mentionRegexFor(botId: String): Regex = s"""<@$botId>""".r
   def toBotRegexFor(botId: String): Regex = s"""^<@$botId>:?\\s*""".r

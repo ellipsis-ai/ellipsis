@@ -20,7 +20,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import sun.misc.BASE64Decoder
 import utils.JavaFutureConverter
 
@@ -105,7 +105,7 @@ class AWSLambdaServiceImpl @Inject() (
                       functionName: String,
                       payloadData: Seq[(String, JsValue)],
                       team: Team,
-                      event: NewMessageEvent,
+                      event: MessageEvent,
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                       environmentVariables: Seq[EnvironmentVariable],
                       successFn: InvokeResult => BotResult
@@ -148,7 +148,7 @@ class AWSLambdaServiceImpl @Inject() (
               behaviorVersion: BehaviorVersion,
               parametersWithValues: Seq[ParameterWithValue],
               environmentVariables: Seq[EnvironmentVariable],
-              event: NewMessageEvent
+              event: MessageEvent
               ): Future[BotResult] = {
     for {
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)

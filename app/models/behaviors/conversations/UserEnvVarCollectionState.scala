@@ -6,14 +6,14 @@ import models.behaviors.conversations.conversation.Conversation
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class UserEnvVarCollectionState(
                                       missingEnvVarNames: Seq[String],
-                                      event: NewMessageEvent,
+                                      event: MessageEvent,
                                       dataService: DataService,
                                       cache: CacheApi,
                                       configuration: Configuration
@@ -58,7 +58,7 @@ object UserEnvVarCollectionState {
   def from(
             user: User,
             conversation: Conversation,
-            event: NewMessageEvent,
+            event: MessageEvent,
             dataService: DataService,
             cache: CacheApi,
             configuration: Configuration

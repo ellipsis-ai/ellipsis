@@ -20,7 +20,7 @@ class SlackEventService @Inject()(
   implicit val system = ActorSystem("slack")
   implicit val ec = system.dispatcher
 
-  def onEvent(event: NewSlackMessageEvent): Future[Unit] = {
+  def onEvent(event: SlackMessageEvent): Future[Unit] = {
     if (!event.isBotMessage) {
       val handleMessage = for {
         maybeConversation <- event.maybeOngoingConversation(dataService)

@@ -3,7 +3,7 @@ package models.behaviors.builtins
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import services.slack.{NewMessageEvent, NewSlackMessageEvent}
+import services.slack.{MessageEvent, SlackMessageEvent}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,7 +11,7 @@ import scala.concurrent.Future
 
 case class DisplayHelpBehavior(
                                 helpString: String,
-                                event: NewMessageEvent,
+                                event: MessageEvent,
                                 lambdaService: AWSLambdaService,
                                 dataService: DataService
                               ) extends BuiltinBehavior {
@@ -27,7 +27,7 @@ case class DisplayHelpBehavior(
     for {
       triggers <- dataService.messageTriggers.allFor(behaviorVersion)
       authorNames <- event match {
-        case e: NewSlackMessageEvent => dataService.behaviors.authorNamesFor(behaviorVersion.behavior, e)
+        case e: SlackMessageEvent => dataService.behaviors.authorNamesFor(behaviorVersion.behavior, e)
         case _ => Future.successful(Seq())
       }
     } yield {

@@ -9,7 +9,7 @@ import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 
 import scala.concurrent.Future
 
@@ -32,7 +32,7 @@ trait AWSLambdaService extends AWSService {
               behaviorVersion: BehaviorVersion,
               parametersWithValues: Seq[ParameterWithValue],
               environmentVariables: Seq[EnvironmentVariable],
-              event: NewMessageEvent
+              event: MessageEvent
               ): Future[BotResult]
 
   def deleteFunction(functionName: String): Future[Unit]

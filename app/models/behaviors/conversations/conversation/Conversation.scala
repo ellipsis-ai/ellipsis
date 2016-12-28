@@ -7,7 +7,7 @@ import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,9 +27,9 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: NewMessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
+  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
   def respond(
-               event: NewMessageEvent,
+               event: MessageEvent,
                lambdaService: AWSLambdaService,
                dataService: DataService,
                cache: CacheApi,
@@ -38,7 +38,7 @@ trait Conversation {
              ): Future[BotResult]
 
   def resultFor(
-                 event: NewMessageEvent,
+                 event: MessageEvent,
                  lambdaService: AWSLambdaService,
                  dataService: DataService,
                  cache: CacheApi,

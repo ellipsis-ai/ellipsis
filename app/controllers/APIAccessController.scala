@@ -17,7 +17,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc.Results
 import services.DataService
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -79,7 +79,7 @@ class APIAccessController @Inject() (
                   maybeLinkedToken.
                     map { _ =>
                       request.session.get("invocation-id").flatMap { invocationId =>
-                        cache.get[NewMessageEvent](invocationId).map { event =>
+                        cache.get[MessageEvent](invocationId).map { event =>
                           eventHandler.handle(event, None).map { results =>
                             results.map(_.sendIn(event, None, None))
                             Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.name}."))

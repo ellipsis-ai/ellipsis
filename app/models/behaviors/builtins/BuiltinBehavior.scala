@@ -1,13 +1,13 @@
 package models.behaviors.builtins
 
 import models.behaviors.BotResult
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.Future
 
 trait BuiltinBehavior {
-  val event: NewMessageEvent
+  val event: MessageEvent
   val lambdaService: AWSLambdaService
   val dataService: DataService
 
@@ -16,7 +16,7 @@ trait BuiltinBehavior {
 
 object BuiltinBehavior {
 
-  def maybeFrom(event: NewMessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
+  def maybeFrom(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
     val setEnvironmentVariableRegex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
     val unsetEnvironmentVariableRegex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
     val startLearnConversationRegex = s"""(?i)^learn\\s*$$""".r

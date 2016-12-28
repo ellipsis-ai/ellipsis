@@ -2,14 +2,14 @@ package models.behaviors.builtins
 
 import json.{BehaviorConfig, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors._
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RememberBehavior(event: NewMessageEvent, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
+case class RememberBehavior(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
   def result: Future[BotResult] = {
     for {

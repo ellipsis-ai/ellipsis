@@ -4,10 +4,10 @@ import models.behaviors.conversations.conversation.Conversation
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 
 case class BehaviorParameterContext(
-                                     event: NewMessageEvent,
+                                     event: MessageEvent,
                                      maybeConversation: Option[Conversation],
                                      parameter: BehaviorParameter,
                                      cache: CacheApi,

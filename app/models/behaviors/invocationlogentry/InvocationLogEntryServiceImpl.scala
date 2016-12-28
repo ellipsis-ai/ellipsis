@@ -12,7 +12,7 @@ import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behavior.Behavior
 import play.api.libs.json.{JsValue, Json}
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -170,7 +170,7 @@ class InvocationLogEntryServiceImpl @Inject() (
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  result: BotResult,
-                 event: NewMessageEvent,
+                 event: MessageEvent,
                  maybeUserIdForContext: Option[String],
                  runtimeInMilliseconds: Long
                ): Future[InvocationLogEntry] = {

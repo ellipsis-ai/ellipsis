@@ -5,7 +5,7 @@ import models.behaviors.conversations.conversation.Conversation
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 
 import scala.concurrent.Future
 
@@ -13,7 +13,7 @@ trait CollectionState {
 
   val name: String
 
-  val event: NewMessageEvent
+  val event: MessageEvent
   val dataService: DataService
   val cache: CacheApi
   val configuration: Configuration

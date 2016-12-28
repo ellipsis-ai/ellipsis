@@ -11,7 +11,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsDefined, JsValue}
 import services.AWSLambdaConstants._
-import services.slack.NewMessageEvent
+import services.slack.MessageEvent
 import services.AWSLambdaLogResult
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,7 +31,7 @@ sealed trait BotResult {
   def hasText: Boolean = fullText.trim.nonEmpty
 
   def sendIn(
-              event: NewMessageEvent,
+              event: MessageEvent,
               maybeShouldUnfurl: Option[Boolean],
               maybeConversation: Option[Conversation]
             ): Future[Unit] = {
@@ -79,7 +79,7 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
   def text: String = ""
 
   override def sendIn(
-                       event: NewMessageEvent,
+                       event: MessageEvent,
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation]
                      ): Future[Unit] = {
@@ -210,7 +210,7 @@ class AWSDownResult extends BotResult {
 
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
-                               event: NewMessageEvent,
+                               event: MessageEvent,
                                loginToken: LoginToken,
                                cache: CacheApi,
                                configuration: Configuration
@@ -238,7 +238,7 @@ case class OAuth2TokenMissing(
   }
 
   override def sendIn(
-                       event: NewMessageEvent,
+                       event: MessageEvent,
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation]
                      ): Future[Unit] = {
@@ -249,7 +249,7 @@ case class OAuth2TokenMissing(
 
 case class RequiredApiNotReady(
                                 required: RequiredOAuth2ApiConfig,
-                                event: NewMessageEvent,
+                                event: MessageEvent,
                                 cache: CacheApi,
                                 configuration: Configuration
                              ) extends BotResult {
