@@ -5,15 +5,7 @@ import org.joda.time.DateTimeZone
 
 class TeamsTable(tag: Tag) extends Table[Team](tag, "teams") {
 
-  implicit val dateTimeZoneColumnType = MappedColumnType.base[DateTimeZone, String](
-    { tz => tz.getID }, { str =>
-      try {
-        DateTimeZone.forID(str)
-      } catch {
-        case e: IllegalArgumentException => null
-      }
-    }
-  )
+  import models.MappedColumnTypeImplicits._
 
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
