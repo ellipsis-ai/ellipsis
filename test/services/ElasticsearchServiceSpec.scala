@@ -28,14 +28,17 @@ class ElasticsearchServiceSpec extends ServiceIntegrationSpec with MockitoSugar 
                   |  }
                   |}""".stripMargin
         val indexName = "small_storage_v55"
-        println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        val r: Future[Int] = elasticsearchService.createIndex(indexName, indexSchema).map { risp =>
-          println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-          println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-          risp.getStatusCode()
+        val a: Future[Int] = elasticsearchService.createIndex(indexName, indexSchema).map(_.getStatusCode)
+        val b: Future[org.scalatest.compatible.Assertion] = a.map { statusCode => assert( statusCode === 200) }
+        val c: Future[Future[Int]] = b.map {
+          import wabisabi._
+          val client = new wabisabi.Client("http://localhost:9200")
+          client.verifyIndex(indexName).map(_.getStatusCode)
         }
-        r.map { statusCode => assert( statusCode === 500) }
+        val e: Future[org.scalatest.compatible.Assertion] = c.map { statusCode => assert( statusCode === 200) }
+        e
       }
+
     }
   }
 }
