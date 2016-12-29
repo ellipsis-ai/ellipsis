@@ -15,6 +15,7 @@ sealed trait Recurrence {
   val frequency: Int
   val typeName: String
   val maybeTimeOfDay: Option[LocalTime] = None
+  val maybeTimeZone: Option[DateTimeZone] = None
   val maybeMinuteOfHour: Option[Int] = None
   val maybeDayOfWeek: Option[Int] = None
   val maybeDayOfMonth: Option[Int] = None
@@ -23,11 +24,11 @@ sealed trait Recurrence {
   def nextAfter(previous: DateTime): DateTime
   def initialAfter(start: DateTime): DateTime
   def withStandardAdjustments(when: DateTime): DateTime = when.withSecondOfMinute(0).withMillisOfSecond(0)
-  def displayStringFor(timeZone: DateTimeZone): String = ""
+  def displayString: String = ""
 }
 case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
 
-  override def displayStringFor(timeZone: DateTimeZone): String = {
+  override def displayString: String = {
     val frequencyString = if (frequency == 1) { "hour" } else { s"$frequency hours" }
     s"every $frequencyString at $minuteOfHour minutes"
   }
@@ -82,6 +83,8 @@ object Hourly {
 
 trait RecurrenceWithTimeOfDay extends Recurrence {
   val timeOfDay: LocalTime
+  val timeZone: DateTimeZone
+  override val maybeTimeZone = Some(timeZone)
   val hourOfDay = timeOfDay.getHourOfDay
   val minuteOfHour = timeOfDay.getMinuteOfHour
   val secondOfMinute = timeOfDay.getSecondOfMinute
@@ -94,13 +97,13 @@ trait RecurrenceWithTimeOfDay extends Recurrence {
   }
 
   def withTime(when: DateTime): DateTime = {
-    when.withTime(hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond)
+    when.withZone(timeZone).withTime(hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond)
   }
 }
 
-case class Daily(frequency: Int, timeOfDay: LocalTime) extends RecurrenceWithTimeOfDay {
+case class Daily(frequency: Int, timeOfDay: LocalTime, timeZone: DateTimeZone) extends RecurrenceWithTimeOfDay {
 
-  override def displayStringFor(timeZone: DateTimeZone): String = {
+  override def displayString: String = {
     val frequencyString = if (frequency == 1) { "day" } else { s"$frequency days" }
     s"every $frequencyString at ${timeOfDay.toString(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
@@ -145,14 +148,14 @@ object Daily {
     }
     maybeFrequency.map { frequency =>
       val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
-      Daily(frequency, maybeTime.getOrElse(Recurrence.currentAdjustedTime))
+      Daily(frequency, maybeTime.getOrElse(Recurrence.currentAdjustedTime), defaultTimeZone)
     }
   }
 }
 
-case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime) extends RecurrenceWithTimeOfDay {
+case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime, timeZone: DateTimeZone) extends RecurrenceWithTimeOfDay {
 
-  override def displayStringFor(timeZone: DateTimeZone): String = {
+  override def displayString: String = {
     val frequencyString = if (frequency == 1) { "week" } else { s"$frequency weeks" }
     s"every $frequencyString on ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.toString(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
@@ -203,14 +206,19 @@ object Weekly {
     maybeFrequency.map { frequency =>
       val maybeDayOfWeek = Recurrence.maybeDayOfWeekFrom(text)
       val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
-      Weekly(frequency, maybeDayOfWeek.getOrElse(DateTime.now.getDayOfWeek), maybeTime.getOrElse(Recurrence.currentAdjustedTime))
+      Weekly(
+        frequency,
+        maybeDayOfWeek.getOrElse(DateTime.now.getDayOfWeek),
+        maybeTime.getOrElse(Recurrence.currentAdjustedTime),
+        defaultTimeZone
+      )
     }
   }
 }
 
-case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: LocalTime) extends RecurrenceWithTimeOfDay {
+case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: LocalTime, timeZone: DateTimeZone) extends RecurrenceWithTimeOfDay {
 
-  override def displayStringFor(timeZone: DateTimeZone): String = {
+  override def displayString: String = {
     val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
     s"every $frequencyString on the ${Recurrence.ordinalStringFor(dayOfMonth)} at ${timeOfDay.toString(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
@@ -261,14 +269,19 @@ object MonthlyByDayOfMonth {
 
     Recurrence.maybeMonthlyFrequencyFrom(text).map { frequency =>
       val maybeDayOfMonth = maybeDayOfMonthFrom(text)
-      MonthlyByDayOfMonth(frequency, maybeDayOfMonth.getOrElse(DateTime.now.getDayOfMonth), Recurrence.ensureTimeFrom(text, defaultTimeZone))
+      MonthlyByDayOfMonth(
+        frequency,
+        maybeDayOfMonth.getOrElse(DateTime.now.getDayOfMonth),
+        Recurrence.ensureTimeFrom(text, defaultTimeZone),
+        defaultTimeZone
+      )
     }
   }
 }
 
-case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeOfDay: LocalTime) extends RecurrenceWithTimeOfDay {
+case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeOfDay: LocalTime, timeZone: DateTimeZone) extends RecurrenceWithTimeOfDay {
 
-  override def displayStringFor(timeZone: DateTimeZone): String = {
+  override def displayString: String = {
     val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
     s"every $frequencyString on the ${Recurrence.ordinalStringFor(nth)} ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.toString(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
@@ -324,12 +337,18 @@ object MonthlyByNthDayOfWeek {
       nthDayOfWeek <- maybeNthDayOfWeekFrom(text)
       frequency <- Recurrence.maybeMonthlyFrequencyFrom(text)
     } yield {
-      MonthlyByNthDayOfWeek(frequency, nthDayOfWeek.dayOfWeek, nthDayOfWeek.n, Recurrence.ensureTimeFrom(text, defaultTimeZone))
+      MonthlyByNthDayOfWeek(
+        frequency,
+        nthDayOfWeek.dayOfWeek,
+        nthDayOfWeek.n,
+        Recurrence.ensureTimeFrom(text, defaultTimeZone),
+        defaultTimeZone
+      )
     }
   }
 }
 
-case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime) extends RecurrenceWithTimeOfDay {
+case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime, timeZone: DateTimeZone) extends RecurrenceWithTimeOfDay {
 
   val month = monthDay.getMonthOfYear
   val dayOfMonth = monthDay.getDayOfMonth
@@ -385,7 +404,12 @@ object Yearly {
     }
 
     maybeYearlyFrequency.map { frequency =>
-      Yearly(frequency, Recurrence.ensureMonthDayFrom(text, defaultTimeZone), Recurrence.ensureTimeFrom(text, defaultTimeZone))
+      Yearly(
+        frequency,
+        Recurrence.ensureMonthDayFrom(text, defaultTimeZone),
+        Recurrence.ensureTimeFrom(text, defaultTimeZone),
+        defaultTimeZone
+      )
     }
   }
 }
@@ -542,6 +566,7 @@ object Recurrence {
                  recurrenceType: String,
                  frequency: Int,
                  maybeTimeOfDay: Option[LocalTime],
+                 timeZone: DateTimeZone,
                  maybeMinuteOfHour: Option[Int],
                  maybeDayOfWeek: Option[Int],
                  maybeDayOfMonth: Option[Int],
@@ -550,19 +575,20 @@ object Recurrence {
                  ): Recurrence = {
     recurrenceType match {
       case(Hourly.recurrenceType) => Hourly(frequency, maybeMinuteOfHour.get)
-      case(Daily.recurrenceType) => Daily(frequency, maybeTimeOfDay.get)
-      case(Weekly.recurrenceType) => Weekly(frequency, maybeDayOfWeek.get, maybeTimeOfDay.get)
-      case(MonthlyByDayOfMonth.recurrenceType) => MonthlyByDayOfMonth(frequency, maybeDayOfMonth.get, maybeTimeOfDay.get)
-      case(MonthlyByNthDayOfWeek.recurrenceType) => MonthlyByNthDayOfWeek(frequency, maybeDayOfWeek.get, maybeNthDayOfWeek.get, maybeTimeOfDay.get)
-      case(Yearly.recurrenceType) => Yearly(frequency, new MonthDay(maybeMonth.get, maybeDayOfMonth.get), maybeTimeOfDay.get)
+      case(Daily.recurrenceType) => Daily(frequency, maybeTimeOfDay.get, timeZone)
+      case(Weekly.recurrenceType) => Weekly(frequency, maybeDayOfWeek.get, maybeTimeOfDay.get, timeZone)
+      case(MonthlyByDayOfMonth.recurrenceType) => MonthlyByDayOfMonth(frequency, maybeDayOfMonth.get, maybeTimeOfDay.get, timeZone)
+      case(MonthlyByNthDayOfWeek.recurrenceType) => MonthlyByNthDayOfWeek(frequency, maybeDayOfWeek.get, maybeNthDayOfWeek.get, maybeTimeOfDay.get, timeZone)
+      case(Yearly.recurrenceType) => Yearly(frequency, new MonthDay(maybeMonth.get, maybeDayOfMonth.get), maybeTimeOfDay.get, timeZone)
     }
   }
 
-  def buildFor(raw: RawScheduledMessage): Recurrence = {
+  def buildFor(raw: RawScheduledMessage, defaultTimeZone: DateTimeZone): Recurrence = {
     buildFrom(
       raw.recurrenceType,
       raw.frequency,
       raw.maybeTimeOfDay,
+      raw.maybeTimeZone.getOrElse(defaultTimeZone),
       raw.maybeMinuteOfHour,
       raw.maybeDayOfWeek,
       raw.maybeDayOfMonth,

@@ -27,21 +27,17 @@ case class ScheduledMessage(
                              createdAt: DateTime
                            ) {
 
-  val timeZone = team.timeZone
-
-  val nextSentAtInTimeZone: DateTime = nextSentAt.withZone(timeZone)
-
-  def followingSentAt: DateTime = recurrence.nextAfter(nextSentAtInTimeZone)
+  def followingSentAt: DateTime = recurrence.nextAfter(nextSentAt)
 
   def successResponse: String = {
-    s"""OK, I will run `$text` ${recurrence.displayStringFor(timeZone).trim}.
+    s"""OK, I will run `$text` ${recurrence.displayString.trim}.
         |
        |$nextRunsString
      """.stripMargin
   }
 
   def scheduleInfoResultFor(result: BotResult) = SimpleTextResult(
-    s"""I've been asked to run `$text` ${recurrence.displayStringFor(timeZone).trim}.
+    s"""I've been asked to run `$text` ${recurrence.displayString.trim}.
         |
        |For more details on what is scheduled, try `@ellipsis: scheduled`.
         |
@@ -49,7 +45,7 @@ case class ScheduledMessage(
      """.stripMargin, result.forcePrivateResponse)
 
   def listResponse: String = {
-    s"""`$text` ${recurrence.displayStringFor(timeZone).trim}
+    s"""`$text` ${recurrence.displayString.trim}
         |
        |$nextRunsString
      """.stripMargin
@@ -57,9 +53,9 @@ case class ScheduledMessage(
 
   val nextRunDateFormatter = DateTimeFormat.forPattern("MMMM d, yyyy")
   def nextRunDateStringFor(when: DateTime): String = {
-    val clarifier = if (when.toLocalDate == DateTime.now.toLocalDate) {
+    val clarifier = if (when.toDate == DateTime.now.toDate) {
       " (today)"
-    } else if (when.toLocalDate == DateTime.now.plusDays(1).toLocalDate) {
+    } else if (when.toDate == DateTime.now.plusDays(1).toDate) {
       " (tomorrow)"
     } else {
       ""
@@ -69,11 +65,14 @@ case class ScheduledMessage(
   }
   def nextRunTimeStringFor(when: DateTime): String = when.toString(Recurrence.timeFormatterWithZone)
 
-  def nextRunStringFor(when: DateTime): String = s"${nextRunDateStringFor(when)} at ${nextRunTimeStringFor(when)}"
+  def nextRunStringFor(when: DateTime): String = {
+    val whenInDefaultTimeZone = when.withZone(team.timeZone)
+    s"${nextRunDateStringFor(whenInDefaultTimeZone)} at ${nextRunTimeStringFor(whenInDefaultTimeZone)}"
+  }
 
   def nextRunsString: String = {
     s"""The next two runs will be:
-        | - ${nextRunStringFor(nextSentAtInTimeZone)}
+        | - ${nextRunStringFor(nextSentAt)}
         | - ${nextRunStringFor(followingSentAt)}
         |
      """.stripMargin
@@ -188,6 +187,7 @@ case class ScheduledMessage(
       recurrence.typeName,
       recurrence.frequency,
       recurrence.maybeTimeOfDay,
+      recurrence.maybeTimeZone,
       recurrence.maybeMinuteOfHour,
       recurrence.maybeDayOfWeek,
       recurrence.maybeDayOfMonth,

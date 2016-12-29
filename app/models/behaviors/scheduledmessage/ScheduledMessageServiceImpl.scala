@@ -6,7 +6,7 @@ import com.google.inject.Provider
 import models.IDs
 import models.accounts.user.{User, UserQueries}
 import models.team.{Team, TeamQueries}
-import org.joda.time.{DateTime, LocalTime}
+import org.joda.time.{DateTime, DateTimeZone, LocalTime}
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
@@ -23,6 +23,7 @@ case class RawScheduledMessage(
                                 recurrenceType: String,
                                 frequency: Int,
                                 maybeTimeOfDay: Option[LocalTime],
+                                maybeTimeZone: Option[DateTimeZone],
                                 maybeMinuteOfHour: Option[Int],
                                 maybeDayOfWeek: Option[Int],
                                 maybeDayOfMonth: Option[Int],
@@ -34,6 +35,8 @@ case class RawScheduledMessage(
 
 class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "scheduled_messages") {
 
+  import models.MappedColumnTypeImplicits._
+
   def id = column[String]("id")
   def text = column[String]("text")
   def maybeUserId = column[Option[String]]("user_id")
@@ -43,6 +46,7 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
   def recurrenceType = column[String]("recurrence_type")
   def frequency = column[Int]("frequency")
   def maybeTimeOfDay = column[Option[LocalTime]]("time_of_day")
+  def maybeTimeZone = column[Option[DateTimeZone]]("time_zone")
   def maybeMinuteOfHour = column[Option[Int]]("minute_of_hour")
   def maybeDayOfWeek = column[Option[Int]]("day_of_week")
   def maybeDayOfMonth = column[Option[Int]]("day_of_month")
@@ -61,6 +65,7 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
     recurrenceType,
     frequency,
     maybeTimeOfDay,
+    maybeTimeZone,
     maybeMinuteOfHour,
     maybeDayOfWeek,
     maybeDayOfMonth,
@@ -94,7 +99,7 @@ class ScheduledMessageServiceImpl @Inject() (
       team,
       raw.maybeChannelName,
       raw.isForIndividualMembers,
-      Recurrence.buildFor(raw),
+      Recurrence.buildFor(raw, team.timeZone),
       raw.nextSentAt,
       raw.createdAt
     )
