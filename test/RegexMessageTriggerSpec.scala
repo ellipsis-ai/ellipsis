@@ -9,7 +9,7 @@ import org.joda.time.DateTime
 class RegexMessageTriggerSpec extends MessageTriggerSpec {
 
   def triggerFor(pattern: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = true): RegexMessageTrigger = {
-    val team = Team(IDs.next, "Team!")
+    val team = Team(IDs.next, "Team!", None)
     val versionId = IDs.next
     val group = BehaviorGroup(IDs.next, "", None, None, team, DateTime.now)
     val behavior = Behavior(IDs.next, team, Some(group), Some(versionId), None, None, DateTime.now)

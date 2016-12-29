@@ -27,6 +27,7 @@ object BuiltinBehavior {
     val scheduleRegex = s"""(?i)^schedule\\s+`(.*?)`(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
     val unscheduleRegex = s"""(?i)^unschedule\\s+`(.*?)`\\s*$$""".r
     val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
+    val setTimeZoneRegex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
 
     if (event.includesBotMention) {
       event.relevantMessageText match {
@@ -40,6 +41,7 @@ object BuiltinBehavior {
         case scheduleRegex(text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, lambdaService, dataService))
         case unscheduleRegex(text) => Some(UnscheduleBehavior(text, event, lambdaService, dataService))
         case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(event, lambdaService, dataService))
+        case setTimeZoneRegex(tzString) => Some(SetDefaultTimeZoneBehavior(tzString, event, lambdaService, dataService))
         case _ => None
       }
     } else {

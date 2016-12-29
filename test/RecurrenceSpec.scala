@@ -1,10 +1,12 @@
 import models.behaviors.scheduledmessage._
 import org.scalatestplus.play.PlaySpec
-import org.joda.time.{DateTime, LocalTime, MonthDay}
+import org.joda.time.{DateTime, DateTimeZone, LocalTime, MonthDay}
 
 class RecurrenceSpec extends PlaySpec {
 
   val fivePM = LocalTime.parse("17:00:00")
+
+  val timeZone = DateTimeZone.forID("America/Toronto")
 
   "Hourly" should {
 
@@ -39,15 +41,15 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "be created with implied frequency of 1" in {
-      Recurrence.maybeFromText("every hour") mustBe Some(Hourly(1, DateTime.now.getMinuteOfHour))
+      Recurrence.maybeFromText("every hour", timeZone) mustBe Some(Hourly(1, DateTime.now.getMinuteOfHour))
     }
 
     "be created with frequency" in {
-      Recurrence.maybeFromText("every 4 hours") mustBe Some(Hourly(4, DateTime.now.getMinuteOfHour))
+      Recurrence.maybeFromText("every 4 hours", timeZone) mustBe Some(Hourly(4, DateTime.now.getMinuteOfHour))
     }
 
     "be created with frequency and minutes" in {
-      Recurrence.maybeFromText("every 4 hours at 15 minutes") mustBe Some(Hourly(4, 15))
+      Recurrence.maybeFromText("every 4 hours at 15 minutes", timeZone) mustBe Some(Hourly(4, 15))
     }
 
   }
@@ -85,15 +87,24 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "be created with implied frequency of 1" in {
-      Recurrence.maybeFromText("every day") mustBe Some(Daily(1, Recurrence.currentAdjustedTime))
+      Recurrence.maybeFromText("every day", timeZone) mustBe Some(Daily(1, Recurrence.currentAdjustedTime))
     }
 
     "be created with frequency" in {
-      Recurrence.maybeFromText("every 4 days") mustBe Some(Daily(4, Recurrence.currentAdjustedTime))
+      Recurrence.maybeFromText("every 4 days", timeZone) mustBe Some(Daily(4, Recurrence.currentAdjustedTime))
     }
 
     "be created with frequency and time" in {
-      Recurrence.maybeFromText("every 4 days at 3pm") mustBe Some(Daily(4, LocalTime.parse("15:00")))
+      Recurrence.maybeFromText("every 4 days at 3pm", timeZone) mustBe Some(Daily(4, LocalTime.parse("15:00")))
+    }
+
+    "use the timezone if specified" in {
+      Recurrence.maybeFromText("every 4 days at 3pm pacific", timeZone) mustBe Some(Daily(4, LocalTime.parse("18:00")))
+    }
+
+    "use the default timezone if not specified" in {
+      val laTz = DateTimeZone.forID("America/Los_Angeles")
+      Recurrence.maybeFromText("every 4 days at 3pm", laTz) mustBe Some(Daily(4, LocalTime.parse("18:00")))
     }
 
   }
@@ -131,15 +142,15 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "be created with implied frequency of 1" in {
-      Recurrence.maybeFromText("every week") mustBe Some(Weekly(1, DateTime.now.getDayOfWeek, Recurrence.currentAdjustedTime))
+      Recurrence.maybeFromText("every week", timeZone) mustBe Some(Weekly(1, DateTime.now.getDayOfWeek, Recurrence.currentAdjustedTime))
     }
 
     "be created with frequency" in {
-      Recurrence.maybeFromText("every 2 weeks") mustBe Some(Weekly(2, DateTime.now.getDayOfWeek, Recurrence.currentAdjustedTime))
+      Recurrence.maybeFromText("every 2 weeks", timeZone) mustBe Some(Weekly(2, DateTime.now.getDayOfWeek, Recurrence.currentAdjustedTime))
     }
 
     "be created with frequency, day of week and time" in {
-      Recurrence.maybeFromText("every 2 weeks on Monday at 3pm") mustBe Some(Weekly(2, 1, LocalTime.parse("15:00")))
+      Recurrence.maybeFromText("every 2 weeks on Monday at 3pm", timeZone) mustBe Some(Weekly(2, 1, LocalTime.parse("15:00")))
     }
 
   }
@@ -182,11 +193,11 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "be created with first day of every month" in {
-      Recurrence.maybeFromText("the first day of every month at 9am") mustBe Some(MonthlyByDayOfMonth(1, 1, LocalTime.parse("09:00")))
+      Recurrence.maybeFromText("the first day of every month at 9am", timeZone) mustBe Some(MonthlyByDayOfMonth(1, 1, LocalTime.parse("09:00")))
     }
 
     "be created with 15th day of every 3rd month" in {
-      Recurrence.maybeFromText("the 15th of every 3rd month at 5pm") mustBe Some(MonthlyByDayOfMonth(3, 15, fivePM))
+      Recurrence.maybeFromText("the 15th of every 3rd month at 5pm", timeZone) mustBe Some(MonthlyByDayOfMonth(3, 15, fivePM))
     }
 
   }
@@ -239,11 +250,11 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "be created with first monday of every month" in {
-      Recurrence.maybeFromText("the first monday of every month at 5pm") mustBe Some(MonthlyByNthDayOfWeek(1, 1, 1, fivePM))
+      Recurrence.maybeFromText("the first monday of every month at 5pm", timeZone) mustBe Some(MonthlyByNthDayOfWeek(1, 1, 1, fivePM))
     }
 
     "be created with 2nd wednesday of every 3rd month" in {
-      Recurrence.maybeFromText("the 2nd wednesday of every 3rd month at 5pm") mustBe Some(MonthlyByNthDayOfWeek(3, 3, 2, fivePM))
+      Recurrence.maybeFromText("the 2nd wednesday of every 3rd month at 5pm", timeZone) mustBe Some(MonthlyByNthDayOfWeek(3, 3, 2, fivePM))
     }
 
   }
@@ -286,12 +297,12 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "be created for the 14th of January every year" in {
-      Recurrence.maybeFromText("every year on January 14 at 5pm") mustBe Some(Yearly(1, new MonthDay(1, 14), fivePM))
+      Recurrence.maybeFromText("every year on January 14 at 5pm", timeZone) mustBe Some(Yearly(1, new MonthDay(1, 14), fivePM))
     }
 
     "be created for every second January 14th with no time specified" in {
       val time = Recurrence.currentAdjustedTime
-      Recurrence.maybeFromText("every 2nd year on January 14") mustBe Some(Yearly(2, new MonthDay(1, 14), time))
+      Recurrence.maybeFromText("every 2nd year on January 14", timeZone) mustBe Some(Yearly(2, new MonthDay(1, 14), time))
     }
 
   }

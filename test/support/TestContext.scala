@@ -23,7 +23,7 @@ trait TestContext {
       disable[ActorModule]
   }
   lazy val teamId: String = IDs.next
-  lazy val team: Team = Team(teamId, "")
+  lazy val team: Team = Team(teamId, "", None)
   lazy val user: User = newUserFor(teamId)
   lazy implicit val app: Application = appBuilder.build()
   lazy val dataService = app.injector.instanceOf(classOf[DataService])
