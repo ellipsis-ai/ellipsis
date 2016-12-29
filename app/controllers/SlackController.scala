@@ -118,7 +118,7 @@ class SlackController @Inject() (
         maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
         _ <- maybeProfile.map { profile =>
           val event = info.event
-          slackEventService.onEvent(SlackMessageEvent(profile, event.channel, event.userId, event.text, event.ts))
+          slackEventService.onEvent(SlackMessageEvent(profile, event.channel, event.userId, event.text.trim, event.ts))
         }.getOrElse {
           Future.successful({})
         }
