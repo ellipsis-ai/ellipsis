@@ -8,6 +8,7 @@ import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.events.EventHandler
 import models.behaviors.{BotResult, SimpleTextResult}
+import play.api.Configuration
 import services.slack.SlackMessageEvent
 import services.DataService
 import slack.api.{ApiError, SlackApiClient}
@@ -36,13 +37,15 @@ case class ScheduledMessage(
      """.stripMargin
   }
 
-  def scheduleInfoResultFor(result: BotResult) = SimpleTextResult(
-    s"""I've been asked to run `$text` ${recurrence.displayString.trim}.
-        |
-       |For more details on what is scheduled, try `@ellipsis: scheduled`.
-        |
-       |Here goes:
+  def scheduleInfoResultFor(result: BotResult, configuration: Configuration) = {
+    val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.HelpController.scheduledMessages()
+      s"$baseUrl$path"
+    }.get
+    SimpleTextResult(
+      s"""[Scheduled:]($helpLink)
      """.stripMargin, result.forcePrivateResponse)
+  }
 
   def listResponse: String = {
     s"""`$text` ${recurrence.displayString.trim}
@@ -117,7 +120,8 @@ case class ScheduledMessage(
                                 eventHandler: EventHandler,
                                 client: SlackApiClient,
                                 profile: SlackBotProfile,
-                                dataService: DataService
+                                dataService: DataService,
+                                configuration: Configuration
                               ): Future[Unit] = {
     for {
       members <- getMembersFor(channelName, client)
@@ -130,7 +134,7 @@ case class ScheduledMessage(
         }
       }).map(_.flatten)
       _ <- Future.sequence(withDMChannels.map { case(slackUserId, dmChannel) =>
-        sendFor(dmChannel, slackUserId, eventHandler, client, profile, dataService)
+        sendFor(dmChannel, slackUserId, eventHandler, client, profile, dataService, configuration)
       }).map(_ => {})
     } yield {}
   }
@@ -142,7 +146,8 @@ case class ScheduledMessage(
                eventHandler: EventHandler,
                client: SlackApiClient,
                profile: SlackBotProfile,
-               dataService: DataService
+               dataService: DataService,
+               configuration: Configuration
              ): Future[Unit] = {
     for {
       event <- Future.successful(SlackMessageEvent(profile, channelName, slackUserId, text, "ts"))
@@ -152,21 +157,27 @@ case class ScheduledMessage(
     } yield {
       results.foreach { result =>
         if (result.hasText) {
-          scheduleInfoResultFor(result).sendIn(event, None, None)
+          scheduleInfoResultFor(result, configuration).sendIn(event, None, None)
         }
         result.sendIn(event, None, None)
       }
     }
   }
 
-  def send(eventHandler: EventHandler, client: SlackApiClient, profile: SlackBotProfile, dataService: DataService): Future[Unit] = {
+  def send(
+            eventHandler: EventHandler,
+            client: SlackApiClient,
+            profile: SlackBotProfile,
+            dataService: DataService,
+            configuration: Configuration
+          ): Future[Unit] = {
     maybeChannelName.map { channelName =>
       if (isForIndividualMembers) {
-        sendForIndividualMembers(channelName, eventHandler, client, profile, dataService)
+        sendForIndividualMembers(channelName, eventHandler, client, profile, dataService, configuration)
       } else {
         maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
           val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
-          sendFor(channelName, slackUserId, eventHandler, client, profile, dataService)
+          sendFor(channelName, slackUserId, eventHandler, client, profile, dataService, configuration)
         }
       }
     }.getOrElse(Future.successful(Unit))
