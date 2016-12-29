@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.Actor
 import models.behaviors.events.EventHandler
+import play.api.Configuration
 import services.DataService
 import slack.api.SlackApiClient
 
@@ -15,7 +16,11 @@ object ScheduledMessageActor {
   final val name = "scheduled-messages"
 }
 
-class ScheduledMessageActor @Inject() (val dataService: DataService, val eventHandler: EventHandler) extends Actor {
+class ScheduledMessageActor @Inject() (
+                                        val dataService: DataService,
+                                        val eventHandler: EventHandler,
+                                        val configuration: Configuration
+                                      ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
   val tick = context.system.scheduler.schedule(1 minute, 1 minute, self, "tick")
@@ -30,7 +35,7 @@ class ScheduledMessageActor @Inject() (val dataService: DataService, val eventHa
         Future.sequence(messages.map { message =>
           message.botProfile(dataService).flatMap { maybeProfile =>
             maybeProfile.map { profile =>
-              message.send(eventHandler, new SlackApiClient(profile.token), profile, dataService)
+              message.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration)
             }.getOrElse(Future.successful(Unit))
           }
         })

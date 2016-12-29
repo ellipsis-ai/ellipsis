@@ -81,6 +81,8 @@ POST        /admin/redeploy/:versionId                @controllers.AdminControll
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
 GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @controllers.VisibilityAPIController.forTeamForDate(token: String, teamName: String, year: String, month: String, day: String)
 
+GET         /help/scheduling                          @controllers.HelpController.scheduledMessages
+
 GET         /health_check                             @controllers.HealthController.check
 
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
