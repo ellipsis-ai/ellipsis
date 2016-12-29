@@ -442,7 +442,8 @@ object Recurrence {
     val timeRegex = """(?i).*at\s+(.*)""".r
     text match {
       case timeRegex(time) => maybeDateFrom(time, defaultTimeZone).map { date =>
-        new LocalTime(date.getTime)
+        val dateTime = new DateTime(date).withZone(defaultTimeZone)
+        dateTime.toLocalTime
       }
       case _ => None
     }
