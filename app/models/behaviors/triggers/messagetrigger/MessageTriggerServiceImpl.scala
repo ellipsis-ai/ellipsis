@@ -9,6 +9,7 @@ import models.behaviors.triggers.{RegexMessageTrigger, TemplateMessageTrigger}
 import models.team.Team
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorgroup.BehaviorGroup
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -68,6 +69,18 @@ class MessageTriggerServiceImpl @Inject() (
       result.
       map(_.map(tuple2Trigger))
     dataService.run(action)
+  }
+
+  def allActiveFor(behaviorGroup: BehaviorGroup): Future[Seq[MessageTrigger]] = {
+    for {
+      behaviors <- dataService.behaviors.allForGroup(behaviorGroup)
+      versions <- Future.sequence(behaviors.map { ea =>
+        dataService.behaviors.maybeCurrentVersionFor(ea)
+      }).map(_.flatten)
+      triggers <- Future.sequence(versions.map { ea =>
+        dataService.messageTriggers.allFor(ea)
+      }).map(_.flatten)
+    } yield triggers
   }
 
   val caseInsensitiveRegex: Regex = """\(\?i\)""".r

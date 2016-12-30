@@ -63,17 +63,21 @@ class InvocationLogController @Inject() (
   }
 
   def getLogs(
-               behaviorId: String,
+               behaviorIdOrTrigger: String,
                token: String,
                maybeFrom: Option[String],
                maybeTo: Option[String]
              ) = Action.async { implicit request =>
     for {
-      maybeTeam <- dataService.teams.findForInvocationToken(token)
-      maybeBehaviorWithoutAccessCheck <- dataService.behaviors.findWithoutAccessCheck(behaviorId)
-      maybeBehavior <- Future.successful(maybeBehaviorWithoutAccessCheck.filter { behavior =>
-        maybeTeam.contains(behavior.team)
-      })
+      maybeInvocationToken <- dataService.invocationTokens.findNotExpired(token)
+      maybeOriginatingBehavior <- maybeInvocationToken.map { invocationToken =>
+        dataService.behaviors.findWithoutAccessCheck(invocationToken.behaviorId)
+      }.getOrElse(Future.successful(None))
+      maybeBehavior <- maybeOriginatingBehavior.flatMap { behavior =>
+        behavior.maybeGroup.map { group =>
+          dataService.behaviors.findByIdOrTrigger(behaviorIdOrTrigger, group)
+        }
+      }.getOrElse(Future.successful(None))
       maybeLogEntries <- maybeBehavior.map { behavior =>
         val from = maybeTimestampFor(maybeFrom).getOrElse(EARLIEST)
         val to = maybeTimestampFor(maybeTo).getOrElse(LATEST)
@@ -90,7 +94,13 @@ class InvocationLogController @Inject() (
       maybeLogEntryData.map { logEntryData =>
         Ok(Json.toJson(logEntryData))
       }.getOrElse {
-        NotFound("")
+        NotFound(
+          s"""Couldn't find action for `${behaviorIdOrTrigger}`
+             |
+             |Possible reasons:
+             |- The token passed is invalid or expired
+             |- The action is neither a valid action ID, nor does it match an action in the same skill you are calling from
+           """.stripMargin)
       }
     }
   }

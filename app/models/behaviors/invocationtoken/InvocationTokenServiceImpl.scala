@@ -36,8 +36,14 @@ class InvocationTokenServiceImpl @Inject() (
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
-  def find(id: String): Future[Option[InvocationToken]] = {
+  private def find(id: String): Future[Option[InvocationToken]] = {
     dataService.run(findQueryFor(id).result.map(_.headOption))
+  }
+
+  def findNotExpired(id: String): Future[Option[InvocationToken]] = {
+    find(id).map { maybeToken =>
+      maybeToken.filterNot(_.isExpired)
+    }
   }
 
   def createFor(user: User, behavior: Behavior): Future[InvocationToken] = {

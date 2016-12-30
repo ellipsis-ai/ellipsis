@@ -13,6 +13,8 @@ trait BehaviorService {
 
   def findWithoutAccessCheck(id: String): Future[Option[Behavior]]
 
+  def findByIdOrTrigger(idOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]]
+
   def find(id: String, user: User): Future[Option[Behavior]]
 
   def findWithImportedId(id: String, team: Team): Future[Option[Behavior]]
