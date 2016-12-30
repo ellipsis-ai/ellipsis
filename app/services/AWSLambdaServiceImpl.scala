@@ -103,6 +103,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   def invokeFunction(
                       functionName: String,
+                      token: InvocationToken,
                       payloadData: Seq[(String, JsValue)],
                       team: Team,
                       event: MessageEvent,
@@ -111,8 +112,6 @@ class AWSLambdaServiceImpl @Inject() (
                       successFn: InvokeResult => BotResult
                     ): Future[BotResult] = {
     for {
-      user <- event.ensureUser(dataService)
-      token <- dataService.invocationTokens.createFor(user)
       userInfo <- event.userInfo(ws, dataService)
       result <- {
         val oauth2ApplicationsNeedingRefresh =
@@ -155,19 +154,24 @@ class AWSLambdaServiceImpl @Inject() (
       result <- if (behaviorVersion.functionBody.isEmpty) {
         Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
       } else {
-        invokeFunction(
-          behaviorVersion.functionName,
-          parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
-          behaviorVersion.team,
-          event,
-          requiredOAuth2ApiConfigs,
-          environmentVariables,
-          result => {
-            val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
-            val logResult = AWSLambdaLogResult.fromText(logString)
-            behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, configuration)
-          }
-        )
+        for {
+          user <- event.ensureUser(dataService)
+          token <- dataService.invocationTokens.createFor(user, behaviorVersion.behavior)
+          invocationResult <- invokeFunction(
+            behaviorVersion.functionName,
+            token,
+            parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
+            behaviorVersion.team,
+            event,
+            requiredOAuth2ApiConfigs,
+            environmentVariables,
+            result => {
+              val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
+              val logResult = AWSLambdaLogResult.fromText(logString)
+              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, configuration)
+            }
+          )
+        } yield invocationResult
       }
     } yield result
   }
