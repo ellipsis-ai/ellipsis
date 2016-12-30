@@ -56,6 +56,26 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def findByTrigger(trigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
+    for {
+      triggers <- dataService.messageTriggers.allActiveFor(group)
+    } yield {
+      val activated = triggers.filter(_.matches(trigger, includesBotMention = true))
+      activated.map(_.behaviorVersion.behavior).headOption
+    }
+  }
+
+  // If passed an ID, it will find the behavior unconditionally
+  // If passed a trigger, it will only look in the behavior group
+  def findByIdOrTrigger(idOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
+    for {
+      maybeById <- findWithoutAccessCheck(idOrTrigger)
+      maybeByIdOrTrigger <- maybeById.map(b => Future.successful(Some(b))).getOrElse {
+        findByTrigger(idOrTrigger, group)
+      }
+    } yield maybeByIdOrTrigger
+  }
+
   def find(id: String, user: User): Future[Option[Behavior]] = {
     for {
       maybeBehavior <- findWithoutAccessCheck(id)

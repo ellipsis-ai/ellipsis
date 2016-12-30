@@ -116,13 +116,9 @@ class UserServiceImpl @Inject() (
 
   def findForInvocationToken(tokenId: String): Future[Option[User]] = {
     for {
-      maybeToken <- dataService.invocationTokens.find(tokenId)
+      maybeToken <- dataService.invocationTokens.findNotExpired(tokenId)
       maybeUser <- maybeToken.map { token =>
-        if (token.isExpired) {
-          Future.successful(None)
-        } else {
-          find(token.userId)
-        }
+        find(token.userId)
       }.getOrElse {
         if (configuration.getString("application.version").contains("Development")) {
           // in dev, if not found, we assume the tokenId is a user ID

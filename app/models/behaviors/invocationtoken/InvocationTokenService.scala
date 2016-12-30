@@ -7,7 +7,7 @@ import scala.concurrent.Future
 
 trait InvocationTokenService {
 
-  def find(id: String): Future[Option[InvocationToken]]
+  def findNotExpired(id: String): Future[Option[InvocationToken]]
 
   def createFor(user: User, behavior: Behavior): Future[InvocationToken]
 

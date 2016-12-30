@@ -1,5 +1,6 @@
 package models.behaviors.triggers.messagetrigger
 
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 
@@ -14,6 +15,8 @@ trait MessageTriggerService {
   def allWithExactPattern(pattern: String, teamId: String): Future[Seq[MessageTrigger]]
 
   def allFor(behaviorVersion: BehaviorVersion): Future[Seq[MessageTrigger]]
+
+  def allActiveFor(behaviorGroup: BehaviorGroup): Future[Seq[MessageTrigger]]
 
   def createFor(
                  behaviorVersion: BehaviorVersion,
