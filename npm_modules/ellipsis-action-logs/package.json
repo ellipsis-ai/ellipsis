@@ -1,0 +1,14 @@
+{
+  "name": "ellipsis-action-logs",
+  "version": "0.0.2",
+  "description": "Interface to get action logs from Ellipsis",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ellipsis Co. <a@ellipsis.ai> (http://ellipsis.ai)",
+  "license": "ISC",
+  "dependencies": {
+    "request": "latest"
+  }
+}
