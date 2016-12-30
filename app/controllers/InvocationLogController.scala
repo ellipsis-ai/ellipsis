@@ -94,7 +94,13 @@ class InvocationLogController @Inject() (
       maybeLogEntryData.map { logEntryData =>
         Ok(Json.toJson(logEntryData))
       }.getOrElse {
-        NotFound(s"Couldn't find action for `${behaviorIdOrTrigger}`")
+        NotFound(
+          s"""Couldn't find action for `${behaviorIdOrTrigger}`
+             |
+             |Possible reasons:
+             |- The token passed is invalid or expired
+             |- The action is neither a valid action ID, nor does it match an action in the same skill you are calling from
+           """.stripMargin)
       }
     }
   }
