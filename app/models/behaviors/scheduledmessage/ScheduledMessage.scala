@@ -155,11 +155,27 @@ case class ScheduledMessage(
       results <- eventHandler.handle(event, None)
       _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(DateTime.now))
     } yield {
-      results.foreach { result =>
-        if (result.hasText) {
-          scheduleInfoResultFor(result, configuration).sendIn(event, None, None)
-        }
-        result.sendIn(event, None, None)
+      sendResults(results.toList, event, configuration)
+    }
+  }
+
+  def sendResult(result: BotResult, event: SlackMessageEvent, configuration: Configuration): Future[Unit] = {
+    for {
+      _ <- if (result.hasText) {
+        scheduleInfoResultFor(result, configuration).sendIn(event, None, None)
+      } else {
+        Future.successful({})
+      }
+      _ <- result.sendIn(event, None, None)
+    } yield {}
+  }
+
+  def sendResults(results: List[BotResult], event: SlackMessageEvent, configuration: Configuration): Future[Unit] = {
+    if (results.isEmpty) {
+      Future.successful({})
+    } else {
+      sendResult(results.head, event, configuration).flatMap { _ =>
+        sendResults(results.tail, event, configuration)
       }
     }
   }
