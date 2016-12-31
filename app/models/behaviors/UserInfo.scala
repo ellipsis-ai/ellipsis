@@ -93,10 +93,11 @@ object UserInfo {
 case class TeamInfo(team: Team, links: Seq[LinkedInfo]) {
 
   def toJson: JsObject = {
-    val parts: Seq[(String, JsValue)] = Seq(
+    val linkParts: Seq[(String, JsValue)] = Seq(
       "links" -> JsArray(links.map(_.toJson))
     )
-    JsObject(parts)
+    val timeZonePart = Seq("timeZone" -> JsString(team.timeZone.toString))
+    JsObject(linkParts ++ timeZonePart)
   }
 
 }
