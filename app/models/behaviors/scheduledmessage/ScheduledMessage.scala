@@ -153,7 +153,6 @@ case class ScheduledMessage(
       event <- Future.successful(SlackMessageEvent(profile, channelName, slackUserId, text, "ts"))
       _ <- eventHandler.interruptOngoingConversationsFor(event)
       results <- eventHandler.handle(event, None)
-      _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(DateTime.now))
     } yield {
       sendResults(results.toList, event, configuration)
     }

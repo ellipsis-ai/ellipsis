@@ -11,7 +11,9 @@ trait ScheduledMessageService {
 
   def allForTeam(team: Team): Future[Seq[ScheduledMessage]]
 
-  def save(trigger: ScheduledMessage): Future[ScheduledMessage]
+  def save(message: ScheduledMessage): Future[ScheduledMessage]
+
+  def updateNextTriggeredFor(message: ScheduledMessage): Future[ScheduledMessage]
 
   def maybeCreateFor(
                       text: String,
