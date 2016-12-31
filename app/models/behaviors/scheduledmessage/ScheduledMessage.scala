@@ -156,10 +156,14 @@ case class ScheduledMessage(
       _ <- dataService.scheduledMessages.save(withUpdatedNextTriggeredFor(DateTime.now))
     } yield {
       results.foreach { result =>
-        if (result.hasText) {
-          scheduleInfoResultFor(result, configuration).sendIn(event, None, None)
-        }
-        result.sendIn(event, None, None)
+        for {
+          _ <- if (result.hasText) {
+            scheduleInfoResultFor(result, configuration).sendIn(event, None, None)
+          } else {
+            Future.successful({})
+          }
+          _ <- result.sendIn(event, None, None)
+        } yield {}
       }
     }
   }
