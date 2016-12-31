@@ -35,7 +35,9 @@ class ScheduledMessageActor @Inject() (
         Future.sequence(messages.map { message =>
           message.botProfile(dataService).flatMap { maybeProfile =>
             maybeProfile.map { profile =>
-              message.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration)
+              dataService.scheduledMessages.updateNextTriggeredFor(message).flatMap { _ =>
+                message.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration)
+              }
             }.getOrElse(Future.successful(Unit))
           }
         })

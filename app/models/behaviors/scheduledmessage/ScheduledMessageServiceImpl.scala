@@ -129,8 +129,8 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def save(trigger: ScheduledMessage): Future[ScheduledMessage] = {
-    val raw = trigger.toRaw
+  def save(message: ScheduledMessage): Future[ScheduledMessage] = {
+    val raw = message.toRaw
     val query = all.filter(_.id === raw.id)
     val action = query.result.flatMap { r =>
       r.headOption.map { existing =>
@@ -138,8 +138,12 @@ class ScheduledMessageServiceImpl @Inject() (
       }.getOrElse {
         all += raw
       }
-    }.map { _ => trigger }
+    }.map { _ => message }
     dataService.run(action)
+  }
+
+  def updateNextTriggeredFor(message: ScheduledMessage): Future[ScheduledMessage] = {
+    save(message.withUpdatedNextTriggeredFor(DateTime.now))
   }
 
   def maybeCreateFor(
