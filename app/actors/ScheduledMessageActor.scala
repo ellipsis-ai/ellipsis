@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.Actor
 import models.behaviors.events.EventHandler
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import services.DataService
 import slack.api.SlackApiClient
 
@@ -39,9 +39,19 @@ class ScheduledMessageActor @Inject() (
                 message.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration)
               }
             }.getOrElse(Future.successful(Unit))
+          }.recover {
+            case t: Throwable => {
+              Logger.error(s"Exception handling scheduled message: ${message.text}", t)
+            }
           }
         })
-      }.map { _ => true }
+      }.
+        map { _ => true }.
+        recover {
+          case t: Throwable => {
+            Logger.error("Exception handling scheduled messages", t)
+          }
+        }
     }
   }
 }
