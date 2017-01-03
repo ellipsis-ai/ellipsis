@@ -182,7 +182,7 @@ case class Weekly(
   lazy val daysOfWeekValues = daysOfWeek.map(_.getValue)
 
   lazy val daysOfWeekString = {
-    daysOfWeek.map(_.name).mkString(", ")
+    daysOfWeek.map(Recurrence.dayOfWeekNameFor).mkString(", ")
   }
 
   def nextDayOfWeekFor(when: DateTime): Int = {
@@ -327,7 +327,7 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: DayOfWeek, nth: Int,
 
   override def displayString: String = {
     val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
-    s"every $frequencyString on the ${Recurrence.ordinalStringFor(nth)} ${dayOfWeek.name} at ${timeOfDay.toString(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
+    s"every $frequencyString on the ${Recurrence.ordinalStringFor(nth)} ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.toString(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
 
   def targetInMonthMatching(when: DateTime): DateTime = {
@@ -523,7 +523,7 @@ object Recurrence {
     maybeTimeFrom(text, defaultTimeZone).getOrElse(currentAdjustedTime(defaultTimeZone))
   }
 
-  def dayOfWeekNameFor(dayOfWeek: Int): String = DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+  def dayOfWeekNameFor(dayOfWeek: DayOfWeek): String = dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
 
   def dayOfWeekRegexFor(dayNames: String*): Regex = {
     s"""(?i).*\\b${dayNames.mkString("|")}\\b.*""".r
