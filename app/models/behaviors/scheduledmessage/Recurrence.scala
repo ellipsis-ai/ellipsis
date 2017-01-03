@@ -186,7 +186,7 @@ case class Weekly(
   }
 
   def nextDayOfWeekFor(when: DateTime): Int = {
-    if (daysOfWeekValues.contains(when.getDayOfWeek) && when.toLocalTime.isBefore(timeOfDay)) {
+    if (isEarlierTheSameDay(when)) {
       when.getDayOfWeek
     } else {
       daysOfWeekValues.find(ea => ea > when.getDayOfWeek).getOrElse(daysOfWeekValues.head)
