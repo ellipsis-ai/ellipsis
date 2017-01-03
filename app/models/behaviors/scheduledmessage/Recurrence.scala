@@ -554,7 +554,7 @@ object Recurrence {
     }
   }
 
-  val dayOrWeekMatchers = Seq(
+  val dayOfWeekMatchers = Seq(
     DayOfWeekMatcher(mondayRegex, DayOfWeek.MONDAY),
     DayOfWeekMatcher(tuesdayRegex, DayOfWeek.TUESDAY),
     DayOfWeekMatcher(wednesdayRegex, DayOfWeek.WEDNESDAY),
@@ -566,7 +566,7 @@ object Recurrence {
 
   def daysOfWeekFrom(text: String): Seq[Int] = {
     val days = ArrayBuffer[Int]()
-    dayOrWeekMatchers.foreach(_.process(text, days))
+    dayOfWeekMatchers.foreach(_.process(text, days))
     days
   }
 
