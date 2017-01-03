@@ -1,5 +1,6 @@
 package models.behaviors.scheduledmessage
 
+import java.time.DayOfWeek
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -13,25 +14,81 @@ import drivers.SlickPostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RawScheduledMessage(
-                                id: String,
-                                text: String,
-                                maybeUserId: Option[String],
-                                teamId: String,
-                                maybeChannelName: Option[String],
-                                isForIndividualMembers: Boolean,
-                                recurrenceType: String,
-                                frequency: Int,
-                                maybeTimeOfDay: Option[LocalTime],
-                                maybeTimeZone: Option[DateTimeZone],
-                                maybeMinuteOfHour: Option[Int],
-                                maybeDayOfWeek: Option[Int],
-                                maybeDayOfMonth: Option[Int],
-                                maybeNthDayOfWeek: Option[Int],
-                                maybeMonth: Option[Int],
-                                nextSentAt: DateTime,
-                                createdAt: DateTime
-                              )
+case class RawScheduledMessage(base: RawScheduledMessageBase, options: RawScheduledMessageOptions) {
+
+  val id: String = base.id
+  val text: String = base.text
+  val maybeUserId: Option[String] = base.maybeUserId
+  val teamId: String = base.teamId
+  val maybeChannelName: Option[String] = base.maybeChannelName
+  val isForIndividualMembers: Boolean = base.isForIndividualMembers
+  val recurrenceType: String = base.recurrenceType
+  val frequency: Int = base.frequency
+  val nextSentAt: DateTime = base.nextSentAt
+  val createdAt: DateTime = base.createdAt
+
+  val maybeTimeOfDay = options.maybeTimeOfDay
+  val maybeTimeZone = options.maybeTimeZone
+  val maybeMinuteOfHour = options.maybeMinuteOfHour
+  val maybeDayOfWeek = options.maybeDayOfWeek.map(DayOfWeek.of)
+  val maybeMonday = options.maybeMonday
+  val maybeTuesday = options.maybeTuesday
+  val maybeWednesday = options.maybeWednesday
+  val maybeThursday = options.maybeThursday
+  val maybeFriday = options.maybeFriday
+  val maybeSaturday = options.maybeSaturday
+  val maybeSunday = options.maybeSunday
+  val maybeDayOfMonth = options.maybeDayOfMonth
+  val maybeNthDayOfWeek = options.maybeNthDayOfWeek
+  val maybeMonth = options.maybeMonth
+
+  val daysOfWeek: Seq[DayOfWeek] = {
+    DayOfWeek.values.zip(
+      Seq(
+        maybeMonday,
+        maybeTuesday,
+        maybeWednesday,
+        maybeThursday,
+        maybeFriday,
+        maybeSaturday,
+        maybeSunday
+      )
+    ).
+      filter { case(day, maybeOn) => maybeOn.exists(identity) }.
+      map { case(day, _) => day }
+  }
+
+}
+
+case class RawScheduledMessageBase(
+                                    id: String,
+                                    text: String,
+                                    maybeUserId: Option[String],
+                                    teamId: String,
+                                    maybeChannelName: Option[String],
+                                    isForIndividualMembers: Boolean,
+                                    recurrenceType: String,
+                                    frequency: Int,
+                                    nextSentAt: DateTime,
+                                    createdAt: DateTime
+                                  )
+
+case class RawScheduledMessageOptions(
+                                       maybeTimeOfDay: Option[LocalTime],
+                                       maybeTimeZone: Option[DateTimeZone],
+                                       maybeMinuteOfHour: Option[Int],
+                                       maybeDayOfWeek: Option[Int],
+                                       maybeMonday: Option[Boolean],
+                                       maybeTuesday: Option[Boolean],
+                                       maybeWednesday: Option[Boolean],
+                                       maybeThursday: Option[Boolean],
+                                       maybeFriday: Option[Boolean],
+                                       maybeSaturday: Option[Boolean],
+                                       maybeSunday: Option[Boolean],
+                                       maybeDayOfMonth: Option[Int],
+                                       maybeNthDayOfWeek: Option[Int],
+                                       maybeMonth: Option[Int]
+                                     )
 
 class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "scheduled_messages") {
 
@@ -49,31 +106,93 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
   def maybeTimeZone = column[Option[DateTimeZone]]("time_zone")
   def maybeMinuteOfHour = column[Option[Int]]("minute_of_hour")
   def maybeDayOfWeek = column[Option[Int]]("day_of_week")
+  def maybeMonday = column[Option[Boolean]]("monday")
+  def maybeTuesday = column[Option[Boolean]]("tuesday")
+  def maybeWednesday = column[Option[Boolean]]("wednesday")
+  def maybeThursday = column[Option[Boolean]]("thursday")
+  def maybeFriday = column[Option[Boolean]]("friday")
+  def maybeSaturday = column[Option[Boolean]]("saturday")
+  def maybeSunday = column[Option[Boolean]]("sunday")
   def maybeDayOfMonth = column[Option[Int]]("day_of_month")
   def maybeNthDayOfWeek = column[Option[Int]]("nth_day_of_week")
   def maybeMonth = column[Option[Int]]("month")
   def nextSentAt = column[DateTime]("next_sent_at")
   def createdAt = column[DateTime]("created_at")
 
-  def * = (
-    id,
-    text,
-    maybeUserId,
-    teamId,
-    maybeChannelName,
-    isForIndividualMembers,
-    recurrenceType,
-    frequency,
-    maybeTimeOfDay,
-    maybeTimeZone,
-    maybeMinuteOfHour,
-    maybeDayOfWeek,
-    maybeDayOfMonth,
-    maybeNthDayOfWeek,
-    maybeMonth,
-    nextSentAt,
-    createdAt
-    ) <> ((RawScheduledMessage.apply _).tupled, RawScheduledMessage.unapply _)
+  private type ScheduledMessageBaseTupleType = (
+    String,
+    String,
+    Option[String],
+    String,
+    Option[String],
+    Boolean,
+    String,
+    Int,
+    DateTime,
+    DateTime
+  )
+
+  private type ScheduledMessageOptionsTupleType = (
+    Option[LocalTime],
+    Option[DateTimeZone],
+    Option[Int],
+    Option[Int],
+    Option[Boolean],
+    Option[Boolean],
+    Option[Boolean],
+    Option[Boolean],
+    Option[Boolean],
+    Option[Boolean],
+    Option[Boolean],
+    Option[Int],
+    Option[Int],
+    Option[Int]
+  )
+
+  private type ScheduledMessageTupleType = (ScheduledMessageBaseTupleType, ScheduledMessageOptionsTupleType)
+
+  private val scheduledMessageShapedValue = (
+    (
+      id,
+      text,
+      maybeUserId,
+      teamId,
+      maybeChannelName,
+      isForIndividualMembers,
+      recurrenceType,
+      frequency,
+      nextSentAt,
+      createdAt
+    ), (
+      maybeTimeOfDay,
+      maybeTimeZone,
+      maybeMinuteOfHour,
+      maybeDayOfWeek,
+      maybeMonday,
+      maybeTuesday,
+      maybeWednesday,
+      maybeThursday,
+      maybeFriday,
+      maybeSaturday,
+      maybeSunday,
+      maybeDayOfMonth,
+      maybeNthDayOfWeek,
+      maybeMonth
+    )
+  ).shaped[ScheduledMessageTupleType]
+
+  private val toRawScheduledMessage: (ScheduledMessageTupleType => RawScheduledMessage) = { tuple =>
+    val base = RawScheduledMessageBase.tupled.apply(tuple._1)
+    val options = RawScheduledMessageOptions.tupled.apply(tuple._2)
+    RawScheduledMessage(base, options)
+  }
+
+  private val toTuple: (RawScheduledMessage => Option[ScheduledMessageTupleType]) = { raw =>
+    Some(RawScheduledMessageBase.unapply(raw.base).get, RawScheduledMessageOptions.unapply(raw.options).get)
+  }
+
+  def * = scheduledMessageShapedValue <> (toRawScheduledMessage, toTuple)
+
 }
 
 class ScheduledMessageServiceImpl @Inject() (

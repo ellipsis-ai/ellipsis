@@ -1,6 +1,5 @@
 package models.behaviors.scheduledmessage
 
-import java.text.{ParseException, SimpleDateFormat}
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.{Calendar, Date, Locale}
@@ -9,6 +8,7 @@ import com.joestelmach.natty._
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone, LocalTime, MonthDay}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
 
 sealed trait Recurrence {
@@ -17,7 +17,15 @@ sealed trait Recurrence {
   val maybeTimeOfDay: Option[LocalTime] = None
   val maybeTimeZone: Option[DateTimeZone] = None
   val maybeMinuteOfHour: Option[Int] = None
-  val maybeDayOfWeek: Option[Int] = None
+  val daysOfWeek: Seq[DayOfWeek] = Seq()
+  val maybeMonday: Option[Boolean] = Some(daysOfWeek.contains(DayOfWeek.MONDAY))
+  val maybeTuesday: Option[Boolean] = Some(daysOfWeek.contains(DayOfWeek.TUESDAY))
+  val maybeWednesday: Option[Boolean] = Some(daysOfWeek.contains(DayOfWeek.WEDNESDAY))
+  val maybeThursday: Option[Boolean] = Some(daysOfWeek.contains(DayOfWeek.THURSDAY))
+  val maybeFriday: Option[Boolean] = Some(daysOfWeek.contains(DayOfWeek.FRIDAY))
+  val maybeSaturday: Option[Boolean] = Some(daysOfWeek.contains(DayOfWeek.SATURDAY))
+  val maybeSunday: Option[Boolean] = Some(daysOfWeek.contains(DayOfWeek.SUNDAY))
+  val maybeDayOfWeek: Option[DayOfWeek] = None
   val maybeDayOfMonth: Option[Int] = None
   val maybeNthDayOfWeek: Option[Int] = None
   val maybeMonth: Option[Int] = None
@@ -164,21 +172,48 @@ object Daily {
   }
 }
 
-case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime, timeZone: DateTimeZone) extends RecurrenceWithTimeOfDay {
+case class Weekly(
+                   frequency: Int,
+                   override val daysOfWeek: Seq[DayOfWeek],
+                   timeOfDay: LocalTime,
+                   timeZone: DateTimeZone
+                 ) extends RecurrenceWithTimeOfDay {
+
+  lazy val daysOfWeekValues = daysOfWeek.map(_.getValue)
+
+  lazy val daysOfWeekString = {
+    daysOfWeek.map(Recurrence.dayOfWeekNameFor).mkString(", ")
+  }
+
+  def maybeNextDayInWeekOf(when: DateTime): Option[Int] = {
+    if (isEarlierTheSameDay(when)) {
+      Some(when.getDayOfWeek)
+    } else {
+      daysOfWeekValues.find(ea => ea > when.getDayOfWeek)
+    }
+  }
+
+  def nextDayOfWeekFor(when: DateTime): Int = {
+    maybeNextDayInWeekOf(when).getOrElse(daysOfWeekValues.head)
+  }
 
   override def displayString: String = {
     val frequencyString = if (frequency == 1) { "week" } else { s"$frequency weeks" }
-    s"every $frequencyString on ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.toString(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
+    s"every $frequencyString on $daysOfWeekString at ${timeOfDay.toString(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
+  }
+
+  def isEarlierTheSameDay(when: DateTime): Boolean = {
+    daysOfWeekValues.contains(when.getDayOfWeek) && when.toLocalTime.isBefore(timeOfDay)
   }
 
   def isEarlierInWeek(when: DateTime): Boolean = {
-    when.getDayOfWeek < dayOfWeek || (when.getDayOfWeek == dayOfWeek && when.toLocalTime.isBefore(timeOfDay))
+    maybeNextDayInWeekOf(when).isDefined
   }
-  def isLaterInWeek(when: DateTime): Boolean = {
-    when.getDayOfWeek > dayOfWeek || (when.getDayOfWeek == dayOfWeek && when.toLocalTime.isAfter(timeOfDay))
-  }
+  def isLaterInWeek(when: DateTime): Boolean = !isEarlierInWeek(when)
 
-  def withAdjustments(when: DateTime): DateTime = withStandardAdjustments(when.withDayOfWeek(dayOfWeek))
+  def withAdjustments(when: DateTime): DateTime = {
+    withStandardAdjustments(when.withDayOfWeek(nextDayOfWeekFor(when)))
+  }
 
   protected def nextAfterAssumingZone(previous: DateTime): DateTime = {
     val weeksToAdd = if (isEarlierInWeek(previous)) {
@@ -198,7 +233,6 @@ case class Weekly(frequency: Int, dayOfWeek: Int, timeOfDay: LocalTime, timeZone
   }
 
   val typeName = Weekly.recurrenceType
-  override val maybeDayOfWeek = Some(dayOfWeek)
   override val maybeTimeOfDay = Some(timeOfDay)
 
 }
@@ -215,11 +249,14 @@ object Weekly {
       case _ => None
     }
     maybeFrequency.map { frequency =>
-      val maybeDayOfWeek = Recurrence.maybeDayOfWeekFrom(text)
+      var daysOfWeek = Recurrence.daysOfWeekFrom(text)
+      if (daysOfWeek.isEmpty) {
+        daysOfWeek = Seq(DateTime.now.getDayOfWeek)
+      }
       val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
       Weekly(
         frequency,
-        maybeDayOfWeek.getOrElse(DateTime.now.getDayOfWeek),
+        daysOfWeek.map(DayOfWeek.of),
         maybeTime.getOrElse(Recurrence.currentAdjustedTime(defaultTimeZone)),
         defaultTimeZone
       )
@@ -290,7 +327,7 @@ object MonthlyByDayOfMonth {
   }
 }
 
-case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeOfDay: LocalTime, timeZone: DateTimeZone) extends RecurrenceWithTimeOfDay {
+case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: DayOfWeek, nth: Int, timeOfDay: LocalTime, timeZone: DateTimeZone) extends RecurrenceWithTimeOfDay {
 
   override def displayString: String = {
     val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
@@ -299,12 +336,12 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeO
 
   def targetInMonthMatching(when: DateTime): DateTime = {
     val firstOfTheMonth = when.withDayOfMonth(1)
-    val weeksToAdd = if (firstOfTheMonth.getDayOfWeek <= dayOfWeek) {
+    val weeksToAdd = if (firstOfTheMonth.getDayOfWeek <= dayOfWeek.getValue) {
       nth - 1
     } else {
       nth
     }
-    withStandardAdjustments(firstOfTheMonth.plusWeeks(weeksToAdd).withDayOfWeek(dayOfWeek))
+    withStandardAdjustments(firstOfTheMonth.plusWeeks(weeksToAdd).withDayOfWeek(dayOfWeek.getValue))
   }
 
   protected def nextAfterAssumingZone(previous: DateTime): DateTime = {
@@ -331,14 +368,14 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: Int, nth: Int, timeO
 
 }
 
-case class NthDayOfWeek(dayOfWeek: Int, n: Int)
+case class NthDayOfWeek(dayOfWeek: DayOfWeek, n: Int)
 
 object MonthlyByNthDayOfWeek {
   val recurrenceType = "monthly_by_nth_day_of_week"
 
   private def maybeNthDayOfWeekFrom(text: String): Option[NthDayOfWeek] = {
     for {
-      dayOfWeek <- Recurrence.maybeDayOfWeekFrom(text)
+      dayOfWeek <- Recurrence.maybeDayOfWeekFrom(text).map(DayOfWeek.of)
       ordinal <- Recurrence.maybeOrdinalFor(text, Some(" month"))
     } yield NthDayOfWeek(dayOfWeek, ordinal)
   }
@@ -490,32 +527,47 @@ object Recurrence {
     maybeTimeFrom(text, defaultTimeZone).getOrElse(currentAdjustedTime(defaultTimeZone))
   }
 
-  def dayOfWeekNameFor(dayOfWeek: Int): String = DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+  def dayOfWeekNameFor(dayOfWeek: DayOfWeek): String = dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
 
-  val daysOfWeekRegex = """(?i).*(monday|tuesday|wednesday|thursday|friday|saturday|sunday).*""".r
-  def includesDayOfWeek(text: String): Boolean = {
-    daysOfWeekRegex.findFirstMatchIn(text).nonEmpty
+  def dayOfWeekRegexFor(dayNames: String*): Regex = {
+    s"""(?i).*\\b${dayNames.mkString("|")}\\b.*""".r
   }
+  val mondayRegex: Regex = dayOfWeekRegexFor("monday", "mon")
+  val tuesdayRegex: Regex = dayOfWeekRegexFor("tuesday", "tues")
+  val wednesdayRegex: Regex = dayOfWeekRegexFor("wednesday", "wed")
+  val thursdayRegex: Regex = dayOfWeekRegexFor("thursday", "thurs")
+  val fridayRegex: Regex = dayOfWeekRegexFor("friday", "fri")
+  val saturdayRegex: Regex = dayOfWeekRegexFor("saturday", "sat")
+  val sundayRegex: Regex = dayOfWeekRegexFor("sunday", "sun")
 
-  def parseDayOfWeekFrom(dayOfWeekName: String): Option[Int] = {
-    try {
-      val dayFormat = new SimpleDateFormat("E", Locale.US)
-      val date = dayFormat.parse(dayOfWeekName)
-      val calendar = Calendar.getInstance()
-      calendar.setTime(date)
-      val javaDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
-      val translatedToJoda = if (javaDayOfWeek == 1) { 7 } else { javaDayOfWeek - 1 }
-      Some(translatedToJoda)
-    } catch {
-      case e: ParseException => None
-    }
+  def includesDayOfWeek(text: String): Boolean = {
+    daysOfWeekFrom(text).nonEmpty
   }
 
   def maybeDayOfWeekFrom(text: String): Option[Int] = {
-    text match {
-      case daysOfWeekRegex(day) => parseDayOfWeekFrom(day)
-      case _ => None
+    daysOfWeekFrom(text).headOption
+  }
+
+  case class DayOfWeekMatcher(regex: Regex, dayOfWeek: DayOfWeek) {
+    def process(text: String, buffer: ArrayBuffer[Int]): Unit = {
+      regex.findFirstMatchIn(text).foreach(_ => buffer += dayOfWeek.getValue)
     }
+  }
+
+  val dayOfWeekMatchers = Seq(
+    DayOfWeekMatcher(mondayRegex, DayOfWeek.MONDAY),
+    DayOfWeekMatcher(tuesdayRegex, DayOfWeek.TUESDAY),
+    DayOfWeekMatcher(wednesdayRegex, DayOfWeek.WEDNESDAY),
+    DayOfWeekMatcher(thursdayRegex, DayOfWeek.THURSDAY),
+    DayOfWeekMatcher(fridayRegex, DayOfWeek.FRIDAY),
+    DayOfWeekMatcher(saturdayRegex, DayOfWeek.SATURDAY),
+    DayOfWeekMatcher(sundayRegex, DayOfWeek.SUNDAY)
+  )
+
+  def daysOfWeekFrom(text: String): Seq[Int] = {
+    val days = ArrayBuffer[Int]()
+    dayOfWeekMatchers.foreach(_.process(text, days))
+    days
   }
 
   def maybeMonthlyFrequencyFrom(text: String): Option[Int] = {
@@ -578,10 +630,11 @@ object Recurrence {
   private def buildFrom(
                  recurrenceType: String,
                  frequency: Int,
+                 daysOfWeek: Seq[DayOfWeek],
                  maybeTimeOfDay: Option[LocalTime],
                  timeZone: DateTimeZone,
                  maybeMinuteOfHour: Option[Int],
-                 maybeDayOfWeek: Option[Int],
+                 maybeDayOfWeek: Option[DayOfWeek],
                  maybeDayOfMonth: Option[Int],
                  maybeNthDayOfWeek: Option[Int],
                  maybeMonth: Option[Int]
@@ -589,7 +642,7 @@ object Recurrence {
     recurrenceType match {
       case(Hourly.recurrenceType) => Hourly(frequency, maybeMinuteOfHour.get)
       case(Daily.recurrenceType) => Daily(frequency, maybeTimeOfDay.get, timeZone)
-      case(Weekly.recurrenceType) => Weekly(frequency, maybeDayOfWeek.get, maybeTimeOfDay.get, timeZone)
+      case(Weekly.recurrenceType) => Weekly(frequency, daysOfWeek, maybeTimeOfDay.get, timeZone)
       case(MonthlyByDayOfMonth.recurrenceType) => MonthlyByDayOfMonth(frequency, maybeDayOfMonth.get, maybeTimeOfDay.get, timeZone)
       case(MonthlyByNthDayOfWeek.recurrenceType) => MonthlyByNthDayOfWeek(frequency, maybeDayOfWeek.get, maybeNthDayOfWeek.get, maybeTimeOfDay.get, timeZone)
       case(Yearly.recurrenceType) => Yearly(frequency, new MonthDay(maybeMonth.get, maybeDayOfMonth.get), maybeTimeOfDay.get, timeZone)
@@ -600,6 +653,7 @@ object Recurrence {
     buildFrom(
       raw.recurrenceType,
       raw.frequency,
+      raw.daysOfWeek,
       raw.maybeTimeOfDay,
       raw.maybeTimeZone.getOrElse(defaultTimeZone),
       raw.maybeMinuteOfHour,

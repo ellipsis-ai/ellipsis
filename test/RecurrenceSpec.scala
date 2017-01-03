@@ -1,3 +1,5 @@
+import java.time.DayOfWeek
+
 import models.behaviors.scheduledmessage._
 import org.scalatestplus.play.PlaySpec
 import org.joda.time.{DateTime, DateTimeZone, LocalTime, MonthDay}
@@ -7,6 +9,10 @@ class RecurrenceSpec extends PlaySpec {
   val fivePM = LocalTime.parse("17:00:00")
 
   val timeZone = DateTimeZone.forID("America/Toronto")
+
+  val justMonday = Seq(DayOfWeek.MONDAY)
+  val justWednesday = Seq(DayOfWeek.WEDNESDAY)
+  val mwf = Seq(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY)
 
   "Hourly" should {
 
@@ -112,45 +118,65 @@ class RecurrenceSpec extends PlaySpec {
   "Weekly" should {
 
     "recur every second week at Monday, 2pm" in  {
-      val recurrence = Weekly(2, 1, LocalTime.parse("14:00:00"), timeZone) // 1 is Monday
+      val recurrence = Weekly(2, justMonday, LocalTime.parse("14:00:00"), timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 7, 14, 0, timeZone)) mustBe new DateTime(2010, 6, 21, 14, 0, timeZone)
     }
 
     "recur later in the week" in  {
-      val recurrence = Weekly(1, 3, fivePM, timeZone)
+      val recurrence = Weekly(1, justWednesday, fivePM, timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 8, 12, 1, timeZone)) mustBe new DateTime(2010, 6, 9, 17, 0, timeZone)
     }
 
     "recur the following week if already past target day" in  {
-      val recurrence = Weekly(1, 3, fivePM, timeZone)
+      val recurrence = Weekly(1, justWednesday, fivePM, timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 10, 12, 1, timeZone)) mustBe new DateTime(2010, 6, 16, 17, 0, timeZone)
     }
 
+    "recur the next of multiple days in the week, if there is one" in {
+      val recurrence = Weekly(1, mwf, fivePM, timeZone)
+      recurrence.nextAfter(new DateTime(2010, 6, 8, 12, 1, timeZone)) mustBe new DateTime(2010, 6, 9, 17, 0, timeZone)
+    }
+
+    "recur the same day of multiple days in the week, if time is later in the day" in {
+      val recurrence = Weekly(1, mwf, fivePM, timeZone)
+      recurrence.nextAfter(new DateTime(2010, 6, 9, 12, 1, timeZone)) mustBe new DateTime(2010, 6, 9, 17, 0, timeZone)
+    }
+
+    "recur the following week if past all days in the week" in {
+      val recurrence = Weekly(1, mwf, fivePM, timeZone)
+      recurrence.nextAfter(new DateTime(2010, 6, 12, 12, 1, timeZone)) mustBe new DateTime(2010, 6, 14, 17, 0, timeZone)
+    }
+
     "have the right initial time when earlier in the week" in {
-      val recurrence = Weekly(2, 3, fivePM, timeZone)
+      val recurrence = Weekly(2, justWednesday, fivePM, timeZone)
       recurrence.initialAfter(new DateTime(2010, 6, 9, 16, 59, timeZone)) mustBe new DateTime(2010, 6, 9, 17, 0, timeZone)
     }
 
     "have the right initial time when later in the week" in {
-      val recurrence = Weekly(2, 3, fivePM, timeZone)
+      val recurrence = Weekly(2, justWednesday, fivePM, timeZone)
       recurrence.initialAfter(new DateTime(2010, 6, 9, 17, 1, timeZone)) mustBe new DateTime(2010, 6, 16, 17, 0, timeZone)
     }
 
     "have the right initial time when at the same point in the week" in {
-      val recurrence = Weekly(2, 3, fivePM, timeZone)
-      recurrence.initialAfter(new DateTime(2010, 6, 9, 17, 0, timeZone)) mustBe new DateTime(2010, 6, 9, 17, 0, timeZone)
+      val recurrence = Weekly(2, justWednesday, fivePM, timeZone)
+      recurrence.initialAfter(new DateTime(2010, 6, 9, 17, 0, timeZone)) mustBe new DateTime(2010, 6, 16, 17, 0, timeZone)
     }
 
     "be created with implied frequency of 1" in {
-      Recurrence.maybeFromText("every week", timeZone) mustBe Some(Weekly(1, DateTime.now.getDayOfWeek, Recurrence.currentAdjustedTime(timeZone), timeZone))
+      Recurrence.maybeFromText("every week", timeZone) mustBe Some(Weekly(1, Seq(DayOfWeek.of(DateTime.now.getDayOfWeek)), Recurrence.currentAdjustedTime(timeZone), timeZone))
     }
 
     "be created with frequency" in {
-      Recurrence.maybeFromText("every 2 weeks", timeZone) mustBe Some(Weekly(2, DateTime.now.getDayOfWeek, Recurrence.currentAdjustedTime(timeZone), timeZone))
+      Recurrence.maybeFromText("every 2 weeks", timeZone) mustBe Some(Weekly(2, Seq(DayOfWeek.of(DateTime.now.getDayOfWeek)), Recurrence.currentAdjustedTime(timeZone), timeZone))
     }
 
     "be created with frequency, day of week and time" in {
-      Recurrence.maybeFromText("every 2 weeks on Monday at 3pm", timeZone) mustBe Some(Weekly(2, 1, LocalTime.parse("15:00"), timeZone))
+      Recurrence.maybeFromText("every 2 weeks on Monday at 3pm", timeZone) mustBe Some(Weekly(2, justMonday, LocalTime.parse("15:00"), timeZone))
+    }
+
+    "be created with frequency, multiple days of week and time" in {
+      Recurrence.maybeFromText("every 2 weeks on Monday Wednesday Friday at 3pm", timeZone) mustBe
+        Some(Weekly(2, mwf, LocalTime.parse("15:00"), timeZone))
     }
 
   }
@@ -205,56 +231,58 @@ class RecurrenceSpec extends PlaySpec {
   "MonthlyByNthDayOfWeek" should {
 
     "recur the second Tuesday of every month, at 5pm" in  {
-      val recurrence = MonthlyByNthDayOfWeek(1, 2, 2, fivePM, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(1, DayOfWeek.TUESDAY, 2, fivePM, timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 7, 12, 1, timeZone)) mustBe new DateTime(2010, 6, 8, 17, 0, timeZone)
     }
 
     "recur correctly when month starts with the target day of week" in  {
-      val recurrence = MonthlyByNthDayOfWeek(1, 4, 1, fivePM, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(1, DayOfWeek.THURSDAY, 1, fivePM, timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 7, 12, 1, timeZone)) mustBe new DateTime(2010, 7, 1, 17, 0, timeZone)
     }
 
     "recur correctly when month starts with a day before the target day of week" in  {
-      val recurrence = MonthlyByNthDayOfWeek(1, 5, 1, fivePM, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(1, DayOfWeek.FRIDAY, 1, fivePM, timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 7, 12, 1, timeZone)) mustBe new DateTime(2010, 7, 2, 17, 0, timeZone)
     }
 
     "recur correctly when month starts with a day after the target day of week" in  {
-      val recurrence = MonthlyByNthDayOfWeek(1, 3, 1, fivePM, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(1, DayOfWeek.WEDNESDAY, 1, fivePM, timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 7, 12, 1, timeZone)) mustBe new DateTime(2010, 7, 7, 17, 0, timeZone)
     }
 
     "recur later the same month if starting from earlier in the month" in  {
-      val recurrence = MonthlyByNthDayOfWeek(1, 1, 1, fivePM, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(1, DayOfWeek.MONDAY, 1, fivePM, timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 6, 12, 1, timeZone)) mustBe new DateTime(2010, 6, 7, 17, 0, timeZone)
     }
 
     "recur later the same month if starting from earlier in the target day" in  {
-      val recurrence = MonthlyByNthDayOfWeek(1, 1, 1, fivePM, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(1, DayOfWeek.MONDAY, 1, fivePM, timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 7, 12, 1, timeZone)) mustBe new DateTime(2010, 6, 7, 17, 0, timeZone)
     }
 
     "have the right initial time when earlier in the month" in {
-      val recurrence = MonthlyByNthDayOfWeek(1, 1, 1, fivePM, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(1, DayOfWeek.MONDAY, 1, fivePM, timeZone)
       recurrence.initialAfter(new DateTime(2010, 6, 7, 16, 59, timeZone)) mustBe new DateTime(2010, 6, 7, 17, 0, timeZone)
     }
 
     "have the right initial time when later in the month" in {
-      val recurrence = MonthlyByNthDayOfWeek(1, 1, 1, fivePM, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(1, DayOfWeek.MONDAY, 1, fivePM, timeZone)
       recurrence.initialAfter(new DateTime(2010, 6, 7, 17, 1, timeZone)) mustBe new DateTime(2010, 7, 5, 17, 0, timeZone)
     }
 
     "have the right initial time when at the same point in the month" in {
-      val recurrence = MonthlyByNthDayOfWeek(1, 1, 1, fivePM, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(1, DayOfWeek.MONDAY, 1, fivePM, timeZone)
       recurrence.initialAfter(new DateTime(2010, 6, 7, 17, 0, timeZone)) mustBe new DateTime(2010, 6, 7, 17, 0, timeZone)
     }
 
     "be created with first monday of every month" in {
-      Recurrence.maybeFromText("the first monday of every month at 5pm", timeZone) mustBe Some(MonthlyByNthDayOfWeek(1, 1, 1, fivePM, timeZone))
+      Recurrence.maybeFromText("the first monday of every month at 5pm", timeZone) mustBe
+        Some(MonthlyByNthDayOfWeek(1, DayOfWeek.MONDAY, 1, fivePM, timeZone))
     }
 
     "be created with 2nd wednesday of every 3rd month" in {
-      Recurrence.maybeFromText("the 2nd wednesday of every 3rd month at 5pm", timeZone) mustBe Some(MonthlyByNthDayOfWeek(3, 3, 2, fivePM, timeZone))
+      Recurrence.maybeFromText("the 2nd wednesday of every 3rd month at 5pm", timeZone) mustBe
+        Some(MonthlyByNthDayOfWeek(3, DayOfWeek.WEDNESDAY, 2, fivePM, timeZone))
     }
 
   }
@@ -305,6 +333,29 @@ class RecurrenceSpec extends PlaySpec {
       Recurrence.maybeFromText("every 2nd year on January 14", timeZone) mustBe Some(Yearly(2, new MonthDay(1, 14), time, timeZone))
     }
 
+  }
+
+  "Recurrence.daysOfWeekFrom" should {
+
+    val monday = DayOfWeek.MONDAY.getValue
+    val wednesday = DayOfWeek.WEDNESDAY.getValue
+    val friday = DayOfWeek.FRIDAY.getValue
+
+    "handle space separated" in {
+      Recurrence.daysOfWeekFrom("Monday Wednesday Friday") mustBe Seq(monday, wednesday, friday)
+    }
+
+    "handle comma separated" in {
+      Recurrence.daysOfWeekFrom("Monday, Wednesday, Friday") mustBe Seq(monday, wednesday, friday)
+    }
+
+    "not care about capitalization" in {
+      Recurrence.daysOfWeekFrom("monDAY, wedNESday, friday") mustBe Seq(monday, wednesday, friday)
+    }
+
+    "work for abbreviations" in {
+      Recurrence.daysOfWeekFrom("mon, wed, fri") mustBe Seq(monday, wednesday, friday)
+    }
   }
 
 
