@@ -118,7 +118,7 @@ class RecurrenceSpec extends PlaySpec {
   "Weekly" should {
 
     "recur every second week at Monday, 2pm" in  {
-      val recurrence = Weekly(2, justMonday, LocalTime.parse("14:00:00"), timeZone) // 1 is Monday
+      val recurrence = Weekly(2, justMonday, LocalTime.parse("14:00:00"), timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 7, 14, 0, timeZone)) mustBe new DateTime(2010, 6, 21, 14, 0, timeZone)
     }
 
@@ -135,6 +135,11 @@ class RecurrenceSpec extends PlaySpec {
     "recur the next of multiple days in the week, if there is one" in {
       val recurrence = Weekly(1, mwf, fivePM, timeZone)
       recurrence.nextAfter(new DateTime(2010, 6, 8, 12, 1, timeZone)) mustBe new DateTime(2010, 6, 9, 17, 0, timeZone)
+    }
+
+    "recur the same day of multiple days in the week, if time is later in the day" in {
+      val recurrence = Weekly(1, mwf, fivePM, timeZone)
+      recurrence.nextAfter(new DateTime(2010, 6, 9, 12, 1, timeZone)) mustBe new DateTime(2010, 6, 9, 17, 0, timeZone)
     }
 
     "recur the following week if past all days in the week" in {
@@ -154,7 +159,7 @@ class RecurrenceSpec extends PlaySpec {
 
     "have the right initial time when at the same point in the week" in {
       val recurrence = Weekly(2, justWednesday, fivePM, timeZone)
-      recurrence.initialAfter(new DateTime(2010, 6, 9, 17, 0, timeZone)) mustBe new DateTime(2010, 6, 9, 17, 0, timeZone)
+      recurrence.initialAfter(new DateTime(2010, 6, 9, 17, 0, timeZone)) mustBe new DateTime(2010, 6, 16, 17, 0, timeZone)
     }
 
     "be created with implied frequency of 1" in {

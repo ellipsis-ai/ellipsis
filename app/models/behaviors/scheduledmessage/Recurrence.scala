@@ -186,7 +186,11 @@ case class Weekly(
   }
 
   def nextDayOfWeekFor(when: DateTime): Int = {
-    daysOfWeekValues.find(when.getDayOfWeek.<=).getOrElse(daysOfWeekValues.head)
+    if (daysOfWeekValues.contains(when.getDayOfWeek) && when.toLocalTime.isBefore(timeOfDay)) {
+      when.getDayOfWeek
+    } else {
+      daysOfWeekValues.find(ea => ea > when.getDayOfWeek).getOrElse(daysOfWeekValues.head)
+    }
   }
 
   override def displayString: String = {
@@ -194,14 +198,14 @@ case class Weekly(
     s"every $frequencyString on $daysOfWeekString at ${timeOfDay.toString(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
 
+  def isEarlierTheSameDay(when: DateTime): Boolean = {
+    daysOfWeekValues.contains(when.getDayOfWeek) && when.toLocalTime.isBefore(timeOfDay)
+  }
+
   def isEarlierInWeek(when: DateTime): Boolean = {
-    daysOfWeekValues.exists(when.getDayOfWeek.<) ||
-      (daysOfWeekValues.contains(when.getDayOfWeek) && when.toLocalTime.isBefore(timeOfDay))
+    daysOfWeekValues.exists(ea => ea > when.getDayOfWeek) || isEarlierTheSameDay(when)
   }
-  def isLaterInWeek(when: DateTime): Boolean = {
-    daysOfWeekValues.exists(when.getDayOfWeek.>) ||
-      (daysOfWeekValues.contains(when.getDayOfWeek) && when.toLocalTime.isAfter(timeOfDay))
-  }
+  def isLaterInWeek(when: DateTime): Boolean = !isEarlierInWeek(when)
 
   def withAdjustments(when: DateTime): DateTime = {
     withStandardAdjustments(when.withDayOfWeek(nextDayOfWeekFor(when)))
