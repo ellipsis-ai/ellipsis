@@ -185,12 +185,16 @@ case class Weekly(
     daysOfWeek.map(Recurrence.dayOfWeekNameFor).mkString(", ")
   }
 
-  def nextDayOfWeekFor(when: DateTime): Int = {
+  def maybeNextDayInWeekOf(when: DateTime): Option[Int] = {
     if (isEarlierTheSameDay(when)) {
-      when.getDayOfWeek
+      Some(when.getDayOfWeek)
     } else {
-      daysOfWeekValues.find(ea => ea > when.getDayOfWeek).getOrElse(daysOfWeekValues.head)
+      daysOfWeekValues.find(ea => ea > when.getDayOfWeek)
     }
+  }
+
+  def nextDayOfWeekFor(when: DateTime): Int = {
+    maybeNextDayInWeekOf(when).getOrElse(daysOfWeekValues.head)
   }
 
   override def displayString: String = {
@@ -203,7 +207,7 @@ case class Weekly(
   }
 
   def isEarlierInWeek(when: DateTime): Boolean = {
-    daysOfWeekValues.exists(ea => ea > when.getDayOfWeek) || isEarlierTheSameDay(when)
+    maybeNextDayInWeekOf(when).isDefined
   }
   def isLaterInWeek(when: DateTime): Boolean = !isEarlierInWeek(when)
 
