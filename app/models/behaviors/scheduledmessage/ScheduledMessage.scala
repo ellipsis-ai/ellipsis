@@ -204,23 +204,34 @@ case class ScheduledMessage(
 
   def toRaw: RawScheduledMessage = {
     RawScheduledMessage(
-      id,
-      text,
-      maybeUser.map(_.id),
-      team.id,
-      maybeChannelName,
-      isForIndividualMembers,
-      recurrence.typeName,
-      recurrence.frequency,
-      recurrence.maybeTimeOfDay,
-      recurrence.maybeTimeZone,
-      recurrence.maybeMinuteOfHour,
-      recurrence.maybeDayOfWeek,
-      recurrence.maybeDayOfMonth,
-      recurrence.maybeNthDayOfWeek,
-      recurrence.maybeMonth,
-      nextSentAt,
-      createdAt
+      RawScheduledMessageBase(
+        id,
+        text,
+        maybeUser.map(_.id),
+        team.id,
+        maybeChannelName,
+        isForIndividualMembers,
+        recurrence.typeName,
+        recurrence.frequency,
+        nextSentAt,
+        createdAt
+      ),
+      RawScheduledMessageOptions(
+        recurrence.maybeTimeOfDay,
+        recurrence.maybeTimeZone,
+        recurrence.maybeMinuteOfHour,
+        recurrence.maybeDayOfWeek.map(_.getValue),
+        recurrence.maybeMonday,
+        recurrence.maybeTuesday,
+        recurrence.maybeWednesday,
+        recurrence.maybeThursday,
+        recurrence.maybeFriday,
+        recurrence.maybeSaturday,
+        recurrence.maybeSunday,
+        recurrence.maybeDayOfMonth,
+        recurrence.maybeNthDayOfWeek,
+        recurrence.maybeMonth
+      )
     )
   }
 }
