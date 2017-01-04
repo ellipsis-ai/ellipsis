@@ -22,8 +22,7 @@ class SlackEventService @Inject()(
   implicit val ec = system.dispatcher
 
   lazy val loadingMessages = Seq(
-    ":drumroll:",
-    ":loading:"
+    ":thinking_face: …"
   )
 
   val random = new Random()
