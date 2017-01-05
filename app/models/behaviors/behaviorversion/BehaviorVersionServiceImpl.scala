@@ -239,10 +239,10 @@ class BehaviorVersionServiceImpl @Inject() (
         !userInfo.links.exists(_.externalSystem == app.name)
       })
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
-        Future.successful(Some(MissingTeamEnvVarsResult(behaviorVersion, configuration, missingTeamEnvVars)))
+        Future.successful(Some(MissingTeamEnvVarsResult(behaviorVersion, dataService, configuration, missingTeamEnvVars)))
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          Future.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, configuration)))
+          Future.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, dataService, configuration)))
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
@@ -321,13 +321,13 @@ class BehaviorVersionServiceImpl @Inject() (
         NoResponseResult(logResultOption)
       } else {
         if (isUnhandledError(json)) {
-          UnhandledErrorResult(behaviorVersion, configuration, logResultOption)
+          UnhandledErrorResult(behaviorVersion, dataService, configuration, logResultOption)
         } else if (json.toString == "null") {
-          NoCallbackTriggeredResult(behaviorVersion, configuration)
+          NoCallbackTriggeredResult(behaviorVersion, dataService, configuration)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(behaviorVersion, configuration, json, logResultOption)
+          SyntaxErrorResult(behaviorVersion, dataService, configuration, json, logResultOption)
         } else {
-          HandledErrorResult(behaviorVersion, configuration, json, logResultOption)
+          HandledErrorResult(behaviorVersion, dataService, configuration, json, logResultOption)
         }
       }
     }

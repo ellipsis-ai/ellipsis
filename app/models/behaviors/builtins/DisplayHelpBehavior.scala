@@ -1,9 +1,8 @@
 package models.behaviors.builtins
 
-import models.behaviors.behaviorversion.BehaviorVersion
+import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.{BotResult, SimpleTextResult}
-import models.behaviors.triggers.messagetrigger.MessageTrigger
-import services.slack.{MessageEvent, SlackMessageEvent}
+import services.slack.MessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,33 +15,29 @@ case class DisplayHelpBehavior(
                                 dataService: DataService
                               ) extends BuiltinBehavior {
 
-  private def triggerStringFor(messageTrigger: MessageTrigger): String = {
-    if (messageTrigger.requiresBotMention)
-      s"`...${messageTrigger.pattern}`"
+  private def triggerStringFor(trigger: BehaviorTriggerData): String = {
+    if (trigger.requiresMention)
+      s"`...${trigger.text}`"
     else
-      s"`${messageTrigger.pattern}`"
+      s"`${trigger.text}`"
   }
 
-  private def helpStringFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
-    for {
-      triggers <- dataService.messageTriggers.allFor(behaviorVersion)
-      authorNames <- event match {
-        case e: SlackMessageEvent => dataService.behaviors.authorNamesFor(behaviorVersion.behavior, e)
-        case _ => Future.successful(Seq())
-      }
-    } yield {
-      val nonRegexTriggers = triggers.filter({ ea => !ea.shouldTreatAsRegex }).sortBy((trigger) => MessageTrigger.sortKeyFor(trigger.pattern, trigger.shouldTreatAsRegex))
+  private def helpStringFor(behaviorVersion: BehaviorVersionData): Option[String] = {
+    val triggers = behaviorVersion.triggers
+    if (triggers.isEmpty) {
+      None
+    } else {
+      val nonRegexTriggers = triggers.filterNot(_.isRegex)
       val namedTriggers =
         if (nonRegexTriggers.isEmpty)
           triggerStringFor(triggers.head)
         else
           nonRegexTriggers.map(triggerStringFor).mkString(" ")
-
       val regexTriggerCount =
         if (nonRegexTriggers.isEmpty)
-          triggers.tail.count({ ea => ea.shouldTreatAsRegex })
+          triggers.tail.count({ ea => ea.isRegex })
         else
-          triggers.count({ ea => ea.shouldTreatAsRegex })
+          triggers.count({ ea => ea.isRegex })
 
       val regexTriggerString =
         if (regexTriggerCount == 1)
@@ -52,26 +47,43 @@ case class DisplayHelpBehavior(
         else
           s""
 
-      val triggersString = namedTriggers + regexTriggerString
+      val triggersString = namedTriggers ++ regexTriggerString
       if (triggersString.isEmpty) {
         None
       } else {
-        val link = behaviorVersion.editLinkFor(lambdaService.configuration)
+        val maybeLink = behaviorVersion.behaviorId.map { id =>
+          dataService.behaviors.editLinkFor(id, lambdaService.configuration)
+        }
+        val link = maybeLink.map { l => s" [✎]($l)" }.getOrElse("")
         val authorsString = "" //if (authorNames.isEmpty) { "" } else { "by " ++ authorNames.map(n => s"<@$n>").mkString(", ") }
-        Some(s"\n$triggersString [✎]($link) $authorsString  ")
+        Some(s"\n$triggersString$link $authorsString  ")
       }
     }
   }
 
-  private def helpStringFor(behaviorVersions: Seq[BehaviorVersion], prompt: String, matchString: String): Future[String] = {
-    Future.sequence(behaviorVersions.map { ea =>
+  private def helpStringFor(group: BehaviorGroupData): String = {
+    s"""\n**${group.name}**
+       |${group.behaviorVersions.map(helpStringFor).flatten.mkString("")}
+     """.stripMargin
+  }
+
+  private def helpStringFor(groups: Seq[BehaviorGroupData], prompt: String, matchString: String): String = {
+    val (groupsWithNames, groupsWithoutNames) = groups.partition(_.maybeNonEmptyName.isDefined)
+    val groupsWithNamesString = groupsWithNames.map { ea =>
       helpStringFor(ea)
-    }).map(_.flatten).map { behaviorStrings =>
-      if (behaviorStrings.isEmpty) {
-        ""
-      } else {
-        s"$prompt$matchString  \n${behaviorStrings.sortBy(_.toLowerCase).mkString("")}"
-      }
+    }.mkString("")
+    val groupsWithoutNamesString = groupsWithoutNames.map { ea =>
+      helpStringFor(ea)
+    }.mkString("")
+    val hasGroupsWithNames = groupsWithNamesString.trim.nonEmpty
+    val hasGroupsWithoutNames = groupsWithoutNamesString.trim.nonEmpty
+    val unnamedSkillsString = if(hasGroupsWithoutNames) { "\n**Unnamed skills:**  \n" } else { "" }
+    if (!hasGroupsWithNames && !hasGroupsWithoutNames) {
+      ""
+    } else {
+      s"""$prompt$matchString
+         |$groupsWithNamesString$unnamedSkillsString$groupsWithoutNamesString
+         |""".stripMargin
     }
   }
 
@@ -79,22 +91,28 @@ case class DisplayHelpBehavior(
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
-      matchingTriggers <- maybeTeam.map { team =>
-        maybeHelpSearch.map { helpSearch =>
-          dataService.messageTriggers.allMatching(helpSearch, team)
-        }.getOrElse {
-          dataService.messageTriggers.allActiveFor(team)
-        }
+      user <- event.ensureUser(dataService)
+      maybeBehaviorGroups <- maybeTeam.map { team =>
+        dataService.behaviorGroups.allFor(team).map(Some(_))
+      }.getOrElse {
+        Future.successful(None)
+      }
+      groupData <- maybeBehaviorGroups.map { groups =>
+        Future.sequence(groups.map { group =>
+          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+        }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
-      behaviorVersions <- Future.successful(matchingTriggers.map(_.behaviorVersion).distinct)
-      (skills, knowledge) <- Future.successful(behaviorVersions.partition(_.isSkill))
-      matchString <- Future.successful(maybeHelpSearch.map { s =>
-        s" that matches `$s`"
-      }.getOrElse(""))
-      skillsString <- helpStringFor(skills, "Here’s what I can do:", matchString)
-      knowledgeString <- helpStringFor(knowledge, "Here’s what I know:", matchString)
     } yield {
-      val endingString = if (behaviorVersions.isEmpty) {
+      val matchingGroupData = maybeHelpSearch.map { helpSearch =>
+        groupData.filter(_.matchesHelpSearch(helpSearch))
+      }.getOrElse {
+        groupData
+      }
+      val matchString = maybeHelpSearch.map { s =>
+        s" that matches `$s`"
+      }.getOrElse("")
+      val groupsString = helpStringFor(matchingGroupData, "Here’s what I can do:", matchString)
+      val endingString = if (matchingGroupData.isEmpty) {
         s"""I’m just getting started here and can’t wait to learn.
            |
            |You can ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself.""".stripMargin
@@ -102,9 +120,7 @@ case class DisplayHelpBehavior(
         s"You can also ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself."
       }
       val text = s"""
-          |$skillsString
-          |
-          |$knowledgeString
+          |$groupsString
           |
           |$endingString
           |""".stripMargin
