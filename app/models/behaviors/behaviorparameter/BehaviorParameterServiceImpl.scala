@@ -78,4 +78,11 @@ class BehaviorParameterServiceImpl @Inject() (
     } yield newParams
     dataService.run(action)
   }
+
+  def isFirstForBehaviorVersion(parameter: BehaviorParameter): Future[Boolean] = {
+    allFor(parameter.behaviorVersion).map { all =>
+      all.headOption.contains(parameter)
+    }
+  }
+
 }

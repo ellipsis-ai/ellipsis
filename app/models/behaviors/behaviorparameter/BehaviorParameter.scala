@@ -1,7 +1,6 @@
 package models.behaviors.behaviorparameter
 
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.input.Input
 
 import scala.concurrent.Future
