@@ -1,6 +1,7 @@
 package models.behaviors.behaviorparameter
 
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.input.Input
 
 import scala.concurrent.Future
@@ -18,8 +19,8 @@ case class BehaviorParameter(
 
   def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
-  def prompt(maybeValue: Option[String], context: BehaviorParameterContext): Future[String] = {
-    paramType.promptFor(maybeValue, context)
+  def prompt(maybeValue: Option[String], context: BehaviorParameterContext, paramState: ParamCollectionState): Future[String] = {
+    paramType.promptFor(maybeValue, context, paramState)
   }
 
   def toRaw: RawBehaviorParameter = {

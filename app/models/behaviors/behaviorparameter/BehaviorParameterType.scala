@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import play.api.libs.json._
@@ -36,13 +37,14 @@ sealed trait BehaviorParameterType {
 
   def promptFor(
                  maybePreviousCollectedValue: Option[String],
-                 context: BehaviorParameterContext
+                 context: BehaviorParameterContext,
+                 paramState: ParamCollectionState
                ): Future[String] = {
     for {
       isFirst <- context.isFirstParam
-      paramCount <- context.paramCount
+      paramCount <- context.unfilledParamCount(paramState)
     } yield {
-      val preamble = if (!isFirst) {
+      val preamble = if (!isFirst || paramCount == 0) {
         ""
       } else if (paramCount == 1) {
         "I need to ask you 1 question first. You can type `…stop` to end this conversation.  \n\n"
@@ -305,10 +307,11 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   private def promptForListAllCase(
                                     maybeSearchQuery: Option[String],
                                     maybePreviousCollectedValue: Option[String],
-                                    context: BehaviorParameterContext
+                                    context: BehaviorParameterContext,
+                                    paramState: ParamCollectionState
                                   ): Future[String] = {
     for {
-      superPrompt <- super.promptFor(maybePreviousCollectedValue, context)
+      superPrompt <- super.promptFor(maybePreviousCollectedValue, context, paramState)
       maybeValidValuesResult <- fetchValidValuesResult(maybeSearchQuery, context)
       output <- maybeValidValuesResult.map {
         case r: SuccessResult => {
@@ -341,13 +344,14 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
 
   private def promptForSearchCase(
                                    maybePreviousCollectedValue: Option[String],
-                                   context: BehaviorParameterContext
+                                   context: BehaviorParameterContext,
+                                   paramState: ParamCollectionState
                                  ): Future[String] = {
 
     maybeCachedSearchQueryFor(context).map { searchQuery =>
-      promptForListAllCase(Some(searchQuery), maybePreviousCollectedValue, context)
+      promptForListAllCase(Some(searchQuery), maybePreviousCollectedValue, context, paramState)
     }.getOrElse {
-      super.promptFor(maybePreviousCollectedValue, context).map { superPrompt =>
+      super.promptFor(maybePreviousCollectedValue, context, paramState).map { superPrompt =>
         superPrompt ++ " Enter a search query:"
       }
     }
@@ -359,13 +363,14 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
 
   override def promptFor(
                            maybePreviousCollectedValue: Option[String],
-                           context: BehaviorParameterContext
+                           context: BehaviorParameterContext,
+                           paramState: ParamCollectionState
                          ): Future[String] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch) {
-        promptForSearchCase(maybePreviousCollectedValue, context)
+        promptForSearchCase(maybePreviousCollectedValue, context, paramState)
       } else {
-        promptForListAllCase(None, maybePreviousCollectedValue, context)
+        promptForListAllCase(None, maybePreviousCollectedValue, context, paramState)
       }
     }
   }

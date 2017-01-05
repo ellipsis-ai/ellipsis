@@ -27,7 +27,7 @@ case class ParamCollectionState(
 
   val rankedParams = params.sortBy(_.rank)
 
-  def maybeNextToCollect(conversation: Conversation): Future[Option[(BehaviorParameter, Option[String])]] = {
+  def allLeftToCollect(conversation: Conversation): Future[Seq[(BehaviorParameter, Option[String])]] = {
     val tuples = rankedParams.map { ea =>
       (ea, collected.find(_.parameter == ea), savedAnswers.find(_.input == ea.input))
     }
@@ -46,9 +46,13 @@ case class ParamCollectionState(
 
     eventualWithHasValidValue.map { withHasValidValue =>
       withHasValidValue.
-        find { case (param, maybeValue, hasValidValue) => !hasValidValue }.
+        filter { case (param, maybeValue, hasValidValue) => !hasValidValue }.
         map { case (param, maybeValue, hasValidValue) => (param, maybeValue) }
     }
+  }
+
+  def maybeNextToCollect(conversation: Conversation): Future[Option[(BehaviorParameter, Option[String])]] = {
+    allLeftToCollect(conversation).map(_.headOption)
   }
 
   def isCompleteIn(conversation: Conversation): Future[Boolean] = maybeNextToCollect(conversation).map(_.isEmpty)
@@ -78,7 +82,7 @@ case class ParamCollectionState(
       maybeNextToCollect <- maybeNextToCollect(conversation)
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
         val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration)
-        param.prompt(maybeValue, context)
+        param.prompt(maybeValue, context, this)
       }.getOrElse {
         Future.successful("All done!")
       }.map { prompt =>
