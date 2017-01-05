@@ -11,4 +11,6 @@ trait BehaviorParameterService {
 
   def ensureFor(behaviorVersion: BehaviorVersion, params: Seq[BehaviorParameterData]): Future[Seq[BehaviorParameter]]
 
+  def isFirstForBehaviorVersion(parameter: BehaviorParameter): Future[Boolean]
+
 }

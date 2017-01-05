@@ -38,7 +38,19 @@ sealed trait BehaviorParameterType {
                  maybePreviousCollectedValue: Option[String],
                  context: BehaviorParameterContext
                ): Future[String] = {
-    Future.successful(s"${context.parameter.question}${invalidValueModifierFor(maybePreviousCollectedValue)}")
+    for {
+      isFirst <- context.isFirstParam
+      paramCount <- context.paramCount
+    } yield {
+      val preamble = if (!isFirst) {
+        ""
+      } else if (paramCount == 1) {
+        "I need to ask you 1 question first. You can type `…stop` to end this conversation.  \n\n"
+      } else {
+        s"I need to ask you $paramCount questions first. You can type `…stop` at any time to end this conversation.  \n\n"
+      }
+      s"$preamble${context.parameter.question}${invalidValueModifierFor(maybePreviousCollectedValue)}"
+    }
   }
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]]
