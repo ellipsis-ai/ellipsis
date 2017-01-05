@@ -7,6 +7,7 @@ import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.matching.Regex
 
 case class BehaviorGroupData(
                               id: Option[String],
@@ -19,6 +20,8 @@ case class BehaviorGroupData(
                               publishedId: Option[String],
                               createdAt: DateTime
                             ) extends Ordered[BehaviorGroupData] {
+
+  val maybeNonEmptyName: Option[String] = Option(name.trim).filter(_.nonEmpty)
 
   def copyForTeam(team: Team): BehaviorGroupData = {
     copy(behaviorVersions = behaviorVersions.map(_.copyForTeam(team)))
@@ -41,9 +44,28 @@ case class BehaviorGroupData(
     }
   }
 
+  private def anyTriggerMatchesHelpSearch(regex: Regex): Boolean = {
+    behaviorVersions.exists { version =>
+      version.triggers.exists { trigger =>
+        regex.findFirstMatchIn(trigger.text).isDefined
+      }
+    }
+  }
+
+  def matchesHelpSearch(helpSearch: String): Boolean = {
+    val regex = ("(?i)" ++ helpSearch).r
+    regex.findFirstMatchIn(name).isDefined ||
+      regex.findFirstMatchIn(description).isDefined ||
+      anyTriggerMatchesHelpSearch(regex)
+  }
+
   import scala.math.Ordered.orderingToOrdered
   def compare(that: BehaviorGroupData): Int = {
-    if (this.maybeSortString.isEmpty && that.maybeSortString.isDefined) {
+    if (this.maybeNonEmptyName.isEmpty && that.maybeNonEmptyName.isDefined) {
+      1
+    } else if (this.maybeNonEmptyName.isDefined && that.maybeNonEmptyName.isEmpty) {
+      -1
+    } else if (this.maybeSortString.isEmpty && that.maybeSortString.isDefined) {
       1
     } else if (this.maybeSortString.isDefined && that.maybeSortString.isEmpty) {
       -1

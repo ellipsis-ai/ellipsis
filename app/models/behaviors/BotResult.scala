@@ -12,7 +12,7 @@ import play.api.cache.CacheApi
 import play.api.libs.json.{JsDefined, JsValue}
 import services.AWSLambdaConstants._
 import services.slack.MessageEvent
-import services.AWSLambdaLogResult
+import services.{AWSLambdaLogResult, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -92,10 +92,11 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
 trait WithBehaviorLink {
 
   val behaviorVersion: BehaviorVersion
+  val dataService: DataService
   val configuration: Configuration
   val forcePrivateResponse = behaviorVersion.forcePrivateResponse
 
-  def link: String = behaviorVersion.editLinkFor(configuration)
+  def link: String = dataService.behaviors.editLinkFor(behaviorVersion.behavior.id, configuration)
 
   def linkToBehaviorFor(text: String): String = {
     s"[$text](${link})"
@@ -104,6 +105,7 @@ trait WithBehaviorLink {
 
 case class UnhandledErrorResult(
                                  behaviorVersion: BehaviorVersion,
+                                 dataService: DataService,
                                  configuration: Configuration,
                                  maybeLogResult: Option[AWSLambdaLogResult]
                                ) extends BotResultWithLogResult with WithBehaviorLink {
@@ -119,6 +121,7 @@ case class UnhandledErrorResult(
 
 case class HandledErrorResult(
                                behaviorVersion: BehaviorVersion,
+                               dataService: DataService,
                                configuration: Configuration,
                                json: JsValue,
                                maybeLogResult: Option[AWSLambdaLogResult]
@@ -142,6 +145,7 @@ case class HandledErrorResult(
 
 case class SyntaxErrorResult(
                               behaviorVersion: BehaviorVersion,
+                              dataService: DataService,
                               configuration: Configuration,
                               json: JsValue,
                               maybeLogResult: Option[AWSLambdaLogResult]
@@ -162,6 +166,7 @@ case class SyntaxErrorResult(
 
 case class NoCallbackTriggeredResult(
                                       behaviorVersion: BehaviorVersion,
+                                      dataService: DataService,
                                       configuration: Configuration
                                     ) extends BotResult with WithBehaviorLink {
 
@@ -174,6 +179,7 @@ case class NoCallbackTriggeredResult(
 
 case class MissingTeamEnvVarsResult(
                                  behaviorVersion: BehaviorVersion,
+                                 dataService: DataService,
                                  configuration: Configuration,
                                  missingEnvVars: Seq[String]
                                ) extends BotResult with WithBehaviorLink {
@@ -251,13 +257,14 @@ case class RequiredApiNotReady(
                                 required: RequiredOAuth2ApiConfig,
                                 event: MessageEvent,
                                 cache: CacheApi,
+                                dataService: DataService,
                                 configuration: Configuration
                              ) extends BotResult {
 
   val resultType = ResultType.RequiredApiNotReady
   val forcePrivateResponse = true
 
-  def configLink: String = required.behaviorVersion.editLinkFor(configuration)
+  def configLink: String = dataService.behaviors.editLinkFor(required.behaviorVersion.behavior.id, configuration)
   def configText: String = {
     s"You first must [configure the ${required.api.name} API]($configLink)"
   }

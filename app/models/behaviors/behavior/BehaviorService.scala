@@ -4,6 +4,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
+import play.api.Configuration
 import services.slack.SlackMessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -56,5 +57,11 @@ trait BehaviorService {
   def unlearn(behavior: Behavior): Future[Unit]
 
   def authorNamesFor(behavior: Behavior, event: SlackMessageEvent): Future[Seq[String]]
+
+  def editLinkFor(behaviorId: String, configuration: Configuration): String = {
+    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val path = controllers.routes.BehaviorEditorController.edit(behaviorId)
+    s"$baseUrl$path"
+  }
 
 }

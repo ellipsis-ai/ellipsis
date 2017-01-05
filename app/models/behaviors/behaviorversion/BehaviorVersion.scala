@@ -11,7 +11,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json}
 import play.api.Configuration
 import services.AWSLambdaConstants._
-import services.AWSLambdaLogResult
+import services.{AWSLambdaLogResult, DataService}
 
 case class BehaviorVersion(
                             id: String,
@@ -32,8 +32,6 @@ case class BehaviorVersion(
       Option(body).exists(_.trim.nonEmpty)
     }
   }
-
-  def editLinkFor(configuration: Configuration) = behavior.editLinkFor(configuration)
 
   def description: String = maybeDescription.getOrElse("")
 
@@ -59,6 +57,7 @@ case class BehaviorVersion(
                  payload: ByteBuffer,
                  logResult: AWSLambdaLogResult,
                  parametersWithValues: Seq[ParameterWithValue],
+                 dataService: DataService,
                  configuration: Configuration
                ): BotResult = {
     val bytes = payload.array
@@ -72,13 +71,13 @@ case class BehaviorVersion(
         NoResponseResult(logResultOption)
       } else {
         if (isUnhandledError(json)) {
-          UnhandledErrorResult(this, configuration, logResultOption)
+          UnhandledErrorResult(this, dataService, configuration, logResultOption)
         } else if (json.toString == "null") {
-          NoCallbackTriggeredResult(this, configuration)
+          NoCallbackTriggeredResult(this, dataService, configuration)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(this, configuration, json, logResultOption)
+          SyntaxErrorResult(this, dataService, configuration, json, logResultOption)
         } else {
-          HandledErrorResult(this, configuration, json, logResultOption)
+          HandledErrorResult(this, dataService, configuration, json, logResultOption)
         }
       }
     }

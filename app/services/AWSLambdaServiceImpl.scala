@@ -168,7 +168,7 @@ class AWSLambdaServiceImpl @Inject() (
             result => {
               val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
               val logResult = AWSLambdaLogResult.fromText(logString)
-              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, configuration)
+              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration)
             }
           )
         } yield invocationResult
