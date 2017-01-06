@@ -1,18 +1,14 @@
 package services
 
 import javax.inject.Inject
-
 import com.ning.http.client.Response
 import play.api.Configuration
-import models.small_storage.items.Item
+import play.api.libs.json._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
-import wabisabi._
 
-/**
-  * Created by matteo on 12/8/16.
-  */
+
 class ElasticsearchServiceImpl @Inject()(
                                           val configuration: Configuration
                                         ) extends ElasticsearchService
@@ -24,20 +20,35 @@ class ElasticsearchServiceImpl @Inject()(
     return client.createIndex(name, Some(schema))
   }
 
-  def createIndexFromFile(fileName: String): Future[Response] = {
+  def createIndexFromFile(name: String, schemaFileFullpath: String): Future[Response] = {
     Future {
-      Source.fromFile("conf/elasticsearch/indexes/" + fileName + ".json").getLines.mkString
-    }.map { s =>
-      return createIndex(fileName, s)
+      Source.fromFile(schemaFileFullpath).getLines.mkString
+    }.flatMap { s =>
+      createIndex(name, s)
     }
   }
 
-  def index(indexName: String, item: Item): Future[Response] = {
-    client.index(
-      indexName,
-      `type` = "foo", id = Some("foo"),
-      data = "{\"foo\":\"bar\"}",
-      refresh = true
-    )
+  def indexDoc(indexName: String, docType: String, docId: Option[String] = None, json: JsValue): Future[Response] = {
+    val indexFuture: Future[Response] = client.index(indexName, `type` = docType, id = docId, data = json.toString(), refresh = true)
+    indexFuture.flatMap { indexResponse =>
+      if (indexResponse.getStatusCode() == 200) {
+        val docId = (Json.parse(indexResponse.getResponseBody()) \ "_id").as[String]
+        client.get(indexName, docType, docId)
+      } else
+        indexFuture
+    }
   }
+
+  def deleteIndex(name: String): Future[Response] = {
+    client.deleteIndex(name)
+  }
+
+  def deleteAllIndexes(): Future[Response] = {
+    deleteIndex("*")
+  }
+
+  def verifyIndex(name: String): Future[Response] = {
+    client.verifyIndex(name)
+  }
+
 }

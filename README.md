@@ -193,5 +193,18 @@ $ ./actw console
 And type the following scala: 
 
 ```scala
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import com.ning.http.client.Response
+
+import wabisabi._
+val client = new Client("http://localhost:9200")
+Await.result(client.health().map(_.getStatusCode), 10.seconds)
+Await.result(client.health().map(_.getResponseBody), 10.seconds)
+
+
+
+
 
 ```

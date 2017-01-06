@@ -1,10 +1,9 @@
 package services
 
-import com.ning.http.client.Response
-
 import scala.concurrent.Future
-import models.small_storage.items.Item
 import play.api.Configuration
+import com.ning.http.client.Response
+import play.api.libs.json.JsValue
 
 trait ElasticsearchService {
 
@@ -13,8 +12,13 @@ trait ElasticsearchService {
 
   def createIndex(name: String, schema: String): Future[Response]
 
-  def createIndexFromFile(fileName: String): Future[Response]
+  def createIndexFromFile(name: String, schemaFileFullpath: String): Future[Response]
 
-  def index(indexName: String, item: Item): Future[Response]
+  def indexDoc(indexName: String, docType: String, docId: Option[String] = None, json: JsValue): Future[Response]
 
+  def deleteIndex(name: String): Future[Response]
+
+  def deleteAllIndexes(): Future[Response]
+
+  def verifyIndex(name: String): Future[Response]
 }
