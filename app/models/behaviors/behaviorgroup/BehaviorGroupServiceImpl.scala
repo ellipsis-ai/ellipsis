@@ -116,8 +116,16 @@ class BehaviorGroupServiceImpl @Inject() (
   }
 
   def delete(group: BehaviorGroup): Future[BehaviorGroup] = {
-    val action = rawFindQuery(group.id).delete
-    dataService.run(action).map(_ => group)
+    for {
+      behaviors <- dataService.behaviors.allForGroup(group)
+      _ <- Future.sequence(behaviors.map { ea =>
+        dataService.behaviors.unlearn(ea)
+      })
+      deleted <- {
+        val action = rawFindQuery(group.id).delete
+        dataService.run(action).map(_ => group)
+      }
+    } yield deleted
   }
 
 }
