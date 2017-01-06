@@ -38,7 +38,7 @@ case class ScheduledMessage(
       s"$baseUrl$path"
     }.get
     SimpleTextResult(
-      s"""[Scheduled:]($helpLink)
+      s"""I've been [scheduled]($helpLink) to run $shortDescription
      """.stripMargin, result.forcePrivateResponse)
   }
 
@@ -46,7 +46,7 @@ case class ScheduledMessage(
     maybeChannelName.exists(_.startsWith("D"))
   }
 
-  def listResponse: String = {
+  def shortDescription: String = {
     val channelInfo = maybeChannelName.map { channelName =>
       if (isScheduledForDirectMessage) {
         s"in a DM"
@@ -56,8 +56,11 @@ case class ScheduledMessage(
         s"in <#$channelName>"
       }
     }.getOrElse("")
+    s"`$text` ${recurrence.displayString.trim} $channelInfo"
+  }
 
-    s"""`$text` ${recurrence.displayString.trim} $channelInfo
+  def listResponse: String = {
+    s"""$shortDescription
         |
         |$nextRunsString
      """.stripMargin
