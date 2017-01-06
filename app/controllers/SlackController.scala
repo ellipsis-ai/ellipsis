@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
-import play.api.data.Forms.{mapping, nonEmptyText, seq}
+import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, Result}
 import play.utils.UriEncoding
@@ -76,24 +76,37 @@ class SlackController @Inject() (
     }
   }
 
-  case class EventInfo(
-                  eventType: String,
-                  ts: String,
-                  userId: String,
-                  channel: String,
-                  text: String
-                  )
+  trait MessageRequestInfo extends RequestInfo {
+    val teamId: String
+    val channel: String
+    val userId: String
+    val message: String
+    val ts: String
+  }
 
-  case class EventRequestInfo(
-                        token: String,
-                        teamId: String,
-                        apiAppId: String,
-                        event: EventInfo,
-                        requestType: String,
-                        authedUsers: Seq[String]
-                      ) extends RequestInfo
+  case class MessageSentEventInfo(
+                                    eventType: String,
+                                    ts: String,
+                                    userId: String,
+                                    channel: String,
+                                    text: String
+                                  )
 
-  private val eventRequestForm = Form(
+  case class MessageSentEventRequestInfo(
+                                          token: String,
+                                          teamId: String,
+                                          apiAppId: String,
+                                          event: MessageSentEventInfo,
+                                          requestType: String,
+                                          authedUsers: Seq[String]
+                                        ) extends MessageRequestInfo {
+    val message: String = event.text.trim
+    val userId: String = event.userId
+    val channel: String = event.channel
+    val ts: String = event.ts
+  }
+
+  private val messageSentEventRequestForm = Form(
     mapping(
       "token" -> nonEmptyText,
       "team_id" -> nonEmptyText,
@@ -104,21 +117,82 @@ class SlackController @Inject() (
         "user" -> nonEmptyText,
         "channel" -> nonEmptyText,
         "text" -> nonEmptyText
-      )(EventInfo.apply)(EventInfo.unapply),
+      )(MessageSentEventInfo.apply)(MessageSentEventInfo.unapply),
       "type" -> nonEmptyText,
       "authed_users" -> seq(nonEmptyText)
-    )(EventRequestInfo.apply)(EventRequestInfo.unapply) verifying("Not an event request", fields => fields match {
+    )(MessageSentEventRequestInfo.apply)(MessageSentEventRequestInfo.unapply) verifying("Not an event request", fields => fields match {
       case info => info.requestType == "event_callback"
     })
   )
 
-  private def eventResult(info: EventRequestInfo): Result = {
+  case class EditedInfo(user: String, ts: String)
+
+  case class ChangedMessageInfo(
+                                 eventType: String,
+                                 ts: String,
+                                 userId: String,
+                                 text: String,
+                                 edited: EditedInfo
+                               )
+
+  case class MessageChangedEventInfo(
+                                      eventType: String,
+                                      message: ChangedMessageInfo,
+                                      eventSubType: String,
+                                      channel: String,
+                                      eventTs: String,
+                                      ts: String
+                                   )
+
+  case class MessageChangedEventRequestInfo(
+                                             token: String,
+                                             teamId: String,
+                                             apiAppId: String,
+                                             event: MessageChangedEventInfo,
+                                             requestType: String,
+                                             authedUsers: Seq[String]
+                                          ) extends MessageRequestInfo {
+    val message: String = event.message.text.trim
+    val userId: String = event.message.userId
+    val channel: String = event.channel
+    val ts: String = event.ts
+  }
+
+  private val messageChangedEventRequestForm = Form(
+    mapping(
+      "token" -> nonEmptyText,
+      "team_id" -> nonEmptyText,
+      "api_app_id" -> nonEmptyText,
+      "event" -> mapping(
+        "type" -> nonEmptyText,
+        "message" -> mapping(
+          "type" -> nonEmptyText,
+          "ts" -> nonEmptyText,
+          "user" -> nonEmptyText,
+          "text" -> nonEmptyText,
+          "edited" -> mapping(
+            "user" -> nonEmptyText,
+            "ts" -> nonEmptyText
+          )(EditedInfo.apply)(EditedInfo.unapply)
+        )(ChangedMessageInfo.apply)(ChangedMessageInfo.unapply),
+        "subtype" -> nonEmptyText,
+        "channel" -> nonEmptyText,
+        "event_ts" -> nonEmptyText,
+        "ts" -> nonEmptyText
+      )(MessageChangedEventInfo.apply)(MessageChangedEventInfo.unapply),
+      "type" -> nonEmptyText,
+      "authed_users" -> seq(nonEmptyText)
+    )(MessageChangedEventRequestInfo.apply)(MessageChangedEventRequestInfo.unapply) verifying("Not an edited message event request", fields => fields match {
+      case info => info.requestType == "event_callback" && info.event.eventSubType == "message_changed"
+    })
+  )
+
+  private def messageEventResult(info: MessageRequestInfo): Result = {
     if (info.isValid) {
       for {
         maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
         _ <- maybeProfile.map { profile =>
-          val event = info.event
-          slackEventService.onEvent(SlackMessageEvent(profile, event.channel, event.userId, event.text.trim, event.ts))
+          slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.userId, info.message, info.ts))
         }.getOrElse {
           Future.successful({})
         }
@@ -131,12 +205,17 @@ class SlackController @Inject() (
 
   def event = Action { implicit request =>
     challengeRequestForm.bindFromRequest.fold(
-      formWithErrors => {
-        eventRequestForm.bindFromRequest.fold(
-          formWithErrors => {
-            BadRequest(formWithErrors.errorsAsJson)
+      _ => {
+        messageSentEventRequestForm.bindFromRequest.fold(
+          _ => {
+            messageChangedEventRequestForm.bindFromRequest.fold(
+              _ => {
+                Ok("I don't know what to do with this request but I'm not concerned")
+              },
+              info => messageEventResult(info)
+            )
           },
-          info => eventResult(info)
+          info => messageEventResult(info)
         )
       },
       info => challengeResult(info)
