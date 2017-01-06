@@ -18,10 +18,10 @@ case class ResetBehaviorsBehavior(
     val eventualReply = try {
       for {
         maybeTeam <- dataService.teams.find(event.teamId)
-        behaviors <- maybeTeam.map { team =>
-          dataService.behaviors.allForTeam(team)
+        groups <- maybeTeam.map { team =>
+          dataService.behaviorGroups.allFor(team)
         }.getOrElse(Future.successful(Seq()))
-        _ <- Future.sequence(behaviors.map(b => dataService.behaviors.unlearn(b)))
+        _ <- Future.sequence(groups.map(dataService.behaviorGroups.delete))
       } yield {
         "OK, I've forgotten all the things"
       }
