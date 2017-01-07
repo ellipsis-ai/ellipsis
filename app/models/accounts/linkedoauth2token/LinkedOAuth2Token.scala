@@ -26,7 +26,7 @@ case class LinkedOAuth2Token(
   def expiresIn: Option[Int] = maybeExpirationTime.map { expirationTime =>
     val now = OffsetDateTime.now
     if (expirationTime.isAfter(now)) {
-      expirationTime.getSecond - now.getSecond
+      expirationTime.toEpochSecond - now.toEpochSecond
     } else {
       0
     }
