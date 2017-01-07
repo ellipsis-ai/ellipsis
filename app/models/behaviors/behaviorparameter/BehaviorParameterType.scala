@@ -125,6 +125,13 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   val id = behavior.id
   val name = behavior.maybeDataTypeName.getOrElse("Unnamed data type")
 
+  case class ValidValue(id: String, label: String)
+  implicit val validValueReads = Json.reads[ValidValue]
+  implicit val validValueWrites = Json.writes[ValidValue]
+  case class ValidValueWithNumericId(id: Long, label: String)
+  implicit val validValueWithNumericIdReads = Json.reads[ValidValueWithNumericId]
+  implicit val validValueWithNumericIdWrites = Json.writes[ValidValueWithNumericId]
+
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
     cachedValidValueFor(text, context).map { vv =>
       Future.successful(Some(vv))
@@ -148,13 +155,6 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
       }.getOrElse(Future.successful(Seq()))
     } yield !requiredOAuth2ApiConfigs.forall(_.isReady)
   }
-
-  case class ValidValue(id: String, label: String)
-  implicit val validValueReads = Json.reads[ValidValue]
-  implicit val validValueWrites = Json.writes[ValidValue]
-  case class ValidValueWithNumericId(id: Long, label: String)
-  implicit val validValueWithNumericIdReads = Json.reads[ValidValueWithNumericId]
-  implicit val validValueWithNumericIdWrites = Json.writes[ValidValueWithNumericId]
 
   val team = behavior.team
 
