@@ -79,7 +79,9 @@ case class ScheduledMessage(
 
     nextRunDateFormatter.format(when) ++ clarifier
   }
-  def nextRunTimeStringFor(when: OffsetDateTime): String = Recurrence.timeFormatterWithZone.format(when)
+  def nextRunTimeStringFor(when: OffsetDateTime): String = {
+    Recurrence.timeFormatterWithZone.format(when.toZonedDateTime.withZoneSameInstant(team.timeZone))
+  }
 
   def nextRunStringFor(when: OffsetDateTime): String = {
     val whenInDefaultTimeZone = Recurrence.withZone(when, team.timeZone)
