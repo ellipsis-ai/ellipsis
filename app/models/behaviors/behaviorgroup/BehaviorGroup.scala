@@ -1,6 +1,6 @@
 package models.behaviors.behaviorgroup
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.team.Team
 import utils.SafeFileName
@@ -11,7 +11,7 @@ case class BehaviorGroup(
                           maybeDescription: Option[String],
                           maybeImportedId: Option[String],
                           team: Team,
-                          createdAt: ZonedDateTime) {
+                          createdAt: OffsetDateTime) {
 
   def exportName: String = {
     Option(SafeFileName.forName(name)).filter(_.nonEmpty).getOrElse(id)

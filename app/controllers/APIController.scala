@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import models.accounts.user.User
@@ -97,7 +97,7 @@ class APIController @Inject() (
               info.channel,
               maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
               info.message,
-              ZonedDateTime.now.toInstant.toEpochMilli.toString // TODO: hmmmm
+              OffsetDateTime.now.toInstant.toEpochMilli.toString // TODO: hmmmm
             )
           )
           isInvokedExternally <- Future.successful(maybeUserForApiToken.isDefined)

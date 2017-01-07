@@ -14,6 +14,11 @@ sealed trait Recurrence {
   val typeName: String
   val maybeTimeOfDay: Option[LocalTime] = None
   val maybeTimeZone: Option[ZoneId] = None
+  def maybeZoneOffsetAt(when: OffsetDateTime): Option[ZoneOffset] = {
+    maybeTimeZone.map { timeZone =>
+      Recurrence.zoneOffsetAt(when, timeZone)
+    }
+  }
   val maybeMinuteOfHour: Option[Int] = None
   val daysOfWeek: Seq[DayOfWeek] = Seq()
   val maybeMonday: Option[Boolean] = Some(daysOfWeek.contains(DayOfWeek.MONDAY))
@@ -27,20 +32,20 @@ sealed trait Recurrence {
   val maybeDayOfMonth: Option[Int] = None
   val maybeNthDayOfWeek: Option[Int] = None
   val maybeMonth: Option[Int] = None
-  private def withZone(when: ZonedDateTime): ZonedDateTime = {
-    maybeTimeZone.map { timeZone =>
-      when.withZoneSameLocal(timeZone)
+  protected def withZone(when: OffsetDateTime): OffsetDateTime = {
+    maybeZoneOffsetAt(when).map { offset =>
+      when.withOffsetSameInstant(offset)
     }.getOrElse(when)
   }
-  protected def nextAfterAssumingZone(previous: ZonedDateTime): ZonedDateTime
-  def nextAfter(previous: ZonedDateTime): ZonedDateTime = {
+  protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime
+  def nextAfter(previous: OffsetDateTime): OffsetDateTime = {
     nextAfterAssumingZone(withZone(previous))
   }
-  protected def initialAfterAssumingZone(start: ZonedDateTime): ZonedDateTime
-  def initialAfter(start: ZonedDateTime): ZonedDateTime = {
+  protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime
+  def initialAfter(start: OffsetDateTime): OffsetDateTime = {
     initialAfterAssumingZone(withZone(start))
   }
-  def withStandardAdjustments(when: ZonedDateTime): ZonedDateTime = when.withSecond(0).withNano(0)
+  def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = when.withSecond(0).withNano(0)
   def displayString: String = ""
 }
 case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
@@ -50,12 +55,12 @@ case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
     s"every $frequencyString at $minuteOfHour minutes"
   }
 
-  def isEarlierInHour(when: ZonedDateTime): Boolean = when.getMinute < minuteOfHour
-  def isLaterInHour(when: ZonedDateTime): Boolean = when.getMinute > minuteOfHour
+  def isEarlierInHour(when: OffsetDateTime): Boolean = when.getMinute < minuteOfHour
+  def isLaterInHour(when: OffsetDateTime): Boolean = when.getMinute > minuteOfHour
 
-  def withAdjustments(when: ZonedDateTime): ZonedDateTime = withStandardAdjustments(when.withMinute(minuteOfHour))
+  def withAdjustments(when: OffsetDateTime): OffsetDateTime = withStandardAdjustments(when.withMinute(minuteOfHour))
 
-  protected def nextAfterAssumingZone(previous: ZonedDateTime): ZonedDateTime = {
+  protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime = {
     val hoursToAdd = if (isEarlierInHour(previous)) {
       frequency - 1
     } else {
@@ -64,7 +69,7 @@ case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
     withAdjustments(previous.plusHours(hoursToAdd))
   }
 
-  protected def initialAfterAssumingZone(start: ZonedDateTime): ZonedDateTime = {
+  protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime = {
     if (isLaterInHour(start)) {
       withAdjustments(start.plusHours(1))
     } else {
@@ -93,7 +98,7 @@ object Hourly {
         case minutesRegex(minutes) => Some(minutes.toInt)
         case _ => None
       }
-      Hourly(frequency, maybeMinuteOfHour.getOrElse(ZonedDateTime.now.getMinute))
+      Hourly(frequency, maybeMinuteOfHour.getOrElse(OffsetDateTime.now.getMinute))
     }
   }
 }
@@ -109,12 +114,12 @@ trait RecurrenceWithTimeOfDay extends Recurrence {
 
   def stringFor(timeZone: ZoneId): String = s"(${timeZone.toString})"
 
-  override def withStandardAdjustments(when: ZonedDateTime): ZonedDateTime = {
+  override def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = {
     super.withStandardAdjustments(withTime(when))
   }
 
-  def withTime(when: ZonedDateTime): ZonedDateTime = {
-    when.withZoneSameLocal(timeZone).withHour(hourOfDay).withMinute(minuteOfHour).withSecond(secondOfMinute).withNano(nanosOfSecond)
+  def withTime(when: OffsetDateTime): OffsetDateTime = {
+    withZone(when).withHour(hourOfDay).withMinute(minuteOfHour).withSecond(secondOfMinute).withNano(nanosOfSecond)
   }
 }
 
@@ -125,12 +130,12 @@ case class Daily(frequency: Int, timeOfDay: LocalTime, timeZone: ZoneId) extends
     s"every $frequencyString at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
 
-  def isEarlierInDay(when: ZonedDateTime): Boolean = when.toLocalTime.isBefore(timeOfDay)
-  def isLaterInDay(when: ZonedDateTime): Boolean = when.toLocalTime.isAfter(timeOfDay)
+  def isEarlierInDay(when: OffsetDateTime): Boolean = when.toLocalTime.isBefore(timeOfDay)
+  def isLaterInDay(when: OffsetDateTime): Boolean = when.toLocalTime.isAfter(timeOfDay)
 
-  def withAdjustments(when: ZonedDateTime): ZonedDateTime = withStandardAdjustments(when)
+  def withAdjustments(when: OffsetDateTime): OffsetDateTime = withStandardAdjustments(when)
 
-  protected def nextAfterAssumingZone(previous: ZonedDateTime): ZonedDateTime = {
+  protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime = {
     val daysToAdd = if (isEarlierInDay(previous)) {
       frequency - 1
     } else {
@@ -139,7 +144,7 @@ case class Daily(frequency: Int, timeOfDay: LocalTime, timeZone: ZoneId) extends
     withAdjustments(previous.plusDays(daysToAdd))
   }
 
-  protected def initialAfterAssumingZone(start: ZonedDateTime): ZonedDateTime = {
+  protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime = {
     if (isLaterInDay(start)) {
       withAdjustments(start.plusDays(1))
     } else {
@@ -183,7 +188,7 @@ case class Weekly(
     daysOfWeek.map(Recurrence.dayOfWeekNameFor).mkString(", ")
   }
 
-  def maybeNextDayInWeekOf(when: ZonedDateTime): Option[DayOfWeek] = {
+  def maybeNextDayInWeekOf(when: OffsetDateTime): Option[DayOfWeek] = {
     if (isEarlierTheSameDay(when)) {
       Some(when.getDayOfWeek)
     } else {
@@ -191,7 +196,7 @@ case class Weekly(
     }
   }
 
-  def nextDayOfWeekFor(when: ZonedDateTime): DayOfWeek = {
+  def nextDayOfWeekFor(when: OffsetDateTime): DayOfWeek = {
     maybeNextDayInWeekOf(when).getOrElse(daysOfWeek.head)
   }
 
@@ -200,20 +205,20 @@ case class Weekly(
     s"every $frequencyString on $daysOfWeekString at ${Recurrence.timeFormatter.format(timeOfDay)} ${stringFor(timeZone)}"
   }
 
-  def isEarlierTheSameDay(when: ZonedDateTime): Boolean = {
+  def isEarlierTheSameDay(when: OffsetDateTime): Boolean = {
     daysOfWeek.contains(when.getDayOfWeek) && when.toLocalTime.isBefore(timeOfDay)
   }
 
-  def isEarlierInWeek(when: ZonedDateTime): Boolean = {
+  def isEarlierInWeek(when: OffsetDateTime): Boolean = {
     maybeNextDayInWeekOf(when).isDefined
   }
-  def isLaterInWeek(when: ZonedDateTime): Boolean = !isEarlierInWeek(when)
+  def isLaterInWeek(when: OffsetDateTime): Boolean = !isEarlierInWeek(when)
 
-  def withAdjustments(when: ZonedDateTime): ZonedDateTime = {
+  def withAdjustments(when: OffsetDateTime): OffsetDateTime = {
     withStandardAdjustments(when.`with`(nextDayOfWeekFor(when)))
   }
 
-  protected def nextAfterAssumingZone(previous: ZonedDateTime): ZonedDateTime = {
+  protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime = {
     val weeksToAdd = if (isEarlierInWeek(previous)) {
       frequency - 1
     } else {
@@ -222,7 +227,7 @@ case class Weekly(
     withAdjustments(previous.plusWeeks(weeksToAdd))
   }
 
-  protected def initialAfterAssumingZone(start: ZonedDateTime): ZonedDateTime = {
+  protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime = {
     if (isLaterInWeek(start)) {
       withAdjustments(start.plusWeeks(1))
     } else {
@@ -249,7 +254,7 @@ object Weekly {
     maybeFrequency.map { frequency =>
       var daysOfWeek = Recurrence.daysOfWeekFrom(text)
       if (daysOfWeek.isEmpty) {
-        daysOfWeek = Seq(ZonedDateTime.now.getDayOfWeek)
+        daysOfWeek = Seq(OffsetDateTime.now.getDayOfWeek)
       }
       val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
       Weekly(
@@ -269,16 +274,16 @@ case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: Local
     s"every $frequencyString on the ${Recurrence.ordinalStringFor(dayOfMonth)} at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
 
-  def isEarlierInMonth(when: ZonedDateTime): Boolean = {
+  def isEarlierInMonth(when: OffsetDateTime): Boolean = {
     when.getDayOfMonth < dayOfMonth || (when.getDayOfMonth == dayOfMonth && when.toLocalTime.isBefore(timeOfDay))
   }
-  def isLaterInMonth(when: ZonedDateTime): Boolean = {
+  def isLaterInMonth(when: OffsetDateTime): Boolean = {
     when.getDayOfMonth > dayOfMonth || (when.getDayOfMonth == dayOfMonth && when.toLocalTime.isAfter(timeOfDay))
   }
 
-  def withAdjustments(when: ZonedDateTime): ZonedDateTime = withStandardAdjustments(when.withDayOfMonth(dayOfMonth))
+  def withAdjustments(when: OffsetDateTime): OffsetDateTime = withStandardAdjustments(when.withDayOfMonth(dayOfMonth))
 
-  protected def nextAfterAssumingZone(previous: ZonedDateTime): ZonedDateTime = {
+  protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime = {
     val monthsToAdd = if (isEarlierInMonth(previous)) {
       frequency - 1
     } else {
@@ -287,7 +292,7 @@ case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: Local
     withAdjustments(previous.plusMonths(monthsToAdd))
   }
 
-  protected def initialAfterAssumingZone(start: ZonedDateTime): ZonedDateTime = {
+  protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime = {
     if (isLaterInMonth(start)) {
       withAdjustments(start.plusMonths(1))
     } else {
@@ -317,7 +322,7 @@ object MonthlyByDayOfMonth {
       val maybeDayOfMonth = maybeDayOfMonthFrom(text)
       MonthlyByDayOfMonth(
         frequency,
-        maybeDayOfMonth.getOrElse(ZonedDateTime.now.getDayOfMonth),
+        maybeDayOfMonth.getOrElse(OffsetDateTime.now.getDayOfMonth),
         Recurrence.ensureTimeFrom(text, defaultTimeZone),
         defaultTimeZone
       )
@@ -332,7 +337,7 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: DayOfWeek, nth: Int,
     s"every $frequencyString on the ${Recurrence.ordinalStringFor(nth)} ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
 
-  def targetInMonthMatching(when: ZonedDateTime): ZonedDateTime = {
+  def targetInMonthMatching(when: OffsetDateTime): OffsetDateTime = {
     val firstOfTheMonth = when.withDayOfMonth(1)
     val weeksToAdd = if (firstOfTheMonth.getDayOfWeek.getValue <= dayOfWeek.getValue) {
       nth - 1
@@ -342,7 +347,7 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: DayOfWeek, nth: Int,
     withStandardAdjustments(firstOfTheMonth.plusWeeks(weeksToAdd).`with`(dayOfWeek))
   }
 
-  protected def nextAfterAssumingZone(previous: ZonedDateTime): ZonedDateTime = {
+  protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime = {
     val monthsToAdd = if (targetInMonthMatching(previous).isAfter(previous)) {
       frequency - 1
     } else {
@@ -351,7 +356,7 @@ case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: DayOfWeek, nth: Int,
     targetInMonthMatching(previous.plusMonths(monthsToAdd))
   }
 
-  protected def initialAfterAssumingZone(start: ZonedDateTime): ZonedDateTime = {
+  protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime = {
     if (targetInMonthMatching(start).isBefore(start)) {
       targetInMonthMatching(start.plusMonths(1))
     } else {
@@ -399,20 +404,20 @@ case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime, time
   val month = monthDay.getMonthValue
   val dayOfMonth = monthDay.getDayOfMonth
 
-  def isEarlierInYear(when: ZonedDateTime): Boolean = {
+  def isEarlierInYear(when: OffsetDateTime): Boolean = {
     when.getMonthValue < month ||
       (when.getMonthValue == month && when.getDayOfMonth < dayOfMonth) ||
       (when.getMonthValue == month && when.getDayOfMonth == dayOfMonth && when.toLocalTime.isBefore(timeOfDay))
   }
-  def isLaterInYear(when: ZonedDateTime): Boolean = {
+  def isLaterInYear(when: OffsetDateTime): Boolean = {
     when.getMonthValue > month ||
       (when.getMonthValue == month && when.getDayOfMonth > dayOfMonth) ||
       (when.getMonthValue == month && when.getDayOfMonth == dayOfMonth && when.toLocalTime.isAfter(timeOfDay))
   }
 
-  def withAdjustments(when: ZonedDateTime): ZonedDateTime = withStandardAdjustments(when.withMonth(month).withDayOfMonth(dayOfMonth))
+  def withAdjustments(when: OffsetDateTime): OffsetDateTime = withStandardAdjustments(when.withMonth(month).withDayOfMonth(dayOfMonth))
 
-  protected def nextAfterAssumingZone(previous: ZonedDateTime): ZonedDateTime = {
+  protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime = {
     val yearsToAdd = if (isEarlierInYear(previous)) {
       frequency - 1
     } else {
@@ -421,7 +426,7 @@ case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime, time
     withAdjustments(previous.plusYears(yearsToAdd))
   }
 
-  protected def initialAfterAssumingZone(start: ZonedDateTime): ZonedDateTime = {
+  protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime = {
     if (isLaterInYear(start)) {
       withAdjustments(start.plusYears(1))
     } else {
@@ -474,11 +479,20 @@ object Recurrence {
   val timeFormatter = DateTimeFormatter.ofPattern("h:mma")
   val timeFormatterWithZone = DateTimeFormatter.ofPattern("h:mma z")
 
-  def currentAdjustedTime(timeZone: ZoneId): LocalTime = {
-    ZonedDateTime.now.withZoneSameInstant(timeZone).toLocalTime.withSecond(0).withNano(0)
+  def zoneOffsetAt(when: OffsetDateTime, timeZone: ZoneId): ZoneOffset = {
+    timeZone.getRules.getOffset(when.toInstant);
   }
+
+  def withZone(when: OffsetDateTime, timeZone: ZoneId): OffsetDateTime = {
+    when.withOffsetSameInstant(zoneOffsetAt(when, timeZone))
+  }
+
+  def currentAdjustedTime(timeZone: ZoneId): LocalTime = {
+    withZone(OffsetDateTime.now, timeZone).toLocalTime.withSecond(0).withNano(0)
+  }
+
   def currentMonthDay(timeZone: ZoneId): MonthDay = {
-    val now = ZonedDateTime.now.withZoneSameInstant(timeZone)
+    val now = withZone(OffsetDateTime.now, timeZone)
     MonthDay.of(now.getMonth, now.getDayOfMonth)
   }
 
@@ -514,7 +528,7 @@ object Recurrence {
     val timeRegex = """(?i).*at\s+(.*)""".r
     text match {
       case timeRegex(time) => maybeDateFrom(time, defaultTimeZone).map { date =>
-        val dateTime = ZonedDateTime.ofInstant(date.toInstant, defaultTimeZone)
+        val dateTime = OffsetDateTime.ofInstant(date.toInstant, defaultTimeZone)
         dateTime.toLocalTime
       }
       case _ => None

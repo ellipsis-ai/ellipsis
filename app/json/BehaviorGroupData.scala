@@ -1,6 +1,6 @@
 package json
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.accounts.user.User
 import models.team.Team
@@ -19,7 +19,7 @@ case class BehaviorGroupData(
                               githubUrl: Option[String],
                               importedId: Option[String],
                               publishedId: Option[String],
-                              createdAt: ZonedDateTime
+                              createdAt: OffsetDateTime
                             ) extends Ordered[BehaviorGroupData] {
 
   val maybeNonEmptyName: Option[String] = Option(name.trim).filter(_.nonEmpty)

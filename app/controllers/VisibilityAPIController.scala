@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.{ZoneId, ZonedDateTime}
+import java.time.{OffsetDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -33,8 +33,8 @@ class VisibilityAPIController @Inject() (
 
   private val dateFormatter =  DateTimeFormatter.ofPattern("EEE, dd MMM yyyy").withLocale(java.util.Locale.ENGLISH)
 
-  private def dateFor(year: String, month: String, day: String): ZonedDateTime = {
-    ZonedDateTime.of(year.toInt, month.toInt, day.toInt, 0, 0, 0, 0, ZoneId.systemDefault)
+  private def dateFor(year: String, month: String, day: String): OffsetDateTime = {
+    OffsetDateTime.of(year.toInt, month.toInt, day.toInt, 0, 0, 0, 0, ZoneOffset.UTC)
   }
 
   def invocationCountsForDate(token: String, year: String, month: String, day: String) = Action.async { implicit request =>

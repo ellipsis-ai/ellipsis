@@ -1,7 +1,7 @@
 package controllers
 
 import java.net.{URI, URLEncoder}
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -109,7 +109,7 @@ class SocialAuthController @Inject() (
                 dataService.users.createFor(botProfile.teamId)
               }
               eventualUser.flatMap { user =>
-                dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, ZonedDateTime.now))
+                dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, OffsetDateTime.now))
               }
             }
           }
@@ -178,7 +178,7 @@ class SocialAuthController @Inject() (
                     dataService.users.createFor(teamId)
                   }
                   eventualUser.flatMap { user =>
-                    dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, ZonedDateTime.now))
+                    dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, OffsetDateTime.now))
                   }
                 }
                 user <- Future.successful(linkedAccount.user)

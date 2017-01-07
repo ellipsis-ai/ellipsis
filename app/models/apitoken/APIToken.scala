@@ -1,6 +1,6 @@
 package models.apitoken
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 case class APIToken(
@@ -8,8 +8,8 @@ case class APIToken(
                      label: String,
                      userId: String,
                      isRevoked: Boolean,
-                     maybeLastUsed: Option[ZonedDateTime],
-                     createdAt: ZonedDateTime
+                     maybeLastUsed: Option[OffsetDateTime],
+                     createdAt: OffsetDateTime
                    ) {
   val isValid: Boolean = !isRevoked
 

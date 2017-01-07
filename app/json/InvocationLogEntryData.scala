@@ -1,6 +1,6 @@
 package json
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 case class InvocationLogEntryData(
                                   behaviorId: String,
@@ -10,5 +10,5 @@ case class InvocationLogEntryData(
                                   context: String,
                                   maybeUserIdForContext: Option[String],
                                   runtimeInMilliseconds: Long,
-                                  createdAt: ZonedDateTime
+                                  createdAt: OffsetDateTime
                                 )

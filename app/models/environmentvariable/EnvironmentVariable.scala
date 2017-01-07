@@ -1,9 +1,9 @@
 package models.environmentvariable
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 trait EnvironmentVariable {
   val name: String
   val value: String
-  val createdAt: ZonedDateTime
+  val createdAt: OffsetDateTime
 }

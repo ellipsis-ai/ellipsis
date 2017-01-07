@@ -1,6 +1,6 @@
 package models.behaviors.savedanswer
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -19,7 +19,7 @@ case class RawSavedAnswer(
                           inputId: String,
                           valueString: String,
                           maybeUserId: Option[String],
-                          createdAt: ZonedDateTime
+                          createdAt: OffsetDateTime
                          )
 
 class SavedAnswersTable(tag: Tag) extends Table[RawSavedAnswer](tag, "saved_answers") {
@@ -28,7 +28,7 @@ class SavedAnswersTable(tag: Tag) extends Table[RawSavedAnswer](tag, "saved_answ
   def inputId = column[String]("input_id")
   def valueString = column[String]("value_string")
   def maybeUserId = column[Option[String]]("user_id")
-  def createdAt = column[ZonedDateTime]("created_at")
+  def createdAt = column[OffsetDateTime]("created_at")
 
   def * = (id, inputId, valueString, maybeUserId, createdAt) <> ((RawSavedAnswer.apply _).tupled, RawSavedAnswer.unapply _)
 }
@@ -63,7 +63,7 @@ class SavedAnswerServiceImpl @Inject() (
         val updated = existing.copy(valueString = valueString)
         query.update(updated).map(_ => updated)
       }.getOrElse {
-        val raw = RawSavedAnswer(IDs.next, input.id, valueString, maybeUserId, ZonedDateTime.now)
+        val raw = RawSavedAnswer(IDs.next, input.id, valueString, maybeUserId, OffsetDateTime.now)
         (all += raw).map(_ => raw)
       }
     } yield SavedAnswer(raw.id, input, valueString, maybeUserId, raw.createdAt)

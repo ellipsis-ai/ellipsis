@@ -1,6 +1,6 @@
 package models.behaviors.scheduledmessage
 
-import java.time.{DayOfWeek, LocalTime, ZoneId, ZonedDateTime}
+import java.time.{DayOfWeek, LocalTime, ZoneId, OffsetDateTime}
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -23,8 +23,8 @@ case class RawScheduledMessage(base: RawScheduledMessageBase, options: RawSchedu
   val isForIndividualMembers: Boolean = base.isForIndividualMembers
   val recurrenceType: String = base.recurrenceType
   val frequency: Int = base.frequency
-  val nextSentAt: ZonedDateTime = base.nextSentAt
-  val createdAt: ZonedDateTime = base.createdAt
+  val nextSentAt: OffsetDateTime = base.nextSentAt
+  val createdAt: OffsetDateTime = base.createdAt
 
   val maybeTimeOfDay = options.maybeTimeOfDay
   val maybeTimeZone = options.maybeTimeZone
@@ -68,8 +68,8 @@ case class RawScheduledMessageBase(
                                     isForIndividualMembers: Boolean,
                                     recurrenceType: String,
                                     frequency: Int,
-                                    nextSentAt: ZonedDateTime,
-                                    createdAt: ZonedDateTime
+                                    nextSentAt: OffsetDateTime,
+                                    createdAt: OffsetDateTime
                                   )
 
 case class RawScheduledMessageOptions(
@@ -113,8 +113,8 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
   def maybeDayOfMonth = column[Option[Int]]("day_of_month")
   def maybeNthDayOfWeek = column[Option[Int]]("nth_day_of_week")
   def maybeMonth = column[Option[Int]]("month")
-  def nextSentAt = column[ZonedDateTime]("next_sent_at")
-  def createdAt = column[ZonedDateTime]("created_at")
+  def nextSentAt = column[OffsetDateTime]("next_sent_at")
+  def createdAt = column[OffsetDateTime]("created_at")
 
   private type ScheduledMessageBaseTupleType = (
     String,
@@ -125,8 +125,8 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
     Boolean,
     String,
     Int,
-    ZonedDateTime,
-    ZonedDateTime
+    OffsetDateTime,
+    OffsetDateTime
   )
 
   private type ScheduledMessageOptionsTupleType = (
@@ -221,13 +221,13 @@ class ScheduledMessageServiceImpl @Inject() (
     )
   }
 
-  def uncompiledAllToBeSentQuery(when: Rep[ZonedDateTime]) = {
+  def uncompiledAllToBeSentQuery(when: Rep[OffsetDateTime]) = {
     allWithUser.filter { case((msg, team), user) =>  msg.nextSentAt <= when }
   }
   val allToBeSentQuery = Compiled(uncompiledAllToBeSentQuery _)
 
   def allToBeSent: Future[Seq[ScheduledMessage]] = {
-    val action = allToBeSentQuery(ZonedDateTime.now).result.map { r =>
+    val action = allToBeSentQuery(OffsetDateTime.now).result.map { r =>
       r.map(tuple2ScheduledMessage)
     }
     dataService.run(action)
@@ -259,7 +259,7 @@ class ScheduledMessageServiceImpl @Inject() (
   }
 
   def updateNextTriggeredFor(message: ScheduledMessage): Future[ScheduledMessage] = {
-    save(message.withUpdatedNextTriggeredFor(ZonedDateTime.now))
+    save(message.withUpdatedNextTriggeredFor(OffsetDateTime.now))
   }
 
   def maybeCreateFor(
@@ -271,7 +271,7 @@ class ScheduledMessageServiceImpl @Inject() (
                       isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledMessage]] = {
     Recurrence.maybeFromText(recurrenceText, team.timeZone).map { recurrence =>
-      val now = ZonedDateTime.now.withZoneSameInstant(team.timeZone)
+      val now = Recurrence.withZone(OffsetDateTime.now, team.timeZone)
       val newMessage = ScheduledMessage(
         IDs.next,
         text,

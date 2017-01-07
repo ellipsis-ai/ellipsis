@@ -1,6 +1,6 @@
 package json
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.team.Team
 import models.accounts.user.User
@@ -27,7 +27,7 @@ case class BehaviorVersionData(
                                 importedId: Option[String],
                                 githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
-                                createdAt: Option[ZonedDateTime]
+                                createdAt: Option[OffsetDateTime]
                                 ) {
   val awsConfig: Option[AWSConfigData] = config.aws
 
@@ -62,7 +62,7 @@ object BehaviorVersionData {
                 config: BehaviorConfig,
                 importedId: Option[String],
                 githubUrl: Option[String],
-                createdAt: Option[ZonedDateTime],
+                createdAt: Option[OffsetDateTime],
                 dataService: DataService
               ): BehaviorVersionData = {
 

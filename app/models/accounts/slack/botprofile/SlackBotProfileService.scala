@@ -1,6 +1,6 @@
 package models.accounts.slack.botprofile
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.team.Team
 
@@ -14,7 +14,7 @@ trait SlackBotProfileService {
 
   def allForSlackTeamId(slackTeamId: String): Future[Seq[SlackBotProfile]]
 
-  def allSince(when: ZonedDateTime): Future[Seq[SlackBotProfile]]
+  def allSince(when: OffsetDateTime): Future[Seq[SlackBotProfile]]
 
   def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile]
 

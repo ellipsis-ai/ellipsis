@@ -1,6 +1,6 @@
 package services
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import json._
 import json.Formatting._
@@ -155,7 +155,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
             val maybePublishedId = maybeConfig.map(_.publishedId)
             val name = maybeConfig.map(_.name).getOrElse(groupPath)
             val icon = maybeConfig.flatMap(_.icon)
-            BehaviorGroupData(None, name, readme, icon, behaviors, Some(githubUrl), None, maybePublishedId, ZonedDateTime.now)
+            BehaviorGroupData(None, name, readme, icon, behaviors, Some(githubUrl), None, maybePublishedId, OffsetDateTime.now)
           }).map(Some(_))
         }).getOrElse(Future.successful(None))
     }

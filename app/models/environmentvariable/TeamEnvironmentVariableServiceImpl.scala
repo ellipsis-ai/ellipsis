@@ -1,6 +1,6 @@
 package models.environmentvariable
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -15,7 +15,7 @@ case class RawTeamEnvironmentVariable(
                                    name: String,
                                    value: String,
                                    teamId: String,
-                                   createdAt: ZonedDateTime
+                                   createdAt: OffsetDateTime
                                  )
 
 class TeamEnvironmentVariablesTable(tag: Tag) extends Table[RawTeamEnvironmentVariable](tag, "environment_variables") {
@@ -23,7 +23,7 @@ class TeamEnvironmentVariablesTable(tag: Tag) extends Table[RawTeamEnvironmentVa
   def name = column[String]("name")
   def value = column[String]("value")
   def teamId = column[String]("team_id")
-  def createdAt = column[ZonedDateTime]("created_at")
+  def createdAt = column[OffsetDateTime]("created_at")
 
   def * = (name, value, teamId, createdAt) <> ((RawTeamEnvironmentVariable.apply _).tupled, RawTeamEnvironmentVariable.unapply _)
 }
@@ -64,12 +64,12 @@ class TeamEnvironmentVariableServiceImpl @Inject() (
       query.result.flatMap { r =>
         r.headOption.map { existing =>
           maybeValue.map { value =>
-            val raw = RawTeamEnvironmentVariable(name, value, team.id, ZonedDateTime.now)
+            val raw = RawTeamEnvironmentVariable(name, value, team.id, OffsetDateTime.now)
             query.update(raw).map(_ => raw)
           }.getOrElse(DBIO.successful(existing))
         }.getOrElse {
           val value = maybeValue.getOrElse("")
-          val raw = RawTeamEnvironmentVariable(name, value, team.id, ZonedDateTime.now)
+          val raw = RawTeamEnvironmentVariable(name, value, team.id, OffsetDateTime.now)
           (all += raw).map(_ => raw)
         }.map { raw =>
           Some(TeamEnvironmentVariable(raw.name, raw.value, team, raw.createdAt))

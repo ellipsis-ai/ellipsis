@@ -1,6 +1,6 @@
 package models.behaviors.invocationlogentry
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.behaviors.behavior.Behavior
 import models.behaviors.{BotResult, ParameterWithValue}
@@ -12,15 +12,15 @@ import scala.concurrent.Future
 
 trait InvocationLogEntryService {
 
-  def countsForDate(date: ZonedDateTime): Future[Seq[(String, Int)]]
+  def countsForDate(date: OffsetDateTime): Future[Seq[(String, Int)]]
 
-  def uniqueInvokingUserCountsForDate(date: ZonedDateTime): Future[Seq[(String, Int)]]
+  def uniqueInvokingUserCountsForDate(date: OffsetDateTime): Future[Seq[(String, Int)]]
 
-  def uniqueInvokedBehaviorCountsForDate(date: ZonedDateTime): Future[Seq[(String, Int)]]
+  def uniqueInvokedBehaviorCountsForDate(date: OffsetDateTime): Future[Seq[(String, Int)]]
 
-  def forTeamForDate(team: Team, date: ZonedDateTime): Future[Seq[InvocationLogEntry]]
+  def forTeamForDate(team: Team, date: OffsetDateTime): Future[Seq[InvocationLogEntry]]
 
-  def allForBehavior(behavior: Behavior, from: ZonedDateTime, to: ZonedDateTime): Future[Seq[InvocationLogEntry]]
+  def allForBehavior(behavior: Behavior, from: OffsetDateTime, to: OffsetDateTime): Future[Seq[InvocationLogEntry]]
 
   def createFor(
                  behaviorVersion: BehaviorVersion,

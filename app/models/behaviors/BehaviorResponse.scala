@@ -1,6 +1,6 @@
 package models.behaviors
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
@@ -74,9 +74,9 @@ case class BehaviorResponse(
   }
 
   def resultForFilledOut: Future[BotResult] = {
-    val startTime = ZonedDateTime.now
+    val startTime = OffsetDateTime.now
     dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event).flatMap { result =>
-      val runtimeInMilliseconds = ZonedDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
+      val runtimeInMilliseconds = OffsetDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
       dataService.invocationLogEntries.createFor(
         behaviorVersion,
         parametersWithValues,

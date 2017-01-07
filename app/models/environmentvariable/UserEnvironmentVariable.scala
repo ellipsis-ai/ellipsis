@@ -1,6 +1,6 @@
 package models.environmentvariable
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.accounts.user.User
 
@@ -8,7 +8,7 @@ case class UserEnvironmentVariable(
                                 name: String,
                                 value: String,
                                 user: User,
-                                createdAt: ZonedDateTime
+                                createdAt: OffsetDateTime
                               ) extends EnvironmentVariable {
 
   def toRaw: RawUserEnvironmentVariable = {

@@ -1,6 +1,6 @@
 package models.behaviors.invocationtoken
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -18,7 +18,7 @@ class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invoc
   def id = column[String]("id", O.PrimaryKey)
   def userId = column[String]("user_id")
   def behaviorId = column[String]("behavior_id")
-  def createdAt = column[ZonedDateTime]("created_at")
+  def createdAt = column[OffsetDateTime]("created_at")
 
   def * = (id, userId, behaviorId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
 }
@@ -47,7 +47,7 @@ class InvocationTokenServiceImpl @Inject() (
   }
 
   def createFor(user: User, behavior: Behavior): Future[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, user.id, behavior.id, ZonedDateTime.now)
+    val newInstance = InvocationToken(IDs.next, user.id, behavior.id, OffsetDateTime.now)
     dataService.run((all += newInstance).map(_ => newInstance))
   }
 

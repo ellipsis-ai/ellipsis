@@ -1,6 +1,6 @@
 package models.behaviors.conversations.conversation
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -21,7 +21,7 @@ trait Conversation {
   val conversationType: String
   val context: String
   val userIdForContext: String
-  val startedAt: ZonedDateTime
+  val startedAt: OffsetDateTime
   val state: String
 
   val stateRequiresPrivateMessage: Boolean = false

@@ -1,6 +1,6 @@
 package models.accounts.user
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -69,7 +69,7 @@ class UserServiceImpl @Inject() (
     dataService.linkedAccounts.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
       maybeLinkedAccount.map(Future.successful).getOrElse {
         save(createOnTeamWithId(teamId)).flatMap { user =>
-          dataService.linkedAccounts.save(LinkedAccount(user, loginInfo, ZonedDateTime.now))
+          dataService.linkedAccounts.save(LinkedAccount(user, loginInfo, OffsetDateTime.now))
         }
       }.map(_.user)
     }

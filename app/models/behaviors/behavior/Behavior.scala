@@ -1,6 +1,6 @@
 package models.behaviors.behavior
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
@@ -12,7 +12,7 @@ case class Behavior(
                      maybeCurrentVersionId: Option[String],
                      maybeImportedId: Option[String],
                      maybeDataTypeName: Option[String],
-                     createdAt: ZonedDateTime
+                     createdAt: OffsetDateTime
                    ) {
 
   val isDataType = maybeDataTypeName.isDefined

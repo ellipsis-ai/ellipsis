@@ -1,11 +1,11 @@
 package models.accounts.linkedaccount
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 
-case class LinkedAccount(user: User, loginInfo: LoginInfo, createdAt: ZonedDateTime) {
+case class LinkedAccount(user: User, loginInfo: LoginInfo, createdAt: OffsetDateTime) {
   def toRaw: RawLinkedAccount = RawLinkedAccount(user.id, loginInfo, createdAt)
 }
 

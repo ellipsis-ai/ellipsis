@@ -1,6 +1,6 @@
 package models.behaviors.conversations
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.IDs
 import models.behaviors._
@@ -21,7 +21,7 @@ case class InvokeBehaviorConversation(
                                       trigger: MessageTrigger,
                                       context: String, // Slack, etc
                                       userIdForContext: String, // id for Slack, etc user
-                                      startedAt: ZonedDateTime,
+                                      startedAt: OffsetDateTime,
                                       state: String = Conversation.NEW_STATE
                                       ) extends Conversation {
 
@@ -127,7 +127,7 @@ object InvokeBehaviorConversation {
         activatedTrigger,
         context,
         userIdForContext,
-        ZonedDateTime.now,
+        OffsetDateTime.now,
         Conversation.NEW_STATE
       )
     dataService.conversations.save(newInstance).map(_ => newInstance)

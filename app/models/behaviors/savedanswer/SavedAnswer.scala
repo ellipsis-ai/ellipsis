@@ -1,6 +1,6 @@
 package models.behaviors.savedanswer
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.behaviors.input.Input
 
@@ -9,7 +9,7 @@ case class SavedAnswer(
                       input: Input,
                       valueString: String,
                       maybeUserId: Option[String],
-                      createdAt: ZonedDateTime
+                      createdAt: OffsetDateTime
                                   ) {
   def toRaw: RawSavedAnswer = {
     RawSavedAnswer(id, input.id, valueString, maybeUserId, createdAt)

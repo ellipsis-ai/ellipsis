@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import com.mohiva.play.silhouette.test._
 import models.IDs
@@ -17,7 +17,7 @@ import scala.concurrent.Future
 
 class SocialAuthControllerSpec extends PlaySpec with MockitoSugar {
 
-  def newLoginTokenFor(user: User, isUsed: Boolean = false): LoginToken = LoginToken(IDs.next, user.id, isUsed, ZonedDateTime.now)
+  def newLoginTokenFor(user: User, isUsed: Boolean = false): LoginToken = LoginToken(IDs.next, user.id, isUsed, OffsetDateTime.now)
 
   "SocialAuthController.loginWithToken" should {
 

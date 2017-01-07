@@ -1,6 +1,6 @@
 package models.accounts.oauth2token
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
@@ -9,7 +9,7 @@ case class OAuth2Token(
                         accessToken: String,
                         maybeSlackScopes: Option[String],
                         maybeTokenType: Option[String],
-                        maybeExpirationTime: Option[ZonedDateTime],
+                        maybeExpirationTime: Option[OffsetDateTime],
                         maybeRefreshToken: Option[String],
                         loginInfo: LoginInfo
                       ) {
@@ -20,7 +20,7 @@ case class OAuth2Token(
   }
   def oauth2Info: OAuth2Info = OAuth2Info(accessToken, maybeTokenType, expiresIn, maybeRefreshToken, maybeOauth2Params)
   def expiresIn: Option[Int] = maybeExpirationTime.map { expirationTime =>
-    val now = ZonedDateTime.now
+    val now = OffsetDateTime.now
     if (expirationTime.isAfter(now)) {
       expirationTime.getSecond - now.getSecond
     } else {

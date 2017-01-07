@@ -1,6 +1,6 @@
 package models.environmentvariable
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -15,7 +15,7 @@ case class RawUserEnvironmentVariable(
                                    name: String,
                                    value: String,
                                    userId: String,
-                                   createdAt: ZonedDateTime
+                                   createdAt: OffsetDateTime
                                  )
 
 class UserEnvironmentVariablesTable(tag: Tag) extends Table[RawUserEnvironmentVariable](tag, "user_environment_variables") {
@@ -23,7 +23,7 @@ class UserEnvironmentVariablesTable(tag: Tag) extends Table[RawUserEnvironmentVa
   def name = column[String]("name")
   def value = column[String]("value")
   def userId = column[String]("user_id")
-  def createdAt = column[ZonedDateTime]("created_at")
+  def createdAt = column[OffsetDateTime]("created_at")
 
   def * = (name, value, userId, createdAt) <> ((RawUserEnvironmentVariable.apply _).tupled, RawUserEnvironmentVariable.unapply _)
 }
@@ -64,12 +64,12 @@ class UserEnvironmentVariableServiceImpl @Inject() (
       query.result.flatMap { r =>
         r.headOption.map { existing =>
           maybeValue.map { value =>
-            val raw = RawUserEnvironmentVariable(name, value, user.id, ZonedDateTime.now)
+            val raw = RawUserEnvironmentVariable(name, value, user.id, OffsetDateTime.now)
             query.update(raw).map(_ => raw)
           }.getOrElse(DBIO.successful(existing))
         }.getOrElse {
           val value = maybeValue.getOrElse("")
-          val raw = RawUserEnvironmentVariable(name, value, user.id, ZonedDateTime.now)
+          val raw = RawUserEnvironmentVariable(name, value, user.id, OffsetDateTime.now)
           (all += raw).map(_ => raw)
         }.map { raw =>
           Some(UserEnvironmentVariable(raw.name, raw.value, user, raw.createdAt))

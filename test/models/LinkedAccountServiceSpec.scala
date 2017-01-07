@@ -1,6 +1,6 @@
 package models
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
@@ -19,7 +19,7 @@ class LinkedAccountServiceSpec extends DBSpec {
   }
 
   def newSavedLinkedAccountFor(user: User): Future[LinkedAccount] = {
-    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, IDs.next), ZonedDateTime.now)
+    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, IDs.next), OffsetDateTime.now)
     dataService.linkedAccounts.save(account)
   }
 

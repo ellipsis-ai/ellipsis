@@ -1,6 +1,6 @@
 package models.behaviors.conversations.conversation
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -16,7 +16,7 @@ case class RawConversation(
                             conversationType: String,
                             context: String,
                             userIdForContext: String,
-                            startedAt: ZonedDateTime,
+                            startedAt: OffsetDateTime,
                             state: String
                           )
 
@@ -27,7 +27,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
   def conversationType = column[String]("conversation_type")
   def context = column[String]("context")
   def userIdForContext = column[String]("user_id_for_context")
-  def startedAt = column[ZonedDateTime]("started_at")
+  def startedAt = column[OffsetDateTime]("started_at")
   def state = column[String]("state")
 
   def * =

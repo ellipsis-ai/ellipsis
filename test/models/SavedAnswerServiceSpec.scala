@@ -69,7 +69,7 @@ class SavedAnswerServiceSpec extends DBSpec {
         val input = param.input
         val savedAnswer = newSavedAnswerFor(input, user)
 
-        runNow(dataService.savedAnswers.allFor(user, Seq(param))).map(_.id) mustBe Seq(savedAnswer.id)
+        runNow(dataService.savedAnswers.allFor(user, Seq(param))) mustBe Seq(savedAnswer)
 
         runNow(dataService.savedAnswers.deleteAllFor(input))
 

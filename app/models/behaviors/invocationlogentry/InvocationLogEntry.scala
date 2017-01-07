@@ -1,6 +1,6 @@
 package models.behaviors.invocationlogentry
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.behaviors.behaviorversion.BehaviorVersion
 import play.api.libs.json.JsValue
@@ -15,5 +15,5 @@ case class InvocationLogEntry(
                                context: String,
                                maybeUserIdForContext: Option[String],
                                runtimeInMilliseconds: Long,
-                               createdAt: ZonedDateTime
+                               createdAt: OffsetDateTime
                              )

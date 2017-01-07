@@ -2,7 +2,7 @@ package models.behaviors.behaviorversion
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -31,7 +31,7 @@ case class RawBehaviorVersion(
                                maybeResponseTemplate: Option[String],
                                forcePrivateResponse: Boolean,
                                maybeAuthorId: Option[String],
-                               createdAt: ZonedDateTime
+                               createdAt: OffsetDateTime
                              )
 
 class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "behavior_versions") {
@@ -44,7 +44,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def maybeResponseTemplate = column[Option[String]]("response_template")
   def forcePrivateResponse = column[Boolean]("private_response")
   def maybeAuthorId = column[Option[String]]("author_id")
-  def createdAt = column[ZonedDateTime]("created_at")
+  def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
     (id, behaviorId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
@@ -108,7 +108,7 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def createFor(behavior: Behavior, maybeUser: Option[User]): Future[BehaviorVersion] = {
-    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), ZonedDateTime.now)
+    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), OffsetDateTime.now)
 
     val action = (all += raw).map { _ =>
       BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)

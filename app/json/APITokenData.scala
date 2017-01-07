@@ -1,14 +1,14 @@
 package json
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import models.apitoken.APIToken
 
 case class APITokenData(
                          id: String,
                          label: String,
-                         lastUsed: Option[ZonedDateTime],
-                         createdAt: ZonedDateTime,
+                         lastUsed: Option[OffsetDateTime],
+                         createdAt: OffsetDateTime,
                          isRevoked: Boolean
                        )
 

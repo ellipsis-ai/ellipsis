@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.{ZoneId, ZonedDateTime}
+import java.time.{ZoneId, OffsetDateTime}
 import java.time.format.DateTimeFormatter
 
 import controllers.Assets.Asset
@@ -20,7 +20,7 @@ class RemoteAssets extends Controller {
   def getAsset(path: String, file: Asset): Action[AnyContent] = Action.async { request =>
     val action = Assets.versioned(path, file)
     action.apply(request).map { result =>
-      result.withHeaders(DATE -> df.format(ZonedDateTime.now))
+      result.withHeaders(DATE -> df.format(OffsetDateTime.now))
     }
   }
 

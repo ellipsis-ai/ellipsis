@@ -1,6 +1,6 @@
 package models.accounts.linkedoauth2token
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.accounts.oauth2application.OAuth2Application
@@ -8,7 +8,7 @@ import models.accounts.oauth2application.OAuth2Application
 case class LinkedOAuth2Token(
                               accessToken: String,
                               maybeTokenType: Option[String],
-                              maybeExpirationTime: Option[ZonedDateTime],
+                              maybeExpirationTime: Option[OffsetDateTime],
                               maybeRefreshToken: Option[String],
                               maybeScopeGranted: Option[String],
                               userId: String,
@@ -24,7 +24,7 @@ case class LinkedOAuth2Token(
   }
   def oauth2Info: OAuth2Info = OAuth2Info(accessToken, maybeTokenType, expiresIn, maybeRefreshToken, maybeOauth2Params)
   def expiresIn: Option[Int] = maybeExpirationTime.map { expirationTime =>
-    val now = ZonedDateTime.now
+    val now = OffsetDateTime.now
     if (expirationTime.isAfter(now)) {
       expirationTime.getSecond - now.getSecond
     } else {
@@ -32,7 +32,7 @@ case class LinkedOAuth2Token(
     }
   }
 
-  def isExpired: Boolean = maybeExpirationTime.exists(_.isBefore(ZonedDateTime.now))
+  def isExpired: Boolean = maybeExpirationTime.exists(_.isBefore(OffsetDateTime.now))
 
   def toRaw: RawLinkedOAuth2Token = RawLinkedOAuth2Token(
     accessToken,

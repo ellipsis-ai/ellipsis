@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -25,7 +25,7 @@ class InvocationLogController @Inject() (
                            context: String,
                            userIdForContext: Option[String],
                            ellipsisUserId: Option[String],
-                           timestamp: ZonedDateTime
+                           timestamp: OffsetDateTime
                          )
 
   object LogEntryData {
@@ -48,13 +48,13 @@ class InvocationLogController @Inject() (
   }
   implicit val logEntryWrites = Json.writes[LogEntryData]
 
-  private val EARLIEST = ZonedDateTime.parse("2016-01-01")
-  private val LATEST = ZonedDateTime.now
+  private val EARLIEST = OffsetDateTime.parse("2016-01-01")
+  private val LATEST = OffsetDateTime.now
 
-  private def maybeTimestampFor(maybeString: Option[String]): Option[ZonedDateTime] = {
+  private def maybeTimestampFor(maybeString: Option[String]): Option[OffsetDateTime] = {
     try {
       maybeString.map { str =>
-        ZonedDateTime.parse(str)
+        OffsetDateTime.parse(str)
       }
     } catch {
       case e: IllegalArgumentException => None
