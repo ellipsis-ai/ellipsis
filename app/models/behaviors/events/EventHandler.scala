@@ -29,14 +29,16 @@ class EventHandler @Inject() (
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       responses <- BehaviorResponse.allFor(event, maybeTeam, None, lambdaService, dataService, cache, ws, configuration)
-      results <- Future.sequence(responses.map(_.result))
-    } yield {
-      if (results.isEmpty && event.isResponseExpected) {
-        Seq(SimpleTextResult(event.iDontKnowHowToRespondMessageFor(lambdaService), forcePrivateResponse = false))
-      } else {
-        results
+      results <- Future.sequence(responses.map(_.result)).flatMap { r =>
+        if (r.isEmpty && event.isResponseExpected) {
+          event.noExactMatchResult(dataService, lambdaService).map { noMatchResult =>
+            Seq(noMatchResult)
+          }
+        } else {
+          Future.successful(r)
+        }
       }
-    }
+    } yield results
   }
 
   def interruptOngoingConversationsFor(event: MessageEvent): Future[Unit] = {
