@@ -47,7 +47,8 @@ libraryDependencies ++= Seq(
   "com.atlassian.commonmark" % "commonmark" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",
-  "com.joestelmach" % "natty" % "0.11"
+  "com.joestelmach" % "natty" % "0.11",
+  "com.rockymadden.stringmetric" %% "stringmetric-core" % "0.27.4"
   //"com.github.mumoshu" %% "play2-memcached-play24" % "0.7.0"
 )
 

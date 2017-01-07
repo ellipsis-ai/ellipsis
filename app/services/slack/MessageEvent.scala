@@ -3,8 +3,9 @@ package services.slack
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.{MessageInfo, UserInfo}
+import models.behaviors.{BotResult, MessageInfo, SimpleTextResult, UserInfo}
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.triggers.TriggerFuzzyMatcher
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
@@ -45,6 +46,30 @@ trait MessageEvent {
        |
                    |Type `@ellipsis: help` to see what I can do or ${teachMeLinkFor(lambdaService)}
     """.stripMargin
+  }
+
+  def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService): Future[BotResult] = {
+    for {
+      maybeTeam <- dataService.teams.find(teamId)
+      triggers <- maybeTeam.map { team =>
+        dataService.messageTriggers.allActiveFor(team)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      val similarTriggers =
+        TriggerFuzzyMatcher(fullMessageText, triggers).
+          run.
+          map { case(trigger, _) => s"`${trigger.pattern}`" }
+      val message = if (similarTriggers.isEmpty) {
+        iDontKnowHowToRespondMessageFor(lambdaService)
+      } else {
+        s"""Did you mean:
+           |
+           |${similarTriggers.mkString("  \n")}
+           |
+         """.stripMargin
+      }
+      SimpleTextResult(message, forcePrivateResponse = false)
+    }
   }
 
   def recentMessages(dataService: DataService): Future[Seq[String]] = Future.successful(Seq())
