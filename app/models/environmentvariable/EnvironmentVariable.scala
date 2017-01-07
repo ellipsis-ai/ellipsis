@@ -1,9 +1,9 @@
 package models.environmentvariable
 
-import org.joda.time.DateTime
+import java.time.OffsetDateTime
 
 trait EnvironmentVariable {
   val name: String
   val value: String
-  val createdAt: DateTime
+  val createdAt: OffsetDateTime
 }

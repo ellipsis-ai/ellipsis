@@ -1,12 +1,12 @@
 package models.accounts.logintoken
 
-import org.joda.time.DateTime
+import java.time.OffsetDateTime
 
 case class LoginToken(
                         value: String,
                         userId: String,
                         isUsed: Boolean,
-                        createdAt: DateTime
+                        createdAt: OffsetDateTime
                       ) {
 
   def isExpired: Boolean = createdAt.isBefore(LoginToken.expiryCutoff)
@@ -19,6 +19,6 @@ object LoginToken {
 
   val EXPIRY_SECONDS = 300
 
-  def expiryCutoff: DateTime = DateTime.now.minusSeconds(EXPIRY_SECONDS)
+  def expiryCutoff: OffsetDateTime = OffsetDateTime.now.minusSeconds(EXPIRY_SECONDS)
 
 }

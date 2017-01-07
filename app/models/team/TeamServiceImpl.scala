@@ -1,5 +1,6 @@
 package models.team
 
+import java.time.ZoneId
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -9,7 +10,6 @@ import models.accounts.user.User
 import play.api.Configuration
 import services.DataService
 import drivers.SlickPostgresDriver.api._
-import org.joda.time.DateTimeZone
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -69,7 +69,7 @@ class TeamServiceImpl @Inject() (
     }
   }
 
-  def setTimeZoneFor(team: Team, tz: DateTimeZone): Future[Team] = {
+  def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team] = {
     save(team.copy(maybeTimeZone = Some(tz)))
   }
 

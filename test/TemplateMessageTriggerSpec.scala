@@ -1,19 +1,20 @@
+import java.time.OffsetDateTime
+
 import models.IDs
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.triggers.TemplateMessageTrigger
 import models.team.Team
-import org.joda.time.DateTime
 
 class TemplateMessageTriggerSpec extends MessageTriggerSpec {
 
   def triggerFor(template: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): TemplateMessageTrigger = {
     val team = Team(IDs.next, "Team!", None)
     val versionId = IDs.next
-    val group = BehaviorGroup(IDs.next, "", None, None, team, DateTime.now)
-    val behavior = Behavior(IDs.next, team, Some(group), Some(versionId), None, None, DateTime.now)
-    val behaviorVersion = BehaviorVersion(versionId, behavior, None, None, None, None, forcePrivateResponse = false, None, DateTime.now)
+    val group = BehaviorGroup(IDs.next, "", None, None, team, OffsetDateTime.now)
+    val behavior = Behavior(IDs.next, team, Some(group), Some(versionId), None, None, OffsetDateTime.now)
+    val behaviorVersion = BehaviorVersion(versionId, behavior, None, None, None, None, forcePrivateResponse = false, None, OffsetDateTime.now)
     TemplateMessageTrigger(IDs.next, behaviorVersion, template, requiresBotMention, isCaseSensitive)
   }
 

@@ -1,9 +1,10 @@
 package models.behaviors.conversations.conversation
 
+import java.time.OffsetDateTime
+
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
@@ -20,7 +21,7 @@ trait Conversation {
   val conversationType: String
   val context: String
   val userIdForContext: String
-  val startedAt: DateTime
+  val startedAt: OffsetDateTime
   val state: String
 
   val stateRequiresPrivateMessage: Boolean = false

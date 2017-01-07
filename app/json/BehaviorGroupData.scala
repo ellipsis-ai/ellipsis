@@ -1,8 +1,9 @@
 package json
 
+import java.time.OffsetDateTime
+
 import models.accounts.user.User
 import models.team.Team
-import org.joda.time.DateTime
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,7 +19,7 @@ case class BehaviorGroupData(
                               githubUrl: Option[String],
                               importedId: Option[String],
                               publishedId: Option[String],
-                              createdAt: DateTime
+                              createdAt: OffsetDateTime
                             ) extends Ordered[BehaviorGroupData] {
 
   val maybeNonEmptyName: Option[String] = Option(name.trim).filter(_.nonEmpty)

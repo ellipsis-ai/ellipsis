@@ -1,8 +1,9 @@
 package models.behaviors.behavior
 
+import java.time.OffsetDateTime
+
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
-import org.joda.time.DateTime
 
 case class Behavior(
                      id: String,
@@ -11,7 +12,7 @@ case class Behavior(
                      maybeCurrentVersionId: Option[String],
                      maybeImportedId: Option[String],
                      maybeDataTypeName: Option[String],
-                     createdAt: DateTime
+                     createdAt: OffsetDateTime
                    ) {
 
   val isDataType = maybeDataTypeName.isDefined

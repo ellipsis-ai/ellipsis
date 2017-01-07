@@ -1,8 +1,9 @@
 package models.behaviors.scheduledmessage
 
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+
 import models.team.Team
-import org.joda.time.format.DateTimeFormat
-import org.joda.time.DateTime
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -24,11 +25,11 @@ case class ScheduledMessage(
                              maybeChannelName: Option[String],
                              isForIndividualMembers: Boolean,
                              recurrence: Recurrence,
-                             nextSentAt: DateTime,
-                             createdAt: DateTime
+                             nextSentAt: OffsetDateTime,
+                             createdAt: OffsetDateTime
                            ) {
 
-  def followingSentAt: DateTime = recurrence.nextAfter(nextSentAt)
+  def followingSentAt: OffsetDateTime = recurrence.nextAfter(nextSentAt)
 
   def successResponse: String = s"OK, I will trigger $listResponse"
 
@@ -66,22 +67,22 @@ case class ScheduledMessage(
      """.stripMargin
   }
 
-  val nextRunDateFormatter = DateTimeFormat.forPattern("MMMM d, yyyy")
-  def nextRunDateStringFor(when: DateTime): String = {
-    val clarifier = if (when.toDate == DateTime.now.toDate) {
+  val nextRunDateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
+  def nextRunDateStringFor(when: OffsetDateTime): String = {
+    val clarifier = if (when.toLocalDate == OffsetDateTime.now.toLocalDate) {
       " (today)"
-    } else if (when.toDate == DateTime.now.plusDays(1).toDate) {
+    } else if (when.toLocalDate == OffsetDateTime.now.plusDays(1).toLocalDate) {
       " (tomorrow)"
     } else {
       ""
     }
 
-    when.toString(nextRunDateFormatter) ++ clarifier
+    nextRunDateFormatter.format(when) ++ clarifier
   }
-  def nextRunTimeStringFor(when: DateTime): String = when.toString(Recurrence.timeFormatterWithZone)
+  def nextRunTimeStringFor(when: OffsetDateTime): String = Recurrence.timeFormatterWithZone.format(when)
 
-  def nextRunStringFor(when: DateTime): String = {
-    val whenInDefaultTimeZone = when.withZone(team.timeZone)
+  def nextRunStringFor(when: OffsetDateTime): String = {
+    val whenInDefaultTimeZone = Recurrence.withZone(when, team.timeZone)
     s"${nextRunDateStringFor(whenInDefaultTimeZone)} at ${nextRunTimeStringFor(whenInDefaultTimeZone)}"
   }
 
@@ -210,7 +211,7 @@ case class ScheduledMessage(
     }.getOrElse(Future.successful(Unit))
   }
 
-  def withUpdatedNextTriggeredFor(when: DateTime): ScheduledMessage = {
+  def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {
     this.copy(nextSentAt = recurrence.nextAfter(when))
   }
 

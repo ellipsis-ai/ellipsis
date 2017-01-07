@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
   "com.github.nscala-time" %% "nscala-time" % "2.14.0",
   "com.typesafe.slick" % "slick-hikaricp_2.11" % "3.1.1",
   "com.github.tminglei" %% "slick-pg" % "0.14.4",
-  "com.github.tminglei" %% "slick-pg_joda-time" % "0.14.4",
+  "com.github.tminglei" %% "slick-pg_date2" % "0.14.4",
   "com.github.tminglei" %% "slick-pg_play-json" % "0.14.4",
   "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test,
   "org.mockito" % "mockito-core" % "1.8.5" % Test,

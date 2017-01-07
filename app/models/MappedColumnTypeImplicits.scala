@@ -1,16 +1,17 @@
 package models
 
+import java.time.ZoneId
+
 import drivers.SlickPostgresDriver.api._
-import org.joda.time.DateTimeZone
 
 object MappedColumnTypeImplicits {
 
-  implicit val dateTimeZoneColumnType = MappedColumnType.base[DateTimeZone, String](
-    { tz => tz.getID }, { str =>
+  implicit val zoneIdColumnType = MappedColumnType.base[ZoneId, String](
+    { tz => tz.getId }, { str =>
       try {
-        DateTimeZone.forID(str)
+        ZoneId.of(str)
       } catch {
-        case e: IllegalArgumentException => null
+        case _: IllegalArgumentException => null
       }
     }
   )

@@ -5,7 +5,6 @@ import javax.inject.Inject
 import models.accounts.user.User
 import models.behaviors.SimpleTextResult
 import models.behaviors.events.EventHandler
-import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.data.Form
@@ -16,6 +15,7 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.Action
 import services.slack.SlackMessageEvent
 import services.{DataService, SlackEventService}
+import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -97,7 +97,7 @@ class APIController @Inject() (
               info.channel,
               maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
               info.message,
-              DateTime.now.toInstant.getMillis.toString
+              SlackTimestamp.now
             )
           )
           isInvokedExternally <- Future.successful(maybeUserForApiToken.isDefined)

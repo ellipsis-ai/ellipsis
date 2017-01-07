@@ -3,7 +3,7 @@ package drivers
 import com.github.tminglei.slickpg._
 
 trait SlickPostgresDriver extends ExPostgresDriver
-  with PgDateSupportJoda
+  with PgDate2Support
   with PgJsonSupport
   with PgPlayJsonSupport {
   def pgjson = "jsonb"

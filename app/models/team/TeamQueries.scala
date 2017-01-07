@@ -1,15 +1,14 @@
 package models.team
 
+import java.time.ZoneId
+
 import drivers.SlickPostgresDriver.api._
-import org.joda.time.DateTimeZone
 
 class TeamsTable(tag: Tag) extends Table[Team](tag, "teams") {
 
-  import models.MappedColumnTypeImplicits._
-
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
-  def maybeTimeZone = column[Option[DateTimeZone]]("time_zone")
+  def maybeTimeZone = column[Option[ZoneId]]("time_zone")
 
   def * =
     (id, name, maybeTimeZone) <> ((Team.apply _).tupled, Team.unapply _)

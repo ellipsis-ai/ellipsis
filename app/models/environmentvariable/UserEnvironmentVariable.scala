@@ -1,13 +1,14 @@
 package models.environmentvariable
 
+import java.time.OffsetDateTime
+
 import models.accounts.user.User
-import org.joda.time.DateTime
 
 case class UserEnvironmentVariable(
                                 name: String,
                                 value: String,
                                 user: User,
-                                createdAt: DateTime
+                                createdAt: OffsetDateTime
                               ) extends EnvironmentVariable {
 
   def toRaw: RawUserEnvironmentVariable = {

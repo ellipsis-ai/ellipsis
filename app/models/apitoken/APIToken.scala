@@ -1,21 +1,21 @@
 package models.apitoken
 
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 case class APIToken(
                      id: String,
                      label: String,
                      userId: String,
                      isRevoked: Boolean,
-                     maybeLastUsed: Option[DateTime],
-                     createdAt: DateTime
+                     maybeLastUsed: Option[OffsetDateTime],
+                     createdAt: OffsetDateTime
                    ) {
   val isValid: Boolean = !isRevoked
 
-  val maybeLastUsedString: Option[String] = maybeLastUsed.map(_.toString(APIToken.formatter))
+  val maybeLastUsedString: Option[String] = maybeLastUsed.map(_.format(APIToken.formatter))
 }
 
 object APIToken {
-  val formatter = DateTimeFormat.forPattern("MMMM d, yyyy")
+  val formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
 }

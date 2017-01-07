@@ -1,11 +1,12 @@
 package models
 
+import java.time.OffsetDateTime
+
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackProvider
 import models.accounts.slack.profile.SlackProfile
-import org.joda.time.DateTime
 import support.DBSpec
 
 import scala.concurrent.Future
@@ -18,7 +19,7 @@ class LinkedAccountServiceSpec extends DBSpec {
   }
 
   def newSavedLinkedAccountFor(user: User): Future[LinkedAccount] = {
-    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, IDs.next), DateTime.now)
+    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, IDs.next), OffsetDateTime.now)
     dataService.linkedAccounts.save(account)
   }
 

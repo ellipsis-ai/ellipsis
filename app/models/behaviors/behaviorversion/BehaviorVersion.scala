@@ -2,12 +2,12 @@ package models.behaviors.behaviorversion
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.time.OffsetDateTime
 
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.team.Team
-import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json}
 import play.api.Configuration
 import services.AWSLambdaConstants._
@@ -22,7 +22,7 @@ case class BehaviorVersion(
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
                             maybeAuthor: Option[User],
-                            createdAt: DateTime
+                            createdAt: OffsetDateTime
                           ) {
 
   val team: Team = behavior.team
