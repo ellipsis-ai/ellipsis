@@ -1,11 +1,11 @@
 package controllers
 
+import java.time.{ZoneId, ZonedDateTime}
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-import json.{InvocationLogEntryData, InvocationLogsByDayData}
+import json.InvocationLogEntryData
 import json.Formatting._
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
@@ -31,10 +31,10 @@ class VisibilityAPIController @Inject() (
 
   implicit val invocationCountWrites = Json.writes[InvocationCount]
 
-  private val dateFormatter =  DateTimeFormat.forPattern("EEE, dd MMM yyyy").withLocale(java.util.Locale.ENGLISH)
+  private val dateFormatter =  DateTimeFormatter.ofPattern("EEE, dd MMM yyyy").withLocale(java.util.Locale.ENGLISH)
 
-  private def dateFor(year: String, month: String, day: String): DateTime = {
-    new DateTime(year.toInt, month.toInt, day.toInt, 0, 0)
+  private def dateFor(year: String, month: String, day: String): ZonedDateTime = {
+    ZonedDateTime.of(year.toInt, month.toInt, day.toInt, 0, 0, 0, 0, ZoneId.systemDefault)
   }
 
   def invocationCountsForDate(token: String, year: String, month: String, day: String) = Action.async { implicit request =>
@@ -63,7 +63,7 @@ class VisibilityAPIController @Inject() (
                   uniqueUserCounts.
                     find { case(tid, bCount) => teamId == tid }.
                     map(_._2).getOrElse(0)
-                InvocationCount(date.toString(dateFormatter), teamName, totalCount, uniqueBehaviorCount, uniqueUserCount)
+                InvocationCount(dateFormatter.format(date), teamName, totalCount, uniqueBehaviorCount, uniqueUserCount)
               }
           )
         )

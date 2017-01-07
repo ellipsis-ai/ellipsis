@@ -1,13 +1,14 @@
 package json
 
+import java.time.ZonedDateTime
+
 import models.apitoken.APIToken
-import org.joda.time.DateTime
 
 case class APITokenData(
                          id: String,
                          label: String,
-                         lastUsed: Option[DateTime],
-                         createdAt: DateTime,
+                         lastUsed: Option[ZonedDateTime],
+                         createdAt: ZonedDateTime,
                          isRevoked: Boolean
                        )
 

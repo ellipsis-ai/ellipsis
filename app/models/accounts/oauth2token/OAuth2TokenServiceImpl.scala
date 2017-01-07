@@ -1,5 +1,6 @@
 package models.accounts.oauth2token
 
+import java.time.ZonedDateTime
 import javax.inject.{Inject, Provider}
 
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -7,7 +8,6 @@ import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.accounts.slack.profile.SlackProfileQueries
 import services.DataService
 import drivers.SlickPostgresDriver.api._
-import org.joda.time.DateTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -16,7 +16,7 @@ class OAuth2TokensTable(tag: Tag) extends Table[OAuth2Token](tag, "oauth_2_token
   def accessToken = column[String]("access_token")
   def maybeSlackScopes = column[Option[String]]("slack_scopes")
   def maybeTokenType = column[Option[String]]("token_type")
-  def maybeExpirationTime = column[Option[DateTime]]("expiration_time")
+  def maybeExpirationTime = column[Option[ZonedDateTime]]("expiration_time")
   def maybeRefreshToken = column[Option[String]]("refresh_token")
   def providerId = column[String]("provider_id")
   def providerKey = column[String]("provider_key")
@@ -41,7 +41,7 @@ class OAuth2TokenServiceImpl @Inject() (
   val findByLoginInfoQuery = Compiled(uncompiledFindByLoginInfo _)
 
   def save(loginInfo: LoginInfo, oauth2Info: OAuth2Info): Future[OAuth2Info] = {
-    val expirationTime = oauth2Info.expiresIn.map { seconds => DateTime.now.plusSeconds(seconds) }
+    val expirationTime = oauth2Info.expiresIn.map { seconds => ZonedDateTime.now.plusSeconds(seconds) }
     val maybeSlackScopes = oauth2Info.params.flatMap { paramMap => paramMap.get("scope") }
     val token = OAuth2Token(oauth2Info.accessToken, maybeSlackScopes, oauth2Info.tokenType, expirationTime, oauth2Info.refreshToken, loginInfo)
     save(token).map { _ => oauth2Info }

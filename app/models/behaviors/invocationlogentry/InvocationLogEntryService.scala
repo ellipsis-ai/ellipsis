@@ -1,25 +1,26 @@
 package models.behaviors.invocationlogentry
 
+import java.time.ZonedDateTime
+
 import models.behaviors.behavior.Behavior
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
-import org.joda.time.DateTime
 import services.slack.MessageEvent
 
 import scala.concurrent.Future
 
 trait InvocationLogEntryService {
 
-  def countsForDate(date: DateTime): Future[Seq[(String, Int)]]
+  def countsForDate(date: ZonedDateTime): Future[Seq[(String, Int)]]
 
-  def uniqueInvokingUserCountsForDate(date: DateTime): Future[Seq[(String, Int)]]
+  def uniqueInvokingUserCountsForDate(date: ZonedDateTime): Future[Seq[(String, Int)]]
 
-  def uniqueInvokedBehaviorCountsForDate(date: DateTime): Future[Seq[(String, Int)]]
+  def uniqueInvokedBehaviorCountsForDate(date: ZonedDateTime): Future[Seq[(String, Int)]]
 
-  def forTeamForDate(team: Team, date: DateTime): Future[Seq[InvocationLogEntry]]
+  def forTeamForDate(team: Team, date: ZonedDateTime): Future[Seq[InvocationLogEntry]]
 
-  def allForBehavior(behavior: Behavior, from: DateTime, to: DateTime): Future[Seq[InvocationLogEntry]]
+  def allForBehavior(behavior: Behavior, from: ZonedDateTime, to: ZonedDateTime): Future[Seq[InvocationLogEntry]]
 
   def createFor(
                  behaviorVersion: BehaviorVersion,

@@ -1,7 +1,8 @@
 package models.accounts.slack.botprofile
 
+import java.time.ZonedDateTime
+
 import models.team.Team
-import org.joda.time.DateTime
 
 import scala.concurrent.Future
 
@@ -13,7 +14,7 @@ trait SlackBotProfileService {
 
   def allForSlackTeamId(slackTeamId: String): Future[Seq[SlackBotProfile]]
 
-  def allSince(when: DateTime): Future[Seq[SlackBotProfile]]
+  def allSince(when: ZonedDateTime): Future[Seq[SlackBotProfile]]
 
   def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile]
 

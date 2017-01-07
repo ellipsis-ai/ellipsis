@@ -1,11 +1,11 @@
 package controllers
 
+import java.time.ZonedDateTime
 import javax.inject.Inject
 
 import models.accounts.user.User
 import models.behaviors.SimpleTextResult
 import models.behaviors.events.EventHandler
-import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.data.Form
@@ -97,7 +97,7 @@ class APIController @Inject() (
               info.channel,
               maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
               info.message,
-              DateTime.now.toInstant.getMillis.toString
+              ZonedDateTime.now.toInstant.toEpochMilli.toString // TODO: hmmmm
             )
           )
           isInvokedExternally <- Future.successful(maybeUserForApiToken.isDefined)

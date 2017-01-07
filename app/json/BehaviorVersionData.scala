@@ -1,8 +1,9 @@
 package json
 
+import java.time.ZonedDateTime
+
 import models.team.Team
 import models.accounts.user.User
-import org.joda.time.DateTime
 import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -26,7 +27,7 @@ case class BehaviorVersionData(
                                 importedId: Option[String],
                                 githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
-                                createdAt: Option[DateTime]
+                                createdAt: Option[ZonedDateTime]
                                 ) {
   val awsConfig: Option[AWSConfigData] = config.aws
 
@@ -61,7 +62,7 @@ object BehaviorVersionData {
                 config: BehaviorConfig,
                 importedId: Option[String],
                 githubUrl: Option[String],
-                createdAt: Option[DateTime],
+                createdAt: Option[ZonedDateTime],
                 dataService: DataService
               ): BehaviorVersionData = {
 

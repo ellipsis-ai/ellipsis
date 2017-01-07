@@ -1,5 +1,5 @@
 package models.accounts.slack.botprofile
 
-import org.joda.time.DateTime
+import java.time.ZonedDateTime
 
-case class SlackBotProfile(userId: String, teamId: String, slackTeamId: String, token: String, createdAt: DateTime)
+case class SlackBotProfile(userId: String, teamId: String, slackTeamId: String, token: String, createdAt: ZonedDateTime)

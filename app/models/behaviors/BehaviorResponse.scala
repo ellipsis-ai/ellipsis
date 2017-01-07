@@ -1,5 +1,7 @@
 package models.behaviors
 
+import java.time.ZonedDateTime
+
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -7,7 +9,6 @@ import models.team.Team
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsString, JsValue}
@@ -73,9 +74,9 @@ case class BehaviorResponse(
   }
 
   def resultForFilledOut: Future[BotResult] = {
-    val startTime = DateTime.now
+    val startTime = ZonedDateTime.now
     dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event).flatMap { result =>
-      val runtimeInMilliseconds = DateTime.now.toDate.getTime - startTime.toDate.getTime
+      val runtimeInMilliseconds = ZonedDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
       dataService.invocationLogEntries.createFor(
         behaviorVersion,
         parametersWithValues,

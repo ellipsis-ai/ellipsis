@@ -1,15 +1,14 @@
 package controllers
 
+import java.time.ZonedDateTime
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsNull, JsValue, Json}
 import play.api.mvc.Action
 import models.behaviors.invocationlogentry.InvocationLogEntry
-import org.joda.time.format.DateTimeFormat
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -26,7 +25,7 @@ class InvocationLogController @Inject() (
                            context: String,
                            userIdForContext: Option[String],
                            ellipsisUserId: Option[String],
-                           timestamp: DateTime
+                           timestamp: ZonedDateTime
                          )
 
   object LogEntryData {
@@ -49,13 +48,13 @@ class InvocationLogController @Inject() (
   }
   implicit val logEntryWrites = Json.writes[LogEntryData]
 
-  private val EARLIEST = DateTime.parse("2016-01-01")
-  private val LATEST = DateTime.now
+  private val EARLIEST = ZonedDateTime.parse("2016-01-01")
+  private val LATEST = ZonedDateTime.now
 
-  private def maybeTimestampFor(maybeString: Option[String]): Option[DateTime] = {
+  private def maybeTimestampFor(maybeString: Option[String]): Option[ZonedDateTime] = {
     try {
       maybeString.map { str =>
-        DateTime.parse(str)
+        ZonedDateTime.parse(str)
       }
     } catch {
       case e: IllegalArgumentException => None

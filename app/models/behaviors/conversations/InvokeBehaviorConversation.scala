@@ -1,11 +1,12 @@
 package models.behaviors.conversations
 
+import java.time.ZonedDateTime
+
 import models.IDs
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
@@ -20,7 +21,7 @@ case class InvokeBehaviorConversation(
                                       trigger: MessageTrigger,
                                       context: String, // Slack, etc
                                       userIdForContext: String, // id for Slack, etc user
-                                      startedAt: DateTime,
+                                      startedAt: ZonedDateTime,
                                       state: String = Conversation.NEW_STATE
                                       ) extends Conversation {
 
@@ -126,7 +127,7 @@ object InvokeBehaviorConversation {
         activatedTrigger,
         context,
         userIdForContext,
-        DateTime.now,
+        ZonedDateTime.now,
         Conversation.NEW_STATE
       )
     dataService.conversations.save(newInstance).map(_ => newInstance)

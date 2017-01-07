@@ -1,9 +1,9 @@
 package models.environmentvariable
 
-import org.joda.time.DateTime
+import java.time.ZonedDateTime
 
 trait EnvironmentVariable {
   val name: String
   val value: String
-  val createdAt: DateTime
+  val createdAt: ZonedDateTime
 }

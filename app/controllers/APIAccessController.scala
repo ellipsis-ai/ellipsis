@@ -9,7 +9,7 @@ import models.accounts.linkedoauth2token.LinkedOAuth2Token
 import models.accounts.oauth2application.OAuth2Application
 import models.behaviors.events.EventHandler
 import models.silhouette.EllipsisEnv
-import org.joda.time.DateTime
+import java.time.ZonedDateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.http.{HeaderNames, MimeTypes}
@@ -45,7 +45,7 @@ class APIAccessController @Inject() (
         val maybeTokenType = (json \ "token_type").asOpt[String]
         val maybeScopeGranted = (json \ "scope").asOpt[String]
         val maybeExpirationTime = (json \ "expires_in").asOpt[Int].map { seconds =>
-          DateTime.now.plusSeconds(seconds)
+          ZonedDateTime.now.plusSeconds(seconds)
         }
         val maybeRefreshToken = (json \ "refresh_token").asOpt[String]
         val token = LinkedOAuth2Token(accessToken, maybeTokenType, maybeExpirationTime, maybeRefreshToken, maybeScopeGranted, user.id, application)

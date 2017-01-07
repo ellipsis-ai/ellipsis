@@ -1,5 +1,6 @@
 package models.accounts.user
 
+import java.time.ZonedDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -7,7 +8,6 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.linkedaccount.LinkedAccount
 import models.IDs
 import models.team.Team
-import org.joda.time.DateTime
 import services.DataService
 import slack.api.ApiError
 import drivers.SlickPostgresDriver.api._
@@ -69,7 +69,7 @@ class UserServiceImpl @Inject() (
     dataService.linkedAccounts.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
       maybeLinkedAccount.map(Future.successful).getOrElse {
         save(createOnTeamWithId(teamId)).flatMap { user =>
-          dataService.linkedAccounts.save(LinkedAccount(user, loginInfo, DateTime.now))
+          dataService.linkedAccounts.save(LinkedAccount(user, loginInfo, ZonedDateTime.now))
         }
       }.map(_.user)
     }

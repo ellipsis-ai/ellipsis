@@ -1,15 +1,15 @@
 package models.team
 
-import org.joda.time.DateTimeZone
+import java.time.ZoneId
 
 case class Team(
                  id: String,
                  name: String,
-                 maybeTimeZone: Option[DateTimeZone]
+                 maybeTimeZone: Option[ZoneId]
                ) {
 
   def maybeNonEmptyName: Option[String] = Option(name).filter(_.trim.nonEmpty)
 
-  def timeZone: DateTimeZone = maybeTimeZone.getOrElse(DateTimeZone.getDefault)
+  def timeZone: ZoneId = maybeTimeZone.getOrElse(ZoneId.systemDefault)
 
 }

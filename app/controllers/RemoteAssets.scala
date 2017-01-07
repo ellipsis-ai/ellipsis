@@ -1,11 +1,12 @@
 package controllers
 
+import java.time.{ZoneId, ZonedDateTime}
+import java.time.format.DateTimeFormatter
+
 import controllers.Assets.Asset
 import play.api.mvc._
 import play.api.Play
 import play.api.Play.current
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
-import org.joda.time.DateTimeZone
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -14,12 +15,12 @@ class RemoteAssets extends Controller {
   private val timeZoneCode = "GMT"
 
   private val df: DateTimeFormatter =
-    DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss '"+timeZoneCode+"'").withLocale(java.util.Locale.ENGLISH).withZone(DateTimeZone.forID(timeZoneCode))
+    DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss '"+timeZoneCode+"'").withLocale(java.util.Locale.ENGLISH).withZone(ZoneId.of(timeZoneCode))
 
   def getAsset(path: String, file: Asset): Action[AnyContent] = Action.async { request =>
     val action = Assets.versioned(path, file)
     action.apply(request).map { result =>
-      result.withHeaders(DATE -> df.print((new java.util.Date).getTime))
+      result.withHeaders(DATE -> df.format(ZonedDateTime.now))
     }
   }
 
