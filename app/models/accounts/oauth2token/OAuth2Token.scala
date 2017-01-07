@@ -22,7 +22,7 @@ case class OAuth2Token(
   def expiresIn: Option[Int] = maybeExpirationTime.map { expirationTime =>
     val now = OffsetDateTime.now
     if (expirationTime.isAfter(now)) {
-      expirationTime.getSecond - now.getSecond
+      (expirationTime.toEpochSecond - now.toEpochSecond).toInt  // OAuth2Info library class uses Int instead of Long
     } else {
       0
     }
