@@ -136,13 +136,19 @@ case class SlackMessageEvent(
     if (segments.isEmpty) {
       Future.successful({})
     } else {
-      client.postChatMessage(
-        channelToUse,
-        segments.head,
-        asUser = Some(true),
-        unfurlLinks = maybeShouldUnfurl,
-        unfurlMedia = Some(true)
-      ).flatMap { _ => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl)}
+      val segment = segments.head.trim
+      // Slack API gives an error for empty messages
+      if (segment.isEmpty) {
+        Future.successful({})
+      } else {
+        client.postChatMessage(
+          channelToUse,
+          segment,
+          asUser = Some(true),
+          unfurlLinks = maybeShouldUnfurl,
+          unfurlMedia = Some(true)
+        )
+      }.flatMap { _ => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl)}
     }
   }
 
