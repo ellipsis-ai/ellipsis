@@ -26,6 +26,10 @@ case class SlackMessageEvent(
 
   val fullMessageText: String = text
 
+  override def relevantMessageText: String = {
+    SlackMessageEvent.toBotRegexFor(profile.userId).replaceFirstIn(super.relevantMessageText, "")
+  }
+
   lazy val includesBotMention: Boolean = {
     isDirectMessage(channel) ||
       SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(text).nonEmpty ||

@@ -56,7 +56,7 @@ trait MessageEvent {
       }.getOrElse(Future.successful(Seq()))
     } yield {
       val similarTriggers =
-        TriggerFuzzyMatcher(fullMessageText, triggers).
+        TriggerFuzzyMatcher(relevantMessageText, triggers).
           run.
           map { case(trigger, _) => s"`${trigger.pattern}`" }
       val message = if (similarTriggers.isEmpty) {
