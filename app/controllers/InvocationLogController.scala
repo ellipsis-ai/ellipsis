@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZoneOffset}
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -48,7 +48,7 @@ class InvocationLogController @Inject() (
   }
   implicit val logEntryWrites = Json.writes[LogEntryData]
 
-  private val EARLIEST = OffsetDateTime.parse("2016-01-01")
+  private val EARLIEST = OffsetDateTime.of(2016, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
   private val LATEST = OffsetDateTime.now
 
   private def maybeTimestampFor(maybeString: Option[String]): Option[OffsetDateTime] = {
