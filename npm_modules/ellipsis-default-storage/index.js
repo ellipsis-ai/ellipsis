@@ -4,7 +4,7 @@ function findMissingArgs(keysToEnsure, args) {
     var missing = [];
     keysToEnsure.forEach(function(key) {
         if (args[key] === undefined) {
-            missing.push(key)
+            missing.push(key);
         }
     });
     return missing;
