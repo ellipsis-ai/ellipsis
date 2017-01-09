@@ -21,16 +21,7 @@ class SlackEventService @Inject()(
   implicit val system = ActorSystem("slack")
   implicit val ec: ExecutionContext = system.dispatcher
 
-  lazy val loadingMessages = Seq(
-    ":thinking_face: …"
-  )
-
   val random = new Random()
-
-  def loadingMessage = {
-    val index = random.nextInt(loadingMessages.length)
-    loadingMessages(index)
-  }
 
   def onEvent(event: SlackMessageEvent): Future[Unit] = {
     if (!event.isBotMessage) {
@@ -52,14 +43,8 @@ class SlackEventService @Inject()(
       Future {
         Thread.sleep(1500)
         if (!p.isCompleted) {
-          event.client.postChatMessage(
-            event.channel,
-            loadingMessage,
-            asUser = Some(true),
-            unfurlLinks = None,
-            unfurlMedia = None
-          ).map { ts =>
-            p.future.onComplete(_ => event.client.deleteChat(event.channel, ts))
+          event.client.addReactionToMessage("thinking_face", event.channel, event.ts).map { _ =>
+            p.future.onComplete(_ => event.client.removeReactionFromMessage("thinking_face", event.channel, event.ts))
           }
         }
       }
