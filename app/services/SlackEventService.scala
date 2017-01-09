@@ -47,7 +47,7 @@ class SlackEventService @Inject()(
       }
       p.completeWith(handleMessage)
       Future {
-        Thread.sleep(1500)
+        Thread.sleep(3000)
         if (!p.isCompleted) {
           event.client.postChatMessage(
             event.channel,
