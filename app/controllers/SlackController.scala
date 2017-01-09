@@ -212,7 +212,14 @@ class SlackController @Inject() (
               _ => {
                 Ok("I don't know what to do with this request but I'm not concerned")
               },
-              info => messageEventResult(info)
+              info => {
+                val isRetry = request.headers.get("X-Slack-Retry-Num").isDefined
+                if (isRetry) {
+                  Ok("We are ignoring retries for now")
+                } else {
+                  messageEventResult(info)
+                }
+              }
             )
           },
           info => messageEventResult(info)
