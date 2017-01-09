@@ -2,13 +2,13 @@ package services
 
 import javax.inject._
 
+import akka.actor.ActorSystem
 import play.api.i18n.MessagesApi
 import models.behaviors.events.EventHandler
 import play.api.Logger
 import services.slack._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Random
 
 @Singleton
@@ -17,6 +17,9 @@ class SlackEventService @Inject()(
                                    messages: MessagesApi,
                                    val eventHandler: EventHandler
                                  ) {
+
+  implicit val system = ActorSystem("slack")
+  implicit val ec: ExecutionContext = system.dispatcher
 
   lazy val loadingMessages = Seq(
     ":thinking_face: …"
@@ -47,7 +50,7 @@ class SlackEventService @Inject()(
       }
       p.completeWith(handleMessage)
       Future {
-        Thread.sleep(3000)
+        Thread.sleep(1500)
         if (!p.isCompleted) {
           event.client.postChatMessage(
             event.channel,
