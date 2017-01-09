@@ -26,11 +26,11 @@ module.exports = {
           get({
             url: url,
             qs: queryParams
-          }, function (error, response, body) {
+          }, function (error, response) {
             if (error) {
               errorHandler(error);
             } else {
-              if (response.statusCode != 200) {
+              if (response.statusCode !== 200) {
                 errorHandler(response.statusCode + ": " + response.body);
               } else {
                 if (args.success) {
