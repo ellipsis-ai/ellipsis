@@ -87,6 +87,12 @@ case class DisplayHelpBehavior(
     }
   }
 
+  def justGettingStartedText(lambdaService: AWSLambdaService): String = {
+    s"""I’m just getting started here and can’t wait to learn.
+      |
+      |You can ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself.""".stripMargin
+  }
+
   def result: Future[BotResult] = {
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
     for {
@@ -112,10 +118,17 @@ case class DisplayHelpBehavior(
         s" that matches `$s`"
       }.getOrElse("")
       val groupsString = helpStringFor(matchingGroupData, "Here’s what I can do:", matchString)
-      val endingString = if (matchingGroupData.isEmpty) {
-        s"""I’m just getting started here and can’t wait to learn.
+      val endingString = if (groupData.isEmpty) {
+        justGettingStartedText(lambdaService)
+      } else if (matchingGroupData.isEmpty) {
+        maybeHelpSearch.map { s =>
+          s"""I couldn't find help for anything like `$s`
            |
-           |You can ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself.""".stripMargin
+           |You can try another `…help <something>` query or just type `…help` to see everything I can do.
+         """.stripMargin
+        }.getOrElse {
+          justGettingStartedText(lambdaService)
+        }
       } else {
         s"You can also ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself."
       }
