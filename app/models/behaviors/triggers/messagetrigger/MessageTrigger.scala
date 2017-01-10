@@ -3,13 +3,13 @@ package models.behaviors.triggers.messagetrigger
 import java.util.regex.PatternSyntaxException
 
 import models.behaviors.behaviorparameter.BehaviorParameter
-import models.behaviors.triggers.Trigger
+import models.behaviors.triggers.{FuzzyMatchable, Trigger}
 import services.AWSLambdaConstants
 import services.slack.MessageEvent
 
 import scala.util.matching.Regex
 
-trait MessageTrigger extends Trigger {
+trait MessageTrigger extends Trigger with FuzzyMatchable {
 
   val pattern: String
   val maybeFuzzyMatchPattern: Option[String] = None
