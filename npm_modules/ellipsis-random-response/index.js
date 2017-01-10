@@ -9,6 +9,7 @@ const emojiList = {
   confused: ["🤔", "🐦", "🐴", "🤷‍♀️", "🤷‍♂️"],
   yes: ["👍", "✅", "✨", "🚀", "🆗"],
   no: ["👎", "🛑", "🙅‍♂️", "🙅", "🚧"],
+  hello: ["👋", "🙂"],
   misc: []
 };
 
@@ -21,6 +22,15 @@ const responseList = {
   confused: ["Hmm", "Uh…", "Um…", "I’m confused"],
   yes: ["Yes!", "Absolutely", "For sure", "Definitely", "Do it", "That’s a great idea"],
   no: ["No", "No way", "Nope", "I don’t think so", "Forget it", "That doesn’t seem like a good idea"],
+  hello: [
+    "Well hello there.",
+    "Hi",
+    "Hi!",
+    "Hello",
+    "Greetings",
+    "Howdy",
+    "Hey there"
+  ],
   misc: []
 };
 
