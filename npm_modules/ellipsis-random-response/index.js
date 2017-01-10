@@ -16,7 +16,7 @@ const emojiList = {
 const responseList = {
   happy: ["Excellent", "Very good", "Oh, fantastic"],
   celebratory: ["Yay!", "Hurray!", "Yesssssssss"],
-  congratulatory: ["Well done!", "Nice work!", "Oh, nicely done.", "Congrats!", "Mission accomplished"],
+  congratulatory: ["Well done!", "Nice work!", "Oh, nicely done.", "Congrats!", "Mission accomplished."],
   disappointed: ["Oh dear", "Uh oh", "Ugh"],
   oops: ["Oh well.", "Don't worry about it.", "These things happen."],
   confused: ["Hmm", "Uh…", "Um…", "I’m confused"],
