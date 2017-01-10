@@ -3,12 +3,12 @@ package json
 import java.time.OffsetDateTime
 
 import models.accounts.user.User
+import models.behaviors.triggers.TriggerFuzzyMatcher
 import models.team.Team
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.matching.Regex
 
 case class BehaviorGroupData(
                               id: Option[String],
@@ -45,19 +45,16 @@ case class BehaviorGroupData(
     }
   }
 
-  private def anyTriggerMatchesHelpSearch(regex: Regex): Boolean = {
-    behaviorVersions.exists { version =>
-      version.triggers.exists { trigger =>
-        regex.findFirstMatchIn(trigger.text).isDefined
-      }
-    }
+  private def anyTriggerMatchesHelpSearch(helpSearch: String): Boolean = {
+    val triggers = behaviorVersions.flatMap(_.triggers)
+    TriggerFuzzyMatcher(helpSearch, triggers).run.nonEmpty
   }
 
   def matchesHelpSearch(helpSearch: String): Boolean = {
     val regex = ("(?i)" ++ helpSearch).r
     regex.findFirstMatchIn(name).isDefined ||
       regex.findFirstMatchIn(description).isDefined ||
-      anyTriggerMatchesHelpSearch(regex)
+      anyTriggerMatchesHelpSearch(helpSearch)
   }
 
   import scala.math.Ordered.orderingToOrdered

@@ -81,7 +81,7 @@ case class DisplayHelpBehavior(
     if (!hasGroupsWithNames && !hasGroupsWithoutNames) {
       ""
     } else {
-      s"""$prompt$matchString
+      s"""$prompt$matchString:
          |$groupsWithNamesString$unnamedSkillsString$groupsWithoutNamesString
          |""".stripMargin
     }
@@ -115,9 +115,9 @@ case class DisplayHelpBehavior(
         groupData
       }
       val matchString = maybeHelpSearch.map { s =>
-        s" that matches `$s`"
+        s" related to `$s`"
       }.getOrElse("")
-      val groupsString = helpStringFor(matchingGroupData, "Here’s what I can do:", matchString)
+      val groupsString = helpStringFor(matchingGroupData, "Here’s what I can do", matchString)
       val endingString = if (groupData.isEmpty) {
         justGettingStartedText(lambdaService)
       } else if (matchingGroupData.isEmpty) {
