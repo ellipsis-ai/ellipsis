@@ -7,14 +7,16 @@ case class TriggerFuzzyMatcher(matchString: String, triggers: Seq[MessageTrigger
 
   val matchTokenCount: Int = matchString.split("\\s+").length
 
-  def ngramsFor(trigger: MessageTrigger): Seq[String] = {
-    trigger.pattern.split("\\s+").sliding(matchTokenCount, 1).map(tokens => tokens.mkString(" ")).toSeq
+  def ngramsFor(pattern: String): Seq[String] = {
+    pattern.split("\\s+").sliding(matchTokenCount, 1).map(tokens => tokens.mkString(" ")).toSeq
   }
 
   def basicScoreFor(text: String): Double = RatcliffObershelpMetric.compare(text, matchString).getOrElse(0)
 
   def scoreFor(trigger: MessageTrigger): Double = {
-    ngramsFor(trigger).map(basicScoreFor).max
+    trigger.maybeFuzzyMatchPattern.map { pattern =>
+      ngramsFor(pattern).map(basicScoreFor).max
+    }.getOrElse(0)
   }
 
   def run: Seq[(MessageTrigger, Double)] = {
