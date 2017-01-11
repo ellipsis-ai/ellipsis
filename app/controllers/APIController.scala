@@ -5,7 +5,7 @@ import javax.inject.Inject
 import models.accounts.user.User
 import models.behaviors.SimpleTextResult
 import models.behaviors.events.EventHandler
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
@@ -106,13 +106,19 @@ class APIController @Inject() (
               _ <- eventHandler.interruptOngoingConversationsFor(event)
               result <- eventHandler.handle(event, None).map { results =>
                 results.foreach { result =>
-                  if (isInvokedExternally) {
-                    maybeSlackProfile.foreach { slackProfile =>
+                  val eventualIntroSend = if (isInvokedExternally) {
+                    maybeSlackProfile.map { slackProfile =>
                       val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
                       introResult.sendIn(event, None, None)
+                    }.getOrElse(Future.successful({}))
+                  } else {
+                    Future.successful({})
+                  }
+                  eventualIntroSend.flatMap { _ =>
+                    result.sendIn(event, None, None).map { _ =>
+                      Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.fullMessageText}] in channel [${event.channel}]")
                     }
                   }
-                  result.sendIn(event, None, None)
                 }
                 Ok(Json.toJson(results.map(_.fullText)))
               }

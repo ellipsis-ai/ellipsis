@@ -30,7 +30,9 @@ class SlackEventService @Inject()(
         maybeConversation <- event.maybeOngoingConversation(dataService)
         _ <- eventHandler.handle(event, maybeConversation).flatMap { results =>
           Future.sequence(
-            results.map(_.sendIn(event, None, maybeConversation))
+            results.map(result => result.sendIn(event, None, maybeConversation).map { _ =>
+              Logger.info(s"Sending result [${result.fullText}] in response to slack message [${event.fullMessageText}] in channel [${event.channel}]")
+            })
           )
         }
       } yield {}

@@ -9,7 +9,7 @@
   </appender>
 
   <logger name="play" level="WARN" />
-  <logger name="application" level="WARN" />
+  <logger name="application" level="INFO" />
 
   <logger name="slick.jdbc" level="WARN" />
 
