@@ -45,10 +45,11 @@ class EventHandler @Inject() (
     event.allOngoingConversations(dataService).flatMap { ongoing =>
       Future.sequence(ongoing.map { ea =>
         val cancelMessage =
-          s""":exclamation: I've been asked to interrupt this conversation for something super duper important*.
-             |
-             |>You can start it again by saying `${ea.trigger.pattern}`
-             |>*may not actually be super duper important""".stripMargin
+          s""">:point_up: Hi. You haven’t answered my question above yet, but I’ve been asked to interrupt this for something else.
+             |>
+             |>You can restart the old conversation later if you want by typing `${ea.trigger.pattern}`
+             |>
+             |>For now…""".stripMargin
         cancelConversationResult(ea, cancelMessage).map { result =>
           result.sendIn(event, None, None)
         }

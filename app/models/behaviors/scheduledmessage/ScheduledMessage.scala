@@ -39,7 +39,7 @@ case class ScheduledMessage(
       s"$baseUrl$path"
     }.get
     SimpleTextResult(
-      s"""I've been [scheduled]($helpLink) to run $shortDescription
+      s""">:mantelpiece_clock: I've been [scheduled]($helpLink) to run $shortDescription
      """.stripMargin, result.forcePrivateResponse)
   }
 
