@@ -120,15 +120,9 @@ define(function(require) {
             <ul className="list-space-xl">
               <li>
                 <span>Type <span className="box-chat-example">/invite @ellipsis</span> to add your </span>
-                <span>bot to any channel. (It will stay there unless later removed.</span>
+                <span>bot to any channel.</span>
               </li>
               {this.getBehaviorHelpInstructions()}
-              <li>
-                <span>You can always get your bot’s attention by mentioning </span>
-                <span className="box-chat-example">@ellipsis</span>
-                <span> or starting any message with </span>
-                <span className="box-chat-example">...</span>
-              </li>
             </ul>
 
             <div className="mtxl">
