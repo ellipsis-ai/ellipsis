@@ -148,12 +148,10 @@ case class ScheduledMessage(
       members <- getMembersFor(channelName, client)
       otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
       withDMChannels <- Future.sequence(otherMembers.map { ea =>
-        client.listIms.map { ims =>
-          ims.find(_.user == ea).map(_.id).map { dmChannel =>
-            (ea, dmChannel)
-          }
+        client.openIm(ea).map { dmChannel =>
+          (ea, dmChannel)
         }
-      }).map(_.flatten)
+      })
       _ <- Future.sequence(withDMChannels.map { case(slackUserId, dmChannel) =>
         sendFor(dmChannel, slackUserId, eventHandler, client, profile, dataService, configuration)
       }).map(_ => {})
