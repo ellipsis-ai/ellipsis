@@ -9,7 +9,7 @@ import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.events.EventHandler
 import models.behaviors.{BotResult, SimpleTextResult}
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import services.slack.SlackMessageEvent
 import services.DataService
 import slack.api.{ApiError, SlackApiClient}
@@ -181,7 +181,9 @@ case class ScheduledMessage(
         Future.successful({})
       }
       _ <- result.sendIn(event, None, None)
-    } yield {}
+    } yield {
+      Logger.info(s"Sending result [${result.fullText}] for scheduled message [${text}] in channel [${event.channel}]")
+    }
   }
 
   def sendResults(results: List[BotResult], event: SlackMessageEvent, configuration: Configuration): Future[Unit] = {
