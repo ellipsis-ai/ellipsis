@@ -45,7 +45,7 @@ class EventHandler @Inject() (
     event.allOngoingConversations(dataService).flatMap { ongoing =>
       Future.sequence(ongoing.map { ea =>
         val cancelMessage =
-          s""">:point_up: Hi. You haven’t answered my question above question yet, but I’ve been asked to interrupt this for something else.
+          s""">:point_up: Hi. You haven’t answered my question above yet, but I’ve been asked to interrupt this for something else.
              |>
              |>You can restart the old conversation later if you want by typing `${ea.trigger.pattern}`
              |>
