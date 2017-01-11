@@ -9,15 +9,9 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
     while (node != null) {
       node match {
         case p: Paragraph => {
-          var child = p.getFirstChild
-          while (child != null) {
-            child match {
-              case t: Text => stringBuilder.append("\r> ")
-              case _ =>
-            }
-            child.accept(this)
-            child = child.getNext
-          }
+          stringBuilder.append("\r> ")
+          visitChildren(node)
+          stringBuilder.append("\r> ")
         }
         case _ => {
           stringBuilder.append("\r> ")
