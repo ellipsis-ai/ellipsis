@@ -158,7 +158,7 @@ case class SlackMessageEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation]
                  )(implicit ec: ExecutionContext): Future[Unit] = {
-    val formattedText = SlackMessageFormatter(client).bodyTextFor(unformattedText)
+    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
     for {
       channelToUse <- channelForSend(forcePrivate, maybeConversation)
       _ <- sendPreamble(formattedText, channelToUse)
