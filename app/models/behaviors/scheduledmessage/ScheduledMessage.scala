@@ -47,10 +47,16 @@ case class ScheduledMessage(
     maybeChannelName.exists(_.startsWith("D"))
   }
 
+  def isScheduledForPrivateChannel: Boolean = {
+    maybeChannelName.exists(_.startsWith("G"))
+  }
+
   def shortDescription: String = {
     val channelInfo = maybeChannelName.map { channelName =>
       if (isScheduledForDirectMessage) {
-        s"in a DM"
+        "in a DM"
+      } else if (isScheduledForPrivateChannel) {
+        "in a private channel"
       } else if (isForIndividualMembers) {
         s"privately for all members of <#$channelName>"
       } else {
