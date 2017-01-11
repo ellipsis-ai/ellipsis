@@ -11,12 +11,14 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
         case p: Paragraph => {
           stringBuilder.append("\r> ")
           var child = p.getFirstChild
+          child.accept(this)
+          child = child.getNext
           while (child != null) {
-            child.accept(this)
             child match {
-              case t: Text => stringBuilder.append(" ")
-              case _ =>
+              case text: Text =>
+              case _ => stringBuilder.append(" ")
             }
+            child.accept(this)
             child = child.getNext
           }
           stringBuilder.append("\r> ")
