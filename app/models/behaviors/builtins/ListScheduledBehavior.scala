@@ -24,7 +24,7 @@ case class ListScheduledBehavior(
   def responseForMessages(messages: Seq[ScheduledMessage]): String = {
     s"""Here is what you have scheduled:
        |
-       |${messages.map(_.listResponse).mkString("\n\n")}
+       |${messages.map(_.listResponse).mkString("Run ", "\n\nRun ", "")}
        |
        |You can unschedule by typing something like:
        |

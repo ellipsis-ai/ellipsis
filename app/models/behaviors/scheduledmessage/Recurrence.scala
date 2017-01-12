@@ -112,7 +112,8 @@ trait RecurrenceWithTimeOfDay extends Recurrence {
   val secondOfMinute = timeOfDay.getSecond
   val nanosOfSecond = timeOfDay.getNano
 
-  def stringFor(timeZone: ZoneId): String = s"(${timeZone.toString})"
+  // TODO: Someday we may care about locales
+  def stringFor(timeZone: ZoneId): String = s"${timeZone.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}"
 
   override def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = {
     super.withStandardAdjustments(withTime(when))
@@ -185,7 +186,13 @@ case class Weekly(
   lazy val daysOfWeekValues = daysOfWeek.map(_.getValue)
 
   lazy val daysOfWeekString = {
-    daysOfWeek.map(Recurrence.dayOfWeekNameFor).mkString(", ")
+    if (daysOfWeek.length == 5 && !daysOfWeek.contains(DayOfWeek.SATURDAY) && !daysOfWeek.contains(DayOfWeek.SUNDAY)) {
+      "weekday"
+    } else if (daysOfWeek.length == 7) {
+      "day"
+    } else {
+      daysOfWeek.map(Recurrence.dayOfWeekNameFor).mkString(", ")
+    }
   }
 
   def maybeNextDayInWeekOf(when: OffsetDateTime): Option[DayOfWeek] = {
@@ -201,8 +208,12 @@ case class Weekly(
   }
 
   override def displayString: String = {
-    val frequencyString = if (frequency == 1) { "week" } else { s"$frequency weeks" }
-    s"every $frequencyString on $daysOfWeekString at ${Recurrence.timeFormatter.format(timeOfDay)} ${stringFor(timeZone)}"
+    val frequencyString = if (frequency == 1) {
+      daysOfWeekString
+    } else {
+      s"$frequency weeks on $daysOfWeekString"
+    }
+    s"every $frequencyString at ${Recurrence.timeFormatter.format(timeOfDay)} ${stringFor(timeZone)}"
   }
 
   def isEarlierTheSameDay(when: OffsetDateTime): Boolean = {
