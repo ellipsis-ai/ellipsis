@@ -15,6 +15,8 @@ const EventFormatter = {
     ALL_DAY_SUFFIX: '(all day)'
   },
 
+  defaultTimeZone: 'UTC',
+
   formatEvent: function(event, tz) {
     if (event.start.date) {
       return this.formatAllDayEvent(event);
@@ -39,12 +41,7 @@ const EventFormatter = {
   },
 
   formatRegularEvent: function(event, tz) {
-    let start;
-    if (event.start.timeZone || tz) {
-      start = moment(event.start.dateTime).tz(event.start.timeZone || tz);
-    } else {
-      start = moment(event.start.dateTime);
-    }
+    let start = moment(event.start.dateTime).tz(event.start.timeZone || tz || this.defaultTimeZone);
     let startDate = start.format(this.formats.DATE);
     let startTime = start.format(this.formats.TIME);
     let formattedEventTime = `${startDate} ${startTime}`;
@@ -52,11 +49,7 @@ const EventFormatter = {
     let endDate = '';
     let endTime = '';
     if (!event.endTimeUnspecified) {
-      if (event.start.timeZone || tz) {
-        end = moment(event.end.dateTime).tz(event.start.timeZone || tz);
-      } else {
-        end = moment(event.end.dateTime);
-      }
+      end = moment(event.end.dateTime).tz(event.start.timeZone || tz || this.defaultTimeZone);
       endDate = end.format(this.formats.DATE);
       endTime = end.format(this.formats.TIME);
       if (endDate !== startDate) {
@@ -65,9 +58,7 @@ const EventFormatter = {
         formattedEventTime += ` ${this.verbiage.DASH} ${endTime}`;
       }
     }
-    if (event.start.timeZone || tz) {
-      formattedEventTime += ` ${start.format(this.formats.TZ)}`;
-    }
+    formattedEventTime += ` ${start.format(this.formats.TZ)}`;
     return formattedEventTime;
   }
 };
