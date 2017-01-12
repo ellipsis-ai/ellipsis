@@ -1,4 +1,4 @@
 env:
   node: true
-parseerOptions:
+parserOptions:
   sourceType: module

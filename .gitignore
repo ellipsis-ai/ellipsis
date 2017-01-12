@@ -27,3 +27,4 @@ node_modules
 tags
 .ctags
 actw
+**/npm-debug.log
