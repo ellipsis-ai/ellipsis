@@ -31,7 +31,7 @@ case class ScheduledMessage(
 
   def followingSentAt: OffsetDateTime = recurrence.nextAfter(nextSentAt)
 
-  def successResponse: String = s"OK, I will trigger $listResponse"
+  def successResponse: String = shortDescription("OK, I will run")
 
   def scheduleInfoResultFor(result: BotResult, configuration: Configuration) = {
     val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
@@ -39,7 +39,7 @@ case class ScheduledMessage(
       s"$baseUrl$path"
     }.get
     SimpleTextResult(
-      s""">:mantelpiece_clock: I've been [scheduled]($helpLink) to run $shortDescription
+      s""">:mantelpiece_clock: I’m running `$text` [as scheduled]($helpLink) (${recurrence.displayString.trim}):
      """.stripMargin, result.forcePrivateResponse)
   }
 
@@ -51,39 +51,45 @@ case class ScheduledMessage(
     maybeChannelName.exists(_.startsWith("G"))
   }
 
-  def shortDescription: String = {
+  def recurrenceAndChannel: String = {
     val channelInfo = maybeChannelName.map { channelName =>
       if (isScheduledForDirectMessage) {
-        "in a DM"
+        "in a direct message"
       } else if (isScheduledForPrivateChannel) {
         "in a private channel"
       } else if (isForIndividualMembers) {
-        s"privately for all members of <#$channelName>"
+        s"in a direct message to each member of <#$channelName>"
       } else {
         s"in <#$channelName>"
       }
     }.getOrElse("")
-    s"`$text` ${recurrence.displayString.trim} $channelInfo"
+    s"${recurrence.displayString.trim} $channelInfo"
+  }
+
+  def shortDescription(prefix: String = ""): String = {
+    s"$prefix `$text` $recurrenceAndChannel."
   }
 
   def listResponse: String = {
-    s"""$shortDescription
+    s"""
+        |
+        |**${shortDescription("Run")}**
         |
         |$nextRunsString
+        |
+        |
      """.stripMargin
   }
 
   val nextRunDateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
   def nextRunDateStringFor(when: OffsetDateTime): String = {
-    val clarifier = if (when.toLocalDate == OffsetDateTime.now.toLocalDate) {
-      " (today)"
+    if (when.toLocalDate == OffsetDateTime.now.toLocalDate) {
+      "Today"
     } else if (when.toLocalDate == OffsetDateTime.now.plusDays(1).toLocalDate) {
-      " (tomorrow)"
+      "Tomorrow"
     } else {
-      ""
+      nextRunDateFormatter.format(when)
     }
-
-    nextRunDateFormatter.format(when) ++ clarifier
   }
   def nextRunTimeStringFor(when: OffsetDateTime): String = {
     Recurrence.timeFormatterWithZone.format(when.toZonedDateTime.withZoneSameInstant(team.timeZone))
@@ -95,7 +101,7 @@ case class ScheduledMessage(
   }
 
   def nextRunsString: String = {
-    s"""The next two runs will be:
+    s"""The next two times will be:
         | - ${nextRunStringFor(nextSentAt)}
         | - ${nextRunStringFor(followingSentAt)}
         |

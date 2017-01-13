@@ -30,7 +30,7 @@ case class UnscheduleBehavior(
         val alternativesMessage = if(scheduled.isEmpty) {
           "You don't currently have anything scheduled."
         } else {
-          s"Currently scheduled:\n\n${scheduled.map(_.listResponse).mkString("\n\n")}"
+          s"Here’s what you have scheduled currently:\n\n${scheduled.map(_.listResponse).mkString}"
         }
         s"I couldn't find `$text` scheduled. $alternativesMessage"
       }
