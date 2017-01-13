@@ -31,7 +31,7 @@ case class ScheduledMessage(
 
   def followingSentAt: OffsetDateTime = recurrence.nextAfter(nextSentAt)
 
-  def successResponse: String = s"OK, I will run $listResponse"
+  def successResponse: String = shortDescription("OK, I will run")
 
   def scheduleInfoResultFor(result: BotResult, configuration: Configuration) = {
     val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
@@ -51,25 +51,33 @@ case class ScheduledMessage(
     maybeChannelName.exists(_.startsWith("G"))
   }
 
-  def shortDescription: String = {
+  def recurrenceAndChannel: String = {
     val channelInfo = maybeChannelName.map { channelName =>
       if (isScheduledForDirectMessage) {
         "in a direct message"
       } else if (isScheduledForPrivateChannel) {
         "in a private channel"
       } else if (isForIndividualMembers) {
-        s"privately for everyone in <#$channelName>"
+        s"in a direct message to each member of <#$channelName>"
       } else {
         s"in <#$channelName>"
       }
     }.getOrElse("")
-    s"${recurrence.displayString.trim} ($channelInfo)"
+    s"${recurrence.displayString.trim} $channelInfo"
+  }
+
+  def shortDescription(prefix: String = ""): String = {
+    s"$prefix `$text` $recurrenceAndChannel."
   }
 
   def listResponse: String = {
-    s"""`$text` $shortDescription
+    s"""
+        |
+        |**${shortDescription("Run")}**
         |
         |$nextRunsString
+        |
+        |
      """.stripMargin
   }
 

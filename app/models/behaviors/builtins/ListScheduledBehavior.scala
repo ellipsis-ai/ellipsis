@@ -16,19 +16,23 @@ case class ListScheduledBehavior(
                                  ) extends BuiltinBehavior {
 
   lazy val noMessagesResponse: String =
-    """You haven't yet scheduled anything. To do so, try something like:
+    """You haven’t yet scheduled anything. To do so, try something like:
       |
-      |@ellipsis: schedule `some ellipsis skill` every day at 3pm
+      |```
+      |...schedule `go bananas` every day at 3pm
+      |```
     """.stripMargin
 
   def responseForMessages(messages: Seq[ScheduledMessage]): String = {
-    s"""Here is what you have scheduled:
+    s"""Here’s what you have scheduled:
        |
-       |${messages.map(_.listResponse).mkString("Run ", "\n\nRun ", "")}
+       |${messages.map(_.listResponse).mkString}
        |
        |You can unschedule by typing something like:
        |
-       |@ellipsis: unschedule `some ellipsis skill`
+       |```
+       |...unschedule `go bananas`
+       |```
      """.stripMargin
   }
 

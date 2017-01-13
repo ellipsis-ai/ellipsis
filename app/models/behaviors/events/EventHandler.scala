@@ -47,9 +47,7 @@ class EventHandler @Inject() (
         val cancelMessage =
           s""">:point_up: Hi. You haven’t answered my question above yet, but I’ve been asked to interrupt this for something else.
              |>
-             |>You can restart the old conversation later if you want by typing `${ea.trigger.pattern}`
-             |>
-             |>For now…""".stripMargin
+             |>You can restart the old conversation later if you want by typing `${ea.trigger.pattern}`""".stripMargin
         cancelConversationResult(ea, cancelMessage).map { result =>
           result.sendIn(event, None, None)
         }
