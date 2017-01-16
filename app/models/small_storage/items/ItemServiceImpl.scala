@@ -2,13 +2,15 @@ package models.small_storage.items
 
 import javax.inject.Inject
 
+import com.ning.http.client.Response
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import models.IDs
 import models.team.Team
 import play.api.libs.json._
 import services.ElasticsearchService
-
+import play.api.libs.functional.syntax._
 
 class ItemServiceImpl @Inject()(
                                 elasticsearch: ElasticsearchService
@@ -22,33 +24,30 @@ class ItemServiceImpl @Inject()(
     save(item)
   }
 
+
   def save(item: Item): Future[Item] = {
-    elasticsearch.indexDoc(`indexName` = indexName, docType = itemType, json = Json.toJson(item)).map { result =>
-      if (result.getStatusCode == 200)
-//        Json.parse(result.getResponseBody()).as[Item]
-        item
-      else
-//      throw!
-        item
+    val indexDocOp: Future[Response] = elasticsearch.indexDoc(`indexName` = indexName, docType = itemType, json = Json.toJson(item))
+
+    elasticsearch.indexDoc(`indexName` = indexName, docType = itemType, json = Json.toJson(item)).flatMap { result =>
+      if (result.getStatusCode == 201) {
+        val resAsJson = Json.parse(result.getResponseBody())
+        val returnedDocId: String = (resAsJson \ "_id").as[String]
+        val returnedDocType: String = (resAsJson \ "_type").as[String]
+        elasticsearch.getDoc(indexName, returnedDocType, returnedDocId).map { getResult =>
+          if (getResult.getStatusCode == 200) {
+            val itemAsJson: JsValue = Json.parse(getResult.getResponseBody())
+            (itemAsJson \ "_source").as[Item]
+          }
+          else throw new Exception("Cannot retrieve new item!")
+        }
+      }
+      else throw new Exception(s"Cannot store item! Elasticsearch response: ${result.getStatusCode} | ${result.getResponseBody()}")
     }
   }
 
-  implicit val itemWrites = new Writes[Item] {
-    def writes(item: Item) = Json.obj(
-      "id" -> item.id,
-      "kind" -> item.kind,
-      "data" -> item.data.asOpt[JsObject]
-    )
-  }
-
-//  implicit val teamWrites: Writes[Team] = (
-//      (__ \ "id").write[String] and
-//      (__ \ "name").write[String]
-//    ) (unlift(Team.unapply))
-
-//  implicit val itemReads: Reads[Item] = (
-//    (JsPath \ "id").read[String] and
-//      (JsPath \ "long").read[Double]
-//    )(Item.apply _)
+  implicit val teamReads = Json.reads[Team]
+  implicit val teamWrites = Json.writes[Team]
+  implicit val itemWrites = Json.writes[Item]
+  implicit val itemReads = Json.reads[Item]
 
 }

@@ -21,4 +21,6 @@ trait ElasticsearchService {
   def deleteAllIndexes(): Future[Response]
 
   def verifyIndex(name: String): Future[Response]
+
+  def getDoc(indexName: String, docType: String, id: String): Future[Response]
 }

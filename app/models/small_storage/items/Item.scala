@@ -7,14 +7,15 @@ import play.api.libs.json.JsValue
 case class Item(
                  id: String,
                  kind: String,
-                 team: Team,
                  createdAt: DateTime = DateTime.now,
-                 updateAt: DateTime = DateTime.now,
+                 updatedAt: DateTime = DateTime.now,
+                 team: Team,
                  data: JsValue
                ) {
   require(id != null, "id cannot be null")
   require(team != null, "team cannot be null")
-  require(kind != null, "kind cannot be null")
+  require(createdAt != null, "createdAt cannot be null")
+  require(updatedAt != null, "updatedAt cannot be null")
   require(data != null, "data cannot be null")
 }
 

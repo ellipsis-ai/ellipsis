@@ -28,17 +28,6 @@ class ElasticsearchServiceImpl @Inject()(
     }
   }
 
-  def indexDoc(indexName: String, docType: String, docId: Option[String] = None, json: JsValue): Future[Response] = {
-    val indexFuture: Future[Response] = client.index(indexName, `type` = docType, id = docId, data = json.toString(), refresh = true)
-    indexFuture.flatMap { indexResponse =>
-      if (indexResponse.getStatusCode() == 200) {
-        val docId = (Json.parse(indexResponse.getResponseBody()) \ "_id").as[String]
-        client.get(indexName, docType, docId)
-      } else
-        indexFuture
-    }
-  }
-
   def deleteIndex(name: String): Future[Response] = {
     client.deleteIndex(name)
   }
@@ -49,6 +38,20 @@ class ElasticsearchServiceImpl @Inject()(
 
   def verifyIndex(name: String): Future[Response] = {
     client.verifyIndex(name)
+  }
+
+  def indexDoc(indexName: String, docType: String, docId: Option[String] = None, json: JsValue): Future[Response] = {
+    val indexFuture: Future[Response] = client.index(indexName, `type` = docType, id = docId, data = json.toString(), refresh = true)
+    indexFuture.flatMap { indexResponse =>
+      if (indexResponse.getStatusCode() == 200) {
+        val docId = (Json.parse(indexResponse.getResponseBody()) \ "_id").as[String]
+        client.get(indexName, docType, docId)
+      } else
+        indexFuture
+    }
+  }
+  def getDoc(indexName: String, docType: String, id: String): Future[Response] = {
+    client.get(indexName, docType, id)
   }
 
 }

@@ -5,6 +5,7 @@ import scala.concurrent.Await
 import com.ning.http.client.Response
 import play.api.libs.json._
 
+
 class ElasticsearchServiceSpec extends IntegrationSpec {
   describe("Elasticsearch Service") {
     describe("#createIndex") {
@@ -91,9 +92,19 @@ class ElasticsearchServiceSpec extends IntegrationSpec {
         ), 10.seconds)
         assert(r1.getStatusCode() === 201)
         println(r1.getResponseBody())
+        val repsonseAsJson = Json.parse(r1.getResponseBody())
+        val returnedDocId: String = (repsonseAsJson \ "_id").as[String]
+        val returnedDocType: String = (repsonseAsJson \ "_type").as[String]
 
-        val r2: Response = Await.result(elasticsearchService.deleteIndex(indexName), 10.seconds)
+        val r2: Response = Await.result(elasticsearchService.getDoc(
+          indexName,
+          returnedDocType,
+          returnedDocId), 10.seconds)
         assert(r2.getStatusCode() === 200)
+        println(r2.getResponseBody())
+
+        val r3: Response = Await.result(elasticsearchService.deleteIndex(indexName), 10.seconds)
+        assert(r3.getStatusCode() === 200)
       }
     }
   }

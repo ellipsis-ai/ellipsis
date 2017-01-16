@@ -76,8 +76,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[ScheduledMessageService].to(classOf[ScheduledMessageServiceImpl])
     bind[InvocationLogEntryService].to(classOf[InvocationLogEntryServiceImpl])
 
-    bind[ItemService].to(classOf[ItemServiceImpl])
-
+    bind(classOf[ItemService]).to(classOf[ItemServiceImpl])
     bind(classOf[AWSLambdaService]).to(classOf[AWSLambdaServiceImpl])
     bind(classOf[AWSLogsService]).to(classOf[AWSLogsServiceImpl])
     bind(classOf[ElasticsearchService]).to(classOf[ElasticsearchServiceImpl])

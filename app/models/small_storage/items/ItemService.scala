@@ -6,9 +6,16 @@ import play.api.libs.json.JsObject
 import scala.concurrent.Future
 
 
+//
 trait ItemService {
 
   def create(team: Team, kind: String, data: JsObject): Future[Item]
 
   def save(item: Item): Future[Item]
+
+//  def get(itemId: String): Future[Item]
+//  def delete(itemId: String): Future[Item]
+//  def search(itemId: String): Future[Item]
+  // maybe edit
+
 }
