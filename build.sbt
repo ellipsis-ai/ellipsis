@@ -39,7 +39,7 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "core.js" % "2.4.1",
   "org.webjars.bower" % "react" % "15.3.1",
   "org.webjars.bower" % "fetch" % "1.0.0",
-  "org.webjars.bower" % "codemirror" % "5.15.2",
+  "org.webjars.bower" % "codemirror" % "5.22.2",
   "org.webjars.bower" % "jshint" % "2.9.2",
   "org.webjars.bower" % "javascript-debounce" % "1.0.0",
   "org.webjars.bower" % "moment" % "2.14.1",

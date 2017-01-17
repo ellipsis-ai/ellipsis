@@ -118,6 +118,11 @@ return React.createClass({
     };
   },
 
+  replaceTabsWithSpaces: function(cm) {
+    var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+    cm.replaceSelection(spaces);
+  },
+
   render: function() {
     return (
       <Codemirror value={this.props.value}
@@ -126,7 +131,7 @@ return React.createClass({
         options={{
           mode: "javascript",
           firstLineNumber: this.props.firstLineNumber,
-          gutters: ["CodeMirror-lint-markers"],
+          gutters: ["CodeMirror-lint-markers","CodeMirror-linenumbers"],
           hintOptions: { hint: this.autocompleteParams },
           indentUnit: 2,
           indentWithTabs: false,
@@ -138,10 +143,7 @@ return React.createClass({
           viewportMargin: Infinity,
           extraKeys: {
             Esc: "autocomplete",
-            Tab: function(cm) {
-              var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
-              cm.replaceSelection(spaces);
-            }
+            Tab: this.replaceTabsWithSpaces
           }
         }}
       />

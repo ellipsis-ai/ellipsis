@@ -139,12 +139,7 @@ define(function(require) {
                 onChange={this.props.onChangeTemplate}
                 onCursorChange={this.props.onCursorChange}
                 options={{
-                  mode: {
-                    name: "markdown",
-                    /* Use CommonMark-appropriate settings */
-                    fencedCodeBlocks: true,
-                    underscoresBreakWords: false
-                  },
+                  mode: "gfm",
                   gutters: ['CodeMirror-no-gutter'],
                   indentUnit: 4,
                   indentWithTabs: true,
