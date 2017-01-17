@@ -589,7 +589,11 @@ object Recurrence {
 
   def daysOfWeekFrom(text: String): Seq[DayOfWeek] = {
     val days = ArrayBuffer[DayOfWeek]()
-    dayOfWeekMatchers.foreach(_.process(text, days))
+    if ("every weekday".r.findFirstMatchIn(text).nonEmpty) {
+      days ++= Seq(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)
+    } else {
+      dayOfWeekMatchers.foreach(_.process(text, days))
+    }
     days
   }
 
