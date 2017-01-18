@@ -11,6 +11,8 @@ const emojiList = {
   no: ["👎", "🛑", "🙅‍♂️", "🙅", "🚧"],
   understood: ["👍", "👌", "✅", "🆗", "📝", "📌"],
   hello: ["👋", "🙂"],
+  appreciated: ["👍", "🙂", "😊"],
+  sarcastic: ["😬", "🙈", "🙃", "😛","🤔"],
   misc: []
 };
 
@@ -33,6 +35,19 @@ const responseList = {
     "Howdy",
     "Hey there"
   ],
+  appreciated: [
+    "Oh, my pleasure.",
+    "I do what I can.",
+    "It was nothing, really.",
+    "Don’t mention it.",
+    "You’re welcome."
+  ],
+  sarcastic: [
+    "I can’t tell if you’re being sincere, but… no worries.",
+    "Welp",
+    "_cough_",
+    "Moving right along…"
+  ],
   misc: []
 };
 
@@ -52,6 +67,14 @@ const RandomResponse = {
       response += RandomResponse.fromList(possible);
     }
     return response;
+  },
+
+  emojiListFor: function(theme) {
+    return emojiList[theme] || [];
+  },
+
+  responseListFor: function(theme) {
+    return responseList[theme] || [];
   },
 
   response: function(optionalTheme) {
