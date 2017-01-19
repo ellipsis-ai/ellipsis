@@ -8,5 +8,6 @@ case class InvocationToken(
                             behaviorId: String,
                             createdAt: OffsetDateTime
                           ) {
-  def isExpired: Boolean = createdAt.isBefore(OffsetDateTime.now.minusSeconds(10))
+  // Ellipsis's function time out is 10 seconds, but there can be a delay in starting, so we allow an extra 5
+  def isExpired: Boolean = createdAt.isBefore(OffsetDateTime.now.minusSeconds(15))
 }
