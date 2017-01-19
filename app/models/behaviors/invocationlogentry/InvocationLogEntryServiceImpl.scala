@@ -137,33 +137,22 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def uncompiledAllForBehaviorVersionQuery(
-                                            behaviorVersionId: Rep[String],
-                                            from: Rep[OffsetDateTime],
-                                            to: Rep[OffsetDateTime]
-                                          ) = {
+  def uncompiledAllForBehaviorQuery(
+                                     behaviorId: Rep[String],
+                                     from: Rep[OffsetDateTime],
+                                     to: Rep[OffsetDateTime]
+                                   ) = {
     allWithVersion.
-      filter { case(entry, _) => entry.behaviorVersionId === behaviorVersionId }.
+      filter { case(entry, ((version, _), _)) => version.behaviorId === behaviorId }.
       filter { case(entry, _) => entry.createdAt >= from && entry.createdAt <= to }
   }
-  val allForBehaviorVersionQuery = Compiled(uncompiledAllForBehaviorVersionQuery _)
+  val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
 
-  def allForBehaviorVersion(
-                             behaviorVersion: BehaviorVersion,
-                             from: OffsetDateTime,
-                             to: OffsetDateTime
-                           ): Future[Seq[InvocationLogEntry]] = {
-    val action = allForBehaviorVersionQuery(behaviorVersion.id, from, to).result.map { r =>
+  def allForBehavior(behavior: Behavior, from: OffsetDateTime, to: OffsetDateTime): Future[Seq[InvocationLogEntry]] = {
+    val action = allForBehaviorQuery(behavior.id, from, to).result.map { r =>
       r.map(tuple2Entry)
     }
     dataService.run(action)
-  }
-
-  def allForBehavior(behavior: Behavior, from: OffsetDateTime, to: OffsetDateTime): Future[Seq[InvocationLogEntry]] = {
-    for {
-      versions <- dataService.behaviorVersions.allFor(behavior)
-      entries <- Future.sequence(versions.map(ea => allForBehaviorVersion(ea, from, to))).map(_.flatten)
-    } yield entries
   }
 
   def createFor(
