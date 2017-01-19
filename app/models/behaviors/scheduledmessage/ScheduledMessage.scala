@@ -142,6 +142,26 @@ case class ScheduledMessage(
     }
   }
 
+  case class SlackDMInfo(userId: String, channelId: String)
+
+  private def sendDMsSequentiallyFor(
+                          infos: List[SlackDMInfo],
+                          eventHandler: EventHandler,
+                          client: SlackApiClient,
+                          profile: SlackBotProfile,
+                          dataService: DataService,
+                          configuration: Configuration
+                        ): Future[Unit] = {
+    if (infos.isEmpty) {
+      Future.successful({})
+    } else {
+      val info = infos.head
+      sendFor(info.channelId, info.userId, eventHandler, client, profile, dataService, configuration).flatMap { _ =>
+        sendDMsSequentiallyFor(infos.tail, eventHandler, client, profile, dataService, configuration)
+      }
+    }
+  }
+
   def sendForIndividualMembers(
                                 channelName: String,
                                 eventHandler: EventHandler,
@@ -153,14 +173,12 @@ case class ScheduledMessage(
     for {
       members <- getMembersFor(channelName, client)
       otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
-      withDMChannels <- Future.sequence(otherMembers.map { ea =>
+      dmInfos <- Future.sequence(otherMembers.map { ea =>
         client.openIm(ea).map { dmChannel =>
-          (ea, dmChannel)
+          SlackDMInfo(ea, dmChannel)
         }
       })
-      _ <- Future.sequence(withDMChannels.map { case(slackUserId, dmChannel) =>
-        sendFor(dmChannel, slackUserId, eventHandler, client, profile, dataService, configuration)
-      }).map(_ => {})
+      _ <- sendDMsSequentiallyFor(dmInfos.toList, eventHandler, client, profile, dataService, configuration)
     } yield {}
   }
 
