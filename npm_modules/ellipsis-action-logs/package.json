@@ -1,6 +1,6 @@
 {
   "name": "ellipsis-action-logs",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Interface to get action logs from Ellipsis",
   "main": "index.js",
   "scripts": {
