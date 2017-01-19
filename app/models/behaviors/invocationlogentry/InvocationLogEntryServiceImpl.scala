@@ -140,16 +140,18 @@ class InvocationLogEntryServiceImpl @Inject() (
   def uncompiledAllForBehaviorQuery(
                                      behaviorId: Rep[String],
                                      from: Rep[OffsetDateTime],
-                                     to: Rep[OffsetDateTime]
+                                     to: Rep[OffsetDateTime],
+                                     maybeUserId: Rep[Option[String]]
                                    ) = {
     allWithVersion.
       filter { case(entry, ((version, _), _)) => version.behaviorId === behaviorId }.
-      filter { case(entry, _) => entry.createdAt >= from && entry.createdAt <= to }
+      filter { case(entry, _) => entry.createdAt >= from && entry.createdAt <= to }.
+      filter { case(entry, _) => maybeUserId.isEmpty || entry.maybeUserIdForContext === maybeUserId }
   }
   val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
 
-  def allForBehavior(behavior: Behavior, from: OffsetDateTime, to: OffsetDateTime): Future[Seq[InvocationLogEntry]] = {
-    val action = allForBehaviorQuery(behavior.id, from, to).result.map { r =>
+  def allForBehavior(behavior: Behavior, from: OffsetDateTime, to: OffsetDateTime, maybeUserId: Option[String]): Future[Seq[InvocationLogEntry]] = {
+    val action = allForBehaviorQuery(behavior.id, from, to, maybeUserId).result.map { r =>
       r.map(tuple2Entry)
     }
     dataService.run(action)
