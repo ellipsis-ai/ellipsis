@@ -22,8 +22,8 @@ module.exports = {
           from: args.from.toISOString(),
           to: args.to.toISOString()
         };
-        if (args.userIdForContext) {
-          queryParams.userIdForContext = args.userIdForContext;
+        if (args.userId) {
+          queryParams.userId = args.userId;
         }
         request.
           get({
