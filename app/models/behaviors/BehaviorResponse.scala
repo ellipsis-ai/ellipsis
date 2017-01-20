@@ -75,17 +75,22 @@ case class BehaviorResponse(
 
   def resultForFilledOut: Future[BotResult] = {
     val startTime = OffsetDateTime.now
-    dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event).flatMap { result =>
-      val runtimeInMilliseconds = OffsetDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
-      dataService.invocationLogEntries.createFor(
-        behaviorVersion,
-        parametersWithValues,
-        result,
-        event,
-        Some(event.userIdForContext),
-        runtimeInMilliseconds
-      ).map(_ => result)
-    }
+    for {
+      user <- event.ensureUser(dataService)
+      result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event)
+      _ <- {
+        val runtimeInMilliseconds = OffsetDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
+        dataService.invocationLogEntries.createFor(
+          behaviorVersion,
+          parametersWithValues,
+          result,
+          event,
+          Some(event.userIdForContext),
+          user,
+          runtimeInMilliseconds
+        )
+      }
+    } yield result
   }
 
   def result: Future[BotResult] = {

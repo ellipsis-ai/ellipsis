@@ -2,6 +2,7 @@ package models.behaviors.invocationlogentry
 
 import java.time.OffsetDateTime
 
+import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -28,6 +29,7 @@ trait InvocationLogEntryService {
                  result: BotResult,
                  event: MessageEvent,
                  maybeUserIdForContext: Option[String],
+                 user: User,
                  runtimeInMilliseconds: Long
                ): Future[InvocationLogEntry]
 
