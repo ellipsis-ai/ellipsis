@@ -39,8 +39,8 @@ case class ScheduledMessage(
       s"$baseUrl$path"
     }.get
     SimpleTextResult(
-      s""">:mantelpiece_clock: I’m running `$text` [as scheduled]($helpLink) (${recurrence.displayString.trim}):
-     """.stripMargin, result.forcePrivateResponse)
+      s"""_:mantelpiece_clock: I’m running `$text` [as scheduled]($helpLink) (${recurrence.displayString.trim}):_
+         |""".stripMargin, result.forcePrivateResponse)
   }
 
   def isScheduledForDirectMessage: Boolean = {
