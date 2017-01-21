@@ -4,8 +4,7 @@ import java.time.OffsetDateTime
 import javax.inject._
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.slack.SlackProvider
-import models.accounts.user.{User, UserQueries}
+import models.accounts.user.User
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
@@ -28,16 +27,7 @@ class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataServ
 
   def dataService = dataServiceProvider.get
 
-  val all = TableQuery[LinkedAccountsTable]
-  val joined = all.join(UserQueries.all).on(_.userId === _.id)
-
-  def uncompiledFindQuery(providerId: Rep[String], providerKey: Rep[String], teamId: Rep[String]) = {
-    joined.
-      filter { case(linked, user) => linked.providerId === providerId }.
-      filter { case(linked, user) => linked.providerKey === providerKey }.
-      filter { case(linked, user) => user.teamId === teamId }
-  }
-  val findQuery = Compiled(uncompiledFindQuery _)
+  import LinkedAccountQueries._
 
   def find(loginInfo: LoginInfo, teamId: String): Future[Option[LinkedAccount]] = {
     val action = findQuery(loginInfo.providerID, loginInfo.providerKey, teamId).
@@ -60,15 +50,6 @@ class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataServ
     dataService.run(action)
   }
 
-  def tuple2LinkedAccount(tuple: (RawLinkedAccount, User)): LinkedAccount = {
-    LinkedAccount(tuple._2, tuple._1.loginInfo, tuple._1.createdAt)
-  }
-
-  def uncompiledAllForQuery(userId: Rep[String]) = {
-    joined.filter { case(_, u) => u.id === userId }
-  }
-  val allForQuery = Compiled(uncompiledAllForQuery _)
-
   def allFor(user: User): Future[Seq[LinkedAccount]] = {
     val action = allForQuery(user.id).
       result.
@@ -77,13 +58,6 @@ class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataServ
       }
     dataService.run(action)
   }
-
-  def uncompiledForSlackForQuery(userId: Rep[String]) = {
-    joined.
-      filter { case(la, u) => la.providerId === SlackProvider.ID }.
-      filter { case(la, u) => u.id === userId }
-  }
-  val forSlackForQuery = Compiled(uncompiledForSlackForQuery _)
 
   def maybeForSlackFor(user: User): Future[Option[LinkedAccount]] = {
     val action = forSlackForQuery(user.id).result.map { r =>

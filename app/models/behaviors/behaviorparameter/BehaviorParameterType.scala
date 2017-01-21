@@ -56,7 +56,7 @@ sealed trait BehaviorParameterType {
       } else {
         s"I need to ask you some questions. $howToStop"
       }
-      s"$preamble${context.parameter.question}${invalidValueModifierFor(maybePreviousCollectedValue)}"
+      s"$preamble**${context.parameter.question}** ${invalidValueModifierFor(maybePreviousCollectedValue)}"
     }
   }
 
