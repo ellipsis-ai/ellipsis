@@ -65,7 +65,8 @@ class InvocationLogController @Inject() (
                behaviorIdOrTrigger: String,
                token: String,
                maybeFrom: Option[String],
-               maybeTo: Option[String]
+               maybeTo: Option[String],
+               maybeUserId: Option[String]
              ) = Action.async { implicit request =>
     for {
       maybeInvocationToken <- dataService.invocationTokens.findNotExpired(token)
@@ -80,7 +81,7 @@ class InvocationLogController @Inject() (
       maybeLogEntries <- maybeBehavior.map { behavior =>
         val from = maybeTimestampFor(maybeFrom).getOrElse(EARLIEST)
         val to = maybeTimestampFor(maybeTo).getOrElse(LATEST)
-        dataService.invocationLogEntries.allForBehavior(behavior, from, to).map { entries =>
+        dataService.invocationLogEntries.allForBehavior(behavior, from, to, maybeUserId).map { entries =>
           Some(entries.filterNot(_.paramValues == JsNull))
         }
       }.getOrElse(Future.successful(None))

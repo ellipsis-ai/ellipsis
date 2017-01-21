@@ -22,6 +22,9 @@ module.exports = {
           from: args.from.toISOString(),
           to: args.to.toISOString()
         };
+        if (args.userId) {
+          queryParams.userId = args.userId;
+        }
         request.
           get({
             url: url,

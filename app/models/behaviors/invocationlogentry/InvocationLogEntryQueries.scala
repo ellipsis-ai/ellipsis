@@ -77,11 +77,13 @@ object InvocationLogEntryQueries {
   def uncompiledAllForBehaviorQuery(
                                      behaviorId: Rep[String],
                                      from: Rep[OffsetDateTime],
-                                     to: Rep[OffsetDateTime]
+                                     to: Rep[OffsetDateTime],
+                                     maybeUserId: Rep[Option[String]]
                                    ) = {
     allWithVersion.
       filter { case(_, ((version, _), _)) => version.behaviorId === behaviorId }.
-      filter { case((entry, _), _) => entry.createdAt >= from && entry.createdAt <= to }
+      filter { case((entry, _), _) => entry.createdAt >= from && entry.createdAt <= to }.
+      filter { case((entry, _), _) => maybeUserId.isEmpty || entry.maybeUserId === maybeUserId }
   }
   val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
 }
