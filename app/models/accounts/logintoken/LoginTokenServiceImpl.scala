@@ -15,10 +15,9 @@ import scala.concurrent.Future
 class LoginTokensTable(tag: Tag) extends Table[LoginToken](tag, "login_tokens") {
   def value = column[String]("value")
   def userId = column[String]("user_id")
-  def isUsed = column[Boolean]("is_used")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (value, userId, isUsed, createdAt) <> ((LoginToken.apply _).tupled, LoginToken.unapply _)
+  def * = (value, userId, createdAt) <> ((LoginToken.apply _).tupled, LoginToken.unapply _)
 }
 
 class LoginTokenServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) extends LoginTokenService {
@@ -36,12 +35,8 @@ class LoginTokenServiceImpl @Inject() (dataServiceProvider: Provider[DataService
     dataService.run(findQuery(value).result.map(_.headOption))
   }
 
-  def use(loginToken: LoginToken): Future[Unit] = {
-    dataService.run(all.filter(_.value === loginToken.value).map(_.isUsed).update(true).map(_ => Unit))
-  }
-
   def createFor(user: User): Future[LoginToken] = {
-    val instance = LoginToken(IDs.next, user.id, isUsed = false, OffsetDateTime.now)
+    val instance = LoginToken(IDs.next, user.id, OffsetDateTime.now)
     dataService.run((all += instance).map(_ => instance))
   }
 

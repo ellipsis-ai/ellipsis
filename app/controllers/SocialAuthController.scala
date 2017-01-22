@@ -209,7 +209,6 @@ class SocialAuthController @Inject() (
           Future.successful(Redirect(successRedirect))
         } else if (token.isValid) {
           for {
-            _ <- dataService.loginTokens.use(token)
             maybeUser <- dataService.users.find(token.userId)
             resultForValidToken <- maybeUser.map { user =>
               authenticatorResultForUserAndResult(user, Redirect(successRedirect))
