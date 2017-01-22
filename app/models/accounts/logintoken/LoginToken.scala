@@ -5,13 +5,12 @@ import java.time.OffsetDateTime
 case class LoginToken(
                         value: String,
                         userId: String,
-                        isUsed: Boolean,
                         createdAt: OffsetDateTime
                       ) {
 
   def isExpired: Boolean = createdAt.isBefore(LoginToken.expiryCutoff)
 
-  def isValid: Boolean = !isUsed && !isExpired
+  def isValid: Boolean = !isExpired
 
 }
 

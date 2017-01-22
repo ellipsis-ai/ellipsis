@@ -4,10 +4,8 @@ import java.time.OffsetDateTime
 
 import com.mohiva.play.silhouette.test._
 import models.IDs
-import models.accounts.logintoken.LoginToken
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
-import models.accounts.user.User
 import models.team.Team
 import org.scalatest.mock.MockitoSugar
 import org.mockito.Mockito._
@@ -19,8 +17,6 @@ import support.ControllerTestContextWithLoggedInUser
 import scala.concurrent.Future
 
 class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
-
-  def newLoginTokenFor(user: User, isUsed: Boolean = false): LoginToken = LoginToken(IDs.next, user.id, isUsed, OffsetDateTime.now)
 
   "APIAccessController.linkCustomOAuth2Service" should {
 
