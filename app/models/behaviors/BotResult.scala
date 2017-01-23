@@ -198,7 +198,7 @@ case class MissingTeamEnvVarsResult(
        |
        |You can define an environment variable by typing something like:
        |
-       |`@ellipsis: set env ENV_VAR_NAME value`
+       |`${event.botPrefix}set env ENV_VAR_NAME value`
     """.stripMargin
   }
 
