@@ -40,8 +40,8 @@ class ElasticsearchServiceImpl @Inject()(
     client.verifyIndex(name)
   }
 
-  def indexDoc(indexName: String, docType: String, docId: Option[String] = None, json: JsValue): Future[Response] = {
-    val indexFuture: Future[Response] = client.index(indexName, `type` = docType, id = docId, data = json.toString(), refresh = true)
+  def indexDoc(index: String, docType: String, docId: Option[String] = None, json: JsValue): Future[Response] = {
+    val indexFuture: Future[Response] = client.index(index, docType, docId, json.toString(), refresh = true)
     indexFuture.flatMap { indexResponse =>
       if (indexResponse.getStatusCode() == 200) {
         val docId = (Json.parse(indexResponse.getResponseBody()) \ "_id").as[String]
@@ -50,8 +50,22 @@ class ElasticsearchServiceImpl @Inject()(
         indexFuture
     }
   }
-  def getDoc(indexName: String, docType: String, id: String): Future[Response] = {
-    client.get(indexName, docType, id)
+
+  def getDoc(index: String, docType: String, id: String): Future[Response] = {
+    client.get(index, docType, id)
+  }
+
+  def deleteDoc(index: String, docType: String, id: String): Future[Response] = {
+    client.delete(index, docType, id)
+  }
+
+  def countDocs(index: String, docType: String): Future[Int] = {
+    client.count(index, docType).map { res =>
+       res.getStatusCode() match {
+         case 200 => (Json.parse(res.getResponseBody()) \ "count").as[Int]
+         case   _ => throw new Exception("Error retrieving docs count")
+       }
+    }
   }
 
 }

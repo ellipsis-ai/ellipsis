@@ -13,9 +13,12 @@ trait ItemService {
 
   def save(item: Item): Future[Item]
 
-//  def get(itemId: String): Future[Item]
-//  def delete(itemId: String): Future[Item]
-//  def search(itemId: String): Future[Item]
-  // maybe edit
+  def find(itemId: String): Future[Option[Item]]
+
+  def delete(itemId: String): Future[Option[Item]]
+
+  def allForTeam(team: Team): Future[Seq[Item]]
+
+  def count(team: Team): Future[Int]
 
 }

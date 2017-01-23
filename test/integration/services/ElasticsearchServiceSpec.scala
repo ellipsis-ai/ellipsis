@@ -7,9 +7,8 @@ import play.api.libs.json._
 
 
 class ElasticsearchServiceSpec extends IntegrationSpec {
-  describe("Elasticsearch Service") {
-    describe("#createIndex") {
-      it("Returns 200 and creates the new index") {
+  "ElasticsearchService#createIndex" should {
+    "Returns 200 and creates the new index" in {
         val indexName = "test_small_storage_v55"
         Await.result(elasticsearchService.deleteIndex(indexName), 10.seconds)
 
@@ -39,9 +38,9 @@ class ElasticsearchServiceSpec extends IntegrationSpec {
         val r2: Response = Await.result(elasticsearchService.deleteIndex(indexName), 10.seconds)
         assert(r2.getStatusCode() === 200)
       }
-    }
-    describe("#indexDoc") {
-      it("Returns 200 and index the doc") {
+  }
+  "ElasticsearchService#indexDoc" should {
+    "Returns 200 and index the doc" in {
         val indexName = "test_small_storage_v55"
         Await.result(elasticsearchService.deleteIndex(indexName), 10.seconds)
 
@@ -106,6 +105,5 @@ class ElasticsearchServiceSpec extends IntegrationSpec {
         val r3: Response = Await.result(elasticsearchService.deleteIndex(indexName), 10.seconds)
         assert(r3.getStatusCode() === 200)
       }
-    }
   }
 }

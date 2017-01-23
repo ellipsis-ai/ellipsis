@@ -202,9 +202,4 @@ import wabisabi._
 val client = new Client("http://localhost:9200")
 Await.result(client.health().map(_.getStatusCode), 10.seconds)
 Await.result(client.health().map(_.getResponseBody), 10.seconds)
-
-
-
-
-
 ```

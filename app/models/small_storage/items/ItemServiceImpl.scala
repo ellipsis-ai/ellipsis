@@ -24,25 +24,68 @@ class ItemServiceImpl @Inject()(
     save(item)
   }
 
-
   def save(item: Item): Future[Item] = {
-    val indexDocOp: Future[Response] = elasticsearch.indexDoc(`indexName` = indexName, docType = itemType, json = Json.toJson(item))
-
-    elasticsearch.indexDoc(`indexName` = indexName, docType = itemType, json = Json.toJson(item)).flatMap { result =>
-      if (result.getStatusCode == 201) {
-        val resAsJson = Json.parse(result.getResponseBody())
-        val returnedDocId: String = (resAsJson \ "_id").as[String]
-        val returnedDocType: String = (resAsJson \ "_type").as[String]
-        elasticsearch.getDoc(indexName, returnedDocType, returnedDocId).map { getResult =>
-          if (getResult.getStatusCode == 200) {
-            val itemAsJson: JsValue = Json.parse(getResult.getResponseBody())
-            (itemAsJson \ "_source").as[Item]
+    elasticsearch.indexDoc(indexName, itemType, Json.toJson(item)).flatMap { result =>
+      result.getStatusCode match {
+        case 201 => {
+          val returnedDocId: String = (Json.parse(result.getResponseBody()) \ "_id").as[String]
+          findById(returnedDocId).map {
+            case Some(Item) => Some(Item)
+            case None => throw new Exception("Item not found")
           }
-          else throw new Exception("Cannot retrieve new item!")
         }
+        case _ => throw new Exception(s"Cannot store item! Elasticsearch response: ${result.getStatusCode} | ${result.getResponseBody()}")
       }
-      else throw new Exception(s"Cannot store item! Elasticsearch response: ${result.getStatusCode} | ${result.getResponseBody()}")
     }
+  }
+
+  def findById(itemId: String): Future[Option[Item]] = {
+    elasticsearch.getDoc(indexName, itemType, itemId).map { getResult =>
+      getResult.getStatusCode match {
+        case 200 => Some((Json.parse(getResult.getResponseBody()) \ "_source").as[Item])
+        case 404 => None
+        case   _ => throw new Exception("Cannot connect to storage")
+      }
+    }
+  }
+
+  def deleteDoc(itemId: String): Future[Unit] = {
+    elasticsearch.deleteDoc(indexName, itemType, itemId).map { result =>
+      result.getStatusCode match {
+        case 200 or 404 => Unit
+        case   _ => throw new Execption("Failed to delete item")
+      }
+    }
+  }
+
+//  def delete(itemId: String): Future[Option[Item]] = {
+//    val maybeItem = findById(itemId)
+//    if maybeItem
+//      val deleteDocResult = elasticsearch.deleteDoc(`indexName` = indexName, docType = itemType, id = itemId)
+//      if deleteDocResult == 200
+//        Item
+//      else
+//        throw new Exection("Failed to delete item")
+//    else
+//      None
+//    for {
+//      maybeItem <- findById(itemId)
+//      _ <- deleteItem(itemId) if maybeItem.isDefined
+//    } yield { maybeItem }
+//
+//    findById(itemId).flatMap {
+//      case Some(Item) => deleteItem(itemId).map { Future(Item) }
+//      case None => Future(None)
+//    }
+//
+//  }
+
+  def allForTeam(team: Team): Future[Seq[Item]] = {
+
+  }
+
+  def count(team: Team): Future[Int] = {
+    elasticsearch.count(indexName = indexName, docType = itemType)
   }
 
   implicit val teamReads = Json.reads[Team]

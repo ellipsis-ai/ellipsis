@@ -49,8 +49,7 @@ libraryDependencies ++= Seq(
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",
   "com.joestelmach" % "natty" % "0.11",
-  "wabisabi" %% "wabisabi" % "2.1.0",
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+  "wabisabi" %% "wabisabi" % "2.1.0"
 )
 resolvers += "gphat" at "https://raw.github.com/gphat/mvn-repo/master/releases/"
 javaOptions in Test += "-Dconfig.file=conf/test.conf"
