@@ -4,7 +4,7 @@ import json.BehaviorVersionData
 import models.accounts.user.User
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behavior.Behavior
-import services.slack.MessageEvent
+import models.behaviors.events.MessageEvent
 
 import scala.concurrent.Future
 

@@ -7,10 +7,9 @@ import models.team.Team
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.events.EventHandler
+import models.behaviors.events.{EventHandler, ScheduledMessageEvent, SlackMessageEvent}
 import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.{Configuration, Logger}
-import services.slack.{ScheduledMessageEvent, SlackMessageEvent}
 import services.DataService
 import slack.api.{ApiError, SlackApiClient}
 
@@ -33,7 +32,7 @@ case class ScheduledMessage(
 
   def successResponse: String = shortDescription("OK, I will run")
 
-  def scheduleInfoResultFor(event: SlackMessageEvent, result: BotResult, configuration: Configuration) = {
+  def scheduleInfoResultFor(event: ScheduledMessageEvent, result: BotResult, configuration: Configuration) = {
     val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.HelpController.scheduledMessages()
       s"$baseUrl$path"

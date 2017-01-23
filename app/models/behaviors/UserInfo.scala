@@ -2,11 +2,11 @@ package models.behaviors
 
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
+import models.behaviors.events.MessageEvent
 import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
 import services.DataService
-import services.slack.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

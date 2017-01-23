@@ -4,10 +4,10 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.MessageEvent
 import models.behaviors.savedanswer.SavedAnswer
 import play.api.Configuration
 import play.api.cache.CacheApi
-import services.slack.MessageEvent
 import services.{AWSLambdaConstants, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global

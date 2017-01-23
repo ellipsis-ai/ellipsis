@@ -6,12 +6,12 @@ import models.accounts.oauth2application.OAuth2Application
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.MessageEvent
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsDefined, JsValue}
 import services.AWSLambdaConstants._
-import services.slack.MessageEvent
 import services.{AWSLambdaLogResult, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global

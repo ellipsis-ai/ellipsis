@@ -1,4 +1,4 @@
-package services.slack
+package models.behaviors.events
 
 import models.accounts.slack.botprofile.SlackBotProfile
 import slack.api.SlackApiClient

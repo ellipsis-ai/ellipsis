@@ -1,7 +1,7 @@
 package models.behaviors.builtins
 
 import models.behaviors.BotResult
-import services.slack.MessageEvent
+import models.behaviors.events.MessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.Future

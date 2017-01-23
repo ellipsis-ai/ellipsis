@@ -9,11 +9,11 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
+import models.behaviors.events.MessageEvent
 import models.environmentvariable.EnvironmentVariable
 import org.scalatest.mock.MockitoSugar
 import play.api.Configuration
 import play.api.libs.ws.WSClient
-import services.slack.MessageEvent
 import services.{AWSLambdaService, AWSLogsService, DataService}
 
 import scala.concurrent.Future

@@ -4,11 +4,11 @@ import java.time.OffsetDateTime
 
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.slack.MessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global

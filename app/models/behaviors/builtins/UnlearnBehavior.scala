@@ -1,8 +1,8 @@
 package models.behaviors.builtins
 
 import com.amazonaws.AmazonServiceException
+import models.behaviors.events.MessageEvent
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.slack.MessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global

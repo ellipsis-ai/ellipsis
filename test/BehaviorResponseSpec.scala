@@ -2,13 +2,13 @@ import models.IDs
 import models.behaviors.BehaviorResponse
 import models.behaviors.behaviorparameter.{BehaviorParameter, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.MessageEvent
 import models.behaviors.input.Input
 import models.behaviors.triggers.TemplateMessageTrigger
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
-import services.slack.MessageEvent
 import support.TestContext
 
 import scala.concurrent.Future

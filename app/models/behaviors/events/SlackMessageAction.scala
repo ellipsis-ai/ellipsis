@@ -1,4 +1,4 @@
-package services.slack
+package models.behaviors.events
 
 import slack.models.ActionField
 

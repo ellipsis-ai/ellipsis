@@ -1,11 +1,11 @@
-package services.slack
+package models.behaviors.events
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.{BotResult, MessageInfo, SimpleTextResult, UserInfo}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.triggers.TriggerFuzzyMatcher
+import models.behaviors.{BotResult, MessageInfo, SimpleTextResult, UserInfo}
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}

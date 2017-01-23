@@ -12,8 +12,8 @@ import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
+import models.behaviors.events.MessageEvent
 import play.api.libs.json.{JsValue, Json}
-import services.slack.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
