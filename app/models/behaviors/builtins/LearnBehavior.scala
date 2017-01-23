@@ -13,7 +13,7 @@ case class LearnBehavior(
                         ) extends BuiltinBehavior {
 
   def result: Future[BotResult] = {
-    Future.successful(SimpleTextResult(s"I love to learn. Come ${event.teachMeLinkFor(lambdaService)}.", forcePrivateResponse = false))
+    Future.successful(SimpleTextResult(event, s"I love to learn. Come ${event.teachMeLinkFor(lambdaService)}.", forcePrivateResponse = false))
   }
 
 }

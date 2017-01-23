@@ -27,7 +27,7 @@ case class UnsetEnvironmentVariableBehavior(
       } else {
         s"I couldn't find `$name` to delete"
       }
-      SimpleTextResult(msg, forcePrivateResponse = false)
+      SimpleTextResult(event, msg, forcePrivateResponse = false)
     }
   }
 

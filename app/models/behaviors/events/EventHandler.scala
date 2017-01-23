@@ -49,26 +49,35 @@ class EventHandler @Inject() (
              |
              |:wave: Hey. You haven’t answered my question above yet, If you want me to ask again, say `${ea.trigger.pattern}`.
              |""".stripMargin
-        cancelConversationResult(ea, cancelMessage).map { result =>
-          result.sendIn(event, None, None)
+        cancelConversationResult(event, ea, cancelMessage).map { result =>
+          result.sendIn(None, None)
         }
       })
     }.map(_ => {})
   }
 
-  def cancelConversationResult(conversation: Conversation, withMessage: String): Future[BotResult] = {
+  def cancelConversationResult(event: MessageEvent, conversation: Conversation, withMessage: String): Future[BotResult] = {
     conversation.cancel(dataService).map { _ =>
-      SimpleTextResult(withMessage, forcePrivateResponse = false)
+      SimpleTextResult(event, withMessage, forcePrivateResponse = false)
     }
   }
 
-  def isCancelConversationMessage(text: String): Boolean = {
-    Seq("…stop", "…cancel", "...stop", "...cancel").contains(text)
+  def isCancelConversationMessage(event: MessageEvent): Boolean = {
+    val text = event.fullMessageText
+    val mentionedBot = event.includesBotMention
+    val shortcutPlusKeyword = "^(\\.\\.\\.|…)(stop|cancel|skip)".r.findFirstIn(text).isDefined
+    val mentionedPlusKeyword = mentionedBot && "^<@.+?>:?\\s+(stop|cancel|skip)$".r.findFirstIn(text).isDefined
+    /*
+    One could imagine allowing the stop words to work with no prefix in a DM with Ellipsis, but since such words
+    could also be valid answers, disabling this for now.
+
+    val isDMPlusKeyword = mentionedBot && "^(stop|cancel|skip)$".r.findFirstIn(text).isDefined */
+    shortcutPlusKeyword || mentionedPlusKeyword /* || isDMPlusKeyword */
   }
 
   def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
-    if (isCancelConversationMessage(event.fullMessageText)) {
-      cancelConversationResult(conversation, s"OK, I'll stop talking about `${conversation.trigger.pattern}`")
+    if (isCancelConversationMessage(event)) {
+      cancelConversationResult(event, conversation, s"OK, I’ll stop asking about that.")
     } else {
       conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
     }

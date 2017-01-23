@@ -47,7 +47,7 @@ case class UserEnvVarCollectionState(
       }.getOrElse {
         "All done!"
       }
-      SimpleTextResult(prompt, forcePrivateResponse = true)
+      SimpleTextResult(event, prompt, forcePrivateResponse = true)
     }
   }
 

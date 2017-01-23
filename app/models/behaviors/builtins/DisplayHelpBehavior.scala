@@ -2,7 +2,7 @@ package models.behaviors.builtins
 
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.slack.MessageEvent
+import services.slack.{MessageEvent, SlackMessageEvent}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -122,9 +122,11 @@ case class DisplayHelpBehavior(
         justGettingStartedText(lambdaService)
       } else if (matchingGroupData.isEmpty) {
         maybeHelpSearch.map { s =>
-          s"""I couldn't find help for anything like `$s`
+          s"""I couldn’t find help for anything like `$s`
            |
-           |You can try another `…help <something>` query or just type `…help` to see everything I can do.
+           |Try searching for something else, e.g. `${event.botPrefix}help bananas`
+           |
+           |Or type `${event.botPrefix}help` to list everything I can do.
          """.stripMargin
         }.getOrElse {
           justGettingStartedText(lambdaService)
@@ -137,7 +139,7 @@ case class DisplayHelpBehavior(
           |
           |$endingString
           |""".stripMargin
-      SimpleTextResult(text, forcePrivateResponse = false)
+      SimpleTextResult(event, text, forcePrivateResponse = false)
     }
   }
 

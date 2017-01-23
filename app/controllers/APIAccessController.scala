@@ -62,7 +62,7 @@ class APIAccessController @Inject() (
                                     )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[Future[Result]] = {
     cache.get[MessageEvent](invocationId).map { event =>
       eventHandler.handle(event, None).map { results =>
-        results.map(_.sendIn(event, None, None))
+        results.map(_.sendIn(None, None))
         Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.name}."))
       }
     }

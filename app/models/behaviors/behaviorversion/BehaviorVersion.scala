@@ -11,6 +11,7 @@ import models.team.Team
 import play.api.libs.json.{JsValue, Json}
 import play.api.Configuration
 import services.AWSLambdaConstants._
+import services.slack.MessageEvent
 import services.{AWSLambdaLogResult, DataService}
 
 case class BehaviorVersion(
@@ -58,26 +59,27 @@ case class BehaviorVersion(
                  logResult: AWSLambdaLogResult,
                  parametersWithValues: Seq[ParameterWithValue],
                  dataService: DataService,
-                 configuration: Configuration
+                 configuration: Configuration,
+                 event: MessageEvent
                ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
     val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(successResult, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
+      SuccessResult(event, successResult, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(logResultOption)
+        NoResponseResult(event, logResultOption)
       } else {
         if (isUnhandledError(json)) {
-          UnhandledErrorResult(this, dataService, configuration, logResultOption)
+          UnhandledErrorResult(event, this, dataService, configuration, logResultOption)
         } else if (json.toString == "null") {
-          NoCallbackTriggeredResult(this, dataService, configuration)
+          NoCallbackTriggeredResult(event, this, dataService, configuration)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(this, dataService, configuration, json, logResultOption)
+          SyntaxErrorResult(event, this, dataService, configuration, json, logResultOption)
         } else {
-          HandledErrorResult(this, dataService, configuration, json, logResultOption)
+          HandledErrorResult(event, this, dataService, configuration, json, logResultOption)
         }
       }
     }

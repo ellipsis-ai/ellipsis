@@ -33,12 +33,12 @@ case class ScheduledMessage(
 
   def successResponse: String = shortDescription("OK, I will run")
 
-  def scheduleInfoResultFor(result: BotResult, configuration: Configuration) = {
+  def scheduleInfoResultFor(event: SlackMessageEvent, result: BotResult, configuration: Configuration) = {
     val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.HelpController.scheduledMessages()
       s"$baseUrl$path"
     }.get
-    SimpleTextResult(
+    SimpleTextResult(event,
       s"""_:mantelpiece_clock: I’m running `$text` [as scheduled]($helpLink) (${recurrence.displayString.trim}):_
          |""".stripMargin, result.forcePrivateResponse)
   }
@@ -204,11 +204,11 @@ case class ScheduledMessage(
   def sendResult(result: BotResult, event: SlackMessageEvent, configuration: Configuration): Future[Unit] = {
     for {
       _ <- if (result.hasText) {
-        scheduleInfoResultFor(result, configuration).sendIn(event, None, None)
+        scheduleInfoResultFor(event, result, configuration).sendIn(None, None)
       } else {
         Future.successful({})
       }
-      _ <- result.sendIn(event, None, None)
+      _ <- result.sendIn(None, None)
     } yield {
       Logger.info(s"Sending result [${result.fullText}] for scheduled message [${text}] in channel [${event.channel}]")
     }

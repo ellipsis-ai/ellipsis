@@ -86,7 +86,7 @@ case class ParamCollectionState(
       }.getOrElse {
         Future.successful("All done!")
       }.map { prompt =>
-        SimpleTextResult(prompt, conversation.behaviorVersion.forcePrivateResponse)
+        SimpleTextResult(event, prompt, conversation.behaviorVersion.forcePrivateResponse)
       }
     } yield result
   }

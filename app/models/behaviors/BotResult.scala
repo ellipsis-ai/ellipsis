@@ -26,12 +26,12 @@ object ResultType extends Enumeration {
 sealed trait BotResult {
   val resultType: ResultType.Value
   val forcePrivateResponse: Boolean
+  val event: MessageEvent
   def text: String
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
 
   def sendIn(
-              event: MessageEvent,
               maybeShouldUnfurl: Option[Boolean],
               maybeConversation: Option[Conversation]
             ): Future[Unit] = {
@@ -48,6 +48,7 @@ trait BotResultWithLogResult extends BotResult {
 }
 
 case class SuccessResult(
+                          event: MessageEvent,
                           result: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
@@ -63,7 +64,7 @@ case class SuccessResult(
   }
 }
 
-case class SimpleTextResult(simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
+case class SimpleTextResult(event: MessageEvent, simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
 
   val resultType = ResultType.ConversationPrompt
 
@@ -71,7 +72,7 @@ case class SimpleTextResult(simpleText: String, forcePrivateResponse: Boolean) e
 
 }
 
-case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
+case class NoResponseResult(event: MessageEvent, maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
 
   val resultType = ResultType.NoResponse
   val forcePrivateResponse = false // N/A
@@ -79,7 +80,6 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
   def text: String = ""
 
   override def sendIn(
-                       event: MessageEvent,
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation]
                      ): Future[Unit] = {
@@ -104,6 +104,7 @@ trait WithBehaviorLink {
 }
 
 case class UnhandledErrorResult(
+                                 event: MessageEvent,
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
@@ -120,6 +121,7 @@ case class UnhandledErrorResult(
 }
 
 case class HandledErrorResult(
+                               event: MessageEvent,
                                behaviorVersion: BehaviorVersion,
                                dataService: DataService,
                                configuration: Configuration,
@@ -144,6 +146,7 @@ case class HandledErrorResult(
 }
 
 case class SyntaxErrorResult(
+                              event: MessageEvent,
                               behaviorVersion: BehaviorVersion,
                               dataService: DataService,
                               configuration: Configuration,
@@ -165,6 +168,7 @@ case class SyntaxErrorResult(
 }
 
 case class NoCallbackTriggeredResult(
+                                      event: MessageEvent,
                                       behaviorVersion: BehaviorVersion,
                                       dataService: DataService,
                                       configuration: Configuration
@@ -178,6 +182,7 @@ case class NoCallbackTriggeredResult(
 }
 
 case class MissingTeamEnvVarsResult(
+                                 event: MessageEvent,
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
@@ -193,13 +198,13 @@ case class MissingTeamEnvVarsResult(
        |
        |You can define an environment variable by typing something like:
        |
-       |`@ellipsis: set env ENV_VAR_NAME value`
+       |`${event.botPrefix}set env ENV_VAR_NAME value`
     """.stripMargin
   }
 
 }
 
-class AWSDownResult extends BotResult {
+case class AWSDownResult(event: MessageEvent) extends BotResult {
 
   val resultType = ResultType.AWSDown
   val forcePrivateResponse = false
@@ -244,12 +249,11 @@ case class OAuth2TokenMissing(
   }
 
   override def sendIn(
-                       event: MessageEvent,
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation]
                      ): Future[Unit] = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(event, maybeShouldUnfurl, maybeConversation)
+    super.sendIn(maybeShouldUnfurl, maybeConversation)
   }
 }
 
