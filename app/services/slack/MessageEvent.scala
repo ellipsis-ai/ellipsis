@@ -79,7 +79,8 @@ trait MessageEvent {
                    text: String,
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
-                   maybeConversation: Option[Conversation]
+                   maybeConversation: Option[Conversation],
+                   maybeActions: Option[MessageActions] = None
                  )(implicit ec: ExecutionContext): Future[Unit]
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
