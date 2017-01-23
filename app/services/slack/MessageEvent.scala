@@ -44,7 +44,7 @@ trait MessageEvent {
     s"""
        |I don't know how to respond to `$fullMessageText`
        |
-       |Type `@ellipsis: help` to see what I can do or ${teachMeLinkFor(lambdaService)}
+       |Type `${botPrefix}help` to see what I can do or ${teachMeLinkFor(lambdaService)}
     """.stripMargin
   }
 
@@ -66,7 +66,7 @@ trait MessageEvent {
            |
            |${similarTriggers.mkString("  \n")}
            |
-           |Otherwise, try `@ellipsis: help` to see what else I can do or ${teachMeLinkFor(lambdaService)}
+           |Otherwise, try `${botPrefix}help` to see what else I can do or ${teachMeLinkFor(lambdaService)}
          """.stripMargin
       }
       SimpleTextResult(message, forcePrivateResponse = false)
@@ -127,6 +127,8 @@ trait MessageEvent {
     // Override for client-specific code to strip formatting from text
     text
   }
+
+  def botPrefix: String = "..."
 
 }
 

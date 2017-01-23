@@ -2,7 +2,7 @@ package models.behaviors.builtins
 
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.slack.MessageEvent
+import services.slack.{MessageEvent, SlackMessageEvent}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -124,7 +124,9 @@ case class DisplayHelpBehavior(
         maybeHelpSearch.map { s =>
           s"""I couldn’t find help for anything like `$s`
            |
-           |You can try searching for something else, e.g. `@ellipsis help bananas`, or type `@ellipsis help` to list everything I can do.
+           |Try searching for something else, e.g. `${event.botPrefix}help bananas`
+           |
+           |Or type `${event.botPrefix}help` to list everything I can do.
          """.stripMargin
         }.getOrElse {
           justGettingStartedText(lambdaService)

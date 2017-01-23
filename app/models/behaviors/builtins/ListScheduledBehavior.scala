@@ -16,10 +16,10 @@ case class ListScheduledBehavior(
                                  ) extends BuiltinBehavior {
 
   lazy val noMessagesResponse: String =
-    """You haven’t yet scheduled anything. To do so, try something like:
+    s"""You haven’t yet scheduled anything. To do so, try something like:
       |
       |```
-      |@ellipsis schedule `go bananas` every day at 3pm
+      |${event.botPrefix}schedule `go bananas` every day at 3pm
       |```
     """.stripMargin
 
@@ -31,7 +31,7 @@ case class ListScheduledBehavior(
        |You can unschedule by typing something like:
        |
        |```
-       |@ellipsis unschedule `go bananas`
+       |${event.botPrefix}unschedule `go bananas`
        |```
      """.stripMargin
   }
