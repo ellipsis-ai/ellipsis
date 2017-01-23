@@ -6,10 +6,10 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
+import models.behaviors.events.MessageEvent
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
-import services.slack.MessageEvent
 
 import scala.concurrent.Future
 

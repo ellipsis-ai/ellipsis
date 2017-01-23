@@ -11,8 +11,8 @@ import models.team.Team
 import services.DataService
 import slack.api.ApiError
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.events.{MessageEvent, SlackMessageEvent}
 import play.api.Configuration
-import services.slack.{MessageEvent, SlackMessageEvent}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

@@ -2,10 +2,10 @@ package models.behaviors.behaviorparameter
 
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.MessageEvent
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
-import services.slack.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

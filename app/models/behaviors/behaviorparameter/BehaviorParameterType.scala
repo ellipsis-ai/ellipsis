@@ -6,9 +6,9 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.MessageEvent
 import models.team.Team
 import play.api.libs.json._
-import services.slack.MessageEvent
 import services.{AWSLambdaConstants, DataService}
 
 import scala.concurrent.duration._

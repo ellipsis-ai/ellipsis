@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
+import models.behaviors.events.SlackMessageEvent
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
@@ -10,7 +11,6 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, Result}
 import play.utils.UriEncoding
-import services.slack.SlackMessageEvent
 import services.{DataService, SlackEventService}
 
 import scala.concurrent.ExecutionContext.Implicits.global

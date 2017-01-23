@@ -3,10 +3,10 @@ package models.behaviors.testing
 import models.accounts.user.User
 import models.behaviors.UserInfo
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.{MessageActions, MessageEvent}
 import models.team.Team
 import play.api.libs.ws.WSClient
 import services.DataService
-import services.slack.{MessageActions, MessageEvent}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}

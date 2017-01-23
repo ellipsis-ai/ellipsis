@@ -5,10 +5,10 @@ import models.accounts.simpletokenapi.SimpleTokenApi
 import models.accounts.user.User
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.MessageEvent
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
-import services.slack.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

@@ -2,7 +2,7 @@ package models.behaviors.builtins
 
 import json.{BehaviorConfig, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors._
-import services.slack.MessageEvent
+import models.behaviors.events.MessageEvent
 import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
 

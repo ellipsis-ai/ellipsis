@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import models.accounts.user.User
 import models.behaviors.SimpleTextResult
-import models.behaviors.events.EventHandler
+import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.{Configuration, Logger}
 import play.api.cache.CacheApi
 import play.api.data.Form
@@ -13,7 +13,6 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.Action
-import services.slack.SlackMessageEvent
 import services.{DataService, SlackEventService}
 import utils.SlackTimestamp
 

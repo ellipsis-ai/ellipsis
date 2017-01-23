@@ -1,4 +1,4 @@
-package services.slack
+package models.behaviors.events
 
 import models.behaviors.conversations.conversation.Conversation
 

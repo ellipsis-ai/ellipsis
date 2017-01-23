@@ -4,7 +4,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import models.team.Team
 import models.behaviors.behavior.Behavior
-import services.slack.{MessageEvent, SlackMessageEvent}
+import models.behaviors.events.{MessageEvent, SlackMessageEvent}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global

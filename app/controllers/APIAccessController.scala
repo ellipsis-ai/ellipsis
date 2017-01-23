@@ -7,7 +7,7 @@ import models.accounts.user.User
 import models.IDs
 import models.accounts.linkedoauth2token.LinkedOAuth2Token
 import models.accounts.oauth2application.OAuth2Application
-import models.behaviors.events.EventHandler
+import models.behaviors.events.{EventHandler, MessageEvent}
 import models.silhouette.EllipsisEnv
 import java.time.OffsetDateTime
 
@@ -19,7 +19,6 @@ import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result, Results}
 import services.DataService
-import services.slack.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

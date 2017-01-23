@@ -11,7 +11,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 import services.{AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
-import services.slack.SlackMessageEvent
+import models.behaviors.events.SlackMessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

@@ -17,7 +17,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
-import services.slack.MessageEvent
+import models.behaviors.events.MessageEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

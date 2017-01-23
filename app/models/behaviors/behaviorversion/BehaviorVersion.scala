@@ -7,11 +7,11 @@ import java.time.OffsetDateTime
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
+import models.behaviors.events.MessageEvent
 import models.team.Team
 import play.api.libs.json.{JsValue, Json}
 import play.api.Configuration
 import services.AWSLambdaConstants._
-import services.slack.MessageEvent
 import services.{AWSLambdaLogResult, DataService}
 
 case class BehaviorVersion(

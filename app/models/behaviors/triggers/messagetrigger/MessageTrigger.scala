@@ -3,9 +3,9 @@ package models.behaviors.triggers.messagetrigger
 import java.util.regex.PatternSyntaxException
 
 import models.behaviors.behaviorparameter.BehaviorParameter
+import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.{FuzzyMatchable, Trigger}
 import services.AWSLambdaConstants
-import services.slack.MessageEvent
 
 import scala.util.matching.Regex
 

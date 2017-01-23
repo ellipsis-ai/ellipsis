@@ -4,9 +4,8 @@ import javax.inject._
 
 import akka.actor.ActorSystem
 import play.api.i18n.MessagesApi
-import models.behaviors.events.EventHandler
+import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
-import services.slack._
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Random

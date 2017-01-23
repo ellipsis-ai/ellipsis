@@ -13,6 +13,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
+import models.behaviors.events.MessageEvent
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.behaviors.invocationtoken.InvocationToken
 import models.team.Team
@@ -20,7 +21,6 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
-import services.slack.MessageEvent
 import sun.misc.BASE64Decoder
 import utils.JavaFutureConverter
 

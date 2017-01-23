@@ -1,8 +1,8 @@
 package models.behaviors.builtins
 
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
+import models.behaviors.events.{MessageEvent, SlackMessageEvent}
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.slack.{MessageEvent, SlackMessageEvent}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global

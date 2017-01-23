@@ -6,8 +6,8 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.MessageEvent
 import models.team.Team
-import services.slack.MessageEvent
 
 import scala.concurrent.Future
 
