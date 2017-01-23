@@ -49,7 +49,7 @@ case class SimpleTokenCollectionState(
            |
            |You can find it by visiting ${api.maybeTokenUrl.getOrElse("")}.
            |
-           |Once you have found it, enter it here or type `…cancel` if you're not ready yet.
+           |Once you have found it, enter it here or type `...cancel` if you're not ready yet.
            |""".stripMargin
       }.getOrElse {
         "All done!"

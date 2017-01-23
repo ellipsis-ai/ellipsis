@@ -122,9 +122,9 @@ case class DisplayHelpBehavior(
         justGettingStartedText(lambdaService)
       } else if (matchingGroupData.isEmpty) {
         maybeHelpSearch.map { s =>
-          s"""I couldn't find help for anything like `$s`
+          s"""I couldn’t find help for anything like `$s`
            |
-           |You can try another `…help <something>` query or just type `…help` to see everything I can do.
+           |You can try searching for something else, e.g. `@ellipsis help bananas`, or type `@ellipsis help` to list everything I can do.
          """.stripMargin
         }.getOrElse {
           justGettingStartedText(lambdaService)

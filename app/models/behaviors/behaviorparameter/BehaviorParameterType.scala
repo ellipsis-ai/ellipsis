@@ -44,7 +44,7 @@ sealed trait BehaviorParameterType {
       isFirst <- context.isFirstParam
       paramCount <- context.unfilledParamCount(paramState)
     } yield {
-      val howToStop = "You can type `...stop` to end this conversation.  \n\n"
+      val howToStop = "Type `...stop` to end this conversation.  \n\n"
       val preamble = if (!isFirst || paramCount == 0) {
         ""
       } else if (paramCount == 1) {
@@ -238,7 +238,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     }
   }
 
-  val invalidPromptModifier: String = s"I need a $name. Use one of the numbers or labels below or `…stop` to get out of here"
+  val invalidPromptModifier: String = s"I need a $name. Type one of the numbers or labels below or `...stop` to end this conversation."
 
   private def valuesListCacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = {
     s"values-list-${conversation.id}-${parameter.id}"

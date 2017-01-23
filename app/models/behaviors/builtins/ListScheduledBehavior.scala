@@ -19,7 +19,7 @@ case class ListScheduledBehavior(
     """You haven’t yet scheduled anything. To do so, try something like:
       |
       |```
-      |...schedule `go bananas` every day at 3pm
+      |@ellipsis schedule `go bananas` every day at 3pm
       |```
     """.stripMargin
 
@@ -31,7 +31,7 @@ case class ListScheduledBehavior(
        |You can unschedule by typing something like:
        |
        |```
-       |...unschedule `go bananas`
+       |@ellipsis unschedule `go bananas`
        |```
      """.stripMargin
   }

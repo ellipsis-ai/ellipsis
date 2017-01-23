@@ -62,13 +62,18 @@ class EventHandler @Inject() (
     }
   }
 
-  def isCancelConversationMessage(text: String): Boolean = {
-    Seq("…stop", "…cancel", "...stop", "...cancel").contains(text)
+  def isCancelConversationMessage(event: MessageEvent): Boolean = {
+    val text = event.fullMessageText
+    val mentionedBot = event.includesBotMention
+    val shortcutPlusKeyword = "^(\\.\\.\\.|…)(stop|cancel|skip)".r.findFirstIn(text).isDefined
+    val mentionedPlusKeyword = mentionedBot && "^<@.+?>:?\\s+(stop|cancel|skip)$".r.findFirstIn(text).isDefined
+    val isDMPlusKeyword = mentionedBot && "^(stop|cancel|skip)$".r.findFirstIn(text).isDefined
+    shortcutPlusKeyword || mentionedPlusKeyword || isDMPlusKeyword
   }
 
   def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
-    if (isCancelConversationMessage(event.fullMessageText)) {
-      cancelConversationResult(conversation, s"OK, I'll stop talking about `${conversation.trigger.pattern}`")
+    if (isCancelConversationMessage(event)) {
+      cancelConversationResult(conversation, s"OK, I’ll stop asking about that.")
     } else {
       conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
     }
