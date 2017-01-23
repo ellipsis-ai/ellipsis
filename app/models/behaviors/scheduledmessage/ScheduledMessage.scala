@@ -10,7 +10,7 @@ import models.accounts.user.User
 import models.behaviors.events.EventHandler
 import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.{Configuration, Logger}
-import services.slack.SlackMessageEvent
+import services.slack.{ScheduledMessageEvent, SlackMessageEvent}
 import services.DataService
 import slack.api.{ApiError, SlackApiClient}
 
@@ -192,8 +192,8 @@ case class ScheduledMessage(
                dataService: DataService,
                configuration: Configuration
              ): Future[Unit] = {
+    val event = ScheduledMessageEvent(SlackMessageEvent(profile, channelName, slackUserId, text, "ts"))
     for {
-      event <- Future.successful(SlackMessageEvent(profile, channelName, slackUserId, text, "ts"))
       _ <- eventHandler.interruptOngoingConversationsFor(event)
       results <- eventHandler.handle(event, None)
     } yield {
@@ -201,7 +201,7 @@ case class ScheduledMessage(
     }
   }
 
-  def sendResult(result: BotResult, event: SlackMessageEvent, configuration: Configuration): Future[Unit] = {
+  def sendResult(result: BotResult, event: ScheduledMessageEvent, configuration: Configuration): Future[Unit] = {
     for {
       _ <- if (result.hasText) {
         scheduleInfoResultFor(event, result, configuration).sendIn(None, None)
@@ -210,11 +210,15 @@ case class ScheduledMessage(
       }
       _ <- result.sendIn(None, None)
     } yield {
-      Logger.info(s"Sending result [${result.fullText}] for scheduled message [${text}] in channel [${event.channel}]")
+      val channelInfo =
+        event.maybeChannel.
+          map { channel => s" in channel $channel" }.
+          getOrElse("")
+      Logger.info(s"Sending result [${result.fullText}] for scheduled message [${text}]$channelInfo")
     }
   }
 
-  def sendResults(results: List[BotResult], event: SlackMessageEvent, configuration: Configuration): Future[Unit] = {
+  def sendResults(results: List[BotResult], event: ScheduledMessageEvent, configuration: Configuration): Future[Unit] = {
     if (results.isEmpty) {
       Future.successful({})
     } else {
