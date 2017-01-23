@@ -239,7 +239,7 @@ class BehaviorVersionServiceImpl @Inject() (
         !userInfo.links.exists(_.externalSystem == app.name)
       })
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
-        Future.successful(Some(MissingTeamEnvVarsResult(behaviorVersion, dataService, configuration, missingTeamEnvVars)))
+        Future.successful(Some(MissingTeamEnvVarsResult(event, behaviorVersion, dataService, configuration, missingTeamEnvVars)))
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
           Future.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, dataService, configuration)))
@@ -308,26 +308,27 @@ class BehaviorVersionServiceImpl @Inject() (
                  payload: ByteBuffer,
                  logResult: AWSLambdaLogResult,
                  parametersWithValues: Seq[ParameterWithValue],
-                 configuration: Configuration
+                 configuration: Configuration,
+                 event: MessageEvent
                ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
     val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(successResult, parametersWithValues, behaviorVersion.maybeResponseTemplate, logResultOption, behaviorVersion.forcePrivateResponse)
+      SuccessResult(event, successResult, parametersWithValues, behaviorVersion.maybeResponseTemplate, logResultOption, behaviorVersion.forcePrivateResponse)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(logResultOption)
+        NoResponseResult(event, logResultOption)
       } else {
         if (isUnhandledError(json)) {
-          UnhandledErrorResult(behaviorVersion, dataService, configuration, logResultOption)
+          UnhandledErrorResult(event, behaviorVersion, dataService, configuration, logResultOption)
         } else if (json.toString == "null") {
-          NoCallbackTriggeredResult(behaviorVersion, dataService, configuration)
+          NoCallbackTriggeredResult(event, behaviorVersion, dataService, configuration)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(behaviorVersion, dataService, configuration, json, logResultOption)
+          SyntaxErrorResult(event, behaviorVersion, dataService, configuration, json, logResultOption)
         } else {
-          HandledErrorResult(behaviorVersion, dataService, configuration, json, logResultOption)
+          HandledErrorResult(event, behaviorVersion, dataService, configuration, json, logResultOption)
         }
       }
     }

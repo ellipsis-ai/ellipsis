@@ -69,7 +69,7 @@ trait MessageEvent {
            |Otherwise, try `${botPrefix}help` to see what else I can do or ${teachMeLinkFor(lambdaService)}
          """.stripMargin
       }
-      SimpleTextResult(message, forcePrivateResponse = false)
+      SimpleTextResult(this, message, forcePrivateResponse = false)
     }
   }
 

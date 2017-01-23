@@ -29,7 +29,7 @@ case class UnlearnBehavior(
       case e: AmazonServiceException => Future.successful("D'oh! That didn't work.")
     }
     eventualReply.map { reply =>
-      SimpleTextResult(reply, forcePrivateResponse = false)
+      SimpleTextResult(event, reply, forcePrivateResponse = false)
     }
   }
 

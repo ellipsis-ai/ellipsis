@@ -133,7 +133,7 @@ class AWSLambdaServiceImpl @Inject() (
           JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recover {
             case e: java.util.concurrent.ExecutionException => {
               e.getMessage match {
-                case amazonServiceExceptionRegex() => new AWSDownResult()
+                case amazonServiceExceptionRegex() => AWSDownResult(event)
                 case _ => throw e
               }
             }
@@ -152,7 +152,7 @@ class AWSLambdaServiceImpl @Inject() (
     for {
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
       result <- if (behaviorVersion.functionBody.isEmpty) {
-        Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
+        Future.successful(SuccessResult(event, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
       } else {
         for {
           user <- event.ensureUser(dataService)
@@ -168,7 +168,7 @@ class AWSLambdaServiceImpl @Inject() (
             result => {
               val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
               val logResult = AWSLambdaLogResult.fromText(logString)
-              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration)
+              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration, event)
             }
           )
         } yield invocationResult

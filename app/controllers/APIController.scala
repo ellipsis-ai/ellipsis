@@ -108,14 +108,14 @@ class APIController @Inject() (
                 results.foreach { result =>
                   val eventualIntroSend = if (isInvokedExternally) {
                     maybeSlackProfile.map { slackProfile =>
-                      val introResult = SimpleTextResult(s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
-                      introResult.sendIn(event, None, None)
+                      val introResult = SimpleTextResult(event, s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
+                      introResult.sendIn(None, None)
                     }.getOrElse(Future.successful({}))
                   } else {
                     Future.successful({})
                   }
                   eventualIntroSend.flatMap { _ =>
-                    result.sendIn(event, None, None).map { _ =>
+                    result.sendIn(None, None).map { _ =>
                       Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.fullMessageText}] in channel [${event.channel}]")
                     }
                   }

@@ -49,16 +49,16 @@ class EventHandler @Inject() (
              |
              |:wave: Hey. You haven’t answered my question above yet, If you want me to ask again, say `${ea.trigger.pattern}`.
              |""".stripMargin
-        cancelConversationResult(ea, cancelMessage).map { result =>
-          result.sendIn(event, None, None)
+        cancelConversationResult(event, ea, cancelMessage).map { result =>
+          result.sendIn(None, None)
         }
       })
     }.map(_ => {})
   }
 
-  def cancelConversationResult(conversation: Conversation, withMessage: String): Future[BotResult] = {
+  def cancelConversationResult(event: MessageEvent, conversation: Conversation, withMessage: String): Future[BotResult] = {
     conversation.cancel(dataService).map { _ =>
-      SimpleTextResult(withMessage, forcePrivateResponse = false)
+      SimpleTextResult(event, withMessage, forcePrivateResponse = false)
     }
   }
 
@@ -73,7 +73,7 @@ class EventHandler @Inject() (
 
   def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
     if (isCancelConversationMessage(event)) {
-      cancelConversationResult(conversation, s"OK, I’ll stop asking about that.")
+      cancelConversationResult(event, conversation, s"OK, I’ll stop asking about that.")
     } else {
       conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
     }
