@@ -6,7 +6,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import play.api.libs.ws.WSClient
 import services.DataService
-import services.slack.MessageEvent
+import services.slack.{MessageActions, MessageEvent}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,7 +36,8 @@ case class TestEvent(
                    text: String,
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
-                   maybeConversation: Option[Conversation]
+                   maybeConversation: Option[Conversation],
+                   maybeActions: Option[MessageActions]
                  )(implicit ec: ExecutionContext): Future[Unit] = {
     Future.successful(messageBuffer += text)
   }

@@ -9,6 +9,7 @@ import play.api.libs.json.{JsBoolean, JsObject, JsString}
 import play.api.libs.ws.WSClient
 import services.DataService
 import slack.api.SlackApiClient
+import slack.models.Attachment
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -131,7 +132,8 @@ case class SlackMessageEvent(
   def sendMessageSegmentsInOrder(
                            segments: List[String],
                            channelToUse: String,
-                           maybeShouldUnfurl: Option[Boolean]
+                           maybeShouldUnfurl: Option[Boolean],
+                           maybeAttachments: Option[Seq[Attachment]]
                          ): Future[Unit] = {
     if (segments.isEmpty) {
       Future.successful({})
@@ -141,14 +143,20 @@ case class SlackMessageEvent(
       if (segment.isEmpty) {
         Future.successful({})
       } else {
+        val maybeAttachmentsForSegment = if (segments.tail.isEmpty) {
+          maybeAttachments
+        } else {
+          None
+        }
         client.postChatMessage(
           channelToUse,
           segment,
           asUser = Some(true),
           unfurlLinks = maybeShouldUnfurl,
-          unfurlMedia = Some(true)
+          unfurlMedia = Some(true),
+          attachments = maybeAttachmentsForSegment
         )
-      }.flatMap { _ => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl)}
+      }.flatMap { _ => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, maybeAttachments)}
     }
   }
 
@@ -156,13 +164,20 @@ case class SlackMessageEvent(
                    unformattedText: String,
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
-                   maybeConversation: Option[Conversation]
+                   maybeConversation: Option[Conversation],
+                   maybeActions: Option[MessageActions] = None
                  )(implicit ec: ExecutionContext): Future[Unit] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
+    val maybeAttachments = maybeActions.flatMap { actions =>
+      actions match {
+        case a: SlackMessageActions => Some(Seq(a.attachment))
+        case _ => None
+      }
+    }
     for {
       channelToUse <- channelForSend(forcePrivate, maybeConversation)
       _ <- sendPreamble(formattedText, channelToUse)
-      _ <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl)
+      _ <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments)
     } yield {}
   }
 

@@ -35,7 +35,7 @@ sealed trait BotResult {
               maybeShouldUnfurl: Option[Boolean],
               maybeConversation: Option[Conversation]
             ): Future[Unit] = {
-    event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation)
+    event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, None)
   }
 }
 

@@ -24,6 +24,8 @@ trait Conversation {
   val startedAt: OffsetDateTime
   val state: String
 
+  def isPending: Boolean = state == Conversation.PENDING_STATE
+
   val stateRequiresPrivateMessage: Boolean = false
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
@@ -59,6 +61,7 @@ trait Conversation {
 
 object Conversation {
   val NEW_STATE = "new"
+  val PENDING_STATE = "pending"
   val DONE_STATE = "done"
 
   val SLACK_CONTEXT = "slack"
