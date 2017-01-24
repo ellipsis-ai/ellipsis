@@ -20,19 +20,19 @@ object BuiltinBehavior {
     text.replaceAll("[“”]", "\"").replaceAll("[‘’]", "'")
   }
 
-  def maybeFrom(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
-    val setEnvironmentVariableRegex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
-    val unsetEnvironmentVariableRegex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
-    val startLearnConversationRegex = s"""(?i)^learn\\s*$$""".r
-    val unlearnRegex = s"""(?i)^unlearn\\s+(\\S+)""".r
-    val helpRegex = s"""(?i)^help\\s*(\\S*.*)$$""".r
-    val rememberRegex = s"""(?i)^(remember|\\^)\\s*$$""".r
-    val scheduledRegex = s"""(?i)^scheduled$$""".r
-    val scheduleRegex = s"""(?i)^schedule\\s+([`"'])(.*?)\\1(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
-    val unscheduleRegex = s"""(?i)^unschedule\\s+([`"'])(.*?)\\1\\s*$$""".r
-    val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
-    val setTimeZoneRegex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
+  val setEnvironmentVariableRegex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
+  val unsetEnvironmentVariableRegex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
+  val startLearnConversationRegex = s"""(?i)^learn\\s*$$""".r
+  val unlearnRegex = s"""(?i)^unlearn\\s+(\\S+)""".r
+  val helpRegex = s"""(?i)^help\\s*(\\S*.*)$$""".r
+  val rememberRegex = s"""(?i)^(remember|\\^)\\s*$$""".r
+  val scheduledRegex = s"""(?i)^scheduled$$""".r
+  val scheduleRegex = s"""(?i)^schedule\\s+([`"'])(.*?)\\1(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
+  val unscheduleRegex = s"""(?i)^unschedule\\s+([`"'])(.*?)\\1\\s*$$""".r
+  val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
+  val setTimeZoneRegex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
 
+  def maybeFrom(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
     if (event.includesBotMention) {
       uneducateQuotes(event.relevantMessageText) match {
         case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, event, lambdaService, dataService))
