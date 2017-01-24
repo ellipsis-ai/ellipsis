@@ -24,8 +24,8 @@ object BuiltinBehavior {
     val helpRegex = s"""(?i)^help\\s*(\\S*.*)$$""".r
     val rememberRegex = s"""(?i)^(remember|\\^)\\s*$$""".r
     val scheduledRegex = s"""(?i)^scheduled$$""".r
-    val scheduleRegex = s"""(?i)^schedule\\s+`(.*?)`(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
-    val unscheduleRegex = s"""(?i)^unschedule\\s+`(.*?)`\\s*$$""".r
+    val scheduleRegex = s"""(?i)^schedule\\s+[`"“](.*?)[`"”](\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
+    val unscheduleRegex = s"""(?i)^unschedule\\s+[`"“](.*?)[`"”]\\s*$$""".r
     val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
     val setTimeZoneRegex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
 

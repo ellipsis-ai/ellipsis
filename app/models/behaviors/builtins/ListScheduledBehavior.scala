@@ -19,7 +19,7 @@ case class ListScheduledBehavior(
     s"""You haven’t yet scheduled anything. To do so, try something like:
       |
       |```
-      |${event.botPrefix}schedule `go bananas` every day at 3pm
+      |${event.botPrefix}schedule "go bananas" every day at 3pm
       |```
     """.stripMargin
 
@@ -31,7 +31,7 @@ case class ListScheduledBehavior(
        |You can unschedule by typing something like:
        |
        |```
-       |${event.botPrefix}unschedule `go bananas`
+       |${event.botPrefix}unschedule "go bananas"
        |```
      """.stripMargin
   }
