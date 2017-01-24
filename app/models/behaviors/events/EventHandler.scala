@@ -40,19 +40,21 @@ class EventHandler @Inject() (
     } yield results
   }
 
-  def interruptOngoingConversationsFor(event: MessageEvent): Future[Unit] = {
+  def interruptOngoingConversationsFor(event: MessageEvent): Future[Boolean] = {
     event.allOngoingConversations(dataService).flatMap { ongoing =>
       Future.sequence(ongoing.map { ea =>
         val cancelMessage =
-          s"""_(skipping question)_
+          s"""_(skipping question for now)_
              |
-             |:wave: Hey. You haven’t answered my question above yet, If you want me to ask again, say `${ea.trigger.pattern}`.
+             |:wave: Hey.
+             |
+             |You haven’t answered my question above yet. When you’re ready to answer, just say `${ea.trigger.pattern}`.
              |""".stripMargin
-        cancelConversationResult(event, ea, cancelMessage).map { result =>
-          result.sendIn(None, None)
+        cancelConversationResult(event, ea, cancelMessage).flatMap { result =>
+          result.sendIn(None, None).map(_ => result)
         }
       })
-    }.map(_ => {})
+    }.map(interruptionResults => interruptionResults.nonEmpty)
   }
 
   def cancelConversationResult(event: MessageEvent, conversation: Conversation, withMessage: String): Future[BotResult] = {

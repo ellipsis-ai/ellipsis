@@ -32,14 +32,25 @@ case class ScheduledMessage(
 
   def successResponse: String = shortDescription("OK, I will run")
 
-  def scheduleInfoResultFor(event: ScheduledMessageEvent, result: BotResult, configuration: Configuration) = {
+  def scheduleInfoResultFor(event: ScheduledMessageEvent, result: BotResult, configuration: Configuration, didInterrupt: Boolean) = {
     val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.HelpController.scheduledMessages()
       s"$baseUrl$path"
     }.get
-    SimpleTextResult(event,
-      s"""_:mantelpiece_clock: I’m running `$text` [as scheduled]($helpLink) (${recurrence.displayString.trim}):_
-         |""".stripMargin, result.forcePrivateResponse)
+    val resultText = if (didInterrupt) {
+      s"""Meanwhile, I’m running `$text` [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
+         |
+         |───
+       """.stripMargin
+    } else {
+      s""":wave: Hi.
+         |
+         |I’m running `$text` [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
+         |
+         |───
+         |""".stripMargin
+    }
+    SimpleTextResult(event, resultText, result.forcePrivateResponse)
   }
 
   def isScheduledForDirectMessage: Boolean = {
@@ -193,17 +204,17 @@ case class ScheduledMessage(
              ): Future[Unit] = {
     val event = ScheduledMessageEvent(SlackMessageEvent(profile, channelName, slackUserId, text, "ts"))
     for {
-      _ <- eventHandler.interruptOngoingConversationsFor(event)
+      didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
       results <- eventHandler.handle(event, None)
     } yield {
-      sendResults(results.toList, event, configuration)
+      sendResults(results.toList, event, configuration, didInterrupt)
     }
   }
 
-  def sendResult(result: BotResult, event: ScheduledMessageEvent, configuration: Configuration): Future[Unit] = {
+  def sendResult(result: BotResult, event: ScheduledMessageEvent, configuration: Configuration, didInterrupt: Boolean): Future[Unit] = {
     for {
       _ <- if (result.hasText) {
-        scheduleInfoResultFor(event, result, configuration).sendIn(None, None)
+        scheduleInfoResultFor(event, result, configuration, didInterrupt).sendIn(None, None)
       } else {
         Future.successful({})
       }
@@ -217,12 +228,12 @@ case class ScheduledMessage(
     }
   }
 
-  def sendResults(results: List[BotResult], event: ScheduledMessageEvent, configuration: Configuration): Future[Unit] = {
+  def sendResults(results: List[BotResult], event: ScheduledMessageEvent, configuration: Configuration, didInterrupt: Boolean): Future[Unit] = {
     if (results.isEmpty) {
       Future.successful({})
     } else {
-      sendResult(results.head, event, configuration).flatMap { _ =>
-        sendResults(results.tail, event, configuration)
+      sendResult(results.head, event, configuration, didInterrupt).flatMap { _ =>
+        sendResults(results.tail, event, configuration, didInterrupt)
       }
     }
   }

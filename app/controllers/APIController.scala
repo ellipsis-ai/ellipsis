@@ -102,12 +102,26 @@ class APIController @Inject() (
           isInvokedExternally <- Future.successful(maybeUserForApiToken.isDefined)
           result <- maybeEvent.map { event =>
             for {
-              _ <- eventHandler.interruptOngoingConversationsFor(event)
+              didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
               result <- eventHandler.handle(event, None).map { results =>
                 results.foreach { result =>
+
                   val eventualIntroSend = if (isInvokedExternally) {
                     maybeSlackProfile.map { slackProfile =>
-                      val introResult = SimpleTextResult(event, s"<@${slackProfile.loginInfo.providerKey}> asked me to say:", result.forcePrivateResponse)
+                      val resultText = if (didInterrupt) {
+                        s"""Meanwhile, <@${slackProfile.loginInfo.providerKey}> asked me to run `${event.fullMessageText}`.
+                           |
+                           |───
+                           |""".stripMargin
+                      } else {
+                        s""":wave: Hi.
+                           |
+                           |<@${slackProfile.loginInfo.providerKey}> asked me to run `${event.fullMessageText}`.
+                           |
+                           |───
+                           |""".stripMargin
+                      }
+                      val introResult = SimpleTextResult(event, resultText, result.forcePrivateResponse)
                       introResult.sendIn(None, None)
                     }.getOrElse(Future.successful({}))
                   } else {
