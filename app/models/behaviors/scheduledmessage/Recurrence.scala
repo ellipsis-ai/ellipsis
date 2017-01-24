@@ -113,7 +113,7 @@ trait RecurrenceWithTimeOfDay extends Recurrence {
   val nanosOfSecond = timeOfDay.getNano
 
   // TODO: Someday we may care about locales
-  def stringFor(timeZone: ZoneId): String = s"${timeZone.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}"
+  def stringFor(timeZone: ZoneId): String = s"${timeZone.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)}"
 
   override def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = {
     super.withStandardAdjustments(withTime(when))
