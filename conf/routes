@@ -71,6 +71,7 @@ GET         /login_with_token/:token                  @controllers.SocialAuthCon
 GET         /add_to_slack                             @controllers.SlackController.add
 GET         /sign_in_with_slack                       @controllers.SlackController.signIn(redirect: Option[String] ?= None)
 POST        /slack/event                              @controllers.SlackController.event
+POST        /slack/action                             @controllers.SlackController.action
 
 GET         /link_oauth2/:configId                    @controllers.APIAccessController.linkCustomOAuth2Service(configId: String, code: Option[String], state: Option[String], invocationId: Option[String], redirect: Option[String])
 GET         /authenticated/:message                   @controllers.APIAccessController.authenticated(message: String)

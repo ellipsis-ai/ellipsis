@@ -10,6 +10,8 @@ trait ConversationService {
 
   def findOngoingFor(userIdForContext: String, context: String, isPrivateMessage: Boolean): Future[Option[Conversation]]
 
+  def find(id: String): Future[Option[Conversation]]
+
   def cancel(conversation: Conversation): Future[Unit]
 
   def cancel(maybeConversation: Option[Conversation]): Future[Unit] = {

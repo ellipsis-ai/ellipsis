@@ -57,7 +57,7 @@ class ConversationServiceImpl @Inject() (
   }
 
   def allOngoingFor(userIdForContext: String, context: String, isPrivateMessage: Boolean): Future[Seq[Conversation]] = {
-    val action = allWithoutStateQueryFor(userIdForContext, Conversation.DONE_STATE).result.map { r =>
+    val action = allOngoingQueryFor(userIdForContext).result.map { r =>
       r.map(tuple2Conversation)
     }.map { activeConvos =>
       val requiresPrivate = if (isPrivateMessage) {
@@ -74,11 +74,17 @@ class ConversationServiceImpl @Inject() (
     allOngoingFor(userIdForContext, context, isPrivateMessage).map(_.headOption)
   }
 
-  def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)
-  val cancelQuery = Compiled(uncompiledCancelQuery _)
+  def find(id: String): Future[Option[Conversation]] = {
+    dataService.run(findQuery(id).result.map { r =>
+      r.headOption.map(tuple2Conversation)
+    })
+  }
+
+  def uncompiledStateQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)
+  val stateQuery = Compiled(uncompiledStateQuery _)
 
   def cancel(conversation: Conversation): Future[Unit] = {
-    val action = cancelQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
+    val action = stateQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
     dataService.run(action)
   }
 
