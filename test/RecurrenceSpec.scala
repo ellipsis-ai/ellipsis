@@ -341,7 +341,9 @@ class RecurrenceSpec extends PlaySpec {
   "Recurrence.daysOfWeekFrom" should {
 
     val monday = DayOfWeek.MONDAY
+    val tuesday = DayOfWeek.TUESDAY
     val wednesday = DayOfWeek.WEDNESDAY
+    val thursday = DayOfWeek.THURSDAY
     val friday = DayOfWeek.FRIDAY
 
     "handle space separated" in {
@@ -358,6 +360,10 @@ class RecurrenceSpec extends PlaySpec {
 
     "work for abbreviations" in {
       Recurrence.daysOfWeekFrom("mon, wed, fri") mustBe Seq(monday, wednesday, friday)
+    }
+
+    "handle weekdays" in {
+      Recurrence.daysOfWeekFrom("every weekday") mustBe Seq(monday, tuesday, wednesday, thursday, friday)
     }
   }
 
