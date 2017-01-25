@@ -1,6 +1,5 @@
 define((require) => {
 var React = require('react'),
-  ReactDOM = require('react-dom'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
@@ -109,14 +108,6 @@ const BehaviorEditor = React.createClass({
 
   getActiveDropdown: function() {
     return this.state.activeDropdown && this.state.activeDropdown.name ? this.state.activeDropdown.name : "";
-  },
-
-  getActiveModalElement: function() {
-    if (this.props.activePanelName && this.props.activePanelIsModal) {
-      return ReactDOM.findDOMNode(this.refs[this.props.activePanelName]);
-    } else {
-      return null;
-    }
   },
 
   getOtherSavedParametersInGroup: function() {
@@ -605,23 +596,6 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  focusOnFirstPossibleElement: function(parentElement) {
-    var tabSelector = 'a[href], area[href], input:not([disabled]), button:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, object, embed, *[tabindex], *[contenteditable]';
-    var firstFocusableElement = parentElement.querySelector(tabSelector);
-    if (firstFocusableElement) {
-      firstFocusableElement.focus();
-    }
-  },
-
-  focusOnPrimaryOrFirstPossibleElement: function(parentElement) {
-    var primaryElement = parentElement.querySelector('button.button-primary');
-    if (primaryElement) {
-      primaryElement.focus();
-    } else {
-      this.focusOnFirstPossibleElement(parentElement);
-    }
-  },
-
   loadVersions: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.props.behavior.behaviorId).url;
     this.setState({
@@ -649,23 +623,6 @@ const BehaviorEditor = React.createClass({
   handleEscKey: function() {
     if (this.getActiveDropdown()) {
       this.hideActiveDropdown();
-    }
-  },
-
-  handleModalFocus: function(event) {
-    var activeModal = this.getActiveModalElement();
-    if (!activeModal) {
-      return;
-    }
-    var focusTarget = event.target;
-    var possibleMatches = activeModal.getElementsByTagName(focusTarget.tagName);
-    var match = Array.prototype.some.call(possibleMatches, function(element) {
-      return element === focusTarget;
-    });
-    if (!match) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      this.focusOnFirstPossibleElement(activeModal);
     }
   },
 
@@ -844,12 +801,7 @@ const BehaviorEditor = React.createClass({
     if (!alreadyOpen) {
       this.refs.scrim.getElement().style.top = '';
     }
-    this.props.onToggleActivePanel(name, beModal, optionalCallback || (() => {
-      var activeModal = this.getActiveModalElement();
-      if (activeModal) {
-        this.focusOnPrimaryOrFirstPossibleElement(activeModal);
-      }
-    }));
+    this.props.onToggleActivePanel(name, beModal, optionalCallback);
   },
 
   toggleSharedAnswerInputSelector: function() {
@@ -1367,7 +1319,6 @@ const BehaviorEditor = React.createClass({
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
-    window.document.addEventListener('focus', this.handleModalFocus, true);
     window.addEventListener('resize', this.fixHeaderHeight, false);
     this.refs.pageTitleLayoutReplacer.style.height = `${this.getFixedTitleHeight()}px`;
   },

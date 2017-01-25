@@ -133,7 +133,11 @@ define(function(require) {
 
           <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.toggleInfoPanel} />
           <FixedFooter ref="footer">
-            <Collapsible revealWhen={this.props.activePanelName === 'moreInfo'} animationDuration={ANIMATION_DURATION}>
+            <Collapsible
+              ref="moreInfo"
+              revealWhen={this.props.activePanelName === 'moreInfo'}
+              animationDuration={ANIMATION_DURATION}
+            >
               <BehaviorGroupInfoPanel
                 groupData={this.getSelectedBehaviorGroup()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
@@ -142,6 +146,7 @@ define(function(require) {
             </Collapsible>
 
             <Collapsible
+              ref="afterInstall"
               revealWhen={this.hasRecentlyInstalledBehaviorGroups() && this.props.activePanelName === 'afterInstall'}
               animationDuration={ANIMATION_DURATION}
             >
