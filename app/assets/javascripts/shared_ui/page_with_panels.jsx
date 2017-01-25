@@ -42,9 +42,7 @@ define(function(require) {
         },
 
         clearActivePanel: function() {
-          this.setState({
-            activePanel: null
-          });
+          this.setState(this.getInitialState());
         },
 
         render: function() {
