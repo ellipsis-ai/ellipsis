@@ -649,8 +649,6 @@ const BehaviorEditor = React.createClass({
   handleEscKey: function() {
     if (this.getActiveDropdown()) {
       this.hideActiveDropdown();
-    } else if (this.props.activePanelName) {
-      this.props.onClearActivePanel();
     }
   },
 

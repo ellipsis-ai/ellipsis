@@ -1,5 +1,6 @@
 define(function(require) {
-  var React = require('react');
+  var React = require('react'),
+    Event = require('../lib/event');
 
   return {
     requiredPropTypes: function() {
@@ -36,6 +37,22 @@ define(function(require) {
 
         clearActivePanel: function() {
           this.setState(this.getInitialState());
+        },
+
+        handleEscKey: function() {
+          if (this.state.activePanelName) {
+            this.clearActivePanel();
+          }
+        },
+
+        onDocumentKeyDown: function(event) {
+          if (Event.keyPressWasEsc(event)) {
+            this.handleEscKey(event);
+          }
+        },
+
+        componentDidMount: function() {
+          window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
         },
 
         render: function() {
