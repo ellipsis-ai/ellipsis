@@ -17,7 +17,8 @@ define(function(require) {
 
         getInitialState: function() {
           return {
-            activePanel: null
+            activePanel: null,
+            previousActivePanel: null
           };
         },
 
@@ -31,9 +32,12 @@ define(function(require) {
         },
 
         toggleActivePanel: function(name, beModal, optionalCallback) {
+          var previousPanel = this.state.previousActivePanel;
           var alreadyOpen = this.getActivePanelName() === name;
+          var newPanel = alreadyOpen ? previousPanel : { name: name, isModal: !!beModal };
           this.setState({
-            activePanel: alreadyOpen ? null : { name: name, isModal: !!beModal }
+            activePanel: newPanel,
+            previousActivePanel: this.state.activePanel
           }, optionalCallback);
         },
 
