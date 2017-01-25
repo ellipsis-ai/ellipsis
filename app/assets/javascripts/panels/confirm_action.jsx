@@ -3,6 +3,7 @@ define(function(require) {
     DynamicLabelButton = require('../form/dynamic_label_button');
 
   return React.createClass({
+    displayName: 'ConfirmActionPanel',
     propTypes: {
       children: React.PropTypes.node.isRequired,
       confirmText: React.PropTypes.node,
