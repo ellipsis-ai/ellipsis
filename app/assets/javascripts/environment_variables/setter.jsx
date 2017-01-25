@@ -3,7 +3,7 @@ define(function(require) {
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
     Input = require('../form/input'),
     Textarea = require('../form/textarea'),
-    formatEnvVarName = require('./formatter'),
+    formatEnvVarName = require('../lib/formatter').formatEnvironmentVariableName,
     ifPresent = require('../lib/if_present'),
     SetterActions = require('./setter_actions');
 

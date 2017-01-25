@@ -35,6 +35,10 @@ define(function(require) {
       return camel;
     },
 
+    formatEnvironmentVariableName: function(name) {
+      return name.toUpperCase().replace(/\s/g, '_').replace(/^\d|[^A-Z0-9_]/g, '');
+    },
+
     formatList: function(list, optionalMapper) {
       var mapper = optionalMapper || ((ea) => ea);
       if (list.length === 0) {
