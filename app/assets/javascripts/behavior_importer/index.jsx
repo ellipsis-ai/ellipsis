@@ -2,10 +2,10 @@ define(function(require) {
   var React = require('react'),
     BehaviorGroupCard = require('./behavior_group_card'),
     BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
-    Collapsible = require('../collapsible'),
-    FixedFooter = require('../fixed_footer'),
+    Collapsible = require('../shared_ui/collapsible'),
+    FixedFooter = require('../shared_ui/fixed_footer'),
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
-    ModalScrim = require('../modal_scrim');
+    ModalScrim = require('../shared_ui/modal_scrim');
 
   var ANIMATION_DURATION = 0.25;
 

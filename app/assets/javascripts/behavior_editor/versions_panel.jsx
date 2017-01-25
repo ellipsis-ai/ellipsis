@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  Formatter = require('../formatter'),
+  Formatter = require('../lib/formatter'),
   BehaviorVersion = require('../models/behavior_version'),
   Select = require('../form/select');
 

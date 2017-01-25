@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  CSS = require('../css'),
+  CSS = require('../lib/css'),
   SVGXIcon = require('../svg/x');
 
 return React.createClass({

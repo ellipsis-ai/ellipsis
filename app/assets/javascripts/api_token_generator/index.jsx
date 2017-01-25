@@ -1,12 +1,12 @@
 define(function(require) {
   var React = require('react'),
-      Collapsible = require('../collapsible'),
-      CSRFTokenHiddenInput = require('../csrf_token_hidden_input'),
-      Formatter = require('../formatter'),
+      Collapsible = require('../shared_ui/collapsible'),
+      CSRFTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
+      Formatter = require('../lib/formatter'),
       HelpButton = require('../help/help_button'),
       HelpPanel = require('../help/panel'),
       Input = require('../form/input'),
-      SettingsMenu = require('../settings_menu');
+      SettingsMenu = require('../shared_ui/settings_menu');
 
   var revokeForm = jsRoutes.controllers.APITokenController.revokeToken();
   var createForm = jsRoutes.controllers.APITokenController.createToken();

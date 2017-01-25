@@ -2,7 +2,7 @@ define(function(require) {
   var React = require('react'),
     BehaviorName = require('../behavior_list/behavior_name'),
     SVGInstall = require('../svg/install'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../lib/if_present');
 
   return React.createClass({
     displayName: 'BehaviorGroupInfoPanel',
