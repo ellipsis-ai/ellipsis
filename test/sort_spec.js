@@ -1,5 +1,5 @@
-jest.unmock('../app/assets/javascripts/sort');
-const Sort = require('../app/assets/javascripts/sort');
+jest.unmock('../app/assets/javascripts/lib/sort');
+const Sort = require('../app/assets/javascripts/lib/sort');
 
 describe('Sort', () => {
   describe('arrayAlphaBy', () => {

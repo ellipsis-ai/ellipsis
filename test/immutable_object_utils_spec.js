@@ -1,6 +1,6 @@
-jest.unmock('../app/assets/javascripts/immutable_object_utils');
+jest.unmock('../app/assets/javascripts/lib/immutable_object_utils');
 
-var ImmutableObjectUtils = require('../app/assets/javascripts/immutable_object_utils');
+var ImmutableObjectUtils = require('../app/assets/javascripts/lib/immutable_object_utils');
 
 describe('ImmutableObjectUtils', () => {
   const array = ['a', 'b', 'c'];
