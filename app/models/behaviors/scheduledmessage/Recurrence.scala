@@ -113,7 +113,7 @@ trait RecurrenceWithTimeOfDay extends Recurrence {
   val nanosOfSecond = timeOfDay.getNano
 
   // TODO: Someday we may care about locales
-  def stringFor(timeZone: ZoneId): String = s"${timeZone.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}"
+  def stringFor(timeZone: ZoneId): String = s"${timeZone.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)}"
 
   override def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = {
     super.withStandardAdjustments(withTime(when))
@@ -589,7 +589,11 @@ object Recurrence {
 
   def daysOfWeekFrom(text: String): Seq[DayOfWeek] = {
     val days = ArrayBuffer[DayOfWeek]()
-    dayOfWeekMatchers.foreach(_.process(text, days))
+    if ("every weekday".r.findFirstMatchIn(text).nonEmpty) {
+      days ++= Seq(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)
+    } else {
+      dayOfWeekMatchers.foreach(_.process(text, days))
+    }
     days
   }
 

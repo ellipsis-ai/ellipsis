@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../lib/if_present');
 
   return React.createClass({
     displayName: 'DynamicLabelButton',

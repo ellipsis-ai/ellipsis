@@ -27,7 +27,7 @@ case class ScheduleBehavior(
     } yield {
       val responseText = maybeScheduledMessage.map { scheduledMessage =>
         scheduledMessage.successResponse
-      }.getOrElse(s"Sorry, I don't know how to schedule `$recurrence`")
+      }.getOrElse(s"Sorry, I don’t know how to schedule `$recurrence`")
 
       SimpleTextResult(event, responseText, forcePrivateResponse = false)
     }

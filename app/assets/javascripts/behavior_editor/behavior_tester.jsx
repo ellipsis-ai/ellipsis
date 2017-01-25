@@ -1,9 +1,9 @@
 define(function(require) {
   var React = require('react'),
     BehaviorTest = require('./behavior_test'),
-    Collapsible = require('../collapsible'),
+    Collapsible = require('../shared_ui/collapsible'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
-    ifPresent = require('../if_present'),
+    ifPresent = require('../lib/if_present'),
     Input = require('../form/input'),
     Param = require('../models/param'),
     Trigger = require('../models/trigger'),

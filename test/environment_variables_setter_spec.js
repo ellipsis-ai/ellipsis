@@ -1,5 +1,4 @@
 jest.unmock('../app/assets/javascripts/environment_variables/setter');
-jest.unmock('../app/assets/javascripts/environment_variables/formatter');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';

@@ -52,12 +52,14 @@
     ],
     "scriptPreprocessor": "<rootDir>/app/assets/javascripts/amdefinerator",
     "unmockedModulePathPatterns": [
-      "<rootDir>/node_modules/amdefine/",
-      "<rootDir>/node_modules/codemirror/",
-      "<rootDir>/node_modules/react/",
-      "<rootDir>/node_modules/react-dom/",
-      "<rootDir>/node_modules/react-addons-test-utils/",
-      "<rootDir>/app/assets/javascripts/immutable_object_utils"
+      "amdefine",
+      "codemirror",
+      "react",
+      "react-dom",
+      "react-addons-test-utils",
+      "moment",
+      "<rootDir>/app/assets/javascripts/lib/.+",
+      "<rootDir>/app/assets/javascripts/shared_ui/page_with_panels"
     ],
     "testDirectoryName": "test",
     "testPathIgnorePatterns": [

@@ -1,7 +1,7 @@
 define(function(require) {
   var React = require('react'),
     Checklist = require('./checklist'),
-    Codemirror = require('../react-codemirror'),
+    Codemirror = require('../shared_ui/react-codemirror'),
     Param = require('../models/param'),
     ResponseTemplate = require('../models/response_template'),
     SectionHeading = require('./section_heading'),

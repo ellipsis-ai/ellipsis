@@ -42,7 +42,9 @@ trait MessageEvent {
 
   def iDontKnowHowToRespondMessageFor(lambdaService: AWSLambdaService)(implicit ec: ExecutionContext): String = {
     s"""
-       |I don't know how to respond to `$fullMessageText`
+       |I don’t know how to respond to:
+       |
+       |> $fullMessageText
        |
        |Type `${botPrefix}help` to see what I can do or ${teachMeLinkFor(lambdaService)}
     """.stripMargin

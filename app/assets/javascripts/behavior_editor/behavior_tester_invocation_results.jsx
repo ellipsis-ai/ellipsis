@@ -1,7 +1,7 @@
 define(function(require) {
   var React = require('react'),
     InvocationTestResult = require('../models/behavior_invocation_result'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../lib/if_present');
 
   return React.createClass({
     propTypes: {

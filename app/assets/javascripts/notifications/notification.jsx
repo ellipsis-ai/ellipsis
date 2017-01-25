@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    Collapsible = require('../collapsible'),
+    Collapsible = require('../shared_ui/collapsible'),
     SVGTip = require('../svg/tip'),
     SVGWarning = require('../svg/warning'),
     NotificationForEnvVarMissing = require('./env_var_not_defined'),
