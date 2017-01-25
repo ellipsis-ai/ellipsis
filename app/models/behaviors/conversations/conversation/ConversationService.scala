@@ -1,5 +1,7 @@
 package models.behaviors.conversations.conversation
 
+import models.behaviors.events.MessageEvent
+
 import scala.concurrent.Future
 
 trait ConversationService {
@@ -17,6 +19,8 @@ trait ConversationService {
   def cancel(maybeConversation: Option[Conversation]): Future[Unit] = {
     maybeConversation.map(cancel).getOrElse(Future.successful({}))
   }
+
+  def start(conversationId: String, teamId: String, event: MessageEvent): Future[Unit]
 
   def deleteAll(): Future[Unit]
 

@@ -284,28 +284,14 @@ class SlackController @Inject() (
         Json.parse(payload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
-              info.maybeConversationIdToStart.foreach { conversationId =>
-                for {
-                  maybeConvo <- dataService.conversations.find(conversationId)
-                  maybeStarted <- maybeConvo.map { convo =>
-                    (if (convo.isPending) {
-                      convo.updateStateTo(Conversation.NEW_STATE, dataService)
-                    } else {
-                      Future.successful(convo)
-                    }).map(Some(_))
-                  }.getOrElse(Future.successful(None))
-                  _ <- maybeStarted.map { started =>
-                    dataService.slackBotProfiles.allForSlackTeamId(info.team.id).flatMap { botProfiles =>
-                      botProfiles.headOption.map { botProfile =>
-                        val event = SlackMessageEvent(botProfile, info.channel.id, info.user.id, "", info.message_ts)
-                        started.resultFor(event, lambdaService, dataService, cache, ws, configuration).flatMap { result =>
-                          result.sendIn(None, Some(started))
-                        }
-                      }.getOrElse(Future.successful(None))
-                    }
-                  }.getOrElse(Future.successful(None))
-                } yield {}
-              }
+              info.maybeConversationIdToStart.map { conversationId =>
+                dataService.slackBotProfiles.allForSlackTeamId(info.team.id).flatMap { botProfiles =>
+                  botProfiles.headOption.map { botProfile =>
+                    val event = SlackMessageEvent(botProfile, info.channel.id, info.user.id, "", info.message_ts)
+                    dataService.conversations.start(conversationId, info.team.id, event)
+                  }.getOrElse(Future.successful({}))
+                }
+              }.getOrElse(Future.successful({}))
 
               // respond immediately
               Ok("Ok, I'll ask you now")

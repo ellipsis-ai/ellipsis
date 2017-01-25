@@ -4,8 +4,12 @@ import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import services.DataService
+import services.{AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.events.MessageEvent
+import play.api.Configuration
+import play.api.cache.CacheApi
+import play.api.libs.ws.WSClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -36,10 +40,15 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
 }
 
 class ConversationServiceImpl @Inject() (
-                                           dataServiceProvider: Provider[DataService]
+                                           dataServiceProvider: Provider[DataService],
+                                           lambdaServiceProvider: Provider[AWSLambdaService],
+                                           cache: CacheApi,
+                                           configuration: Configuration,
+                                           ws: WSClient
                                          ) extends ConversationService {
 
   def dataService = dataServiceProvider.get
+  def lambdaService = lambdaServiceProvider.get
 
   import ConversationQueries._
 
@@ -86,6 +95,28 @@ class ConversationServiceImpl @Inject() (
   def cancel(conversation: Conversation): Future[Unit] = {
     val action = stateQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
     dataService.run(action)
+  }
+
+  def start(
+             conversationId: String,
+             teamId: String,
+             event: MessageEvent
+           ): Future[Unit] = {
+    for {
+      maybeConvo <- dataService.conversations.find(conversationId)
+      maybeStarted <- maybeConvo.map { convo =>
+        (if (convo.isPending) {
+          convo.updateStateTo(Conversation.NEW_STATE, dataService)
+        } else {
+          Future.successful(convo)
+        }).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      _ <- maybeStarted.map { started =>
+        started.resultFor(event, lambdaService, dataService, cache, ws, configuration).flatMap { result =>
+          result.sendIn(None, Some(started))
+        }
+      }.getOrElse(Future.successful(None))
+    } yield {}
   }
 
   def deleteAll(): Future[Unit] = {
