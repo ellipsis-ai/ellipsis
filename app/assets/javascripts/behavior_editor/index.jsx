@@ -841,8 +841,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-
-
   toggleActivePanel: function(name, beModal, optionalCallback) {
     var alreadyOpen = this.props.activePanelName === name;
     if (!alreadyOpen) {
