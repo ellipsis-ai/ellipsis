@@ -2,11 +2,11 @@ define(function(require) {
   var React = require('react'),
     BehaviorName = require('./behavior_name'),
     BehaviorGroup = require('../models/behavior_group'),
-    Collapsible = require('../collapsible'),
+    Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
-    FixedFooter = require('../fixed_footer'),
+    FixedFooter = require('../shared_ui/fixed_footer'),
     Formatter = require('../formatter'),
-    ModalScrim = require('../modal_scrim'),
+    ModalScrim = require('../shared_ui/modal_scrim'),
     SVGInstalled = require('../svg/installed');
 
   return React.createClass({

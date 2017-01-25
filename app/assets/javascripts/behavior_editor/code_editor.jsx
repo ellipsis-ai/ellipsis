@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  Codemirror = require('../react-codemirror');
+  Codemirror = require('../shared_ui/react-codemirror');
   require('codemirror');
   require('codemirror/mode/javascript/javascript');
   require('codemirror/addon/lint/lint');

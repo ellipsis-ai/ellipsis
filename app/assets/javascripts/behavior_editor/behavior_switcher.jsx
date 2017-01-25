@@ -2,7 +2,7 @@ define(function(require) {
   var React = require('react'),
     BehaviorSwitcherGroup = require('./behavior_switcher_group'),
     BehaviorVersion = require('../models/behavior_version'),
-    Collapsible = require('../collapsible'),
+    Collapsible = require('../shared_ui/collapsible'),
     Input = require('../form/input'),
     SVGXIcon = require('../svg/x'),
     ifPresent = require('../if_present');

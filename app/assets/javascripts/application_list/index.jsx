@@ -1,9 +1,9 @@
 define(function(require) {
   var React = require('react'),
-    Collapsible = require('../collapsible'),
+    Collapsible = require('../shared_ui/collapsible'),
     HelpButton = require('../help/help_button'),
     HelpPanel = require('../help/panel'),
-    SettingsMenu = require('../settings_menu'),
+    SettingsMenu = require('../shared_ui/settings_menu'),
     Sort = require('../sort');
 
   return React.createClass({

@@ -3,7 +3,7 @@ define(function(require) {
     SectionHeading = require('./section_heading'),
     UserInputDefinition = require('./user_input_definition'),
     Checklist = require('./checklist'),
-    Collapsible = require('../collapsible'),
+    Collapsible = require('../shared_ui/collapsible'),
     Param = require('../models/param'),
     Trigger = require('../models/trigger');
 

@@ -4,9 +4,9 @@ var React = require('react'),
   DeleteButton = require('./delete_button'),
   HelpButton = require('../help/help_button'),
   Input = require('../form/input'),
-  Collapsible = require('../collapsible'),
+  Collapsible = require('../shared_ui/collapsible'),
   ToggleGroup = require('../form/toggle_group'),
-  DropdownMenu = require('../dropdown_menu'),
+  DropdownMenu = require('../shared_ui/dropdown_menu'),
   Trigger = require('../models/trigger');
 
 return React.createClass({

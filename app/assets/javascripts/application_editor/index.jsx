@@ -1,10 +1,10 @@
 define(function(require) {
   var React = require('react'),
     CSS = require('../css'),
-    Collapsible = require('../collapsible'),
-    CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
+    Collapsible = require('../shared_ui/collapsible'),
+    CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
     Input = require('../form/input'),
-    SettingsMenu = require('../settings_menu'),
+    SettingsMenu = require('../shared_ui/settings_menu'),
     BrowserUtils = require('../browser_utils'),
     ifPresent = require('../if_present'),
     Formatter = require('../formatter');

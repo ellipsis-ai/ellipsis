@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  Collapsible = require('../collapsible'),
+  Collapsible = require('../shared_ui/collapsible'),
   HelpPanel = require('../help/panel');
 
 return React.createClass({
