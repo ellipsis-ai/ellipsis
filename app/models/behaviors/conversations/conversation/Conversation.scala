@@ -23,6 +23,8 @@ trait Conversation {
   val userIdForContext: String
   val startedAt: OffsetDateTime
   val state: String
+  val justConfirmedReady: Boolean
+  def copyWithJustConfirmedReady: Conversation
 
   def isPending: Boolean = state == Conversation.PENDING_STATE
 

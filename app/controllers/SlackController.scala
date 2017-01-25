@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageEvent
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -11,7 +10,7 @@ import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Result}
 import play.utils.UriEncoding
@@ -253,6 +252,7 @@ class SlackController @Inject() (
                                    message_ts: String,
                                    attachment_id: String,
                                    token: String,
+                                   original_message: JsValue,
                                    response_url: String
                                  ) extends RequestInfo {
 
@@ -294,7 +294,11 @@ class SlackController @Inject() (
               }.getOrElse(Future.successful({}))
 
               // respond immediately
-              Ok("Ok, I'll ask you now")
+              val transformer = (__ \ "attachments").json.update(
+                __.read[JsArray].map{ _ => JsArray(Seq()) }
+              )
+              val updated = info.original_message.transform(transformer).get
+              Ok(updated)
             } else {
               Unauthorized("Bad token")
             }

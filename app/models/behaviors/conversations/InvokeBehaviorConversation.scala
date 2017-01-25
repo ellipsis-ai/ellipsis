@@ -22,10 +22,13 @@ case class InvokeBehaviorConversation(
                                       context: String, // Slack, etc
                                       userIdForContext: String, // id for Slack, etc user
                                       startedAt: OffsetDateTime,
-                                      state: String = Conversation.NEW_STATE
+                                      state: String = Conversation.NEW_STATE,
+                                      justConfirmedReady: Boolean
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
+
+  def copyWithJustConfirmedReady: Conversation = this.copy(justConfirmedReady = true)
 
   override val stateRequiresPrivateMessage: Boolean = {
     InvokeBehaviorConversation.statesRequiringPrivateMessage.contains(state)
@@ -144,7 +147,8 @@ object InvokeBehaviorConversation {
         context,
         event.userIdForContext,
         OffsetDateTime.now,
-        initialState
+        initialState,
+        justConfirmedReady = false
       )
     dataService.conversations.save(newInstance).map(_ => newInstance)
   }

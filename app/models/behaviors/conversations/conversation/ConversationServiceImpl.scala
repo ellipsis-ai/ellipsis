@@ -112,8 +112,9 @@ class ConversationServiceImpl @Inject() (
         }).map(Some(_))
       }.getOrElse(Future.successful(None))
       _ <- maybeStarted.map { started =>
-        started.resultFor(event, lambdaService, dataService, cache, ws, configuration).flatMap { result =>
-          result.sendIn(None, Some(started))
+        val startedAndReady = started.copyWithJustConfirmedReady
+        startedAndReady.resultFor(event, lambdaService, dataService, cache, ws, configuration).flatMap { result =>
+          result.sendIn(None, Some(startedAndReady))
         }
       }.getOrElse(Future.successful(None))
     } yield {}
