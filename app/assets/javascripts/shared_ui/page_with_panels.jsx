@@ -17,27 +17,20 @@ define(function(require) {
 
         getInitialState: function() {
           return {
-            activePanel: null,
-            previousActivePanel: null
+            activePanelName: "",
+            activePanelIsModal: false,
+            previousPanelName: "",
+            previousPanelIsModal: false
           };
         },
 
-        getActivePanelName: function() {
-          return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
-        },
-
-        activePanelIsModal: function() {
-          const panel = this.state.activePanel;
-          return !!(panel && panel.isModal);
-        },
-
         toggleActivePanel: function(name, beModal, optionalCallback) {
-          var previousPanel = this.state.previousActivePanel;
-          var alreadyOpen = this.getActivePanelName() === name;
-          var newPanel = alreadyOpen ? previousPanel : { name: name, isModal: !!beModal };
+          var alreadyOpen = this.state.activePanelName === name;
           this.setState({
-            activePanel: newPanel,
-            previousActivePanel: this.state.activePanel
+            activePanelName: alreadyOpen ? this.state.previousPanelName : name,
+            activePanelIsModal: alreadyOpen ? this.state.previousPanelIsModal : !!beModal,
+            previousPanelName: this.state.activePanelName,
+            previousPanelIsModal: this.state.activePanelIsModal
           }, optionalCallback);
         },
 
@@ -48,8 +41,8 @@ define(function(require) {
         render: function() {
           return (
             <Component
-              activePanelName={this.getActivePanelName()}
-              activePanelIsModal={this.activePanelIsModal()}
+              activePanelName={this.state.activePanelName}
+              activePanelIsModal={this.state.activePanelIsModal}
               onToggleActivePanel={this.toggleActivePanel}
               onClearActivePanel={this.clearActivePanel}
               {...this.props} {...this.state}
