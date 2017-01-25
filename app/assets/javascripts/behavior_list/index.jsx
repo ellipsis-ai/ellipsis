@@ -33,7 +33,8 @@ define(function(require) {
     getInitialState: function() {
       return {
         selectedGroupIds: [],
-        activePanel: null
+        activePanel: null,
+        isSubmitting: false
       };
     },
 
@@ -64,6 +65,10 @@ define(function(require) {
 
     confirmDeleteBehaviorGroups: function() {
       this.toggleActivePanel('confirmDeleteBehaviorGroups', true);
+    },
+
+    confirmMergeBehaviorGroups: function() {
+      this.toggleActivePanel('confirmMergeBehaviorGroups', true);
     },
 
     hideActivePanel: function() {
@@ -129,13 +134,21 @@ define(function(require) {
     },
 
     mergeBehaviorGroups: function() {
-      var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
-      this.runSelectedBehaviorGroupsAction(url);
+      this.setState({
+        isSubmitting: true
+      }, () => {
+        var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
+        this.runSelectedBehaviorGroupsAction(url);
+      });
     },
 
     deleteBehaviorGroups: function() {
-      var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
-      this.runSelectedBehaviorGroupsAction(url);
+      this.setState({
+        isSubmitting: true
+      }, () => {
+        var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
+        this.runSelectedBehaviorGroupsAction(url);
+      });
     },
 
     renderGroupSelectionCheckbox: function(groupId) {
@@ -179,8 +192,12 @@ define(function(require) {
       if (selectedCount === 1) {
         return "Are you sure you want to delete this skill?";
       } else {
-        return `Are you sure you want to delete ${selectedCount} skills?`;
+        return `Are you sure you want to delete these ${selectedCount} skills?`;
       }
+    },
+
+    getTextForMergeBehaviorGroups: function(selectedCount) {
+      return `Are you sure you want to merge these ${selectedCount} skills?`;
     },
 
     groupHasTitle: function(group) {
@@ -292,7 +309,7 @@ define(function(require) {
           </button>
           <button type="button"
             className="mrl mbs"
-            onClick={this.mergeBehaviorGroups}
+            onClick={this.confirmMergeBehaviorGroups}
             disabled={selectedCount < 2}
           >
             Merge skills
@@ -342,8 +359,25 @@ define(function(require) {
               </div>
             </Collapsible>
             <Collapsible ref="confirmDeleteBehaviorGroups" revealWhen={this.getActivePanelName() === 'confirmDeleteBehaviorGroups'}>
-              <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehaviorGroups} onCancelClick={this.hideActivePanel}>
+              <ConfirmActionPanel
+                confirmText="Delete"
+                confirmingText="Deleting"
+                onConfirmClick={this.deleteBehaviorGroups}
+                onCancelClick={this.hideActivePanel}
+                isConfirming={this.state.isSubmitting}
+              >
                 <p>{this.getTextForDeleteBehaviorGroups(this.getSelectedGroupIds().length)}</p>
+              </ConfirmActionPanel>
+            </Collapsible>
+            <Collapsible ref="confirmMergeBehaviorGroups" revealWhen={this.getActivePanelName() === 'confirmMergeBehaviorGroups'}>
+              <ConfirmActionPanel
+                confirmText="Merge"
+                confirmingText="Merging"
+                onConfirmClick={this.mergeBehaviorGroups}
+                onCancelClick={this.hideActivePanel}
+                isConfirming={this.state.isSubmitting}
+              >
+                <p>{this.getTextForMergeBehaviorGroups(this.getSelectedGroupIds().length)}</p>
               </ConfirmActionPanel>
             </Collapsible>
           </FixedFooter>
