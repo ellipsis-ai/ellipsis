@@ -3,8 +3,10 @@ define(function(require) {
     BehaviorName = require('./behavior_name'),
     BehaviorGroup = require('../models/behavior_group'),
     Collapsible = require('../collapsible'),
+    ConfirmActionPanel = require('../panels/confirm_action'),
     FixedFooter = require('../fixed_footer'),
     Formatter = require('../formatter'),
+    ModalScrim = require('../modal_scrim'),
     SVGInstalled = require('../svg/installed');
 
   return React.createClass({
@@ -30,7 +32,9 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        selectedGroupIds: []
+        selectedGroupIds: [],
+        activePanel: null,
+        isSubmitting: false
       };
     },
 
@@ -50,6 +54,40 @@ define(function(require) {
 
     isGroupSelected: function(groupId) {
       return this.getSelectedGroupIds().indexOf(groupId) >= 0;
+    },
+
+    toggleActivePanel: function(name, beModal, optionalCallback) {
+      var alreadyOpen = this.getActivePanelName() === name;
+      this.setState({
+        activePanel: alreadyOpen ? null : { name: name, isModal: !!beModal }
+      }, optionalCallback);
+    },
+
+    confirmDeleteBehaviorGroups: function() {
+      this.toggleActivePanel('confirmDeleteBehaviorGroups', true);
+    },
+
+    confirmMergeBehaviorGroups: function() {
+      this.toggleActivePanel('confirmMergeBehaviorGroups', true);
+    },
+
+    hideActivePanel: function() {
+      this.setState({
+        activePanel: null
+      });
+    },
+
+    getActivePanel: function() {
+      return this.state.activePanel;
+    },
+
+    getActivePanelName: function() {
+      return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
+    },
+
+    activePanelIsModal: function() {
+      const panel = this.getActivePanel();
+      return !!(panel && panel.isModal);
     },
 
     onGroupSelectionCheckboxChange: function(groupId) {
@@ -96,13 +134,21 @@ define(function(require) {
     },
 
     mergeBehaviorGroups: function() {
-      var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
-      this.runSelectedBehaviorGroupsAction(url);
+      this.setState({
+        isSubmitting: true
+      }, () => {
+        var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
+        this.runSelectedBehaviorGroupsAction(url);
+      });
     },
 
     deleteBehaviorGroups: function() {
-      var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
-      this.runSelectedBehaviorGroupsAction(url);
+      this.setState({
+        isSubmitting: true
+      }, () => {
+        var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
+        this.runSelectedBehaviorGroupsAction(url);
+      });
     },
 
     renderGroupSelectionCheckbox: function(groupId) {
@@ -140,6 +186,18 @@ define(function(require) {
       } else {
         return `Delete skills`;
       }
+    },
+
+    getTextForDeleteBehaviorGroups: function(selectedCount) {
+      if (selectedCount === 1) {
+        return "Are you sure you want to delete this skill?";
+      } else {
+        return `Are you sure you want to delete these ${selectedCount} skills?`;
+      }
+    },
+
+    getTextForMergeBehaviorGroups: function(selectedCount) {
+      return `Are you sure you want to merge these ${selectedCount} skills?`;
     },
 
     groupHasTitle: function(group) {
@@ -244,14 +302,14 @@ define(function(require) {
           </button>
           <button type="button"
             className="mrs mbs"
-            onClick={this.deleteBehaviorGroups}
+            onClick={this.confirmDeleteBehaviorGroups}
             disabled={selectedCount < 1}
           >
             {this.getLabelForDeleteAction(selectedCount)}
           </button>
           <button type="button"
             className="mrl mbs"
-            onClick={this.mergeBehaviorGroups}
+            onClick={this.confirmMergeBehaviorGroups}
             disabled={selectedCount < 2}
           >
             Merge skills
@@ -293,11 +351,34 @@ define(function(require) {
             </div>
           </div>
 
-          <FixedFooter className="bg-white">
-            <Collapsible revealWhen={this.getSelectedGroupIds().length > 0}>
+          <ModalScrim isActive={this.activePanelIsModal()} onClick={this.hideActivePanel} />
+          <FixedFooter ref="footer" className="bg-white">
+            <Collapsible revealWhen={!this.getActivePanelName() && this.getSelectedGroupIds().length > 0}>
               <div className="container container-c ptm border-top">
                 {this.renderActions()}
               </div>
+            </Collapsible>
+            <Collapsible ref="confirmDeleteBehaviorGroups" revealWhen={this.getActivePanelName() === 'confirmDeleteBehaviorGroups'}>
+              <ConfirmActionPanel
+                confirmText="Delete"
+                confirmingText="Deleting"
+                onConfirmClick={this.deleteBehaviorGroups}
+                onCancelClick={this.hideActivePanel}
+                isConfirming={this.state.isSubmitting}
+              >
+                <p>{this.getTextForDeleteBehaviorGroups(this.getSelectedGroupIds().length)}</p>
+              </ConfirmActionPanel>
+            </Collapsible>
+            <Collapsible ref="confirmMergeBehaviorGroups" revealWhen={this.getActivePanelName() === 'confirmMergeBehaviorGroups'}>
+              <ConfirmActionPanel
+                confirmText="Merge"
+                confirmingText="Merging"
+                onConfirmClick={this.mergeBehaviorGroups}
+                onCancelClick={this.hideActivePanel}
+                isConfirming={this.state.isSubmitting}
+              >
+                <p>{this.getTextForMergeBehaviorGroups(this.getSelectedGroupIds().length)}</p>
+              </ConfirmActionPanel>
             </Collapsible>
           </FixedFooter>
         </div>
