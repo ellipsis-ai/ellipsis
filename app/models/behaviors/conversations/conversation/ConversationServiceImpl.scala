@@ -4,8 +4,12 @@ import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import services.DataService
+import services.{AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.events.MessageEvent
+import play.api.Configuration
+import play.api.cache.CacheApi
+import play.api.libs.ws.WSClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -36,10 +40,15 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
 }
 
 class ConversationServiceImpl @Inject() (
-                                           dataServiceProvider: Provider[DataService]
+                                           dataServiceProvider: Provider[DataService],
+                                           lambdaServiceProvider: Provider[AWSLambdaService],
+                                           cache: CacheApi,
+                                           configuration: Configuration,
+                                           ws: WSClient
                                          ) extends ConversationService {
 
   def dataService = dataServiceProvider.get
+  def lambdaService = lambdaServiceProvider.get
 
   import ConversationQueries._
 
@@ -57,7 +66,7 @@ class ConversationServiceImpl @Inject() (
   }
 
   def allOngoingFor(userIdForContext: String, context: String, isPrivateMessage: Boolean): Future[Seq[Conversation]] = {
-    val action = allWithoutStateQueryFor(userIdForContext, Conversation.DONE_STATE).result.map { r =>
+    val action = allOngoingQueryFor(userIdForContext).result.map { r =>
       r.map(tuple2Conversation)
     }.map { activeConvos =>
       val requiresPrivate = if (isPrivateMessage) {
@@ -74,12 +83,41 @@ class ConversationServiceImpl @Inject() (
     allOngoingFor(userIdForContext, context, isPrivateMessage).map(_.headOption)
   }
 
-  def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)
-  val cancelQuery = Compiled(uncompiledCancelQuery _)
+  def find(id: String): Future[Option[Conversation]] = {
+    dataService.run(findQuery(id).result.map { r =>
+      r.headOption.map(tuple2Conversation)
+    })
+  }
+
+  def uncompiledStateQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)
+  val stateQuery = Compiled(uncompiledStateQuery _)
 
   def cancel(conversation: Conversation): Future[Unit] = {
-    val action = cancelQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
+    val action = stateQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
     dataService.run(action)
+  }
+
+  def start(
+             conversationId: String,
+             teamId: String,
+             event: MessageEvent
+           ): Future[Unit] = {
+    for {
+      maybeConvo <- dataService.conversations.find(conversationId)
+      maybeStarted <- maybeConvo.map { convo =>
+        (if (convo.isPending) {
+          convo.updateStateTo(Conversation.NEW_STATE, dataService)
+        } else {
+          Future.successful(convo)
+        }).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      _ <- maybeStarted.map { started =>
+        val startedAndReady = started.copyWithJustConfirmedReady
+        startedAndReady.resultFor(event, lambdaService, dataService, cache, ws, configuration).flatMap { result =>
+          result.sendIn(None, Some(startedAndReady))
+        }
+      }.getOrElse(Future.successful(None))
+    } yield {}
   }
 
   def deleteAll(): Future[Unit] = {

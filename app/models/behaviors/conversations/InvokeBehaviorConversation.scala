@@ -22,10 +22,13 @@ case class InvokeBehaviorConversation(
                                       context: String, // Slack, etc
                                       userIdForContext: String, // id for Slack, etc user
                                       startedAt: OffsetDateTime,
-                                      state: String = Conversation.NEW_STATE
+                                      state: String = Conversation.NEW_STATE,
+                                      justConfirmedReady: Boolean
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
+
+  def copyWithJustConfirmedReady: Conversation = this.copy(justConfirmedReady = true)
 
   override val stateRequiresPrivateMessage: Boolean = {
     InvokeBehaviorConversation.statesRequiringPrivateMessage.contains(state)
@@ -76,10 +79,19 @@ case class InvokeBehaviorConversation(
       updated <- collectionStates.find(_.name == state).map(_.collectValueFrom(this)).getOrElse {
         state match {
           case NEW_STATE => updateToNextState(event, cache, dataService, configuration)
+          case PENDING_STATE => Future.successful(this) // TODO: make it possible to leave pending state with a message
           case DONE_STATE => Future.successful(this)
         }
       }
     } yield updated
+  }
+
+  def maybePendingResultFor(event: MessageEvent): Option[BotResult] = {
+    if (isPending) {
+      Some(PendingConversationResult(event, this, behaviorVersion.forcePrivateResponse))
+    } else {
+      None
+    }
   }
 
   def respond(
@@ -90,15 +102,17 @@ case class InvokeBehaviorConversation(
                ws: WSClient,
                configuration: Configuration
              ): Future[BotResult] = {
-    for {
-      collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
-      result <- collectionStates.find(_.name == state).map(_.promptResultFor(this)).getOrElse {
-        val paramState = paramStateIn(collectionStates)
-        BehaviorResponse.buildFor(event, behaviorVersion, paramState.invocationMap, trigger, Some(this), lambdaService, dataService, cache, ws, configuration).flatMap { br =>
-          br.resultForFilledOut
+    maybePendingResultFor(event).map(Future.successful).getOrElse {
+      for {
+        collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
+        result <- collectionStates.find(_.name == state).map(_.promptResultFor(this)).getOrElse {
+          val paramState = paramStateIn(collectionStates)
+          BehaviorResponse.buildFor(event, behaviorVersion, paramState.invocationMap, trigger, Some(this), lambdaService, dataService, cache, ws, configuration).flatMap { br =>
+            br.resultForFilledOut
+          }
         }
-      }
-    } yield result
+      } yield result
+    }
   }
 
 }
@@ -115,20 +129,26 @@ object InvokeBehaviorConversation {
   )
 
   def createFor(
+                 event: MessageEvent,
                  behaviorVersion: BehaviorVersion,
                  context: String,
-                 userIdForContext: String,
                  activatedTrigger: MessageTrigger,
                  dataService: DataService
                  ): Future[InvokeBehaviorConversation] = {
+    val initialState = if (event.isTriggeredByUser) {
+      Conversation.NEW_STATE
+    } else {
+      Conversation.PENDING_STATE
+    }
     val newInstance =
       InvokeBehaviorConversation(
         IDs.next,
         activatedTrigger,
         context,
-        userIdForContext,
+        event.userIdForContext,
         OffsetDateTime.now,
-        Conversation.NEW_STATE
+        initialState,
+        justConfirmedReady = false
       )
     dataService.conversations.save(newInstance).map(_ => newInstance)
   }

@@ -6,7 +6,7 @@ import models.accounts.oauth2application.OAuth2Application
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.{MessageActions, MessageEvent, SlackMessageAction, SlackMessageActions}
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -35,8 +35,10 @@ sealed trait BotResult {
               maybeShouldUnfurl: Option[Boolean],
               maybeConversation: Option[Conversation]
             ): Future[Unit] = {
-    event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, None)
+    event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, maybeActions)
   }
+
+  def maybeActions: Option[MessageActions] = None
 }
 
 trait BotResultWithLogResult extends BotResult {
@@ -70,6 +72,23 @@ case class SimpleTextResult(event: MessageEvent, simpleText: String, forcePrivat
 
   def text: String = simpleText
 
+}
+
+case class PendingConversationResult(event: MessageEvent, conversation: Conversation, forcePrivateResponse: Boolean) extends BotResult {
+
+  val resultType = ResultType.ConversationPrompt
+
+  def text: String = ":point_up: Excuse me, I have a question to ask you. Let me know when you're ready."
+
+  override def maybeActions: Option[MessageActions] = {
+    Some(
+      SlackMessageActions(
+        conversation.id,
+        Seq(SlackMessageAction(name = "start_conversation", text = "I'm ready", value = "true")),
+        None
+      )
+    )
+  }
 }
 
 case class NoResponseResult(event: MessageEvent, maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {

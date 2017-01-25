@@ -6,12 +6,15 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models.behaviors.events.SlackMessageEvent
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
+import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
+import play.api.libs.json._
+import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Result}
 import play.utils.UriEncoding
-import services.{DataService, SlackEventService}
+import services.{AWSLambdaService, DataService, SlackEventService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -21,7 +24,10 @@ class SlackController @Inject() (
                                   val silhouette: Silhouette[EllipsisEnv],
                                   val configuration: Configuration,
                                   val dataService: DataService,
-                                  val slackEventService: SlackEventService
+                                  val slackEventService: SlackEventService,
+                                  val lambdaService: AWSLambdaService,
+                                  val cache: CacheApi,
+                                  val ws: WSClient
                                 ) extends EllipsisController {
 
   def add = silhouette.UserAwareAction { implicit request =>
@@ -197,6 +203,8 @@ class SlackController @Inject() (
           Future.successful({})
         }
       } yield {}
+
+      // respond immediately
       Ok(":+1:")
     } else {
       Unauthorized("Bad token")
@@ -226,6 +234,80 @@ class SlackController @Inject() (
         )
       },
       info => challengeResult(info)
+    )
+  }
+
+  case class ActionInfo(name: String, value: String)
+  case class TeamInfo(id: String, domain: String)
+  case class ChannelInfo(id: String, name: String)
+  case class UserInfo(id: String, name: String)
+
+  case class ActionsTriggeredInfo(
+                                   callback_id: String,
+                                   actions: Seq[ActionInfo],
+                                   team: TeamInfo,
+                                   channel: ChannelInfo,
+                                   user: UserInfo,
+                                   action_ts: String,
+                                   message_ts: String,
+                                   attachment_id: String,
+                                   token: String,
+                                   original_message: JsValue,
+                                   response_url: String
+                                 ) extends RequestInfo {
+
+    def maybeConversationIdToStart: Option[String] = {
+      actions.find { info => info.name == "start_conversation" && info.value == "true" }.map { _ =>
+        callback_id
+      }
+    }
+
+  }
+
+  private val actionForm = Form(
+    "payload" -> nonEmptyText
+  )
+
+  implicit val channelReads = Json.reads[ChannelInfo]
+  implicit val teamReads = Json.reads[TeamInfo]
+  implicit val userReads = Json.reads[UserInfo]
+  implicit val actionReads = Json.reads[ActionInfo]
+  implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
+
+  def action = Action { implicit request =>
+    actionForm.bindFromRequest.fold(
+      formWithErrors => {
+        println(formWithErrors.errorsAsJson)
+        BadRequest(formWithErrors.errorsAsJson)
+      },
+      payload => {
+        Json.parse(payload).validate[ActionsTriggeredInfo] match {
+          case JsSuccess(info, jsPath) => {
+            if (info.isValid) {
+              info.maybeConversationIdToStart.map { conversationId =>
+                dataService.slackBotProfiles.allForSlackTeamId(info.team.id).flatMap { botProfiles =>
+                  botProfiles.headOption.map { botProfile =>
+                    val event = SlackMessageEvent(botProfile, info.channel.id, info.user.id, "", info.message_ts)
+                    dataService.conversations.start(conversationId, info.team.id, event)
+                  }.getOrElse(Future.successful({}))
+                }
+              }.getOrElse(Future.successful({}))
+
+              // respond immediately
+              val transformer = (__ \ "attachments").json.update(
+                __.read[JsArray].map{ _ => JsArray(Seq()) }
+              )
+              val updated = info.original_message.transform(transformer).get
+              Ok(updated)
+            } else {
+              Unauthorized("Bad token")
+            }
+          }
+          case JsError(err) => {
+            BadRequest(err.toString)
+          }
+        }
+      }
     )
   }
 

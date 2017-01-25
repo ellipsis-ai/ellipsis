@@ -41,6 +41,8 @@ case class SlackMessageEvent(
   val teamId: String = profile.teamId
   val userIdForContext: String = user
 
+  val isTriggeredByUser: Boolean = true
+
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
   def isDirectMessage(channelId: String): Boolean = {
