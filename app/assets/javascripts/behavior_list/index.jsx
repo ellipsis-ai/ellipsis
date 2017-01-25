@@ -7,14 +7,15 @@ define(function(require) {
     FixedFooter = require('../shared_ui/fixed_footer'),
     Formatter = require('../lib/formatter'),
     ModalScrim = require('../shared_ui/modal_scrim'),
+    PageWithPanels = require('../shared_ui/page_with_panels'),
     SVGInstalled = require('../svg/installed');
 
-  return React.createClass({
+  const BehaviorList = React.createClass({
     displayName: "BehaviorList",
-    propTypes: {
+    propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       csrfToken: React.PropTypes.string.isRequired
-    },
+    }),
 
     getImportedStatusFromGroupOrVersion: function(groupOrVersion) {
       if (groupOrVersion.importedId) {
@@ -33,7 +34,6 @@ define(function(require) {
     getInitialState: function() {
       return {
         selectedGroupIds: [],
-        activePanel: null,
         isSubmitting: false
       };
     },
@@ -56,38 +56,12 @@ define(function(require) {
       return this.getSelectedGroupIds().indexOf(groupId) >= 0;
     },
 
-    toggleActivePanel: function(name, beModal, optionalCallback) {
-      var alreadyOpen = this.getActivePanelName() === name;
-      this.setState({
-        activePanel: alreadyOpen ? null : { name: name, isModal: !!beModal }
-      }, optionalCallback);
-    },
-
     confirmDeleteBehaviorGroups: function() {
-      this.toggleActivePanel('confirmDeleteBehaviorGroups', true);
+      this.props.onToggleActivePanel('confirmDeleteBehaviorGroups', true);
     },
 
     confirmMergeBehaviorGroups: function() {
-      this.toggleActivePanel('confirmMergeBehaviorGroups', true);
-    },
-
-    hideActivePanel: function() {
-      this.setState({
-        activePanel: null
-      });
-    },
-
-    getActivePanel: function() {
-      return this.state.activePanel;
-    },
-
-    getActivePanelName: function() {
-      return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
-    },
-
-    activePanelIsModal: function() {
-      const panel = this.getActivePanel();
-      return !!(panel && panel.isModal);
+      this.props.onToggleActivePanel('confirmMergeBehaviorGroups', true);
     },
 
     onGroupSelectionCheckboxChange: function(groupId) {
@@ -351,30 +325,30 @@ define(function(require) {
             </div>
           </div>
 
-          <ModalScrim isActive={this.activePanelIsModal()} onClick={this.hideActivePanel} />
+          <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.props.onClearActivePanel} />
           <FixedFooter ref="footer" className="bg-white">
-            <Collapsible revealWhen={!this.getActivePanelName() && this.getSelectedGroupIds().length > 0}>
+            <Collapsible revealWhen={!this.props.activePanelName && this.getSelectedGroupIds().length > 0}>
               <div className="container container-c ptm border-top">
                 {this.renderActions()}
               </div>
             </Collapsible>
-            <Collapsible ref="confirmDeleteBehaviorGroups" revealWhen={this.getActivePanelName() === 'confirmDeleteBehaviorGroups'}>
+            <Collapsible ref="confirmDeleteBehaviorGroups" revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroups'}>
               <ConfirmActionPanel
                 confirmText="Delete"
                 confirmingText="Deleting"
                 onConfirmClick={this.deleteBehaviorGroups}
-                onCancelClick={this.hideActivePanel}
+                onCancelClick={this.props.onClearActivePanel}
                 isConfirming={this.state.isSubmitting}
               >
                 <p>{this.getTextForDeleteBehaviorGroups(this.getSelectedGroupIds().length)}</p>
               </ConfirmActionPanel>
             </Collapsible>
-            <Collapsible ref="confirmMergeBehaviorGroups" revealWhen={this.getActivePanelName() === 'confirmMergeBehaviorGroups'}>
+            <Collapsible ref="confirmMergeBehaviorGroups" revealWhen={this.props.activePanelName === 'confirmMergeBehaviorGroups'}>
               <ConfirmActionPanel
                 confirmText="Merge"
                 confirmingText="Merging"
                 onConfirmClick={this.mergeBehaviorGroups}
-                onCancelClick={this.hideActivePanel}
+                onCancelClick={this.props.onClearActivePanel}
                 isConfirming={this.state.isSubmitting}
               >
                 <p>{this.getTextForMergeBehaviorGroups(this.getSelectedGroupIds().length)}</p>
@@ -385,4 +359,6 @@ define(function(require) {
       );
     }
   });
+
+  return PageWithPanels.with(BehaviorList);
 });
