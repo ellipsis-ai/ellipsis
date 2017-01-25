@@ -4,7 +4,7 @@ define(function(require) {
     HelpButton = require('../help/help_button'),
     HelpPanel = require('../help/panel'),
     SettingsMenu = require('../shared_ui/settings_menu'),
-    Sort = require('../sort');
+    Sort = require('../lib/sort');
 
   return React.createClass({
     displayName: 'ApplicationList',

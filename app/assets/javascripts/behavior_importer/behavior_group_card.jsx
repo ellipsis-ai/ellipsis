@@ -4,7 +4,7 @@ define(function(require) {
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
     SVGInstalling = require('../svg/installing'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../lib/if_present');
 
   return React.createClass({
     displayName: 'BehaviorGroupCard',

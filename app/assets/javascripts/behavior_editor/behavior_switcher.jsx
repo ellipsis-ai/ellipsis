@@ -5,7 +5,7 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     Input = require('../form/input'),
     SVGXIcon = require('../svg/x'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../lib/if_present');
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',

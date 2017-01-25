@@ -5,7 +5,7 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     FixedFooter = require('../shared_ui/fixed_footer'),
-    Formatter = require('../formatter'),
+    Formatter = require('../lib/formatter'),
     ModalScrim = require('../shared_ui/modal_scrim'),
     SVGInstalled = require('../svg/installed');
 

@@ -1,13 +1,13 @@
 define(function(require) {
   var React = require('react'),
-    CSS = require('../css'),
+    CSS = require('../lib/css'),
     Collapsible = require('../shared_ui/collapsible'),
     CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
     Input = require('../form/input'),
     SettingsMenu = require('../shared_ui/settings_menu'),
-    BrowserUtils = require('../browser_utils'),
-    ifPresent = require('../if_present'),
-    Formatter = require('../formatter');
+    BrowserUtils = require('../lib/browser_utils'),
+    ifPresent = require('../lib/if_present'),
+    Formatter = require('../lib/formatter');
 
   return React.createClass({
     displayName: 'ApplicationEditor',

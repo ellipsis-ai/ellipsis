@@ -6,7 +6,7 @@ var React = require('react'),
   SVGTip = require('../svg/tip'),
   SVGInfo = require('../svg/info'),
   Param = require('../models/param'),
-  ifPresent = require('../if_present');
+  ifPresent = require('../lib/if_present');
 
   var EACH_TIME = "each_time";
   var PER_TEAM = "per_team";

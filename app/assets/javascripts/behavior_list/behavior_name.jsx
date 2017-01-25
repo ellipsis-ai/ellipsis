@@ -1,7 +1,7 @@
 define(function(require) {
   var React = require('react'),
     BehaviorVersion = require('../models/behavior_version'),
-    ImmutableObjectUtils = require('../immutable_object_utils');
+    ImmutableObjectUtils = require('../lib/immutable_object_utils');
 
   return React.createClass({
     displayName: 'BehaviorName',

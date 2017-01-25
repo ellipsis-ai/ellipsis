@@ -3,7 +3,7 @@ define(function(require) {
     Input = require('../form/input'),
     Textarea = require('../form/textarea'),
     formatEnvVarName = require('./formatter'),
-    ifPresent = require('../if_present');
+    ifPresent = require('../lib/if_present');
 
   return React.createClass({
     propTypes: {

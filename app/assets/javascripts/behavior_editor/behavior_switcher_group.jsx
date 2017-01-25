@@ -3,8 +3,8 @@ define(function(require) {
     AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
     BehaviorName = require('../behavior_list/behavior_name'),
     BehaviorVersion = require('../models/behavior_version'),
-    ifPresent = require('../if_present'),
-    Sort = require('../sort');
+    ifPresent = require('../lib/if_present'),
+    Sort = require('../lib/sort');
 
   return React.createClass({
     displayName: 'BehaviorSwitcherGroup',

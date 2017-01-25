@@ -2,8 +2,8 @@ define(function(require) {
   var React = require('react'),
     SettingsMenu = require('../shared_ui/settings_menu'),
     Setter = require('./setter'),
-    ifPresent = require('../if_present'),
-    Sort = require('../sort');
+    ifPresent = require('../lib/if_present'),
+    Sort = require('../lib/sort');
 
   return React.createClass({
     displayName: 'EnvironmentVariableList',
