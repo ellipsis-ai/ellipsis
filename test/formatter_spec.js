@@ -1,6 +1,6 @@
-jest.unmock('../app/assets/javascripts/formatter');
+jest.unmock('../app/assets/javascripts/lib/formatter');
 
-const Formatter = require('../app/assets/javascripts/formatter');
+const Formatter = require('../app/assets/javascripts/lib/formatter');
 
 describe("Formatter", () => {
   describe("formatCamelCaseIdentifier", () => {

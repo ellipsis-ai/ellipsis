@@ -5,18 +5,19 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     FixedFooter = require('../shared_ui/fixed_footer'),
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
-    ModalScrim = require('../shared_ui/modal_scrim');
+    ModalScrim = require('../shared_ui/modal_scrim'),
+    PageWithPanels = require('../shared_ui/page_with_panels');
 
   var ANIMATION_DURATION = 0.25;
 
-  return React.createClass({
-    propTypes: {
+  const BehaviorImporter = React.createClass({
+    propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       teamId: React.PropTypes.string.isRequired,
       installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string
-    },
+    }),
 
     getLocalId: function(group) {
       const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.importedId === group.publishedId);
@@ -46,8 +47,6 @@ define(function(require) {
         recentlyInstalledBehaviorGroups: [],
         behaviorGroups: this.props.behaviorGroups,
         selectedBehaviorGroup: null,
-        activePanel: null,
-        previousActivePanel: null,
         importingList: [],
         footerHeight: 0
       };
@@ -74,7 +73,7 @@ define(function(require) {
             importingList: this.state.importingList.filter((ea) => ea !== groupToInstall),
             recentlyInstalledBehaviorGroups: this.state.recentlyInstalledBehaviorGroups.concat([installedGroup])
           });
-          if (!this.activePanelIsNamed('afterInstall')) {
+          if (this.props.activePanelName !== 'afterInstall') {
             this.toggleAfterInstallPanel();
           }
         });
@@ -88,44 +87,17 @@ define(function(require) {
       return this.state.selectedBehaviorGroup;
     },
 
-    getActivePanel: function() {
-      return this.state.activePanel;
-    },
-
-    getPreviousActivePanel: function() {
-      return this.state.previousActivePanel;
-    },
-
-    activePanelIsNamed: function(name) {
-      const panel = this.getActivePanel();
-      return !!(panel && panel.name === name);
-    },
-
-    activePanelIsModal: function() {
-      const panel = this.getActivePanel();
-      return !!(panel && panel.isModal);
-    },
-
-    toggleActivePanel: function(name, beModal, optionalCallback) {
-      var previousPanel = this.getPreviousActivePanel();
-      var newPanel = this.activePanelIsNamed(name) ? previousPanel : { name: name, isModal: !!beModal };
-      this.setState({
-        activePanel: newPanel,
-        previousActivePanel: this.getActivePanel()
-      }, optionalCallback);
-    },
-
     toggleInfoPanel: function(group) {
       if (group && group !== this.state.selectedBehaviorGroup) {
         this.setState({
           selectedBehaviorGroup: group
         });
       }
-      this.toggleActivePanel('moreInfo', true);
+      this.props.onToggleActivePanel('moreInfo', true);
     },
 
     toggleAfterInstallPanel: function() {
-      this.toggleActivePanel('afterInstall');
+      this.props.onToggleActivePanel('afterInstall');
     },
 
     resetFooterHeight: function() {
@@ -159,9 +131,13 @@ define(function(require) {
             ))}
           </div>
 
-          <ModalScrim isActive={this.activePanelIsModal()} onClick={this.toggleInfoPanel} />
+          <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.toggleInfoPanel} />
           <FixedFooter ref="footer">
-            <Collapsible revealWhen={this.activePanelIsNamed('moreInfo')} animationDuration={ANIMATION_DURATION}>
+            <Collapsible
+              ref="moreInfo"
+              revealWhen={this.props.activePanelName === 'moreInfo'}
+              animationDuration={ANIMATION_DURATION}
+            >
               <BehaviorGroupInfoPanel
                 groupData={this.getSelectedBehaviorGroup()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
@@ -170,12 +146,13 @@ define(function(require) {
             </Collapsible>
 
             <Collapsible
-              revealWhen={this.hasRecentlyInstalledBehaviorGroups() && this.activePanelIsNamed('afterInstall')}
+              ref="afterInstall"
+              revealWhen={this.hasRecentlyInstalledBehaviorGroups() && this.props.activePanelName === 'afterInstall'}
               animationDuration={ANIMATION_DURATION}
             >
               <InstalledBehaviorGroupsPanel
                 installedBehaviorGroups={this.getBehaviorGroupsJustInstalled()}
-                onToggle={this.toggleAfterInstallPanel}
+                onToggle={this.props.onClearActivePanel}
                 slackTeamId={this.props.slackTeamId}
               />
             </Collapsible>
@@ -184,4 +161,6 @@ define(function(require) {
       );
     }
   });
+
+  return PageWithPanels.with(BehaviorImporter);
 });

@@ -1,5 +1,4 @@
 jest.unmock('../app/assets/javascripts/environment_variables/index');
-jest.unmock('../app/assets/javascripts/sort');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';

@@ -6,14 +6,15 @@ define(function(require) {
       HelpButton = require('../help/help_button'),
       HelpPanel = require('../help/panel'),
       Input = require('../form/input'),
+      PageWithPanels = require('../shared_ui/page_with_panels'),
       SettingsMenu = require('../shared_ui/settings_menu');
 
   var revokeForm = jsRoutes.controllers.APITokenController.revokeToken();
   var createForm = jsRoutes.controllers.APITokenController.createToken();
 
-  return React.createClass({
+  const ApiTokenGenerator = React.createClass({
     displayName: "ApiTokenGenerator",
-    propTypes: {
+    propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       tokens: React.PropTypes.arrayOf(React.PropTypes.shape({
@@ -24,7 +25,7 @@ define(function(require) {
         isRevoked: React.PropTypes.bool.isRequired
       })).isRequired,
       justCreatedTokenId: React.PropTypes.string
-    },
+    }),
 
     sortByMostRecent: function(tokens) {
       return tokens.map(t => t).sort((a, b) => a.createdAt < b.createdAt);
@@ -32,7 +33,6 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        activePanel: null,
         newTokenLabel: "",
         tokens: this.sortByMostRecent(this.props.tokens)
       };
@@ -54,12 +54,8 @@ define(function(require) {
       return this.props.justCreatedTokenId === token.id;
     },
 
-    getActivePanelName: function() {
-      return this.state.activePanel;
-    },
-
     toggleApiHelp: function() {
-      this.setState({ activePanel: this.getActivePanelName() === "ellipsisApiHelp" ? null : "ellipsisApiHelp" });
+      this.props.onToggleActivePanel('ellipsisApiHelp');
     },
 
     render: function() {
@@ -83,7 +79,7 @@ define(function(require) {
                   </p>
 
                   <p>
-                    <HelpButton className="mrs" onClick={this.toggleApiHelp} toggled={this.getActivePanelName() === 'ellipsisApiHelp'} />
+                    <HelpButton className="mrs" onClick={this.toggleApiHelp} toggled={this.props.activePanelName === 'ellipsisApiHelp'} />
                     <button type="button" className="button-raw" onClick={this.toggleApiHelp}>How to make requests</button>
                   </p>
 
@@ -98,7 +94,7 @@ define(function(require) {
           </div>
 
           <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
-            <Collapsible ref="ellipsisApiHelp" revealWhen={this.getActivePanelName() === 'ellipsisApiHelp'}>
+            <Collapsible ref="ellipsisApiHelp" revealWhen={this.props.activePanelName === 'ellipsisApiHelp'}>
               <HelpPanel
                 heading="Sending API requests to Ellipsis"
                 onCollapseClick={this.toggleApiHelp}
@@ -207,4 +203,6 @@ define(function(require) {
       );
     }
   });
+
+  return PageWithPanels.with(ApiTokenGenerator);
 });

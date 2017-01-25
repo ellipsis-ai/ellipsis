@@ -3,23 +3,18 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     HelpButton = require('../help/help_button'),
     HelpPanel = require('../help/panel'),
+    PageWithPanels = require('../shared_ui/page_with_panels'),
     SettingsMenu = require('../shared_ui/settings_menu'),
     Sort = require('../lib/sort');
 
-  return React.createClass({
+  const ApplicationList = React.createClass({
     displayName: 'ApplicationList',
-    propTypes: {
+    propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       apis: React.PropTypes.arrayOf(React.PropTypes.object),
       applications: React.PropTypes.arrayOf(React.PropTypes.object)
-    },
-
-    getInitialState: function() {
-      return {
-        activePanel: null
-      };
-    },
+    }),
 
     hasApis: function() {
       return !!(this.props.apis && this.props.apis.length > 0);
@@ -52,13 +47,7 @@ define(function(require) {
     },
 
     toggleOAuth2ApplicationHelp: function() {
-      this.setState({
-        activePanel: this.state.activePanel === "oAuth2ApplicationHelp" ? null : "oAuth2ApplicationHelp"
-      });
-    },
-
-    getActivePanelName: function() {
-      return this.state.activePanel;
+      this.props.onToggleActivePanel("oAuth2ApplicationHelp");
     },
 
     render: function() {
@@ -89,7 +78,7 @@ define(function(require) {
 
                   <p>
                     <HelpButton className="mrs" onClick={this.toggleOAuth2ApplicationHelp}
-                      toggled={this.getActivePanelName() === 'oAuth2ApplicationHelp'}/>
+                      toggled={this.props.activePanelName === 'oAuth2ApplicationHelp'}/>
                     <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>
                       How API applications work
                     </button>
@@ -115,7 +104,7 @@ define(function(require) {
           </div>
 
           <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
-            <Collapsible ref="oAuth2ApplicationHelp" revealWhen={this.getActivePanelName() === 'oAuth2ApplicationHelp'}>
+            <Collapsible ref="oAuth2ApplicationHelp" revealWhen={this.props.activePanelName === 'oAuth2ApplicationHelp'}>
               {this.renderOAuth2ApplicationHelp()}
             </Collapsible>
           </footer>
@@ -252,4 +241,6 @@ define(function(require) {
       );
     }
   });
+
+  return PageWithPanels.with(ApplicationList);
 });

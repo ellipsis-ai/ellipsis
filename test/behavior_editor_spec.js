@@ -3,9 +3,7 @@ jest
   .unmock('../app/assets/javascripts/models/behavior_version')
   .unmock('../app/assets/javascripts/models/param')
   .unmock('../app/assets/javascripts/models/response_template')
-  .unmock('../app/assets/javascripts/models/trigger')
-  .unmock('../app/assets/javascripts/sort')
-  .unmock('../app/assets/javascripts/unique_by');
+  .unmock('../app/assets/javascripts/models/trigger');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
@@ -82,7 +80,7 @@ describe('BehaviorEditor', () => {
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
-    );
+    ).refs.component;
   }
 
   describe('getInitialTriggersFromProps', () => {
