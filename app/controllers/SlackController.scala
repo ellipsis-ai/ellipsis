@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
+import models.behaviors.SimpleTextResult
 import models.behaviors.events.SlackMessageEvent
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -15,6 +16,7 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Result}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
+import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -262,6 +264,12 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeHelpForSkillId: Option[String] = {
+      actions.find { info => info.name == "help_for_skill" && !info.value.isEmpty }.map { info =>
+        info.value
+      }
+    }
+
   }
 
   private val actionForm = Form(
@@ -284,14 +292,22 @@ class SlackController @Inject() (
         Json.parse(payload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
-              info.maybeConversationIdToStart.map { conversationId =>
-                dataService.slackBotProfiles.allForSlackTeamId(info.team.id).flatMap { botProfiles =>
-                  botProfiles.headOption.map { botProfile =>
-                    val event = SlackMessageEvent(botProfile, info.channel.id, info.user.id, "", info.message_ts)
+              dataService.slackBotProfiles.allForSlackTeamId(info.team.id).flatMap { botProfiles =>
+                botProfiles.headOption.map { botProfile =>
+                  val event = SlackMessageEvent(botProfile, info.channel.id, info.user.id, "", info.message_ts)
+
+                  val maybeStartConversation = info.maybeConversationIdToStart.map { conversationId =>
                     dataService.conversations.start(conversationId, info.team.id, event)
                   }.getOrElse(Future.successful({}))
-                }
-              }.getOrElse(Future.successful({}))
+
+                  val maybeHelpForSkill = info.maybeHelpForSkillId.map { skillId =>
+                    val result = SimpleTextResult(event, "Here’s your help, buddy.", forcePrivateResponse = false)
+                    result.sendIn(None, None)
+                  }.getOrElse(Future.successful({}))
+
+                  Future.sequence(Seq(maybeStartConversation, maybeHelpForSkill))
+                }.getOrElse(Future.successful({}))
+              }
 
               // respond immediately
               val transformer = (__ \ "attachments").json.update(

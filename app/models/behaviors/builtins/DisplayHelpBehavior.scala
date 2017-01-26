@@ -1,8 +1,8 @@
 package models.behaviors.builtins
 
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.{MessageEvent, SlackMessageEvent}
-import models.behaviors.{BotResult, SimpleTextResult}
+import models.behaviors.events.{MessageEvent, SlackMessageAction, SlackMessageActions, SlackMessageEvent}
+import models.behaviors.{BotResult, SimpleTextResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -77,7 +77,11 @@ case class DisplayHelpBehavior(
     }.mkString("")
     val hasGroupsWithNames = groupsWithNamesString.trim.nonEmpty
     val hasGroupsWithoutNames = groupsWithoutNamesString.trim.nonEmpty
-    val unnamedSkillsString = if(hasGroupsWithoutNames) { "\n**Unnamed skills:**  \n" } else { "" }
+    val unnamedSkillsString = if (hasGroupsWithoutNames) {
+      "\n**Unnamed skills:**  \n"
+    } else {
+      ""
+    }
     if (!hasGroupsWithNames && !hasGroupsWithoutNames) {
       ""
     } else {
@@ -89,7 +93,7 @@ case class DisplayHelpBehavior(
 
   def justGettingStartedText(lambdaService: AWSLambdaService): String = {
     s"""I’m just getting started here and can’t wait to learn.
-      |
+       |
       |You can ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself.""".stripMargin
   }
 
@@ -123,9 +127,9 @@ case class DisplayHelpBehavior(
       } else if (matchingGroupData.isEmpty) {
         maybeHelpSearch.map { s =>
           s"""I couldn’t find help for anything like `$s`
-           |
+             |
            |Try searching for something else, e.g. `${event.botPrefix}help bananas`
-           |
+             |
            |Or type `${event.botPrefix}help` to list everything I can do.
          """.stripMargin
         }.getOrElse {
@@ -134,12 +138,20 @@ case class DisplayHelpBehavior(
       } else {
         s"You can also ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself."
       }
-      val text = s"""
-          |$groupsString
-          |
+      val text =
+        s"""
+           |$groupsString
+           |
           |$endingString
-          |""".stripMargin
-      SimpleTextResult(event, text, forcePrivateResponse = false)
+           |""".stripMargin
+      //      SimpleTextResult(event, text, forcePrivateResponse = false)
+      TextWithActionsResult(event, text, forcePrivateResponse = false,
+        SlackMessageActions(
+          "help",
+          Seq(SlackMessageAction(name = "help_for_skill", text = "Moar help", value = "123")),
+          Some("Blurb")
+        )
+      )
     }
   }
 

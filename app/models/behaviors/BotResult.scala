@@ -20,7 +20,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BotResult {
@@ -68,10 +68,20 @@ case class SuccessResult(
 
 case class SimpleTextResult(event: MessageEvent, simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
 
-  val resultType = ResultType.ConversationPrompt
+  val resultType = ResultType.SimpleText
 
   def text: String = simpleText
 
+}
+
+case class TextWithActionsResult(event: MessageEvent, simpleText: String, forcePrivateResponse: Boolean, actions: MessageActions) extends BotResult {
+  val resultType = ResultType.TextWithActions
+
+  def text: String = simpleText
+
+  override def maybeActions: Option[MessageActions] = {
+    Some(actions)
+  }
 }
 
 case class PendingConversationResult(event: MessageEvent, conversation: Conversation, forcePrivateResponse: Boolean) extends BotResult {
