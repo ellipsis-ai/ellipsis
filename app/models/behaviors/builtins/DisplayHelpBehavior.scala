@@ -145,11 +145,27 @@ case class DisplayHelpBehavior(
           |$endingString
            |""".stripMargin
       //      SimpleTextResult(event, text, forcePrivateResponse = false)
-      TextWithActionsResult(event, text, forcePrivateResponse = false,
+      val intro =
+        s"""Here’s what I can do$matchString.
+           |
+           |Click a skill you’d like to know more about, or try again ${
+          if (matchString.isEmpty) {
+            "with a keyword to narrow it down, e.g. `@ellipsis help bananas`."
+          } else {
+            "with a different keyword."
+          }}""".stripMargin
+      TextWithActionsResult(event, intro, forcePrivateResponse = false,
         SlackMessageActions(
           "help",
-          Seq(SlackMessageAction(name = "help_for_skill", text = "Moar help", value = "123")),
-          Some("Blurb")
+          matchingGroupData.map(group => {
+            val label = if (group.name.isEmpty) {
+              "Other"
+            } else {
+              group.name
+            }
+            SlackMessageAction("help_for_skill", label, group.id.getOrElse("other"))
+          }),
+          None
         )
       )
     }

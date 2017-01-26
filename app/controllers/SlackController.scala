@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models.behaviors.SimpleTextResult
+import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageEvent
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -301,8 +302,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
 
                   val maybeHelpForSkill = info.maybeHelpForSkillId.map { skillId =>
-                    val result = SimpleTextResult(event, "Here’s your help, buddy.", forcePrivateResponse = false)
-                    result.sendIn(None, None)
+                    DisplayHelpBehavior(s"help $skillId}", event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
 
                   Future.sequence(Seq(maybeStartConversation, maybeHelpForSkill))
