@@ -18,6 +18,7 @@ import scala.util.matching.Regex
 case class SlackMessageEvent(
                                  profile: SlackBotProfile,
                                  channel: String,
+                                 maybeThreadId: Option[String],
                                  user: String,
                                  text: String,
                                  ts: String
@@ -48,7 +49,11 @@ case class SlackMessageEvent(
   }
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, conversationContext, maybeChannel.exists(isDirectMessage))
+    dataService.conversations.findOngoingFor(user, conversationContext, maybeThreadId, maybeChannel.exists(isDirectMessage))
+  }
+
+  def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
+    dataService.conversations.findOngoingFor(user, conversationContext, Some(ts), maybeChannel.exists(isDirectMessage))
   }
 
   override def recentMessages(dataService: DataService): Future[Seq[String]] = {
@@ -133,7 +138,8 @@ case class SlackMessageEvent(
                            segments: List[String],
                            channelToUse: String,
                            maybeShouldUnfurl: Option[Boolean],
-                           maybeAttachments: Option[Seq[Attachment]]
+                           maybeAttachments: Option[Seq[Attachment]],
+                           maybeConversation: Option[Conversation]
                          ): Future[Unit] = {
     if (segments.isEmpty) {
       Future.successful({})
@@ -154,9 +160,10 @@ case class SlackMessageEvent(
           asUser = Some(true),
           unfurlLinks = maybeShouldUnfurl,
           unfurlMedia = Some(true),
-          attachments = maybeAttachmentsForSegment
+          attachments = maybeAttachmentsForSegment,
+          threadTs = maybeConversation.flatMap(_.maybeThreadId)
         )
-      }.flatMap { _ => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, maybeAttachments)}
+      }.flatMap { _ => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation)}
     }
   }
 
@@ -177,7 +184,7 @@ case class SlackMessageEvent(
     for {
       channelToUse <- channelForSend(forcePrivate, maybeConversation)
       _ <- sendPreamble(formattedText, channelToUse)
-      _ <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments)
+      _ <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation)
     } yield {}
   }
 

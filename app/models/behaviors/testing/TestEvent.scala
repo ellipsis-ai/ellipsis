@@ -27,6 +27,7 @@ case class TestEvent(
   lazy val userIdForContext = user.id
   lazy val name = "test"
   lazy val maybeChannel = None
+  lazy val maybeThreadId = None
   lazy val eventualMaybeDMChannel = Future.successful(None)
   val isResponseExpected = true
 

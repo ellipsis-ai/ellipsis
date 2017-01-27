@@ -19,6 +19,7 @@ case class ScheduledMessageEvent(underlying: MessageEvent) extends MessageEvent 
                  )(implicit ec: ExecutionContext) = underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions)
 
   lazy val maybeChannel: Option[String] = underlying.maybeChannel
+  lazy val maybeThreadId: Option[String] = underlying.maybeThreadId
   lazy val teamId: String = underlying.teamId
   lazy val name: String = underlying.name
   lazy val includesBotMention: Boolean = underlying.includesBotMention

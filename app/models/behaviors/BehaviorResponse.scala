@@ -104,8 +104,8 @@ case class BehaviorResponse(
               context <- event.conversationContextFor(behaviorVersion)
               convo <- InvokeBehaviorConversation.createFor(
                 behaviorVersion,
+                event,
                 context,
-                event.userIdForContext,
                 activatedTrigger,
                 dataService
               )

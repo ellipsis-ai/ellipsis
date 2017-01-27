@@ -28,11 +28,13 @@ class SlackEventService @Inject()(
       val handleMessage = for {
         maybeConversation <- event.maybeOngoingConversation(dataService)
         _ <- eventHandler.handle(event, maybeConversation).flatMap { results =>
-          Future.sequence(
-            results.map(result => result.sendIn(None, maybeConversation).map { _ =>
-              Logger.info(s"Sending result [${result.fullText}] in response to slack message [${event.fullMessageText}] in channel [${event.channel}]")
-            })
-          )
+          maybeConversation.map(c => Future.successful(Some(c))).getOrElse(event.maybeConversationRootedHere(dataService)).flatMap { maybeConversation =>
+            Future.sequence(
+              results.map(result => result.sendIn(None, maybeConversation).map { _ =>
+                Logger.info(s"Sending result [${result.fullText}] in response to slack message [${event.fullMessageText}] in channel [${event.channel}]")
+              })
+            )
+          }
         }
       } yield {}
       handleMessage.recover {

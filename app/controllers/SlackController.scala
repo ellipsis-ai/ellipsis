@@ -82,11 +82,13 @@ class SlackController @Inject() (
     val userId: String
     val message: String
     val ts: String
+    val maybeThreadTs: Option[String]
   }
 
   case class MessageSentEventInfo(
                                     eventType: String,
                                     ts: String,
+                                    maybeThreadTs: Option[String],
                                     userId: String,
                                     channel: String,
                                     text: String
@@ -104,6 +106,7 @@ class SlackController @Inject() (
     val userId: String = event.userId
     val channel: String = event.channel
     val ts: String = event.ts
+    val maybeThreadTs = event.maybeThreadTs
   }
 
   private val messageSentEventRequestForm = Form(
@@ -114,6 +117,7 @@ class SlackController @Inject() (
       "event" -> mapping(
         "type" -> nonEmptyText,
         "ts" -> nonEmptyText,
+        "thread_ts" -> optional(nonEmptyText),
         "user" -> nonEmptyText,
         "channel" -> nonEmptyText,
         "text" -> nonEmptyText
@@ -141,6 +145,7 @@ class SlackController @Inject() (
                                       eventSubType: String,
                                       channel: String,
                                       eventTs: String,
+                                      maybeThreadTs: Option[String],
                                       ts: String
                                    )
 
@@ -156,6 +161,7 @@ class SlackController @Inject() (
     val userId: String = event.message.userId
     val channel: String = event.channel
     val ts: String = event.ts
+    val maybeThreadTs = event.maybeThreadTs
   }
 
   private val messageChangedEventRequestForm = Form(
@@ -178,6 +184,7 @@ class SlackController @Inject() (
         "subtype" -> nonEmptyText,
         "channel" -> nonEmptyText,
         "event_ts" -> nonEmptyText,
+        "thread_ts" -> optional(nonEmptyText),
         "ts" -> nonEmptyText
       )(MessageChangedEventInfo.apply)(MessageChangedEventInfo.unapply),
       "type" -> nonEmptyText,
@@ -192,7 +199,7 @@ class SlackController @Inject() (
       for {
         maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
         _ <- maybeProfile.map { profile =>
-          slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.userId, info.message, info.ts))
+          slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts))
         }.getOrElse {
           Future.successful({})
         }

@@ -20,6 +20,7 @@ trait Conversation {
   val behaviorVersion: BehaviorVersion = trigger.behaviorVersion
   val conversationType: String
   val context: String
+  val maybeThreadId: Option[String]
   val userIdForContext: String
   val startedAt: OffsetDateTime
   val state: String
@@ -55,7 +56,7 @@ trait Conversation {
   }
 
   def toRaw: RawConversation = {
-    RawConversation(id, trigger.id, conversationType, context, userIdForContext, startedAt, state)
+    RawConversation(id, trigger.id, conversationType, context, maybeThreadId, userIdForContext, startedAt, state)
   }
 }
 

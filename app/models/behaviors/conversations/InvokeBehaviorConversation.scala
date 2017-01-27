@@ -6,7 +6,7 @@ import models.IDs
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.{MessageEvent, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -17,12 +17,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class InvokeBehaviorConversation(
-                                      id: String,
-                                      trigger: MessageTrigger,
-                                      context: String, // Slack, etc
-                                      userIdForContext: String, // id for Slack, etc user
-                                      startedAt: OffsetDateTime,
-                                      state: String = Conversation.NEW_STATE
+                                       id: String,
+                                       trigger: MessageTrigger,
+                                       context: String, // Slack, etc
+                                       maybeThreadId: Option[String],
+                                       userIdForContext: String, // id for Slack, etc user
+                                       startedAt: OffsetDateTime,
+                                       state: String = Conversation.NEW_STATE
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
@@ -116,17 +117,22 @@ object InvokeBehaviorConversation {
 
   def createFor(
                  behaviorVersion: BehaviorVersion,
+                 event: MessageEvent,
                  context: String,
-                 userIdForContext: String,
                  activatedTrigger: MessageTrigger,
                  dataService: DataService
                  ): Future[InvokeBehaviorConversation] = {
+    val maybeThreadId = event match {
+      case e: SlackMessageEvent => Some(e.ts)
+      case _ => None
+    }
     val newInstance =
       InvokeBehaviorConversation(
         IDs.next,
         activatedTrigger,
         context,
-        userIdForContext,
+        maybeThreadId,
+        event.userIdForContext,
         OffsetDateTime.now,
         Conversation.NEW_STATE
       )

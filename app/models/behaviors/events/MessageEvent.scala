@@ -21,6 +21,7 @@ trait MessageEvent {
   val fullMessageText: String
   val includesBotMention: Boolean
   val maybeChannel: Option[String]
+  val maybeThreadId: Option[String]
 
   def relevantMessageText: String = MessageEvent.ellipsisRegex.replaceFirstIn(fullMessageText, "")
 
@@ -123,7 +124,7 @@ trait MessageEvent {
   }
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(userIdForContext, conversationContext, maybeChannel.exists(isDirectMessage))
+    dataService.conversations.allOngoingFor(userIdForContext, conversationContext, maybeThreadId, maybeChannel.exists(isDirectMessage))
   }
 
   def unformatTextFragment(text: String): String = {
