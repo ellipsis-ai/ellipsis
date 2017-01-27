@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models.behaviors.SimpleTextResult
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageEvent
 import models.silhouette.EllipsisEnv
@@ -17,7 +16,6 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Result}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
-import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -302,7 +300,12 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
 
                   val maybeHelpForSkill = info.maybeHelpForSkillId.map { skillId =>
-                    DisplayHelpBehavior(s"help $skillId}", event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
+                    val result = if (skillId == "(untitled)") {
+                      DisplayHelpBehavior(Some(skillId), None, event, lambdaService, dataService).result
+                    } else {
+                      DisplayHelpBehavior(None, Some(skillId), event, lambdaService, dataService).result
+                    }
+                    result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
 
                   Future.sequence(Seq(maybeStartConversation, maybeHelpForSkill))
