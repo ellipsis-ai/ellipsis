@@ -40,12 +40,8 @@ class BackgroundConversationsActor @Inject() (
         Logger.info(s"Attempting to background conversations: ${convos.length}")
         Future.sequence(convos.map { convo =>
           if (convo.shouldBeBackgrounded) {
-            dataService.slackBotProfiles.allFor(convo.behaviorVersion.team).flatMap { botProfiles =>
-              (for {
-                botProfile <- botProfiles.headOption
-                channel <- convo.maybeChannel
-              } yield {
-                val event = SlackMessageEvent(botProfile, channel, None, convo.userIdForContext, "", SlackTimestamp.now)
+            convo.maybeEventForBackgrounding(dataService).flatMap { maybeEvent =>
+              maybeEvent.map { event =>
                 event.sendMessage(
                   "Looks like you weren't able to answer this right away. No problem! I've moved this conversation to:",
                   convo.behaviorVersion.forcePrivateResponse,
@@ -59,7 +55,7 @@ class BackgroundConversationsActor @Inject() (
                     }
                   }
                 }
-              }).getOrElse(Future.successful({}))
+              }.getOrElse(Future.successful({}))
             }
           } else {
             Future.successful({})
