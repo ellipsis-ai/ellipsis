@@ -39,8 +39,8 @@ case class TestEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions]
-                 )(implicit ec: ExecutionContext): Future[Unit] = {
-    Future.successful(messageBuffer += text)
+                 )(implicit ec: ExecutionContext): Future[Option[String]] = {
+    Future.successful(messageBuffer += text).map(_ => None)
   }
 
   override def userInfo(ws: WSClient, dataService: DataService): Future[UserInfo] = {

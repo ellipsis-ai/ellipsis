@@ -19,6 +19,7 @@ import scala.concurrent.Future
 case class InvokeBehaviorConversation(
                                        id: String,
                                        trigger: MessageTrigger,
+                                       triggerMessage: String,
                                        context: String, // Slack, etc
                                        maybeThreadId: Option[String],
                                        userIdForContext: String, // id for Slack, etc user
@@ -27,6 +28,10 @@ case class InvokeBehaviorConversation(
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
+
+  def copyWithMaybeThreadId(maybeId: Option[String]): Conversation = {
+    copy(maybeThreadId = maybeId)
+  }
 
   override val stateRequiresPrivateMessage: Boolean = {
     InvokeBehaviorConversation.statesRequiringPrivateMessage.contains(state)
@@ -130,8 +135,9 @@ object InvokeBehaviorConversation {
       InvokeBehaviorConversation(
         IDs.next,
         activatedTrigger,
+        event.fullMessageText,
         context,
-        maybeThreadId,
+        None,
         event.userIdForContext,
         OffsetDateTime.now,
         Conversation.NEW_STATE

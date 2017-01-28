@@ -107,9 +107,20 @@ case class SlackMessageEvent(
     }
   }
 
-  def sendPreamble(formattedText: String, channelToUse: String)(implicit ec: ExecutionContext): Future[Unit] = {
+  def sendPreamble(formattedText: String, channelToUse: String, maybeConversation: Option[Conversation])(implicit ec: ExecutionContext): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
+        _ <- maybeConversation.map { convo =>
+          if (convo.state == Conversation.DONE_STATE && convo.maybeThreadId.isDefined) {
+            client.postChatMessage(
+              channel,
+              s"<@${user}>, I have an answer for `${convo.triggerMessage}`:",
+              asUser = Some(true)
+            )
+          } else {
+            Future.successful({})
+          }
+        }.getOrElse(Future.successful({}))
         _ <- if (isDirectMessage(channelToUse) && channelToUse != channel) {
           client.postChatMessage(
             channel,
@@ -139,21 +150,24 @@ case class SlackMessageEvent(
                            channelToUse: String,
                            maybeShouldUnfurl: Option[Boolean],
                            maybeAttachments: Option[Seq[Attachment]],
-                           maybeConversation: Option[Conversation]
-                         ): Future[Unit] = {
+                           maybeConversation: Option[Conversation],
+                           maybePreviousTs: Option[String]
+                         ): Future[Option[String]] = {
     if (segments.isEmpty) {
-      Future.successful({})
+      Future.successful(maybePreviousTs)
     } else {
       val segment = segments.head.trim
       // Slack API gives an error for empty messages
       if (segment.isEmpty) {
-        Future.successful({})
+        Future.successful(None)
       } else {
         val maybeAttachmentsForSegment = if (segments.tail.isEmpty) {
           maybeAttachments
         } else {
           None
         }
+        val maybeThreadTsToUse = maybeConversation.filterNot(_.state == Conversation.DONE_STATE).flatMap(_.maybeThreadId)
+        val replyBroadcast = maybeThreadTsToUse.isDefined && !isDirectMessage(channelToUse) && maybeConversation.exists(_.state == Conversation.DONE_STATE)
         client.postChatMessage(
           channelToUse,
           segment,
@@ -161,9 +175,10 @@ case class SlackMessageEvent(
           unfurlLinks = maybeShouldUnfurl,
           unfurlMedia = Some(true),
           attachments = maybeAttachmentsForSegment,
-          threadTs = maybeConversation.flatMap(_.maybeThreadId)
+          threadTs = maybeThreadTsToUse,
+          replyBroadcast = Some(replyBroadcast)
         )
-      }.flatMap { _ => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation)}
+      }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, Some(ts))}
     }
   }
 
@@ -173,7 +188,7 @@ case class SlackMessageEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None
-                 )(implicit ec: ExecutionContext): Future[Unit] = {
+                 )(implicit ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
     val maybeAttachments = maybeActions.flatMap { actions =>
       actions match {
@@ -183,9 +198,9 @@ case class SlackMessageEvent(
     }
     for {
       channelToUse <- channelForSend(forcePrivate, maybeConversation)
-      _ <- sendPreamble(formattedText, channelToUse)
-      _ <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation)
-    } yield {}
+      _ <- sendPreamble(formattedText, channelToUse, maybeConversation)
+      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, None)
+    } yield maybeLastTs
   }
 
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {

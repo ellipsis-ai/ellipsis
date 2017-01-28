@@ -84,7 +84,7 @@ trait MessageEvent {
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None
-                 )(implicit ec: ExecutionContext): Future[Unit]
+                 )(implicit ec: ExecutionContext): Future[Option[String]]
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
 

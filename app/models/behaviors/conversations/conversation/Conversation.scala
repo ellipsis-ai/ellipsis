@@ -17,6 +17,7 @@ import scala.concurrent.Future
 trait Conversation {
   val id: String
   val trigger: MessageTrigger
+  val triggerMessage: String
   val behaviorVersion: BehaviorVersion = trigger.behaviorVersion
   val conversationType: String
   val context: String
@@ -26,6 +27,14 @@ trait Conversation {
   val state: String
 
   def isPending: Boolean = state == Conversation.PENDING_STATE
+
+  def shouldBeBackgrounded: Boolean = {
+    startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
+  }
+
+  def maybeChannel: Option[String] = context.split("#").tail.headOption
+
+  def copyWithMaybeThreadId(maybeId: Option[String]): Conversation
 
   val stateRequiresPrivateMessage: Boolean = false
 
@@ -56,18 +65,20 @@ trait Conversation {
   }
 
   def toRaw: RawConversation = {
-    RawConversation(id, trigger.id, conversationType, context, maybeThreadId, userIdForContext, startedAt, state)
+    RawConversation(id, trigger.id, triggerMessage, conversationType, context, maybeThreadId, userIdForContext, startedAt, state)
   }
 }
 
 object Conversation {
   val NEW_STATE = "new"
   val PENDING_STATE = "pending"
-  val DONE_STATE = "done"
+  val DONE_STATE: String = "done"
 
   val SLACK_CONTEXT = "slack"
   val API_CONTEXT = "api"
 
   val LEARN_BEHAVIOR = "learn_behavior"
   val INVOKE_BEHAVIOR = "invoke_behavior"
+
+  val SECONDS_UNTIL_BACKGROUNDED = 60
 }

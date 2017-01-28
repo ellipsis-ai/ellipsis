@@ -44,19 +44,18 @@ sealed trait BehaviorParameterType {
       isFirst <- context.isFirstParam
       paramCount <- context.unfilledParamCount(paramState)
     } yield {
-      val howToStop = "Type `...stop` to end this conversation.  \n\n"
       val preamble = if (!isFirst || paramCount == 0) {
         ""
       } else if (paramCount == 1) {
-        s"I need to ask you a question. $howToStop"
+        s"I need to ask you a question."
       } else if (paramCount == 2) {
-        s"I need to ask you a couple questions. $howToStop"
+        s"I need to ask you a couple questions."
       } else if (paramCount < 5) {
-        s"I need to ask you a few questions. $howToStop"
+        s"I need to ask you a few questions."
       } else {
-        s"I need to ask you some questions. $howToStop"
+        s"I need to ask you some questions."
       }
-      s"$preamble**${context.parameter.question}** ${invalidValueModifierFor(maybePreviousCollectedValue)}"
+      s"$preamble\n\n**${context.parameter.question}** ${invalidValueModifierFor(maybePreviousCollectedValue)}"
     }
   }
 

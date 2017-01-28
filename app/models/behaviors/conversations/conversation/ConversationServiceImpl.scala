@@ -13,6 +13,7 @@ import scala.concurrent.Future
 case class RawConversation(
                             id: String,
                             triggerId: String,
+                            triggerMessage: String,
                             conversationType: String,
                             context: String,
                             maybeThreadId: Option[String],
@@ -25,6 +26,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
 
   def id = column[String]("id", O.PrimaryKey)
   def triggerId = column[String]("trigger_id")
+  def triggerMessage = column[String]("trigger_message")
   def conversationType = column[String]("conversation_type")
   def context = column[String]("context")
   def maybeThreadId = column[Option[String]]("thread_id")
@@ -33,7 +35,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
   def state = column[String]("state")
 
   def * =
-    (id, triggerId, conversationType, context, maybeThreadId, userIdForContext, startedAt, state) <>
+    (id, triggerId, triggerMessage, conversationType, context, maybeThreadId, userIdForContext, startedAt, state) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 
@@ -67,7 +69,17 @@ class ConversationServiceImpl @Inject() (
       } else {
         Seq()
       }
-      requiresPrivate ++ activeConvos.filterNot(_.stateRequiresPrivateMessage).filter(_.context == context).filter(_.maybeThreadId == maybeThreadId)
+      (requiresPrivate ++ activeConvos).
+        filterNot(_.stateRequiresPrivateMessage).
+        filter(_.context == context).
+        filter{ convo => convo.maybeThreadId == maybeThreadId }
+    }
+    dataService.run(action)
+  }
+
+  def allForeground: Future[Seq[Conversation]] = {
+    val action = allForegroundQuery.result.map { r =>
+      r.map(tuple2Conversation)
     }
     dataService.run(action)
   }
@@ -86,6 +98,19 @@ class ConversationServiceImpl @Inject() (
 
   def deleteAll(): Future[Unit] = {
     dataService.run(all.delete).map(_ => Unit)
+  }
+
+  def find(id: String): Future[Option[Conversation]] = {
+    val action = findQueryFor(id).result.map { r =>
+      r.headOption.map(tuple2Conversation)
+    }
+    dataService.run(action)
+  }
+
+  def isDone(id: String): Future[Boolean] = {
+    find(id).map { maybeConversation =>
+      maybeConversation.exists(_.state == Conversation.DONE_STATE)
+    }
   }
 
 }
