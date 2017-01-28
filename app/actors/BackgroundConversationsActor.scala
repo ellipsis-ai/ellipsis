@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object BackgroundConversationsActor {
-  final val name = "backburner-conversations"
+  final val name = "background-conversations"
 }
 
 class BackgroundConversationsActor @Inject() (
