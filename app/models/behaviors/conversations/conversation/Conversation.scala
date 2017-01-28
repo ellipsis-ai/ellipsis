@@ -21,6 +21,7 @@ trait Conversation {
   val behaviorVersion: BehaviorVersion = trigger.behaviorVersion
   val conversationType: String
   val context: String
+  val maybeChannel: Option[String]
   val maybeThreadId: Option[String]
   val userIdForContext: String
   val startedAt: OffsetDateTime
@@ -31,8 +32,6 @@ trait Conversation {
   def shouldBeBackgrounded: Boolean = {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
-
-  def maybeChannel: Option[String] = context.split("#").tail.headOption
 
   def copyWithMaybeThreadId(maybeId: Option[String]): Conversation
 
@@ -65,7 +64,7 @@ trait Conversation {
   }
 
   def toRaw: RawConversation = {
-    RawConversation(id, trigger.id, triggerMessage, conversationType, context, maybeThreadId, userIdForContext, startedAt, state)
+    RawConversation(id, trigger.id, triggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state)
   }
 }
 

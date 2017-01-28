@@ -23,6 +23,8 @@ trait MessageEvent {
   val maybeChannel: Option[String]
   val maybeThreadId: Option[String]
 
+  val context = name
+
   def relevantMessageText: String = MessageEvent.ellipsisRegex.replaceFirstIn(fullMessageText, "")
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
@@ -107,24 +109,20 @@ trait MessageEvent {
   val isResponseExpected: Boolean
   def isDirectMessage(channel: String): Boolean
 
-  val conversationContext = conversationContextForChannel(maybeChannel.getOrElse(""))
-  def conversationContextForChannel(channel: String) = name ++ "#" ++ channel
-
   def eventualMaybeDMChannel: Future[Option[String]]
 
-  def conversationContextFor(behaviorVersion: BehaviorVersion): Future[String] = {
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
     eventualMaybeDMChannel.map { maybeDMChannel =>
-      val maybeChannelToUse = if (behaviorVersion.forcePrivateResponse) {
+      if (behaviorVersion.forcePrivateResponse) {
         maybeDMChannel
       } else {
         maybeChannel
       }
-      conversationContextForChannel(maybeChannelToUse.getOrElse(""))
     }
   }
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(userIdForContext, conversationContext, maybeThreadId, maybeChannel.exists(isDirectMessage))
+    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId, maybeChannel.exists(isDirectMessage))
   }
 
   def unformatTextFragment(text: String): String = {

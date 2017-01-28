@@ -6,7 +6,7 @@ import models.IDs
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageEvent, SlackMessageEvent}
+import models.behaviors.events.MessageEvent
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -21,6 +21,7 @@ case class InvokeBehaviorConversation(
                                        trigger: MessageTrigger,
                                        triggerMessage: String,
                                        context: String, // Slack, etc
+                                       maybeChannel: Option[String],
                                        maybeThreadId: Option[String],
                                        userIdForContext: String, // id for Slack, etc user
                                        startedAt: OffsetDateTime,
@@ -123,20 +124,17 @@ object InvokeBehaviorConversation {
   def createFor(
                  behaviorVersion: BehaviorVersion,
                  event: MessageEvent,
-                 context: String,
+                 maybeChannel: Option[String],
                  activatedTrigger: MessageTrigger,
                  dataService: DataService
                  ): Future[InvokeBehaviorConversation] = {
-    val maybeThreadId = event match {
-      case e: SlackMessageEvent => Some(e.ts)
-      case _ => None
-    }
     val newInstance =
       InvokeBehaviorConversation(
         IDs.next,
         activatedTrigger,
         event.fullMessageText,
-        context,
+        event.name,
+        maybeChannel,
         None,
         event.userIdForContext,
         OffsetDateTime.now,

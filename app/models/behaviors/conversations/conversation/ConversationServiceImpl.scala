@@ -16,6 +16,7 @@ case class RawConversation(
                             triggerMessage: String,
                             conversationType: String,
                             context: String,
+                            maybeChannel: Option[String],
                             maybeThreadId: Option[String],
                             userIdForContext: String,
                             startedAt: OffsetDateTime,
@@ -29,13 +30,14 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
   def triggerMessage = column[String]("trigger_message")
   def conversationType = column[String]("conversation_type")
   def context = column[String]("context")
+  def maybeChannel = column[Option[String]]("channel")
   def maybeThreadId = column[Option[String]]("thread_id")
   def userIdForContext = column[String]("user_id_for_context")
   def startedAt = column[OffsetDateTime]("started_at")
   def state = column[String]("state")
 
   def * =
-    (id, triggerId, triggerMessage, conversationType, context, maybeThreadId, userIdForContext, startedAt, state) <>
+    (id, triggerId, triggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 
@@ -60,7 +62,7 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def allOngoingFor(userIdForContext: String, context: String, maybeThreadId: Option[String], isPrivateMessage: Boolean): Future[Seq[Conversation]] = {
+  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], isPrivateMessage: Boolean): Future[Seq[Conversation]] = {
     val action = allWithoutStateQueryFor(userIdForContext, Conversation.DONE_STATE).result.map { r =>
       r.map(tuple2Conversation)
     }.map { activeConvos =>
@@ -72,7 +74,8 @@ class ConversationServiceImpl @Inject() (
       (requiresPrivate ++ activeConvos).
         filterNot(_.stateRequiresPrivateMessage).
         filter(_.context == context).
-        filter{ convo => convo.maybeThreadId == maybeThreadId }
+        filter(_.maybeChannel == maybeChannel).
+        filter(_.maybeThreadId == maybeThreadId)
     }
     dataService.run(action)
   }
@@ -84,8 +87,8 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def findOngoingFor(userIdForContext: String, context: String, maybeThreadId: Option[String], isPrivateMessage: Boolean): Future[Option[Conversation]] = {
-    allOngoingFor(userIdForContext, context, maybeThreadId, isPrivateMessage).map(_.headOption)
+  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], isPrivateMessage: Boolean): Future[Option[Conversation]] = {
+    allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId, isPrivateMessage).map(_.headOption)
   }
 
   def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)

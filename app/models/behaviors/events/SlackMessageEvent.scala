@@ -49,11 +49,11 @@ case class SlackMessageEvent(
   }
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, conversationContext, maybeThreadId, maybeChannel.exists(isDirectMessage))
+    dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId, maybeChannel.exists(isDirectMessage))
   }
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, conversationContext, Some(ts), maybeChannel.exists(isDirectMessage))
+    dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), maybeChannel.exists(isDirectMessage))
   }
 
   override def recentMessages(dataService: DataService): Future[Seq[String]] = {
