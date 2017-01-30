@@ -304,14 +304,14 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
 
                   val maybeHelpIndex = info.maybeHelpIndex.map { _ =>
-                    DisplayHelpBehavior(None, None, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
+                    DisplayHelpBehavior(None, None, isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
 
                   val maybeHelpForSkill = info.maybeHelpForSkillId.map { skillId =>
                     val result = if (skillId == "(untitled)") {
-                      DisplayHelpBehavior(Some(skillId), None, event, lambdaService, dataService).result
+                      DisplayHelpBehavior(Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
                     } else {
-                      DisplayHelpBehavior(None, Some(skillId), event, lambdaService, dataService).result
+                      DisplayHelpBehavior(None, Some(skillId), isFirstTrigger = false, event, lambdaService, dataService).result
                     }
                     result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))

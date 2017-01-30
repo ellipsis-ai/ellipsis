@@ -14,6 +14,7 @@ import scala.concurrent.Future
 case class DisplayHelpBehavior(
                          maybeHelpString: Option[String],
                          maybeSkillId: Option[String],
+                         isFirstTrigger: Boolean,
                          event: MessageEvent,
                          lambdaService: AWSLambdaService,
                          dataService: DataService
@@ -65,15 +66,27 @@ case class DisplayHelpBehavior(
       s"`${trigger.text}`"
   }
 
-  private def introResultFor(groupData: Seq[BehaviorGroupData], maybeHelpSearch: Option[String]): BotResult = {
+  private def maybeHelpSearch: Option[String] = {
+    maybeHelpString.filter(_.trim.nonEmpty)
+  }
+
+  private def matchString: String = {
+    maybeHelpSearch.map { s =>
+      s" related to `$s`"
+    }.getOrElse("")
+  }
+
+  private def introResultFor(groupData: Seq[BehaviorGroupData]): BotResult = {
     val groupsWithOther = ArrayBuffer[BehaviorGroupData]()
     val (untitledGroups, titledGroups) = groupData.partition(group => group.name.isEmpty)
     groupsWithOther ++= titledGroups
     groupsWithOther += BehaviorGroupData(None, "", "", None, untitledGroups.flatMap(group => group.behaviorVersions), None, None, None, OffsetDateTime.now)
-    val matchString = maybeHelpSearch.map { s =>
-      s" related to `$s`"
-    }.getOrElse("")
-    val intro = s"Here’s what I know how to do$matchString:"
+
+    val intro = if (isFirstTrigger) {
+      s"What can I help with?"
+    } else {
+      s"OK, here’s everything else I know$matchString:"
+    }
     val instructions = if (matchString.isEmpty) {
       "Click a skill to learn more, or try searching a keyword to narrow it down, e.g. `@ellipsis help bananas`."
     } else {
@@ -93,7 +106,11 @@ case class DisplayHelpBehavior(
 
   def skillResultFor(group: BehaviorGroupData): BotResult = {
 
-    val intro = "Here’s what I know how to do:"
+    val intro = if (isFirstTrigger) {
+      s"Here’s what I know$matchString:"
+    } else {
+      "OK, here’s the help you asked for. Click below for more help."
+    }
 
     val name = if (group.name.isEmpty) {
       "**Miscellaneous skills**"
@@ -127,7 +144,6 @@ case class DisplayHelpBehavior(
   }
 
   def result: Future[BotResult] = {
-    val maybeHelpSearch = maybeHelpString.filter(_.trim.nonEmpty)
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       user <- event.ensureUser(dataService)
@@ -158,7 +174,7 @@ case class DisplayHelpBehavior(
       if (matchingGroupData.length == 1) {
         skillResultFor(matchingGroupData.head)
       } else {
-        introResultFor(matchingGroupData, maybeHelpSearch)
+        introResultFor(matchingGroupData)
       }
     }
   }
