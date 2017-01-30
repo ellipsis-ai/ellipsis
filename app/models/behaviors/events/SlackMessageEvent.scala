@@ -76,12 +76,6 @@ case class SlackMessageEvent(
 
   def eventualMaybeDMChannel = client.listIms.map(_.find(_.user == user).map(_.id))
 
-  def maybeChannelFromConversationContext(context: String): Option[String] = {
-    s"""${Conversation.SLACK_CONTEXT}#(\\S+)""".r.findFirstMatchIn(context).flatMap { m =>
-      m.subgroups.headOption
-    }
-  }
-
   def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation]): Future[String] = {
     eventualMaybeDMChannel.map { maybeDMChannel =>
       (if (forcePrivate) {
@@ -90,7 +84,7 @@ case class SlackMessageEvent(
         None
       }).orElse {
         maybeConversation.flatMap { convo =>
-          maybeChannelFromConversationContext(convo.context)
+          convo.maybeChannel
         }
       }.getOrElse(channel)
     }

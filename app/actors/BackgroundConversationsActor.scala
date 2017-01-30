@@ -3,12 +3,11 @@ package actors
 import javax.inject.Inject
 
 import akka.actor.Actor
-import models.behaviors.events.{EventHandler, SlackMessageEvent}
+import models.behaviors.events.EventHandler
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, DataService}
-import utils.SlackTimestamp
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -37,7 +36,6 @@ class BackgroundConversationsActor @Inject() (
   def receive = {
     case "tick" => {
       dataService.conversations.allForeground.flatMap { convos =>
-        Logger.info(s"Attempting to background conversations: ${convos.length}")
         Future.sequence(convos.map { convo =>
           if (convo.shouldBeBackgrounded) {
             convo.maybeEventForBackgrounding(dataService).flatMap { maybeEvent =>
