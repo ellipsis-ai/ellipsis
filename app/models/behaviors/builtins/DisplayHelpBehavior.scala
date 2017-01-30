@@ -120,7 +120,8 @@ case class DisplayHelpBehavior(
          |
          |$listHeading
          |${group.behaviorVersions.flatMap(helpStringFor).mkString("")}""".stripMargin
-    SimpleTextResult(event, resultText, forcePrivateResponse = false)
+    val actions = Seq(SlackMessageAction("help_index", "Other help…", ""))
+    TextWithActionsResult(event, "Here’s what I know how to do:", forcePrivateResponse = false, SlackMessageActions("help", actions, Some(resultText), Some("#94A4FF")))
   }
 
   def result: Future[BotResult] = {

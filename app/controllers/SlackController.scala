@@ -269,6 +269,10 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeHelpIndex: Option[String] = {
+      actions.find { info => info.name == "help_index" }.map { _ => "index" }
+    }
+
   }
 
   private val actionForm = Form(
@@ -299,6 +303,10 @@ class SlackController @Inject() (
                     dataService.conversations.start(conversationId, info.team.id, event)
                   }.getOrElse(Future.successful({}))
 
+                  val maybeHelpIndex = info.maybeHelpIndex.map { _ =>
+                    DisplayHelpBehavior(None, None, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
+                  }.getOrElse(Future.successful({}))
+
                   val maybeHelpForSkill = info.maybeHelpForSkillId.map { skillId =>
                     val result = if (skillId == "(untitled)") {
                       DisplayHelpBehavior(Some(skillId), None, event, lambdaService, dataService).result
@@ -308,7 +316,7 @@ class SlackController @Inject() (
                     result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
 
-                  Future.sequence(Seq(maybeStartConversation, maybeHelpForSkill))
+                  Future.sequence(Seq(maybeStartConversation, maybeHelpIndex, maybeHelpForSkill))
                 }.getOrElse(Future.successful({}))
               }
 
