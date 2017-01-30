@@ -78,10 +78,8 @@ case class DisplayHelpBehavior(
     } else {
       "with a different keyword."
     }
-    val intro =
-      s"""Here’s what I can do$matchString.
-         |
-         |Click the skill you want to know more about, or try again $tryAgain""".stripMargin
+    val intro = s"""Here’s what I know how to do$matchString:"""
+    val actionPreamble = s"""Click the skill you want to know more about, or try again $tryAgain"""
     val actions = groupsWithOther.map(group => {
       val (label, helpActionValue) = if (group.name.isEmpty) {
         ("Other", "(untitled)")
@@ -90,7 +88,8 @@ case class DisplayHelpBehavior(
       }
       SlackMessageAction("help_for_skill", label, helpActionValue)
     })
-    TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help", actions, None))
+    val attachment = SlackMessageActions("help", actions, Some(actionPreamble), Some("#F65688"))
+    TextWithActionsResult(event, intro, forcePrivateResponse = false, attachment)
   }
 
   def skillResultFor(group: BehaviorGroupData): BotResult = {
@@ -111,7 +110,7 @@ case class DisplayHelpBehavior(
     val listHeading = if (numActions == 0) {
       "This skill has no actions."
     } else if (numActions == 1) {
-      "**1 action available:**  "
+      "_**1 action available:**_  "
     } else {
       s"**$numActions actions available:**  "
     }

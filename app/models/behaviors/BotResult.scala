@@ -95,6 +95,7 @@ case class PendingConversationResult(event: MessageEvent, conversation: Conversa
       SlackMessageActions(
         conversation.id,
         Seq(SlackMessageAction(name = "start_conversation", text = "I'm ready", value = "true")),
+        None,
         None
       )
     )
