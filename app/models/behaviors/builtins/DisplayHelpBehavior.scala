@@ -73,13 +73,12 @@ case class DisplayHelpBehavior(
     val matchString = maybeHelpSearch.map { s =>
       s" related to `$s`"
     }.getOrElse("")
-    val tryAgain = if (matchString.isEmpty) {
-      "with a keyword to narrow it down, e.g. `@ellipsis help bananas`."
+    val intro = s"Here’s what I know how to do$matchString:"
+    val instructions = if (matchString.isEmpty) {
+      "Click a skill to learn more, or try searching a keyword to narrow it down, e.g. `@ellipsis help bananas`."
     } else {
-      "with a different keyword."
+      "Click a skill to learn more, or try with a different keyword."
     }
-    val intro = s"""Here’s what I know how to do$matchString:"""
-    val actionPreamble = s"""Click the skill you want to know more about, or try again $tryAgain"""
     val actions = groupsWithOther.map(group => {
       val (label, helpActionValue) = if (group.name.isEmpty) {
         ("Other", "(untitled)")
@@ -88,11 +87,14 @@ case class DisplayHelpBehavior(
       }
       SlackMessageAction("help_for_skill", label, helpActionValue)
     })
-    val attachment = SlackMessageActions("help", actions, Some(actionPreamble), Some("#F65688"))
+    val attachment = SlackMessageActions("help", actions, Some(instructions), Some("#F65688"))
     TextWithActionsResult(event, intro, forcePrivateResponse = false, attachment)
   }
 
   def skillResultFor(group: BehaviorGroupData): BotResult = {
+
+    val intro = "Here’s what I know how to do:"
+
     val name = if (group.name.isEmpty) {
       "**Miscellaneous skills**"
     } else {
@@ -121,7 +123,7 @@ case class DisplayHelpBehavior(
          |$listHeading
          |${group.behaviorVersions.flatMap(helpStringFor).mkString("")}""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "Other help…", ""))
-    TextWithActionsResult(event, "Here’s what I know how to do:", forcePrivateResponse = false, SlackMessageActions("help", actions, Some(resultText), Some("#94A4FF")))
+    TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help", actions, Some(resultText), Some("#94A4FF")))
   }
 
   def result: Future[BotResult] = {
