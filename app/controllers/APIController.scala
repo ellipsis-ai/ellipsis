@@ -94,6 +94,7 @@ class APIController @Inject() (
             } yield SlackMessageEvent(
               botProfile,
               info.channel,
+              None,
               maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
               info.message,
               SlackTimestamp.now

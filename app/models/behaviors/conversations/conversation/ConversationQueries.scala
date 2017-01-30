@@ -15,16 +15,26 @@ object ConversationQueries {
     val raw = tuple._1
     val trigger = MessageTriggerQueries.tuple2Trigger(tuple._2)
     // When we have multiple kinds of conversations again, use conversationType to figure out which is which
-    InvokeBehaviorConversation(raw.id, trigger, raw.context, raw.userIdForContext, raw.startedAt, raw.state)
+    InvokeBehaviorConversation(raw.id, trigger, raw.triggerMessage, raw.context, raw.maybeChannel, raw.maybeThreadId, raw.userIdForContext, raw.startedAt, raw.state)
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = allWithTrigger.filter(_._1.id === id)
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
-  def uncompiledAllWithoutStateQueryFor(userIdForContext: Rep[String], state: Rep[String]) = {
+  def uncompiledAllOngoingQueryFor(userIdForContext: Rep[String], context: Rep[String]) = {
     allWithTrigger.
-      filter { case(conversation, _) => conversation.userIdForContext === userIdForContext }.
-      filterNot { case(conversation, _) => conversation.state === state }
+      filter { case(convo, _) => convo.userIdForContext === userIdForContext }.
+      filter { case(convo, _) => convo.context === context }.
+      filterNot { case(convo, _) => convo.state === Conversation.DONE_STATE }
   }
-  val allWithoutStateQueryFor = Compiled(uncompiledAllWithoutStateQueryFor _)
+  val allOngoingQueryFor = Compiled(uncompiledAllOngoingQueryFor _)
+
+  def uncompiledAllForegroundQuery = {
+    val doneValue: Rep[String] = Conversation.DONE_STATE
+    allWithTrigger.
+      filterNot { case(conversation, _) => conversation.state === doneValue }.
+      filterNot { case(conversation, _) => conversation.maybeThreadId.isDefined }
+  }
+  def allForegroundQuery = Compiled(uncompiledAllForegroundQuery)
+
 }

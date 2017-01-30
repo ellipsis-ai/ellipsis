@@ -101,11 +101,11 @@ case class BehaviorResponse(
             resultForFilledOut
           } else {
             for {
-              context <- event.conversationContextFor(behaviorVersion)
+              maybeChannel <- event.maybeChannelToUseFor(behaviorVersion)
               convo <- InvokeBehaviorConversation.createFor(
                 behaviorVersion,
-                context,
-                event.userIdForContext,
+                event,
+                maybeChannel,
                 activatedTrigger,
                 dataService
               )

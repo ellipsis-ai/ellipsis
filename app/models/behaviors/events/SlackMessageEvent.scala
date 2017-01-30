@@ -18,6 +18,7 @@ import scala.util.matching.Regex
 case class SlackMessageEvent(
                                  profile: SlackBotProfile,
                                  channel: String,
+                                 maybeThreadId: Option[String],
                                  user: String,
                                  text: String,
                                  ts: String
@@ -48,7 +49,11 @@ case class SlackMessageEvent(
   }
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, conversationContext, maybeChannel.exists(isDirectMessage))
+    dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId, maybeChannel.exists(isDirectMessage))
+  }
+
+  def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
+    dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), maybeChannel.exists(isDirectMessage))
   }
 
   override def recentMessages(dataService: DataService): Future[Seq[String]] = {
@@ -71,12 +76,6 @@ case class SlackMessageEvent(
 
   def eventualMaybeDMChannel = client.listIms.map(_.find(_.user == user).map(_.id))
 
-  def maybeChannelFromConversationContext(context: String): Option[String] = {
-    s"""${Conversation.SLACK_CONTEXT}#(\\S+)""".r.findFirstMatchIn(context).flatMap { m =>
-      m.subgroups.headOption
-    }
-  }
-
   def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation]): Future[String] = {
     eventualMaybeDMChannel.map { maybeDMChannel =>
       (if (forcePrivate) {
@@ -85,7 +84,7 @@ case class SlackMessageEvent(
         None
       }).orElse {
         maybeConversation.flatMap { convo =>
-          maybeChannelFromConversationContext(convo.context)
+          convo.maybeChannel
         }
       }.getOrElse(channel)
     }
@@ -102,9 +101,20 @@ case class SlackMessageEvent(
     }
   }
 
-  def sendPreamble(formattedText: String, channelToUse: String)(implicit ec: ExecutionContext): Future[Unit] = {
+  def sendPreamble(formattedText: String, channelToUse: String, maybeConversation: Option[Conversation])(implicit ec: ExecutionContext): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
+        _ <- maybeConversation.map { convo =>
+          if (convo.state == Conversation.DONE_STATE && convo.maybeThreadId.isDefined) {
+            client.postChatMessage(
+              channel,
+              s"<@${user}>, I have an answer for `${convo.triggerMessage}`:",
+              asUser = Some(true)
+            )
+          } else {
+            Future.successful({})
+          }
+        }.getOrElse(Future.successful({}))
         _ <- if (isDirectMessage(channelToUse) && channelToUse != channel) {
           client.postChatMessage(
             channel,
@@ -133,30 +143,36 @@ case class SlackMessageEvent(
                            segments: List[String],
                            channelToUse: String,
                            maybeShouldUnfurl: Option[Boolean],
-                           maybeAttachments: Option[Seq[Attachment]]
-                         ): Future[Unit] = {
+                           maybeAttachments: Option[Seq[Attachment]],
+                           maybeConversation: Option[Conversation],
+                           maybePreviousTs: Option[String]
+                         ): Future[Option[String]] = {
     if (segments.isEmpty) {
-      Future.successful({})
+      Future.successful(maybePreviousTs)
     } else {
       val segment = segments.head.trim
       // Slack API gives an error for empty messages
       if (segment.isEmpty) {
-        Future.successful({})
+        Future.successful(None)
       } else {
         val maybeAttachmentsForSegment = if (segments.tail.isEmpty) {
           maybeAttachments
         } else {
           None
         }
+        val maybeThreadTsToUse = maybeConversation.filterNot(_.state == Conversation.DONE_STATE).flatMap(_.maybeThreadId)
+        val replyBroadcast = maybeThreadTsToUse.isDefined && !isDirectMessage(channelToUse) && maybeConversation.exists(_.state == Conversation.DONE_STATE)
         client.postChatMessage(
           channelToUse,
           segment,
           asUser = Some(true),
           unfurlLinks = maybeShouldUnfurl,
           unfurlMedia = Some(true),
-          attachments = maybeAttachmentsForSegment
+          attachments = maybeAttachmentsForSegment,
+          threadTs = maybeThreadTsToUse,
+          replyBroadcast = Some(replyBroadcast)
         )
-      }.flatMap { _ => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, maybeAttachments)}
+      }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, Some(ts))}
     }
   }
 
@@ -166,7 +182,7 @@ case class SlackMessageEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None
-                 )(implicit ec: ExecutionContext): Future[Unit] = {
+                 )(implicit ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
     val maybeAttachments = maybeActions.flatMap { actions =>
       actions match {
@@ -176,9 +192,9 @@ case class SlackMessageEvent(
     }
     for {
       channelToUse <- channelForSend(forcePrivate, maybeConversation)
-      _ <- sendPreamble(formattedText, channelToUse)
-      _ <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments)
-    } yield {}
+      _ <- sendPreamble(formattedText, channelToUse, maybeConversation)
+      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, None)
+    } yield maybeLastTs
   }
 
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {

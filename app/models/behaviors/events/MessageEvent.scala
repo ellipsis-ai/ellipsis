@@ -21,6 +21,9 @@ trait MessageEvent {
   val fullMessageText: String
   val includesBotMention: Boolean
   val maybeChannel: Option[String]
+  val maybeThreadId: Option[String]
+
+  val context = name
 
   def relevantMessageText: String = MessageEvent.ellipsisRegex.replaceFirstIn(fullMessageText, "")
 
@@ -83,7 +86,7 @@ trait MessageEvent {
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None
-                 )(implicit ec: ExecutionContext): Future[Unit]
+                 )(implicit ec: ExecutionContext): Future[Option[String]]
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
 
@@ -106,24 +109,20 @@ trait MessageEvent {
   val isResponseExpected: Boolean
   def isDirectMessage(channel: String): Boolean
 
-  val conversationContext = conversationContextForChannel(maybeChannel.getOrElse(""))
-  def conversationContextForChannel(channel: String) = name ++ "#" ++ channel
-
   def eventualMaybeDMChannel: Future[Option[String]]
 
-  def conversationContextFor(behaviorVersion: BehaviorVersion): Future[String] = {
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
     eventualMaybeDMChannel.map { maybeDMChannel =>
-      val maybeChannelToUse = if (behaviorVersion.forcePrivateResponse) {
+      if (behaviorVersion.forcePrivateResponse) {
         maybeDMChannel
       } else {
         maybeChannel
       }
-      conversationContextForChannel(maybeChannelToUse.getOrElse(""))
     }
   }
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(userIdForContext, conversationContext, maybeChannel.exists(isDirectMessage))
+    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId, maybeChannel.exists(isDirectMessage))
   }
 
   def unformatTextFragment(text: String): String = {

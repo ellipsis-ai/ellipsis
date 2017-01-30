@@ -34,7 +34,7 @@ sealed trait BotResult {
   def sendIn(
               maybeShouldUnfurl: Option[Boolean],
               maybeConversation: Option[Conversation]
-            ): Future[Unit] = {
+            ): Future[Option[String]] = {
     event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, None)
   }
 }
@@ -82,9 +82,9 @@ case class NoResponseResult(event: MessageEvent, maybeLogResult: Option[AWSLambd
   override def sendIn(
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation]
-                     ): Future[Unit] = {
+                     ): Future[Option[String]] = {
     // do nothing
-    Future.successful({})
+    Future.successful(None)
   }
 
 }
@@ -251,7 +251,7 @@ case class OAuth2TokenMissing(
   override def sendIn(
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation]
-                     ): Future[Unit] = {
+                     ): Future[Option[String]] = {
     cache.set(key, event, 5.minutes)
     super.sendIn(maybeShouldUnfurl, maybeConversation)
   }
