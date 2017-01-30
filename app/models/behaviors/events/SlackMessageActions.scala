@@ -11,13 +11,16 @@ case class SlackMessageActions(
 
   type T = SlackMessageAction
 
-  lazy val attachment: Attachment = {
-    Attachment(
-      actions = actions.map(_.actionField),
-      text = maybeText,
-      callback_id = Some(id),
-      color = maybeColor
-    )
+  lazy val attachments: Seq[Attachment] = {
+    actions.grouped(SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT).zipWithIndex.map { case(actionPart, index) => {
+      Attachment(
+        actions = actionPart.map(_.actionField),
+        text = if (index == 0) { maybeText } else { None },
+        callback_id = Some(id),
+        color = maybeColor
+      )
+    }}.toList
   }
 
 }
+

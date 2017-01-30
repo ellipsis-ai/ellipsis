@@ -172,7 +172,7 @@ case class SlackMessageEvent(
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
     val maybeAttachments = maybeActions.flatMap { actions =>
       actions match {
-        case a: SlackMessageActions => Some(Seq(a.attachment))
+        case a: SlackMessageActions => Some(a.attachments)
         case _ => None
       }
     }
@@ -229,4 +229,6 @@ object SlackMessageEvent {
   //
   // "For best results, message bodies should contain no more than a few thousand characters."
   val MAX_MESSAGE_LENGTH = 2000
+  // "A maximum of 5 actions may be provided."
+  val MAX_ACTIONS_PER_ATTACHMENT = 5
 }
