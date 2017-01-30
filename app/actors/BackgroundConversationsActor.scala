@@ -41,7 +41,7 @@ class BackgroundConversationsActor @Inject() (
             convo.maybeEventForBackgrounding(dataService).flatMap { maybeEvent =>
               maybeEvent.map { event =>
                 event.sendMessage(
-                  "Looks like you weren't able to answer this right away. No problem! I've moved this conversation to:",
+                  s"<@${event.userIdForContext}>: Looks like you weren't able to answer this right away. No problem! I've moved this conversation to a thread.",
                   convo.behaviorVersion.forcePrivateResponse,
                   maybeShouldUnfurl = None,
                   Some(convo)

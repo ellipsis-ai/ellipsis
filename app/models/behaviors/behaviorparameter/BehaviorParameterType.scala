@@ -46,14 +46,16 @@ sealed trait BehaviorParameterType {
     } yield {
       val preamble = if (!isFirst || paramCount == 0) {
         ""
-      } else if (paramCount == 1) {
-        s"I need to ask you a question."
-      } else if (paramCount == 2) {
-        s"I need to ask you a couple questions."
-      } else if (paramCount < 5) {
-        s"I need to ask you a few questions."
       } else {
-        s"I need to ask you some questions."
+        s"<@${context.event.userIdForContext}>: " ++ (if (paramCount == 1) {
+          s"I need to ask you a question."
+        } else if (paramCount == 2) {
+          s"I need to ask you a couple questions."
+        } else if (paramCount < 5) {
+          s"I need to ask you a few questions."
+        } else {
+          s"I need to ask you some questions."
+        })
       }
       s"$preamble\n\n**${context.parameter.question}** ${invalidValueModifierFor(maybePreviousCollectedValue)}"
     }
