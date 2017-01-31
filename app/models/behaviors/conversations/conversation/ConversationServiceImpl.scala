@@ -69,9 +69,10 @@ class ConversationServiceImpl @Inject() (
       maybeThreadId.map { threadId =>
         activeConvos.filter(_.maybeThreadId.contains(threadId))
       }.getOrElse {
-        val withMatchingChannel = activeConvos.filter(_.maybeChannel == maybeChannel)
+        val withoutThreadId = activeConvos.filter(_.maybeThreadId.isEmpty)
+        val withMatchingChannel = withoutThreadId.filter(_.maybeChannel == maybeChannel)
         val matchingBecausePrivate = if (isPrivateMessage) {
-          activeConvos.filter(_.stateRequiresPrivateMessage)
+          withoutThreadId.filter(_.stateRequiresPrivateMessage)
         } else {
           Seq()
         }
