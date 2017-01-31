@@ -1,7 +1,8 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.{MessageEvent, SlackMessageEvent}
+import models.behaviors.events.MessageEvent
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
@@ -93,7 +94,7 @@ case class DisplayHelpBehavior(
       |You can ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself.""".stripMargin
   }
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
     for {
       maybeTeam <- dataService.teams.find(event.teamId)

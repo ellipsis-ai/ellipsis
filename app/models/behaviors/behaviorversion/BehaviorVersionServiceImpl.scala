@@ -5,6 +5,7 @@ import java.nio.charset.Charset
 import java.time.OffsetDateTime
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.google.inject.Provider
 import json.BehaviorVersionData
 import models.IDs
@@ -56,7 +57,8 @@ class BehaviorVersionServiceImpl @Inject() (
                                       lambdaServiceProvider: Provider[AWSLambdaService],
                                       ws: WSClient,
                                       configuration: Configuration,
-                                      cache: CacheApi
+                                      cache: CacheApi,
+                                      implicit val actorSystem: ActorSystem
                                     ) extends BehaviorVersionService {
 
   def dataService = dataServiceProvider.get

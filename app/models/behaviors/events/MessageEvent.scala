@@ -1,5 +1,6 @@
 package models.behaviors.events
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -78,7 +79,7 @@ trait MessageEvent {
     }
   }
 
-  def recentMessages(dataService: DataService): Future[Seq[String]] = Future.successful(Seq())
+  def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
 
   def sendMessage(
                    text: String,
@@ -86,32 +87,32 @@ trait MessageEvent {
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None
-                 )(implicit ec: ExecutionContext): Future[Option[String]]
+                 )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
 
-  def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
+  def ensureUser(dataService: DataService): Future[User] = {
     dataService.users.ensureUserFor(loginInfo, teamId)
   }
 
-  def userInfo(ws: WSClient, dataService: DataService): Future[UserInfo] = {
+  def userInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
     UserInfo.buildFor(this, teamId, ws, dataService)
   }
 
-  def messageInfo(ws: WSClient, dataService: DataService): Future[MessageInfo] = {
+  def messageInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
     MessageInfo.buildFor(this, ws, dataService)
   }
 
-  def detailsFor(ws: WSClient, dataService: DataService): Future[JsObject] = {
+  def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
     Future.successful(JsObject(Seq()))
   }
 
   val isResponseExpected: Boolean
   def isDirectMessage(channel: String): Boolean
 
-  def eventualMaybeDMChannel: Future[Option[String]]
+  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]]
 
-  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     eventualMaybeDMChannel.map { maybeDMChannel =>
       if (behaviorVersion.forcePrivateResponse) {
         maybeDMChannel

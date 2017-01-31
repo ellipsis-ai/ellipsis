@@ -1,5 +1,6 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import models.behaviors.events.MessageEvent
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
@@ -17,7 +18,7 @@ case class ScheduleBehavior(
                              dataService: DataService
                              ) extends BuiltinBehavior {
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
       user <- event.ensureUser(dataService)
       maybeTeam <- dataService.teams.find(user.teamId)

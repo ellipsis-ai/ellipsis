@@ -1,12 +1,13 @@
 package models.behaviors.events
 
+import akka.actor.ActorSystem
 import models.behaviors.conversations.conversation.Conversation
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 case class ScheduledMessageEvent(underlying: MessageEvent) extends MessageEvent {
 
-  def eventualMaybeDMChannel: Future[Option[String]] = underlying.eventualMaybeDMChannel
+  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]] = underlying.eventualMaybeDMChannel
 
   def isDirectMessage(channel: String) = underlying.isDirectMessage(channel)
 
@@ -16,7 +17,7 @@ case class ScheduledMessageEvent(underlying: MessageEvent) extends MessageEvent 
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions]
-                 )(implicit ec: ExecutionContext) = underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions)
+                 )(implicit actorSystem: ActorSystem) = underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions)
 
   lazy val maybeChannel: Option[String] = underlying.maybeChannel
   lazy val maybeThreadId: Option[String] = underlying.maybeThreadId

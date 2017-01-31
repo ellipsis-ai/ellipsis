@@ -2,7 +2,7 @@ package actors
 
 import javax.inject.Inject
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorSystem}
 import models.behaviors.events.EventHandler
 import play.api.{Configuration, Logger}
 import services.DataService
@@ -19,7 +19,8 @@ object ScheduledMessageActor {
 class ScheduledMessageActor @Inject() (
                                         val dataService: DataService,
                                         val eventHandler: EventHandler,
-                                        val configuration: Configuration
+                                        val configuration: Configuration,
+                                        implicit val actorSystem: ActorSystem
                                       ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs

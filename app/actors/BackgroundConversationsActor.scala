@@ -2,7 +2,7 @@ package actors
 
 import javax.inject.Inject
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorSystem}
 import models.behaviors.events.EventHandler
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
@@ -23,7 +23,8 @@ class BackgroundConversationsActor @Inject() (
                                               val configuration: Configuration,
                                               val lambdaService: AWSLambdaService,
                                               val ws: WSClient,
-                                              val cache: CacheApi
+                                              val cache: CacheApi,
+                                              implicit val actorSystem: ActorSystem
                                             ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs

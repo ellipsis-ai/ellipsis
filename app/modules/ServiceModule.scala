@@ -1,6 +1,6 @@
 package modules
 
-import com.google.inject.{AbstractModule, Provides}
+import com.google.inject.AbstractModule
 import models.Models
 import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
@@ -32,12 +32,8 @@ import models.environmentvariable._
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
 import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
-import play.api.Configuration
-import play.api.i18n.MessagesApi
 import services._
 import net.codingwell.scalaguice.ScalaModule
-import play.api.cache.CacheApi
-import play.api.libs.ws.WSClient
 
 class ServiceModule extends AbstractModule with ScalaModule {
 
@@ -74,28 +70,13 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[CollectedParameterValueService].to[CollectedParameterValueServiceImpl]
     bind[ScheduledMessageService].to[ScheduledMessageServiceImpl]
     bind[InvocationLogEntryService].to[InvocationLogEntryServiceImpl]
+    bind[AWSDynamoDBService].to[AWSDynamoDBServiceImpl]
 
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]
     bind[AWSLogsService].to[AWSLogsServiceImpl]
     bind[Models].asEagerSingleton()
     bind[SlackEventService].asEagerSingleton()
-  }
-
-  @Provides
-  def provideAWSDynamoDBService(configuration: Configuration): AWSDynamoDBService = {
-    new AWSDynamoDBServiceImpl(configuration)
-  }
-
-  @Provides
-  def providesEventHandler(
-                            lambdaService: AWSLambdaService,
-                            dataService: DataService,
-                            cache: CacheApi,
-                            messages: MessagesApi,
-                            ws: WSClient,
-                            configuration: Configuration
-                            ): EventHandler = {
-    new EventHandler(lambdaService, dataService, cache, messages, ws, configuration)
+    bind[EventHandler].asEagerSingleton()
   }
 
 }

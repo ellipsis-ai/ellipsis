@@ -1,5 +1,6 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import com.amazonaws.AmazonServiceException
 import models.behaviors.events.MessageEvent
 import models.behaviors.{BotResult, SimpleTextResult}
@@ -14,7 +15,7 @@ case class ResetBehaviorsBehavior(
                                    dataService: DataService
                             ) extends BuiltinBehavior {
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     val eventualReply = try {
       for {
         maybeTeam <- dataService.teams.find(event.teamId)

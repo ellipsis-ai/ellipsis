@@ -14,11 +14,11 @@ import scala.util.Random
 class SlackEventService @Inject()(
                                    val dataService: DataService,
                                    messages: MessagesApi,
-                                   val eventHandler: EventHandler
+                                   val eventHandler: EventHandler,
+                                   implicit val actorSystem: ActorSystem
                                  ) {
 
-  implicit val system = ActorSystem("slack")
-  implicit val ec: ExecutionContext = system.dispatcher
+  implicit val ec: ExecutionContext = actorSystem.dispatcher
 
   val random = new Random()
 
