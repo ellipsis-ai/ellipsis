@@ -3,6 +3,7 @@ package models.behaviors.scheduledmessage
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
+import akka.actor.ActorSystem
 import models.team.Team
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
@@ -143,7 +144,7 @@ case class ScheduledMessage(
     }
   }
 
-  private def getMembersFor(channelOrGroupId: String, client: SlackApiClient): Future[Seq[String]] = {
+  private def getMembersFor(channelOrGroupId: String, client: SlackApiClient)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
     for {
       maybeChannel <- swallowingChannelNotFound(() => client.getChannelInfo(channelOrGroupId))
       maybeGroup <- swallowingChannelNotFound(() => client.getGroupInfo(channelOrGroupId))
@@ -161,7 +162,7 @@ case class ScheduledMessage(
                           profile: SlackBotProfile,
                           dataService: DataService,
                           configuration: Configuration
-                        ): Future[Unit] = {
+                        )(implicit actorSystem: ActorSystem): Future[Unit] = {
     if (infos.isEmpty) {
       Future.successful({})
     } else {
@@ -179,7 +180,7 @@ case class ScheduledMessage(
                                 profile: SlackBotProfile,
                                 dataService: DataService,
                                 configuration: Configuration
-                              ): Future[Unit] = {
+                              )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
       members <- getMembersFor(channelName, client)
       otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
@@ -201,7 +202,7 @@ case class ScheduledMessage(
                profile: SlackBotProfile,
                dataService: DataService,
                configuration: Configuration
-             ): Future[Unit] = {
+             )(implicit actorSystem: ActorSystem): Future[Unit] = {
     val event = ScheduledMessageEvent(SlackMessageEvent(profile, channelName, None, slackUserId, text, "ts"))
     for {
       didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
@@ -211,7 +212,12 @@ case class ScheduledMessage(
     }
   }
 
-  def sendResult(result: BotResult, event: ScheduledMessageEvent, configuration: Configuration, didInterrupt: Boolean): Future[Unit] = {
+  def sendResult(
+                  result: BotResult,
+                  event: ScheduledMessageEvent,
+                  configuration: Configuration,
+                  didInterrupt: Boolean
+                )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
       _ <- if (result.hasText) {
         scheduleInfoResultFor(event, result, configuration, didInterrupt).sendIn(None, None)
@@ -228,7 +234,12 @@ case class ScheduledMessage(
     }
   }
 
-  def sendResults(results: List[BotResult], event: ScheduledMessageEvent, configuration: Configuration, didInterrupt: Boolean): Future[Unit] = {
+  def sendResults(
+                   results: List[BotResult],
+                   event: ScheduledMessageEvent,
+                   configuration: Configuration,
+                   didInterrupt: Boolean
+                 )(implicit actorSystem: ActorSystem): Future[Unit] = {
     if (results.isEmpty) {
       Future.successful({})
     } else {
@@ -244,7 +255,7 @@ case class ScheduledMessage(
             profile: SlackBotProfile,
             dataService: DataService,
             configuration: Configuration
-          ): Future[Unit] = {
+          )(implicit actorSystem: ActorSystem): Future[Unit] = {
     maybeChannelName.map { channelName =>
       if (isForIndividualMembers) {
         sendForIndividualMembers(channelName, eventHandler, client, profile, dataService, configuration)

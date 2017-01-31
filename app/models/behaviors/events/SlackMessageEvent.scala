@@ -1,5 +1,6 @@
 package models.behaviors.events
 
+import akka.actor.ActorSystem
 import models.SlackMessageFormatter
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
@@ -12,7 +13,7 @@ import slack.api.SlackApiClient
 import slack.models.Attachment
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.util.matching.Regex
 
 case class SlackMessageEvent(
@@ -56,7 +57,7 @@ case class SlackMessageEvent(
     dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), maybeChannel.exists(isDirectMessage))
   }
 
-  override def recentMessages(dataService: DataService): Future[Seq[String]] = {
+  override def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
     for {
       maybeTeam <- dataService.teams.find(profile.teamId)
       maybeOAuthToken <- dataService.oauth2Tokens.maybeFullForSlackTeamId(profile.slackTeamId)
@@ -74,10 +75,10 @@ case class SlackMessageEvent(
     } yield messages
   }
 
-  def eventualMaybeDMChannel = client.listIms.map(_.find(_.user == user).map(_.id))
+  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = client.listIms.map(_.find(_.user == user).map(_.id))
 
-  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation]): Future[String] = {
-    eventualMaybeDMChannel.map { maybeDMChannel =>
+  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[String] = {
+    eventualMaybeDMChannel(actorSystem).map { maybeDMChannel =>
       (if (forcePrivate) {
         maybeDMChannel
       } else {
@@ -101,7 +102,7 @@ case class SlackMessageEvent(
     }
   }
 
-  def sendPreamble(formattedText: String, channelToUse: String, maybeConversation: Option[Conversation])(implicit ec: ExecutionContext): Future[Unit] = {
+  def sendPreamble(formattedText: String, channelToUse: String, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
         _ <- maybeConversation.map { convo =>
@@ -146,7 +147,7 @@ case class SlackMessageEvent(
                            maybeAttachments: Option[Seq[Attachment]],
                            maybeConversation: Option[Conversation],
                            maybePreviousTs: Option[String]
-                         ): Future[Option[String]] = {
+                         )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     if (segments.isEmpty) {
       Future.successful(maybePreviousTs)
     } else {
@@ -182,7 +183,7 @@ case class SlackMessageEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None
-                 )(implicit ec: ExecutionContext): Future[Option[String]] = {
+                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
     val maybeAttachments = maybeActions.flatMap { actions =>
       actions match {
@@ -197,13 +198,13 @@ case class SlackMessageEvent(
     } yield maybeLastTs
   }
 
-  override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
+  override def ensureUser(dataService: DataService): Future[User] = {
     super.ensureUser(dataService).flatMap { user =>
       dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)
     }
   }
 
-  override def detailsFor(ws: WSClient, dataService: DataService): Future[JsObject] = {
+  override def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
     client.getUserInfo(userIdForContext).map { user =>
       val profileData = user.profile.map { profile =>
         Seq(

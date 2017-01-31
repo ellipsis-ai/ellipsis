@@ -1,5 +1,6 @@
 package models.behaviors
 
+import akka.actor.ActorSystem
 import models.IDs
 import models.accounts.logintoken.LoginToken
 import models.accounts.oauth2application.OAuth2Application
@@ -14,7 +15,6 @@ import play.api.libs.json.{JsDefined, JsValue}
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -34,7 +34,7 @@ sealed trait BotResult {
   def sendIn(
               maybeShouldUnfurl: Option[Boolean],
               maybeConversation: Option[Conversation]
-            ): Future[Option[String]] = {
+            )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, None)
   }
 }
@@ -82,7 +82,7 @@ case class NoResponseResult(event: MessageEvent, maybeLogResult: Option[AWSLambd
   override def sendIn(
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation]
-                     ): Future[Option[String]] = {
+                     )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     // do nothing
     Future.successful(None)
   }
@@ -251,7 +251,7 @@ case class OAuth2TokenMissing(
   override def sendIn(
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation]
-                     ): Future[Option[String]] = {
+                     )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     cache.set(key, event, 5.minutes)
     super.sendIn(maybeShouldUnfurl, maybeConversation)
   }

@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.file.{Files, Paths}
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
 import models.Models
@@ -37,7 +38,8 @@ class AWSLambdaServiceImpl @Inject() (
                                        val ws: WSClient,
                                        val cache: CacheApi,
                                        val dataService: DataService,
-                                       val logsService: AWSLogsService
+                                       val logsService: AWSLogsService,
+                                       implicit val actorSystem: ActorSystem
                                        ) extends AWSLambdaService {
 
   import AWSLambdaConstants._

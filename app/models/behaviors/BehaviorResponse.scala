@@ -2,6 +2,7 @@ package models.behaviors
 
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -93,7 +94,7 @@ case class BehaviorResponse(
     } yield result
   }
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     dataService.behaviorVersions.maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeNotReadyResult =>
       maybeNotReadyResult.map(Future.successful).getOrElse {
         isReady.flatMap { ready =>
