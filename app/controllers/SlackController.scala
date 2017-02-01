@@ -314,14 +314,6 @@ class SlackController @Inject() (
             if (info.isValid) {
               var resultText: String = "OK, let’s continue."
 
-              info.maybeConversationIdToStart.foreach { conversationId =>
-                eventForSlackBot(info).map { maybeEvent =>
-                  maybeEvent.map { event =>
-                    dataService.conversations.start(conversationId, info.team.id, event)
-                  }.getOrElse(Future.successful({}))
-                }
-              }
-
               info.maybeHelpIndex.foreach { _ =>
                 eventForSlackBot(info).map { maybeEvent =>
                   maybeEvent.map { event =>
