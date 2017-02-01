@@ -11,6 +11,7 @@ import models.behaviors.events.{EventHandler, MessageEvent}
 import models.silhouette.EllipsisEnv
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -30,7 +31,8 @@ class APIAccessController @Inject() (
                                       val dataService: DataService,
                                       val ws: WSClient,
                                       val cache: CacheApi,
-                                      val eventHandler: EventHandler
+                                      val eventHandler: EventHandler,
+                                      implicit val actorSystem: ActorSystem
                                     )
   extends ReAuthable {
 

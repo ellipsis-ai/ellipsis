@@ -7,18 +7,22 @@ version := "1.0-SNAPSHOT"
 
 lazy val root =
   (project in file(".")).
+    dependsOn(slackClientProject).
     enablePlugins(PlayScala, SbtWeb)
 
 pipelineStages := Seq(rjs, digest, gzip)
 
 scalaVersion := "2.11.8"
 
+lazy val slackClientVersion = "173dfe3cc5d426c329bb45ca4ed805d01f15e466"
+lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
+
 libraryDependencies ++= Seq(
   evolutions,
   jdbc,
   filters,
   cache,
-  "com.github.gilbertw1" %% "slack-scala-client" % "0.1.8",
+//  "com.github.gilbertw1" %% "slack-scala-client" % "0.1.8",
   "com.github.nscala-time" %% "nscala-time" % "2.14.0",
   "com.typesafe.slick" % "slick-hikaricp_2.11" % "3.1.1",
   "com.github.tminglei" %% "slick-pg" % "0.14.4",

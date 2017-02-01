@@ -17,15 +17,22 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class InvokeBehaviorConversation(
-                                      id: String,
-                                      trigger: MessageTrigger,
-                                      context: String, // Slack, etc
-                                      userIdForContext: String, // id for Slack, etc user
-                                      startedAt: OffsetDateTime,
-                                      state: String = Conversation.NEW_STATE
+                                       id: String,
+                                       trigger: MessageTrigger,
+                                       triggerMessage: String,
+                                       context: String, // Slack, etc
+                                       maybeChannel: Option[String],
+                                       maybeThreadId: Option[String],
+                                       userIdForContext: String, // id for Slack, etc user
+                                       startedAt: OffsetDateTime,
+                                       state: String = Conversation.NEW_STATE
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
+
+  def copyWithMaybeThreadId(maybeId: Option[String]): Conversation = {
+    copy(maybeThreadId = maybeId)
+  }
 
   override val stateRequiresPrivateMessage: Boolean = {
     InvokeBehaviorConversation.statesRequiringPrivateMessage.contains(state)
@@ -116,8 +123,8 @@ object InvokeBehaviorConversation {
 
   def createFor(
                  behaviorVersion: BehaviorVersion,
-                 context: String,
-                 userIdForContext: String,
+                 event: MessageEvent,
+                 maybeChannel: Option[String],
                  activatedTrigger: MessageTrigger,
                  dataService: DataService
                  ): Future[InvokeBehaviorConversation] = {
@@ -125,8 +132,11 @@ object InvokeBehaviorConversation {
       InvokeBehaviorConversation(
         IDs.next,
         activatedTrigger,
-        context,
-        userIdForContext,
+        event.fullMessageText,
+        event.name,
+        maybeChannel,
+        None,
+        event.userIdForContext,
         OffsetDateTime.now,
         Conversation.NEW_STATE
       )

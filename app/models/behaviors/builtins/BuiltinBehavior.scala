@@ -1,5 +1,6 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import models.behaviors.BotResult
 import models.behaviors.events.MessageEvent
 import services.{AWSLambdaService, DataService}
@@ -11,7 +12,7 @@ trait BuiltinBehavior {
   val lambdaService: AWSLambdaService
   val dataService: DataService
 
-  def result: Future[BotResult]
+  def result(implicit actorSystem: ActorSystem): Future[BotResult]
 }
 
 object BuiltinBehavior {

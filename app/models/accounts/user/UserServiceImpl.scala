@@ -3,6 +3,7 @@ package models.accounts.user
 import java.time.OffsetDateTime
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.linkedaccount.LinkedAccount
@@ -19,7 +20,8 @@ import scala.concurrent.Future
 
 class UserServiceImpl @Inject() (
                                   dataServiceProvider: Provider[DataService],
-                                  configuration: Configuration
+                                  configuration: Configuration,
+                                  implicit val actorSystem: ActorSystem
                                 ) extends UserService {
 
   def dataService = dataServiceProvider.get

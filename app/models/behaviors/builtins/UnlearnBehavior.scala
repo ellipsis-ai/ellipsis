@@ -1,5 +1,6 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import com.amazonaws.AmazonServiceException
 import models.behaviors.events.MessageEvent
 import models.behaviors.{BotResult, SimpleTextResult}
@@ -15,7 +16,7 @@ case class UnlearnBehavior(
                             dataService: DataService
                             ) extends BuiltinBehavior {
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     val eventualReply = try {
       for {
         triggers <- dataService.messageTriggers.allWithExactPattern(patternString, event.teamId)

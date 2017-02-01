@@ -1,5 +1,6 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import models.behaviors.events.MessageEvent
 import models.behaviors.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, SimpleTextResult}
@@ -36,7 +37,7 @@ case class ListScheduledBehavior(
      """.stripMargin
   }
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       scheduled <- maybeTeam.map { team =>

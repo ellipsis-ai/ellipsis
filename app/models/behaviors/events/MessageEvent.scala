@@ -1,5 +1,6 @@
 package models.behaviors.events
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -21,6 +22,9 @@ trait MessageEvent {
   val fullMessageText: String
   val includesBotMention: Boolean
   val maybeChannel: Option[String]
+  val maybeThreadId: Option[String]
+
+  val context = name
 
   def relevantMessageText: String = MessageEvent.ellipsisRegex.replaceFirstIn(fullMessageText, "")
 
@@ -75,7 +79,7 @@ trait MessageEvent {
     }
   }
 
-  def recentMessages(dataService: DataService): Future[Seq[String]] = Future.successful(Seq())
+  def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
 
   def sendMessage(
                    text: String,
@@ -83,47 +87,43 @@ trait MessageEvent {
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None
-                 )(implicit ec: ExecutionContext): Future[Unit]
+                 )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
 
-  def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
+  def ensureUser(dataService: DataService): Future[User] = {
     dataService.users.ensureUserFor(loginInfo, teamId)
   }
 
-  def userInfo(ws: WSClient, dataService: DataService): Future[UserInfo] = {
+  def userInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
     UserInfo.buildFor(this, teamId, ws, dataService)
   }
 
-  def messageInfo(ws: WSClient, dataService: DataService): Future[MessageInfo] = {
+  def messageInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
     MessageInfo.buildFor(this, ws, dataService)
   }
 
-  def detailsFor(ws: WSClient, dataService: DataService): Future[JsObject] = {
+  def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
     Future.successful(JsObject(Seq()))
   }
 
   val isResponseExpected: Boolean
   def isDirectMessage(channel: String): Boolean
 
-  val conversationContext = conversationContextForChannel(maybeChannel.getOrElse(""))
-  def conversationContextForChannel(channel: String) = name ++ "#" ++ channel
+  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]]
 
-  def eventualMaybeDMChannel: Future[Option[String]]
-
-  def conversationContextFor(behaviorVersion: BehaviorVersion): Future[String] = {
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     eventualMaybeDMChannel.map { maybeDMChannel =>
-      val maybeChannelToUse = if (behaviorVersion.forcePrivateResponse) {
+      if (behaviorVersion.forcePrivateResponse) {
         maybeDMChannel
       } else {
         maybeChannel
       }
-      conversationContextForChannel(maybeChannelToUse.getOrElse(""))
     }
   }
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(userIdForContext, conversationContext, maybeChannel.exists(isDirectMessage))
+    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId, maybeChannel.exists(isDirectMessage))
   }
 
   def unformatTextFragment(text: String): String = {

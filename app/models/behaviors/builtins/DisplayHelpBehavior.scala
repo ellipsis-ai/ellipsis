@@ -2,7 +2,9 @@ package models.behaviors.builtins
 
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
+import models.behaviors.events.MessageEvent
 import models.behaviors.events.{MessageEvent, SlackMessageAction, SlackMessageActions, SlackMessageEvent}
 import models.behaviors.{BotResult, SimpleTextResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
@@ -143,7 +145,7 @@ case class DisplayHelpBehavior(
     TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help", actions, Some(resultText), Some("#94A4FF")))
   }
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       user <- event.ensureUser(dataService)

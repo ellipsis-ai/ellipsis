@@ -1,5 +1,6 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import models.behaviors.events.MessageEvent
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
@@ -16,7 +17,7 @@ case class SetEnvironmentVariableBehavior(
                                            dataService: DataService
                                            ) extends BuiltinBehavior {
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       maybeEnvVar <- maybeTeam.map { team =>

@@ -14,11 +14,11 @@ import scala.util.Random
 class SlackEventService @Inject()(
                                    val dataService: DataService,
                                    messages: MessagesApi,
-                                   val eventHandler: EventHandler
+                                   val eventHandler: EventHandler,
+                                   implicit val actorSystem: ActorSystem
                                  ) {
 
-  implicit val system = ActorSystem("slack")
-  implicit val ec: ExecutionContext = system.dispatcher
+  implicit val ec: ExecutionContext = actorSystem.dispatcher
 
   val random = new Random()
 
@@ -28,11 +28,15 @@ class SlackEventService @Inject()(
       val handleMessage = for {
         maybeConversation <- event.maybeOngoingConversation(dataService)
         _ <- eventHandler.handle(event, maybeConversation).flatMap { results =>
-          Future.sequence(
-            results.map(result => result.sendIn(None, maybeConversation).map { _ =>
-              Logger.info(s"Sending result [${result.fullText}] in response to slack message [${event.fullMessageText}] in channel [${event.channel}]")
-            })
-          )
+          maybeConversation.map(c => Future.successful(Some(c))).getOrElse(event.maybeConversationRootedHere(dataService)).flatMap { maybeConversation =>
+            maybeConversation.map(c => dataService.conversations.find(c.id)).getOrElse(Future.successful(None)).flatMap { maybeUpdatedConversation =>
+              Future.sequence(
+                results.map(result => result.sendIn(None, maybeUpdatedConversation).map { _ =>
+                  Logger.info(s"Sending result [${result.fullText}] in response to slack message [${event.fullMessageText}] in channel [${event.channel}]")
+                })
+              )
+            }
+          }
         }
       } yield {}
       handleMessage.recover {

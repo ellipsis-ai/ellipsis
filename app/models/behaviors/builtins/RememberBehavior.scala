@@ -1,5 +1,6 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import json.{BehaviorConfig, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors._
 import models.behaviors.events.MessageEvent
@@ -11,7 +12,7 @@ import scala.concurrent.Future
 
 case class RememberBehavior(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       maybeUser <- maybeTeam.map { team =>

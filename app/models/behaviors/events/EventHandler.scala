@@ -2,7 +2,8 @@ package models.behaviors.events
 
 import javax.inject._
 
-import models.behaviors.{BehaviorResponse, BotResult, NoResponseResult, SimpleTextResult}
+import akka.actor.ActorSystem
+import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult}
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import play.api.Configuration
@@ -21,7 +22,8 @@ class EventHandler @Inject() (
                                cache: CacheApi,
                                messages: MessagesApi,
                                ws: WSClient,
-                               configuration: Configuration
+                               configuration: Configuration,
+                               implicit val actorSystem: ActorSystem
                                ) {
 
   def startInvokeConversationFor(event: MessageEvent): Future[Seq[BotResult]] = {

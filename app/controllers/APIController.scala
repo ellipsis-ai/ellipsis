@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.SimpleTextResult
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
@@ -26,7 +27,9 @@ class APIController @Inject() (
                                 val ws: WSClient,
                                 val cache: CacheApi,
                                 val slackService: SlackEventService,
-                                val eventHandler: EventHandler)
+                                val eventHandler: EventHandler,
+                                implicit val actorSystem: ActorSystem
+                              )
   extends EllipsisController {
 
   class InvalidTokenException extends Exception
@@ -94,6 +97,7 @@ class APIController @Inject() (
             } yield SlackMessageEvent(
               botProfile,
               info.channel,
+              None,
               maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
               info.message,
               SlackTimestamp.now

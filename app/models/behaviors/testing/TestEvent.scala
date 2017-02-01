@@ -1,5 +1,6 @@
 package models.behaviors.testing
 
+import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.UserInfo
 import models.behaviors.conversations.conversation.Conversation
@@ -9,7 +10,8 @@ import play.api.libs.ws.WSClient
 import services.DataService
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class TestEvent(
                       user: User,
@@ -27,7 +29,8 @@ case class TestEvent(
   lazy val userIdForContext = user.id
   lazy val name = "test"
   lazy val maybeChannel = None
-  lazy val eventualMaybeDMChannel = Future.successful(None)
+  lazy val maybeThreadId = None
+  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = Future.successful(None)
   val isResponseExpected = true
 
   def isDirectMessage(channel: String): Boolean = false
@@ -38,15 +41,15 @@ case class TestEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions]
-                 )(implicit ec: ExecutionContext): Future[Unit] = {
-    Future.successful(messageBuffer += text)
+                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    Future.successful(messageBuffer += text).map(_ => None)
   }
 
-  override def userInfo(ws: WSClient, dataService: DataService): Future[UserInfo] = {
+  override def userInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
     UserInfo.buildFor(Some(user), this, ws, dataService)
   }
 
-  override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
+  override def ensureUser(dataService: DataService): Future[User] = {
     Future.successful(user)
   }
 
