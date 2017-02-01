@@ -1,5 +1,6 @@
 package models.behaviors.events
 
+import models.SlackMessageFormatter
 import slack.models.Attachment
 
 case class SlackMessageActions(
@@ -11,15 +12,22 @@ case class SlackMessageActions(
 
   type T = SlackMessageAction
 
+  def attachmentSegments: Seq[Attachment] = actions.grouped(SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT).map { actionPart =>
+    Attachment(
+      actions = actionPart.map(_.actionField),
+      callback_id = Some(id),
+      color = maybeColor
+    )
+  }.toSeq
+
   lazy val attachments: Seq[Attachment] = {
-    actions.grouped(SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT).zipWithIndex.map { case(actionPart, index) => {
-      Attachment(
-        actions = actionPart.map(_.actionField),
-        text = if (index == 0) { maybeText } else { None },
-        callback_id = Some(id),
-        color = maybeColor
-      )
-    }}.toList
+    maybeText.map { unformatted =>
+      Seq(Attachment(
+        text = Some(SlackMessageFormatter.bodyTextFor(unformatted)),
+        color = maybeColor,
+        mrkdwn_in = Seq("text")
+      )) ++ attachmentSegments
+    }.getOrElse(attachmentSegments)
   }
 
 }

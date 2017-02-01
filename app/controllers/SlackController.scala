@@ -252,7 +252,14 @@ class SlackController @Inject() (
   case class ChannelInfo(id: String, name: String)
   case class UserInfo(id: String, name: String)
   case class OriginalMessageInfo(text: String, attachments: Seq[AttachmentInfo])
-  case class AttachmentInfo(title: Option[String], text: Option[String], fields: Option[Seq[FieldInfo]] = None, actions: Option[Seq[ActionInfo]] = None, color: Option[String] = None)
+  case class AttachmentInfo(
+                             title: Option[String],
+                             text: Option[String],
+                             mrkdwn_in: Option[Seq[String]],
+                             fields: Option[Seq[FieldInfo]] = None,
+                             actions: Option[Seq[ActionInfo]] = None,
+                             color: Option[String] = None
+                           )
   case class FieldInfo(title: Option[String], value: Option[String])
   case class ActionsTriggeredInfo(
                                    callback_id: String,
@@ -321,7 +328,7 @@ class SlackController @Inject() (
         Json.parse(payload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
-              var resultText: String = "OK, let’s continue."
+              var resultText: String = "_OK, let’s continue._"
 
               info.maybeHelpIndex.foreach { _ =>
                 eventForSlackBot(info).map { maybeEvent =>
@@ -329,7 +336,7 @@ class SlackController @Inject() (
                     DisplayHelpBehavior(None, None, isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
                 }
-                resultText = "You clicked *Other help*."
+                resultText = "_You clicked *Other help*._"
               }
 
               info.maybeHelpForSkillId.foreach { skillId =>
@@ -345,12 +352,13 @@ class SlackController @Inject() (
                 }
                 resultText = info.original_message.attachments.flatMap(_.actions).flatten.filter { action =>
                   action.name == "help_for_skill" && action.value == skillId
-                }.flatMap(_.text).headOption.map(buttonLabel => s"You clicked *$buttonLabel.*").getOrElse("You clicked a button.")
+                }.flatMap(_.text).headOption.map(buttonLabel => s"_You clicked *$buttonLabel.*_").getOrElse("_You clicked a button._")
               }
 
               // respond immediately by removing buttons and appending a new attachment
               val attachmentsWithoutButtons = info.original_message.attachments.filter(ea => ea.text.isDefined).map(ea => ea.copy(actions = None))
-              val updated = info.original_message.copy(attachments = attachmentsWithoutButtons :+ AttachmentInfo(title = None, text = Some(resultText)))
+              val resultAttachment = AttachmentInfo(title = None, text = Some(resultText), mrkdwn_in = Some(Seq("text")), color = Some("#C3CCFE"))
+              val updated = info.original_message.copy(attachments = attachmentsWithoutButtons :+ resultAttachment)
               Ok(Json.toJson(updated))
             } else {
               Unauthorized("Bad token")
