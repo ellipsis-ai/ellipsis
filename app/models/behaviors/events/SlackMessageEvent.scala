@@ -45,8 +45,12 @@ case class SlackMessageEvent(
 
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
+
   def isDirectMessage(channelId: String): Boolean = {
     channelId.startsWith("D")
+  }
+  def isPrivateChannel(channelId: String): Boolean = {
+    channel.startsWith("G")
   }
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
@@ -102,17 +106,13 @@ case class SlackMessageEvent(
     }
   }
 
-  lazy val isDirectMessage: Boolean = channel.startsWith("D")
-
-  lazy val isPrivateChannel: Boolean = channel.startsWith("G")
-
   def sendPreamble(formattedText: String, channelToUse: String, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
         _ <- if (maybeThreadId.isDefined && maybeConversation.flatMap(_.maybeThreadId).isEmpty) {
-          val channelText = if (isDirectMessage) {
+          val channelText = if (isDirectMessage(channel)) {
             "the DM channel"
-          } else if (isPrivateChannel) {
+          } else if (isPrivateChannel(channel)) {
             "the private channel"
           } else {
             s"<#$channel>"
