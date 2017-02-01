@@ -105,17 +105,6 @@ case class SlackMessageEvent(
   def sendPreamble(formattedText: String, channelToUse: String, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
-        _ <- maybeConversation.map { convo =>
-          if (convo.state == Conversation.DONE_STATE && convo.maybeThreadId.isDefined) {
-            client.postChatMessage(
-              channel,
-              s"<@${user}>, I have an answer for `${convo.triggerMessage}`:",
-              asUser = Some(true)
-            )
-          } else {
-            Future.successful({})
-          }
-        }.getOrElse(Future.successful({}))
         _ <- if (isDirectMessage(channelToUse) && channelToUse != channel) {
           client.postChatMessage(
             channel,
@@ -161,8 +150,8 @@ case class SlackMessageEvent(
         } else {
           None
         }
-        val maybeThreadTsToUse = maybeConversation.filterNot(_.state == Conversation.DONE_STATE).flatMap(_.maybeThreadId)
-        val replyBroadcast = maybeThreadTsToUse.isDefined && !isDirectMessage(channelToUse) && maybeConversation.exists(_.state == Conversation.DONE_STATE)
+        val maybeThreadTsToUse = maybeConversation.flatMap(_.maybeThreadId)
+        val replyBroadcast = maybeThreadTsToUse.isDefined && maybeConversation.exists(_.state == Conversation.DONE_STATE)
         client.postChatMessage(
           channelToUse,
           segment,

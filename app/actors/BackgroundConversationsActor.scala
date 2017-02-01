@@ -42,7 +42,12 @@ class BackgroundConversationsActor @Inject() (
             convo.maybeEventForBackgrounding(dataService).flatMap { maybeEvent =>
               maybeEvent.map { event =>
                 event.sendMessage(
-                  s"<@${event.userIdForContext}>: Looks like you weren't able to answer this right away. No problem! I've moved this conversation to a thread.",
+                  s"""<@${event.userIdForContext}>: Looks like you weren't able to answer this right away.
+                     |
+                     |You said:
+                     |> `${convo.triggerMessage}`
+                     |
+                     |No problem! I've moved this conversation to a thread.""".stripMargin,
                   convo.behaviorVersion.forcePrivateResponse,
                   maybeShouldUnfurl = None,
                   Some(convo)
