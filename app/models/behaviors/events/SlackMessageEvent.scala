@@ -102,9 +102,30 @@ case class SlackMessageEvent(
     }
   }
 
+  lazy val isDirectMessage: Boolean = channel.startsWith("D")
+
+  lazy val isPrivateChannel: Boolean = channel.startsWith("G")
+
   def sendPreamble(formattedText: String, channelToUse: String, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
+        _ <- if (maybeThreadId.isDefined && maybeConversation.flatMap(_.maybeThreadId).isEmpty) {
+          val channelText = if (isDirectMessage) {
+            "the DM channel"
+          } else if (isPrivateChannel) {
+            "the private channel"
+          } else {
+            s"<#$channel>"
+          }
+          client.postChatMessage(
+            channel,
+            s"<@${user}> I've responded back in $channelText.",
+            asUser = Some(true),
+            threadTs = maybeThreadId
+          )
+        } else {
+          Future.successful({})
+        }
         _ <- if (isDirectMessage(channelToUse) && channelToUse != channel) {
           client.postChatMessage(
             channel,
