@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageEvent
@@ -28,7 +29,8 @@ class SlackController @Inject() (
                                   val slackEventService: SlackEventService,
                                   val lambdaService: AWSLambdaService,
                                   val cache: CacheApi,
-                                  val ws: WSClient
+                                  val ws: WSClient,
+                                  implicit val actorSystem: ActorSystem
                                 ) extends EllipsisController {
 
   def add = silhouette.UserAwareAction { implicit request =>
@@ -304,7 +306,7 @@ class SlackController @Inject() (
   def eventForSlackBot(info: ActionsTriggeredInfo): Future[Option[SlackMessageEvent]] = {
     dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map { botProfiles =>
       botProfiles.headOption.map { botProfile =>
-        SlackMessageEvent(botProfile, info.channel.id, info.user.id, "", info.message_ts)
+        SlackMessageEvent(botProfile, info.channel.id, None, info.user.id, "", info.message_ts)
       }
     }
   }
