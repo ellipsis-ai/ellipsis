@@ -8,12 +8,10 @@ import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageEvent
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Result}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
@@ -28,8 +26,6 @@ class SlackController @Inject() (
                                   val dataService: DataService,
                                   val slackEventService: SlackEventService,
                                   val lambdaService: AWSLambdaService,
-                                  val cache: CacheApi,
-                                  val ws: WSClient,
                                   implicit val actorSystem: ActorSystem
                                 ) extends EllipsisController {
 
@@ -275,12 +271,6 @@ class SlackController @Inject() (
                                    response_url: String
                                  ) extends RequestInfo {
 
-    def maybeConversationIdToStart: Option[String] = {
-      actions.find { info => info.name == "start_conversation" && info.value == "true" }.map { _ =>
-        callback_id
-      }
-    }
-
     def maybeHelpForSkillId: Option[String] = {
       actions.find { info => info.name == "help_for_skill" && !info.value.isEmpty }.map { info =>
         info.value
@@ -350,9 +340,20 @@ class SlackController @Inject() (
                     result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
                 }
-                resultText = info.original_message.attachments.flatMap(_.actions).flatten.filter { action =>
-                  action.name == "help_for_skill" && action.value == skillId
-                }.flatMap(_.text).headOption.map(buttonLabel => s"_You clicked *$buttonLabel.*_").getOrElse("_You clicked a button._")
+                val filteredActions =
+                  info.
+                    original_message.attachments.
+                    flatMap(_.actions).
+                    flatten.
+                    filter { action =>
+                      action.name == "help_for_skill" && action.value == skillId
+                    }
+                val resultText =
+                  filteredActions.
+                    flatMap(_.text).
+                    headOption.
+                    map(buttonLabel => s"_You clicked *$buttonLabel.*_").
+                    getOrElse("_You clicked a button._")
               }
 
               // respond immediately by removing buttons and appending a new attachment
