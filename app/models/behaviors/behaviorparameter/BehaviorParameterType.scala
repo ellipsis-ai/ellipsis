@@ -45,11 +45,8 @@ sealed trait BehaviorParameterType {
       paramCount <- context.unfilledParamCount(paramState)
     } yield {
       val howToStop = "Type `...stop` to end this conversation.  \n\n"
-      val justConfirmedReady = context.maybeConversation.exists(_.justConfirmedReady)
       val preamble = if (!isFirst || paramCount == 0) {
         ""
-      } else if (justConfirmedReady) {
-        s"You said you were ready. $howToStop"
       } else if (paramCount == 1) {
         s"I need to ask you a question. $howToStop"
       } else if (paramCount == 2) {

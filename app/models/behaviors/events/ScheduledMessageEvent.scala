@@ -9,7 +9,6 @@ case class ScheduledMessageEvent(underlying: MessageEvent) extends MessageEvent 
   def eventualMaybeDMChannel: Future[Option[String]] = underlying.eventualMaybeDMChannel
 
   def isDirectMessage(channel: String) = underlying.isDirectMessage(channel)
-  val isTriggeredByUser: Boolean = false
 
   def sendMessage(
                    text: String,

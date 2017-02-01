@@ -105,7 +105,6 @@ trait MessageEvent {
 
   val isResponseExpected: Boolean
   def isDirectMessage(channel: String): Boolean
-  val isTriggeredByUser: Boolean
 
   val conversationContext = conversationContextForChannel(maybeChannel.getOrElse(""))
   def conversationContextForChannel(channel: String) = name ++ "#" ++ channel

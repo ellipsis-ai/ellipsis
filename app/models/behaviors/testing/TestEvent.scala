@@ -29,8 +29,7 @@ case class TestEvent(
   lazy val maybeChannel = None
   lazy val eventualMaybeDMChannel = Future.successful(None)
   val isResponseExpected = true
-  val isTriggeredByUser: Boolean = true
-
+  
   def isDirectMessage(channel: String): Boolean = false
 
   def sendMessage(

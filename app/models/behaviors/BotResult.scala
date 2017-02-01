@@ -84,24 +84,6 @@ case class TextWithActionsResult(event: MessageEvent, simpleText: String, forceP
   }
 }
 
-case class PendingConversationResult(event: MessageEvent, conversation: Conversation, forcePrivateResponse: Boolean) extends BotResult {
-
-  val resultType = ResultType.ConversationPrompt
-
-  def text: String = ":point_up: Excuse me, I have a question to ask you. Let me know when you're ready."
-
-  override def maybeActions: Option[MessageActions] = {
-    Some(
-      SlackMessageActions(
-        conversation.id,
-        Seq(SlackMessageAction(name = "start_conversation", text = "I'm ready", value = "true")),
-        None,
-        None
-      )
-    )
-  }
-}
-
 case class NoResponseResult(event: MessageEvent, maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
 
   val resultType = ResultType.NoResponse
