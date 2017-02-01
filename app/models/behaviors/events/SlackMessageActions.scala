@@ -12,13 +12,18 @@ case class SlackMessageActions(
 
   type T = SlackMessageAction
 
-  def attachmentSegments: Seq[Attachment] = actions.grouped(SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT).map { actionPart =>
-    Attachment(
-      actions = actionPart.map(_.actionField),
-      callback_id = Some(id),
-      color = maybeColor
-    )
-  }.toSeq
+  def attachmentSegments: Seq[Attachment] = {
+    val size = actions.length
+    val maxPerGroup = SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT
+    val groupSize = if (size % maxPerGroup == 1) { maxPerGroup - 1 } else { maxPerGroup }
+    actions.grouped(groupSize).map { actionPart =>
+      Attachment(
+        actions = actionPart.map(_.actionField),
+        callback_id = Some(id),
+        color = maybeColor
+      )
+    }.toSeq
+  }
 
   lazy val attachments: Seq[Attachment] = {
     maybeText.map { unformatted =>

@@ -96,7 +96,7 @@ case class DisplayHelpBehavior(
     }
     val actions = groupsWithOther.map(group => {
       val (label, helpActionValue) = if (group.name.isEmpty) {
-        ("Other", "(untitled)")
+        ("Miscellaneous", "(untitled)")
       } else {
         (group.name, group.id.getOrElse(""))
       }
@@ -166,7 +166,7 @@ case class DisplayHelpBehavior(
     } yield {
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
         if (helpSearch == "(untitled)") {
-          Seq(BehaviorGroupData(None, "Other", "", None, groupData.filter(_.name.isEmpty).flatMap(_.behaviorVersions), None, None, None, OffsetDateTime.now))
+          Seq(BehaviorGroupData(None, "Miscellaneous skills", "", None, groupData.filter(_.name.isEmpty).flatMap(_.behaviorVersions), None, None, None, OffsetDateTime.now))
         } else {
           groupData.filter(_.matchesHelpSearch(helpSearch))
         }
