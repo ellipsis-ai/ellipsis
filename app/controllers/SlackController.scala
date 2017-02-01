@@ -238,11 +238,13 @@ class SlackController @Inject() (
     )
   }
 
-  case class ActionInfo(name: String, value: String)
+  case class ActionInfo(name: String, value: String, text: Option[String])
   case class TeamInfo(id: String, domain: String)
   case class ChannelInfo(id: String, name: String)
   case class UserInfo(id: String, name: String)
-
+  case class OriginalMessageInfo(text: String, attachments: Seq[AttachmentInfo])
+  case class AttachmentInfo(title: Option[String], text: Option[String], fields: Option[Seq[FieldInfo]] = None, actions: Option[Seq[ActionInfo]] = None, color: Option[String] = None)
+  case class FieldInfo(title: Option[String], value: Option[String])
   case class ActionsTriggeredInfo(
                                    callback_id: String,
                                    actions: Seq[ActionInfo],
@@ -253,7 +255,7 @@ class SlackController @Inject() (
                                    message_ts: String,
                                    attachment_id: String,
                                    token: String,
-                                   original_message: JsValue,
+                                   original_message: OriginalMessageInfo,
                                    response_url: String
                                  ) extends RequestInfo {
 
@@ -283,7 +285,22 @@ class SlackController @Inject() (
   implicit val teamReads = Json.reads[TeamInfo]
   implicit val userReads = Json.reads[UserInfo]
   implicit val actionReads = Json.reads[ActionInfo]
+  implicit val fieldReads = Json.reads[FieldInfo]
+  implicit val attachmentReads = Json.reads[AttachmentInfo]
+  implicit val messageReads = Json.reads[OriginalMessageInfo]
+  implicit val actionWrites = Json.writes[ActionInfo]
+  implicit val fieldWrites = Json.writes[FieldInfo]
+  implicit val attachmentWrites = Json.writes[AttachmentInfo]
+  implicit val messageWrites = Json.writes[OriginalMessageInfo]
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
+
+  def eventForSlackBot(info: ActionsTriggeredInfo): Future[Option[SlackMessageEvent]] = {
+    dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map { botProfiles =>
+      botProfiles.headOption.map { botProfile =>
+        SlackMessageEvent(botProfile, info.channel.id, info.user.id, "", info.message_ts)
+      }
+    }
+  }
 
   def action = Action { implicit request =>
     actionForm.bindFromRequest.fold(
@@ -295,19 +312,28 @@ class SlackController @Inject() (
         Json.parse(payload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
-              dataService.slackBotProfiles.allForSlackTeamId(info.team.id).flatMap { botProfiles =>
-                botProfiles.headOption.map { botProfile =>
-                  val event = SlackMessageEvent(botProfile, info.channel.id, info.user.id, "", info.message_ts)
+              var resultText: String = "OK, let’s continue."
 
-                  val maybeStartConversation = info.maybeConversationIdToStart.map { conversationId =>
+              info.maybeConversationIdToStart.foreach { conversationId =>
+                eventForSlackBot(info).map { maybeEvent =>
+                  maybeEvent.map { event =>
                     dataService.conversations.start(conversationId, info.team.id, event)
                   }.getOrElse(Future.successful({}))
+                }
+              }
 
-                  val maybeHelpIndex = info.maybeHelpIndex.map { _ =>
+              info.maybeHelpIndex.foreach { _ =>
+                eventForSlackBot(info).map { maybeEvent =>
+                  maybeEvent.map { event =>
                     DisplayHelpBehavior(None, None, isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
+                }
+                resultText = "You clicked *Other help*."
+              }
 
-                  val maybeHelpForSkill = info.maybeHelpForSkillId.map { skillId =>
+              info.maybeHelpForSkillId.foreach { skillId =>
+                eventForSlackBot(info).map { maybeEvent =>
+                  maybeEvent.map { event =>
                     val result = if (skillId == "(untitled)") {
                       DisplayHelpBehavior(Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
                     } else {
@@ -315,17 +341,16 @@ class SlackController @Inject() (
                     }
                     result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
-
-                  Future.sequence(Seq(maybeStartConversation, maybeHelpIndex, maybeHelpForSkill))
-                }.getOrElse(Future.successful({}))
+                }
+                resultText = info.original_message.attachments.flatMap(_.actions).flatten.filter { action =>
+                  action.name == "help_for_skill" && action.value == skillId
+                }.flatMap(_.text).headOption.map(buttonLabel => s"You clicked *$buttonLabel.*").getOrElse("You clicked a button.")
               }
 
-              // respond immediately
-              val transformer = (__ \ "attachments").json.update(
-                __.read[JsArray].map{ _ => JsArray(Seq()) }
-              )
-              val updated = info.original_message.transform(transformer).get
-              Ok(updated)
+              // respond immediately by removing buttons and appending a new attachment
+              val attachmentsWithoutButtons = info.original_message.attachments.filter(ea => ea.text.isDefined).map(ea => ea.copy(actions = None))
+              val updated = info.original_message.copy(attachments = attachmentsWithoutButtons :+ AttachmentInfo(title = None, text = Some(resultText)))
+              Ok(Json.toJson(updated))
             } else {
               Unauthorized("Bad token")
             }
