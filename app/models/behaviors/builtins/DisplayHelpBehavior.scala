@@ -8,6 +8,7 @@ import models.behaviors.events.MessageEvent
 import models.behaviors.events.{MessageEvent, SlackMessageAction, SlackMessageActions, SlackMessageEvent}
 import models.behaviors.{BotResult, SimpleTextResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
+import utils.Color
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -102,7 +103,7 @@ case class DisplayHelpBehavior(
       }
       SlackMessageAction("help_for_skill", label, helpActionValue)
     })
-    val attachment = SlackMessageActions("help", actions, Some(instructions), Some("#F65688"))
+    val attachment = SlackMessageActions("help", actions, Some(instructions), Some(Color.PINK))
     TextWithActionsResult(event, intro, forcePrivateResponse = false, attachment)
   }
 
@@ -142,7 +143,7 @@ case class DisplayHelpBehavior(
          |$listHeading
          |${group.behaviorVersions.flatMap(helpStringFor).mkString("")}""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "Other help…", ""))
-    TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help", actions, Some(resultText), Some("#94A4FF")))
+    TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help", actions, Some(resultText), Some(Color.BLUE_LIGHT)))
   }
 
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
