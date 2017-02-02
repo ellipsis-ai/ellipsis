@@ -15,6 +15,7 @@ import play.api.libs.json._
 import play.api.mvc.{Action, Result}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
+import utils.Color
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -374,7 +375,7 @@ class SlackController @Inject() (
 
               // respond immediately by removing buttons and appending a new attachment
               val attachmentsWithoutButtons = info.original_message.attachments.filter(ea => ea.text.isDefined).map(ea => ea.copy(actions = None))
-              val resultAttachment = AttachmentInfo(title = None, text = Some(resultText), mrkdwn_in = Some(Seq("text")), color = Some("#C3CCFE"))
+              val resultAttachment = AttachmentInfo(title = None, text = Some(resultText), mrkdwn_in = Some(Seq("text")), color = Some(Color.BLUE_LIGHTER))
               val updated = info.original_message.copy(attachments = attachmentsWithoutButtons :+ resultAttachment)
               Ok(Json.toJson(updated))
             } else {
