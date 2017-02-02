@@ -281,6 +281,13 @@ class SlackController @Inject() (
       actions.find { info => info.name == "help_index" }.map { _ => "index" }
     }
 
+    def maybeFutureEvent: Future[Option[SlackMessageEvent]] = {
+      dataService.slackBotProfiles.allForSlackTeamId(this.team.id).map { botProfiles =>
+        botProfiles.headOption.map { botProfile =>
+          SlackMessageEvent(botProfile, this.channel.id, None, this.user.id, "", this.message_ts)
+        }
+      }
+    }
   }
 
   private val actionForm = Form(
@@ -300,14 +307,6 @@ class SlackController @Inject() (
   implicit val messageWrites = Json.writes[OriginalMessageInfo]
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
 
-  def eventForSlackBot(info: ActionsTriggeredInfo): Future[Option[SlackMessageEvent]] = {
-    dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map { botProfiles =>
-      botProfiles.headOption.map { botProfile =>
-        SlackMessageEvent(botProfile, info.channel.id, None, info.user.id, "", info.message_ts)
-      }
-    }
-  }
-
   def action = Action { implicit request =>
     actionForm.bindFromRequest.fold(
       formWithErrors => {
@@ -321,7 +320,7 @@ class SlackController @Inject() (
               var resultText: String = "_OK, let’s continue._"
 
               info.maybeHelpIndex.foreach { _ =>
-                eventForSlackBot(info).map { maybeEvent =>
+                info.maybeFutureEvent.map { maybeEvent =>
                   maybeEvent.map { event =>
                     DisplayHelpBehavior(None, None, isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
@@ -330,7 +329,7 @@ class SlackController @Inject() (
               }
 
               info.maybeHelpForSkillId.foreach { skillId =>
-                eventForSlackBot(info).map { maybeEvent =>
+                info.maybeFutureEvent.map { maybeEvent =>
                   maybeEvent.map { event =>
                     val result = if (skillId == "(untitled)") {
                       DisplayHelpBehavior(Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
@@ -348,7 +347,7 @@ class SlackController @Inject() (
                     filter { action =>
                       action.name == "help_for_skill" && action.value == skillId
                     }
-                val resultText =
+                resultText =
                   filteredActions.
                     flatMap(_.text).
                     headOption.
