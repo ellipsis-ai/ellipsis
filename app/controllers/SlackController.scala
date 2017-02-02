@@ -244,7 +244,7 @@ class SlackController @Inject() (
   }
 
   case class ActionTriggeredInfo(name: String, value: Option[String])
-  case class ActionInfo(name: String, text: String, value: Option[String], `type`: String = "button", style: Option[String])
+  case class ActionInfo(name: String, text: String, value: Option[String], `type`: String, style: Option[String])
   case class TeamInfo(id: String, domain: String)
   case class ChannelInfo(id: String, name: String)
   case class UserInfo(id: String, name: String)
