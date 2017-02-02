@@ -98,5 +98,5 @@ object Conversation {
   val LEARN_BEHAVIOR = "learn_behavior"
   val INVOKE_BEHAVIOR = "invoke_behavior"
 
-  val SECONDS_UNTIL_BACKGROUNDED = 60
+  val SECONDS_UNTIL_BACKGROUNDED = 300
 }
