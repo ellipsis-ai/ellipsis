@@ -1,27 +1,27 @@
 package models.behaviors.builtins
 
+import java.time.OffsetDateTime
+
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.events.MessageEvent
-import models.behaviors.{BotResult, SimpleTextResult}
+import models.behaviors.events.{MessageEvent, SlackMessageAction, SlackMessageActions, SlackMessageEvent}
+import models.behaviors.{BotResult, SimpleTextResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
+import utils.Color
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class DisplayHelpBehavior(
-                                helpString: String,
-                                event: MessageEvent,
-                                lambdaService: AWSLambdaService,
-                                dataService: DataService
-                              ) extends BuiltinBehavior {
-
-  private def triggerStringFor(trigger: BehaviorTriggerData): String = {
-    if (trigger.requiresMention)
-      s"`...${trigger.text}`"
-    else
-      s"`${trigger.text}`"
-  }
+                         maybeHelpString: Option[String],
+                         maybeSkillId: Option[String],
+                         isFirstTrigger: Boolean,
+                         event: MessageEvent,
+                         lambdaService: AWSLambdaService,
+                         dataService: DataService
+                       ) extends BuiltinBehavior {
 
   private def helpStringFor(behaviorVersion: BehaviorVersionData): Option[String] = {
     val triggers = behaviorVersion.triggers
@@ -57,50 +57,103 @@ case class DisplayHelpBehavior(
         }
         val link = maybeLink.map { l => s" [✎]($l)" }.getOrElse("")
         val authorsString = "" //if (authorNames.isEmpty) { "" } else { "by " ++ authorNames.map(n => s"<@$n>").mkString(", ") }
-        Some(s"\n$triggersString$link $authorsString  ")
+        Some(s"$triggersString$link $authorsString  \n")
       }
     }
   }
 
-  private def helpStringFor(group: BehaviorGroupData): String = {
-    s"""\n**${group.name}**
-       |${group.behaviorVersions.map(helpStringFor).flatten.mkString("")}
-     """.stripMargin
+  private def triggerStringFor(trigger: BehaviorTriggerData): String = {
+    if (trigger.requiresMention)
+      s"`${event.botPrefix}${trigger.text}`"
+    else
+      s"`${trigger.text}`"
   }
 
-  private def helpStringFor(groups: Seq[BehaviorGroupData], prompt: String, matchString: String): String = {
-    val (groupsWithNames, groupsWithoutNames) = groups.partition(_.maybeNonEmptyName.isDefined)
-    val groupsWithNamesString = groupsWithNames.map { ea =>
-      helpStringFor(ea)
-    }.mkString("")
-    val groupsWithoutNamesString = groupsWithoutNames.map { ea =>
-      helpStringFor(ea)
-    }.mkString("")
-    val hasGroupsWithNames = groupsWithNamesString.trim.nonEmpty
-    val hasGroupsWithoutNames = groupsWithoutNamesString.trim.nonEmpty
-    val unnamedSkillsString = if(hasGroupsWithoutNames) { "\n**Unnamed skills:**  \n" } else { "" }
-    if (!hasGroupsWithNames && !hasGroupsWithoutNames) {
+  private def maybeHelpSearch: Option[String] = {
+    maybeHelpString.filter(_.trim.nonEmpty)
+  }
+
+  private def matchString: String = {
+    maybeHelpSearch.map { s =>
+      s" related to `$s`"
+    }.getOrElse("")
+  }
+
+  private def introResultFor(groupData: Seq[BehaviorGroupData]): BotResult = {
+    val groupsWithOther = ArrayBuffer[BehaviorGroupData]()
+    val (untitledGroups, titledGroups) = groupData.partition(group => group.name.isEmpty)
+    groupsWithOther ++= titledGroups
+    groupsWithOther += BehaviorGroupData(None, "", "", None, untitledGroups.flatMap(group => group.behaviorVersions), None, None, None, OffsetDateTime.now)
+
+    val intro = if (isFirstTrigger) {
+      s"What can I help with?"
+    } else {
+      s"OK, here’s everything else I know$matchString:"
+    }
+    val instructions = if (matchString.isEmpty) {
+      "Click a skill to learn more, or try searching a keyword to narrow it down, e.g. `@ellipsis help bananas`."
+    } else {
+      "Click a skill to learn more, or try with a different keyword."
+    }
+    val actions = groupsWithOther.map(group => {
+      val (label, helpActionValue) = if (group.name.isEmpty) {
+        ("Miscellaneous", "(untitled)")
+      } else {
+        (group.name, group.id.getOrElse(""))
+      }
+      SlackMessageAction("help_for_skill", label, helpActionValue)
+    })
+    val attachment = SlackMessageActions("help", actions, Some(instructions), Some(Color.PINK))
+    TextWithActionsResult(event, intro, forcePrivateResponse = false, attachment)
+  }
+
+  def skillResultFor(group: BehaviorGroupData): BotResult = {
+
+    val intro = if (isFirstTrigger) {
+      s"Here’s what I know$matchString:"
+    } else {
+      "OK, here’s the help you asked for. Click below for more help."
+    }
+
+    val name = if (group.name.isEmpty) {
+      "Miscellaneous skills"
+    } else {
+      group.name
+    }
+
+    val description = if (group.description.isEmpty) {
       ""
     } else {
-      s"""$prompt$matchString:
-         |$groupsWithNamesString$unnamedSkillsString$groupsWithoutNamesString
-         |""".stripMargin
+      s"  \n${group.description}\n\n"
     }
-  }
 
-  def justGettingStartedText(lambdaService: AWSLambdaService): String = {
-    s"""I’m just getting started here and can’t wait to learn.
-      |
-      |You can ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself.""".stripMargin
+    val numActions = group.behaviorVersions.length
+
+    val listHeading = if (numActions == 0) {
+      "This skill has no actions."
+    } else if (numActions == 1) {
+      "_**1 action available:**_  "
+    } else {
+      s"_**$numActions actions available:**_  "
+    }
+
+    val resultText =
+      s"""$description$listHeading
+         |${group.behaviorVersions.flatMap(helpStringFor).mkString("")}""".stripMargin
+    val actions = Seq(SlackMessageAction("help_index", "Other help…", ""))
+    TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help", actions, Some(resultText), Some(Color.BLUE_LIGHT), Some(name)))
   }
 
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
-    val maybeHelpSearch = Option(helpString).filter(_.trim.nonEmpty)
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       user <- event.ensureUser(dataService)
       maybeBehaviorGroups <- maybeTeam.map { team =>
-        dataService.behaviorGroups.allFor(team).map(Some(_))
+        maybeSkillId.map(skillId => {
+          dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
+        }).getOrElse({
+          dataService.behaviorGroups.allFor(team).map(Some(_))
+        })
       }.getOrElse {
         Future.successful(None)
       }
@@ -111,37 +164,19 @@ case class DisplayHelpBehavior(
       }.getOrElse(Future.successful(Seq()))
     } yield {
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        groupData.filter(_.matchesHelpSearch(helpSearch))
+        if (helpSearch == "(untitled)") {
+          Seq(BehaviorGroupData(None, "Miscellaneous skills", "", None, groupData.filter(_.name.isEmpty).flatMap(_.behaviorVersions), None, None, None, OffsetDateTime.now))
+        } else {
+          groupData.filter(_.matchesHelpSearch(helpSearch))
+        }
       }.getOrElse {
         groupData
       }
-      val matchString = maybeHelpSearch.map { s =>
-        s" related to `$s`"
-      }.getOrElse("")
-      val groupsString = helpStringFor(matchingGroupData, "Here’s what I can do", matchString)
-      val endingString = if (groupData.isEmpty) {
-        justGettingStartedText(lambdaService)
-      } else if (matchingGroupData.isEmpty) {
-        maybeHelpSearch.map { s =>
-          s"""I couldn’t find help for anything like `$s`
-           |
-           |Try searching for something else, e.g. `${event.botPrefix}help bananas`
-           |
-           |Or type `${event.botPrefix}help` to list everything I can do.
-         """.stripMargin
-        }.getOrElse {
-          justGettingStartedText(lambdaService)
-        }
+      if (matchingGroupData.length == 1) {
+        skillResultFor(matchingGroupData.head)
       } else {
-        s"You can also ${event.installLinkFor(lambdaService)} or ${event.teachMeLinkFor(lambdaService)} yourself."
+        introResultFor(matchingGroupData)
       }
-      val text = s"""
-          |$groupsString
-          |
-          |$endingString
-          |""".stripMargin
-      SimpleTextResult(event, text, forcePrivateResponse = false)
     }
   }
-
 }

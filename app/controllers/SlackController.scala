@@ -2,16 +2,20 @@ package controllers
 
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
+import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageEvent
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
+import play.api.libs.json._
 import play.api.mvc.{Action, Result}
 import play.utils.UriEncoding
-import services.{DataService, SlackEventService}
+import services.{AWSLambdaService, DataService, SlackEventService}
+import utils.Color
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -21,7 +25,9 @@ class SlackController @Inject() (
                                   val silhouette: Silhouette[EllipsisEnv],
                                   val configuration: Configuration,
                                   val dataService: DataService,
-                                  val slackEventService: SlackEventService
+                                  val slackEventService: SlackEventService,
+                                  val lambdaService: AWSLambdaService,
+                                  implicit val actorSystem: ActorSystem
                                 ) extends EllipsisController {
 
   def add = silhouette.UserAwareAction { implicit request =>
@@ -204,6 +210,8 @@ class SlackController @Inject() (
           Future.successful({})
         }
       } yield {}
+
+      // respond immediately
       Ok(":+1:")
     } else {
       Unauthorized("Bad token")
@@ -233,6 +241,152 @@ class SlackController @Inject() (
         )
       },
       info => challengeResult(info)
+    )
+  }
+
+  case class ActionTriggeredInfo(name: String, value: Option[String])
+  case class ActionInfo(name: String, text: String, value: Option[String], `type`: String, style: Option[String])
+  case class TeamInfo(id: String, domain: String)
+  case class ChannelInfo(id: String, name: String)
+  case class UserInfo(id: String, name: String)
+  case class OriginalMessageInfo(text: String, attachments: Seq[AttachmentInfo])
+  case class AttachmentInfo(
+                             title: Option[String],
+                             text: Option[String],
+                             mrkdwn_in: Option[Seq[String]],
+                             fields: Option[Seq[FieldInfo]] = None,
+                             actions: Option[Seq[ActionInfo]] = None,
+                             color: Option[String] = None,
+                             title_link: Option[String] = None,
+                             fallback: Option[String] = None,
+                             pretext: Option[String] = None,
+                             author_name: Option[String] = None,
+                             author_icon: Option[String] = None,
+                             author_link: Option[String] = None,
+                             image_url: Option[String] = None,
+                             thumb_url: Option[String] = None,
+                             footer: Option[String] = None,
+                             footer_icon: Option[String] = None,
+                             ts: Option[String] = None
+                           )
+  case class FieldInfo(title: Option[String], value: Option[String], short: Option[Boolean] = None)
+  case class ActionsTriggeredInfo(
+                                   callback_id: String,
+                                   actions: Seq[ActionTriggeredInfo],
+                                   team: TeamInfo,
+                                   channel: ChannelInfo,
+                                   user: UserInfo,
+                                   action_ts: String,
+                                   message_ts: String,
+                                   attachment_id: String,
+                                   token: String,
+                                   original_message: OriginalMessageInfo,
+                                   response_url: String
+                                 ) extends RequestInfo {
+
+    def maybeHelpForSkillId: Option[String] = {
+      actions.
+        find { info => info.name == "help_for_skill" && info.value.isDefined }.
+        flatMap { _.value }
+    }
+
+    def maybeHelpIndex: Option[String] = {
+      actions.find { info => info.name == "help_index" }.map { _ => "index" }
+    }
+
+    def maybeFutureEvent: Future[Option[SlackMessageEvent]] = {
+      dataService.slackBotProfiles.allForSlackTeamId(this.team.id).map { botProfiles =>
+        botProfiles.headOption.map { botProfile =>
+          SlackMessageEvent(botProfile, this.channel.id, None, this.user.id, "", this.message_ts)
+        }
+      }
+    }
+  }
+
+  private val actionForm = Form(
+    "payload" -> nonEmptyText
+  )
+
+  implicit val channelReads = Json.reads[ChannelInfo]
+  implicit val teamReads = Json.reads[TeamInfo]
+  implicit val userReads = Json.reads[UserInfo]
+
+  implicit val actionReads = Json.reads[ActionInfo]
+  implicit val actionWrites = Json.writes[ActionInfo]
+
+  implicit val actionTriggeredReads = Json.reads[ActionTriggeredInfo]
+
+  implicit val fieldReads = Json.reads[FieldInfo]
+  implicit val fieldWrites = Json.writes[FieldInfo]
+
+  implicit val attachmentReads = Json.reads[AttachmentInfo]
+  implicit val attachmentWrites = Json.writes[AttachmentInfo]
+
+  implicit val messageReads = Json.reads[OriginalMessageInfo]
+  implicit val messageWrites = Json.writes[OriginalMessageInfo]
+
+  implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
+
+  def action = Action { implicit request =>
+    actionForm.bindFromRequest.fold(
+      formWithErrors => {
+        println(formWithErrors.errorsAsJson)
+        BadRequest(formWithErrors.errorsAsJson)
+      },
+      payload => {
+        Json.parse(payload).validate[ActionsTriggeredInfo] match {
+          case JsSuccess(info, jsPath) => {
+            if (info.isValid) {
+              var resultText: String = "_OK, let’s continue._"
+              val user = s"<@${info.user.id}>"
+
+              info.maybeHelpIndex.foreach { _ =>
+                info.maybeFutureEvent.map { maybeEvent =>
+                  maybeEvent.map { event =>
+                    DisplayHelpBehavior(None, None, isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
+                  }.getOrElse(Future.successful({}))
+                }
+                resultText = s"_$user clicked *Other help*._"
+              }
+
+              info.maybeHelpForSkillId.foreach { skillId =>
+                info.maybeFutureEvent.map { maybeEvent =>
+                  maybeEvent.map { event =>
+                    val result = if (skillId == "(untitled)") {
+                      DisplayHelpBehavior(Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
+                    } else {
+                      DisplayHelpBehavior(None, Some(skillId), isFirstTrigger = false, event, lambdaService, dataService).result
+                    }
+                    result.flatMap(result => result.sendIn(None, None))
+                  }.getOrElse(Future.successful({}))
+                }
+                val maybeClickedAction =
+                  info.
+                    original_message.attachments.
+                    flatMap(_.actions).
+                    flatten.
+                    find { action =>
+                      action.name == "help_for_skill" && action.value.contains(skillId)
+                    }
+                resultText = maybeClickedAction.map {
+                  action => s"_$user clicked *${action.text}.*_"
+                }.getOrElse(s"_$user clicked a button._")
+              }
+
+              // respond immediately by removing buttons and appending a new attachment
+              val attachmentsWithoutButtons = info.original_message.attachments.filter(ea => ea.text.isDefined).map(ea => ea.copy(actions = None))
+              val resultAttachment = AttachmentInfo(title = None, text = Some(resultText), mrkdwn_in = Some(Seq("text")), color = Some(Color.BLUE_LIGHTER))
+              val updated = info.original_message.copy(attachments = attachmentsWithoutButtons :+ resultAttachment)
+              Ok(Json.toJson(updated))
+            } else {
+              Unauthorized("Bad token")
+            }
+          }
+          case JsError(err) => {
+            BadRequest(err.toString)
+          }
+        }
+      }
     )
   }
 
