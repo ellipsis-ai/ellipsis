@@ -7,7 +7,8 @@ case class SlackMessageActions(
                                 id: String,
                                 actions: Seq[SlackMessageAction],
                                 maybeText: Option[String],
-                                maybeColor: Option[String]
+                                maybeColor: Option[String],
+                                maybeTitle: Option[String] = None
                               ) extends MessageActions {
 
   type T = SlackMessageAction
@@ -28,11 +29,20 @@ case class SlackMessageActions(
   lazy val attachments: Seq[Attachment] = {
     maybeText.map { unformatted =>
       Seq(Attachment(
+        title = maybeTitle,
         text = Some(SlackMessageFormatter.bodyTextFor(unformatted)),
         color = maybeColor,
         mrkdwn_in = Seq("text")
       )) ++ attachmentSegments
-    }.getOrElse(attachmentSegments)
+    }.getOrElse {
+      attachmentSegments.zipWithIndex.map { case(segment, index) =>
+        if (index == 0) {
+          segment.copy(title = maybeTitle)
+        } else {
+          segment
+        }
+      }
+    }
   }
 
 }

@@ -337,6 +337,7 @@ class SlackController @Inject() (
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
               var resultText: String = "_OK, let’s continue._"
+              val user = s"<@${info.user.id}>"
 
               info.maybeHelpIndex.foreach { _ =>
                 info.maybeFutureEvent.map { maybeEvent =>
@@ -344,7 +345,7 @@ class SlackController @Inject() (
                     DisplayHelpBehavior(None, None, isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
                 }
-                resultText = "_You clicked *Other help*._"
+                resultText = s"_$user clicked *Other help*._"
               }
 
               info.maybeHelpForSkillId.foreach { skillId =>
@@ -367,8 +368,8 @@ class SlackController @Inject() (
                       action.name == "help_for_skill" && action.value.contains(skillId)
                     }
                 resultText = maybeClickedAction.map {
-                  action => s"_You clicked *${action.text}.*_"
-                }.getOrElse("_You clicked a button._")
+                  action => s"_$user clicked *${action.text}.*_"
+                }.getOrElse(s"_$user clicked a button._")
               }
 
               // respond immediately by removing buttons and appending a new attachment

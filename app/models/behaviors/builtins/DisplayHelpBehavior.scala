@@ -116,15 +116,15 @@ case class DisplayHelpBehavior(
     }
 
     val name = if (group.name.isEmpty) {
-      "**Miscellaneous skills**"
+      "Miscellaneous skills"
     } else {
-      s"**${group.name}**"
+      group.name
     }
 
     val description = if (group.description.isEmpty) {
       ""
     } else {
-      s"  \n${group.description}"
+      s"  \n${group.description}\n\n"
     }
 
     val numActions = group.behaviorVersions.length
@@ -134,16 +134,14 @@ case class DisplayHelpBehavior(
     } else if (numActions == 1) {
       "_**1 action available:**_  "
     } else {
-      s"**$numActions actions available:**  "
+      s"_**$numActions actions available:**_  "
     }
 
     val resultText =
-      s"""$name$description
-         |
-         |$listHeading
+      s"""$description$listHeading
          |${group.behaviorVersions.flatMap(helpStringFor).mkString("")}""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "Other help…", ""))
-    TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help", actions, Some(resultText), Some(Color.BLUE_LIGHT)))
+    TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help", actions, Some(resultText), Some(Color.BLUE_LIGHT), Some(name)))
   }
 
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
