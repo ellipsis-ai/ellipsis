@@ -243,7 +243,8 @@ class SlackController @Inject() (
     )
   }
 
-  case class ActionInfo(name: String, value: String, text: Option[String])
+  case class ActionTriggeredInfo(name: String, value: Option[String])
+  case class ActionInfo(name: String, text: String, value: Option[String], `type`: String = "button", style: Option[String])
   case class TeamInfo(id: String, domain: String)
   case class ChannelInfo(id: String, name: String)
   case class UserInfo(id: String, name: String)
@@ -254,12 +255,23 @@ class SlackController @Inject() (
                              mrkdwn_in: Option[Seq[String]],
                              fields: Option[Seq[FieldInfo]] = None,
                              actions: Option[Seq[ActionInfo]] = None,
-                             color: Option[String] = None
+                             color: Option[String] = None,
+                             title_link: Option[String] = None,
+                             fallback: Option[String] = None,
+                             pretext: Option[String] = None,
+                             author_name: Option[String] = None,
+                             author_icon: Option[String] = None,
+                             author_link: Option[String] = None,
+                             image_url: Option[String] = None,
+                             thumb_url: Option[String] = None,
+                             footer: Option[String] = None,
+                             footer_icon: Option[String] = None,
+                             ts: Option[String] = None
                            )
-  case class FieldInfo(title: Option[String], value: Option[String])
+  case class FieldInfo(title: Option[String], value: Option[String], short: Option[Boolean] = None)
   case class ActionsTriggeredInfo(
                                    callback_id: String,
-                                   actions: Seq[ActionInfo],
+                                   actions: Seq[ActionTriggeredInfo],
                                    team: TeamInfo,
                                    channel: ChannelInfo,
                                    user: UserInfo,
@@ -272,9 +284,9 @@ class SlackController @Inject() (
                                  ) extends RequestInfo {
 
     def maybeHelpForSkillId: Option[String] = {
-      actions.find { info => info.name == "help_for_skill" && !info.value.isEmpty }.map { info =>
-        info.value
-      }
+      actions.
+        find { info => info.name == "help_for_skill" && info.value.isDefined }.
+        flatMap { _.value }
     }
 
     def maybeHelpIndex: Option[String] = {
@@ -297,14 +309,21 @@ class SlackController @Inject() (
   implicit val channelReads = Json.reads[ChannelInfo]
   implicit val teamReads = Json.reads[TeamInfo]
   implicit val userReads = Json.reads[UserInfo]
+
   implicit val actionReads = Json.reads[ActionInfo]
-  implicit val fieldReads = Json.reads[FieldInfo]
-  implicit val attachmentReads = Json.reads[AttachmentInfo]
-  implicit val messageReads = Json.reads[OriginalMessageInfo]
   implicit val actionWrites = Json.writes[ActionInfo]
+
+  implicit val actionTriggeredReads = Json.reads[ActionTriggeredInfo]
+
+  implicit val fieldReads = Json.reads[FieldInfo]
   implicit val fieldWrites = Json.writes[FieldInfo]
+
+  implicit val attachmentReads = Json.reads[AttachmentInfo]
   implicit val attachmentWrites = Json.writes[AttachmentInfo]
+
+  implicit val messageReads = Json.reads[OriginalMessageInfo]
   implicit val messageWrites = Json.writes[OriginalMessageInfo]
+
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
 
   def action = Action { implicit request =>
@@ -339,20 +358,17 @@ class SlackController @Inject() (
                     result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
                 }
-                val filteredActions =
+                val maybeClickedAction =
                   info.
                     original_message.attachments.
                     flatMap(_.actions).
                     flatten.
-                    filter { action =>
-                      action.name == "help_for_skill" && action.value == skillId
+                    find { action =>
+                      action.name == "help_for_skill" && action.value.contains(skillId)
                     }
-                resultText =
-                  filteredActions.
-                    flatMap(_.text).
-                    headOption.
-                    map(buttonLabel => s"_You clicked *$buttonLabel.*_").
-                    getOrElse("_You clicked a button._")
+                resultText = maybeClickedAction.map {
+                  action => s"_You clicked *${action.text}.*_"
+                }.getOrElse("_You clicked a button._")
               }
 
               // respond immediately by removing buttons and appending a new attachment
