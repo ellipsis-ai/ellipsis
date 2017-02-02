@@ -41,13 +41,14 @@ class BackgroundConversationsActor @Inject() (
           if (convo.shouldBeBackgrounded) {
             convo.maybeEventForBackgrounding(dataService).flatMap { maybeEvent =>
               maybeEvent.map { event =>
-                event.sendMessage(
-                  s"""<@${event.userIdForContext}>: Looks like you weren't able to answer this right away.
-                     |
-                     |You said:
+                val quoteText = if (convo.isScheduled) { " " } else {
+                  s"""\r\rYou said:
                      |> `${convo.triggerMessage}`
                      |
-                     |No problem! I've moved this conversation to a thread.""".stripMargin,
+                     |""".stripMargin
+                }
+                event.sendMessage(
+                  s"""<@${event.userIdForContext}>: Looks like you weren't able to answer this right away.${quoteText}No problem! I've moved this conversation to a thread.""".stripMargin,
                   convo.behaviorVersion.forcePrivateResponse,
                   maybeShouldUnfurl = None,
                   Some(convo)

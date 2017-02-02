@@ -203,7 +203,7 @@ case class ScheduledMessage(
                dataService: DataService,
                configuration: Configuration
              )(implicit actorSystem: ActorSystem): Future[Unit] = {
-    val event = ScheduledMessageEvent(SlackMessageEvent(profile, channelName, None, slackUserId, text, "ts"))
+    val event = ScheduledMessageEvent(SlackMessageEvent(profile, channelName, None, slackUserId, text, "ts"), this)
     for {
       didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
       results <- eventHandler.handle(event, None)

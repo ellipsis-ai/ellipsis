@@ -2,10 +2,11 @@ package models.behaviors.events
 
 import akka.actor.ActorSystem
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.scheduledmessage.ScheduledMessage
 
 import scala.concurrent.Future
 
-case class ScheduledMessageEvent(underlying: MessageEvent) extends MessageEvent {
+case class ScheduledMessageEvent(underlying: MessageEvent, scheduledMessage: ScheduledMessage) extends MessageEvent {
 
   def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]] = underlying.eventualMaybeDMChannel
 
@@ -27,5 +28,6 @@ case class ScheduledMessageEvent(underlying: MessageEvent) extends MessageEvent 
   lazy val fullMessageText: String = underlying.fullMessageText
   lazy val isResponseExpected: Boolean = underlying.isResponseExpected
   lazy val userIdForContext: String = underlying.userIdForContext
+  override val maybeScheduledMessage: Option[ScheduledMessage] = Some(scheduledMessage)
 
 }
