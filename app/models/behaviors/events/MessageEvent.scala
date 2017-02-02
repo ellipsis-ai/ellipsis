@@ -5,6 +5,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.scheduledmessage.ScheduledMessage
 import models.behaviors.triggers.TriggerFuzzyMatcher
 import models.behaviors.{BotResult, MessageInfo, SimpleTextResult, UserInfo}
 import play.api.libs.json.JsObject
@@ -23,6 +24,7 @@ trait MessageEvent {
   val includesBotMention: Boolean
   val maybeChannel: Option[String]
   val maybeThreadId: Option[String]
+  val maybeScheduledMessage: Option[ScheduledMessage] = None
 
   val context = name
 
