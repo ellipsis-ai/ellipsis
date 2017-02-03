@@ -89,10 +89,12 @@ case class DisplayHelpBehavior(
     val groupsToShow = allGroups.slice(startAt, endAt)
     val groupsRemaining = allGroups.slice(endAt, allGroups.length)
 
-    val intro = if (startAt == 0 && isFirstTrigger) {
-      s"What can I help with?"
+    val intro = if (startAt == 0 && maybeHelpString.isEmpty) {
+      s"OK, let’s start from the top. Here are some things I know about. ${event.skillListLinkFor(lambdaService)}"
+    } else if (startAt == 0 && maybeHelpString.isDefined) {
+      s"OK, here’s what I know$matchString. ${event.skillListLinkFor(lambdaService)}"
     } else {
-      s"OK, here are some more things I know about$matchString:"
+      s"OK, here are some more things I know$matchString."
     }
     val maybeInstructions = if (startAt > 0 || !isFirstTrigger) {
       None
@@ -123,7 +125,7 @@ case class DisplayHelpBehavior(
   def skillResultFor(group: BehaviorGroupData): BotResult = {
 
     val intro = if (isFirstTrigger) {
-      s"Here’s what I know$matchString:"
+      s"Here’s what I know$matchString. ${event.skillListLinkFor(lambdaService)}"
     } else {
       "OK, here’s the help you asked for:"
     }
@@ -157,6 +159,12 @@ case class DisplayHelpBehavior(
     TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, Some(resultText), Some(Color.BLUE_LIGHT), Some(name)))
   }
 
+  def emptyResult: BotResult = {
+    val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
+    val resultText = s"I don’t know anything$matchString. ${event.skillListLinkFor(lambdaService)}"
+    TextWithActionsResult(event, resultText, forcePrivateResponse = false, SlackMessageActions("help_no_result", actions, None, Some(Color.PINK)))
+  }
+
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
@@ -185,7 +193,9 @@ case class DisplayHelpBehavior(
       }.getOrElse {
         groupData
       }
-      if (matchingGroupData.length == 1) {
+      if (matchingGroupData.isEmpty) {
+        emptyResult
+      } else if (matchingGroupData.length == 1) {
         skillResultFor(matchingGroupData.head)
       } else {
         introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0))
