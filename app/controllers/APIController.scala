@@ -15,7 +15,8 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.Action
 import services.{DataService, SlackEventService}
-import utils.SlackTimestamp
+import slack.api.SlackApiClient
+import utils.{SlackChannels, SlackTimestamp}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -91,18 +92,23 @@ class APIController @Inject() (
           maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
             dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
           }.getOrElse(Future.successful(None))
-          maybeEvent <- Future.successful(
-            for {
-              botProfile <- maybeBotProfile
-            } yield SlackMessageEvent(
-              botProfile,
-              info.channel,
-              None,
-              maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
-              info.message,
-              SlackTimestamp.now
-            )
-          )
+          maybeEvent <- {
+            maybeBotProfile.map { botProfile =>
+              val client = SlackApiClient(botProfile.token)
+              SlackChannels(client).maybeIdFor(info.channel).map { maybeChannelId =>
+                Some(
+                  SlackMessageEvent(
+                    botProfile,
+                    maybeChannelId.getOrElse(info.channel),
+                    None,
+                    maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
+                    info.message,
+                    SlackTimestamp.now
+                  )
+                )
+              }
+            }.getOrElse(Future.successful(None))
+          }
           isInvokedExternally <- Future.successful(maybeUserForApiToken.isDefined)
           result <- maybeEvent.map { event =>
             for {
