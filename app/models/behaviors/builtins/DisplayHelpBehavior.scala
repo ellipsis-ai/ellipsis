@@ -112,7 +112,7 @@ case class DisplayHelpBehavior(
     val remainingGroupCount = groupsRemaining.length
     val actions = if (remainingGroupCount > 0) {
       val label = if (remainingGroupCount == 1) { "1 more skill…" } else { s"$remainingGroupCount more skills…" }
-      skillActions :+ SlackMessageAction("help_index", label, endAt.toString, style = Some("primary"))
+      skillActions :+ SlackMessageAction("help_index", label, endAt.toString, maybeStyle = Some("primary"))
     } else {
       skillActions
     }
