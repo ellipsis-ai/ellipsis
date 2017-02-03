@@ -45,7 +45,7 @@ class BehaviorParameterServiceImpl @Inject() (
   import BehaviorParameterQueries._
 
   def allFor(behaviorVersion: BehaviorVersion): Future[Seq[BehaviorParameter]] = {
-   val action = allForQuery(behaviorVersion.id).result.map(_.map(tuple2Parameter))
+   val action = allForQuery(behaviorVersion.id).result.map(_.map(tuple2Parameter).sortBy(_.rank))
     dataService.run(action)
   }
 
