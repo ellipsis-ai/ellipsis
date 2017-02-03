@@ -4,9 +4,8 @@ import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.MessageEvent
 import models.behaviors.events.{MessageEvent, SlackMessageAction, SlackMessageActions, SlackMessageEvent}
-import models.behaviors.{BotResult, SimpleTextResult, TextWithActionsResult}
+import models.behaviors.{BotResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
 import utils.Color
 
@@ -57,8 +56,7 @@ case class DisplayHelpBehavior(
           dataService.behaviors.editLinkFor(id, lambdaService.configuration)
         }
         val link = maybeLink.map { l => s" [✎]($l)" }.getOrElse("")
-        val authorsString = "" //if (authorNames.isEmpty) { "" } else { "by " ++ authorNames.map(n => s"<@$n>").mkString(", ") }
-        Some(s"$triggersString$link $authorsString  \n")
+        Some(s"$triggersString$link\n\n")
       }
     }
   }
@@ -131,15 +129,15 @@ case class DisplayHelpBehavior(
     }
 
     val name = if (group.name.isEmpty) {
-      "Miscellaneous skills"
+      "**Miscellaneous skills**"
     } else {
-      group.name
+      s"**${group.name}**"
     }
 
     val description = if (group.description.isEmpty) {
       ""
     } else {
-      s"  \n${group.description}\n\n"
+      s"${group.description}\n\n"
     }
 
     val numActions = group.behaviorVersions.length
@@ -153,10 +151,10 @@ case class DisplayHelpBehavior(
     }
 
     val resultText =
-      s"""$description$listHeading
+      s"""$intro\n\n$name  \n$description$listHeading
          |${group.behaviorVersions.flatMap(helpStringFor).mkString("")}""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
-    TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, Some(resultText), Some(Color.BLUE_LIGHT), Some(name)))
+    TextWithActionsResult(event, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
   }
 
   def emptyResult: BotResult = {
