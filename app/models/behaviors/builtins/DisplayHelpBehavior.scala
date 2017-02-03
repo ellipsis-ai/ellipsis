@@ -89,10 +89,12 @@ case class DisplayHelpBehavior(
     val groupsToShow = allGroups.slice(startAt, endAt)
     val groupsRemaining = allGroups.slice(endAt, allGroups.length)
 
-    val intro = if (startAt == 0) {
+    val intro = if (startAt == 0 && maybeHelpString.isEmpty) {
       s"OK, let’s start from the top. Here are some things I know about. ${event.skillListLinkFor(lambdaService)}"
+    } else if (startAt == 0 && maybeHelpString.isDefined) {
+      s"OK, here’s what I know$matchString. ${event.skillListLinkFor(lambdaService)}"
     } else {
-      s"OK, here are some more things I know about$matchString."
+      s"OK, here are some more things I know$matchString."
     }
     val maybeInstructions = if (startAt > 0 || !isFirstTrigger) {
       None
