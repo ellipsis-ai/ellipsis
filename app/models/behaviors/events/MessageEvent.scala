@@ -30,6 +30,14 @@ trait MessageEvent {
 
   def relevantMessageText: String = MessageEvent.ellipsisRegex.replaceFirstIn(fullMessageText, "")
 
+  def skillListLinkFor(lambdaService: AWSLambdaService): String = {
+    val skillListLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.ApplicationController.index(Some(teamId))
+      s"$baseUrl$path"
+    }.get
+    s"[View all skills]($skillListLink)"
+  }
+
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.BehaviorEditorController.newForNormalBehavior(Some(teamId))
