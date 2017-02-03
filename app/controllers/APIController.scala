@@ -5,7 +5,7 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.SimpleTextResult
-import models.behaviors.events.{EventHandler, SlackMessageEvent}
+import models.behaviors.events.{EventHandler, MessageEvent, ScheduledMessageEvent, SlackMessageEvent}
 import play.api.{Configuration, Logger}
 import play.api.cache.CacheApi
 import play.api.data.Form
@@ -76,6 +76,12 @@ class APIController @Inject() (
       info => {
         val eventualResult = for {
           maybeUserForApiToken <- maybeUserForApiToken(info.token)
+          maybeInvocationToken <- dataService.invocationTokens.findNotExpired(info.token)
+          maybeScheduledMessage <- maybeInvocationToken.flatMap { token =>
+            token.maybeScheduledMessageId.map { msgId =>
+              dataService.scheduledMessages.find(msgId)
+            }
+          }.getOrElse(Future.successful(None))
           maybeUserForInvocationToken <- dataService.users.findForInvocationToken(info.token)
           maybeUser <- Future.successful(maybeUserForApiToken.orElse(maybeUserForInvocationToken))
           maybeTeam <- maybeUser.map { user =>
@@ -96,16 +102,18 @@ class APIController @Inject() (
             maybeBotProfile.map { botProfile =>
               val client = SlackApiClient(botProfile.token)
               SlackChannels(client).maybeIdFor(info.channel).map { maybeChannelId =>
-                Some(
-                  SlackMessageEvent(
-                    botProfile,
-                    maybeChannelId.getOrElse(info.channel),
-                    None,
-                    maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
-                    info.message,
-                    SlackTimestamp.now
-                  )
+                val slackEvent = SlackMessageEvent(
+                  botProfile,
+                  maybeChannelId.getOrElse(info.channel),
+                  None,
+                  maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
+                  info.message,
+                  SlackTimestamp.now
                 )
+                val event: MessageEvent = maybeScheduledMessage.map { scheduledMessage =>
+                  ScheduledMessageEvent(slackEvent, scheduledMessage)
+                }.getOrElse(slackEvent)
+                Some(event)
               }
             }.getOrElse(Future.successful(None))
           }
@@ -139,7 +147,8 @@ class APIController @Inject() (
                   }
                   eventualIntroSend.flatMap { _ =>
                     result.sendIn(None, None).map { _ =>
-                      Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.fullMessageText}] in channel [${event.channel}]")
+                      val channelText = event.maybeChannel.map(c => s" in channel [$c]").getOrElse("")
+                      Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.fullMessageText}]$channelText")
                     }
                   }
                 }

@@ -6,6 +6,7 @@ case class InvocationToken(
                             id: String,
                             userId: String,
                             behaviorId: String,
+                            maybeScheduledMessageId: Option[String],
                             createdAt: OffsetDateTime
                           ) {
   // Ellipsis's function time out is 10 seconds, but there can be a delay in starting, so we allow an extra 5

@@ -158,7 +158,7 @@ class AWSLambdaServiceImpl @Inject() (
       } else {
         for {
           user <- event.ensureUser(dataService)
-          token <- dataService.invocationTokens.createFor(user, behaviorVersion.behavior)
+          token <- dataService.invocationTokens.createFor(user, behaviorVersion.behavior, event.maybeScheduledMessage)
           invocationResult <- invokeFunction(
             behaviorVersion.functionName,
             token,
