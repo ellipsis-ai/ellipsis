@@ -20,7 +20,7 @@ case class SlackMessageActions(
     val maybeFormattedText = maybeText.map(SlackMessageFormatter.bodyTextFor)
     actions.grouped(groupSize).zipWithIndex.map { case(segment, index) =>
       Attachment(
-        fallback = if (index == 0) { maybeFormattedText } else { Some("") },
+        fallback = Some("This feature is unavailable on this platform."),
         actions = segment.map(_.actionField),
         callback_id = Some(id),
         color = maybeColor,
