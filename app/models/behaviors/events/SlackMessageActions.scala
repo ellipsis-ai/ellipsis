@@ -19,6 +19,7 @@ case class SlackMessageActions(
     val groupSize = if (size % maxPerGroup == 1) { maxPerGroup - 1 } else { maxPerGroup }
     actions.grouped(groupSize).map { actionPart =>
       Attachment(
+        fallback = Some("Buttons unavailable"),
         actions = actionPart.map(_.actionField),
         callback_id = Some(id),
         color = maybeColor
@@ -28,9 +29,11 @@ case class SlackMessageActions(
 
   lazy val attachments: Seq[Attachment] = {
     maybeText.map { unformatted =>
+      val formatted = Some(SlackMessageFormatter.bodyTextFor(unformatted))
       Seq(Attachment(
+        fallback = formatted,
         title = maybeTitle,
-        text = Some(SlackMessageFormatter.bodyTextFor(unformatted)),
+        text = formatted,
         color = maybeColor,
         mrkdwn_in = Seq("text")
       )) ++ attachmentSegments
