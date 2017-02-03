@@ -92,12 +92,12 @@ case class DisplayHelpBehavior(
     val intro = if (startAt == 0 && isFirstTrigger) {
       s"What can I help with?"
     } else {
-      s"OK, here are some more things I know how about$matchString:"
+      s"OK, here are some more things I know about$matchString:"
     }
     val maybeInstructions = if (startAt > 0 || !isFirstTrigger) {
       None
     } else if (matchString.isEmpty) {
-      Some("Click a skill to learn more. You can also search by keyword. For example, type:  \n`@ellipsis help bananas`")
+      Some(s"Click a skill to learn more. You can also search by keyword. For example, type:  \n`${event.botPrefix}help bananas`")
     } else {
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
