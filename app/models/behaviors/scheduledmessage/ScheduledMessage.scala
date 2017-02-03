@@ -12,7 +12,8 @@ import models.behaviors.events.{EventHandler, ScheduledMessageEvent, SlackMessag
 import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.{Configuration, Logger}
 import services.DataService
-import slack.api.{ApiError, SlackApiClient}
+import slack.api.SlackApiClient
+import utils.SlackChannels
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -134,25 +135,6 @@ case class ScheduledMessage(
     }.getOrElse(Future.successful(None))
   }
 
-  private def swallowingChannelNotFound[T](fn: () => Future[T]): Future[Option[T]] = {
-    fn().map(Some(_)).recover {
-      case e: ApiError => if (e.code == "channel_not_found") {
-        None
-      } else {
-        throw e
-      }
-    }
-  }
-
-  private def getMembersFor(channelOrGroupId: String, client: SlackApiClient)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
-    for {
-      maybeChannel <- swallowingChannelNotFound(() => client.getChannelInfo(channelOrGroupId))
-      maybeGroup <- swallowingChannelNotFound(() => client.getGroupInfo(channelOrGroupId))
-    } yield {
-      maybeChannel.flatMap(_.members).orElse(maybeGroup.map(_.members)).getOrElse(Seq())
-    }
-  }
-
   case class SlackDMInfo(userId: String, channelId: String)
 
   private def sendDMsSequentiallyFor(
@@ -182,7 +164,7 @@ case class ScheduledMessage(
                                 configuration: Configuration
                               )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
-      members <- getMembersFor(channelName, client)
+      members <- SlackChannels(client).getMembersFor(channelName)
       otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
       dmInfos <- Future.sequence(otherMembers.map { ea =>
         client.openIm(ea).map { dmChannel =>
