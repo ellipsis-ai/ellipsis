@@ -249,16 +249,17 @@ class SlackController @Inject() (
   case class TeamInfo(id: String, domain: String)
   case class ChannelInfo(id: String, name: String)
   case class UserInfo(id: String, name: String)
-  case class OriginalMessageInfo(text: String, attachments: Seq[AttachmentInfo])
+  case class OriginalMessageInfo(text: String, attachments: Seq[AttachmentInfo], response_type: Option[String], replace_original: Option[Boolean])
   case class AttachmentInfo(
-                             title: Option[String],
-                             text: Option[String],
-                             mrkdwn_in: Option[Seq[String]],
+                             fallback: Option[String] = None,
+                             title: Option[String] = None,
+                             text: Option[String] = None,
+                             mrkdwn_in: Option[Seq[String]] = None,
+                             callback_id: Option[String] = None,
                              fields: Option[Seq[FieldInfo]] = None,
                              actions: Option[Seq[ActionInfo]] = None,
                              color: Option[String] = None,
                              title_link: Option[String] = None,
-                             fallback: Option[String] = None,
                              pretext: Option[String] = None,
                              author_name: Option[String] = None,
                              author_icon: Option[String] = None,
@@ -290,8 +291,14 @@ class SlackController @Inject() (
         flatMap { _.value }
     }
 
-    def maybeHelpIndex: Option[String] = {
-      actions.find { info => info.name == "help_index" }.map { _ => "index" }
+    def maybeHelpIndexAt: Option[Int] = {
+      actions.find { info => info.name == "help_index" }.map { _.value.map { value =>
+        try {
+          value.toInt
+        } catch {
+          case _: NumberFormatException => 0
+        }
+      }.getOrElse(0) }
     }
 
     def maybeFutureEvent: Future[Option[SlackMessageEvent]] = {
@@ -340,22 +347,22 @@ class SlackController @Inject() (
               var resultText: String = "_OK, let’s continue._"
               val user = s"<@${info.user.id}>"
 
-              info.maybeHelpIndex.foreach { _ =>
+              info.maybeHelpIndexAt.foreach { index =>
                 info.maybeFutureEvent.map { maybeEvent =>
                   maybeEvent.map { event =>
-                    DisplayHelpBehavior(None, None, isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
+                    DisplayHelpBehavior(None, None, Some(index), isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
                 }
-                resultText = s"_$user clicked *Other help*._"
+                resultText = s"_$user clicked *More help*._"
               }
 
               info.maybeHelpForSkillId.foreach { skillId =>
                 info.maybeFutureEvent.map { maybeEvent =>
                   maybeEvent.map { event =>
                     val result = if (skillId == "(untitled)") {
-                      DisplayHelpBehavior(Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
+                      DisplayHelpBehavior(Some(skillId), None, None, isFirstTrigger = false, event, lambdaService, dataService).result
                     } else {
-                      DisplayHelpBehavior(None, Some(skillId), isFirstTrigger = false, event, lambdaService, dataService).result
+                      DisplayHelpBehavior(None, Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
                     }
                     result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
@@ -375,7 +382,7 @@ class SlackController @Inject() (
 
               // respond immediately by removing buttons and appending a new attachment
               val attachmentsWithoutButtons = info.original_message.attachments.filter(ea => ea.text.isDefined).map(ea => ea.copy(actions = None))
-              val resultAttachment = AttachmentInfo(title = None, text = Some(resultText), mrkdwn_in = Some(Seq("text")), color = Some(Color.BLUE_LIGHTER))
+              val resultAttachment = AttachmentInfo(Some(resultText), None, Some(resultText), Some(Seq("text")), Some(info.callback_id), color = Some(Color.BLUE_LIGHTER))
               val updated = info.original_message.copy(attachments = attachmentsWithoutButtons :+ resultAttachment)
               Ok(Json.toJson(updated))
             } else {

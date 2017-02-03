@@ -17,6 +17,7 @@ import scala.concurrent.Future
 case class DisplayHelpBehavior(
                          maybeHelpString: Option[String],
                          maybeSkillId: Option[String],
+                         maybeStartAtIndex: Option[Int],
                          isFirstTrigger: Boolean,
                          event: MessageEvent,
                          lambdaService: AWSLambdaService,
@@ -79,23 +80,28 @@ case class DisplayHelpBehavior(
     }.getOrElse("")
   }
 
-  private def introResultFor(groupData: Seq[BehaviorGroupData]): BotResult = {
-    val groupsWithOther = ArrayBuffer[BehaviorGroupData]()
+  private def introResultFor(groupData: Seq[BehaviorGroupData], startAt: Int): BotResult = {
+    val allGroups = ArrayBuffer[BehaviorGroupData]()
     val (untitledGroups, titledGroups) = groupData.partition(group => group.name.isEmpty)
-    groupsWithOther ++= titledGroups
-    groupsWithOther += BehaviorGroupData(None, "", "", None, untitledGroups.flatMap(group => group.behaviorVersions), None, None, None, OffsetDateTime.now)
+    allGroups ++= titledGroups
+    allGroups += BehaviorGroupData(None, "", "", None, untitledGroups.flatMap(group => group.behaviorVersions), None, None, None, OffsetDateTime.now)
+    val endAt = startAt + SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT - 1
+    val groupsToShow = allGroups.slice(startAt, endAt)
+    val groupsRemaining = allGroups.slice(endAt, allGroups.length)
 
-    val intro = if (isFirstTrigger) {
+    val intro = if (startAt == 0 && isFirstTrigger) {
       s"What can I help with?"
     } else {
-      s"OK, here’s everything else I know$matchString:"
+      s"OK, here are some more things I know how about$matchString:"
     }
-    val instructions = if (matchString.isEmpty) {
-      "Click a skill to learn more, or try searching a keyword to narrow it down, e.g. `@ellipsis help bananas`."
+    val maybeInstructions = if (startAt > 0 || !isFirstTrigger) {
+      None
+    } else if (matchString.isEmpty) {
+      Some("Click a skill to learn more. You can also search by keyword. For example, type:  \n`@ellipsis help bananas`")
     } else {
-      "Click a skill to learn more, or try with a different keyword."
+      Some("Click a skill to learn more, or try searching a different keyword.")
     }
-    val actions = groupsWithOther.map(group => {
+    val skillActions = groupsToShow.map(group => {
       val (label, helpActionValue) = if (group.name.isEmpty) {
         ("Miscellaneous", "(untitled)")
       } else {
@@ -103,7 +109,16 @@ case class DisplayHelpBehavior(
       }
       SlackMessageAction("help_for_skill", label, helpActionValue)
     })
-    val attachment = SlackMessageActions("help", actions, Some(instructions), Some(Color.PINK))
+    val remainingGroupCount = groupsRemaining.length
+    val actions = if (remainingGroupCount > 0) {
+      val label = if (remainingGroupCount == 1) { "1 more skill…" } else { s"$remainingGroupCount more skills…" }
+      skillActions :+ SlackMessageAction("help_index", label, endAt.toString, style = Some("primary"))
+    } else if (groupsRemaining.isEmpty && groupsToShow.length < allGroups.length) {
+      skillActions :+ SlackMessageAction("help_index", "More skills…", "0", style = Some("primary"))
+    } else {
+      skillActions
+    }
+    val attachment = SlackMessageActions("help_index", actions, maybeInstructions, Some(Color.PINK))
     TextWithActionsResult(event, intro, forcePrivateResponse = false, attachment)
   }
 
@@ -112,7 +127,7 @@ case class DisplayHelpBehavior(
     val intro = if (isFirstTrigger) {
       s"Here’s what I know$matchString:"
     } else {
-      "OK, here’s the help you asked for. Click below for more help."
+      "OK, here’s the help you asked for:"
     }
 
     val name = if (group.name.isEmpty) {
@@ -140,8 +155,8 @@ case class DisplayHelpBehavior(
     val resultText =
       s"""$description$listHeading
          |${group.behaviorVersions.flatMap(helpStringFor).mkString("")}""".stripMargin
-    val actions = Seq(SlackMessageAction("help_index", "Other help…", ""))
-    TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help", actions, Some(resultText), Some(Color.BLUE_LIGHT), Some(name)))
+    val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
+    TextWithActionsResult(event, intro, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, Some(resultText), Some(Color.BLUE_LIGHT), Some(name)))
   }
 
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
@@ -175,7 +190,7 @@ case class DisplayHelpBehavior(
       if (matchingGroupData.length == 1) {
         skillResultFor(matchingGroupData.head)
       } else {
-        introResultFor(matchingGroupData)
+        introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0))
       }
     }
   }
