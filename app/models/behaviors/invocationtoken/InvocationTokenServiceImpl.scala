@@ -9,6 +9,7 @@ import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
+import models.behaviors.scheduledmessage.ScheduledMessage
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -18,9 +19,10 @@ class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invoc
   def id = column[String]("id", O.PrimaryKey)
   def userId = column[String]("user_id")
   def behaviorId = column[String]("behavior_id")
+  def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, userId, behaviorId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
+  def * = (id, userId, behaviorId, maybeScheduledMessageId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
 }
 
 class InvocationTokenServiceImpl @Inject() (
@@ -46,8 +48,8 @@ class InvocationTokenServiceImpl @Inject() (
     }
   }
 
-  def createFor(user: User, behavior: Behavior): Future[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, user.id, behavior.id, OffsetDateTime.now)
+  def createFor(user: User, behavior: Behavior, maybeScheduledMessage: Option[ScheduledMessage]): Future[InvocationToken] = {
+    val newInstance = InvocationToken(IDs.next, user.id, behavior.id, maybeScheduledMessage.map(_.id), OffsetDateTime.now)
     dataService.run((all += newInstance).map(_ => newInstance))
   }
 
