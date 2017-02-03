@@ -344,7 +344,7 @@ class SlackController @Inject() (
         Json.parse(payload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
-              var resultText: String = "_OK, let’s continue._"
+              var resultText: String = "OK, let’s continue."
               val user = s"<@${info.user.id}>"
 
               info.maybeHelpIndexAt.foreach { index =>
@@ -353,7 +353,7 @@ class SlackController @Inject() (
                     DisplayHelpBehavior(None, None, Some(index), isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
                 }
-                resultText = s"_$user clicked *More help*._"
+                resultText = s"$user clicked More help."
               }
 
               info.maybeHelpForSkillId.foreach { skillId =>
@@ -376,14 +376,14 @@ class SlackController @Inject() (
                       action.name == "help_for_skill" && action.value.contains(skillId)
                     }
                 resultText = maybeClickedAction.map {
-                  action => s"_$user clicked *${action.text}.*_"
-                }.getOrElse(s"_$user clicked a button._")
+                  action => s"$user clicked ${action.text}."
+                }.getOrElse(s"$user clicked a button.")
               }
 
-              // respond immediately by removing buttons and appending a new attachment
-              val attachmentsWithoutButtons = info.original_message.attachments.filter(ea => ea.text.isDefined).map(ea => ea.copy(actions = None))
-              val resultAttachment = AttachmentInfo(Some(resultText), None, Some(resultText), Some(Seq("text")), Some(info.callback_id), color = Some(Color.BLUE_LIGHTER))
-              val updated = info.original_message.copy(attachments = attachmentsWithoutButtons :+ resultAttachment)
+              // respond immediately by appending a new attachment
+              val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
+              val newAttachment = AttachmentInfo(Some(resultText), None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = Some(resultText))
+              val updated = info.original_message.copy(attachments = info.original_message.attachments :+ newAttachment)
               Ok(Json.toJson(updated))
             } else {
               Unauthorized("Bad token")
