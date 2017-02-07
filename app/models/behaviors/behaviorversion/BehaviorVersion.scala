@@ -18,7 +18,7 @@ case class BehaviorVersion(
                             id: String,
                             behavior: Behavior,
                             maybeDescription: Option[String],
-                            maybeShortName: Option[String],
+                            maybeName: Option[String],
                             maybeFunctionBody: Option[String],
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
@@ -27,6 +27,8 @@ case class BehaviorVersion(
                           ) {
 
   val team: Team = behavior.team
+
+  val exportName: String = maybeName.getOrElse(id)
 
   def isSkill: Boolean = {
     maybeFunctionBody.exists { body =>
@@ -90,7 +92,7 @@ case class BehaviorVersion(
       id,
       behavior.id,
       maybeDescription,
-      maybeShortName,
+      maybeName,
       maybeFunctionBody,
       maybeResponseTemplate,
       forcePrivateResponse,

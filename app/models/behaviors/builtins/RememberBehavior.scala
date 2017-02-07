@@ -39,7 +39,7 @@ case class RememberBehavior(event: MessageEvent, lambdaService: AWSLambdaService
             qaExtractor.possibleAnswerContent,
             Seq(),
             triggerData,
-            BehaviorConfig(None, None, None, None, None, None),
+            BehaviorConfig(None, None, None, None, None, None, None),
             None,
             None,
             None,

@@ -18,7 +18,7 @@ object BehaviorVersionQueries {
       raw.id,
       BehaviorQueries.tuple2Behavior(tuple._2),
       raw.maybeDescription,
-      raw.maybeShortName,
+      raw.maybeName,
       raw.maybeFunctionBody,
       raw.maybeResponseTemplate,
       raw.forcePrivateResponse,
