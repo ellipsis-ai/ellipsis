@@ -298,6 +298,7 @@ class BehaviorEditorController @Inject() (
             }.getOrElse(Seq()),
             BehaviorConfig(
               None,
+              version.maybeName,
               maybeAwsConfigData,
               maybeRequiredOAuth2ApiConfigsData,
               maybeRequiredSimpleTokenApisData,

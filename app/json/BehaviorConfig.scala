@@ -2,6 +2,7 @@ package json
 
 case class BehaviorConfig(
                            publishedId: Option[String],
+                           name: Option[String],
                            aws: Option[AWSConfigData],
                            requiredOAuth2ApiConfigs: Option[Seq[RequiredOAuth2ApiConfigData]],
                            requiredSimpleTokenApis: Option[Seq[RequiredSimpleTokenApiData]],

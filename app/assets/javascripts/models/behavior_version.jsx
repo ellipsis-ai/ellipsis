@@ -9,6 +9,7 @@ define(function(require) {
         groupId: { value: props.groupId, enumerable: true },
         teamId: { value: props.teamId, enumerable: true },
         behaviorId: { value: props.behaviorId, enumerable: true },
+        name: { value: props.name, enumerable: true },
         description: { value: props.description, enumerable: true },
         functionBody: { value: props.functionBody, enumerable: true },
         responseTemplate: { value: props.responseTemplate, enumerable: true },

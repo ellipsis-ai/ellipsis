@@ -23,7 +23,7 @@ case class BehaviorVersionExporter(
 
   val fullPath = {
     val behaviorType = if (behaviorVersion.behavior.isDataType) { "data_types" } else { "actions" }
-    val dirName = behaviorVersion.behavior.maybeDataTypeName.getOrElse(behaviorVersion.id)
+    val dirName = behaviorVersion.behavior.maybeDataTypeName.getOrElse(behaviorVersion.exportName)
     val safeDirName = SafeFileName.forName(dirName)
     s"$parentPath/$behaviorType/$safeDirName"
   }
