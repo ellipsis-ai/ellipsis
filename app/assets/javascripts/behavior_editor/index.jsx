@@ -1924,7 +1924,7 @@ const BehaviorEditor = React.createClass({
             {this.getBehaviorHeading()}
 
             <div className="columns mbs">
-              <div className="column column-one-quarter mobile-column-full">
+              <div className="column column-page-sidebar mobile-column-full">
                 <Input
                   className="form-input-borderless form-input-m type-bold"
                   placeholder="Add a name (optional)"
@@ -1933,7 +1933,7 @@ const BehaviorEditor = React.createClass({
                 />
               </div>
 
-              <div className="column column-three-quarters mobile-column-full">
+              <div className="column column-page-main mobile-column-full">
                 <Input
                   className="form-input-borderless form-input-m type-bold"
                   placeholder="Add a description (optional)"
