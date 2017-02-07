@@ -940,7 +940,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateName: function(newName) {
-    this.setBehaviorProp('name', newName)
+    this.setBehaviorProp('name', newName);
   },
 
   updateEnvVariables: function(envVars, options) {
@@ -1923,7 +1923,7 @@ const BehaviorEditor = React.createClass({
           <div className="container pts">
             {this.getBehaviorHeading()}
 
-            <div className="columns mbs">
+            <div className="columns mbl">
               <div className="column column-page-sidebar mobile-column-full">
                 <Input
                   className="form-input-borderless form-input-m type-bold"
