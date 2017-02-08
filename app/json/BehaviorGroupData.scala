@@ -15,6 +15,7 @@ case class BehaviorGroupData(
                               name: String,
                               description: String,
                               icon: Option[String],
+                              inputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
                               githubUrl: Option[String],
                               importedId: Option[String],
@@ -81,6 +82,12 @@ object BehaviorGroupData {
       behaviors <- maybeGroup.map { group =>
         dataService.behaviors.allForGroup(group)
       }.getOrElse(Future.successful(Seq()))
+      inputs <- maybeGroup.map { group =>
+        dataService.inputs.allForGroup(group)
+      }.getOrElse(Future.successful(Seq()))
+      inputsData <- Future.sequence(inputs.map { ea =>
+        InputData.fromInput(ea, dataService)
+      })
       versionsData <- Future.sequence(behaviors.map { ea =>
         BehaviorVersionData.maybeFor(ea.id, user, dataService)
       }).map(_.flatten.sortBy { ea =>
@@ -92,6 +99,7 @@ object BehaviorGroupData {
         group.name,
         group.maybeDescription.getOrElse(""),
         None,
+        inputsData,
         versionsData,
         maybeGithubUrl,
         group.maybeImportedId,

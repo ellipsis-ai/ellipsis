@@ -22,4 +22,12 @@ case class BehaviorParameterData(
     groupId
   )
 
+  def copyWithIdMappings(dataTypeIdMapping: Map[String, String], inputIdMapping: Map[String, String]): BehaviorParameterData = {
+    copy(
+      paramType = paramType.map(_.copyWithIdMapping(dataTypeIdMapping)),
+      inputId = inputId.flatMap { iid => inputIdMapping.get(iid) }
+    )
+  }
+
+
 }

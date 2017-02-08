@@ -10,7 +10,13 @@ case class BehaviorParameterTypeData(
                                       id: String,
                                       name: String,
                                       needsConfig: Option[Boolean]
-                                    )
+                                    ) {
+  def copyWithIdMapping(mapping: Map[String, String]): BehaviorParameterTypeData = {
+    mapping.get(id).map { exportId =>
+      copy(id = exportId)
+    }.getOrElse(this)
+  }
+}
 
 object BehaviorParameterTypeData {
 
