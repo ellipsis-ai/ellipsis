@@ -18,7 +18,7 @@ function errorHandler(ellipsis, args, message) {
   }
 }
 
-module.exports = {
+const PM = {
 
   postMessage: function (args) {
     const ellipsis = args.ellipsis;
@@ -63,15 +63,16 @@ module.exports = {
       errorHandler(null, args, errorMessages.ELLIPSIS_OBJECT_MISSING);
     } else if (!message) {
       errorHandler(ellipsis, args, errorMessages.MESSAGE_MISSING);
+    } else {
+      return new Promise((resolve, reject) => {
+        PM.postMessage(Object.assign({}, args, {
+          ellipsis: ellipsis,
+          message: message,
+          success: resolve,
+          error: reject
+        }));
+      });
     }
-    return new Promise((resolve, reject) => {
-      this.postMessage(Object.assign({}, args, {
-        ellipsis: ellipsis,
-        message: message,
-        success: resolve,
-        error: reject
-      }));
-    });
   },
 
   promiseToSchedule: function(args) {
@@ -85,7 +86,7 @@ module.exports = {
     } else {
       const useDM = args.useDM ? "privately for everyone in this channel" : "";
       const message = `...schedule "${action}" ${useDM} ${recurrence}`;
-      return this.promiseToPostMessage(Object.assign({}, args, {
+      return PM.promiseToPostMessage(Object.assign({}, args, {
         message: message
       }));
     }
@@ -97,11 +98,13 @@ module.exports = {
     if (!action) {
       errorHandler(ellipsis, args, errorMessages.UNSCHEDULE_ACTION_MISSING);
     } else {
-      const message = `...unschedule "${action}`;
-      return this.promiseToPostMessage(Object.assign({}, args, {
+      const message = `...unschedule "${action}"`;
+      return PM.promiseToPostMessage(Object.assign({}, args, {
         message: message
       }));
     }
   }
 
 };
+
+module.exports = PM;
