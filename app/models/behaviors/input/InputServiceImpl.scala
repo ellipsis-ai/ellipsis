@@ -10,6 +10,7 @@ import models.behaviors.behaviorparameter.{BehaviorParameterType, TextType}
 import models.team.Team
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behavior.Behavior
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -134,6 +135,18 @@ class InputServiceImpl @Inject() (
       val action = uncompiledFindRawQuery(input.id).map(_.maybeExportId).update(newExportId)
       dataService.run(action).map { _ => input.copy(maybeExportId = newExportId) }
     }
+  }
+
+  def ensureExportIdsFor(behavior: Behavior): Future[Unit] = {
+    for {
+      maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
+      params <- maybeCurrentVersion.map { version =>
+        dataService.behaviorParameters.allFor(version)
+      }.getOrElse(Future.successful(Seq()))
+      _ <- Future.sequence(params.map { param =>
+        withEnsuredExportId(param.input)
+      })
+    } yield {}
   }
 
 }

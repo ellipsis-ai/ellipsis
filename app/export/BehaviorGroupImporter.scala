@@ -29,7 +29,6 @@ case class BehaviorGroupImporter(
           }
           param.copy(inputId = maybeNewId, inputExportId = None)
         }
-        versionData.copy(params = paramsWithNewInputIds)
         BehaviorVersionImporter(team, user, versionData.copy(params = paramsWithNewInputIds), dataService).run
       }
     )

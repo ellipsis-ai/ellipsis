@@ -45,7 +45,7 @@ case class BehaviorGroupExporter(
   }
 
   def writeInputs(): Unit = {
-    val forExport = inputsData.map(_.copyForExport(this))
+    val forExport = inputsData.map(_.copyForExport(this)).sortBy(_.exportId)
     writeFileFor("inputs.json", Json.prettyPrint(Json.toJson(forExport)))
   }
 
@@ -88,6 +88,11 @@ object BehaviorGroupExporter {
       maybeBehaviors <- maybeGroup.map { group =>
         dataService.behaviors.allForGroup(group).map(Some(_))
       }.getOrElse(Future.successful(None))
+      _ <- maybeBehaviors.map { behaviors =>
+        Future.sequence(behaviors.map { behavior =>
+          dataService.inputs.ensureExportIdsFor(behavior)
+        }).map(_ => {})
+      }.getOrElse(Future.successful({}))
       maybeExporters <- maybeBehaviors.map { behaviors =>
         val exportName = maybeGroup.map(_.exportName).get
         val parentPath = s"$mainParentPath/$exportName"
@@ -103,12 +108,7 @@ object BehaviorGroupExporter {
           }).map(_.flatten)
         }).map(_.flatten.distinct)
       }.getOrElse(Future.successful(Seq()))
-      inputsWithEnsuredExportIds <- Future.sequence(
-        inputs.map { input =>
-          dataService.inputs.withEnsuredExportId(input)
-        }
-      )
-      inputsData <- Future.sequence(inputsWithEnsuredExportIds.map { ea =>
+      inputsData <- Future.sequence(inputs.map { ea =>
         InputData.fromInput(ea, dataService)
       })
     } yield {
