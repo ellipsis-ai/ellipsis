@@ -4,7 +4,7 @@ define(function() {
       var initialProps = Object.assign({
         caseSensitive: false,
         isRegex: false,
-        requiresMention: false,
+        requiresMention: true,
         text: ""
       }, props);
       Object.defineProperties(this, {
