@@ -1,5 +1,6 @@
 package json
 
+import export.BehaviorGroupExporter
 import models.behaviors.behaviorparameter.BehaviorParameterType
 import services.DataService
 
@@ -11,8 +12,8 @@ case class BehaviorParameterTypeData(
                                       name: String,
                                       needsConfig: Option[Boolean]
                                     ) {
-  def copyWithIdMapping(mapping: Map[String, String]): BehaviorParameterTypeData = {
-    mapping.get(id).map { exportId =>
+  def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterTypeData = {
+    groupExporter.exportIdForDataTypeId(id).map { exportId =>
       copy(id = exportId)
     }.getOrElse(this)
   }

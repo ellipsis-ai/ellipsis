@@ -18,10 +18,19 @@ case class BehaviorGroupImporter(
                                    dataService: DataService
                                  ) {
 
+  val inputExportIdToIdMapping = collection.mutable.Map[String, String]()
+
   def importBehaviorVersions(versions: Seq[BehaviorVersionData]): Future[Seq[Option[BehaviorVersion]]] = {
     Future.sequence(
       versions.map { versionData =>
-        BehaviorVersionImporter(team, user, versionData, dataService).run
+        val paramsWithNewInputIds = versionData.params.map { param =>
+          val maybeNewId = param.inputExportId.flatMap { exportId =>
+            inputExportIdToIdMapping.get(exportId)
+          }
+          param.copy(inputId = maybeNewId, inputExportId = None)
+        }
+        versionData.copy(params = paramsWithNewInputIds)
+        BehaviorVersionImporter(team, user, versionData.copy(params = paramsWithNewInputIds), dataService).run
       }
     )
   }
@@ -34,7 +43,12 @@ case class BehaviorGroupImporter(
         val withNewDataTypeId = maybeNewDataTypeId.map { newId =>
           inputData.copy(paramType = inputData.paramType.map(_.copy(id = newId)))
         }.getOrElse(inputData)
-        dataService.inputs.ensureFor(withNewDataTypeId, team)
+        dataService.inputs.ensureFor(withNewDataTypeId, team).map { newInput =>
+          inputData.exportId.foreach { exportId =>
+            inputExportIdToIdMapping.put(exportId, newInput.id)
+          }
+          newInput
+        }
       }
     )
   }

@@ -16,4 +16,6 @@ trait InputService {
 
   def allForGroup(group: BehaviorGroup): Future[Seq[Input]]
 
+  def withEnsuredExportId(input: Input): Future[Input]
+
 }

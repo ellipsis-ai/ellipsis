@@ -1,5 +1,7 @@
 package json
 
+import export.BehaviorGroupExporter
+
 case class BehaviorParameterData(
                                   name: String,
                                   paramType: Option[BehaviorParameterTypeData],
@@ -7,6 +9,7 @@ case class BehaviorParameterData(
                                   isSavedForTeam: Option[Boolean],
                                   isSavedForUser: Option[Boolean],
                                   inputId: Option[String],
+                                  inputExportId: Option[String],
                                   groupId: Option[String]
                                 ) {
 
@@ -14,6 +17,7 @@ case class BehaviorParameterData(
 
   val inputData = InputData(
     inputId,
+    inputExportId,
     name,
     paramType,
     question,
@@ -22,10 +26,10 @@ case class BehaviorParameterData(
     groupId
   )
 
-  def copyWithIdMappings(dataTypeIdMapping: Map[String, String], inputIdMapping: Map[String, String]): BehaviorParameterData = {
+  def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterData = {
     copy(
-      paramType = paramType.map(_.copyWithIdMapping(dataTypeIdMapping)),
-      inputId = inputId.flatMap { iid => inputIdMapping.get(iid) }
+      paramType = paramType.map(_.copyForExport(groupExporter)),
+      inputId = inputId.flatMap(groupExporter.exportIdForInputId)
     )
   }
 

@@ -16,6 +16,7 @@ import scala.concurrent.Future
 
 case class RawInput(
                      id: String,
+                     maybeExportId: Option[String],
                      name: String,
                      maybeQuestion: Option[String],
                      paramType: String,
@@ -27,6 +28,7 @@ case class RawInput(
 class InputsTable(tag: Tag) extends Table[RawInput](tag, "inputs") {
 
   def id = column[String]("id", O.PrimaryKey)
+  def maybeExportId = column[Option[String]]("export_id")
   def name = column[String]("name")
   def maybeQuestion = column[Option[String]]("question")
   def paramType = column[String]("param_type")
@@ -35,7 +37,7 @@ class InputsTable(tag: Tag) extends Table[RawInput](tag, "inputs") {
   def maybeBehaviorGroupId = column[Option[String]]("group_id")
 
   def * =
-    (id, name, maybeQuestion, paramType, isSavedForTeam, isSavedForUser, maybeBehaviorGroupId) <> ((RawInput.apply _).tupled, RawInput.unapply _)
+    (id, maybeExportId, name, maybeQuestion, paramType, isSavedForTeam, isSavedForUser, maybeBehaviorGroupId) <> ((RawInput.apply _).tupled, RawInput.unapply _)
 }
 
 class InputServiceImpl @Inject() (
@@ -67,6 +69,7 @@ class InputServiceImpl @Inject() (
         maybeParamType <- DBIO.from(maybeParamTypeFor(data, team))
         raw <- DBIO.successful(RawInput(
           IDs.next,
+          Some(data.exportId.getOrElse(IDs.next)),
           data.name,
           data.maybeNonEmptyQuestion,
           maybeParamType.map(_.id).getOrElse(TextType.id),
@@ -77,6 +80,7 @@ class InputServiceImpl @Inject() (
         input <- (all += raw).map { _ =>
           Input(
             raw.id,
+            raw.maybeExportId,
             raw.name,
             raw.maybeQuestion,
             maybeParamType.getOrElse(TextType),
@@ -101,6 +105,7 @@ class InputServiceImpl @Inject() (
       maybeParamType <- maybeParamTypeFor(data, team)
       input <- maybeExisting.map { existing =>
         val raw = existing.copy(
+          maybeExportId = Some(data.exportId.getOrElse(IDs.next)),
           name = data.name,
           maybeQuestion = data.maybeNonEmptyQuestion,
           paramType = maybeParamType.getOrElse(TextType),
@@ -119,6 +124,16 @@ class InputServiceImpl @Inject() (
       r.map(tuple2Input)
     }
     dataService.run(action)
+  }
+
+  def withEnsuredExportId(input: Input): Future[Input] = {
+    if (input.maybeExportId.isDefined) {
+      Future.successful(input)
+    } else {
+      val newExportId = Some(IDs.next)
+      val action = uncompiledFindRawQuery(input.id).map(_.maybeExportId).update(newExportId)
+      dataService.run(action).map { _ => input.copy(maybeExportId = newExportId) }
+    }
   }
 
 }

@@ -18,7 +18,7 @@ class EnsureInputs @Inject() (dataService: DataService) {
       params <- dataService.run(BehaviorParameterQueries.all.result)
       _ <- Future.sequence(params.map { ea =>
         if (ea.inputId.isEmpty) {
-          val raw = RawInput(IDs.next, ea.name, ea.maybeQuestion, ea.paramType, isSavedForTeam = false, isSavedForUser = false, None)
+          val raw = RawInput(IDs.next, None, ea.name, ea.maybeQuestion, ea.paramType, isSavedForTeam = false, isSavedForUser = false, None)
           dataService.run((InputQueries.all += raw).andThen {
             BehaviorParameterQueries.all.filter(_.id === ea.id).map(_.inputId).update(Some(raw.id))
           })

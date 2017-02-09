@@ -12,7 +12,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class BehaviorVersionExporter(
-                                    exportId: String,
                                     behaviorVersion: BehaviorVersion,
                                     maybeFunction: Option[String],
                                     paramsData: Seq[BehaviorParameterData],
@@ -44,15 +43,15 @@ case class BehaviorVersionExporter(
     writeFileFor("config.json", configString)
   }
 
-  def copyWithIdMappings(dataTypeIdMapping: Map[String, String], inputIdMapping: Map[String, String]): BehaviorVersionExporter = {
-    copy(paramsData = paramsData.map(_.copyWithIdMappings(dataTypeIdMapping, inputIdMapping)))
+  def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorVersionExporter = {
+    copy(paramsData = paramsData.map(_.copyForExport(groupExporter)))
   }
 
 }
 
 object BehaviorVersionExporter {
 
-  def maybeFor(exportId: String, behaviorId: String, user: User, parentPath: String, dataService: DataService): Future[Option[BehaviorVersionExporter]] = {
+  def maybeFor(behaviorId: String, user: User, parentPath: String, dataService: DataService): Future[Option[BehaviorVersionExporter]] = {
     for {
       maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
@@ -77,7 +76,6 @@ object BehaviorVersionExporter {
         }
         val configForExport = versionData.config.copy(requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsForExport)
         BehaviorVersionExporter(
-          exportId,
           behaviorVersion,
           maybeFunction,
           versionData.params,
