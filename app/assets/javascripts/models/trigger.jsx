@@ -37,7 +37,7 @@ define(function() {
     }
 
     get displayText() {
-      return this.requiresMention ? `...${this.text}` : this.text;
+      return this.text;
     }
 
     hasNonRegexParams() {

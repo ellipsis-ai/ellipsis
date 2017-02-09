@@ -242,8 +242,6 @@ case class SlackMessageEvent(
     text.replaceAll("""<.+?\|(.+?)>""", "$1")
   }
 
-  override def botPrefix: String = s"<@${profile.userId}> "
-
 }
 
 object SlackMessageEvent {
