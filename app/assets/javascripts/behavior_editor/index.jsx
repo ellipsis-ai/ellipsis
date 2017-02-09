@@ -837,10 +837,14 @@ const BehaviorEditor = React.createClass({
     const ref = this.isDataTypeBehavior() ? 'dataTypeTester' : 'behaviorTester';
     if (this.isModified()) {
       this.onSaveBehavior(() => {
-        this.toggleTester(ref);
+        this.props.onClearActivePanel(() => {
+          this.toggleTester(ref);
+        });
       });
     } else {
-      this.toggleTester(ref);
+      this.props.onClearActivePanel(() => {
+        this.toggleTester(ref);
+      });
     }
   },
 
@@ -850,14 +854,6 @@ const BehaviorEditor = React.createClass({
         this.refs[ref].focus();
       }
     });
-  },
-
-  toggleBehaviorTester: function() {
-    this.toggleTester('behaviorTester');
-  },
-
-  toggleDataTypeTester: function() {
-    this.toggleTester('dataTypeTester');
   },
 
   toggleBoilerplateHelp: function() {
@@ -1587,7 +1583,7 @@ const BehaviorEditor = React.createClass({
               params={this.getBehaviorParams()}
               behaviorId={this.props.behavior.behaviorId}
               csrfToken={this.props.csrfToken}
-              onDone={this.toggleBehaviorTester}
+              onDone={this.props.onClearActivePanel}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
             />
           </Collapsible>
@@ -1598,7 +1594,7 @@ const BehaviorEditor = React.createClass({
               behaviorId={this.props.behavior.behaviorId}
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
-              onDone={this.toggleDataTypeTester}
+              onDone={this.props.onClearActivePanel}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
             />
           </Collapsible>
