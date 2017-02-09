@@ -1,0 +1,22 @@
+@(
+  config: ViewConfig,
+  scheduledActions: Seq[models.behaviors.scheduledmessage.ScheduledMessage],
+  scheduledActionsAsJson: String
+)(implicit messages: Messages, r: RequestHeader)
+
+@main("Scheduled Actions", config) {
+
+  <div id="content" class="content">
+  <p>Teams count: @scheduledActions.length </p>
+  <table border="1">
+    <tr>
+      <th>Action</th>
+    </tr>
+    @scheduledActions.map { a =>
+      <tr>
+        <td>@a.text</td>
+      </tr>
+    }
+  </table>
+  </div>
+}
