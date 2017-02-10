@@ -46,7 +46,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
 
   def newSavedInputFor(group: BehaviorGroup): Input = {
-    val data = InputData(Some(IDs.next), IDs.next, None, "", false, false, Some(group.id))
+    val data = InputData(Some(IDs.next), None, IDs.next, None, "", false, false, Some(group.id))
     runNow(dataService.inputs.createFor(data, group.team))
   }
 
@@ -60,7 +60,22 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
                         isSavedForTeam: Option[Boolean] = None,
                         isSavedForUser: Option[Boolean] = None
                       ): BehaviorParameter = {
-    val data = Seq(BehaviorParameterData("param", maybeType, "", isSavedForTeam = isSavedForTeam, isSavedForUser = isSavedForUser, None, None))
+    val inputData = InputData(Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity), None)
+    val input = runNow(dataService.inputs.createFor(inputData, version.team))
+    val paramTypeData = runNow(BehaviorParameterTypeData.from(input.paramType, dataService))
+    val data =
+      Seq(
+        BehaviorParameterData(
+          input.name,
+          Some(paramTypeData),
+          input.question,
+          Some(input.isSavedForTeam),
+          Some(input.isSavedForUser),
+          Some(input.id),
+          input.maybeExportId,
+          input.maybeBehaviorGroup.map(_.id)
+        )
+      )
     runNow(dataService.behaviorParameters.ensureFor(version, data)).head
   }
 
