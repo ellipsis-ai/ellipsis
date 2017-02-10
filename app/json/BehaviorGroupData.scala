@@ -51,10 +51,22 @@ case class BehaviorGroupData(
   }
 
   def matchesHelpSearch(helpSearch: String): Boolean = {
+    nameOrDescriptionMatchesHelpSearch(helpSearch) || anyTriggerMatchesHelpSearch(helpSearch)
+  }
+
+  def nameOrDescriptionMatchesHelpSearch(helpSearch: String): Boolean = {
     val regex = ("(?i)" ++ helpSearch).r
-    regex.findFirstMatchIn(name).isDefined ||
-      regex.findFirstMatchIn(description).isDefined ||
-      anyTriggerMatchesHelpSearch(helpSearch)
+    regex.findFirstMatchIn(name).isDefined || regex.findFirstMatchIn(description).isDefined
+  }
+
+  def filteredToSearch(helpSearch : String): BehaviorGroupData = {
+    if (nameOrDescriptionMatchesHelpSearch(helpSearch)) {
+      this
+    } else {
+      this.copy(behaviorVersions = behaviorVersions.filter { version =>
+        TriggerFuzzyMatcher(helpSearch, version.triggers).run.nonEmpty
+      })
+    }
   }
 
   import scala.math.Ordered.orderingToOrdered

@@ -120,6 +120,27 @@ case class DisplayHelpBehavior(
     TextWithActionsResult(event, intro, forcePrivateResponse = false, attachment)
   }
 
+  private def actionHeadingFor(group: BehaviorGroupData): String = {
+    val numActions = group.behaviorVersions.length
+    if (maybeHelpSearch.forall(helpSearch => helpSearch == "(untitled)" || group.nameOrDescriptionMatchesHelpSearch(helpSearch))) {
+      if (numActions == 0) {
+        "This skill has no actions."
+      } else if (numActions == 1) {
+        "_**1 action available:**_  "
+      } else {
+        s"_**$numActions actions available:**_  "
+      }
+    } else {
+      if (numActions == 0) {
+        "This skill has no matching actions."
+      } else if (numActions == 1) {
+        "_**1 matching action:**_  "
+      } else {
+        s"_**$numActions matching actions:**_  "
+      }
+    }
+  }
+
   def skillResultFor(group: BehaviorGroupData): BotResult = {
 
     val intro = if (isFirstTrigger) {
@@ -140,18 +161,8 @@ case class DisplayHelpBehavior(
       s"${group.description}\n\n"
     }
 
-    val numActions = group.behaviorVersions.length
-
-    val listHeading = if (numActions == 0) {
-      "This skill has no actions."
-    } else if (numActions == 1) {
-      "_**1 action available:**_  "
-    } else {
-      s"_**$numActions actions available:**_  "
-    }
-
     val resultText =
-      s"""$intro\n\n$name  \n$description$listHeading
+      s"""$intro\n\n$name  \n$description${actionHeadingFor(group)}
          |${group.behaviorVersions.flatMap(helpStringFor).mkString("")}""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
     TextWithActionsResult(event, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
@@ -186,7 +197,7 @@ case class DisplayHelpBehavior(
         if (helpSearch == "(untitled)") {
           Seq(BehaviorGroupData(None, "Miscellaneous skills", "", None, groupData.filter(_.name.isEmpty).flatMap(_.behaviorVersions), None, None, None, OffsetDateTime.now))
         } else {
-          groupData.filter(_.matchesHelpSearch(helpSearch))
+          groupData.filter(_.matchesHelpSearch(helpSearch)).map(_.filteredToSearch(helpSearch))
         }
       }.getOrElse {
         groupData
