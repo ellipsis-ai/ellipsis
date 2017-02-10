@@ -12,7 +12,7 @@ import models.behaviors.events.{EventHandler, ScheduledMessageEvent, SlackMessag
 import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.{Configuration, Logger}
 import services.DataService
-import slack.api.SlackApiClient
+import slack.api.{ApiError, SlackApiClient}
 import utils.SlackChannels
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -168,9 +168,14 @@ case class ScheduledMessage(
       otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
       dmInfos <- Future.sequence(otherMembers.map { ea =>
         client.openIm(ea).map { dmChannel =>
-          SlackDMInfo(ea, dmChannel)
+          Some(SlackDMInfo(ea, dmChannel))
+        }.recover {
+          case e: ApiError => {
+            Logger.error(s"Couldn't send DM to $ea due to Slack API error: ${e.code}", e)
+            None
+          }
         }
-      })
+      }).map(_.flatten)
       _ <- sendDMsSequentiallyFor(dmInfos.toList, eventHandler, client, profile, dataService, configuration)
     } yield {}
   }
