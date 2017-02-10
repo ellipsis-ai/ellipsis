@@ -141,7 +141,8 @@ trait MessageEvent {
     text
   }
 
-  def botPrefix: String = "..."
+  // TODO: Remove this method if we're sure we don't want to use it in help anymore
+  def botPrefix: String = ""
 
 }
 
