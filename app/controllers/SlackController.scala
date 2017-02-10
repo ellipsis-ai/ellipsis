@@ -341,7 +341,14 @@ class SlackController @Inject() (
         BadRequest(formWithErrors.errorsAsJson)
       },
       payload => {
-        Json.parse(payload).validate[ActionsTriggeredInfo] match {
+
+        // Slack improperly (?) displays escaped text inside button labels as-is in the client when
+        // we return the original message back.
+        //
+        // TODO: Investigate whether this is safe and/or desirable
+        val unescapedPayload = payload.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+
+        Json.parse(unescapedPayload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
               var resultText: String = "OK, let’s continue."
