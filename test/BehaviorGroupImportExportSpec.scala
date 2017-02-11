@@ -2,6 +2,9 @@ import export.{BehaviorGroupExporter, BehaviorGroupZipImporter}
 import models.behaviors.behaviorgroup.BehaviorGroup
 import support.DBSpec
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 class BehaviorGroupImportExportSpec extends DBSpec {
 
   def mustBeValidImport(exported: BehaviorGroup, imported: BehaviorGroup): Unit = {
@@ -24,10 +27,12 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val behavior = newSavedBehaviorFor(group)
-        val version = newSavedVersionFor(behavior)
-        runNow(dataService.behaviorVersions.save(version))
-        val param = newSavedParamFor(version, isSavedForTeam = Some(true))
+        val behavior1 = newSavedBehaviorFor(group)
+        val version1 = newSavedVersionFor(behavior1)
+        val param1 = newSavedParamFor(version1, isSavedForTeam = Some(true))
+        val behavior2 = newSavedBehaviorFor(group)
+        val version2 = newSavedVersionFor(behavior2)
+        val param2 = newSavedParamFor(version2, maybeExistingInput = Some(param1.input))
         val maybeExporter = runNow(BehaviorGroupExporter.maybeFor(group.id, user, dataService))
         maybeExporter.isDefined mustBe(true)
         val file = maybeExporter.get.getZipFile
@@ -45,6 +50,19 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         val importedGroup = groupsAfter.filterNot(_.id == exportedGroup.id).head
 
         mustBeValidImport(exportedGroup, importedGroup)
+
+        val importedInputs = runNow(dataService.inputs.allForGroup(importedGroup))
+        importedInputs must have length 1
+        val importedBehaviors = runNow(dataService.behaviors.allForGroup(importedGroup))
+        val importedVersions = runNow(Future.sequence(importedBehaviors.map { behavior =>
+          dataService.behaviors.maybeCurrentVersionFor(behavior)
+        }).map(_.flatten))
+        importedVersions must have length 2
+        val importedParams = runNow(Future.sequence(importedVersions.map { version =>
+          dataService.behaviorParameters.allFor(version)
+        }).map(_.flatten))
+        importedParams must have length 2
+        importedParams.head.input mustBe importedParams.tail.head.input
       })
     }
 

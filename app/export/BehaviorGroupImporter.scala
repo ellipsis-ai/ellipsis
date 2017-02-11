@@ -34,7 +34,7 @@ case class BehaviorGroupImporter(
     )
   }
 
-  def importInputs(inputs: Seq[InputData], dataTypes: Seq[BehaviorVersion]): Future[Seq[Input]] = {
+  def importInputs(inputs: Seq[InputData], dataTypes: Seq[BehaviorVersion], group: BehaviorGroup): Future[Seq[Input]] = {
     Future.sequence(
       inputs.map { inputData =>
         val maybeOldDataTypeId = inputData.paramType.map(_.id)
@@ -42,7 +42,12 @@ case class BehaviorGroupImporter(
         val withNewDataTypeId = maybeNewDataTypeId.map { newId =>
           inputData.copy(paramType = inputData.paramType.map(_.copy(id = newId)))
         }.getOrElse(inputData)
-        dataService.inputs.ensureFor(withNewDataTypeId, team).map { newInput =>
+        val withNewGroupId = if (inputData.groupId.isDefined) {
+          withNewDataTypeId.copy(groupId = Some(group.id))
+        } else {
+          withNewDataTypeId
+        }
+        dataService.inputs.ensureFor(withNewGroupId, team).map { newInput =>
           inputData.exportId.foreach { exportId =>
             inputExportIdToIdMapping.put(exportId, newInput.id)
           }
@@ -61,7 +66,7 @@ case class BehaviorGroupImporter(
       val (dataTypesData, actionsData) = behaviorVersionsWithGroupInfo.partition(_.isDataType)
       for {
         dataTypes <- importBehaviorVersions(dataTypesData).map(_.flatten)
-        _ <- importInputs(data.inputs, dataTypes)
+        _ <- importInputs(data.inputs, dataTypes, group)
         _ <- importBehaviorVersions(actionsData)
       } yield {
         Some(group)

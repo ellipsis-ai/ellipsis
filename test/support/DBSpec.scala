@@ -25,6 +25,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 
 trait DBSpec extends PlaySpec with OneAppPerSuite {
@@ -58,10 +59,17 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
                         version: BehaviorVersion,
                         maybeType: Option[BehaviorParameterTypeData] = None,
                         isSavedForTeam: Option[Boolean] = None,
-                        isSavedForUser: Option[Boolean] = None
+                        isSavedForUser: Option[Boolean] = None,
+                        maybeExistingInput: Option[Input] = None
                       ): BehaviorParameter = {
-    val inputData = InputData(Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity), None)
-    val input = runNow(dataService.inputs.createFor(inputData, version.team))
+    val input = maybeExistingInput.map { input =>
+      runNow(InputData.fromInput(input, dataService).flatMap { inputData =>
+        dataService.inputs.ensureFor(inputData.copy(groupId = version.behavior.maybeGroup.map(_.id)), version.team)
+      })
+    }.getOrElse {
+      val inputData = InputData(Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity), None)
+      runNow(dataService.inputs.createFor(inputData, version.team))
+    }
     val paramTypeData = runNow(BehaviorParameterTypeData.from(input.paramType, dataService))
     val data =
       Seq(
