@@ -29,6 +29,51 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
         val behavior1 = newSavedBehaviorFor(group)
         val version1 = newSavedVersionFor(behavior1)
+        val param1 = newSavedParamFor(version1)
+        val behavior2 = newSavedBehaviorFor(group)
+        val version2 = newSavedVersionFor(behavior2)
+        val param2 = newSavedParamFor(version2)
+        val maybeExporter = runNow(BehaviorGroupExporter.maybeFor(group.id, user, dataService))
+        maybeExporter.isDefined mustBe(true)
+        val file = maybeExporter.get.getZipFile
+        val importer = BehaviorGroupZipImporter(team, user, file, dataService)
+
+        val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
+        groupsBefore must have length 1
+
+        runNow(importer.run)
+
+        val groupsAfter = runNow(dataService.behaviorGroups.allFor(team))
+        groupsAfter must have length 2
+
+        val exportedGroup = groupsBefore.head
+        val importedGroup = groupsAfter.filterNot(_.id == exportedGroup.id).head
+
+        mustBeValidImport(exportedGroup, importedGroup)
+
+        val importedSharedInputs = runNow(dataService.inputs.allForGroup(importedGroup))
+        importedSharedInputs must have length 0
+        val importedBehaviors = runNow(dataService.behaviors.allForGroup(importedGroup))
+        val importedVersions = runNow(Future.sequence(importedBehaviors.map { behavior =>
+          dataService.behaviors.maybeCurrentVersionFor(behavior)
+        }).map(_.flatten))
+        importedVersions must have length 2
+        val importedParams = runNow(Future.sequence(importedVersions.map { version =>
+          dataService.behaviorParameters.allFor(version)
+        }).map(_.flatten))
+        importedParams must have length 2
+        importedParams.head.input must not be importedParams.tail.head.input
+      })
+    }
+
+
+    "export and import back in with shared param" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+        val behavior1 = newSavedBehaviorFor(group)
+        val version1 = newSavedVersionFor(behavior1)
         val param1 = newSavedParamFor(version1, isSavedForTeam = Some(true))
         val behavior2 = newSavedBehaviorFor(group)
         val version2 = newSavedVersionFor(behavior2)
