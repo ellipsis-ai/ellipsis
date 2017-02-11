@@ -15,5 +15,4 @@ UPDATE behavior_parameters as bp SET question = (SELECT question FROM inputs as 
 UPDATE behavior_parameters as bp SET param_type = (SELECT param_type FROM inputs as i WHERE i.id = bp.input_id);
 
 ALTER TABLE behavior_parameters ALTER COLUMN name SET NOT NULL;
-ALTER TABLE behavior_parameters ALTER COLUMN question SET NOT NULL;
 ALTER TABLE behavior_parameters ALTER COLUMN param_type SET NOT NULL;

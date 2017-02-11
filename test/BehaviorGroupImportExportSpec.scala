@@ -26,9 +26,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
         val behavior = newSavedBehaviorFor(group)
         val version = newSavedVersionFor(behavior)
-        // TODO: look into why no function body means no export
-        val versionWithData = version.copy(maybeFunctionBody = Some(""))
-        runNow(dataService.behaviorVersions.save(versionWithData))
+        runNow(dataService.behaviorVersions.save(version))
         val param = newSavedParamFor(version, isSavedForTeam = Some(true))
         val maybeExporter = runNow(BehaviorGroupExporter.maybeFor(group.id, user, dataService))
         maybeExporter.isDefined mustBe(true)

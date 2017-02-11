@@ -64,7 +64,6 @@ object BehaviorVersionExporter {
     } yield {
       for {
         behaviorVersion <- maybeBehaviorVersion
-        function <- maybeFunction
         versionData <- maybeVersionData
       } yield {
         // we don't want to export the team-specific application, but we want to keep the scope
