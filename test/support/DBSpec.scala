@@ -99,6 +99,10 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
     runNow(dataService.behaviors.createFor(group, None, None))
   }
 
+  def newSavedDataTypeFor(group: BehaviorGroup): Behavior = {
+    runNow(dataService.behaviors.createFor(group, None, Some("Some type")))
+  }
+
   def newSavedBehaviorGroupFor(team: Team): BehaviorGroup = {
     runNow(dataService.behaviorGroups.createFor("", "", None, team))
   }
