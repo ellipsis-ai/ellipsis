@@ -44,13 +44,15 @@ case class BehaviorGroupZipImporter(
     val versionFileRegex = """^(actions|data_types)/([^/]+)/(.+)""".r
     val readmeRegex = """^README$$""".r
     val configRegex = """^config\.json$$""".r
-    val inputsRegex = """^inputs\.json$$""".r
+    val actionInputsRegex = """^action_inputs\.json$$""".r
+    val dataTypeInputsRegex = """^data_type_inputs\.json$$""".r
 
     var groupName: String = ""
     var groupDescription: String = ""
     var maybePublishedId: Option[String] = None
     var maybeIcon: Option[String] = None
-    var inputs: Seq[InputData] = Seq()
+    var actionInputs: Seq[InputData] = Seq()
+    var dataTypeInputs: Seq[InputData] = Seq()
 
     while (nextEntry != null) {
       val entryName = nextEntry.getName
@@ -78,11 +80,20 @@ case class BehaviorGroupZipImporter(
           case e: JsError =>
         }
       }
-      inputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      actionInputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val readData = readDataFrom(zipInputStream)
         Json.parse(readData).validate[Seq[InputData]] match {
           case JsSuccess(data, jsPath) => {
-            inputs = data
+            actionInputs = data
+          }
+          case e: JsError =>
+        }
+      }
+      dataTypeInputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+        val readData = readDataFrom(zipInputStream)
+        Json.parse(readData).validate[Seq[InputData]] match {
+          case JsSuccess(data, jsPath) => {
+            dataTypeInputs = data
           }
           case e: JsError =>
         }
@@ -109,7 +120,8 @@ case class BehaviorGroupZipImporter(
       groupName,
       groupDescription,
       maybeIcon,
-      inputs,
+      actionInputs,
+      dataTypeInputs,
       versionsData,
       githubUrl = None,
       importedId = maybePublishedId,

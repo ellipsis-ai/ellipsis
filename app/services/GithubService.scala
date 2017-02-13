@@ -154,19 +154,21 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
         tree <- maybeTree
         readmeUrl <- urlForTreeFileNamed("README", tree)
         configUrl <- urlForTreeFileNamed("config.json", tree)
-        inputsUrl <- urlForTreeFileNamed("inputs.json", tree)
+        actionInputsUrl <- urlForTreeFileNamed("action_inputs.json", tree)
+        dataTypeInputsUrl <- urlForTreeFileNamed("data_type_inputs.json", tree)
       } yield {
           (for {
             readme <- fetchTextFor(readmeUrl)
             maybeConfig <- fetchGroupConfigFor(configUrl)
-            inputs <- fetchInputsFor(inputsUrl)
+            actionInputs <- fetchInputsFor(actionInputsUrl)
+            dataTypeInputs <- fetchInputsFor(dataTypeInputsUrl)
             behaviors <- fetchBehaviorsFor(groupUrl, groupPath)
           } yield {
             val githubUrl = githubUrlForGroupPath(groupPath)
             val maybePublishedId = maybeConfig.map(_.publishedId)
             val name = maybeConfig.map(_.name).getOrElse(groupPath)
             val icon = maybeConfig.flatMap(_.icon)
-            BehaviorGroupData(None, name, readme, icon, inputs, behaviors, Some(githubUrl), None, maybePublishedId, OffsetDateTime.now)
+            BehaviorGroupData(None, name, readme, icon, actionInputs, dataTypeInputs, behaviors, Some(githubUrl), None, maybePublishedId, OffsetDateTime.now)
           }).map(Some(_))
         }).getOrElse(Future.successful(None))
     }

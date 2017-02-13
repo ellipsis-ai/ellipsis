@@ -65,8 +65,9 @@ case class BehaviorGroupImporter(
       }
       val (dataTypesData, actionsData) = behaviorVersionsWithGroupInfo.partition(_.isDataType)
       for {
+        _ <- importInputs(data.dataTypeInputs, Seq(), group)
         dataTypes <- importBehaviorVersions(dataTypesData).map(_.flatten)
-        _ <- importInputs(data.inputs, dataTypes, group)
+        _ <- importInputs(data.actionInputs, dataTypes, group)
         _ <- importBehaviorVersions(actionsData)
       } yield {
         Some(group)

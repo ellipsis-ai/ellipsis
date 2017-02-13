@@ -15,7 +15,8 @@ case class BehaviorGroupData(
                               name: String,
                               description: String,
                               icon: Option[String],
-                              inputs: Seq[InputData],
+                              actionInputs: Seq[InputData],
+                              dataTypeInputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
                               githubUrl: Option[String],
                               importedId: Option[String],
@@ -82,10 +83,10 @@ object BehaviorGroupData {
       behaviors <- maybeGroup.map { group =>
         dataService.behaviors.allForGroup(group)
       }.getOrElse(Future.successful(Seq()))
-      inputs <- maybeGroup.map { group =>
+      sharedInputs <- maybeGroup.map { group =>
         dataService.inputs.allForGroup(group)
       }.getOrElse(Future.successful(Seq()))
-      inputsData <- Future.sequence(inputs.map { ea =>
+      sharedInputsData <- Future.sequence(sharedInputs.map { ea =>
         InputData.fromInput(ea, dataService)
       })
       versionsData <- Future.sequence(behaviors.map { ea =>
@@ -99,7 +100,8 @@ object BehaviorGroupData {
         group.name,
         group.maybeDescription.getOrElse(""),
         None,
-        inputsData,
+        sharedInputsData,
+        Seq(),
         versionsData,
         maybeGithubUrl,
         group.maybeImportedId,
