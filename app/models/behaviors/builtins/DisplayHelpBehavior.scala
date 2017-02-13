@@ -80,11 +80,27 @@ case class DisplayHelpBehavior(
     }.getOrElse("")
   }
 
+  private def flattenUnnamedBehaviorGroupData(untitledGroups: Seq[BehaviorGroupData]): BehaviorGroupData = {
+    BehaviorGroupData(
+      id = None,
+      name = "Miscellaneous",
+      description = "",
+      icon = None,
+      actionInputs = untitledGroups.flatMap(_.actionInputs),
+      dataTypeInputs = untitledGroups.flatMap(_.dataTypeInputs),
+      behaviorVersions = untitledGroups.flatMap(_.behaviorVersions),
+      githubUrl = None,
+      importedId = None,
+      publishedId = None,
+      OffsetDateTime.now
+    )
+  }
+
   private def introResultFor(groupData: Seq[BehaviorGroupData], startAt: Int): BotResult = {
     val allGroups = ArrayBuffer[BehaviorGroupData]()
     val (untitledGroups, titledGroups) = groupData.partition(group => group.name.isEmpty)
     allGroups ++= titledGroups
-    allGroups += BehaviorGroupData(None, "", "", None, untitledGroups.flatMap(_.actionInputs), untitledGroups.flatMap(_.dataTypeInputs), untitledGroups.flatMap(_.behaviorVersions), None, None, None, OffsetDateTime.now)
+    allGroups += flattenUnnamedBehaviorGroupData(untitledGroups)
     val endAt = startAt + SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT - 1
     val groupsToShow = allGroups.slice(startAt, endAt)
     val groupsRemaining = allGroups.slice(endAt, allGroups.length)
@@ -104,11 +120,8 @@ case class DisplayHelpBehavior(
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
     val skillActions = groupsToShow.map(group => {
-      val (label, helpActionValue) = if (group.name.isEmpty) {
-        ("Miscellaneous", "(untitled)")
-      } else {
-        (group.name, group.id.getOrElse(""))
-      }
+      val label = group.name
+      val helpActionValue = group.id.getOrElse("(untitled)")
       maybeHelpSearch.map { helpSearch =>
         SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
       }.getOrElse {
@@ -155,7 +168,7 @@ case class DisplayHelpBehavior(
       "OK, here’s the help you asked for:"
     }
 
-    val name = if (group.name.isEmpty) {
+    val name = if (group.id.isEmpty) {
       "**Miscellaneous skills**"
     } else {
       s"**${group.name}**"
@@ -210,22 +223,7 @@ case class DisplayHelpBehavior(
       }.getOrElse(Future.successful(Seq()))
     } yield {
       val flattenedGroupData = maybeSkillId.filter(skillId => skillId == "(untitled)").map { _ =>
-        val relevantGroupData = groupData.filter(_.name.isEmpty)
-        Seq(
-          BehaviorGroupData(
-            None,
-            "Miscellaneous skills",
-            "",
-            None,
-            relevantGroupData.flatMap(_.actionInputs),
-            relevantGroupData.flatMap(_.dataTypeInputs),
-            relevantGroupData.flatMap(_.behaviorVersions),
-            None,
-            None,
-            None,
-            OffsetDateTime.now
-          )
-        )
+        Seq(flattenUnnamedBehaviorGroupData(groupData.filter(_.name.isEmpty)))
       }.getOrElse(groupData)
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
         flattenedGroupData.filter(_.matchesHelpSearch(helpSearch)).map(group => filterBehaviorVersionsIfMiscGroup(group, helpSearch))
