@@ -14,6 +14,8 @@ case class BehaviorGroup(
                           team: Team,
                           createdAt: OffsetDateTime) {
 
+  val publishedId: String = maybeImportedId.getOrElse(id)
+
   def exportName: String = {
     Option(SafeFileName.forName(name)).filter(_.nonEmpty).getOrElse(id)
   }

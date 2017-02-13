@@ -23,7 +23,8 @@ case class InputData(
   val maybeNonEmptyQuestion: Option[String] = Option(question).filter(_.nonEmpty)
 
   def copyForExport(groupExporter: BehaviorGroupExporter): InputData = {
-    copy(id = None, paramType = paramType.map(_.copyForExport(groupExporter)))
+    val maybeExportGroupId = groupId.map { _ => groupExporter.behaviorGroup.publishedId }
+    copy(id = None, paramType = paramType.map(_.copyForExport(groupExporter)), groupId = maybeExportGroupId)
   }
 
 }

@@ -18,7 +18,8 @@ case class BehaviorParameterData(
   def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterData = {
     copy(
       paramType = paramType.map(_.copyForExport(groupExporter)),
-      inputId = inputId.flatMap(groupExporter.exportIdForInputId)
+      inputId = inputId.flatMap(groupExporter.exportIdForInputId),
+      groupId = groupId.map { _ => groupExporter.behaviorGroup.publishedId }
     )
   }
 

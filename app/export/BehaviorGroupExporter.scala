@@ -25,8 +25,7 @@ case class BehaviorGroupExporter(
   def zipFileName = s"$fullPath.zip"
 
   val config = {
-    val publishedId = behaviorGroup.maybeImportedId.getOrElse(behaviorGroup.id)
-    BehaviorGroupConfig(behaviorGroup.name, publishedId, behaviorGroup.maybeIcon)
+    BehaviorGroupConfig(behaviorGroup.name, behaviorGroup.publishedId, behaviorGroup.maybeIcon)
   }
 
   def configString: String = Json.prettyPrint(Json.toJson(config))
