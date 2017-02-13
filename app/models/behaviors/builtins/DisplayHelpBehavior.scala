@@ -203,16 +203,15 @@ case class DisplayHelpBehavior(
       maybeTeam <- dataService.teams.find(event.teamId)
       user <- event.ensureUser(dataService)
       maybeBehaviorGroups <- maybeTeam.map { team =>
-        maybeSkillId.filterNot(skillId => skillId == "(untitled)").map(skillId => {
-          dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
-        }).getOrElse({
-          val futureGroups = dataService.behaviorGroups.allFor(team)
-          if (maybeSkillId.contains("(untitled)")) {
-            futureGroups.map(groups => groups.filter(group => group.name.isEmpty)).map(Some(_))
-          } else {
-            futureGroups.map(Some(_))
-          }
-        })
+        maybeSkillId match {
+          case Some("(untitled)") => dataService.behaviorGroups.allFor(team).
+            map {
+              groups => groups.filter(group => group.name.isEmpty)
+            }.
+            map(Some(_))
+          case Some(skillId) => dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
+          case None => dataService.behaviorGroups.allFor(team).map(Some(_))
+        }
       }.getOrElse {
         Future.successful(None)
       }
