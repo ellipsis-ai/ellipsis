@@ -14,7 +14,9 @@ case class BehaviorParameterTypeData(
                                       needsConfig: Option[Boolean]
                                     ) {
 
-  def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterTypeData = copy(id = None, needsConfig = None)
+  def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterTypeData = {
+    copy(id = None, needsConfig = None)
+  }
 
 }
 
