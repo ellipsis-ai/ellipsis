@@ -26,7 +26,7 @@ case class BehaviorGroupExporter(
 
   val config = {
     val publishedId = behaviorGroup.maybeImportedId.getOrElse(behaviorGroup.id)
-    BehaviorGroupConfig(behaviorGroup.name, publishedId, None)
+    BehaviorGroupConfig(behaviorGroup.name, publishedId, behaviorGroup.maybeIcon)
   }
 
   def configString: String = Json.prettyPrint(Json.toJson(config))

@@ -8,6 +8,7 @@ import utils.SafeFileName
 case class BehaviorGroup(
                           id: String,
                           name: String,
+                          maybeIcon: Option[String],
                           maybeDescription: Option[String],
                           maybeImportedId: Option[String],
                           team: Team,
@@ -20,6 +21,7 @@ case class BehaviorGroup(
   def toRaw: RawBehaviorGroup = RawBehaviorGroup(
     id,
     name,
+    maybeIcon,
     maybeDescription,
     maybeImportedId,
     team.id,
