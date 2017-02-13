@@ -138,7 +138,7 @@ case class DisplayHelpBehavior(
   }
 
   private def filterBehaviorVersionsIfMiscGroup(group: BehaviorGroupData, helpSearch: String): BehaviorGroupData = {
-    if (group.name.isEmpty) {
+    if (group.id.isEmpty) {
       group.copy(behaviorVersions = group.behaviorVersions.filter { version =>
         TriggerFuzzyMatcher(helpSearch, version.triggers).hasAnyMatches
       })
@@ -190,10 +190,15 @@ case class DisplayHelpBehavior(
       maybeTeam <- dataService.teams.find(event.teamId)
       user <- event.ensureUser(dataService)
       maybeBehaviorGroups <- maybeTeam.map { team =>
-        maybeSkillId.map(skillId => {
+        maybeSkillId.filterNot(skillId => skillId == "(untitled)").map(skillId => {
           dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
         }).getOrElse({
-          dataService.behaviorGroups.allFor(team).map(Some(_))
+          val futureGroups = dataService.behaviorGroups.allFor(team)
+          if (maybeSkillId.contains("(untitled)")) {
+            futureGroups.map(groups => groups.filter(group => group.name.isEmpty)).map(Some(_))
+          } else {
+            futureGroups.map(Some(_))
+          }
         })
       }.getOrElse {
         Future.successful(None)
@@ -204,14 +209,14 @@ case class DisplayHelpBehavior(
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
     } yield {
+      val flattenedGroupData = maybeSkillId.filter(skillId => skillId == "(untitled)").map { _ =>
+        val miscellaneousBehaviorVersions = groupData.filter(_.name.isEmpty).flatMap(_.behaviorVersions)
+        Seq(BehaviorGroupData(None, "Miscellaneous skills", "", None, miscellaneousBehaviorVersions, None, None, None, OffsetDateTime.now))
+      }.getOrElse(groupData)
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        if (helpSearch == "(untitled)") {
-          Seq(BehaviorGroupData(None, "Miscellaneous skills", "", None, groupData.filter(_.name.isEmpty).flatMap(_.behaviorVersions), None, None, None, OffsetDateTime.now))
-        } else {
-          groupData.filter(_.matchesHelpSearch(helpSearch)).map(group => filterBehaviorVersionsIfMiscGroup(group, helpSearch))
-        }
+        flattenedGroupData.filter(_.matchesHelpSearch(helpSearch)).map(group => filterBehaviorVersionsIfMiscGroup(group, helpSearch))
       }.getOrElse {
-        groupData
+        flattenedGroupData
       }
       if (matchingGroupData.isEmpty) {
         emptyResult

@@ -370,11 +370,7 @@ class SlackController @Inject() (
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { case(skillId, maybeSearchText) =>
                 info.maybeFutureEvent.map { maybeEvent =>
                   maybeEvent.map { event =>
-                    val result = if (skillId == "(untitled)") {
-                      DisplayHelpBehavior(Some(skillId), None, None, isFirstTrigger = false, event, lambdaService, dataService).result
-                    } else {
-                      DisplayHelpBehavior(maybeSearchText, Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
-                    }
+                    val result = DisplayHelpBehavior(maybeSearchText, Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
                     result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
                 }
