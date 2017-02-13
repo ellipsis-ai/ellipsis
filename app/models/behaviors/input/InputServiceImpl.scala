@@ -57,8 +57,10 @@ class InputServiceImpl @Inject() (
   }
 
   private def maybeParamTypeFor(data: InputData, team: Team): Future[Option[BehaviorParameterType]] = {
-    data.paramType.map { paramTypeData =>
-      BehaviorParameterType.find(paramTypeData.id, team, dataService)
+    data.paramType.flatMap { paramTypeData =>
+      paramTypeData.id.map { id =>
+        BehaviorParameterType.find(id, team, dataService)
+      }
     }.getOrElse(Future.successful(None))
   }
 

@@ -6,7 +6,11 @@ case class RequiredSimpleTokenApiData(
                                         id: Option[String],
                                         apiId: String,
                                         name: String
-                                      )
+                                      ) {
+
+  def copyForExport: RequiredSimpleTokenApiData = copy(id = None)
+
+}
 
 object RequiredSimpleTokenApiData {
   def from(required: RequiredSimpleTokenApi): RequiredSimpleTokenApiData = {

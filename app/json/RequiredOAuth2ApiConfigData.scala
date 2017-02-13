@@ -7,7 +7,14 @@ case class RequiredOAuth2ApiConfigData(
                                         apiId: String,
                                         recommendedScope: Option[String],
                                         application: Option[OAuth2ApplicationData]
-                                      )
+                                      ) {
+
+  def copyForExport: RequiredOAuth2ApiConfigData = {
+    val maybeScope = application.flatMap(_.scope)
+    copy(id = None, application = None, recommendedScope = maybeScope)
+  }
+
+}
 
 object RequiredOAuth2ApiConfigData {
   def from(required: RequiredOAuth2ApiConfig): RequiredOAuth2ApiConfigData = {

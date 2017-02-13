@@ -60,26 +60,19 @@ object BehaviorVersionExporter {
       maybeFunction <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.behaviorVersions.maybeFunctionFor(behaviorVersion)
       }.getOrElse(Future.successful(None))
-      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, Some(behaviorId))
+      maybePublishedId <- Future.successful(maybeBehaviorVersion.map(_.behavior.maybeImportedId).getOrElse(Some(behaviorId)))
+      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, maybePublishedId)
     } yield {
       for {
         behaviorVersion <- maybeBehaviorVersion
         versionData <- maybeVersionData
       } yield {
-        // we don't want to export the team-specific application, but we want to keep the scope
-        val requiredOAuth2ApiConfigsForExport = versionData.config.requiredOAuth2ApiConfigs.map { configs =>
-          configs.map { ea =>
-            val maybeScope = ea.application.flatMap(_.scope)
-            ea.copy(application = None, recommendedScope = maybeScope)
-          }
-        }
-        val configForExport = versionData.config.copy(requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsForExport)
         BehaviorVersionExporter(
           behaviorVersion,
           maybeFunction,
           versionData.params,
           versionData.triggers,
-          configForExport,
+          versionData.config.copyForExport,
           versionData.responseTemplate,
           parentPath
         )
