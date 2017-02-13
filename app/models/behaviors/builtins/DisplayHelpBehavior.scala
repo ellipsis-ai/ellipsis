@@ -109,7 +109,11 @@ case class DisplayHelpBehavior(
       } else {
         (group.name, group.id.getOrElse(""))
       }
-      SlackMessageAction("help_for_skill", label, helpActionValue)
+      maybeHelpSearch.map { helpSearch =>
+        SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
+      }.getOrElse {
+        SlackMessageAction("help_for_skill", label, helpActionValue)
+      }
     })
     val remainingGroupCount = groupsRemaining.length
     val actions = if (remainingGroupCount > 0) {
