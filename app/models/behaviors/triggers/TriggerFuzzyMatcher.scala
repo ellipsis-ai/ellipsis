@@ -27,4 +27,8 @@ case class TriggerFuzzyMatcher[T <: FuzzyMatchable](matchString: String, trigger
       reverse
   }
 
+  def hasAnyMatches: Boolean = {
+    run.nonEmpty
+  }
+
 }

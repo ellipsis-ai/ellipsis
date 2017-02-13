@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.events.{MessageEvent, SlackMessageAction, SlackMessageActions, SlackMessageEvent}
+import models.behaviors.triggers.TriggerFuzzyMatcher
 import models.behaviors.{BotResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
 import utils.Color
@@ -62,10 +63,11 @@ case class DisplayHelpBehavior(
   }
 
   private def triggerStringFor(trigger: BehaviorTriggerData): String = {
-    if (trigger.requiresMention)
-      s"`${event.botPrefix}${trigger.text}`"
-    else
+    if (maybeHelpSearch.exists(helpSearch => TriggerFuzzyMatcher(helpSearch, Seq(trigger)).hasAnyMatches)) {
+      s"**`${trigger.text}`**"
+    } else {
       s"`${trigger.text}`"
+    }
   }
 
   private def maybeHelpSearch: Option[String] = {
@@ -122,22 +124,22 @@ case class DisplayHelpBehavior(
 
   private def actionHeadingFor(group: BehaviorGroupData): String = {
     val numActions = group.behaviorVersions.length
-    if (maybeHelpSearch.forall(helpSearch => helpSearch == "(untitled)" || group.nameOrDescriptionMatchesHelpSearch(helpSearch))) {
-      if (numActions == 0) {
-        "This skill has no actions."
-      } else if (numActions == 1) {
-        "_**1 action available:**_  "
-      } else {
-        s"_**$numActions actions available:**_  "
-      }
+    if (numActions == 0) {
+      "This skill has no actions."
+    } else if (numActions == 1) {
+      "_**1 action:**_  "
     } else {
-      if (numActions == 0) {
-        "This skill has no matching actions."
-      } else if (numActions == 1) {
-        "_**1 matching action:**_  "
-      } else {
-        s"_**$numActions matching actions:**_  "
-      }
+      s"_**$numActions actions:**_  "
+    }
+  }
+
+  private def filterBehaviorVersionsIfMiscGroup(group: BehaviorGroupData, helpSearch: String): BehaviorGroupData = {
+    if (group.name.isEmpty) {
+      group.copy(behaviorVersions = group.behaviorVersions.filter { version =>
+        TriggerFuzzyMatcher(helpSearch, version.triggers).hasAnyMatches
+      })
+    } else {
+      group
     }
   }
 
@@ -161,9 +163,14 @@ case class DisplayHelpBehavior(
       s"${group.description}\n\n"
     }
 
+    val actionList = group.behaviorVersions.flatMap(helpStringFor).mkString("")
+
     val resultText =
-      s"""$intro\n\n$name  \n$description${actionHeadingFor(group)}
-         |${group.behaviorVersions.flatMap(helpStringFor).mkString("")}""".stripMargin
+      s"""$intro
+         |
+         |$name  \n$description${actionHeadingFor(group)}
+         |$actionList
+         |""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
     TextWithActionsResult(event, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
   }
@@ -197,7 +204,7 @@ case class DisplayHelpBehavior(
         if (helpSearch == "(untitled)") {
           Seq(BehaviorGroupData(None, "Miscellaneous skills", "", None, groupData.filter(_.name.isEmpty).flatMap(_.behaviorVersions), None, None, None, OffsetDateTime.now))
         } else {
-          groupData.filter(_.matchesHelpSearch(helpSearch)).map(_.filteredToSearch(helpSearch))
+          groupData.filter(_.matchesHelpSearch(helpSearch)).map(group => filterBehaviorVersionsIfMiscGroup(group, helpSearch))
         }
       }.getOrElse {
         groupData

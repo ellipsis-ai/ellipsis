@@ -47,7 +47,7 @@ case class BehaviorGroupData(
 
   private def anyTriggerMatchesHelpSearch(helpSearch: String): Boolean = {
     val triggers = behaviorVersions.flatMap(_.triggers)
-    TriggerFuzzyMatcher(helpSearch, triggers).run.nonEmpty
+    TriggerFuzzyMatcher(helpSearch, triggers).hasAnyMatches
   }
 
   def matchesHelpSearch(helpSearch: String): Boolean = {
@@ -57,16 +57,6 @@ case class BehaviorGroupData(
   def nameOrDescriptionMatchesHelpSearch(helpSearch: String): Boolean = {
     val regex = ("(?i)" ++ helpSearch).r
     regex.findFirstMatchIn(name).isDefined || regex.findFirstMatchIn(description).isDefined
-  }
-
-  def filteredToSearch(helpSearch : String): BehaviorGroupData = {
-    if (nameOrDescriptionMatchesHelpSearch(helpSearch)) {
-      this
-    } else {
-      this.copy(behaviorVersions = behaviorVersions.filter { version =>
-        TriggerFuzzyMatcher(helpSearch, version.triggers).run.nonEmpty
-      })
-    }
   }
 
   import scala.math.Ordered.orderingToOrdered
