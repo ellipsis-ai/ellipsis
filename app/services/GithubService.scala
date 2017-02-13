@@ -139,23 +139,36 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     }
   }
 
+  private def fetchInputsFor(url: String): Future[Seq[InputData]] = {
+    fetchTextFor(url).map { inputsText =>
+      Json.parse(inputsText).validate[Seq[InputData]] match {
+        case JsSuccess(data, jsPath) => data
+        case e: JsError => Seq()
+      }
+    }
+  }
+
   private def fetchGroupDataFor(groupUrl: String, groupPath: String): Future[Option[BehaviorGroupData]] = {
     withTreeFor(groupUrl).flatMap { maybeTree =>
       (for {
         tree <- maybeTree
         readmeUrl <- urlForTreeFileNamed("README", tree)
         configUrl <- urlForTreeFileNamed("config.json", tree)
+        actionInputsUrl <- urlForTreeFileNamed("action_inputs.json", tree)
+        dataTypeInputsUrl <- urlForTreeFileNamed("data_type_inputs.json", tree)
       } yield {
           (for {
             readme <- fetchTextFor(readmeUrl)
             maybeConfig <- fetchGroupConfigFor(configUrl)
+            actionInputs <- fetchInputsFor(actionInputsUrl)
+            dataTypeInputs <- fetchInputsFor(dataTypeInputsUrl)
             behaviors <- fetchBehaviorsFor(groupUrl, groupPath)
           } yield {
             val githubUrl = githubUrlForGroupPath(groupPath)
             val maybePublishedId = maybeConfig.map(_.publishedId)
             val name = maybeConfig.map(_.name).getOrElse(groupPath)
             val icon = maybeConfig.flatMap(_.icon)
-            BehaviorGroupData(None, name, readme, icon, behaviors, Some(githubUrl), None, maybePublishedId, OffsetDateTime.now)
+            BehaviorGroupData(None, name, readme, icon, actionInputs, dataTypeInputs, behaviors, Some(githubUrl), None, maybePublishedId, OffsetDateTime.now)
           }).map(Some(_))
         }).getOrElse(Future.successful(None))
     }

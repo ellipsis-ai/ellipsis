@@ -18,6 +18,7 @@ import scala.concurrent.Future
 sealed trait BehaviorParameterType {
 
   val id: String
+  val exportId: String
   val name: String
   def needsConfig(dataService: DataService): Future[Boolean]
 
@@ -85,6 +86,7 @@ sealed trait BehaviorParameterType {
 
 trait BuiltInType extends BehaviorParameterType {
   lazy val id = name
+  lazy val exportId = name
   def needsConfig(dataService: DataService) = Future.successful(false)
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
     Future.successful(Some(text))
@@ -129,6 +131,7 @@ object NumberType extends BuiltInType {
 case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterType {
 
   val id = behavior.id
+  override val exportId: String = behavior.maybeImportedId.getOrElse(id)
   val name = behavior.maybeDataTypeName.getOrElse("Unnamed data type")
 
   case class ValidValue(id: String, label: String)

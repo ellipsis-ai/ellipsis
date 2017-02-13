@@ -287,6 +287,7 @@ class BehaviorEditorController @Inject() (
                   Some(ea.input.isSavedForTeam),
                   Some(ea.input.isSavedForUser),
                   Some(ea.input.id),
+                  ea.input.maybeExportId,
                   ea.input.maybeBehaviorGroup.map(_.id)
                 )
               }
