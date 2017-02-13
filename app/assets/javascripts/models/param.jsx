@@ -16,6 +16,7 @@ define(function() {
         isSavedForTeam: false,
         isSavedForUser: false,
         inputId: null,
+        inputExportId: null,
         groupId: null
       }, props);
 
@@ -46,6 +47,10 @@ define(function() {
         },
         inputId: {
           value: initialProps.inputId,
+          enumerable: true
+        },
+        inputExportId: {
+          value: initialProps.inputExportId,
           enumerable: true
         },
         groupId: {

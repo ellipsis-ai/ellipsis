@@ -1,7 +1,15 @@
 package json
 
+import export.BehaviorGroupExporter
+import models.behaviors.input.Input
+import services.DataService
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 case class InputData(
                       id: Option[String],
+                      exportId: Option[String],
                       name: String,
                       paramType: Option[BehaviorParameterTypeData],
                       question: String,
@@ -14,4 +22,28 @@ case class InputData(
 
   val maybeNonEmptyQuestion: Option[String] = Option(question).filter(_.nonEmpty)
 
+  def copyForExport(groupExporter: BehaviorGroupExporter): InputData = {
+    val maybeExportGroupId = groupId.map { _ => groupExporter.behaviorGroup.publishedId }
+    copy(id = None, paramType = paramType.map(_.copyForExport(groupExporter)), groupId = maybeExportGroupId)
+  }
+
+}
+
+object InputData {
+
+  def fromInput(input: Input, dataService: DataService): Future[InputData] = {
+    BehaviorParameterTypeData.from(input.paramType, dataService).map { paramTypeData =>
+      InputData(
+        Some(input.id),
+        input.maybeExportId,
+        input.name,
+        Some(paramTypeData),
+        input.question,
+        input.isSavedForTeam,
+        input.isSavedForUser,
+        input.maybeBehaviorGroup.map(_.id)
+      )
+    }
+
+  }
 }

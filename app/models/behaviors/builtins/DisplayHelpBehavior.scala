@@ -84,7 +84,7 @@ case class DisplayHelpBehavior(
     val allGroups = ArrayBuffer[BehaviorGroupData]()
     val (untitledGroups, titledGroups) = groupData.partition(group => group.name.isEmpty)
     allGroups ++= titledGroups
-    allGroups += BehaviorGroupData(None, "", "", None, untitledGroups.flatMap(group => group.behaviorVersions), None, None, None, OffsetDateTime.now)
+    allGroups += BehaviorGroupData(None, "", "", None, untitledGroups.flatMap(_.actionInputs), untitledGroups.flatMap(_.dataTypeInputs), untitledGroups.flatMap(_.behaviorVersions), None, None, None, OffsetDateTime.now)
     val endAt = startAt + SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT - 1
     val groupsToShow = allGroups.slice(startAt, endAt)
     val groupsRemaining = allGroups.slice(endAt, allGroups.length)
@@ -210,8 +210,22 @@ case class DisplayHelpBehavior(
       }.getOrElse(Future.successful(Seq()))
     } yield {
       val flattenedGroupData = maybeSkillId.filter(skillId => skillId == "(untitled)").map { _ =>
-        val miscellaneousBehaviorVersions = groupData.filter(_.name.isEmpty).flatMap(_.behaviorVersions)
-        Seq(BehaviorGroupData(None, "Miscellaneous skills", "", None, miscellaneousBehaviorVersions, None, None, None, OffsetDateTime.now))
+        val relevantGroupData = groupData.filter(_.name.isEmpty)
+        Seq(
+          BehaviorGroupData(
+            None,
+            "Miscellaneous skills",
+            "",
+            None,
+            relevantGroupData.flatMap(_.actionInputs),
+            relevantGroupData.flatMap(_.dataTypeInputs),
+            relevantGroupData.flatMap(_.behaviorVersions),
+            None,
+            None,
+            None,
+            OffsetDateTime.now
+          )
+        )
       }.getOrElse(groupData)
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
         flattenedGroupData.filter(_.matchesHelpSearch(helpSearch)).map(group => filterBehaviorVersionsIfMiscGroup(group, helpSearch))

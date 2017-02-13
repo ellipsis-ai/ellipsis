@@ -28,7 +28,9 @@ case class BehaviorVersion(
 
   val team: Team = behavior.team
 
-  val exportName: String = maybeName.getOrElse(id)
+  val exportName: String = {
+    behavior.maybeDataTypeName.orElse(maybeName).getOrElse(id)
+  }
 
   def isSkill: Boolean = {
     maybeFunctionBody.exists { body =>

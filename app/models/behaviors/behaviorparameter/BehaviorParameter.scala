@@ -24,6 +24,6 @@ case class BehaviorParameter(
   }
 
   def toRaw: RawBehaviorParameter = {
-    RawBehaviorParameter(id, rank, Some(input.id), behaviorVersion.id, name, maybeQuestion, paramType.id)
+    RawBehaviorParameter(id, rank, Some(input.id), behaviorVersion.id)
   }
 }

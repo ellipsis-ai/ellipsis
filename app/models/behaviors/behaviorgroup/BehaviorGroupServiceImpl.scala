@@ -18,6 +18,7 @@ import scala.concurrent.Future
 case class RawBehaviorGroup(
                              id: String,
                              name: String,
+                             maybeIcon: Option[String],
                              maybeDescription: Option[String],
                              maybeImportedId: Option[String],
                              teamId: String,
@@ -28,12 +29,13 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
 
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
+  def maybeIcon = column[Option[String]]("icon")
   def maybeDescription = column[Option[String]]("description")
   def maybeImportedId = column[Option[String]]("imported_id")
   def teamId = column[String]("team_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, name, maybeDescription, maybeImportedId, teamId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
+  def * = (id, name, maybeIcon, maybeDescription, maybeImportedId, teamId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
 }
 
 class BehaviorGroupServiceImpl @Inject() (
@@ -44,8 +46,8 @@ class BehaviorGroupServiceImpl @Inject() (
 
   import BehaviorGroupQueries._
 
-  def createFor(name: String, description: String, maybeImportedId: Option[String], team: Team): Future[BehaviorGroup] = {
-    val raw = RawBehaviorGroup(IDs.next, name, Some(description), maybeImportedId, team.id, OffsetDateTime.now)
+  def createFor(name: String, maybeIcon: Option[String], description: String, maybeImportedId: Option[String], team: Team): Future[BehaviorGroup] = {
+    val raw = RawBehaviorGroup(IDs.next, name, maybeIcon, Some(description), maybeImportedId, team.id, OffsetDateTime.now)
     val action = (all += raw).map(_ => tuple2Group((raw, team)))
     dataService.run(action)
   }
@@ -101,7 +103,8 @@ class BehaviorGroupServiceImpl @Inject() (
     val descriptions = groups.flatMap(_.maybeDescription).filter(_.trim.nonEmpty)
     val mergedDescription = if (descriptions.isEmpty) { None } else { Some(descriptions.mkString("\n")) }
     val maybeImportedId = None // Don't think it makes sense to have an importedId for something merged
-    val rawMerged = RawBehaviorGroup(IDs.next, mergedName, mergedDescription, maybeImportedId, team.id, OffsetDateTime.now)
+    val maybeIcon = groups.find(_.maybeIcon.isDefined).flatMap(_.maybeIcon)
+    val rawMerged = RawBehaviorGroup(IDs.next, mergedName, maybeIcon, mergedDescription, maybeImportedId, team.id, OffsetDateTime.now)
     val action = (for {
       merged <- (all += rawMerged).map(_ => tuple2Group((rawMerged, team)))
       _ <- DBIO.sequence(groups.map { ea =>

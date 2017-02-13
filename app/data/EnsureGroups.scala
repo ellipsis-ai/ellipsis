@@ -19,7 +19,7 @@ class EnsureGroups @Inject() (dataService: DataService) {
       behaviors <- dataService.run(BehaviorQueries.all.result)
       _ <- Future.sequence(behaviors.map { ea =>
         if (ea.groupId.isEmpty) {
-          val raw = RawBehaviorGroup(IDs.next, "", None, None, ea.teamId, OffsetDateTime.now)
+          val raw = RawBehaviorGroup(IDs.next, "", None, None, None, ea.teamId, OffsetDateTime.now)
           dataService.run((BehaviorGroupQueries.all += raw).andThen {
             BehaviorQueries.all.filter(_.id === ea.id).map(_.groupId).update(Some(raw.id))
           })
