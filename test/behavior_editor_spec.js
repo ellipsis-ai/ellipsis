@@ -114,7 +114,7 @@ describe('BehaviorEditor', () => {
 
   describe('getBehaviorParams', () => {
     it('returns the defined parameters', () => {
-      editorConfig.behavior.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234", groupId: null }];
+      editorConfig.behavior.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234", inputExportId: null, groupId: null }];
       let editor = createEditor(editorConfig);
       expect(editor.getBehaviorParams()).toEqual(editorConfig.behavior.params);
     });
