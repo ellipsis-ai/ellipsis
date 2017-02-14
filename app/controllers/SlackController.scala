@@ -285,10 +285,14 @@ class SlackController @Inject() (
                                    response_url: String
                                  ) extends RequestInfo {
 
-    def maybeHelpForSkillId: Option[String] = {
-      actions.
-        find { info => info.name == "help_for_skill" && info.value.isDefined }.
-        flatMap { _.value }
+    def maybeHelpForSkillIdWithMaybeSearch: Option[(String, Option[String])] = {
+      val idAndSearchPattern = "id=(.+?)&search=(.+)".r
+      actions.find { info => info.name == "help_for_skill" }.flatMap { info =>
+        info.value.map {
+          case idAndSearchPattern(id, search) => (id, Some(search))
+          case value => (value, None)
+        }
+      }
     }
 
     def maybeHelpIndexAt: Option[Int] = {
@@ -363,14 +367,10 @@ class SlackController @Inject() (
                 resultText = s"$user clicked More help."
               }
 
-              info.maybeHelpForSkillId.foreach { skillId =>
+              info.maybeHelpForSkillIdWithMaybeSearch.foreach { case(skillId, maybeSearchText) =>
                 info.maybeFutureEvent.map { maybeEvent =>
                   maybeEvent.map { event =>
-                    val result = if (skillId == "(untitled)") {
-                      DisplayHelpBehavior(Some(skillId), None, None, isFirstTrigger = false, event, lambdaService, dataService).result
-                    } else {
-                      DisplayHelpBehavior(None, Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
-                    }
+                    val result = DisplayHelpBehavior(maybeSearchText, Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
                     result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
                 }

@@ -47,16 +47,9 @@ case class BehaviorGroupData(
     }
   }
 
-  private def anyTriggerMatchesHelpSearch(helpSearch: String): Boolean = {
-    val triggers = behaviorVersions.flatMap(_.triggers)
-    TriggerFuzzyMatcher(helpSearch, triggers).run.nonEmpty
-  }
-
-  def matchesHelpSearch(helpSearch: String): Boolean = {
-    val regex = ("(?i)" ++ helpSearch).r
-    regex.findFirstMatchIn(name).isDefined ||
-      regex.findFirstMatchIn(description).isDefined ||
-      anyTriggerMatchesHelpSearch(helpSearch)
+  def nameOrDescriptionContains(searchText: String): Boolean = {
+    name.toLowerCase.contains(searchText.toLowerCase) ||
+      description.toLowerCase.contains(searchText.toLowerCase)
   }
 
   import scala.math.Ordered.orderingToOrdered

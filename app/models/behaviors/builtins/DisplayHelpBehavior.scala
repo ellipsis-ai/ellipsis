@@ -5,11 +5,11 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.events.{MessageEvent, SlackMessageAction, SlackMessageActions, SlackMessageEvent}
+import models.behaviors.triggers.TriggerFuzzyMatcher
 import models.behaviors.{BotResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
 import utils.Color
 
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -23,7 +23,7 @@ case class DisplayHelpBehavior(
                          dataService: DataService
                        ) extends BuiltinBehavior {
 
-  private def helpStringFor(behaviorVersion: BehaviorVersionData): Option[String] = {
+  private def helpStringFor(behaviorVersion: BehaviorVersionData, maybeMatchingTriggers: Option[Seq[BehaviorTriggerData]]): Option[String] = {
     val triggers = behaviorVersion.triggers
     if (triggers.isEmpty) {
       None
@@ -31,9 +31,9 @@ case class DisplayHelpBehavior(
       val nonRegexTriggers = triggers.filterNot(_.isRegex)
       val namedTriggers =
         if (nonRegexTriggers.isEmpty)
-          triggerStringFor(triggers.head)
+          triggerStringFor(triggers.head, maybeMatchingTriggers)
         else
-          nonRegexTriggers.map(triggerStringFor).mkString(" ")
+          nonRegexTriggers.map(trigger => triggerStringFor(trigger, maybeMatchingTriggers)).mkString(" ")
       val regexTriggerCount =
         if (nonRegexTriggers.isEmpty)
           triggers.tail.count({ ea => ea.isRegex })
@@ -61,11 +61,12 @@ case class DisplayHelpBehavior(
     }
   }
 
-  private def triggerStringFor(trigger: BehaviorTriggerData): String = {
-    if (trigger.requiresMention)
-      s"`${event.botPrefix}${trigger.text}`"
-    else
+  private def triggerStringFor(trigger: BehaviorTriggerData, maybeMatchingTriggers: Option[Seq[BehaviorTriggerData]]): String = {
+    if (maybeMatchingTriggers.exists(_.contains(trigger))) {
+      s"**`${trigger.text}`**"
+    } else {
       s"`${trigger.text}`"
+    }
   }
 
   private def maybeHelpSearch: Option[String] = {
@@ -78,14 +79,26 @@ case class DisplayHelpBehavior(
     }.getOrElse("")
   }
 
+  private def flattenUnnamedBehaviorGroupData(untitledGroups: Seq[BehaviorGroupData]): BehaviorGroupData = {
+    BehaviorGroupData(
+      id = None,
+      name = "Miscellaneous",
+      description = "",
+      icon = None,
+      actionInputs = untitledGroups.flatMap(_.actionInputs),
+      dataTypeInputs = untitledGroups.flatMap(_.dataTypeInputs),
+      behaviorVersions = untitledGroups.flatMap(_.behaviorVersions),
+      githubUrl = None,
+      importedId = None,
+      publishedId = None,
+      OffsetDateTime.now
+    )
+  }
+
   private def introResultFor(groupData: Seq[BehaviorGroupData], startAt: Int): BotResult = {
-    val allGroups = ArrayBuffer[BehaviorGroupData]()
-    val (untitledGroups, titledGroups) = groupData.partition(group => group.name.isEmpty)
-    allGroups ++= titledGroups
-    allGroups += BehaviorGroupData(None, "", "", None, untitledGroups.flatMap(_.actionInputs), untitledGroups.flatMap(_.dataTypeInputs), untitledGroups.flatMap(_.behaviorVersions), None, None, None, OffsetDateTime.now)
     val endAt = startAt + SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT - 1
-    val groupsToShow = allGroups.slice(startAt, endAt)
-    val groupsRemaining = allGroups.slice(endAt, allGroups.length)
+    val groupsToShow = groupData.slice(startAt, endAt)
+    val groupsRemaining = groupData.slice(endAt, groupData.length)
 
     val intro = if (startAt == 0 && maybeHelpString.isEmpty) {
       s"OK, let’s start from the top. Here are some things I know about. ${event.skillListLinkFor(lambdaService)}"
@@ -102,12 +115,13 @@ case class DisplayHelpBehavior(
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
     val skillActions = groupsToShow.map(group => {
-      val (label, helpActionValue) = if (group.name.isEmpty) {
-        ("Miscellaneous", "(untitled)")
-      } else {
-        (group.name, group.id.getOrElse(""))
+      val label = group.name
+      val helpActionValue = group.id.getOrElse("(untitled)")
+      maybeHelpSearch.map { helpSearch =>
+        SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
+      }.getOrElse {
+        SlackMessageAction("help_for_skill", label, helpActionValue)
       }
-      SlackMessageAction("help_for_skill", label, helpActionValue)
     })
     val remainingGroupCount = groupsRemaining.length
     val actions = if (remainingGroupCount > 0) {
@@ -120,7 +134,27 @@ case class DisplayHelpBehavior(
     TextWithActionsResult(event, intro, forcePrivateResponse = false, attachment)
   }
 
-  def skillResultFor(group: BehaviorGroupData): BotResult = {
+  private def actionHeadingFor(group: BehaviorGroupData): String = {
+    val numActions = group.behaviorVersions.length
+    if (numActions == 0) {
+      "This skill has no actions."
+    } else if (numActions == 1) {
+      "_**1 action:**_  "
+    } else {
+      s"_**$numActions actions:**_  "
+    }
+  }
+
+  private def filterBehaviorVersionsIfMiscGroup(group: BehaviorGroupData, allMatchingTriggers: Seq[BehaviorTriggerData]): BehaviorGroupData = {
+    if (group.id.isEmpty || group.name.isEmpty) {
+      val matchingBehaviorVersions = group.behaviorVersions.filter(_.triggers.exists(allMatchingTriggers.contains))
+      group.copy(behaviorVersions = matchingBehaviorVersions)
+    } else {
+      group
+    }
+  }
+
+  def skillResultFor(group: BehaviorGroupData, maybeMatchingTriggers: Option[Seq[BehaviorTriggerData]]): BotResult = {
 
     val intro = if (isFirstTrigger) {
       s"Here’s what I know$matchString. ${event.skillListLinkFor(lambdaService)}"
@@ -128,7 +162,7 @@ case class DisplayHelpBehavior(
       "OK, here’s the help you asked for:"
     }
 
-    val name = if (group.name.isEmpty) {
+    val name = if (group.id.isEmpty) {
       "**Miscellaneous skills**"
     } else {
       s"**${group.name}**"
@@ -140,19 +174,14 @@ case class DisplayHelpBehavior(
       s"${group.description}\n\n"
     }
 
-    val numActions = group.behaviorVersions.length
-
-    val listHeading = if (numActions == 0) {
-      "This skill has no actions."
-    } else if (numActions == 1) {
-      "_**1 action available:**_  "
-    } else {
-      s"_**$numActions actions available:**_  "
-    }
+    val actionList = group.behaviorVersions.flatMap(version => helpStringFor(version, maybeMatchingTriggers)).mkString("")
 
     val resultText =
-      s"""$intro\n\n$name  \n$description$listHeading
-         |${group.behaviorVersions.flatMap(helpStringFor).mkString("")}""".stripMargin
+      s"""$intro
+         |
+         |$name  \n$description${actionHeadingFor(group)}
+         |$actionList
+         |""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
     TextWithActionsResult(event, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
   }
@@ -168,11 +197,12 @@ case class DisplayHelpBehavior(
       maybeTeam <- dataService.teams.find(event.teamId)
       user <- event.ensureUser(dataService)
       maybeBehaviorGroups <- maybeTeam.map { team =>
-        maybeSkillId.map(skillId => {
-          dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
-        }).getOrElse({
-          dataService.behaviorGroups.allFor(team).map(Some(_))
-        })
+        maybeSkillId match {
+          case Some("(untitled)") =>
+            dataService.behaviorGroups.allFor(team).map(_.filter(_.name.isEmpty)).map(Some(_))
+          case Some(skillId) => dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
+          case None => dataService.behaviorGroups.allFor(team).map(Some(_))
+        }
       }.getOrElse {
         Future.successful(None)
       }
@@ -182,34 +212,24 @@ case class DisplayHelpBehavior(
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
     } yield {
-      val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        if (helpSearch == "(untitled)") {
-          val relevantGroupData = groupData.filter(_.name.isEmpty)
-          Seq(
-            BehaviorGroupData(
-              None,
-              "Miscellaneous skills",
-              "",
-              None,
-              relevantGroupData.flatMap(_.actionInputs),
-              relevantGroupData.flatMap(_.dataTypeInputs),
-              relevantGroupData.flatMap(_.behaviorVersions),
-              None,
-              None,
-              None,
-              OffsetDateTime.now
-            )
-          )
-        } else {
-          groupData.filter(_.matchesHelpSearch(helpSearch))
-        }
-      }.getOrElse {
-        groupData
+      val (named, unnamed) = groupData.partition(_.name.nonEmpty)
+      val flattenedGroupData = named :+ flattenUnnamedBehaviorGroupData(unnamed)
+      val maybeMatchingTriggers = maybeHelpSearch.map { helpSearch =>
+        val allTriggers = flattenedGroupData.flatMap(_.behaviorVersions).flatMap(_.triggers)
+        TriggerFuzzyMatcher(helpSearch, allTriggers).run.map(_._1)
       }
+      val matchingGroupData = maybeMatchingTriggers.map { matchingTriggers =>
+        flattenedGroupData.
+          filter { group =>
+            maybeHelpSearch.exists(group.nameOrDescriptionContains) ||
+              group.behaviorVersions.exists(_.triggers.exists(matchingTriggers.contains))
+          }.
+          map(group => filterBehaviorVersionsIfMiscGroup(group, matchingTriggers))
+      }.getOrElse(flattenedGroupData)
       if (matchingGroupData.isEmpty) {
         emptyResult
       } else if (matchingGroupData.length == 1) {
-        skillResultFor(matchingGroupData.head)
+        skillResultFor(matchingGroupData.head, maybeMatchingTriggers)
       } else {
         introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0))
       }

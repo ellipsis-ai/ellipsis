@@ -2,7 +2,7 @@ package models.behaviors.triggers
 
 import com.rockymadden.stringmetric.similarity.RatcliffObershelpMetric
 
-case class TriggerFuzzyMatcher[T <: FuzzyMatchable](matchString: String, triggers: Seq[T], threshold: Double = 0.6) {
+case class TriggerFuzzyMatcher[T <: FuzzyMatchable](matchString: String, triggers: Seq[T]) {
 
   val matchTokenCount: Int = matchString.split("\\s+").length
 
@@ -19,12 +19,19 @@ case class TriggerFuzzyMatcher[T <: FuzzyMatchable](matchString: String, trigger
   }
 
   def run: Seq[(T, Double)] = {
-    triggers.map { ea =>
-      (ea, scoreFor(ea))
-    }.
-      filter { case(_, similarity) => similarity > threshold }.
-      sortBy { case(_, similarity) => similarity }.
-      reverse
+    val sortedWithSimilarity =
+      triggers.
+        map { ea => (ea, scoreFor(ea)) }.
+        sortBy { case(_, similarity) => similarity }.
+        reverse
+
+    sortedWithSimilarity.headOption.map(_._2 - 0.1).map { threshold =>
+      sortedWithSimilarity.filter { case(_, similarity) => similarity > threshold }
+    }.getOrElse(Seq())
+  }
+
+  def hasAnyMatches: Boolean = {
+    run.nonEmpty
   }
 
 }
