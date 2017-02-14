@@ -10,7 +10,6 @@ import models.behaviors.{BotResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
 import utils.Color
 
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -97,13 +96,9 @@ case class DisplayHelpBehavior(
   }
 
   private def introResultFor(groupData: Seq[BehaviorGroupData], startAt: Int): BotResult = {
-    val allGroups = ArrayBuffer[BehaviorGroupData]()
-    val (untitledGroups, titledGroups) = groupData.partition(group => group.name.isEmpty)
-    allGroups ++= titledGroups
-    allGroups += flattenUnnamedBehaviorGroupData(untitledGroups)
     val endAt = startAt + SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT - 1
-    val groupsToShow = allGroups.slice(startAt, endAt)
-    val groupsRemaining = allGroups.slice(endAt, allGroups.length)
+    val groupsToShow = groupData.slice(startAt, endAt)
+    val groupsRemaining = groupData.slice(endAt, groupData.length)
 
     val intro = if (startAt == 0 && maybeHelpString.isEmpty) {
       s"OK, let’s start from the top. Here are some things I know about. ${event.skillListLinkFor(lambdaService)}"
@@ -220,9 +215,8 @@ case class DisplayHelpBehavior(
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
     } yield {
-      val flattenedGroupData = maybeSkillId.filter(skillId => skillId == "(untitled)").map { _ =>
-        Seq(flattenUnnamedBehaviorGroupData(groupData.filter(_.name.isEmpty)))
-      }.getOrElse(groupData)
+      val (named, unnamed) = groupData.partition(_.name.nonEmpty)
+      val flattenedGroupData = named :+ flattenUnnamedBehaviorGroupData(unnamed)
       val maybeMatchingTriggers = maybeHelpSearch.map { helpSearch =>
         val allTriggers = flattenedGroupData.flatMap(_.behaviorVersions).flatMap(_.triggers)
         TriggerFuzzyMatcher(helpSearch, allTriggers).run.map(_._1)
