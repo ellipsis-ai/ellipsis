@@ -1,4 +1,4 @@
-package models.behaviors.triggers
+package utils
 
 trait FuzzyMatchable {
 

@@ -5,11 +5,10 @@ import java.time.OffsetDateTime
 import models.accounts.user.User
 import models.team.Team
 import services.DataService
+import utils.FuzzyMatchable
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
-import models.behaviors.triggers.FuzzyMatchable
 
 case class BehaviorGroupData(
                               id: Option[String],

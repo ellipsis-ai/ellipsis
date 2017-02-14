@@ -5,10 +5,10 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.events.{MessageEvent, SlackMessageAction, SlackMessageActions, SlackMessageEvent}
-import models.behaviors.triggers.{FuzzyMatchable, TriggerFuzzyMatcher}
+import utils.FuzzyMatcher
 import models.behaviors.{BotResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
-import utils.Color
+import utils.{Color, FuzzyMatchable}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -164,10 +164,7 @@ case class DisplayHelpBehavior(
     if (groupData.description.isEmpty) {
       ""
     } else {
-      val description = maybeMatchingStrings.filter { _.exists { matchString =>
-        val search = searchPatternFor(matchString.text)
-        search.findFirstIn(groupData.description).isDefined
-      }}.flatMap { _ =>
+      val description = maybeMatchingStrings.filter(_.exists(_.text == groupData.description)).flatMap { _ =>
         maybeHelpSearch.map(helpSearch => searchPatternFor(helpSearch).replaceAllIn(groupData.description, "$1**$2**$3"))
       }.getOrElse(groupData.description)
       description + "\n\n"
@@ -236,7 +233,7 @@ case class DisplayHelpBehavior(
         val matchingStrings = flattenedGroupData.flatMap { groupData =>
           Seq(groupData.fuzzyMatchName, groupData.fuzzyMatchDescription) ++ groupData.behaviorVersions.flatMap(_.triggers)
         }
-        TriggerFuzzyMatcher(helpSearch, matchingStrings).run.map(_._1)
+        FuzzyMatcher(helpSearch, matchingStrings).run.map(_._1)
       }
       val matchingGroupData = maybeMatchingStrings.map { matchingStrings =>
         flattenedGroupData.

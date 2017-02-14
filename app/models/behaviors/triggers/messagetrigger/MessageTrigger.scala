@@ -4,8 +4,9 @@ import java.util.regex.PatternSyntaxException
 
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.events.MessageEvent
-import models.behaviors.triggers.{FuzzyMatchable, Trigger}
+import models.behaviors.triggers.Trigger
 import services.AWSLambdaConstants
+import utils.FuzzyMatchable
 
 import scala.util.matching.Regex
 
