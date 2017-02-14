@@ -198,11 +198,8 @@ case class DisplayHelpBehavior(
       user <- event.ensureUser(dataService)
       maybeBehaviorGroups <- maybeTeam.map { team =>
         maybeSkillId match {
-          case Some("(untitled)") => dataService.behaviorGroups.allFor(team).
-            map {
-              groups => groups.filter(group => group.name.isEmpty)
-            }.
-            map(Some(_))
+          case Some("(untitled)") =>
+            dataService.behaviorGroups.allFor(team).map(_.filter(_.name.isEmpty)).map(Some(_))
           case Some(skillId) => dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
           case None => dataService.behaviorGroups.allFor(team).map(Some(_))
         }
