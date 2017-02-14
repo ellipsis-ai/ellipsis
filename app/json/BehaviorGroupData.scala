@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import models.accounts.user.User
 import models.team.Team
 import services.DataService
+import utils.FuzzyMatchable
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -44,6 +45,14 @@ case class BehaviorGroupData(
     } else {
       this.maybeFirstTrigger
     }
+  }
+
+  lazy val fuzzyMatchName: FuzzyMatchable = {
+    FuzzyBehaviorGroupDetail(name)
+  }
+
+  lazy val fuzzyMatchDescription: FuzzyMatchable = {
+    FuzzyBehaviorGroupDetail(description)
   }
 
   import scala.math.Ordered.orderingToOrdered
@@ -98,4 +107,8 @@ object BehaviorGroupData {
     }
   }
 
+}
+
+case class FuzzyBehaviorGroupDetail(text: String) extends FuzzyMatchable {
+  val maybeFuzzyMatchPattern = Option(text).filter(_.trim.nonEmpty)
 }

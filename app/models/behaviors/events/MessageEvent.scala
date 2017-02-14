@@ -6,7 +6,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduledmessage.ScheduledMessage
-import models.behaviors.triggers.TriggerFuzzyMatcher
+import utils.FuzzyMatcher
 import models.behaviors.{BotResult, MessageInfo, SimpleTextResult, UserInfo}
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
@@ -72,7 +72,7 @@ trait MessageEvent {
       }.getOrElse(Future.successful(Seq()))
     } yield {
       val similarTriggers =
-        TriggerFuzzyMatcher(relevantMessageText, triggers).
+        FuzzyMatcher(relevantMessageText, triggers).
           run.
           map { case(trigger, _) => s"`${trigger.pattern}`" }
       val message = if (similarTriggers.isEmpty) {

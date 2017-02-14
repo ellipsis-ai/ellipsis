@@ -4,14 +4,16 @@ import java.util.regex.PatternSyntaxException
 
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.events.MessageEvent
-import models.behaviors.triggers.{FuzzyMatchable, Trigger}
+import models.behaviors.triggers.Trigger
 import services.AWSLambdaConstants
+import utils.FuzzyMatchable
 
 import scala.util.matching.Regex
 
 trait MessageTrigger extends Trigger with FuzzyMatchable {
 
   val pattern: String
+  val text: String = pattern
   val maybeFuzzyMatchPattern: Option[String] = None
   def regex: Regex
   val requiresBotMention: Boolean

@@ -1,7 +1,7 @@
 package json
 
-import models.behaviors.triggers.FuzzyMatchable
 import models.behaviors.triggers.messagetrigger.MessageTrigger
+import utils.FuzzyMatchable
 
 case class BehaviorTriggerData(
                                 text: String,

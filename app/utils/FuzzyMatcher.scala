@@ -1,8 +1,8 @@
-package models.behaviors.triggers
+package utils
 
 import com.rockymadden.stringmetric.similarity.RatcliffObershelpMetric
 
-case class TriggerFuzzyMatcher[T <: FuzzyMatchable](matchString: String, triggers: Seq[T]) {
+case class FuzzyMatcher[T <: FuzzyMatchable](matchString: String, matchables: Seq[T]) {
 
   val matchTokenCount: Int = matchString.split("\\s+").length
 
@@ -10,17 +10,17 @@ case class TriggerFuzzyMatcher[T <: FuzzyMatchable](matchString: String, trigger
     pattern.split("\\s+").sliding(matchTokenCount, 1).map(tokens => tokens.mkString(" ")).toSeq
   }
 
-  def basicScoreFor(text: String): Double = RatcliffObershelpMetric.compare(text, matchString).getOrElse(0)
+  def basicScoreFor(text: String): Double = RatcliffObershelpMetric.compare(text.toLowerCase, matchString.toLowerCase).getOrElse(0)
 
-  def scoreFor(trigger: T): Double = {
-    trigger.maybeFuzzyMatchPattern.map { pattern =>
-      ngramsFor(pattern).map(basicScoreFor).max
+  def scoreFor(matchable: T): Double = {
+    matchable.maybeFuzzyMatchPattern.map { pattern =>
+      ngramsFor(pattern.toLowerCase).map(basicScoreFor).max
     }.getOrElse(0)
   }
 
   def run: Seq[(T, Double)] = {
     val sortedWithSimilarity =
-      triggers.
+      matchables.
         map { ea => (ea, scoreFor(ea)) }.
         sortBy { case(_, similarity) => similarity }.
         reverse
