@@ -3,7 +3,6 @@ package json
 import java.time.OffsetDateTime
 
 import models.accounts.user.User
-import models.behaviors.triggers.TriggerFuzzyMatcher
 import models.team.Team
 import services.DataService
 
@@ -45,11 +44,6 @@ case class BehaviorGroupData(
     } else {
       this.maybeFirstTrigger
     }
-  }
-
-  def nameOrDescriptionContains(searchText: String): Boolean = {
-    name.toLowerCase.contains(searchText.toLowerCase) ||
-      description.toLowerCase.contains(searchText.toLowerCase)
   }
 
   import scala.math.Ordered.orderingToOrdered
