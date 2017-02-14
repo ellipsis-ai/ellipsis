@@ -110,11 +110,5 @@ object BehaviorGroupData {
 }
 
 case class FuzzyBehaviorGroupDetail(text: String) extends FuzzyMatchable {
-  val maybeFuzzyMatchPattern: Option[String] = {
-    if (text.isEmpty) {
-      None
-    } else {
-      Some(text)
-    }
-  }
+  val maybeFuzzyMatchPattern = Option(text).filter(_.trim.nonEmpty)
 }
