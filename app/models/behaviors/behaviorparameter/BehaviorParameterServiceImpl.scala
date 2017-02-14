@@ -77,10 +77,10 @@ class BehaviorParameterServiceImpl @Inject() (
                 isSavedForTeam = data.isSavedForTeam.exists(identity),
                 isSavedForUser = data.isSavedForUser.exists(identity)
               )
-              dataService.inputs.ensureFor(updatedInputData, behaviorVersion.team)
+              dataService.inputs.ensureFor(updatedInputData, behaviorVersion.group)
             }
           }.getOrElse {
-            dataService.inputs.createFor(data.newInputData, behaviorVersion.team)
+            dataService.inputs.createFor(data.newInputData, behaviorVersion.group)
           }
           param <- createFor(input, i + 1, behaviorVersion)
           _ <- if (data.isShared) {

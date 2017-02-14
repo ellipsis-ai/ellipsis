@@ -47,7 +47,7 @@ case class BehaviorGroupImporter(
         } else {
           withNewDataTypeId
         }
-        dataService.inputs.ensureFor(withNewGroupId, team).map { newInput =>
+        dataService.inputs.ensureFor(withNewGroupId, group).map { newInput =>
           inputData.exportId.foreach { exportId =>
             inputExportIdToIdMapping.put(exportId, newInput.id)
           }

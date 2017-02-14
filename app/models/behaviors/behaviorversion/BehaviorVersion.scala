@@ -7,6 +7,7 @@ import java.time.OffsetDateTime
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.events.MessageEvent
 import models.team.Team
 import play.api.libs.json.{JsValue, Json}
@@ -25,6 +26,8 @@ case class BehaviorVersion(
                             maybeAuthor: Option[User],
                             createdAt: OffsetDateTime
                           ) {
+
+  def group: BehaviorGroup = behavior.group
 
   val team: Team = behavior.team
 

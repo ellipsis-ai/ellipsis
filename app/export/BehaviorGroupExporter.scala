@@ -89,18 +89,12 @@ case class BehaviorGroupExporter(
 
 object BehaviorGroupExporter {
 
-  private def inputsDataForExporters(exporters: Seq[BehaviorVersionExporter], dataService: DataService): Future[Seq[InputData]] = {
-    for {
-      inputs <- Future.sequence(exporters.map { ea =>
-        val inputIds = ea.paramsData.flatMap(_.inputId)
-          Future.sequence(inputIds.map { id =>
-            dataService.inputs.find(id)
-          }).map(_.flatten)
-        }).map(_.flatten.distinct)
-      data <- Future.sequence(inputs.map { ea =>
-        InputData.fromInput(ea, dataService)
-      })
-    } yield data
+  private def inputsDataForExporters(exporters: Seq[BehaviorVersionExporter], dataService: DataService): Seq[InputData] = {
+    exporters.flatMap { exporter =>
+      exporter.paramsData.map { paramData =>
+        paramData.newInputData
+      }
+    }.distinct
   }
 
   def maybeFor(groupId: String, user: User, dataService: DataService): Future[Option[BehaviorGroupExporter]] = {
@@ -125,10 +119,12 @@ object BehaviorGroupExporter {
       (dataTypeExporters, actionExporters) <- Future.successful(maybeExporters.map { exporters =>
         exporters.partition(_.behaviorVersion.behavior.isDataType)
       }.getOrElse((Seq(), Seq())))
-      actionInputsData <- inputsDataForExporters(actionExporters, dataService)
-      dataTypeInputsData <- inputsDataForExporters(dataTypeExporters, dataService)
-    } yield maybeGroup.map { group =>
-      BehaviorGroupExporter(group, actionInputsData, actionExporters, dataTypeInputsData, dataTypeExporters, mainParentPath)
+    } yield {
+      val actionInputsData = inputsDataForExporters(actionExporters, dataService)
+      val dataTypeInputsData = inputsDataForExporters(dataTypeExporters, dataService)
+      maybeGroup.map { group =>
+        BehaviorGroupExporter(group, actionInputsData, actionExporters, dataTypeInputsData, dataTypeExporters, mainParentPath)
+      }
     }
   }
 }
