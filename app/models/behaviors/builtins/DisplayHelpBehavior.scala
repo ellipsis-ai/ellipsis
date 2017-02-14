@@ -230,7 +230,7 @@ case class DisplayHelpBehavior(
       val matchingGroupData = maybeMatchingTriggers.map { matchingTriggers =>
         flattenedGroupData.
           filter { group =>
-            maybeHelpSearch.exists(group.nameOrDescriptionMatchesHelpSearch) ||
+            maybeHelpSearch.exists(group.nameOrDescriptionContains) ||
               group.behaviorVersions.exists(_.triggers.exists(matchingTriggers.contains))
           }.
           map(group => filterBehaviorVersionsIfMiscGroup(group, matchingTriggers))
