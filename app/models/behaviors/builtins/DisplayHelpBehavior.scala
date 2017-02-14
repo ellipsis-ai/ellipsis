@@ -10,8 +10,10 @@ import models.behaviors.{BotResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
 import utils.Color
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.matching.Regex
 
 case class DisplayHelpBehavior(
                          maybeHelpString: Option[String],
@@ -22,6 +24,10 @@ case class DisplayHelpBehavior(
                          lambdaService: AWSLambdaService,
                          dataService: DataService
                        ) extends BuiltinBehavior {
+
+  private def searchPatternFor(searchText: String): Regex = {
+    s"(?i)(\\s|\\A)(\\S*${Regex.quote(searchText)}\\S*)(\\s|\\Z)".r
+  }
 
   private def helpStringFor(behaviorVersion: BehaviorVersionData, maybeMatchingTriggers: Option[Seq[BehaviorTriggerData]]): Option[String] = {
     val triggers = behaviorVersion.triggers
@@ -154,6 +160,17 @@ case class DisplayHelpBehavior(
     }
   }
 
+  private def descriptionFor(groupData: BehaviorGroupData): String = {
+    if (groupData.description.isEmpty) {
+      ""
+    } else {
+      val description = maybeHelpSearch.map { helpSearch =>
+        searchPatternFor(helpSearch).replaceAllIn(groupData.description, "$1**$2**$3")
+      }.getOrElse(groupData.description)
+      description + "\n\n"
+    }
+  }
+
   def skillResultFor(group: BehaviorGroupData, maybeMatchingTriggers: Option[Seq[BehaviorTriggerData]]): BotResult = {
 
     val intro = if (isFirstTrigger) {
@@ -168,18 +185,12 @@ case class DisplayHelpBehavior(
       s"**${group.name}**"
     }
 
-    val description = if (group.description.isEmpty) {
-      ""
-    } else {
-      s"${group.description}\n\n"
-    }
-
     val actionList = group.behaviorVersions.flatMap(version => helpStringFor(version, maybeMatchingTriggers)).mkString("")
 
     val resultText =
       s"""$intro
          |
-         |$name  \n$description${actionHeadingFor(group)}
+         |$name  \n${descriptionFor(group)}${actionHeadingFor(group)}
          |$actionList
          |""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
@@ -213,7 +224,11 @@ case class DisplayHelpBehavior(
       }.getOrElse(Future.successful(Seq()))
     } yield {
       val (named, unnamed) = groupData.partition(_.name.nonEmpty)
-      val flattenedGroupData = named :+ flattenUnnamedBehaviorGroupData(unnamed)
+      val flattenedGroupData = ArrayBuffer[BehaviorGroupData]()
+      flattenedGroupData ++= named
+      if (unnamed.nonEmpty) {
+        flattenedGroupData += flattenUnnamedBehaviorGroupData(unnamed)
+      }
       val maybeMatchingTriggers = maybeHelpSearch.map { helpSearch =>
         val allTriggers = flattenedGroupData.flatMap(_.behaviorVersions).flatMap(_.triggers)
         TriggerFuzzyMatcher(helpSearch, allTriggers).run.map(_._1)
@@ -221,8 +236,12 @@ case class DisplayHelpBehavior(
       val matchingGroupData = maybeMatchingTriggers.map { matchingTriggers =>
         flattenedGroupData.
           filter { group =>
-            maybeHelpSearch.exists(group.nameOrDescriptionContains) ||
-              group.behaviorVersions.exists(_.triggers.exists(matchingTriggers.contains))
+            val nameOrDescriptionMatch = maybeHelpSearch.exists { helpSearch =>
+              val regex = searchPatternFor(helpSearch)
+              regex.findFirstIn(group.name).isDefined ||
+                regex.findFirstIn(group.description).isDefined
+            }
+            nameOrDescriptionMatch || group.behaviorVersions.exists(_.triggers.exists(matchingTriggers.contains))
           }.
           map(group => filterBehaviorVersionsIfMiscGroup(group, matchingTriggers))
       }.getOrElse(flattenedGroupData)
