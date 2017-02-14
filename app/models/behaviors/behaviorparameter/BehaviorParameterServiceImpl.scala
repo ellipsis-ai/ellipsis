@@ -3,7 +3,7 @@ package models.behaviors.behaviorparameter
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import json.BehaviorParameterData
+import json.{BehaviorParameterData, InputData}
 import models.IDs
 import models.behaviors.behaviorversion.BehaviorVersion
 import services.DataService
@@ -61,21 +61,35 @@ class BehaviorParameterServiceImpl @Inject() (
       _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
       newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
         DBIO.from(for {
-          maybeInput <- data.inputId.map { inputId =>
-            dataService.inputs.find(inputId)
-          }.getOrElse(Future.successful(None))
-          maybeParam <- maybeInput.map { input =>
-            createFor(input, i + 1, behaviorVersion).map(Some(_))
-          }.getOrElse(Future.successful(None))
+          maybeExistingInput <- if (data.isShared) {
+            data.inputId.map { inputId =>
+              dataService.inputs.find(inputId)
+            }.getOrElse(Future.successful(None))
+          } else {
+            Future.successful(None)
+          }
+          input <- maybeExistingInput.map { existing =>
+            InputData.fromInput(existing, dataService).flatMap { inputData =>
+              val updatedInputData = inputData.copy(
+                name = data.name,
+                paramType = data.paramType,
+                question = data.question,
+                isSavedForTeam = data.isSavedForTeam.exists(identity),
+                isSavedForUser = data.isSavedForUser.exists(identity)
+              )
+              dataService.inputs.ensureFor(updatedInputData, behaviorVersion.team)
+            }
+          }.getOrElse {
+            dataService.inputs.createFor(data.newInputData, behaviorVersion.team)
+          }
+          param <- createFor(input, i + 1, behaviorVersion)
           _ <- if (data.isShared) {
             Future.successful({})
           } else {
-            maybeParam.map { param =>
-              dataService.savedAnswers.updateForInputId(data.inputId, param.input.id)
-            }.getOrElse(Future.successful({}))
+            dataService.savedAnswers.updateForInputId(data.inputId, input.id)
           }
-        } yield maybeParam)
-      }).map(_.flatten)
+        } yield param)
+      })
     } yield newParams
     dataService.run(action)
   }
