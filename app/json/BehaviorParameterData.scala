@@ -15,6 +15,17 @@ case class BehaviorParameterData(
 
   val isShared = groupId.isDefined
 
+  def newInputData = InputData(
+    None,
+    inputExportId,
+    name,
+    paramType,
+    question,
+    isSavedForTeam.exists(identity),
+    isSavedForUser.exists(identity),
+    groupId
+  )
+
   def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterData = {
     copy(
       paramType = paramType.map(_.copyForExport(groupExporter)),
