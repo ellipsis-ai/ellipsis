@@ -1,6 +1,7 @@
 import export.{BehaviorGroupExporter, BehaviorGroupZipImporter}
 import json.BehaviorParameterTypeData
 import models.accounts.user.User
+import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType}
 import support.DBSpec
@@ -9,6 +10,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class BehaviorGroupImportExportSpec extends DBSpec {
+
+  def checkParamTypeMatches(paramType: BehaviorParameterType, dataType: Behavior): Unit = {
+    paramType.isInstanceOf[BehaviorBackedDataType] mustBe true
+    dataType.maybeImportedId must contain(paramType.exportId)
+    dataType.maybeDataTypeName must contain(paramType.name)
+  }
 
   def exportAndImport(group: BehaviorGroup, exportUser: User, importUser: User): Unit = {
     val maybeImportTeam = runNow(dataService.teams.find(importUser.teamId))
@@ -171,7 +178,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
           dataService.behaviorParameters.allFor(version)
         }).map(_.flatten))
         importedParams must have length 1
-        importedParams.head.input.paramType.id mustBe importedDataTypes.head.id
+        checkParamTypeMatches(importedParams.head.input.paramType, importedDataTypes.head)
       })
     }
 

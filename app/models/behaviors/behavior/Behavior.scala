@@ -15,6 +15,8 @@ case class Behavior(
                      createdAt: OffsetDateTime
                    ) {
 
+  def group: BehaviorGroup = maybeGroup.get
+
   val isDataType = maybeDataTypeName.isDefined
 
   def toRaw: RawBehavior = {
