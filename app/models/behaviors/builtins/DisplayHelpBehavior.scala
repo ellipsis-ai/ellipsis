@@ -164,7 +164,7 @@ case class DisplayHelpBehavior(
     if (groupData.description.isEmpty) {
       ""
     } else {
-      val description = maybeMatchingItems.filter(_.exists(_.text == groupData.description)).flatMap { _ =>
+      val description = maybeMatchingItems.filter(_.contains(groupData.fuzzyMatchDescription)).flatMap { _ =>
         maybeHelpSearch.map(helpSearch => searchPatternFor(helpSearch).replaceAllIn(groupData.description, "$1**$2**$3"))
       }.getOrElse(groupData.description)
       description + "\n\n"
