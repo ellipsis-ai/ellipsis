@@ -6,7 +6,7 @@ import scala.concurrent.Future
 
 trait BehaviorGroupService {
 
-  def createFor(name: String, description: String, maybeImportedId: Option[String], team: Team): Future[BehaviorGroup]
+  def createFor(name: String, maybeIcon: Option[String], description: String, maybeImportedId: Option[String], team: Team): Future[BehaviorGroup]
 
   def save(behaviorGroup: BehaviorGroup): Future[BehaviorGroup]
 

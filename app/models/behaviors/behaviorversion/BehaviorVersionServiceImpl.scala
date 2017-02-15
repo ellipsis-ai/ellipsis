@@ -27,7 +27,7 @@ case class RawBehaviorVersion(
                                id: String,
                                behaviorId: String,
                                maybeDescription: Option[String],
-                               maybeShortName: Option[String],
+                               maybeName: Option[String],
                                maybeFunctionBody: Option[String],
                                maybeResponseTemplate: Option[String],
                                forcePrivateResponse: Boolean,
@@ -40,7 +40,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def id = column[String]("id", O.PrimaryKey)
   def behaviorId = column[String]("behavior_id")
   def maybeDescription = column[Option[String]]("description")
-  def maybeShortName = column[Option[String]]("short_name")
+  def maybeName = column[Option[String]]("name")
   def maybeFunctionBody = column[Option[String]]("code")
   def maybeResponseTemplate = column[Option[String]]("response_template")
   def forcePrivateResponse = column[Boolean]("private_response")
@@ -48,7 +48,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
+    (id, behaviorId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -113,7 +113,7 @@ class BehaviorVersionServiceImpl @Inject() (
     val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), OffsetDateTime.now)
 
     val action = (all += raw).map { _ =>
-      BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)
+      BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)
     }
     dataService.run(action)
   }
@@ -128,6 +128,7 @@ class BehaviorVersionServiceImpl @Inject() (
       _ <-
       for {
         updated <- DBIO.from(save(behaviorVersion.copy(
+          maybeName = data.name,
           maybeDescription = data.description,
           maybeFunctionBody = Some(data.functionBody),
           maybeResponseTemplate = Some(data.responseTemplate),

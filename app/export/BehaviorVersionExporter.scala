@@ -23,8 +23,7 @@ case class BehaviorVersionExporter(
 
   val fullPath = {
     val behaviorType = if (behaviorVersion.behavior.isDataType) { "data_types" } else { "actions" }
-    val dirName = behaviorVersion.behavior.maybeDataTypeName.getOrElse(behaviorVersion.id)
-    val safeDirName = SafeFileName.forName(dirName)
+    val safeDirName = SafeFileName.forName(behaviorVersion.exportName)
     s"$parentPath/$behaviorType/$safeDirName"
   }
 
@@ -44,6 +43,10 @@ case class BehaviorVersionExporter(
     writeFileFor("config.json", configString)
   }
 
+  def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorVersionExporter = {
+    copy(paramsData = paramsData.map(_.copyForExport(groupExporter)))
+  }
+
 }
 
 object BehaviorVersionExporter {
@@ -57,27 +60,19 @@ object BehaviorVersionExporter {
       maybeFunction <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.behaviorVersions.maybeFunctionFor(behaviorVersion)
       }.getOrElse(Future.successful(None))
-      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, Some(behaviorId))
+      maybePublishedId <- Future.successful(maybeBehaviorVersion.flatMap(_.behavior.maybeImportedId).orElse(Some(behaviorId)))
+      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, maybePublishedId)
     } yield {
       for {
         behaviorVersion <- maybeBehaviorVersion
-        function <- maybeFunction
         versionData <- maybeVersionData
       } yield {
-        // we don't want to export the team-specific application, but we want to keep the scope
-        val requiredOAuth2ApiConfigsForExport = versionData.config.requiredOAuth2ApiConfigs.map { configs =>
-          configs.map { ea =>
-            val maybeScope = ea.application.flatMap(_.scope)
-            ea.copy(application = None, recommendedScope = maybeScope)
-          }
-        }
-        val configForExport = versionData.config.copy(requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsForExport)
         BehaviorVersionExporter(
           behaviorVersion,
           maybeFunction,
           versionData.params,
           versionData.triggers,
-          configForExport,
+          versionData.config.copyForExport,
           versionData.responseTemplate,
           parentPath
         )

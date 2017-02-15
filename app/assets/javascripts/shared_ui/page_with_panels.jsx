@@ -41,8 +41,8 @@ define(function(require) {
             }));
         },
 
-        clearActivePanel: function() {
-          this.setState(this.getInitialState());
+        clearActivePanel: function(optionalCallback) {
+          this.setState(this.getInitialState(), optionalCallback);
         },
 
         handleEscKey: function() {

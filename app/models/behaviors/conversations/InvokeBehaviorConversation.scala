@@ -25,7 +25,8 @@ case class InvokeBehaviorConversation(
                                        maybeThreadId: Option[String],
                                        userIdForContext: String, // id for Slack, etc user
                                        startedAt: OffsetDateTime,
-                                       state: String = Conversation.NEW_STATE
+                                       state: String = Conversation.NEW_STATE,
+                                       maybeScheduledMessageId: Option[String]
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
@@ -138,7 +139,8 @@ object InvokeBehaviorConversation {
         None,
         event.userIdForContext,
         OffsetDateTime.now,
-        Conversation.NEW_STATE
+        Conversation.NEW_STATE,
+        event.maybeScheduledMessage.map(_.id)
       )
     dataService.conversations.save(newInstance).map(_ => newInstance)
   }

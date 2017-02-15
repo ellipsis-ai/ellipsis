@@ -7,7 +7,7 @@ import models.accounts.oauth2application.OAuth2Application
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.{MessageActions, MessageEvent, SlackMessageAction, SlackMessageActions}
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -20,7 +20,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BotResult {
@@ -35,8 +35,10 @@ sealed trait BotResult {
               maybeShouldUnfurl: Option[Boolean],
               maybeConversation: Option[Conversation]
             )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, None)
+    event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, maybeActions)
   }
+
+  def maybeActions: Option[MessageActions] = None
 }
 
 trait BotResultWithLogResult extends BotResult {
@@ -66,10 +68,20 @@ case class SuccessResult(
 
 case class SimpleTextResult(event: MessageEvent, simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
 
-  val resultType = ResultType.ConversationPrompt
+  val resultType = ResultType.SimpleText
 
   def text: String = simpleText
 
+}
+
+case class TextWithActionsResult(event: MessageEvent, simpleText: String, forcePrivateResponse: Boolean, actions: MessageActions) extends BotResult {
+  val resultType = ResultType.TextWithActions
+
+  def text: String = simpleText
+
+  override def maybeActions: Option[MessageActions] = {
+    Some(actions)
+  }
 }
 
 case class NoResponseResult(event: MessageEvent, maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {

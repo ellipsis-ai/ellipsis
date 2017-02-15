@@ -24,6 +24,12 @@ trait BehaviorService {
 
   def allForGroup(group: BehaviorGroup): Future[Seq[Behavior]]
 
+  def regularForGroup(group: BehaviorGroup): Future[Seq[Behavior]] = {
+    allForGroup(group).map { all =>
+      all.filterNot(_.isDataType)
+    }
+  }
+
   def regularForTeam(team: Team): Future[Seq[Behavior]] = {
     allForTeam(team).map { all =>
       all.filter(_.maybeDataTypeName.isEmpty)

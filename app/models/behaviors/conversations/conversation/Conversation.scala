@@ -27,6 +27,8 @@ trait Conversation {
   val userIdForContext: String
   val startedAt: OffsetDateTime
   val state: String
+  val maybeScheduledMessageId: Option[String]
+  val isScheduled: Boolean = maybeScheduledMessageId.isDefined
 
   def isPending: Boolean = state == Conversation.PENDING_STATE
 
@@ -81,7 +83,7 @@ trait Conversation {
   }
 
   def toRaw: RawConversation = {
-    RawConversation(id, trigger.id, triggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state)
+    RawConversation(id, trigger.id, triggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state, maybeScheduledMessageId)
   }
 }
 
@@ -96,5 +98,5 @@ object Conversation {
   val LEARN_BEHAVIOR = "learn_behavior"
   val INVOKE_BEHAVIOR = "invoke_behavior"
 
-  val SECONDS_UNTIL_BACKGROUNDED = 60
+  val SECONDS_UNTIL_BACKGROUNDED = 300
 }

@@ -10,6 +10,9 @@ object Formatting {
   implicit val inputSavedAnswerReads = Json.reads[InputSavedAnswerData]
   implicit val inputSavedAnswerWrites = Json.writes[InputSavedAnswerData]
 
+  implicit val inputReads = Json.reads[InputData]
+  implicit val inputWrites = Json.writes[InputData]
+
   implicit val behaviorParameterReads = Json.reads[BehaviorParameterData]
   implicit val behaviorParameterWrites = Json.writes[BehaviorParameterData]
 

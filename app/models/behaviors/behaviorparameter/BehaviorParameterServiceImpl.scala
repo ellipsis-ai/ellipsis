@@ -3,11 +3,12 @@ package models.behaviors.behaviorparameter
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import json.{BehaviorParameterData, BehaviorParameterTypeData, InputData}
+import json.{BehaviorParameterData, InputData}
 import models.IDs
 import models.behaviors.behaviorversion.BehaviorVersion
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.input.Input
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -16,10 +17,7 @@ case class RawBehaviorParameter(
                                  id: String,
                                  rank: Int,
                                  inputId: Option[String],
-                                 behaviorVersionId: String,
-                                 name: String,
-                                 maybeQuestion: Option[String],
-                                 paramType: String
+                                 behaviorVersionId: String
                                )
 
 class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag, "behavior_parameters") {
@@ -28,12 +26,9 @@ class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag,
   def rank = column[Int]("rank")
   def inputId = column[Option[String]]("input_id")
   def behaviorVersionId = column[String]("behavior_version_id")
-  def name = column[String]("name")
-  def maybeQuestion = column[Option[String]]("question")
-  def paramType = column[String]("param_type")
 
   def * =
-    (id, rank, inputId, behaviorVersionId, name, maybeQuestion, paramType) <> ((RawBehaviorParameter.apply _).tupled, RawBehaviorParameter.unapply _)
+    (id, rank, inputId, behaviorVersionId) <> ((RawBehaviorParameter.apply _).tupled, RawBehaviorParameter.unapply _)
 }
 
 class BehaviorParameterServiceImpl @Inject() (
@@ -45,15 +40,14 @@ class BehaviorParameterServiceImpl @Inject() (
   import BehaviorParameterQueries._
 
   def allFor(behaviorVersion: BehaviorVersion): Future[Seq[BehaviorParameter]] = {
-   val action = allForQuery(behaviorVersion.id).result.map(_.map(tuple2Parameter))
+   val action = allForQuery(behaviorVersion.id).result.map(_.map(tuple2Parameter).sortBy(_.rank))
     dataService.run(action)
   }
 
-  private def createFor(inputData: InputData, rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
+  private def createFor(input: Input, rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
     val action = for {
-      input <- DBIO.from(dataService.inputs.ensureFor(inputData, behaviorVersion.team))
       raw <- DBIO.successful {
-        RawBehaviorParameter(IDs.next, rank, Some(input.id), behaviorVersion.id, input.name, input.maybeQuestion, input.toRaw.paramType)
+        RawBehaviorParameter(IDs.next, rank, Some(input.id), behaviorVersion.id)
       }
       param <- (all += raw).map { _ =>
         BehaviorParameter(raw.id, raw.rank, input, behaviorVersion)
@@ -67,11 +61,32 @@ class BehaviorParameterServiceImpl @Inject() (
       _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
       newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
         DBIO.from(for {
-          param <- createFor(data.inputData, i + 1, behaviorVersion)
+          maybeExistingInput <- if (data.isShared) {
+            data.inputId.map { inputId =>
+              dataService.inputs.find(inputId)
+            }.getOrElse(Future.successful(None))
+          } else {
+            Future.successful(None)
+          }
+          input <- maybeExistingInput.map { existing =>
+            InputData.fromInput(existing, dataService).flatMap { inputData =>
+              val updatedInputData = inputData.copy(
+                name = data.name,
+                paramType = data.paramType,
+                question = data.question,
+                isSavedForTeam = data.isSavedForTeam.exists(identity),
+                isSavedForUser = data.isSavedForUser.exists(identity)
+              )
+              dataService.inputs.ensureFor(updatedInputData, behaviorVersion.group)
+            }
+          }.getOrElse {
+            dataService.inputs.createFor(data.newInputData, behaviorVersion.group)
+          }
+          param <- createFor(input, i + 1, behaviorVersion)
           _ <- if (data.isShared) {
             Future.successful({})
           } else {
-            dataService.savedAnswers.updateForInputId(data.inputId, param.input.id)
+            dataService.savedAnswers.updateForInputId(data.inputId, input.id)
           }
         } yield param)
       })

@@ -174,6 +174,10 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  getBehaviorName: function() {
+    return this.getBehaviorProp('name') || "";
+  },
+
   getBehaviorDescription: function() {
     return this.getBehaviorProp('description') || "";
   },
@@ -833,10 +837,14 @@ const BehaviorEditor = React.createClass({
     const ref = this.isDataTypeBehavior() ? 'dataTypeTester' : 'behaviorTester';
     if (this.isModified()) {
       this.onSaveBehavior(() => {
-        this.toggleTester(ref);
+        this.props.onClearActivePanel(() => {
+          this.toggleTester(ref);
+        });
       });
     } else {
-      this.toggleTester(ref);
+      this.props.onClearActivePanel(() => {
+        this.toggleTester(ref);
+      });
     }
   },
 
@@ -846,14 +854,6 @@ const BehaviorEditor = React.createClass({
         this.refs[ref].focus();
       }
     });
-  },
-
-  toggleBehaviorTester: function() {
-    this.toggleTester('behaviorTester');
-  },
-
-  toggleDataTypeTester: function() {
-    this.toggleTester('dataTypeTester');
   },
 
   toggleBoilerplateHelp: function() {
@@ -933,6 +933,10 @@ const BehaviorEditor = React.createClass({
 
   updateDescription: function(newDescription) {
     this.setBehaviorProp('description', newDescription);
+  },
+
+  updateName: function(newName) {
+    this.setBehaviorProp('name', newName);
   },
 
   updateEnvVariables: function(envVars, options) {
@@ -1579,7 +1583,7 @@ const BehaviorEditor = React.createClass({
               params={this.getBehaviorParams()}
               behaviorId={this.props.behavior.behaviorId}
               csrfToken={this.props.csrfToken}
-              onDone={this.toggleBehaviorTester}
+              onDone={this.props.onClearActivePanel}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
             />
           </Collapsible>
@@ -1590,7 +1594,7 @@ const BehaviorEditor = React.createClass({
               behaviorId={this.props.behavior.behaviorId}
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
-              onDone={this.toggleDataTypeTester}
+              onDone={this.props.onClearActivePanel}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
             />
           </Collapsible>
@@ -1915,12 +1919,25 @@ const BehaviorEditor = React.createClass({
           <div className="container pts">
             {this.getBehaviorHeading()}
 
-            <Input
-              className="form-input-borderless form-input-m type-bold mbn"
-              placeholder="Add a description (optional)"
-              onChange={this.updateDescription}
-              value={this.getBehaviorDescription()}
-            />
+            <div className="columns mbl">
+              <div className="column column-page-sidebar mobile-column-full">
+                <Input
+                  className="form-input-borderless form-input-m type-bold"
+                  placeholder="Add a name (optional)"
+                  onChange={this.updateName}
+                  value={this.getBehaviorName()}
+                />
+              </div>
+
+              <div className="column column-page-main mobile-column-full">
+                <Input
+                  className="form-input-borderless form-input-m type-bold"
+                  placeholder="Add a description (optional)"
+                  onChange={this.updateDescription}
+                  value={this.getBehaviorDescription()}
+                />
+              </div>
+            </div>
           </div>
 
           <hr className="mtneg1 mbn thin bg-gray-light" />

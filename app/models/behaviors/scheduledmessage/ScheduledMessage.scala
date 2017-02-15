@@ -13,6 +13,7 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.{Configuration, Logger}
 import services.DataService
 import slack.api.{ApiError, SlackApiClient}
+import utils.SlackChannels
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -134,25 +135,6 @@ case class ScheduledMessage(
     }.getOrElse(Future.successful(None))
   }
 
-  private def swallowingChannelNotFound[T](fn: () => Future[T]): Future[Option[T]] = {
-    fn().map(Some(_)).recover {
-      case e: ApiError => if (e.code == "channel_not_found") {
-        None
-      } else {
-        throw e
-      }
-    }
-  }
-
-  private def getMembersFor(channelOrGroupId: String, client: SlackApiClient)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
-    for {
-      maybeChannel <- swallowingChannelNotFound(() => client.getChannelInfo(channelOrGroupId))
-      maybeGroup <- swallowingChannelNotFound(() => client.getGroupInfo(channelOrGroupId))
-    } yield {
-      maybeChannel.flatMap(_.members).orElse(maybeGroup.map(_.members)).getOrElse(Seq())
-    }
-  }
-
   case class SlackDMInfo(userId: String, channelId: String)
 
   private def sendDMsSequentiallyFor(
@@ -182,13 +164,18 @@ case class ScheduledMessage(
                                 configuration: Configuration
                               )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
-      members <- getMembersFor(channelName, client)
+      members <- SlackChannels(client).getMembersFor(channelName)
       otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
       dmInfos <- Future.sequence(otherMembers.map { ea =>
         client.openIm(ea).map { dmChannel =>
-          SlackDMInfo(ea, dmChannel)
+          Some(SlackDMInfo(ea, dmChannel))
+        }.recover {
+          case e: ApiError => {
+            Logger.error(s"Couldn't send DM to $ea due to Slack API error: ${e.code}", e)
+            None
+          }
         }
-      })
+      }).map(_.flatten)
       _ <- sendDMsSequentiallyFor(dmInfos.toList, eventHandler, client, profile, dataService, configuration)
     } yield {}
   }
@@ -203,7 +190,7 @@ case class ScheduledMessage(
                dataService: DataService,
                configuration: Configuration
              )(implicit actorSystem: ActorSystem): Future[Unit] = {
-    val event = ScheduledMessageEvent(SlackMessageEvent(profile, channelName, None, slackUserId, text, "ts"))
+    val event = ScheduledMessageEvent(SlackMessageEvent(profile, channelName, None, slackUserId, text, "ts"), this)
     for {
       didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
       results <- eventHandler.handle(event, None)

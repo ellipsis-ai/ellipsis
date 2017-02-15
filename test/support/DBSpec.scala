@@ -25,6 +25,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 
 trait DBSpec extends PlaySpec with OneAppPerSuite {
@@ -46,8 +47,8 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
 
   def newSavedInputFor(group: BehaviorGroup): Input = {
-    val data = InputData(Some(IDs.next), IDs.next, None, "", false, false, Some(group.id))
-    runNow(dataService.inputs.createFor(data, group.team))
+    val data = InputData(Some(IDs.next), None, IDs.next, None, "", false, false, Some(group.id))
+    runNow(dataService.inputs.createFor(data, group))
   }
 
   def newSavedAnswerFor(input: Input, user: User): SavedAnswer = {
@@ -58,9 +59,31 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
                         version: BehaviorVersion,
                         maybeType: Option[BehaviorParameterTypeData] = None,
                         isSavedForTeam: Option[Boolean] = None,
-                        isSavedForUser: Option[Boolean] = None
+                        isSavedForUser: Option[Boolean] = None,
+                        maybeExistingInput: Option[Input] = None
                       ): BehaviorParameter = {
-    val data = Seq(BehaviorParameterData("param", maybeType, "", isSavedForTeam = isSavedForTeam, isSavedForUser = isSavedForUser, None, None))
+    val input = maybeExistingInput.map { input =>
+      runNow(InputData.fromInput(input, dataService).flatMap { inputData =>
+        dataService.inputs.ensureFor(inputData.copy(groupId = version.behavior.maybeGroup.map(_.id)), version.group)
+      })
+    }.getOrElse {
+      val inputData = InputData(Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity), None)
+      runNow(dataService.inputs.createFor(inputData, version.group))
+    }
+    val paramTypeData = runNow(BehaviorParameterTypeData.from(input.paramType, dataService))
+    val data =
+      Seq(
+        BehaviorParameterData(
+          input.name,
+          Some(paramTypeData),
+          input.question,
+          Some(input.isSavedForTeam),
+          Some(input.isSavedForUser),
+          Some(input.id),
+          input.maybeExportId,
+          input.maybeBehaviorGroup.map(_.id)
+        )
+      )
     runNow(dataService.behaviorParameters.ensureFor(version, data)).head
   }
 
@@ -76,8 +99,12 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
     runNow(dataService.behaviors.createFor(group, None, None))
   }
 
+  def newSavedDataTypeFor(group: BehaviorGroup): Behavior = {
+    runNow(dataService.behaviors.createFor(group, None, Some("Some type")))
+  }
+
   def newSavedBehaviorGroupFor(team: Team): BehaviorGroup = {
-    runNow(dataService.behaviorGroups.createFor("", "", None, team))
+    runNow(dataService.behaviorGroups.createFor("", None, "", None, team))
   }
 
   def withEmptyDB[T](dataService: PostgresDataService, fn: PostgresDatabase => T) = {

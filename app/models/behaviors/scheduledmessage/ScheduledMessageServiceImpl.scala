@@ -245,6 +245,18 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledFindQueryFor(id: Rep[String]) = {
+    allWithUser.filter { case((msg, _), _) => msg.id === id }
+  }
+  val findQueryFor = Compiled(uncompiledFindQueryFor _)
+
+  def find(id: String): Future[Option[ScheduledMessage]] = {
+    val action = findQueryFor(id).result.map { r =>
+      r.headOption.map(tuple2ScheduledMessage)
+    }
+    dataService.run(action)
+  }
+
   def save(message: ScheduledMessage): Future[ScheduledMessage] = {
     val raw = message.toRaw
     val query = all.filter(_.id === raw.id)

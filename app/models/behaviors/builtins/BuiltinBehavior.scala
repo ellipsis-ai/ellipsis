@@ -40,7 +40,7 @@ object BuiltinBehavior {
         case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, event, lambdaService, dataService))
         case startLearnConversationRegex() => Some(LearnBehavior(event, lambdaService, dataService))
         case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, event, lambdaService, dataService))
-        case helpRegex(helpString) => Some(DisplayHelpBehavior(helpString, event, lambdaService, dataService))
+        case helpRegex(helpString) => Some(DisplayHelpBehavior(Some(helpString), None, Some(0), isFirstTrigger = true, event, lambdaService, dataService))
         case rememberRegex(cmd) => Some(RememberBehavior(event, lambdaService, dataService))
         case scheduledRegex() => Some(ListScheduledBehavior(event, lambdaService, dataService))
         case scheduleRegex(_, text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, lambdaService, dataService))

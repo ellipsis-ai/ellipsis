@@ -5,7 +5,8 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.triggers.TriggerFuzzyMatcher
+import models.behaviors.scheduledmessage.ScheduledMessage
+import utils.FuzzyMatcher
 import models.behaviors.{BotResult, MessageInfo, SimpleTextResult, UserInfo}
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
@@ -23,10 +24,19 @@ trait MessageEvent {
   val includesBotMention: Boolean
   val maybeChannel: Option[String]
   val maybeThreadId: Option[String]
+  val maybeScheduledMessage: Option[ScheduledMessage] = None
 
   val context = name
 
   def relevantMessageText: String = MessageEvent.ellipsisRegex.replaceFirstIn(fullMessageText, "")
+
+  def skillListLinkFor(lambdaService: AWSLambdaService): String = {
+    val skillListLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.ApplicationController.index(Some(teamId))
+      s"$baseUrl$path"
+    }.get
+    s"[View all skills]($skillListLink)"
+  }
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
@@ -62,7 +72,7 @@ trait MessageEvent {
       }.getOrElse(Future.successful(Seq()))
     } yield {
       val similarTriggers =
-        TriggerFuzzyMatcher(relevantMessageText, triggers).
+        FuzzyMatcher(relevantMessageText, triggers).
           run.
           map { case(trigger, _) => s"`${trigger.pattern}`" }
       val message = if (similarTriggers.isEmpty) {
@@ -131,7 +141,8 @@ trait MessageEvent {
     text
   }
 
-  def botPrefix: String = "..."
+  // TODO: Remove this method if we're sure we don't want to use it in help anymore
+  def botPrefix: String = ""
 
 }
 

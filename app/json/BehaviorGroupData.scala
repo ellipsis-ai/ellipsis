@@ -3,9 +3,9 @@ package json
 import java.time.OffsetDateTime
 
 import models.accounts.user.User
-import models.behaviors.triggers.TriggerFuzzyMatcher
 import models.team.Team
 import services.DataService
+import utils.FuzzyMatchable
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,6 +15,8 @@ case class BehaviorGroupData(
                               name: String,
                               description: String,
                               icon: Option[String],
+                              actionInputs: Seq[InputData],
+                              dataTypeInputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
                               githubUrl: Option[String],
                               importedId: Option[String],
@@ -45,16 +47,12 @@ case class BehaviorGroupData(
     }
   }
 
-  private def anyTriggerMatchesHelpSearch(helpSearch: String): Boolean = {
-    val triggers = behaviorVersions.flatMap(_.triggers)
-    TriggerFuzzyMatcher(helpSearch, triggers).run.nonEmpty
+  lazy val fuzzyMatchName: FuzzyMatchable = {
+    FuzzyBehaviorGroupDetail(name)
   }
 
-  def matchesHelpSearch(helpSearch: String): Boolean = {
-    val regex = ("(?i)" ++ helpSearch).r
-    regex.findFirstMatchIn(name).isDefined ||
-      regex.findFirstMatchIn(description).isDefined ||
-      anyTriggerMatchesHelpSearch(helpSearch)
+  lazy val fuzzyMatchDescription: FuzzyMatchable = {
+    FuzzyBehaviorGroupDetail(description)
   }
 
   import scala.math.Ordered.orderingToOrdered
@@ -81,6 +79,12 @@ object BehaviorGroupData {
       behaviors <- maybeGroup.map { group =>
         dataService.behaviors.allForGroup(group)
       }.getOrElse(Future.successful(Seq()))
+      sharedInputs <- maybeGroup.map { group =>
+        dataService.inputs.allForGroup(group)
+      }.getOrElse(Future.successful(Seq()))
+      sharedInputsData <- Future.sequence(sharedInputs.map { ea =>
+        InputData.fromInput(ea, dataService)
+      })
       versionsData <- Future.sequence(behaviors.map { ea =>
         BehaviorVersionData.maybeFor(ea.id, user, dataService)
       }).map(_.flatten.sortBy { ea =>
@@ -92,6 +96,8 @@ object BehaviorGroupData {
         group.name,
         group.maybeDescription.getOrElse(""),
         None,
+        sharedInputsData,
+        Seq(),
         versionsData,
         maybeGithubUrl,
         group.maybeImportedId,
@@ -101,4 +107,8 @@ object BehaviorGroupData {
     }
   }
 
+}
+
+case class FuzzyBehaviorGroupDetail(text: String) extends FuzzyMatchable {
+  val maybeFuzzyMatchPattern = Option(text).filter(_.trim.nonEmpty)
 }

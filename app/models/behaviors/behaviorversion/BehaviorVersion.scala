@@ -7,6 +7,7 @@ import java.time.OffsetDateTime
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.events.MessageEvent
 import models.team.Team
 import play.api.libs.json.{JsValue, Json}
@@ -18,7 +19,7 @@ case class BehaviorVersion(
                             id: String,
                             behavior: Behavior,
                             maybeDescription: Option[String],
-                            maybeShortName: Option[String],
+                            maybeName: Option[String],
                             maybeFunctionBody: Option[String],
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
@@ -26,7 +27,13 @@ case class BehaviorVersion(
                             createdAt: OffsetDateTime
                           ) {
 
+  def group: BehaviorGroup = behavior.group
+
   val team: Team = behavior.team
+
+  val exportName: String = {
+    behavior.maybeDataTypeName.orElse(maybeName).getOrElse(id)
+  }
 
   def isSkill: Boolean = {
     maybeFunctionBody.exists { body =>
@@ -90,7 +97,7 @@ case class BehaviorVersion(
       id,
       behavior.id,
       maybeDescription,
-      maybeShortName,
+      maybeName,
       maybeFunctionBody,
       maybeResponseTemplate,
       forcePrivateResponse,
