@@ -12,10 +12,9 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.mvc.{Action, Result}
+import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
-import utils.Color
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -200,19 +199,24 @@ class SlackController @Inject() (
     })
   )
 
-  private def messageEventResult(info: MessageRequestInfo): Result = {
+  private def messageEventResult(info: MessageRequestInfo)(implicit request: Request[AnyContent]): Result = {
     if (info.isValid) {
-      for {
-        maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
-        _ <- maybeProfile.map { profile =>
-          slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts))
-        }.getOrElse {
-          Future.successful({})
-        }
-      } yield {}
+      val isRetry = request.headers.get("X-Slack-Retry-Num").isDefined
+      if (isRetry) {
+        Ok("We are ignoring retries for now")
+      } else {
+        for {
+          maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
+          _ <- maybeProfile.map { profile =>
+            slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts))
+          }.getOrElse {
+            Future.successful({})
+          }
+        } yield {}
 
-      // respond immediately
-      Ok(":+1:")
+        // respond immediately
+        Ok(":+1:")
+      }
     } else {
       Unauthorized("Bad token")
     }
@@ -224,17 +228,8 @@ class SlackController @Inject() (
         messageSentEventRequestForm.bindFromRequest.fold(
           _ => {
             messageChangedEventRequestForm.bindFromRequest.fold(
-              _ => {
-                Ok("I don't know what to do with this request but I'm not concerned")
-              },
-              info => {
-                val isRetry = request.headers.get("X-Slack-Retry-Num").isDefined
-                if (isRetry) {
-                  Ok("We are ignoring retries for now")
-                } else {
-                  messageEventResult(info)
-                }
-              }
+              _ => Ok("I don't know what to do with this request but I'm not concerned"),
+              info => messageEventResult(info)
             )
           },
           info => messageEventResult(info)
