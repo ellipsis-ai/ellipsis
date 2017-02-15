@@ -73,15 +73,18 @@ $ ngrok http 9000
 ```
 
 #### Create a Slack API App
-- Copy the App id and secret somewhere.
-- Configure the redirect url using the ngrok url.
-- Enable event subscriptions
-  - Go to https://api.slack.com/apps, click on your Slack App, on the right nav menu click on Event Subscriptions
-  - The url is https://api.slack.com/apps/<app-id>/event-subscriptions
-- Subscribe to these Bot events: `message.channels`, `message.groups`, `message.im`, `message.mpim`
-- Turn on "Always Show My Bot as Online" at https://api.slack.com/apps/<app-id>/bots
-- Set your SLACK_TOKEN env var to be the Verification Token from https://api.slack.com/apps/<app-id>/general 
-
+- Go to https://api.slack.com/apps
+- Create a new API Application 
+- Copy the Client ID, Client Secret and the Verification Token somewhere. You will use them to
+  set some environment variables.
+- OAuth & Permission: Add the Ngrok url to the Redirect URL(s)
+- Bot Users: 
+  - Click on "Add a Bot User"
+  - Turn on "Always Show My Bot as Online". 
+- Event subscriptions:
+  - Add the Request URL: <ngrok url>/slack/event 
+  - Subscribe to these Bot Events: `message.channels`, `message.groups`, `message.im`, `message.mpim`
+ 
 #### Get the source code from Github
 ```bash
 $ git clone git@github.com:ellipsis-ai/ellipsis.git
@@ -138,8 +141,18 @@ http://localhost:5601/app/sense
 
 
 #### Run the app
-The app is run using Activator the run_app script is just a wrapper that invokes
-Activator with the necessary env. variables.
+The app is run using Activator the `actw` script is just a wrapper that invokes
+Activator with the necessary environment variables.
+
+```bash
+$ cp actw.template actw
+```
+Now edit `actw` and fill in all the value for the environment variables
+
+```bash
+$ vim actw
+```
+Finally you can run the app
 
 ```bash
 $ ./actw help
