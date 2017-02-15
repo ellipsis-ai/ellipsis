@@ -72,11 +72,13 @@ Run ngrok using:
 $ ngrok http 9000
 ```
 
-#### Create a Slack App
+#### Create a Slack API App
 - Copy the App id and secret somewhere.
 - Configure the redirect url using the ngrok url.
-- Enable event subscriptions at https://api.slack.com/apps/<app-id>/event-subscriptions
-- Subscribe to these events: `message.channels`, `message.groups`, `message.im`, `message.mpim`
+- Enable event subscriptions
+  - Go to https://api.slack.com/apps, click on your Slack App, on the right nav menu click on Event Subscriptions
+  - The url is https://api.slack.com/apps/<app-id>/event-subscriptions
+- Subscribe to these Bot events: `message.channels`, `message.groups`, `message.im`, `message.mpim`
 - Turn on "Always Show My Bot as Online" at https://api.slack.com/apps/<app-id>/bots
 - Set your SLACK_TOKEN env var to be the Verification Token from https://api.slack.com/apps/<app-id>/general 
 
