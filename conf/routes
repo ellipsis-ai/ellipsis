@@ -106,4 +106,4 @@ GET         /assets/*file                             @controllers.RemoteAssets.
 # Teams Routes
 #
 
-GET         /teams/settings/scheduled_actions         @controllers.teams.settings.ScheduledActionsController.index(teamId: Option[String] ?= None)
+GET         /teams/:teamId/settings/scheduled_actions         @controllers.teams.settings.ScheduledActionsController.index(teamId: String)

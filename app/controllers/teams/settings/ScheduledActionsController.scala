@@ -23,13 +23,10 @@ class ScheduledActionsController @Inject() (
                                              val dataService: DataService
                                             ) extends ReAuthable {
 
-  def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def index(teamId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
-      // Future[UserTeamAccess]
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      // Future[Option], Option is Some(Seq) or None
-                            // UserTeamAccess => Option[Team] => Future[Some(Seq[ScheduledMessage]] | Future[None]
+      teamAccess <- dataService.users.teamAccessFor(user, Some(teamId))
       maybeScheduledActions <- teamAccess.maybeTargetTeam.map { team =>
         dataService.scheduledMessages.allForTeam(team).map(Some(_))
       }.getOrElse(Future.successful(None))
