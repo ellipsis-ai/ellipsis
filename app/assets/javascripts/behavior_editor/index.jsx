@@ -1919,20 +1919,20 @@ const BehaviorEditor = React.createClass({
           <div className="container pts">
             {this.getBehaviorHeading()}
 
-            <div className="columns mbl">
-              <div className="column column-page-sidebar mobile-column-full">
+            <div className="columns">
+              <div className="column column-one-third mobile-column-full">
                 <Input
-                  className="form-input-borderless form-input-m type-bold"
-                  placeholder="Add a name (optional)"
+                  className="form-input-borderless form-input-l type-bold"
+                  placeholder="Action name (optional)"
                   onChange={this.updateName}
                   value={this.getBehaviorName()}
                 />
               </div>
 
-              <div className="column column-page-main mobile-column-full">
+              <div className="column column-full mobile-column-full">
                 <Input
-                  className="form-input-borderless form-input-m type-bold"
-                  placeholder="Add a description (optional)"
+                  className="form-input-borderless form-input-m mbneg1"
+                  placeholder="Action description (optional)"
                   onChange={this.updateDescription}
                   value={this.getBehaviorDescription()}
                 />
