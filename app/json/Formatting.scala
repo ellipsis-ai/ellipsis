@@ -66,4 +66,10 @@ object Formatting {
 
   implicit val invocationLogEntriesByDayReads = Json.reads[InvocationLogsByDayData]
   implicit val invocationLogEntriesByDayWrites = Json.writes[InvocationLogsByDayData]
+
+  implicit val scheduledActionDataReads = Json.reads[ScheduledActionData]
+  implicit val scheduledActionDataWrites = Json.writes[ScheduledActionData]
+
+  implicit val scheduledActionsDataReads = Json.reads[ScheduledActionsData]
+  implicit val scheduledActionsDataWrites = Json.writes[ScheduledActionsData]
 }

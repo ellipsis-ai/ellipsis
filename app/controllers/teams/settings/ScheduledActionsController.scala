@@ -26,16 +26,21 @@ class ScheduledActionsController @Inject() (
   def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
+      // Future[UserTeamAccess]
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      // Future[Option], Option is Some(Seq) or None
+                            // UserTeamAccess => Option[Team] => Future[Some(Seq[ScheduledMessage]] | Future[None]
       maybeScheduledActions <- teamAccess.maybeTargetTeam.map { team =>
-          dataService.scheduledMessages.allForTeam(team).map(Some(_))
+        dataService.scheduledMessages.allForTeam(team).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
         val scheduledActions = maybeScheduledActions.map(actions => actions).getOrElse(Seq())
+        val scheduledActionsJson = Json.toJson(ScheduledActionsData(team.id, scheduledActions.map(sa => ScheduledActionData(sa.text))))
         Ok(views.html.teams.settings.scheduled_actions.index(
           viewConfig(Some(teamAccess)),
-          scheduledActions)
+          scheduledActions,
+          scheduledActionsJson.toString())
         )
       }.getOrElse{
         NotFound("Team not accessible")
