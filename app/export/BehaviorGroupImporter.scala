@@ -27,7 +27,7 @@ case class BehaviorGroupImporter(
           val maybeNewId = param.inputExportId.flatMap { exportId =>
             inputExportIdToIdMapping.get(exportId)
           }
-          param.copy(inputId = maybeNewId, inputExportId = None)
+          param.copy(inputId = maybeNewId)
         }
         BehaviorVersionImporter(team, user, versionData.copy(params = paramsWithNewInputIds), dataService).run
       }
