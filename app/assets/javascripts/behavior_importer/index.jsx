@@ -20,7 +20,7 @@ define(function(require) {
     }),
 
     getLocalId: function(group) {
-      const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.importedId === group.publishedId);
+      const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.exportId && ea.exportId === group.exportId);
       return installed ? installed.groupId : null;
     },
 
@@ -30,7 +30,7 @@ define(function(require) {
 
     getBehaviorGroupsJustInstalled: function() {
       return this.props.behaviorGroups.filter((group) => {
-        return this.state.recentlyInstalledBehaviorGroups.some((recent) => recent.importedId === group.publishedId);
+        return this.state.recentlyInstalledBehaviorGroups.some((recent) => recent.exportId === group.exportId);
       });
     },
 
@@ -111,24 +111,15 @@ define(function(require) {
       window.setTimeout(() => { this.resetFooterHeight(); }, ANIMATION_DURATION * 1000);
     },
 
+    reload: function() {
+      window.location.reload(true);
+    },
+
     render: function() {
       return (
         <div className="ptxxl" style={{ paddingBottom: `${this.state.footerHeight}px` }}>
           <div className="columns">
-            {this.getBehaviorGroups().map((group, index) => (
-              <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn" key={"group" + index}>
-                <BehaviorGroupCard
-                  name={group.name}
-                  description={group.description}
-                  icon={group.icon}
-                  groupData={group}
-                  localId={this.getLocalId(group)}
-                  onBehaviorGroupImport={this.onBehaviorGroupImport}
-                  onMoreInfoClick={this.toggleInfoPanel}
-                  isImporting={this.isImporting(group)}
-                />
-              </div>
-            ))}
+            {this.renderBehaviorGroups()}
           </div>
 
           <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.toggleInfoPanel} />
@@ -159,6 +150,39 @@ define(function(require) {
           </FixedFooter>
         </div>
       );
+    },
+
+    renderBehaviorGroups: function() {
+      var groups = this.getBehaviorGroups();
+      if (groups.length > 0) {
+        return groups.map((group, index) => (
+          <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn"
+            key={"group" + index}>
+            <BehaviorGroupCard
+              name={group.name}
+              description={group.description}
+              icon={group.icon}
+              groupData={group}
+              localId={this.getLocalId(group)}
+              onBehaviorGroupImport={this.onBehaviorGroupImport}
+              onMoreInfoClick={this.toggleInfoPanel}
+              isImporting={this.isImporting(group)}
+            />
+          </div>
+        ));
+      } else {
+        return (
+          <div>
+            <p>
+              An error occurred while loading the list of skills. Please try again later.
+            </p>
+
+            <div className="mtl">
+              <button type="button" onClick={this.reload}>Reload the page</button>
+            </div>
+          </div>
+        );
+      }
     }
   });
 

@@ -76,7 +76,7 @@ define(function(require) {
         <div className="type-s mtl">
           <h5 className="mbxs">{behaviorCount === 1 ? "1 action" : `${behaviorCount} actions`}</h5>
           {behaviors.map((behavior, index) => (
-            <div className="mbxs" key={`group-${this.props.groupData.publishedId}-behavior${index}`}>
+            <div className="mbxs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>
               <BehaviorName
                 version={behavior}
                 disableLink={true}

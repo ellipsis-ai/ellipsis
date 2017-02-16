@@ -95,8 +95,7 @@ case class DisplayHelpBehavior(
       dataTypeInputs = untitledGroups.flatMap(_.dataTypeInputs),
       behaviorVersions = untitledGroups.flatMap(_.behaviorVersions),
       githubUrl = None,
-      importedId = None,
-      publishedId = None,
+      exportId = None,
       OffsetDateTime.now
     )
   }

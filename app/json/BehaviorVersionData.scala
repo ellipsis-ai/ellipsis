@@ -25,7 +25,7 @@ case class BehaviorVersionData(
                                 params: Seq[BehaviorParameterData],
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
-                                importedId: Option[String],
+                                exportId: Option[String],
                                 githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
                                 createdAt: Option[OffsetDateTime]
@@ -61,7 +61,7 @@ object BehaviorVersionData {
                 params: Seq[BehaviorParameterData],
                 triggers: Seq[BehaviorTriggerData],
                 config: BehaviorConfig,
-                importedId: Option[String],
+                exportId: Option[String],
                 githubUrl: Option[String],
                 createdAt: Option[OffsetDateTime],
                 dataService: DataService
@@ -85,7 +85,7 @@ object BehaviorVersionData {
       params,
       triggers.sorted,
       config,
-      importedId,
+      exportId,
       githubUrl,
       knownEnvVarsUsed,
       createdAt
@@ -116,14 +116,14 @@ object BehaviorVersionData {
       Json.parse(params).validate[Seq[BehaviorParameterData]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
       config,
-      importedId = None,
+      exportId = None,
       maybeGithubUrl,
       createdAt = None,
       dataService
     )
   }
 
-  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybePublishedId: Option[String] = None): Future[Option[BehaviorVersionData]] = {
+  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybeExportId: Option[String] = None): Future[Option[BehaviorVersionData]] = {
     for {
       maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
@@ -166,7 +166,7 @@ object BehaviorVersionData {
         }
         val requiredOAuth2ApiConfigData = requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
         val requiredSimpleTokenApiData = requiredSimpleTokenApis.map(ea => RequiredSimpleTokenApiData.from(ea))
-        val config = BehaviorConfig(maybePublishedId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
+        val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           behavior.maybeGroup.map(_.id),
@@ -192,7 +192,7 @@ object BehaviorVersionData {
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
           config,
-          behavior.maybeImportedId,
+          behavior.maybeExportId,
           githubUrl = None,
           Some(behaviorVersion.createdAt),
           dataService

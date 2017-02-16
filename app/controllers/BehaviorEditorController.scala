@@ -306,7 +306,7 @@ class BehaviorEditorController @Inject() (
               Some(version.forcePrivateResponse),
               behavior.maybeDataTypeName
             ),
-            behavior.maybeImportedId,
+            behavior.maybeExportId,
             None,
             Some(version.createdAt),
             dataService
