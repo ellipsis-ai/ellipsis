@@ -91,13 +91,6 @@ class BehaviorServiceImpl @Inject() (
     }
   }
 
-  def findWithImportedId(id: String, team: Team): Future[Option[Behavior]] = {
-    val action = findWithImportedIdQuery(id, team.id).result.map { r =>
-      r.headOption.map(tuple2Behavior)
-    }
-    dataService.run(action)
-  }
-
   def allForTeam(team: Team): Future[Seq[Behavior]] = {
     val action = allForTeamQuery(team.id).result.map { tuples => tuples.map(tuple2Behavior) }
     dataService.run(action)
@@ -108,8 +101,8 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def createFor(group: BehaviorGroup, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
-    val raw = RawBehavior(IDs.next, group.team.id, Some(group.id), None, maybeImportedId, maybeDataTypeName, OffsetDateTime.now)
+  def createFor(group: BehaviorGroup, maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
+    val raw = RawBehavior(IDs.next, group.team.id, Some(group.id), None, maybeExportId, maybeDataTypeName, OffsetDateTime.now)
 
     val action = (all += raw).map { _ =>
       Behavior(raw.id, group.team, Some(group), raw.maybeCurrentVersionId, raw.maybeExportId, raw.maybeDataTypeName, raw.createdAt)
@@ -118,10 +111,10 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def createFor(team: Team, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
+  def createFor(team: Team, maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
     for {
-      group <- dataService.behaviorGroups.createFor("", None, "", maybeImportedId, team)
-      behavior <- createFor(group, maybeImportedId, maybeDataTypeName)
+      group <- dataService.behaviorGroups.createFor("", None, "", maybeExportId, team)
+      behavior <- createFor(group, maybeExportId, maybeDataTypeName)
     } yield behavior
   }
 
@@ -172,6 +165,16 @@ class BehaviorServiceImpl @Inject() (
         dataService.users.maybeNameFor(ea, event)
       }).map(_.flatten)
     } yield authorNames
+  }
+
+  def ensureExportIdFor(behavior: Behavior): Future[Behavior] = {
+    if (behavior.maybeExportId.isDefined) {
+      Future.successful(behavior)
+    } else {
+      val newExportId = Some(IDs.next)
+      val action = uncompiledFindRawQuery(behavior.id).map(_.maybeExportId).update(newExportId)
+      dataService.run(action).map(_ => behavior.copy(maybeExportId = newExportId))
+    }
   }
 
 }

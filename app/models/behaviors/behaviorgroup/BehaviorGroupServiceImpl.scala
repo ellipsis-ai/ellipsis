@@ -46,8 +46,8 @@ class BehaviorGroupServiceImpl @Inject() (
 
   import BehaviorGroupQueries._
 
-  def createFor(name: String, maybeIcon: Option[String], description: String, maybeImportedId: Option[String], team: Team): Future[BehaviorGroup] = {
-    val raw = RawBehaviorGroup(IDs.next, name, maybeIcon, Some(description), maybeImportedId, team.id, OffsetDateTime.now)
+  def createFor(name: String, maybeIcon: Option[String], description: String, maybeExportId: Option[String], team: Team): Future[BehaviorGroup] = {
+    val raw = RawBehaviorGroup(IDs.next, name, maybeIcon, Some(description), maybeExportId, team.id, OffsetDateTime.now)
     val action = (all += raw).map(_ => tuple2Group((raw, team)))
     dataService.run(action)
   }
@@ -65,7 +65,7 @@ class BehaviorGroupServiceImpl @Inject() (
       val action = uncompiledRawFindQuery(behaviorGroup.id).map(_.maybeExportId).update(newExportId)
       dataService.run(action).map(_ => behaviorGroup.copy(maybeExportId = newExportId))
     }
-}
+  }
 
   def allFor(team: Team): Future[Seq[BehaviorGroup]] = {
     val action = allForTeamQuery(team.id).result.map { r =>

@@ -20,7 +20,7 @@ define(function(require) {
     }),
 
     getLocalId: function(group) {
-      const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.exportId === group.exportId);
+      const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.exportId && ea.exportId === group.exportId);
       return installed ? installed.groupId : null;
     },
 

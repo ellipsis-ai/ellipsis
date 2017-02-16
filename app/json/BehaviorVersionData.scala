@@ -123,7 +123,7 @@ object BehaviorVersionData {
     )
   }
 
-  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybePublishedId: Option[String] = None): Future[Option[BehaviorVersionData]] = {
+  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybeExportId: Option[String] = None): Future[Option[BehaviorVersionData]] = {
     for {
       maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
@@ -166,7 +166,7 @@ object BehaviorVersionData {
         }
         val requiredOAuth2ApiConfigData = requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
         val requiredSimpleTokenApiData = requiredSimpleTokenApis.map(ea => RequiredSimpleTokenApiData.from(ea))
-        val config = BehaviorConfig(maybePublishedId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
+        val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           behavior.maybeGroup.map(_.id),
