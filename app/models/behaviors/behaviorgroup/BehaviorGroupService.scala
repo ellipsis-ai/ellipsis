@@ -6,9 +6,11 @@ import scala.concurrent.Future
 
 trait BehaviorGroupService {
 
-  def createFor(name: String, maybeIcon: Option[String], description: String, maybeImportedId: Option[String], team: Team): Future[BehaviorGroup]
+  def createFor(name: String, maybeIcon: Option[String], description: String, maybeExportId: Option[String], team: Team): Future[BehaviorGroup]
 
   def save(behaviorGroup: BehaviorGroup): Future[BehaviorGroup]
+
+  def ensureExportIdFor(behaviorGroup: BehaviorGroup): Future[BehaviorGroup]
 
   def allFor(team: Team): Future[Seq[BehaviorGroup]]
 

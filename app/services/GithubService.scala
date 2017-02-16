@@ -165,10 +165,10 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
             behaviors <- fetchBehaviorsFor(groupUrl, groupPath)
           } yield {
             val githubUrl = githubUrlForGroupPath(groupPath)
-            val maybePublishedId = maybeConfig.map(_.publishedId)
+            val maybeExportId = maybeConfig.flatMap(_.exportId)
             val name = maybeConfig.map(_.name).getOrElse(groupPath)
             val icon = maybeConfig.flatMap(_.icon)
-            BehaviorGroupData(None, name, readme, icon, actionInputs, dataTypeInputs, behaviors, Some(githubUrl), None, maybePublishedId, OffsetDateTime.now)
+            BehaviorGroupData(None, name, readme, icon, actionInputs, dataTypeInputs, behaviors, Some(githubUrl), maybeExportId, OffsetDateTime.now)
           }).map(Some(_))
         }).getOrElse(Future.successful(None))
     }

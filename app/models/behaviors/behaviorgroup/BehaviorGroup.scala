@@ -10,11 +10,9 @@ case class BehaviorGroup(
                           name: String,
                           maybeIcon: Option[String],
                           maybeDescription: Option[String],
-                          maybeImportedId: Option[String],
+                          maybeExportId: Option[String],
                           team: Team,
                           createdAt: OffsetDateTime) {
-
-  val publishedId: String = maybeImportedId.getOrElse(id)
 
   def exportName: String = {
     Option(SafeFileName.forName(name)).filter(_.nonEmpty).getOrElse(id)
@@ -25,7 +23,7 @@ case class BehaviorGroup(
     name,
     maybeIcon,
     maybeDescription,
-    maybeImportedId,
+    maybeExportId,
     team.id,
     createdAt
   )

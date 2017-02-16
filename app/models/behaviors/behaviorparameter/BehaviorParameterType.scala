@@ -131,7 +131,7 @@ object NumberType extends BuiltInType {
 case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterType {
 
   val id = behavior.id
-  override val exportId: String = behavior.maybeImportedId.getOrElse(id)
+  override val exportId: String = behavior.maybeExportId.getOrElse(id)
   val name = behavior.maybeDataTypeName.getOrElse("Unnamed data type")
 
   case class ValidValue(id: String, label: String)
@@ -425,7 +425,7 @@ object BehaviorParameterType {
   def find(id: String, behaviorGroup: BehaviorGroup, dataService: DataService): Future[Option[BehaviorParameterType]] = {
     allFor(Some(behaviorGroup), dataService).map { all =>
       all.find {
-        case paramType: BehaviorBackedDataType => paramType.id == id || paramType.behavior.maybeImportedId.contains(id)
+        case paramType: BehaviorBackedDataType => paramType.id == id || paramType.behavior.maybeExportId.contains(id)
         case paramType: BehaviorParameterType => paramType.id == id
       }
     }

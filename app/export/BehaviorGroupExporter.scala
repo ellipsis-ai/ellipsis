@@ -27,7 +27,7 @@ case class BehaviorGroupExporter(
   def zipFileName = s"$fullPath.zip"
 
   val config = {
-    BehaviorGroupConfig(behaviorGroup.name, behaviorGroup.publishedId, behaviorGroup.maybeIcon)
+    BehaviorGroupConfig(behaviorGroup.name, behaviorGroup.maybeExportId, behaviorGroup.maybeIcon)
   }
 
   def configString: String = Json.prettyPrint(Json.toJson(config))
@@ -49,7 +49,7 @@ case class BehaviorGroupExporter(
   }
 
   def exportIdForDataTypeId(dataTypeId: String): Option[String] = {
-    dataTypeExporters.find(_.behaviorVersion.behavior.id == dataTypeId).flatMap(_.config.publishedId)
+    dataTypeExporters.find(_.behaviorVersion.behavior.id == dataTypeId).flatMap(_.config.exportId)
   }
 
   def writeActionInputs(): Unit = {
@@ -100,7 +100,11 @@ object BehaviorGroupExporter {
   def maybeFor(groupId: String, user: User, dataService: DataService): Future[Option[BehaviorGroupExporter]] = {
     val mainParentPath = "/tmp/exports/"
     for {
-      maybeGroup <- dataService.behaviorGroups.find(groupId)
+      maybeGroup <- dataService.behaviorGroups.find(groupId).flatMap { maybeGroup =>
+        maybeGroup.map { group =>
+          dataService.behaviorGroups.ensureExportIdFor(group).map(Some(_))
+        }.getOrElse(Future.successful(None))
+      }
       maybeBehaviors <- maybeGroup.map { group =>
         dataService.behaviors.allForGroup(group).map(Some(_))
       }.getOrElse(Future.successful(None))

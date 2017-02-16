@@ -63,7 +63,7 @@ class ApplicationController @Inject() (
 
   private def withPublishedBehaviorInfoFor(team: Team, maybeBranch: Option[String]): Future[PublishedBehaviorInfo] = {
     dataService.behaviorGroups.allFor(team).map { groups =>
-      groups.map { ea => InstalledBehaviorGroupData(ea.id, ea.maybeImportedId)}
+      groups.map { ea => InstalledBehaviorGroupData(ea.id, ea.maybeExportId)}
     }.map { installedGroups =>
       val githubService = GithubService(team, ws, configuration, cache, dataService, maybeBranch)
       PublishedBehaviorInfo(githubService.publishedBehaviorGroups, installedGroups)

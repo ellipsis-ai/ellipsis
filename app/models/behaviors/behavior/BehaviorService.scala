@@ -18,8 +18,6 @@ trait BehaviorService {
 
   def find(id: String, user: User): Future[Option[Behavior]]
 
-  def findWithImportedId(id: String, team: Team): Future[Option[Behavior]]
-
   def allForTeam(team: Team): Future[Seq[Behavior]]
 
   def allForGroup(group: BehaviorGroup): Future[Seq[Behavior]]
@@ -48,9 +46,9 @@ trait BehaviorService {
     }
   }
 
-  def createFor(team: Team, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
+  def createFor(team: Team, maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
 
-  def createFor(group: BehaviorGroup, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
+  def createFor(group: BehaviorGroup, maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
 
   def updateDataTypeNameFor(behavior: Behavior, maybeName: Option[String]): Future[Behavior]
 
@@ -69,5 +67,7 @@ trait BehaviorService {
     val path = controllers.routes.BehaviorEditorController.edit(behaviorId)
     s"$baseUrl$path"
   }
+
+  def ensureExportIdFor(behavior: Behavior): Future[Behavior]
 
 }

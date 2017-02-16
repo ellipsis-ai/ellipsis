@@ -53,15 +53,19 @@ object BehaviorVersionExporter {
 
   def maybeFor(behaviorId: String, user: User, parentPath: String, dataService: DataService): Future[Option[BehaviorVersionExporter]] = {
     for {
-      maybeBehavior <- dataService.behaviors.find(behaviorId, user)
+      maybeBehavior <- dataService.behaviors.find(behaviorId, user).flatMap { maybeBehavior =>
+        maybeBehavior.map { behavior =>
+          dataService.behaviors.ensureExportIdFor(behavior).map(Some(_))
+        }.getOrElse(Future.successful(None))
+      }
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
         dataService.behaviors.maybeCurrentVersionFor(behavior)
       }.getOrElse(Future.successful(None))
       maybeFunction <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.behaviorVersions.maybeFunctionFor(behaviorVersion)
       }.getOrElse(Future.successful(None))
-      maybePublishedId <- Future.successful(maybeBehaviorVersion.flatMap(_.behavior.maybeImportedId).orElse(Some(behaviorId)))
-      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, maybePublishedId)
+      maybeExportId <- Future.successful(maybeBehavior.flatMap(_.maybeExportId))
+      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, maybeExportId)
     } yield {
       for {
         behaviorVersion <- maybeBehaviorVersion

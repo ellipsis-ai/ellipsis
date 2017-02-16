@@ -13,7 +13,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
 
   def checkParamTypeMatches(paramType: BehaviorParameterType, dataType: Behavior): Unit = {
     paramType.isInstanceOf[BehaviorBackedDataType] mustBe true
-    dataType.maybeImportedId must contain(paramType.exportId)
+    dataType.maybeExportId must contain(paramType.exportId)
     dataType.maybeDataTypeName must contain(paramType.name)
   }
 
@@ -48,12 +48,13 @@ class BehaviorGroupImportExportSpec extends DBSpec {
   }
 
   def mustBeValidImport(exported: BehaviorGroup, imported: BehaviorGroup): Unit = {
-    exported.id must not be(imported.id)
-    imported.maybeImportedId must contain(exported.id)
+    val reloadedExported = runNow(dataService.behaviorGroups.find(exported.id).map(_.get))
+    reloadedExported.id must not be(imported.id)
+    imported.maybeExportId mustBe reloadedExported.maybeExportId
 
-    checkImportedBehaviorsCorrectly(exported, imported)
-    checkImportedDataTypesCorrectly(exported, imported)
-    checkImportedInputsCorrectly(exported, imported)
+    checkImportedBehaviorsCorrectly(reloadedExported, imported)
+    checkImportedDataTypesCorrectly(reloadedExported, imported)
+    checkImportedInputsCorrectly(reloadedExported, imported)
   }
 
   "BehaviorGroupExporter" should {
