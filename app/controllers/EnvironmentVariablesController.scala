@@ -101,13 +101,12 @@ class EnvironmentVariablesController @Inject() (
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      maybeEnvironmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.teamEnvironmentVariables.allFor(team).map(Some(_))
-      }.getOrElse(Future.successful(None))
+      environmentVariables <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.teamEnvironmentVariables.allFor(team)
+      }.getOrElse(Future.successful(Seq()))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        val envVars = maybeEnvironmentVariables.map(envVars => envVars).getOrElse(Seq())
-        val jsonData = Json.toJson(EnvironmentVariablesData(team.id, envVars.map(ea => EnvironmentVariableData.withoutValueFor(ea))))
+        val jsonData = Json.toJson(EnvironmentVariablesData(team.id, environmentVariables.map(ea => EnvironmentVariableData.withoutValueFor(ea))))
         Ok(views.html.listEnvironmentVariables(viewConfig(Some(teamAccess)), jsonData.toString))
       }.getOrElse{
         NotFound("Team not accessible")

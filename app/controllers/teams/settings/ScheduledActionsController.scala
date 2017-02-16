@@ -27,16 +27,15 @@ class ScheduledActionsController @Inject() (
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, Some(teamId))
-      maybeScheduledActions <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.scheduledMessages.allForTeam(team).map(Some(_))
-      }.getOrElse(Future.successful(None))
+      scheduledMessages <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.scheduledMessages.allForTeam(team)
+      }.getOrElse(Future.successful(Seq()))
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        val scheduledActions = maybeScheduledActions.map(actions => actions).getOrElse(Seq())
-        val scheduledActionsJson = Json.toJson(ScheduledActionsData(team.id, scheduledActions.map(sa => ScheduledActionData(sa.text))))
+        val scheduledActionsJson = Json.toJson(ScheduledActionsData(team.id, scheduledMessages.map(sa =>ScheduledActionData(sa.text))))
         Ok(views.html.teams.settings.scheduled_actions.index(
           viewConfig(Some(teamAccess)),
-          scheduledActions,
+          scheduledMessages,
           scheduledActionsJson.toString())
         )
       }.getOrElse{
