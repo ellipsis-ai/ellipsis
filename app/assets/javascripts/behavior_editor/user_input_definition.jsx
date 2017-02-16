@@ -20,6 +20,7 @@ return React.createClass({
       React.PropTypes.string
     ]).isRequired,
     param: React.PropTypes.instanceOf(Param).isRequired,
+    isShared: React.PropTypes.bool.isRequired,
     paramTypes: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         id: React.PropTypes.string,
@@ -169,7 +170,7 @@ return React.createClass({
   },
 
   renderSharingInfo: function() {
-    if (this.props.param.isShared()) {
+    if (this.props.isShared) {
       return (
         <div className="box-tip mbneg1 plm">
           <span className="display-inline-block align-b type-pink mrs" style={{ height: 24 }}>

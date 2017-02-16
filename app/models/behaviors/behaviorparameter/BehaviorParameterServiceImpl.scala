@@ -61,13 +61,9 @@ class BehaviorParameterServiceImpl @Inject() (
       _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
       newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
         DBIO.from(for {
-          maybeExistingInput <- if (data.isShared) {
-            data.inputId.map { inputId =>
-              dataService.inputs.find(inputId)
-            }.getOrElse(Future.successful(None))
-          } else {
-            Future.successful(None)
-          }
+          maybeExistingInput <- data.inputId.map { inputId =>
+            dataService.inputs.find(inputId)
+          }.getOrElse(Future.successful(None))
           input <- maybeExistingInput.map { existing =>
             InputData.fromInput(existing, dataService).flatMap { inputData =>
               val updatedInputData = inputData.copy(
@@ -83,11 +79,7 @@ class BehaviorParameterServiceImpl @Inject() (
             dataService.inputs.createFor(data.newInputData, behaviorVersion.group)
           }
           param <- createFor(input, i + 1, behaviorVersion)
-          _ <- if (data.isShared) {
-            Future.successful({})
-          } else {
-            dataService.savedAnswers.updateForInputId(data.inputId, input.id)
-          }
+          _ <- dataService.savedAnswers.updateForInputId(data.inputId, input.id)
         } yield param)
       })
     } yield newParams

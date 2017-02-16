@@ -84,8 +84,9 @@ class BehaviorGroupImportExportSpec extends DBSpec {
 
         mustBeValidImport(exportedGroup, importedGroup)
 
-        val importedSharedInputs = runNow(dataService.inputs.allForGroup(importedGroup))
-        importedSharedInputs must have length 0
+        val importedInputs = runNow(dataService.inputs.allForGroup(importedGroup))
+        importedInputs must have length 2
+        importedInputs.head.id mustNot be(importedInputs.tail.head.id)
         val importedBehaviors = runNow(dataService.behaviors.allForGroup(importedGroup))
         val importedVersions = runNow(Future.sequence(importedBehaviors.map { behavior =>
           dataService.behaviors.maybeCurrentVersionFor(behavior)
@@ -165,8 +166,8 @@ class BehaviorGroupImportExportSpec extends DBSpec {
 
         mustBeValidImport(exportedGroup, importedGroup)
 
-        val importedSharedInputs = runNow(dataService.inputs.allForGroup(importedGroup))
-        importedSharedInputs must have length 0
+        val importedInputs = runNow(dataService.inputs.allForGroup(importedGroup))
+        importedInputs must have length 1
         val importedDataTypes = runNow(dataService.behaviors.dataTypesForGroup(importedGroup))
         importedDataTypes must have length 1
         val importedBehaviors = runNow(dataService.behaviors.regularForGroup(importedGroup))

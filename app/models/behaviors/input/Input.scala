@@ -16,8 +16,6 @@ case class Input(
 
   val isSaved = isSavedForTeam || isSavedForUser
 
-  def isShared = maybeBehaviorGroup.isDefined
-
   def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
   def toRaw: RawInput = {
