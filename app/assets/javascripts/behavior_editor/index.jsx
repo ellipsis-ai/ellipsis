@@ -1826,7 +1826,7 @@ const BehaviorEditor = React.createClass({
   getBehaviorHeading: function() {
     if (this.getAllBehaviors().length > 1) {
       return (
-        <h3 className="type-blue-faded mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h3>
+        <h4 className="type-blue-faded mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h4>
       );
     } else {
       return null;
@@ -1940,7 +1940,7 @@ const BehaviorEditor = React.createClass({
             </div>
           </div>
 
-          <hr className="mtneg1 mbn thin bg-gray-light" />
+          <hr className="mtn mbn thin bg-gray-light" />
 
           <TriggerConfiguration
             isFinishedBehavior={this.isFinishedBehavior()}
