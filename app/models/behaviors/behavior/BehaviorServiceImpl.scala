@@ -22,7 +22,7 @@ case class RawBehavior(
                         teamId: String,
                         groupId: Option[String],
                         maybeCurrentVersionId: Option[String],
-                        maybeImportedId: Option[String],
+                        maybeExportId: Option[String],
                         maybeDataTypeName: Option[String],
                         createdAt: OffsetDateTime
                       )
@@ -33,11 +33,11 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
   def teamId = column[String]("team_id")
   def groupId = column[Option[String]]("group_id")
   def maybeCurrentVersionId = column[Option[String]]("current_version_id")
-  def maybeImportedId = column[Option[String]]("imported_id")
+  def maybeExportId = column[Option[String]]("export_id")
   def maybeDataTypeName = column[Option[String]]("data_type_name")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, teamId, groupId, maybeCurrentVersionId, maybeImportedId, maybeDataTypeName, createdAt) <>
+  def * = (id, teamId, groupId, maybeCurrentVersionId, maybeExportId, maybeDataTypeName, createdAt) <>
     ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
@@ -112,7 +112,7 @@ class BehaviorServiceImpl @Inject() (
     val raw = RawBehavior(IDs.next, group.team.id, Some(group.id), None, maybeImportedId, maybeDataTypeName, OffsetDateTime.now)
 
     val action = (all += raw).map { _ =>
-      Behavior(raw.id, group.team, Some(group), raw.maybeCurrentVersionId, raw.maybeImportedId, raw.maybeDataTypeName, raw.createdAt)
+      Behavior(raw.id, group.team, Some(group), raw.maybeCurrentVersionId, raw.maybeExportId, raw.maybeDataTypeName, raw.createdAt)
     }
 
     dataService.run(action)

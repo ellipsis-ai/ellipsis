@@ -25,7 +25,7 @@ case class BehaviorVersionData(
                                 params: Seq[BehaviorParameterData],
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
-                                importedId: Option[String],
+                                exportId: Option[String],
                                 githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
                                 createdAt: Option[OffsetDateTime]
@@ -61,7 +61,7 @@ object BehaviorVersionData {
                 params: Seq[BehaviorParameterData],
                 triggers: Seq[BehaviorTriggerData],
                 config: BehaviorConfig,
-                importedId: Option[String],
+                exportId: Option[String],
                 githubUrl: Option[String],
                 createdAt: Option[OffsetDateTime],
                 dataService: DataService
@@ -85,7 +85,7 @@ object BehaviorVersionData {
       params,
       triggers.sorted,
       config,
-      importedId,
+      exportId,
       githubUrl,
       knownEnvVarsUsed,
       createdAt
@@ -116,7 +116,7 @@ object BehaviorVersionData {
       Json.parse(params).validate[Seq[BehaviorParameterData]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
       config,
-      importedId = None,
+      exportId = None,
       maybeGithubUrl,
       createdAt = None,
       dataService
@@ -192,7 +192,7 @@ object BehaviorVersionData {
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
           config,
-          behavior.maybeImportedId,
+          behavior.maybeExportId,
           githubUrl = None,
           Some(behaviorVersion.createdAt),
           dataService

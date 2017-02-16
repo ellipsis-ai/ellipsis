@@ -21,7 +21,7 @@ object BehaviorQueries {
       team,
       maybeGroup,
       raw.maybeCurrentVersionId,
-      raw.maybeImportedId,
+      raw.maybeExportId,
       raw.maybeDataTypeName,
       raw.createdAt
     )
@@ -47,7 +47,7 @@ object BehaviorQueries {
   val findRawQueryFor = Compiled(uncompiledFindRawQuery _)
 
   def uncompiledFindWithImportedIdQuery(id: Rep[String], teamId: Rep[String]) = {
-    allWithGroup.filter { case((behavior, team), _) => behavior.maybeImportedId === id && team.id === teamId}
+    allWithGroup.filter { case((behavior, team), _) => behavior.maybeExportId === id && team.id === teamId}
   }
   val findWithImportedIdQuery = Compiled(uncompiledFindWithImportedIdQuery _)
 

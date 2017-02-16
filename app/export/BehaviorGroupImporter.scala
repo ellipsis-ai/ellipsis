@@ -38,7 +38,7 @@ case class BehaviorGroupImporter(
     Future.sequence(
       inputs.map { inputData =>
         val maybeOldDataTypeId = inputData.paramType.flatMap(_.exportId)
-        val maybeNewDataTypeId = maybeOldDataTypeId.flatMap(oldId => dataTypes.find(_.behavior.maybeImportedId.contains(oldId))).map(_.behavior.id)
+        val maybeNewDataTypeId = maybeOldDataTypeId.flatMap(oldId => dataTypes.find(_.behavior.maybeExportId.contains(oldId))).map(_.behavior.id)
         val withNewDataTypeId = maybeNewDataTypeId.map { newId =>
           inputData.copy(paramType = inputData.paramType.map(_.copy(id = Some(newId))))
         }.getOrElse(inputData)
@@ -59,7 +59,7 @@ case class BehaviorGroupImporter(
 
   def run: Future[Option[BehaviorGroup]] = {
 
-    dataService.behaviorGroups.createFor(data.name, data.icon, data.description, data.publishedId, team).flatMap { group =>
+    dataService.behaviorGroups.createFor(data.name, data.icon, data.description, data.exportId, team).flatMap { group =>
       val behaviorVersionsWithGroupInfo = data.behaviorVersions.map { ea =>
         ea.copy(groupId = Some(group.id))
       }

@@ -23,9 +23,9 @@ case class BehaviorVersionImporter(
           dataService.behaviorGroups.find(gid)
         }.getOrElse(Future.successful(None))
         behavior <- maybeGroup.map { group =>
-          dataService.behaviors.createFor(group, data.config.publishedId, data.config.dataTypeName)
+          dataService.behaviors.createFor(group, data.config.exportId, data.config.dataTypeName)
         }.getOrElse {
-          dataService.behaviors.createFor(team, data.config.publishedId, data.config.dataTypeName)
+          dataService.behaviors.createFor(team, data.config.exportId, data.config.dataTypeName)
         }
         version <- dataService.behaviorVersions.createFor(behavior, Some(user), data)
       } yield Some(version)

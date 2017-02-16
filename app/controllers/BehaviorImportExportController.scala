@@ -121,7 +121,7 @@ class BehaviorImportExportController @Inject() (
             } yield {
               maybeBehaviorGroup.map { behaviorGroup =>
                 if (request.headers.get("x-requested-with").contains("XMLHttpRequest")) {
-                  Ok(Json.toJson(InstalledBehaviorGroupData(behaviorGroup.id, behaviorGroup.maybeImportedId)))
+                  Ok(Json.toJson(InstalledBehaviorGroupData(behaviorGroup.id, behaviorGroup.maybeExportId)))
                 } else {
                   maybeBehavior.map{ behavior =>
                     Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))

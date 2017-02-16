@@ -10,6 +10,8 @@ trait BehaviorGroupService {
 
   def save(behaviorGroup: BehaviorGroup): Future[BehaviorGroup]
 
+  def ensureExportIdFor(behaviorGroup: BehaviorGroup): Future[BehaviorGroup]
+
   def allFor(team: Team): Future[Seq[BehaviorGroup]]
 
   def find(id: String): Future[Option[BehaviorGroup]]

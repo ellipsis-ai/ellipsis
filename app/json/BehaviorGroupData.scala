@@ -19,8 +19,7 @@ case class BehaviorGroupData(
                               dataTypeInputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
                               githubUrl: Option[String],
-                              importedId: Option[String],
-                              publishedId: Option[String],
+                              exportId: Option[String],
                               createdAt: OffsetDateTime
                             ) extends Ordered[BehaviorGroupData] {
 
@@ -100,8 +99,7 @@ object BehaviorGroupData {
         Seq(),
         versionsData,
         maybeGithubUrl,
-        group.maybeImportedId,
-        None,
+        group.maybeExportId,
         group.createdAt
       )
     }

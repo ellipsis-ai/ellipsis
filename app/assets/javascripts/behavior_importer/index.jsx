@@ -20,7 +20,7 @@ define(function(require) {
     }),
 
     getLocalId: function(group) {
-      const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.importedId === group.publishedId);
+      const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.exportId === group.exportId);
       return installed ? installed.groupId : null;
     },
 
@@ -30,7 +30,7 @@ define(function(require) {
 
     getBehaviorGroupsJustInstalled: function() {
       return this.props.behaviorGroups.filter((group) => {
-        return this.state.recentlyInstalledBehaviorGroups.some((recent) => recent.importedId === group.publishedId);
+        return this.state.recentlyInstalledBehaviorGroups.some((recent) => recent.exportId === group.exportId);
       });
     },
 

@@ -20,7 +20,7 @@ case class RawBehaviorGroup(
                              name: String,
                              maybeIcon: Option[String],
                              maybeDescription: Option[String],
-                             maybeImportedId: Option[String],
+                             maybeExportId: Option[String],
                              teamId: String,
                              createdAt: OffsetDateTime
                            )
@@ -31,11 +31,11 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
   def name = column[String]("name")
   def maybeIcon = column[Option[String]]("icon")
   def maybeDescription = column[Option[String]]("description")
-  def maybeImportedId = column[Option[String]]("imported_id")
+  def maybeExportId = column[Option[String]]("export_id")
   def teamId = column[String]("team_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, name, maybeIcon, maybeDescription, maybeImportedId, teamId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
+  def * = (id, name, maybeIcon, maybeDescription, maybeExportId, teamId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
 }
 
 class BehaviorGroupServiceImpl @Inject() (
@@ -56,6 +56,16 @@ class BehaviorGroupServiceImpl @Inject() (
     val action = rawFindQuery(behaviorGroup.id).update(behaviorGroup.toRaw).map(_ => behaviorGroup)
     dataService.run(action)
   }
+
+  def ensureExportIdFor(behaviorGroup: BehaviorGroup): Future[BehaviorGroup] = {
+    if (behaviorGroup.maybeExportId.isDefined) {
+      Future.successful(behaviorGroup)
+    } else {
+      val newExportId = Some(IDs.next)
+      val action = uncompiledRawFindQuery(behaviorGroup.id).map(_.maybeExportId).update(newExportId)
+      dataService.run(action).map(_ => behaviorGroup.copy(maybeExportId = newExportId))
+    }
+}
 
   def allFor(team: Team): Future[Seq[BehaviorGroup]] = {
     val action = allForTeamQuery(team.id).result.map { r =>
@@ -102,9 +112,9 @@ class BehaviorGroupServiceImpl @Inject() (
     val mergedName = groups.map(_.name).filter(_.trim.nonEmpty).mkString("-")
     val descriptions = groups.flatMap(_.maybeDescription).filter(_.trim.nonEmpty)
     val mergedDescription = if (descriptions.isEmpty) { None } else { Some(descriptions.mkString("\n")) }
-    val maybeImportedId = None // Don't think it makes sense to have an importedId for something merged
+    val maybeExportId = None // Don't think it makes sense to have an exportId for something merged
     val maybeIcon = groups.find(_.maybeIcon.isDefined).flatMap(_.maybeIcon)
-    val rawMerged = RawBehaviorGroup(IDs.next, mergedName, maybeIcon, mergedDescription, maybeImportedId, team.id, OffsetDateTime.now)
+    val rawMerged = RawBehaviorGroup(IDs.next, mergedName, maybeIcon, mergedDescription, maybeExportId, team.id, OffsetDateTime.now)
     val action = (for {
       merged <- (all += rawMerged).map(_ => tuple2Group((rawMerged, team)))
       _ <- DBIO.sequence(groups.map { ea =>

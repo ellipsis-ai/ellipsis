@@ -49,7 +49,7 @@ case class BehaviorGroupZipImporter(
 
     var groupName: String = ""
     var groupDescription: String = ""
-    var maybePublishedId: Option[String] = None
+    var maybeExportId: Option[String] = None
     var maybeIcon: Option[String] = None
     var actionInputs: Seq[InputData] = Seq()
     var dataTypeInputs: Seq[InputData] = Seq()
@@ -74,7 +74,7 @@ case class BehaviorGroupZipImporter(
         Json.parse(readData).validate[BehaviorGroupConfig] match {
           case JsSuccess(data, jsPath) => {
             groupName = data.name
-            maybePublishedId = Some(data.publishedId)
+            maybeExportId = data.exportId
             maybeIcon = data.icon
           }
           case e: JsError =>
@@ -124,8 +124,7 @@ case class BehaviorGroupZipImporter(
       dataTypeInputs,
       versionsData,
       githubUrl = None,
-      importedId = maybePublishedId,
-      maybePublishedId,
+      exportId = maybeExportId,
       OffsetDateTime.now
     )
 

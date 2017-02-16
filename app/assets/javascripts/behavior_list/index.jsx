@@ -18,7 +18,7 @@ define(function(require) {
     }),
 
     getImportedStatusFromGroupOrVersion: function(groupOrVersion) {
-      if (groupOrVersion.importedId) {
+      if (groupOrVersion.exportId) {
         return (
           <span title="Installed from ellipsis.ai" className="mls display-inline-block align-m" style={{ width: 30, height: 18 }}>
             <SVGInstalled />
