@@ -64,7 +64,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
                       ): BehaviorParameter = {
     val input = maybeExistingInput.map { input =>
       runNow(InputData.fromInput(input, dataService).flatMap { inputData =>
-        dataService.inputs.ensureFor(inputData.copy(groupId = version.behavior.maybeGroup.map(_.id)), version.group)
+        dataService.inputs.ensureFor(inputData, version.group)
       })
     }.getOrElse {
       val inputData = InputData(Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity), None)

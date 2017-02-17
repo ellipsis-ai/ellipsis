@@ -16,8 +16,7 @@ define(function() {
         isSavedForTeam: false,
         isSavedForUser: false,
         inputId: null,
-        inputExportId: null,
-        groupId: null
+        inputExportId: null
       }, props);
 
       // TODO: We can re-enable this once all published skills have params with param types
@@ -52,16 +51,8 @@ define(function() {
         inputExportId: {
           value: initialProps.inputExportId,
           enumerable: true
-        },
-        groupId: {
-          value: initialProps.groupId,
-          enumerable: true
         }
       });
-    }
-
-    isShared() {
-      return !!this.groupId;
     }
 
     isSaved() {

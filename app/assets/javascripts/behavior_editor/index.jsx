@@ -116,8 +116,7 @@ const BehaviorEditor = React.createClass({
       return arr.concat(ea.params);
     }, [])
       .filter(ea => currentInputIds.indexOf(ea.inputId) === -1)
-      .filter(ea => ea.isSaved())
-      .map(ea => ea.clone({ groupId: this.props.behavior.groupId }));
+      .filter(ea => ea.isSaved());
     return UniqueBy.forArray(all, 'inputId');
   },
 
@@ -1968,6 +1967,7 @@ const BehaviorEditor = React.createClass({
             isFinishedBehavior={this.isFinishedBehavior()}
             behaviorHasCode={this.state.revealCodeEditor}
             hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
+            otherBehaviorsInGroup={this.props.otherBehaviorsInGroup}
             onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
             savedAnswers={this.props.savedAnswers}
             onToggleSavedAnswer={this.toggleSavedAnswerEditor}
