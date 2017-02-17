@@ -56,6 +56,11 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def findByName(name: String, group: BehaviorGroup): Future[Option[Behavior]] = {
+    val action = findByNameQuery(name, Some(group.id)).result.map(_.headOption.map(tuple2Behavior))
+    dataService.run(action)
+  }
+
   def findByTrigger(trigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
     for {
       triggers <- dataService.messageTriggers.allActiveFor(group)
@@ -66,14 +71,17 @@ class BehaviorServiceImpl @Inject() (
   }
 
   // If passed an ID, it will find the behavior unconditionally
-  // If passed a trigger, it will only look in the behavior group
-  def findByIdOrTrigger(idOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
-    for {
-      maybeById <- findWithoutAccessCheck(idOrTrigger)
-      maybeByIdOrTrigger <- maybeById.map(b => Future.successful(Some(b))).getOrElse {
-        findByTrigger(idOrTrigger, group)
+  // If passed a name or trigger, it will only look in the behavior group
+  def findByIdOrNameOrTrigger(idOrNameOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
+    findWithoutAccessCheck(idOrNameOrTrigger).flatMap { maybeById =>
+      maybeById.map(b => Future.successful(Some(b))).getOrElse {
+        findByName(idOrNameOrTrigger, group).flatMap { maybeByName =>
+          maybeByName.map(b => Future.successful(Some(b))).getOrElse {
+            findByTrigger(idOrNameOrTrigger, group)
+          }
+        }
       }
-    } yield maybeByIdOrTrigger
+    }
   }
 
   def find(id: String, user: User): Future[Option[Behavior]] = {

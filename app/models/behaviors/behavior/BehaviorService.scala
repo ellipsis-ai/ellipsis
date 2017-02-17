@@ -14,7 +14,7 @@ trait BehaviorService {
 
   def findWithoutAccessCheck(id: String): Future[Option[Behavior]]
 
-  def findByIdOrTrigger(idOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]]
+  def findByIdOrNameOrTrigger(idOrNameOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]]
 
   def find(id: String, user: User): Future[Option[Behavior]]
 
