@@ -62,7 +62,7 @@ class InvocationLogController @Inject() (
   }
 
   def getLogs(
-               behaviorIdOrTrigger: String,
+               behaviorIdOrNameOrTrigger: String,
                token: String,
                maybeFrom: Option[String],
                maybeTo: Option[String],
@@ -75,7 +75,7 @@ class InvocationLogController @Inject() (
       }.getOrElse(Future.successful(None))
       maybeBehavior <- maybeOriginatingBehavior.flatMap { behavior =>
         behavior.maybeGroup.map { group =>
-          dataService.behaviors.findByIdOrTrigger(behaviorIdOrTrigger, group)
+          dataService.behaviors.findByIdOrNameOrTrigger(behaviorIdOrNameOrTrigger, group)
         }
       }.getOrElse(Future.successful(None))
       maybeLogEntries <- maybeBehavior.map { behavior =>
@@ -95,7 +95,7 @@ class InvocationLogController @Inject() (
         Ok(Json.toJson(logEntryData))
       }.getOrElse {
         NotFound(
-          s"""Couldn't find action for `${behaviorIdOrTrigger}`
+          s"""Couldn't find action for `${behaviorIdOrNameOrTrigger}`
              |
              |Possible reasons:
              |- The token passed is invalid or expired

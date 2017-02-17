@@ -3,12 +3,14 @@ package models.behaviors.behavior
 import models.behaviors.behaviorgroup.BehaviorGroupQueries
 import models.team.{Team, TeamQueries}
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorversion.BehaviorVersionQueries
 
 object BehaviorQueries {
 
   def all = TableQuery[BehaviorsTable]
   def allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
   def allWithGroup = allWithTeam.joinLeft(BehaviorGroupQueries.allWithTeam).on(_._1.groupId === _._1.id)
+  def allWithCurrentVersion = allWithGroup.join(BehaviorVersionQueries.allWithUser).on(_._1._1.maybeCurrentVersionId === _._1.id)
 
   type TupleType = ((RawBehavior, Team), Option[BehaviorGroupQueries.TupleType])
 
@@ -31,6 +33,14 @@ object BehaviorQueries {
     allWithGroup.filter { case((behavior, _), _) => behavior.id === id }
   }
   val findQuery = Compiled(uncompiledFindQuery _)
+
+  def uncompiledFindByNameQuery(name: Rep[String], groupId: Rep[Option[String]]) = {
+    allWithCurrentVersion.
+      filter { case((_, groupWithTeam), _) => groupWithTeam.map(_._1.id) === groupId }.
+      filter { case(_, currentVersion) => currentVersion._1.maybeName === name }.
+      map { case(behaviorWithGroup, _) => behaviorWithGroup }
+  }
+  val findByNameQuery = Compiled(uncompiledFindByNameQuery _)
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
     allWithGroup.
