@@ -65,46 +65,37 @@ class InputServiceImpl @Inject() (
   }
 
   def createFor(data: InputData, behaviorGroup: BehaviorGroup): Future[Input] = {
-    data.groupId.map { gid =>
-      dataService.behaviorGroups.find(gid)
-    }.getOrElse(Future.successful(None)).flatMap { maybeGroup =>
-      val action = for {
-        maybeParamType <- DBIO.from(maybeParamTypeFor(data, behaviorGroup))
-        raw <- DBIO.successful(RawInput(
-          IDs.next,
-          Some(data.exportId.getOrElse(IDs.next)),
-          data.name,
-          data.maybeNonEmptyQuestion,
-          maybeParamType.map(_.id).getOrElse(TextType.id),
-          data.isSavedForTeam,
-          data.isSavedForUser,
-          maybeGroup.map(_.id)
-        ))
-        input <- (all += raw).map { _ =>
-          Input(
-            raw.id,
-            raw.maybeExportId,
-            raw.name,
-            raw.maybeQuestion,
-            maybeParamType.getOrElse(TextType),
-            raw.isSavedForTeam,
-            raw.isSavedForUser,
-            maybeGroup
-          )
-        }
-      } yield input
-      dataService.run(action)
-    }
+    val action = for {
+      maybeParamType <- DBIO.from(maybeParamTypeFor(data, behaviorGroup))
+      raw <- DBIO.successful(RawInput(
+        IDs.next,
+        Some(data.exportId.getOrElse(IDs.next)),
+        data.name,
+        data.maybeNonEmptyQuestion,
+        maybeParamType.map(_.id).getOrElse(TextType.id),
+        data.isSavedForTeam,
+        data.isSavedForUser,
+        Some(behaviorGroup.id)
+      ))
+      input <- (all += raw).map { _ =>
+        Input(
+          raw.id,
+          raw.maybeExportId,
+          raw.name,
+          raw.maybeQuestion,
+          maybeParamType.getOrElse(TextType),
+          raw.isSavedForTeam,
+          raw.isSavedForUser,
+          Some(behaviorGroup)
+        )
+      }
+    } yield input
+    dataService.run(action)
   }
 
   def ensureFor(data: InputData, behaviorGroup: BehaviorGroup): Future[Input] = {
     for {
-      maybeSharingGroup <- data.groupId.map { gid =>
-        dataService.behaviorGroups.find(gid)
-      }.getOrElse(Future.successful(None))
-      maybeExisting <- maybeSharingGroup.map { group =>
-        data.id.map(find).getOrElse(Future.successful(None))
-      }.getOrElse(Future.successful(None))
+      maybeExisting <- data.id.map(find).getOrElse(Future.successful(None))
       maybeParamType <- maybeParamTypeFor(data, behaviorGroup)
       input <- maybeExisting.map { existing =>
         val updated = existing.copy(
@@ -114,7 +105,7 @@ class InputServiceImpl @Inject() (
           paramType = maybeParamType.getOrElse(TextType),
           isSavedForTeam = data.isSavedForTeam,
           isSavedForUser = data.isSavedForUser,
-          maybeBehaviorGroup = maybeSharingGroup
+          maybeBehaviorGroup = Some(behaviorGroup)
         )
         val action = uncompiledFindRawQuery(existing.id).update(updated.toRaw).map { _ => updated }
         dataService.run(action)

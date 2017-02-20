@@ -4,6 +4,7 @@ define(function(require) {
     UserInputDefinition = require('./user_input_definition'),
     Checklist = require('./checklist'),
     Collapsible = require('../shared_ui/collapsible'),
+    BehaviorVersion = require('../models/behavior_version'),
     Param = require('../models/param'),
     Trigger = require('../models/trigger');
 
@@ -27,6 +28,7 @@ define(function(require) {
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       behaviorHasCode: React.PropTypes.bool.isRequired,
       hasSharedAnswers: React.PropTypes.bool.isRequired,
+      otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       onToggleSharedAnswer: React.PropTypes.func.isRequired,
       savedAnswers: React.PropTypes.arrayOf(
         React.PropTypes.shape({
@@ -62,6 +64,14 @@ define(function(require) {
 
     hasParams: function() {
       return this.props.userParams.length > 0;
+    },
+
+    isShared: function(param) {
+      const firstBehaviorWithSameInput = this.props.otherBehaviorsInGroup.find(behavior => {
+        const inputIds = behavior.params.map(ea => ea.inputId);
+        return inputIds.indexOf(param.inputId) !== -1;
+      });
+      return !!firstBehaviorWithSameInput;
     },
 
     countLinkedTriggersForParam: function(paramName, paramIndex) {
@@ -156,6 +166,7 @@ define(function(require) {
                           key={'UserInputDefinition' + paramIndex}
                           ref={'param' + paramIndex}
                           param={param}
+                          isShared={this.isShared(param)}
                           paramTypes={this.props.paramTypes}
                           onChange={this.onChange.bind(this, paramIndex)}
                           onDelete={this.onDelete.bind(this, paramIndex)}

@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageEvent
 import models.silhouette.EllipsisEnv
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -354,20 +354,28 @@ class SlackController @Inject() (
               val user = s"<@${info.user.id}>"
 
               info.maybeHelpIndexAt.foreach { index =>
-                info.maybeFutureEvent.map { maybeEvent =>
+                info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
                     DisplayHelpBehavior(None, None, Some(index), isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
+                }.recover {
+                  case t: Throwable => {
+                    Logger.error("Exception responding to a Slack action", t)
+                  }
                 }
                 resultText = s"$user clicked More help."
               }
 
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { case(skillId, maybeSearchText) =>
-                info.maybeFutureEvent.map { maybeEvent =>
+                info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
                     val result = DisplayHelpBehavior(maybeSearchText, Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
                     result.flatMap(result => result.sendIn(None, None))
                   }.getOrElse(Future.successful({}))
+                }.recover {
+                  case t: Throwable => {
+                    Logger.error("Exception responding to a Slack action", t)
+                  }
                 }
                 val maybeClickedAction =
                   info.

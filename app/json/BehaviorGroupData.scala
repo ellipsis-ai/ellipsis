@@ -72,36 +72,49 @@ case class BehaviorGroupData(
 
 object BehaviorGroupData {
 
+  private def inputsFor(versionsData: Seq[BehaviorVersionData], dataService: DataService) = {
+    Future.sequence(versionsData.flatMap { version =>
+      version.params.map { param =>
+        param.inputId.map(dataService.inputs.find).getOrElse(Future.successful(None))
+      }
+    }).map(_.flatten)
+  }
+
+  private def inputsDataFor(versionsData: Seq[BehaviorVersionData], dataService: DataService) = {
+    inputsFor(versionsData, dataService).flatMap { inputs =>
+      Future.sequence(inputs.map(InputData.fromInput(_, dataService)))
+    }
+  }
+
   def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService): Future[Option[BehaviorGroupData]] = {
     for {
       maybeGroup <- dataService.behaviorGroups.find(id)
       behaviors <- maybeGroup.map { group =>
         dataService.behaviors.allForGroup(group)
       }.getOrElse(Future.successful(Seq()))
-      sharedInputs <- maybeGroup.map { group =>
-        dataService.inputs.allForGroup(group)
-      }.getOrElse(Future.successful(Seq()))
-      sharedInputsData <- Future.sequence(sharedInputs.map { ea =>
-        InputData.fromInput(ea, dataService)
-      })
       versionsData <- Future.sequence(behaviors.map { ea =>
         BehaviorVersionData.maybeFor(ea.id, user, dataService)
       }).map(_.flatten.sortBy { ea =>
         (ea.isDataType, ea.maybeFirstTrigger)
       })
-    } yield maybeGroup.map { group =>
-      BehaviorGroupData(
-        Some(group.id),
-        group.name,
-        group.maybeDescription.getOrElse(""),
-        None,
-        sharedInputsData,
-        Seq(),
-        versionsData,
-        maybeGithubUrl,
-        group.maybeExportId,
-        group.createdAt
-      )
+      (dataTypeVersionsData, actionVersionsData) <- Future.successful(versionsData.partition(_.isDataType))
+      dataTypeInputsData <- inputsDataFor(dataTypeVersionsData, dataService)
+      actionInputsData <- inputsDataFor(actionVersionsData, dataService)
+    } yield {
+      maybeGroup.map { group =>
+        BehaviorGroupData(
+          Some(group.id),
+          group.name,
+          group.maybeDescription.getOrElse(""),
+          None,
+          actionInputsData,
+          dataTypeInputsData,
+          versionsData,
+          maybeGithubUrl,
+          group.maybeExportId,
+          group.createdAt
+        )
+      }
     }
   }
 
