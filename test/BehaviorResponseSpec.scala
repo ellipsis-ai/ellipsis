@@ -2,7 +2,7 @@ import models.IDs
 import models.behaviors.BehaviorResponse
 import models.behaviors.behaviorparameter.{BehaviorParameter, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.behaviors.input.Input
 import models.behaviors.triggers.TemplateMessageTrigger
 import org.mockito.Mockito._
@@ -19,7 +19,7 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar{
 
     "choose the most specific trigger" in new TestContext {
       running(app) {
-        val event = mock[MessageEvent]
+        val event = mock[Event]
         when(event.relevantMessageText).thenReturn("trigger me this batman")
         val version = mock[BehaviorVersion]
         val generalTrigger = TemplateMessageTrigger(
@@ -39,7 +39,7 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar{
           thenReturn(Future.successful(Seq(fooParam, barParam)))
         val responses = await(BehaviorResponse.allFor(event, Some(team), None, lambdaService, dataService, cache, ws, configuration))
         responses must have length(1)
-        responses.head.activatedTrigger must equal(specificTrigger)
+        responses.head.maybeActivatedTrigger must equal(specificTrigger)
       }
     }
 

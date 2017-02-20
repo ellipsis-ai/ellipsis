@@ -1,7 +1,6 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import models.SlackMessageFormatter
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -10,7 +9,7 @@ import play.api.libs.json.{JsBoolean, JsObject, JsString}
 import play.api.libs.ws.WSClient
 import services.DataService
 import slack.api.SlackApiClient
-import slack.models.Attachment
+import utils.SlackMessageSender
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -27,10 +26,11 @@ case class SlackMessageEvent(
 
   lazy val isBotMessage: Boolean = profile.userId == user
 
-  val fullMessageText: String = text
+  val messageText: String = text
 
-  override def relevantMessageText: String = {
-    SlackMessageEvent.toBotRegexFor(profile.userId).replaceFirstIn(super.relevantMessageText, "")
+  override val relevantMessageText: String = {
+    val withoutDotDotDot = MessageEvent.ellipsisRegex.replaceFirstIn(messageText, "")
+    SlackMessageEvent.toBotRegexFor(profile.userId).replaceFirstIn(withoutDotDotDot, "")
   }
 
   lazy val includesBotMention: Boolean = {
@@ -39,7 +39,7 @@ case class SlackMessageEvent(
       MessageEvent.ellipsisRegex.findFirstMatchIn(text).nonEmpty
   }
 
-  val isResponseExpected: Boolean = includesBotMention
+  override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId
   val userIdForContext: String = user
 
@@ -80,8 +80,6 @@ case class SlackMessageEvent(
     } yield messages
   }
 
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = client.listIms.map(_.find(_.user == user).map(_.id))
-
   def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[String] = {
     eventualMaybeDMChannel(actorSystem).map { maybeDMChannel =>
       (if (forcePrivate) {
@@ -96,98 +94,6 @@ case class SlackMessageEvent(
     }
   }
 
-  private def messageSegmentsFor(formattedText: String): List[String] = {
-    if (formattedText.length < SlackMessageEvent.MAX_MESSAGE_LENGTH) {
-      List(formattedText)
-    } else {
-      val largestPossibleSegment = formattedText.substring(0, SlackMessageEvent.MAX_MESSAGE_LENGTH)
-      val lastNewlineIndex = Math.max(largestPossibleSegment.lastIndexOf('\n'), largestPossibleSegment.lastIndexOf('\r'))
-      val lastIndex = if (lastNewlineIndex < 0) { SlackMessageEvent.MAX_MESSAGE_LENGTH - 1 } else { lastNewlineIndex }
-      (formattedText.substring(0, lastIndex)) :: messageSegmentsFor(formattedText.substring(lastIndex + 1))
-    }
-  }
-
-  def sendPreamble(formattedText: String, channelToUse: String, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[Unit] = {
-    if (formattedText.nonEmpty) {
-      for {
-        _ <- if (maybeThreadId.isDefined && maybeConversation.flatMap(_.maybeThreadId).isEmpty) {
-          val channelText = if (isDirectMessage(channel)) {
-            "the DM channel"
-          } else if (isPrivateChannel(channel)) {
-            "the private channel"
-          } else {
-            s"<#$channel>"
-          }
-          client.postChatMessage(
-            channel,
-            s"<@${user}> I've responded back in $channelText.",
-            asUser = Some(true),
-            threadTs = maybeThreadId
-          )
-        } else {
-          Future.successful({})
-        }
-        _ <- if (isDirectMessage(channelToUse) && channelToUse != channel) {
-          client.postChatMessage(
-            channel,
-            s"<@${user}> I've sent you a private message :sleuth_or_spy:",
-            asUser = Some(true)
-          )
-        } else {
-          Future.successful({})
-        }
-        _ <- if (!isDirectMessage(channelToUse) && channelToUse != channel) {
-          client.postChatMessage(
-            channel,
-            s"<@${user}> OK, back to <#${channelToUse}>",
-            asUser = Some(true)
-          )
-        } else {
-          Future.successful({})
-        }
-      } yield {}
-    } else {
-      Future.successful({})
-    }
-  }
-
-  def sendMessageSegmentsInOrder(
-                           segments: List[String],
-                           channelToUse: String,
-                           maybeShouldUnfurl: Option[Boolean],
-                           maybeAttachments: Option[Seq[Attachment]],
-                           maybeConversation: Option[Conversation],
-                           maybePreviousTs: Option[String]
-                         )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    if (segments.isEmpty) {
-      Future.successful(maybePreviousTs)
-    } else {
-      val segment = segments.head.trim
-      // Slack API gives an error for empty messages
-      if (segment.isEmpty) {
-        Future.successful(None)
-      } else {
-        val maybeAttachmentsForSegment = if (segments.tail.isEmpty) {
-          maybeAttachments
-        } else {
-          None
-        }
-        val maybeThreadTsToUse = maybeConversation.flatMap(_.maybeThreadId)
-        val replyBroadcast = maybeThreadTsToUse.isDefined && maybeConversation.exists(_.state == Conversation.DONE_STATE)
-        client.postChatMessage(
-          channelToUse,
-          segment,
-          asUser = Some(true),
-          unfurlLinks = maybeShouldUnfurl,
-          unfurlMedia = Some(true),
-          attachments = maybeAttachmentsForSegment,
-          threadTs = maybeThreadTsToUse,
-          replyBroadcast = Some(replyBroadcast)
-        )
-      }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, Some(ts))}
-    }
-  }
-
   def sendMessage(
                    unformattedText: String,
                    forcePrivate: Boolean,
@@ -195,18 +101,20 @@ case class SlackMessageEvent(
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
-    val maybeAttachments = maybeActions.flatMap { actions =>
-      actions match {
-        case a: SlackMessageActions => Some(a.attachments)
-        case _ => None
-      }
+    channelForSend(forcePrivate, maybeConversation).flatMap { channelToUse =>
+      SlackMessageSender(
+        client,
+        user,
+        unformattedText,
+        forcePrivate,
+        channelToUse,
+        channel,
+        maybeThreadId,
+        maybeShouldUnfurl,
+        maybeConversation,
+        maybeActions
+      ).send
     }
-    for {
-      channelToUse <- channelForSend(forcePrivate, maybeConversation)
-      _ <- sendPreamble(formattedText, channelToUse, maybeConversation)
-      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, None)
-    } yield maybeLastTs
   }
 
   override def ensureUser(dataService: DataService): Future[User] = {
@@ -249,10 +157,4 @@ object SlackMessageEvent {
   def mentionRegexFor(botId: String): Regex = s"""<@$botId>""".r
   def toBotRegexFor(botId: String): Regex = s"""^<@$botId>:?\\s*""".r
 
-  // From Slack docs:
-  //
-  // "For best results, message bodies should contain no more than a few thousand characters."
-  val MAX_MESSAGE_LENGTH = 2000
-  // "A maximum of 5 actions may be provided."
-  val MAX_ACTIONS_PER_ATTACHMENT = 5
 }

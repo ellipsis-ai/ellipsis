@@ -70,16 +70,24 @@ class BehaviorServiceImpl @Inject() (
     }
   }
 
-  // If passed an ID, it will find the behavior unconditionally
-  // If passed a name or trigger, it will only look in the behavior group
-  def findByIdOrNameOrTrigger(idOrNameOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
-    findWithoutAccessCheck(idOrNameOrTrigger).flatMap { maybeById =>
-      maybeById.map(b => Future.successful(Some(b))).getOrElse {
-        findByName(idOrNameOrTrigger, group).flatMap { maybeByName =>
-          maybeByName.map(b => Future.successful(Some(b))).getOrElse {
-            findByTrigger(idOrNameOrTrigger, group)
-          }
+  def findByIdOrName(idOrName: String, group: BehaviorGroup): Future[Option[Behavior]] = {
+    findWithoutAccessCheck(idOrName).flatMap { maybeById =>
+      maybeById.map { b =>
+        if (b.maybeGroup.contains(group)) {
+          Future.successful(Some(b))
+        } else {
+          Future.successful(None)
         }
+      }.getOrElse {
+        findByName(idOrName, group)
+      }
+    }
+  }
+
+  def findByIdOrNameOrTrigger(idOrNameOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
+    findByIdOrName(idOrNameOrTrigger, group).flatMap { maybeByName =>
+      maybeByName.map(b => Future.successful(Some(b))).getOrElse {
+        findByTrigger(idOrNameOrTrigger, group)
       }
     }
   }

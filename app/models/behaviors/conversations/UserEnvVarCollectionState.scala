@@ -1,9 +1,9 @@
 package models.behaviors.conversations
 
 import models.accounts.user.User
-import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
+import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
@@ -13,7 +13,7 @@ import scala.concurrent.Future
 
 case class UserEnvVarCollectionState(
                                       missingEnvVarNames: Seq[String],
-                                      event: MessageEvent,
+                                      event: Event,
                                       dataService: DataService,
                                       cache: CacheApi,
                                       configuration: Configuration
@@ -58,7 +58,7 @@ object UserEnvVarCollectionState {
   def from(
             user: User,
             conversation: Conversation,
-            event: MessageEvent,
+            event: Event,
             dataService: DataService,
             cache: CacheApi,
             configuration: Configuration

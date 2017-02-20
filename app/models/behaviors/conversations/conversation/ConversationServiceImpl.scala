@@ -12,8 +12,9 @@ import scala.concurrent.Future
 
 case class RawConversation(
                             id: String,
-                            triggerId: String,
-                            triggerMessage: String,
+                            behaviorVersionId: String,
+                            maybeTriggerId: Option[String],
+                            maybeTriggerMessage: Option[String],
                             conversationType: String,
                             context: String,
                             maybeChannel: Option[String],
@@ -27,8 +28,9 @@ case class RawConversation(
 class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversations") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def triggerId = column[String]("trigger_id")
-  def triggerMessage = column[String]("trigger_message")
+  def behaviorVersionId = column[String]("behavior_version_id")
+  def maybeTriggerId = column[Option[String]]("trigger_id")
+  def maybeTriggerMessage = column[Option[String]]("trigger_message")
   def conversationType = column[String]("conversation_type")
   def context = column[String]("context")
   def maybeChannel = column[Option[String]]("channel")
@@ -39,7 +41,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
   def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
 
   def * =
-    (id, triggerId, triggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state, maybeScheduledMessageId) <>
+    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state, maybeScheduledMessageId) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 

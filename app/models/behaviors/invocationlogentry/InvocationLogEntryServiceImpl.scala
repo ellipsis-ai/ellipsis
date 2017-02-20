@@ -12,7 +12,7 @@ import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -93,7 +93,7 @@ class InvocationLogEntryServiceImpl @Inject() (
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  result: BotResult,
-                 event: MessageEvent,
+                 event: Event,
                  maybeUserIdForContext: Option[String],
                  user: User,
                  runtimeInMilliseconds: Long
@@ -103,7 +103,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         IDs.next,
         behaviorVersion.id,
         result.resultType.toString,
-        event.fullMessageText,
+        event.invocationLogText,
         Json.toJson(parametersWithValues.map { ea =>
           ea.parameter.name -> ea.preparedValue
         }.toMap),

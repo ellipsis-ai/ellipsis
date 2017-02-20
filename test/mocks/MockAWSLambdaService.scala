@@ -4,12 +4,12 @@ import javax.inject.Inject
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import models.Models
-import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
+import models.behaviors.{BotResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import org.scalatest.mock.MockitoSugar
 import play.api.Configuration
@@ -49,7 +49,7 @@ class MockAWSLambdaService @Inject() (
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],
                        environmentVariables: Seq[EnvironmentVariable],
-                       event: MessageEvent
+                       event: Event
                      ): Future[BotResult] = Future.successful(mock[BotResult])
 
   override def functionWithParams(params: Array[String], functionBody: String): String = ""

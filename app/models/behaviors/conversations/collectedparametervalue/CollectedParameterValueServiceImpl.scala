@@ -35,7 +35,7 @@ class CollectedParameterValueServiceImpl @Inject() (
   val joined =
     all.
       join(BehaviorParameterQueries.allWithBehaviorVersion).on(_.parameterId === _._1._1.id).
-      join(ConversationQueries.allWithTrigger).on(_._1.conversationId === _._1.id)
+      join(ConversationQueries.allWithTrigger).on(_._1.conversationId === _._1._1.id)
 
   type TupleType = ((RawCollectedParameterValue, BehaviorParameterQueries.TupleType), ConversationQueries.TupleType)
 
