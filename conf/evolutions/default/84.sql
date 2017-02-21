@@ -10,6 +10,6 @@ ALTER TABLE conversations ALTER COLUMN trigger_id DROP NOT NULL;
 
 # --- !Downs
 
-DELETE FROM TABLE conversations WHERE trigger_id IS NULL;
+DELETE FROM conversations WHERE trigger_id IS NULL;
 ALTER TABLE conversations ALTER COLUMN trigger_id SET NOT NULL;
 ALTER TABLE conversations DROP COLUMN behavior_version_id;
