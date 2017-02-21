@@ -3,10 +3,14 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
-import models.behaviors.{BotResult, MessageInfo, SimpleTextResult, UserInfo}
+import models.behaviors.behavior.Behavior
+import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduledmessage.ScheduledMessage
+import models.team.Team
+import play.api.Configuration
+import play.api.cache.CacheApi
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
@@ -140,5 +144,15 @@ trait Event {
     // Override for client-specific code to strip formatting from text
     text
   }
+
+  def allBehaviorResponsesFor(
+                               maybeTeam: Option[Team],
+                               maybeLimitToBehavior: Option[Behavior],
+                               lambdaService: AWSLambdaService,
+                               dataService: DataService,
+                               cache: CacheApi,
+                               ws: WSClient,
+                               configuration: Configuration
+                             ): Future[Seq[BehaviorResponse]]
 
 }

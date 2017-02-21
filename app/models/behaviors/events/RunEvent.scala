@@ -2,11 +2,17 @@ package models.behaviors.events
 
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
-import services.DataService
+import models.team.Team
+import play.api.Configuration
+import play.api.cache.CacheApi
+import play.api.libs.ws.WSClient
+import services.{AWSLambdaService, DataService}
 import utils.SlackMessageSender
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class RunEvent(
@@ -50,6 +56,38 @@ case class RunEvent(
       maybeConversation,
       maybeActions
     ).send
+  }
+
+  def allBehaviorResponsesFor(
+                               maybeTeam: Option[Team],
+                               maybeLimitToBehavior: Option[Behavior],
+                               lambdaService: AWSLambdaService,
+                               dataService: DataService,
+                               cache: CacheApi,
+                               ws: WSClient,
+                               configuration: Configuration
+                             ): Future[Seq[BehaviorResponse]] = {
+    for {
+      maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
+      responses <- maybeBehaviorVersion.map { behaviorVersion =>
+        for {
+          params <- dataService.behaviorParameters.allFor(behaviorVersion)
+          response <-
+          BehaviorResponse.buildFor(
+            this,
+            behaviorVersion,
+            Map(), // TODO: support params
+            None,
+            None,
+            lambdaService,
+            dataService,
+            cache,
+            ws,
+            configuration
+          )
+        } yield Seq(response)
+      }.getOrElse(Future.successful(Seq()))
+    } yield responses
   }
 
 }
