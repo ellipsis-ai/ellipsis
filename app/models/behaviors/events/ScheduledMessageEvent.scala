@@ -25,7 +25,7 @@ case class ScheduledMessageEvent(underlying: MessageEvent, scheduledMessage: Sch
   lazy val teamId: String = underlying.teamId
   lazy val name: String = underlying.name
   lazy val includesBotMention: Boolean = underlying.includesBotMention
-  lazy val fullMessageText: String = underlying.fullMessageText
+  lazy val messageText: String = underlying.messageText
   lazy val isResponseExpected: Boolean = underlying.isResponseExpected
   lazy val userIdForContext: String = underlying.userIdForContext
   override val maybeScheduledMessage: Option[ScheduledMessage] = Some(scheduledMessage)

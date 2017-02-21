@@ -8,10 +8,10 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.team.Team
-import play.api.libs.json.{JsValue, Json}
 import play.api.Configuration
+import play.api.libs.json.{JsValue, Json}
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, DataService}
 
@@ -67,7 +67,7 @@ case class BehaviorVersion(
                  parametersWithValues: Seq[ParameterWithValue],
                  dataService: DataService,
                  configuration: Configuration,
-                 event: MessageEvent
+                 event: Event
                ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )

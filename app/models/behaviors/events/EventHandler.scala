@@ -26,7 +26,7 @@ class EventHandler @Inject() (
                                implicit val actorSystem: ActorSystem
                                ) {
 
-  def startInvokeConversationFor(event: MessageEvent): Future[Seq[BotResult]] = {
+  def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       responses <- BehaviorResponse.allFor(event, maybeTeam, None, lambdaService, dataService, cache, ws, configuration)
@@ -42,15 +42,18 @@ class EventHandler @Inject() (
     } yield results
   }
 
-  def interruptOngoingConversationsFor(event: MessageEvent): Future[Boolean] = {
+  def interruptOngoingConversationsFor(event: Event): Future[Boolean] = {
     event.allOngoingConversations(dataService).flatMap { ongoing =>
       Future.sequence(ongoing.map { ea =>
+        val triggerMessage = ea.maybeTriggerMessage.map { triggerMessage =>
+          s"You haven’t answered my question above yet. When you’re ready to answer, just say `$triggerMessage`"
+        }.getOrElse("")
         val cancelMessage =
           s"""_(skipping question for now)_
              |
              |:wave: Hey.
              |
-             |You haven’t answered my question above yet. When you’re ready to answer, just say `${ea.trigger.pattern}`.
+             |$triggerMessage`.
              |""".stripMargin
         cancelConversationResult(event, ea, cancelMessage).flatMap { result =>
           result.sendIn(None, None).map(_ => result)
@@ -59,14 +62,14 @@ class EventHandler @Inject() (
     }.map(interruptionResults => interruptionResults.nonEmpty)
   }
 
-  def cancelConversationResult(event: MessageEvent, conversation: Conversation, withMessage: String): Future[BotResult] = {
+  def cancelConversationResult(event: Event, conversation: Conversation, withMessage: String): Future[BotResult] = {
     conversation.cancel(dataService).map { _ =>
       SimpleTextResult(event, withMessage, forcePrivateResponse = false)
     }
   }
 
-  def isCancelConversationMessage(event: MessageEvent): Boolean = {
-    val text = event.fullMessageText
+  def isCancelConversationMessage(event: Event): Boolean = {
+    val text = event.messageText
     val mentionedBot = event.includesBotMention
     val shortcutPlusKeyword = "^(\\.\\.\\.|…)(stop|cancel|skip)".r.findFirstIn(text).isDefined
     val mentionedPlusKeyword = mentionedBot && "^<@.+?>:?\\s+(stop|cancel|skip)$".r.findFirstIn(text).isDefined
@@ -78,7 +81,7 @@ class EventHandler @Inject() (
     shortcutPlusKeyword || mentionedPlusKeyword /* || isDMPlusKeyword */
   }
 
-  def handleInConversation(conversation: Conversation, event: MessageEvent): Future[BotResult] = {
+  def handleInConversation(conversation: Conversation, event: Event): Future[BotResult] = {
     if (isCancelConversationMessage(event)) {
       cancelConversationResult(event, conversation, s"OK, I’ll stop asking about that.")
     } else {
@@ -86,7 +89,7 @@ class EventHandler @Inject() (
     }
   }
 
-  def handle(event: MessageEvent, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
+  def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     maybeConversation.map { conversation =>
       handleInConversation(conversation, event).map(Seq(_))
     }.getOrElse {

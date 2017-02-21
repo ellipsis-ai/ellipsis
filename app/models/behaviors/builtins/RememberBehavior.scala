@@ -3,20 +3,20 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import json.{BehaviorConfig, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors._
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RememberBehavior(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
+case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       maybeUser <- maybeTeam.map { team =>
-        dataService.users.findFromMessageEvent(event, team)
+        dataService.users.findFromEvent(event, team)
       }.getOrElse(Future.successful(None))
       messages <- event.recentMessages(dataService)
       qaExtractor <- Future.successful(QuestionAnswerExtractor(messages))

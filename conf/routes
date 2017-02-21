@@ -95,6 +95,8 @@ POST        /put_item                                 @controllers.DefaultStorag
 #NOCSRF
 POST        /api/post_message                         @controllers.APIController.postMessage
 #NOCSRF
+POST        /api/run_action                           @controllers.APIController.runAction
+#NOCSRF
 GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
 
 

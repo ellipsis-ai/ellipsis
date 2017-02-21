@@ -1,11 +1,11 @@
 package models.behaviors.conversations
 
-import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.behaviors.savedanswer.SavedAnswer
+import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.{AWSLambdaConstants, DataService}
@@ -17,7 +17,7 @@ case class ParamCollectionState(
                                  params: Seq[BehaviorParameter],
                                  collected: Seq[CollectedParameterValue],
                                  savedAnswers: Seq[SavedAnswer],
-                                 event: MessageEvent,
+                                 event: Event,
                                  dataService: DataService,
                                  cache: CacheApi,
                                  configuration: Configuration
@@ -97,7 +97,7 @@ object ParamCollectionState {
 
   def from(
             conversation: Conversation,
-            event: MessageEvent,
+            event: Event,
             dataService: DataService,
             cache: CacheApi,
             configuration: Configuration

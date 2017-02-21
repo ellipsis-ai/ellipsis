@@ -2,7 +2,7 @@ package models.behaviors.builtins
 
 import akka.actor.ActorSystem
 import com.amazonaws.AmazonServiceException
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class ResetBehaviorsBehavior(
-                                   event: MessageEvent,
+                                   event: Event,
                                    lambdaService: AWSLambdaService,
                                    dataService: DataService
                             ) extends BuiltinBehavior {

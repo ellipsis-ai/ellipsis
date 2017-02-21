@@ -4,7 +4,7 @@ import json.BehaviorVersionData
 import models.accounts.user.User
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 
 import scala.concurrent.Future
 
@@ -32,12 +32,12 @@ trait BehaviorVersionService {
 
   def maybePreviousFor(behaviorVersion: BehaviorVersion): Future[Option[BehaviorVersion]]
 
-  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: MessageEvent): Future[Option[BotResult]]
+  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: Event): Future[Option[BotResult]]
 
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
-                 event: MessageEvent
+                 event: Event
                ): Future[BotResult]
 
   def unlearn(behaviorVersion: BehaviorVersion): Future[Unit]

@@ -3,10 +3,10 @@ package models.behaviors.conversations
 import java.time.OffsetDateTime
 
 import models.IDs
-import models.behaviors._
+import models.behaviors.{BehaviorResponse, BotResult}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -18,8 +18,9 @@ import scala.concurrent.Future
 
 case class InvokeBehaviorConversation(
                                        id: String,
-                                       trigger: MessageTrigger,
-                                       triggerMessage: String,
+                                       behaviorVersion: BehaviorVersion,
+                                       maybeTrigger: Option[MessageTrigger],
+                                       maybeTriggerMessage: Option[String],
                                        context: String, // Slack, etc
                                        maybeChannel: Option[String],
                                        maybeThreadId: Option[String],
@@ -50,7 +51,7 @@ case class InvokeBehaviorConversation(
     }.head // There should always be a match
   }
 
-  def collectionStatesFor(event: MessageEvent, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Seq[CollectionState]] = {
+  def collectionStatesFor(event: Event, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Seq[CollectionState]] = {
     for {
       user <- event.ensureUser(dataService)
       simpleTokenState <- SimpleTokenCollectionState.from(user, this, event, dataService, cache, configuration)
@@ -59,7 +60,7 @@ case class InvokeBehaviorConversation(
     } yield Seq(simpleTokenState, userEnvVarState, paramState)
   }
 
-  def updateToNextState(event: MessageEvent, cache: CacheApi, dataService: DataService, configuration: Configuration): Future[Conversation] = {
+  def updateToNextState(event: Event, cache: CacheApi, dataService: DataService, configuration: Configuration): Future[Conversation] = {
     for {
       collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
       collectionStatesWithIsComplete <- Future.sequence(collectionStates.map { collectionState =>
@@ -68,7 +69,7 @@ case class InvokeBehaviorConversation(
       updated <- {
         val targetState =
           collectionStatesWithIsComplete.
-            find { case(collectionState, isComplete) => !isComplete }.
+            find { case(_, isComplete) => !isComplete }.
             map { case(collectionState, _) => collectionState.name }.
             getOrElse(Conversation.DONE_STATE)
         updateStateTo(targetState, dataService)
@@ -76,22 +77,21 @@ case class InvokeBehaviorConversation(
     } yield updated
   }
 
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation] = {
-    import Conversation._
+  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation] = {
 
     for {
       collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
       updated <- collectionStates.find(_.name == state).map(_.collectValueFrom(this)).getOrElse {
         state match {
-          case NEW_STATE => updateToNextState(event, cache, dataService, configuration)
-          case DONE_STATE => Future.successful(this)
+          case Conversation.NEW_STATE => updateToNextState(event, cache, dataService, configuration)
+          case Conversation.DONE_STATE => Future.successful(this)
         }
       }
     } yield updated
   }
 
   def respond(
-               event: MessageEvent,
+               event: Event,
                lambdaService: AWSLambdaService,
                dataService: DataService,
                cache: CacheApi,
@@ -102,7 +102,7 @@ case class InvokeBehaviorConversation(
       collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
       result <- collectionStates.find(_.name == state).map(_.promptResultFor(this)).getOrElse {
         val paramState = paramStateIn(collectionStates)
-        BehaviorResponse.buildFor(event, behaviorVersion, paramState.invocationMap, trigger, Some(this), lambdaService, dataService, cache, ws, configuration).flatMap { br =>
+        BehaviorResponse.buildFor(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), lambdaService, dataService, cache, ws, configuration).flatMap { br =>
           br.resultForFilledOut
         }
       }
@@ -124,16 +124,17 @@ object InvokeBehaviorConversation {
 
   def createFor(
                  behaviorVersion: BehaviorVersion,
-                 event: MessageEvent,
+                 event: Event,
                  maybeChannel: Option[String],
-                 activatedTrigger: MessageTrigger,
+                 maybeActivatedTrigger: Option[MessageTrigger],
                  dataService: DataService
                  ): Future[InvokeBehaviorConversation] = {
     val newInstance =
       InvokeBehaviorConversation(
         IDs.next,
-        activatedTrigger,
-        event.fullMessageText,
+        behaviorVersion,
+        maybeActivatedTrigger,
+        event.maybeMessageText,
         event.name,
         maybeChannel,
         None,

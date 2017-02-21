@@ -39,7 +39,7 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar{
           thenReturn(Future.successful(Seq(fooParam, barParam)))
         val responses = await(BehaviorResponse.allFor(event, Some(team), None, lambdaService, dataService, cache, ws, configuration))
         responses must have length(1)
-        responses.head.activatedTrigger must equal(specificTrigger)
+        responses.head.maybeActivatedTrigger must contain(specificTrigger)
       }
     }
 

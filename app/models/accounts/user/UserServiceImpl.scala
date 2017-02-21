@@ -6,14 +6,14 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.linkedaccount.LinkedAccount
+import drivers.SlickPostgresDriver.api._
 import models.IDs
+import models.accounts.linkedaccount.LinkedAccount
+import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
+import play.api.Configuration
 import services.DataService
 import slack.api.ApiError
-import drivers.SlickPostgresDriver.api._
-import models.behaviors.events.{MessageEvent, SlackMessageEvent}
-import play.api.Configuration
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -41,7 +41,7 @@ class UserServiceImpl @Inject() (
     dataService.run(findQueryFor(id).result.map(_.headOption))
   }
 
-  def findFromMessageEvent(event: MessageEvent, team: Team): Future[Option[User]] = {
+  def findFromEvent(event: Event, team: Team): Future[Option[User]] = {
     event match {
       case slackEvent: SlackMessageEvent => dataService.linkedAccounts.find(LoginInfo(slackEvent.name, slackEvent.user), team.id).map { maybeLinked =>
         maybeLinked.map(_.user)

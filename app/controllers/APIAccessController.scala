@@ -1,18 +1,17 @@
 package controllers
 
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
-import models.accounts.user.User
+import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import models.IDs
 import models.accounts.linkedoauth2token.LinkedOAuth2Token
 import models.accounts.oauth2application.OAuth2Application
-import models.behaviors.events.{EventHandler, MessageEvent}
+import models.accounts.user.User
+import models.behaviors.events.{Event, EventHandler}
 import models.silhouette.EllipsisEnv
-import java.time.OffsetDateTime
-
-import akka.actor.ActorSystem
-import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.http.{HeaderNames, MimeTypes}
@@ -61,7 +60,7 @@ class APIAccessController @Inject() (
   private def maybeResultWithMagicLinkFor(
                                       invocationId: String
                                     )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[Future[Result]] = {
-    cache.get[MessageEvent](invocationId).map { event =>
+    cache.get[Event](invocationId).map { event =>
       eventHandler.handle(event, None).map { results =>
         results.map(_.sendIn(None, None))
         Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.name}."))
