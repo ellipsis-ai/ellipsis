@@ -8,7 +8,7 @@ import scala.util.matching.Regex
 
 trait MessageEvent extends Event {
 
-  val invocationLogText: String = relevantMessageText
+  lazy val invocationLogText: String = relevantMessageText
 
   def isDirectMessage(channel: String): Boolean
 
