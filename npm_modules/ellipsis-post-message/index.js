@@ -141,6 +141,52 @@ const PM = {
     }
   },
 
+  say: function (args) {
+    const ellipsis = args.ellipsis;
+    if (typeof ellipsis !== "object") {
+      errorHandler(null, args, errorMessages.ELLIPSIS_OBJECT_MISSING);
+    } else {
+      const message = args.message;
+      if (!message) {
+        errorHandler(ellipsis, args, errorMessages.MESSAGE_MISSING);
+      } else {
+        const responseContext = args.responseContext ? args.responseContext : ellipsis.userInfo.messageInfo.medium;
+        const channel = args.channel ? args.channel : ellipsis.userInfo.messageInfo.channel;
+        request.
+          post(
+            {
+              url: ellipsis.apiBaseUrl + "/api/say",
+              form: {
+                message: message,
+                responseContext: responseContext,
+                channel: channel,
+                token: ellipsis.token
+              }
+            }, (error, response, body) => handleResponse(args, ellipsis, error, response, body)
+        );
+      }
+    }
+  },
+
+  promiseToSay: function(args) {
+    const ellipsis = args.ellipsis;
+    const message = args.message;
+    if (typeof ellipsis !== "object") {
+      errorHandler(null, args, errorMessages.ELLIPSIS_OBJECT_MISSING);
+    } else if (!message) {
+      errorHandler(ellipsis, args, errorMessages.MESSAGE_MISSING);
+    } else {
+      return new Promise((resolve, reject) => {
+        PM.say(Object.assign({}, args, {
+          ellipsis: ellipsis,
+          message: message,
+          success: resolve,
+          error: reject
+        }));
+      });
+    }
+  },
+
   promiseToSchedule: function(args) {
     const ellipsis = args.ellipsis;
     const action = args.action;
