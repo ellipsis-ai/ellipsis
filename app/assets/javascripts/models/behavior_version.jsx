@@ -54,6 +54,10 @@ define(function(require) {
       return JSON.stringify(this) === JSON.stringify(behaviorVersion);
     }
 
+    get sortKey() {
+      return this.name || this.getFirstTriggerText();
+    }
+
     clone(props) {
       return new BehaviorVersion(Object.assign({}, this, props));
     }
