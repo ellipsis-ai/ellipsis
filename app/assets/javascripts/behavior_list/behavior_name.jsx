@@ -82,11 +82,24 @@ define(function(require) {
       );
     },
 
+    getActionLabelFromVersion: function(version) {
+      const name = version.name;
+      if (name && name.trim().length > 0) {
+        return (
+          <div className={(this.props.limitTriggers ? "display-ellipsis" : "")}>
+            <span className="link">{name}</span>
+          </div>
+        );
+      } else {
+        return this.getTriggersFromVersion(version);
+      }
+    },
+
     getLabelFromVersion: function(version) {
       if (version.isDataType()) {
         return this.getDataTypeLabelFromVersion(version);
       } else {
-        return this.getTriggersFromVersion(version);
+        return this.getActionLabelFromVersion(version);
       }
     },
 
