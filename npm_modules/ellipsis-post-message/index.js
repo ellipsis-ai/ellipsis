@@ -35,7 +35,7 @@ function handleResponse(args, ellipsis, error, response, body) {
 
 function paramsFormDataFor(params) {
   if (params) {
-    let data = {}
+    let data = {};
     params.forEach((ea, i) => {
       data[`params[${i}].name`] = ea.name;
       data[`params[${i}].value`] = ea.value;
@@ -78,7 +78,7 @@ const PM = {
 
   promiseToRunAction: function(args) {
     const ellipsis = args.ellipsis;
-    const message = args.actionName;
+    const actionName = args.actionName;
     if (typeof ellipsis !== "object") {
       errorHandler(null, args, errorMessages.ELLIPSIS_OBJECT_MISSING);
     } else if (!actionName) {
