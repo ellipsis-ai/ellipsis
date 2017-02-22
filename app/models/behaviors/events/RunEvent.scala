@@ -9,19 +9,20 @@ import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaConstants, AWSLambdaService, DataService}
 import utils.SlackMessageSender
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class RunEvent(
-                    profile: SlackBotProfile,
-                    behavior: Behavior,
-                    channel: String,
-                    maybeThreadId: Option[String],
-                    user: String,
-                    ts: String
+                     profile: SlackBotProfile,
+                     behavior: Behavior,
+                     paramValues: Map[String, String],
+                     channel: String,
+                     maybeThreadId: Option[String],
+                     user: String,
+                     ts: String
                   ) extends Event with SlackEvent {
 
   val messageText: String = ""
@@ -72,11 +73,15 @@ case class RunEvent(
       responses <- maybeBehaviorVersion.map { behaviorVersion =>
         for {
           params <- dataService.behaviorParameters.allFor(behaviorVersion)
-          response <-
-          BehaviorResponse.buildFor(
+          invocationParams <- Future.successful(paramValues.flatMap { case(name, value) =>
+            params.find(_.name == name).map { param =>
+              (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+            }
+          })
+          response <- BehaviorResponse.buildFor(
             this,
             behaviorVersion,
-            Map(), // TODO: support params
+            invocationParams,
             None,
             None,
             lambdaService,

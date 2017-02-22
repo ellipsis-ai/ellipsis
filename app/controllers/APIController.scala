@@ -146,16 +146,32 @@ class APIController @Inject() (
     } yield result
   }
 
+  case class RunActionParamInfo(name: String, value: String)
+
   case class RunActionInfo(
                             actionName: String,
+                            params: Seq[RunActionParamInfo],
                             responseContext: String,
                             channel: String,
                             token: String
-                          ) extends ApiMethodInfo
+                          ) extends ApiMethodInfo {
+
+    val paramsMap: Map[String, String] = {
+      params.map { ea =>
+        (ea.name, ea.value)
+      }.toMap
+    }
+  }
 
   private val runActionForm = Form(
     mapping(
       "actionName" -> nonEmptyText,
+      "params" -> seq(
+        mapping(
+          "name" -> nonEmptyText,
+          "value" -> nonEmptyText
+        )(RunActionParamInfo.apply)(RunActionParamInfo.unapply)
+      ),
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
       "token" -> nonEmptyText
@@ -184,6 +200,7 @@ class APIController @Inject() (
             } yield RunEvent(
               botProfile,
               behavior,
+              info.paramsMap,
               context.maybeSlackChannelId.getOrElse(info.channel),
               None,
               context.maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),

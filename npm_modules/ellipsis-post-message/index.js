@@ -1,3 +1,5 @@
+'use strict';
+
 const request = require('request');
 
 const errorMessages = {
@@ -31,6 +33,19 @@ function handleResponse(args, ellipsis, error, response, body) {
   }
 }
 
+function paramsFormDataFor(params) {
+  if (params) {
+    let data = {}
+    params.forEach((ea, i) => {
+      data[`params[${i}].name`] = ea.name;
+      data[`params[${i}].value`] = ea.value;
+    });
+    return data;
+  } else {
+    return {};
+  }
+}
+
 const PM = {
 
   runAction: function (args) {
@@ -44,16 +59,17 @@ const PM = {
       } else {
         const responseContext = args.responseContext ? args.responseContext : ellipsis.userInfo.messageInfo.medium;
         const channel = args.channel ? args.channel : ellipsis.userInfo.messageInfo.channel;
+        const formData = Object.assign({
+          actionName: actionName,
+          responseContext: responseContext,
+          channel: channel,
+          token: ellipsis.token
+        }, paramsFormDataFor(args.params));
         request.
           post(
             {
               url: ellipsis.apiBaseUrl + "/api/run_action",
-              form: {
-                actionName: actionName,
-                responseContext: responseContext,
-                channel: channel,
-                token: ellipsis.token
-              }
+              form: formData
             }, (error, response, body) => handleResponse(args, ellipsis, error, response, body)
         );
       }
