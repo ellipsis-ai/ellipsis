@@ -45,7 +45,7 @@ define(function(require) {
             {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version) => (
               <div
                 key={`behavior-${version.behaviorId}`}
-                className={`border-top border-bottom pvs container container-wide mbneg1 ${this.isCurrentVersion(version) ? "bg-blue-lighter border-blue" : ""}`}
+                className={`border-top border-light pvxs container container-wide ${this.isCurrentVersion(version) ? "bg-blue border-blue-medium type-white" : ""}`}
               >
                 <BehaviorName
                   version={version}

@@ -87,12 +87,12 @@ define(function(require) {
       if (name && name.trim().length > 0) {
         return (
           <div className={(this.props.limitTriggers ? "display-ellipsis" : "")}>
-            <span className="link mrm">{name}:</span>
+            <span className={"mrm " + (this.props.disableLink ? "" : "link")}>{name}:</span>
             {this.getTriggersFromVersion(version, false)}
           </div>
         );
       } else {
-        return this.getTriggersFromVersion(version, true);
+        return this.getTriggersFromVersion(version, !this.props.disableLink);
       }
     },
 
