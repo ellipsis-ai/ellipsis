@@ -113,10 +113,10 @@ trait Event {
   }
 
 
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]]
+  def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]]
 
-  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    eventualMaybeDMChannel.map { maybeDMChannel =>
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    eventualMaybeDMChannel(dataService).map { maybeDMChannel =>
       if (behaviorVersion.forcePrivateResponse) {
         maybeDMChannel
       } else {
@@ -132,7 +132,8 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None
+                   maybeActions: Option[MessageActions] = None,
+                   dataService: DataService
                  )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
   // TODO: Remove this method if we're sure we don't want to use it in help anymore

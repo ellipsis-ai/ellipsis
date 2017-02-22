@@ -2,6 +2,7 @@ package controllers
 
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
@@ -23,6 +24,8 @@ import play.api.libs.json._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.DataService
+import slack.api.SlackApiClient
+import slack.models.Attachment
 import support.ControllerTestContext
 import utils.{SlackChannels, SlackTimestamp}
 
@@ -74,6 +77,13 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(eventHandler.interruptOngoingConversationsFor(any[Event])).thenReturn(Future.successful(false))
     when(eventHandler.handle(any[Event], org.mockito.Matchers.eq(None))).thenReturn(Future.successful(Seq(SimpleTextResult(event, "result", forcePrivateResponse = false))))
 
+    val mockSlackClient = mock[SlackApiClient]
+    when(dataService.slackBotProfiles.clientFor(botProfile)).thenReturn(mockSlackClient)
+    when(mockSlackClient.listIms).thenReturn(Future.successful(Seq()))
+    when(mockSlackClient.postChatMessage(anyString, anyString, any[Option[String]], any[Option[Boolean]], any[Option[String]],
+                                          any[Option[String]], any[Option[Seq[Attachment]]], any[Option[Boolean]], any[Option[Boolean]],
+                                          any[Option[String]], any[Option[String]], any[Option[Boolean]], any[Option[Boolean]],
+                                          any[Option[String]], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(SlackTimestamp.now))
     token
   }
 
@@ -187,6 +197,42 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       }
     }
 
+  }
+
+  "say" should {
+
+    "400 for invalid token" in new ControllerTestContext {
+      running(app) {
+        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService)
+        val body = postMessageBodyFor("foo", defaultChannel, token)
+        val request = FakeRequest(controllers.routes.APIController.say()).withJsonBody(body)
+        val result = route(app, request).get
+        status(result) mustBe BAD_REQUEST
+        contentAsString(result) mustBe "Invalid token"
+        verify(dataService.apiTokens, times(1)).find(token)
+      }
+    }
+
+    "respond with a valid result" in new ControllerTestContext {
+      running(app) {
+        val token = setUpMocksFor(team, user, isTokenValid = true, None, app, eventHandler, dataService)
+        val message = "foo"
+        val body = postMessageBodyFor(message, defaultChannel, token)
+        val request = FakeRequest(controllers.routes.APIController.say()).withJsonBody(body)
+        val result = route(app, request).get
+        status(result) mustBe OK
+        val resultJson = contentAsJson(result)
+        resultJson.validate[Seq[String]] match {
+          case JsSuccess(data, jsPath) => {
+            data must have length 1
+            data.head mustBe message
+          }
+          case JsError(e) => {
+            assert(false, "Result didn't validate")
+          }
+        }
+      }
+    }
   }
 
 }

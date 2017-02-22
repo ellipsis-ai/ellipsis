@@ -109,7 +109,7 @@ class UserServiceImpl @Inject() (
     for {
       maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
       maybeName <- maybeSlackAccount.map { acc =>
-        event.client.getUserInfo(acc.loginInfo.providerKey).map(info => Some(info.name)).recover {
+        event.clientFor(dataService).getUserInfo(acc.loginInfo.providerKey).map(info => Some(info.name)).recover {
           case e: ApiError => None
         }
       }.getOrElse(Future.successful(None))

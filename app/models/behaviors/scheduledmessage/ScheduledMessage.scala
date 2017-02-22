@@ -195,7 +195,7 @@ case class ScheduledMessage(
       didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
       results <- eventHandler.handle(event, None)
     } yield {
-      sendResults(results.toList, event, configuration, didInterrupt)
+      sendResults(results.toList, event, configuration, didInterrupt, dataService)
     }
   }
 
@@ -203,15 +203,16 @@ case class ScheduledMessage(
                   result: BotResult,
                   event: ScheduledMessageEvent,
                   configuration: Configuration,
-                  didInterrupt: Boolean
+                  didInterrupt: Boolean,
+                  dataService: DataService
                 )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
       _ <- if (result.hasText) {
-        scheduleInfoResultFor(event, result, configuration, didInterrupt).sendIn(None, None)
+        scheduleInfoResultFor(event, result, configuration, didInterrupt).sendIn(None, None, dataService)
       } else {
         Future.successful({})
       }
-      _ <- result.sendIn(None, None)
+      _ <- result.sendIn(None, None, dataService)
     } yield {
       val channelInfo =
         event.maybeChannel.
@@ -225,13 +226,14 @@ case class ScheduledMessage(
                    results: List[BotResult],
                    event: ScheduledMessageEvent,
                    configuration: Configuration,
-                   didInterrupt: Boolean
+                   didInterrupt: Boolean,
+                   dataService: DataService
                  )(implicit actorSystem: ActorSystem): Future[Unit] = {
     if (results.isEmpty) {
       Future.successful({})
     } else {
-      sendResult(results.head, event, configuration, didInterrupt).flatMap { _ =>
-        sendResults(results.tail, event, configuration, didInterrupt)
+      sendResult(results.head, event, configuration, didInterrupt, dataService).flatMap { _ =>
+        sendResults(results.tail, event, configuration, didInterrupt, dataService)
       }
     }
   }

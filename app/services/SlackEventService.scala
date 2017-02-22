@@ -31,7 +31,7 @@ class SlackEventService @Inject()(
           maybeConversation.map(c => Future.successful(Some(c))).getOrElse(event.maybeConversationRootedHere(dataService)).flatMap { maybeConversation =>
             maybeConversation.map(c => dataService.conversations.find(c.id)).getOrElse(Future.successful(None)).flatMap { maybeUpdatedConversation =>
               Future.sequence(
-                results.map(result => result.sendIn(None, maybeUpdatedConversation).map { _ =>
+                results.map(result => result.sendIn(None, maybeUpdatedConversation, dataService).map { _ =>
                   Logger.info(s"Sending result [${result.fullText}] in response to slack message [${event.messageText}] in channel [${event.channel}]")
                 })
               )
@@ -48,8 +48,9 @@ class SlackEventService @Inject()(
       Future {
         Thread.sleep(1500)
         if (!p.isCompleted) {
-          event.client.addReactionToMessage("thinking_face", event.channel, event.ts).map { _ =>
-            p.future.onComplete(_ => event.client.removeReactionFromMessage("thinking_face", event.channel, event.ts))
+          val client = event.clientFor(dataService)
+          client.addReactionToMessage("thinking_face", event.channel, event.ts).map { _ =>
+            p.future.onComplete(_ => client.removeReactionFromMessage("thinking_face", event.channel, event.ts))
           }
         }
       }
