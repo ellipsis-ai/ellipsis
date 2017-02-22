@@ -13,11 +13,11 @@ define(function(require) {
       labelDataType: React.PropTypes.bool
     },
 
-    getLabelFromTrigger: function(trigger) {
-      var className = this.props.disableLink ? "" : "link";
+    getLabelFromTrigger: function(trigger, showLink) {
+      var className = showLink ? "link" : "";
       return trigger && trigger.text ?
         (<span className={`${className} type-monospace`}>{trigger.displayText}</span>) :
-        (<span className={`${className} type-italic`}>(New skill)</span>);
+        (<span className={`${className} type-italic`}>(No triggers)</span>);
     },
 
     getNonRegexTriggerLabelsFromTriggers: function(triggers) {
@@ -54,13 +54,13 @@ define(function(require) {
       }
     },
 
-    getTriggersFromVersion: function(version) {
+    getTriggersFromVersion: function(version, linkFirstTrigger) {
       var firstTriggerIndex = version.findFirstTriggerIndexForDisplay();
       var firstTrigger = version.triggers[firstTriggerIndex];
       var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTriggerIndex);
       return (
         <span>
-          {this.getLabelFromTrigger(firstTrigger)}
+          {this.getLabelFromTrigger(firstTrigger, linkFirstTrigger)}
           {this.props.limitTriggers ? null : (
             <span>
               {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
@@ -87,11 +87,12 @@ define(function(require) {
       if (name && name.trim().length > 0) {
         return (
           <div className={(this.props.limitTriggers ? "display-ellipsis" : "")}>
-            <span className="link">{name}</span>
+            <span className="link mrm">{name}:</span>
+            {this.getTriggersFromVersion(version, false)}
           </div>
         );
       } else {
-        return this.getTriggersFromVersion(version);
+        return this.getTriggersFromVersion(version, true);
       }
     },
 

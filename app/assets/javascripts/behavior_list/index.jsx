@@ -8,6 +8,7 @@ define(function(require) {
     Formatter = require('../lib/formatter'),
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels'),
+    Sort = require('../lib/sort'),
     SVGInstalled = require('../svg/installed');
 
   const BehaviorList = React.createClass({
@@ -243,7 +244,8 @@ define(function(require) {
     },
 
     renderBehaviorGroup: function(group) {
-      var versionRows = group.behaviorVersions.map((ea, i) => {
+      var sorted = Sort.arrayAlphabeticalBy(group.behaviorVersions, (version) => version.sortKey);
+      var versionRows = sorted.map((ea, i) => {
         return this.renderBehaviorVersionRow(ea, i, group);
       });
       return [this.renderBehaviorGroupTitleRow(group)].concat(versionRows);

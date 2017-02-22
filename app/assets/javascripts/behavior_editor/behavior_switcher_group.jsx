@@ -18,7 +18,7 @@ define(function(require) {
     },
 
     getBehaviorList: function() {
-      return Sort.arrayAlphabeticalBy(this.props.behaviors, (behavior) => behavior.getFirstTriggerText());
+      return Sort.arrayAlphabeticalBy(this.props.behaviors, (behavior) => behavior.sortKey);
     },
 
     isCurrentVersion: function(version) {
