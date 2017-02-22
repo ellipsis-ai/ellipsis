@@ -207,10 +207,22 @@ class BehaviorEditorController @Inject() (
       behaviorId => {
         for {
           maybeBehavior <- dataService.behaviors.find(behaviorId, request.identity)
+          otherBehaviorsInGroup <- maybeBehavior.map { behavior =>
+            dataService.behaviors.allForGroup(behavior.group).map { all =>
+              all.diff(Seq(behavior))
+            }
+          }.getOrElse(Future.successful(Seq()))
           _ <- maybeBehavior.map { behavior =>
             dataService.behaviors.unlearn(behavior)
           }.getOrElse(Future.successful(Unit))
-        } yield Redirect(routes.ApplicationController.index())
+        } yield {
+          val redirect = otherBehaviorsInGroup.headOption.map { otherBehavior =>
+            routes.BehaviorEditorController.edit(otherBehavior.id)
+          }.getOrElse {
+            routes.ApplicationController.index()
+          }
+          Redirect(redirect)
+        }
       }
     )
   }
