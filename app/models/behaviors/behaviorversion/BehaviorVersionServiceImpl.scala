@@ -18,7 +18,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.{Event, MessageEvent}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -232,7 +232,7 @@ class BehaviorVersionServiceImpl @Inject() (
     }
   }
 
-  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: MessageEvent): Future[Option[BotResult]] = {
+  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: Event): Future[Option[BotResult]] = {
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingIn(behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
@@ -263,7 +263,7 @@ class BehaviorVersionServiceImpl @Inject() (
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
-                 event: MessageEvent
+                 event: Event
                ): Future[BotResult] = {
     for {
       teamEnvVars <- dataService.teamEnvironmentVariables.allFor(behaviorVersion.team)

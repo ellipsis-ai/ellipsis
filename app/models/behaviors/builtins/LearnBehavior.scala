@@ -1,14 +1,14 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.Future
 
 case class LearnBehavior(
-                          event: MessageEvent,
+                          event: Event,
                           lambdaService: AWSLambdaService,
                           dataService: DataService
                         ) extends BuiltinBehavior {

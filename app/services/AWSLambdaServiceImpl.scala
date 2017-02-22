@@ -14,7 +14,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.behaviors.invocationtoken.InvocationToken
 import models.team.Team
@@ -108,7 +108,7 @@ class AWSLambdaServiceImpl @Inject() (
                       token: InvocationToken,
                       payloadData: Seq[(String, JsValue)],
                       team: Team,
-                      event: MessageEvent,
+                      event: Event,
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                       environmentVariables: Seq[EnvironmentVariable],
                       successFn: InvokeResult => BotResult
@@ -149,7 +149,7 @@ class AWSLambdaServiceImpl @Inject() (
               behaviorVersion: BehaviorVersion,
               parametersWithValues: Seq[ParameterWithValue],
               environmentVariables: Seq[EnvironmentVariable],
-              event: MessageEvent
+              event: Event
               ): Future[BotResult] = {
     for {
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)

@@ -2,13 +2,13 @@ package models.behaviors.builtins
 
 import akka.actor.ActorSystem
 import models.behaviors.BotResult
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.Future
 
 trait BuiltinBehavior {
-  val event: MessageEvent
+  val event: Event
   val lambdaService: AWSLambdaService
   val dataService: DataService
 
@@ -33,9 +33,9 @@ object BuiltinBehavior {
   val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
   val setTimeZoneRegex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
 
-  def maybeFrom(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
+  def maybeFrom(event: Event, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
     if (event.includesBotMention) {
-      uneducateQuotes(event.relevantMessageText) match {
+      uneducateQuotes(event.messageText) match {
         case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, event, lambdaService, dataService))
         case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, event, lambdaService, dataService))
         case startLearnConversationRegex() => Some(LearnBehavior(event, lambdaService, dataService))

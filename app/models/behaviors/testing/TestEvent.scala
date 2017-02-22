@@ -16,15 +16,13 @@ import scala.concurrent.Future
 case class TestEvent(
                       user: User,
                       team: Team,
-                      fullMessageText: String,
+                      messageText: String,
                       includesBotMention: Boolean
                     ) extends MessageEvent {
 
   val teamId = team.id
 
   val messageBuffer: ArrayBuffer[String] = new ArrayBuffer()
-
-  override def relevantMessageText: String = fullMessageText
 
   lazy val userIdForContext = user.id
   lazy val name = "test"

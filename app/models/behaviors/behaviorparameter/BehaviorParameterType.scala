@@ -1,19 +1,19 @@
 package models.behaviors.behaviorparameter
 
 import com.fasterxml.jackson.core.JsonParseException
-import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
+import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import models.team.Team
 import play.api.libs.json._
 import services.{AWSLambdaConstants, DataService}
 
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 sealed trait BehaviorParameterType {
 
@@ -64,7 +64,7 @@ sealed trait BehaviorParameterType {
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]]
 
-  def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
+  def handleCollected(event: Event, context: BehaviorParameterContext): Future[Unit] = {
     val potentialValue = event.relevantMessageText
     val input = context.parameter.input
     if (input.isSaved) {
@@ -384,7 +384,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
     }
   }
 
-  override def handleCollected(event: MessageEvent, context: BehaviorParameterContext): Future[Unit] = {
+  override def handleCollected(event: Event, context: BehaviorParameterContext): Future[Unit] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
         val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)

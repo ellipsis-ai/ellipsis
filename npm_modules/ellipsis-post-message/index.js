@@ -1,8 +1,11 @@
+'use strict';
+
 const request = require('request');
 
 const errorMessages = {
   ELLIPSIS_OBJECT_MISSING: "You need to pass an `ellipsis` object through from an Ellipsis action",
   MESSAGE_MISSING: "You need to pass a `message` argument",
+  ACTION_NAME_MISSING: "You need to pass an `actionName` argument",
   SCHEDULE_ACTION_MISSING: "You need to pass an `action` argument for the thing you want to schedule",
   UNSCHEDULE_ACTION_MISSING: "You need to pass an `action` argument for the thing you want to unschedule",
   RECURRENCE_MISSING: "You need to pass a `recurrence` argument to specify when you want to schedule the action to recur, e.g. \"every weekday at 9am\""
@@ -18,7 +21,79 @@ function errorHandler(ellipsis, args, message) {
   }
 }
 
+function handleResponse(args, ellipsis, error, response, body) {
+  if (error) {
+    errorHandler(ellipsis, args, error);
+  } else if (response.statusCode !== 200) {
+    errorHandler(ellipsis, args, response.statusCode + ": " + response.body);
+  } else if (args.success) {
+    args.success(response, body);
+  } else {
+    // do nothing if no success parameter was provided
+  }
+}
+
+function paramsFormDataFor(params) {
+  if (params) {
+    let data = {};
+    params.forEach((ea, i) => {
+      data[`params[${i}].name`] = ea.name;
+      data[`params[${i}].value`] = ea.value;
+    });
+    return data;
+  } else {
+    return {};
+  }
+}
+
 const PM = {
+
+  runAction: function (args) {
+    const ellipsis = args.ellipsis;
+    if (typeof ellipsis !== "object") {
+      errorHandler(null, args, errorMessages.ELLIPSIS_OBJECT_MISSING);
+    } else {
+      const actionName = args.actionName;
+      if (!actionName) {
+        errorHandler(ellipsis, args, errorMessages.ACTION_NAME_MISSING);
+      } else {
+        const responseContext = args.responseContext ? args.responseContext : ellipsis.userInfo.messageInfo.medium;
+        const channel = args.channel ? args.channel : ellipsis.userInfo.messageInfo.channel;
+        const formData = Object.assign({
+          actionName: actionName,
+          responseContext: responseContext,
+          channel: channel,
+          token: ellipsis.token
+        }, paramsFormDataFor(args.params));
+        request.
+          post(
+            {
+              url: ellipsis.apiBaseUrl + "/api/run_action",
+              form: formData
+            }, (error, response, body) => handleResponse(args, ellipsis, error, response, body)
+        );
+      }
+    }
+  },
+
+  promiseToRunAction: function(args) {
+    const ellipsis = args.ellipsis;
+    const actionName = args.actionName;
+    if (typeof ellipsis !== "object") {
+      errorHandler(null, args, errorMessages.ELLIPSIS_OBJECT_MISSING);
+    } else if (!actionName) {
+      errorHandler(ellipsis, args, errorMessages.ACTION_NAME_MISSING);
+    } else {
+      return new Promise((resolve, reject) => {
+        PM.runAction(Object.assign({}, args, {
+          ellipsis: ellipsis,
+          actionName: actionName,
+          success: resolve,
+          error: reject
+        }));
+      });
+    }
+  },
 
   postMessage: function (args) {
     const ellipsis = args.ellipsis;
@@ -32,25 +107,16 @@ const PM = {
         const responseContext = args.responseContext ? args.responseContext : ellipsis.userInfo.messageInfo.medium;
         const channel = args.channel ? args.channel : ellipsis.userInfo.messageInfo.channel;
         request.
-          post({
-            url: ellipsis.apiBaseUrl + "/api/post_message",
-            form: {
-              message: message,
-              responseContext: responseContext,
-              channel: channel,
-              token: ellipsis.token
-            }
-          }, (error, response, body) => {
-            if (error) {
-              errorHandler(ellipsis, args, error);
-            } else if (response.statusCode !== 200) {
-              errorHandler(ellipsis, args, response.statusCode + ": " + response.body);
-            } else if (args.success) {
-              args.success(response, body);
-            } else {
-              // do nothing if no success parameter was provided
-            }
-          }
+          post(
+            {
+              url: ellipsis.apiBaseUrl + "/api/post_message",
+              form: {
+                message: message,
+                responseContext: responseContext,
+                channel: channel,
+                token: ellipsis.token
+              }
+            }, (error, response, body) => handleResponse(args, ellipsis, error, response, body)
         );
       }
     }

@@ -6,7 +6,7 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.team.Team
 
 import scala.concurrent.Future
@@ -27,7 +27,7 @@ trait InvocationLogEntryService {
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  result: BotResult,
-                 event: MessageEvent,
+                 event: Event,
                  maybeUserIdForContext: Option[String],
                  user: User,
                  runtimeInMilliseconds: Long

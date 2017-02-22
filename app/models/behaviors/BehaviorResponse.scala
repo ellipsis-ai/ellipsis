@@ -9,7 +9,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -36,10 +36,10 @@ case class ParameterWithValue(
 }
 
 case class BehaviorResponse(
-                             event: MessageEvent,
+                             event: Event,
                              behaviorVersion: BehaviorVersion,
                              parametersWithValues: Seq[ParameterWithValue],
-                             activatedTrigger: MessageTrigger,
+                             maybeActivatedTrigger: Option[MessageTrigger],
                              lambdaService: AWSLambdaService,
                              dataService: DataService,
                              cache: CacheApi,
@@ -107,7 +107,7 @@ case class BehaviorResponse(
                 behaviorVersion,
                 event,
                 maybeChannel,
-                activatedTrigger,
+                maybeActivatedTrigger,
                 dataService
               )
               _ <- Future.sequence(parametersWithValues.map { p =>
@@ -127,7 +127,7 @@ case class BehaviorResponse(
 object BehaviorResponse {
 
   def parametersWithValuesFor(
-                               event: MessageEvent,
+                               event: Event,
                                behaviorVersion: BehaviorVersion,
                                paramValues: Map[String, String],
                                maybeConversation: Option[Conversation],
@@ -157,10 +157,10 @@ object BehaviorResponse {
   }
 
   def buildFor(
-                event: MessageEvent,
+                event: Event,
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
-                activatedTrigger: MessageTrigger,
+                maybeActivatedTrigger: Option[MessageTrigger],
                 maybeConversation: Option[Conversation],
                 lambdaService: AWSLambdaService,
                 dataService: DataService,
@@ -169,12 +169,12 @@ object BehaviorResponse {
                 configuration: Configuration
                 ): Future[BehaviorResponse] = {
     parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cache, configuration).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, paramsWithValues, activatedTrigger, lambdaService, dataService, cache, ws, configuration)
+      BehaviorResponse(event, behaviorVersion, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, cache, ws, configuration)
     }
   }
 
   def allFor(
-              event: MessageEvent,
+              event: Event,
               maybeTeam: Option[Team],
               maybeLimitToBehavior: Option[Behavior],
               lambdaService: AWSLambdaService,
@@ -183,61 +183,6 @@ object BehaviorResponse {
               ws: WSClient,
               configuration: Configuration
                ): Future[Seq[BehaviorResponse]] = {
-    for {
-      maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
-        dataService.behaviors.maybeCurrentVersionFor(limitToBehavior)
-      }.getOrElse(Future.successful(None))
-      triggers <- maybeLimitToBehaviorVersion.map { limitToBehaviorVersion =>
-        dataService.messageTriggers.allFor(limitToBehaviorVersion)
-      }.getOrElse {
-        maybeTeam.map { team =>
-          dataService.messageTriggers.allActiveFor(team)
-        }.getOrElse(Future.successful(Seq()))
-      }
-      activatedTriggerLists <- Future.successful {
-        triggers.
-          filter(_.isActivatedBy(event)).
-          groupBy(_.behaviorVersion).
-          values.
-          toSeq
-      }
-      activatedTriggerListsWithParamCounts <- Future.sequence(
-        activatedTriggerLists.map { list =>
-          Future.sequence(list.map { trigger =>
-            for {
-              params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
-            } yield {
-              (trigger, trigger.invocationParamsFor(event, params).size)
-            }
-          })
-        }
-      )
-      // we want to chose activated triggers with more params first
-      activatedTriggers <- Future.successful(activatedTriggerListsWithParamCounts.flatMap { list =>
-        list.
-          sortBy { case(_, paramCount) => paramCount }.
-          map { case(trigger, _) => trigger }.
-          reverse.
-          headOption
-      })
-      responses <- Future.sequence(activatedTriggers.map { trigger =>
-        for {
-          params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
-          response <-
-            BehaviorResponse.buildFor(
-              event,
-              trigger.behaviorVersion,
-              trigger.invocationParamsFor(event, params),
-              trigger,
-              None,
-              lambdaService,
-              dataService,
-              cache,
-              ws,
-              configuration
-            )
-        } yield response
-      })
-    } yield responses
+    event.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cache, ws, configuration)
   }
 }

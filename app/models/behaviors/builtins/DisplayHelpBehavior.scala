@@ -4,11 +4,10 @@ import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.{MessageEvent, SlackMessageAction, SlackMessageActions, SlackMessageEvent}
-import utils.FuzzyMatcher
+import models.behaviors.events._
+import utils.{Color, FuzzyMatchable, FuzzyMatcher, SlackMessageSender}
 import models.behaviors.{BotResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
-import utils.{Color, FuzzyMatchable}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,7 +19,7 @@ case class DisplayHelpBehavior(
                          maybeSkillId: Option[String],
                          maybeStartAtIndex: Option[Int],
                          isFirstTrigger: Boolean,
-                         event: MessageEvent,
+                         event: Event,
                          lambdaService: AWSLambdaService,
                          dataService: DataService
                        ) extends BuiltinBehavior {
@@ -101,7 +100,7 @@ case class DisplayHelpBehavior(
   }
 
   private def introResultFor(groupData: Seq[BehaviorGroupData], startAt: Int): BotResult = {
-    val endAt = startAt + SlackMessageEvent.MAX_ACTIONS_PER_ATTACHMENT - 1
+    val endAt = startAt + SlackMessageSender.MAX_ACTIONS_PER_ATTACHMENT - 1
     val groupsToShow = groupData.slice(startAt, endAt)
     val groupsRemaining = groupData.slice(endAt, groupData.length)
 

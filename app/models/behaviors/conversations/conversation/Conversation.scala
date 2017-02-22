@@ -4,7 +4,7 @@ import java.time.OffsetDateTime
 
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{MessageEvent, SlackMessageEvent}
+import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -17,9 +17,9 @@ import scala.concurrent.Future
 
 trait Conversation {
   val id: String
-  val trigger: MessageTrigger
-  val triggerMessage: String
-  val behaviorVersion: BehaviorVersion = trigger.behaviorVersion
+  val behaviorVersion: BehaviorVersion
+  val maybeTrigger: Option[MessageTrigger]
+  val maybeTriggerMessage: Option[String]
   val conversationType: String
   val context: String
   val maybeChannel: Option[String]
@@ -36,7 +36,7 @@ trait Conversation {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
 
-  private def maybeSlackEventForBackgrounding(dataService: DataService): Future[Option[MessageEvent]] = {
+  private def maybeSlackEventForBackgrounding(dataService: DataService): Future[Option[Event]] = {
     dataService.slackBotProfiles.allFor(behaviorVersion.team).map { botProfiles =>
       for {
         botProfile <- botProfiles.headOption
@@ -45,7 +45,7 @@ trait Conversation {
     }
   }
 
-  def maybeEventForBackgrounding(dataService: DataService): Future[Option[MessageEvent]] = {
+  def maybeEventForBackgrounding(dataService: DataService): Future[Option[Event]] = {
     context match {
       case Conversation.SLACK_CONTEXT => maybeSlackEventForBackgrounding(dataService)
       case _ => Future.successful(None)
@@ -58,9 +58,9 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: MessageEvent, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
+  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
   def respond(
-               event: MessageEvent,
+               event: Event,
                lambdaService: AWSLambdaService,
                dataService: DataService,
                cache: CacheApi,
@@ -69,7 +69,7 @@ trait Conversation {
              ): Future[BotResult]
 
   def resultFor(
-                 event: MessageEvent,
+                 event: Event,
                  lambdaService: AWSLambdaService,
                  dataService: DataService,
                  cache: CacheApi,
@@ -83,7 +83,7 @@ trait Conversation {
   }
 
   def toRaw: RawConversation = {
-    RawConversation(id, trigger.id, triggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state, maybeScheduledMessageId)
+    RawConversation(id, behaviorVersion.id, maybeTrigger.map(_.id), maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state, maybeScheduledMessageId)
   }
 }
 

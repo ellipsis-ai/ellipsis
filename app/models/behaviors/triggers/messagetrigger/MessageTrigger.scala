@@ -3,7 +3,7 @@ package models.behaviors.triggers.messagetrigger
 import java.util.regex.PatternSyntaxException
 
 import models.behaviors.behaviorparameter.BehaviorParameter
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.{Event, MessageEvent}
 import models.behaviors.triggers.Trigger
 import services.AWSLambdaConstants
 import utils.FuzzyMatchable
@@ -41,16 +41,23 @@ trait MessageTrigger extends Trigger with FuzzyMatchable {
     }.getOrElse(Map())
   }
 
-  def invocationParamsFor(event: MessageEvent, params: Seq[BehaviorParameter]): Map[String, String] = {
-    invocationParamsFor(event.relevantMessageText, params)
+  def invocationParamsFor(event: Event, params: Seq[BehaviorParameter]): Map[String, String] = {
+    event match {
+      case e: MessageEvent => invocationParamsFor(e.relevantMessageText, params)
+      case _ => Map()
+    }
   }
 
   def matches(relevantMessageText: String, includesBotMention: Boolean): Boolean = {
     isValidRegex && regex.findFirstMatchIn(relevantMessageText).nonEmpty && (!requiresBotMention || includesBotMention)
   }
 
-  def isActivatedBy(event: MessageEvent): Boolean = {
-    matches(event.relevantMessageText, event.includesBotMention)
+  def isActivatedBy(event: Event): Boolean = {
+    event match {
+      case e: MessageEvent => matches(e.relevantMessageText, e.includesBotMention)
+      case _ => false
+    }
+
   }
 
 }

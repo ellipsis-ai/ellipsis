@@ -1,7 +1,7 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
@@ -13,7 +13,7 @@ case class ScheduleBehavior(
                              text: String,
                              isForIndividualMembers: Boolean,
                              recurrence: String,
-                             event: MessageEvent,
+                             event: Event,
                              lambdaService: AWSLambdaService,
                              dataService: DataService
                              ) extends BuiltinBehavior {

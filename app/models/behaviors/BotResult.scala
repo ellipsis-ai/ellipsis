@@ -7,7 +7,7 @@ import models.accounts.oauth2application.OAuth2Application
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageActions, MessageEvent, SlackMessageAction, SlackMessageActions}
+import models.behaviors.events._
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -26,7 +26,7 @@ object ResultType extends Enumeration {
 sealed trait BotResult {
   val resultType: ResultType.Value
   val forcePrivateResponse: Boolean
-  val event: MessageEvent
+  val event: Event
   def text: String
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
@@ -50,7 +50,7 @@ trait BotResultWithLogResult extends BotResult {
 }
 
 case class SuccessResult(
-                          event: MessageEvent,
+                          event: Event,
                           result: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
@@ -66,7 +66,7 @@ case class SuccessResult(
   }
 }
 
-case class SimpleTextResult(event: MessageEvent, simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
+case class SimpleTextResult(event: Event, simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
 
   val resultType = ResultType.SimpleText
 
@@ -74,7 +74,7 @@ case class SimpleTextResult(event: MessageEvent, simpleText: String, forcePrivat
 
 }
 
-case class TextWithActionsResult(event: MessageEvent, simpleText: String, forcePrivateResponse: Boolean, actions: MessageActions) extends BotResult {
+case class TextWithActionsResult(event: Event, simpleText: String, forcePrivateResponse: Boolean, actions: MessageActions) extends BotResult {
   val resultType = ResultType.TextWithActions
 
   def text: String = simpleText
@@ -84,7 +84,7 @@ case class TextWithActionsResult(event: MessageEvent, simpleText: String, forceP
   }
 }
 
-case class NoResponseResult(event: MessageEvent, maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
+case class NoResponseResult(event: Event, maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
 
   val resultType = ResultType.NoResponse
   val forcePrivateResponse = false // N/A
@@ -116,7 +116,7 @@ trait WithBehaviorLink {
 }
 
 case class UnhandledErrorResult(
-                                 event: MessageEvent,
+                                 event: Event,
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
@@ -133,7 +133,7 @@ case class UnhandledErrorResult(
 }
 
 case class HandledErrorResult(
-                               event: MessageEvent,
+                               event: Event,
                                behaviorVersion: BehaviorVersion,
                                dataService: DataService,
                                configuration: Configuration,
@@ -158,7 +158,7 @@ case class HandledErrorResult(
 }
 
 case class SyntaxErrorResult(
-                              event: MessageEvent,
+                              event: Event,
                               behaviorVersion: BehaviorVersion,
                               dataService: DataService,
                               configuration: Configuration,
@@ -180,7 +180,7 @@ case class SyntaxErrorResult(
 }
 
 case class NoCallbackTriggeredResult(
-                                      event: MessageEvent,
+                                      event: Event,
                                       behaviorVersion: BehaviorVersion,
                                       dataService: DataService,
                                       configuration: Configuration
@@ -194,7 +194,7 @@ case class NoCallbackTriggeredResult(
 }
 
 case class MissingTeamEnvVarsResult(
-                                 event: MessageEvent,
+                                 event: Event,
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
@@ -216,7 +216,7 @@ case class MissingTeamEnvVarsResult(
 
 }
 
-case class AWSDownResult(event: MessageEvent) extends BotResult {
+case class AWSDownResult(event: Event) extends BotResult {
 
   val resultType = ResultType.AWSDown
   val forcePrivateResponse = false
@@ -233,7 +233,7 @@ case class AWSDownResult(event: MessageEvent) extends BotResult {
 
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
-                               event: MessageEvent,
+                               event: Event,
                                loginToken: LoginToken,
                                cache: CacheApi,
                                configuration: Configuration
@@ -271,7 +271,7 @@ case class OAuth2TokenMissing(
 
 case class RequiredApiNotReady(
                                 required: RequiredOAuth2ApiConfig,
-                                event: MessageEvent,
+                                event: Event,
                                 cache: CacheApi,
                                 dataService: DataService,
                                 configuration: Configuration

@@ -3,7 +3,7 @@ package models.behaviors
 import akka.actor.ActorSystem
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
@@ -28,7 +28,7 @@ case class MessageInfo(medium: String, channel: Option[String], userId: String, 
 
 object MessageInfo {
 
-  def buildFor(event: MessageEvent, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
+  def buildFor(event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
     event.detailsFor(ws, dataService).map { details =>
       MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details)
     }
@@ -60,7 +60,7 @@ case class UserInfo(
 
 object UserInfo {
 
-  def buildFor(maybeUser: Option[User], event: MessageEvent, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
+  def buildFor(maybeUser: Option[User], event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
     for {
       linkedOAuth2Tokens <- maybeUser.map { user =>
         dataService.linkedOAuth2Tokens.allForUser(user, ws)
@@ -81,7 +81,7 @@ object UserInfo {
     }
   }
 
-  def buildFor(event: MessageEvent, teamId: String, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
+  def buildFor(event: Event, teamId: String, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
     for {
       maybeLinkedAccount <- dataService.linkedAccounts.find(event.loginInfo, teamId)
       maybeUser <- Future.successful(maybeLinkedAccount.map(_.user))
