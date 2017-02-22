@@ -3,12 +3,15 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduledmessage.ScheduledMessage
+import services.DataService
 
 import scala.concurrent.Future
 
 case class ScheduledMessageEvent(underlying: MessageEvent, scheduledMessage: ScheduledMessage) extends MessageEvent {
 
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]] = underlying.eventualMaybeDMChannel
+  def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    underlying.eventualMaybeDMChannel(dataService)
+  }
 
   def isDirectMessage(channel: String) = underlying.isDirectMessage(channel)
 
@@ -17,8 +20,11 @@ case class ScheduledMessageEvent(underlying: MessageEvent, scheduledMessage: Sch
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions]
-                 )(implicit actorSystem: ActorSystem) = underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions)
+                   maybeActions: Option[MessageActions],
+                   dataService: DataService
+                 )(implicit actorSystem: ActorSystem) = {
+    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions, dataService)
+  }
 
   lazy val maybeChannel: Option[String] = underlying.maybeChannel
   lazy val maybeThreadId: Option[String] = underlying.maybeThreadId

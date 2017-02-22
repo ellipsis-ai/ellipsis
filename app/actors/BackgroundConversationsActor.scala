@@ -54,12 +54,14 @@ class BackgroundConversationsActor @Inject() (
                   s"""<@${event.userIdForContext}>: Looks like you weren't able to answer this right away.${quoteText}No problem! I've moved this conversation to a thread.""".stripMargin,
                   convo.behaviorVersion.forcePrivateResponse,
                   maybeShouldUnfurl = None,
-                  Some(convo)
+                  Some(convo),
+                  maybeActions = None,
+                  dataService
                 ).flatMap { maybeLastTs =>
                   val convoWithThreadId = convo.copyWithMaybeThreadId(maybeLastTs)
                   dataService.conversations.save(convoWithThreadId).flatMap { _ =>
                     convoWithThreadId.respond(event, lambdaService, dataService, cache, ws, configuration).map { result =>
-                      result.sendIn(None, Some(convoWithThreadId))
+                      result.sendIn(None, Some(convoWithThreadId), dataService)
                     }
                   }
                 }

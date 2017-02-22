@@ -28,7 +28,7 @@ case class TestEvent(
   lazy val name = "test"
   lazy val maybeChannel = None
   lazy val maybeThreadId = None
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = Future.successful(None)
+  def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem) = Future.successful(None)
   val isResponseExpected = true
 
   def isDirectMessage(channel: String): Boolean = false
@@ -38,7 +38,8 @@ case class TestEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions]
+                   maybeActions: Option[MessageActions],
+                   dataService: DataService
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }

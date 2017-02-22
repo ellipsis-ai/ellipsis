@@ -56,7 +56,7 @@ class EventHandler @Inject() (
              |$triggerMessage`.
              |""".stripMargin
         cancelConversationResult(event, ea, cancelMessage).flatMap { result =>
-          result.sendIn(None, None).map(_ => result)
+          result.sendIn(None, None, dataService).map(_ => result)
         }
       })
     }.map(interruptionResults => interruptionResults.nonEmpty)

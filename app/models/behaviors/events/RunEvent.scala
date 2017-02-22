@@ -43,10 +43,11 @@ case class RunEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None
+                   maybeActions: Option[MessageActions] = None,
+                   dataService: DataService
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     SlackMessageSender(
-      client,
+      clientFor(dataService),
       user,
       unformattedText,
       forcePrivate,

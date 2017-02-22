@@ -80,8 +80,8 @@ case class SlackMessageEvent(
     } yield messages
   }
 
-  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[String] = {
-    eventualMaybeDMChannel(actorSystem).map { maybeDMChannel =>
+  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation], dataService: DataService)(implicit actorSystem: ActorSystem): Future[String] = {
+    eventualMaybeDMChannel(dataService)(actorSystem).map { maybeDMChannel =>
       (if (forcePrivate) {
         maybeDMChannel
       } else {
@@ -99,11 +99,12 @@ case class SlackMessageEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None
+                   maybeActions: Option[MessageActions] = None,
+                   dataService: DataService
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    channelForSend(forcePrivate, maybeConversation).flatMap { channelToUse =>
+    channelForSend(forcePrivate, maybeConversation, dataService).flatMap { channelToUse =>
       SlackMessageSender(
-        client,
+        clientFor(dataService),
         user,
         unformattedText,
         forcePrivate,
@@ -124,7 +125,7 @@ case class SlackMessageEvent(
   }
 
   override def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
-    client.getUserInfo(userIdForContext).map { user =>
+    clientFor(dataService).getUserInfo(userIdForContext).map { user =>
       val profileData = user.profile.map { profile =>
         Seq(
           profile.first_name.map(v => "firstName" -> JsString(v)),

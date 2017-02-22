@@ -24,4 +24,6 @@ trait SlackBotProfileService {
     SlackChannels(SlackApiClient(botProfile.token))
   }
 
+  def clientFor(botProfile: SlackBotProfile): SlackApiClient = SlackApiClient(botProfile.token)
+
 }

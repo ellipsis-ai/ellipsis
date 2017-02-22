@@ -61,6 +61,10 @@ class APIController @Inject() (
     val token: String
   }
 
+  trait ApiMethodWithMessageInfo extends ApiMethodInfo {
+    val message: String
+  }
+
   case class ApiMethodContext(
                                maybeInvocationToken: Option[InvocationToken],
                                maybeUserForApiToken: Option[User],
@@ -68,7 +72,26 @@ class APIController @Inject() (
                                maybeSlackProfile: Option[SlackProfile],
                                maybeScheduledMessage: Option[ScheduledMessage],
                                maybeSlackChannelId: Option[String]
-                             )
+                             ) {
+
+    def maybeEventFor(info: ApiMethodWithMessageInfo): Option[Event] = {
+      maybeBotProfile.map { botProfile =>
+        val slackEvent = SlackMessageEvent(
+          botProfile,
+          maybeSlackChannelId.getOrElse(info.channel),
+          None,
+          maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
+          info.message,
+          SlackTimestamp.now
+        )
+        val event: Event = maybeScheduledMessage.map { scheduledMessage =>
+          ScheduledMessageEvent(slackEvent, scheduledMessage)
+        }.getOrElse(slackEvent)
+        event
+      }
+    }
+
+  }
 
   def apiMethodContextFor(info: ApiMethodInfo): Future[ApiMethodContext] = {
     for {
@@ -127,13 +150,13 @@ class APIController @Inject() (
                        |""".stripMargin
                   }
                   val introResult = SimpleTextResult(event, resultText, result.forcePrivateResponse)
-                  introResult.sendIn(None, None)
+                  introResult.sendIn(None, None, dataService)
                 }.getOrElse(Future.successful({}))
               } else {
                 Future.successful({})
               }
               eventualIntroSend.flatMap { _ =>
-                result.sendIn(None, None).map { _ =>
+                result.sendIn(None, None, dataService).map { _ =>
                   val channelText = event.maybeChannel.map(c => s" in channel [$c]").getOrElse("")
                   Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.messageText}]$channelText")
                 }
@@ -223,7 +246,7 @@ class APIController @Inject() (
                               responseContext: String,
                               channel: String,
                               token: String
-                            ) extends ApiMethodInfo
+                            ) extends ApiMethodWithMessageInfo
 
   private val postMessageForm = Form(
     mapping(
@@ -259,6 +282,47 @@ class APIController @Inject() (
             }
           )
           result <- runBehaviorFor(maybeEvent, context)
+        } yield result
+
+        eventualResult.recover {
+          case e: InvalidTokenException => BadRequest("Invalid token")
+        }
+      }
+    )
+
+  }
+
+  case class SayInfo(
+                      message: String,
+                      responseContext: String,
+                      channel: String,
+                      token: String
+                    ) extends ApiMethodWithMessageInfo
+
+  private val sayForm = Form(
+    mapping(
+      "message" -> nonEmptyText,
+      "responseContext" -> nonEmptyText,
+      "channel" -> nonEmptyText,
+      "token" -> nonEmptyText
+    )(SayInfo.apply)(SayInfo.unapply)
+  )
+
+  def say = Action.async { implicit request =>
+    sayForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.toString))
+      },
+      info => {
+        val eventualResult = for {
+          context <- apiMethodContextFor(info)
+          maybeEvent <- Future.successful(context.maybeEventFor(info))
+          result <- maybeEvent.map { event =>
+            val botResult = SimpleTextResult(event, info.message, forcePrivateResponse = false)
+            botResult.sendIn(None, None, dataService).map { _ =>
+              Ok(Json.toJson(Seq(botResult.fullText)))
+            }
+          }.getOrElse(Future.successful(NotFound("")))
         } yield result
 
         eventualResult.recover {
