@@ -1,6 +1,5 @@
 define(function(require) {
   var React = require('react'),
-    Checklist = require('./checklist'),
     HelpButton = require('../help/help_button'),
     SectionHeading = require('./section_heading'),
     TriggerInput = require('./trigger_input'),
