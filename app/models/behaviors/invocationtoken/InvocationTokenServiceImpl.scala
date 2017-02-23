@@ -9,7 +9,7 @@ import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
-import models.behaviors.scheduledmessage.ScheduledMessage
+import models.behaviors.scheduling.Scheduled
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -48,8 +48,8 @@ class InvocationTokenServiceImpl @Inject() (
     }
   }
 
-  def createFor(user: User, behavior: Behavior, maybeScheduledMessage: Option[ScheduledMessage]): Future[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, user.id, behavior.id, maybeScheduledMessage.map(_.id), OffsetDateTime.now)
+  def createFor(user: User, behavior: Behavior, maybeScheduled: Option[Scheduled]): Future[InvocationToken] = {
+    val newInstance = InvocationToken(IDs.next, user.id, behavior.id, maybeScheduled.map(_.id), OffsetDateTime.now)
     dataService.run((all += newInstance).map(_ => newInstance))
   }
 

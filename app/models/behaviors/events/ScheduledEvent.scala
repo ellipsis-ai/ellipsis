@@ -1,19 +1,22 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.scheduledmessage.ScheduledMessage
-import services.DataService
+import models.behaviors.scheduling.Scheduled
+import models.team.Team
+import play.api.Configuration
+import play.api.cache.CacheApi
+import play.api.libs.ws.WSClient
+import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.Future
 
-case class ScheduledMessageEvent(underlying: MessageEvent, scheduledMessage: ScheduledMessage) extends MessageEvent {
+case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event {
 
   def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     underlying.eventualMaybeDMChannel(dataService)
   }
-
-  def isDirectMessage(channel: String) = underlying.isDirectMessage(channel)
 
   def sendMessage(
                    text: String,
@@ -32,8 +35,21 @@ case class ScheduledMessageEvent(underlying: MessageEvent, scheduledMessage: Sch
   lazy val name: String = underlying.name
   lazy val includesBotMention: Boolean = underlying.includesBotMention
   lazy val messageText: String = underlying.messageText
+  lazy val invocationLogText: String = underlying.invocationLogText
   lazy val isResponseExpected: Boolean = underlying.isResponseExpected
   lazy val userIdForContext: String = underlying.userIdForContext
-  override val maybeScheduledMessage: Option[ScheduledMessage] = Some(scheduledMessage)
+  override val maybeScheduled: Option[Scheduled] = Some(scheduled)
+
+  def allBehaviorResponsesFor(
+                               maybeTeam: Option[Team],
+                               maybeLimitToBehavior: Option[Behavior],
+                               lambdaService: AWSLambdaService,
+                               dataService: DataService,
+                               cache: CacheApi,
+                               ws: WSClient,
+                               configuration: Configuration
+                             ) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cache, ws, configuration)
+
+  def allOngoingConversations(dataService: DataService) = underlying.allOngoingConversations(dataService)
 
 }

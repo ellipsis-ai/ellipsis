@@ -1,4 +1,4 @@
-package models.behaviors.scheduledmessage
+package models.behaviors.scheduling.scheduledmessage
 
 import models.accounts.user.User
 import models.team.Team

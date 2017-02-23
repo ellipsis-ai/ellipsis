@@ -26,11 +26,13 @@ import models.behaviors.conversations.collectedparametervalue.CollectedParameter
 import models.behaviors.conversations.conversation.ConversationService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
-import models.behaviors.scheduledmessage.ScheduledMessageService
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.savedanswer.SavedAnswerService
+import models.behaviors.scheduling.recurrence.RecurrenceService
+import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -68,6 +70,8 @@ class PostgresDataService @Inject() (
                                       val conversationsProvider: Provider[ConversationService],
                                       val collectedParameterValuesProvider: Provider[CollectedParameterValueService],
                                       val scheduledMessagesProvider: Provider[ScheduledMessageService],
+                                      val scheduledBehaviorsProvider: Provider[ScheduledBehaviorService],
+                                      val recurrencesProvider: Provider[RecurrenceService],
                                       val invocationLogEntriesProvider: Provider[InvocationLogEntryService]
                             ) extends DataService {
 
@@ -100,6 +104,8 @@ class PostgresDataService @Inject() (
   val conversations = conversationsProvider.get
   val collectedParameterValues = collectedParameterValuesProvider.get
   val scheduledMessages = scheduledMessagesProvider.get
+  val scheduledBehaviors = scheduledBehaviorsProvider.get
+  val recurrences = recurrencesProvider.get
   val invocationLogEntries = invocationLogEntriesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)

@@ -1,15 +1,16 @@
-package models.behaviors.scheduledmessage
+package models.behaviors.scheduling
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 import akka.actor.ActorSystem
-import models.team.Team
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.events.{EventHandler, ScheduledMessageEvent, SlackMessageEvent}
+import models.behaviors.events.{EventHandler, ScheduledEvent}
+import models.behaviors.scheduling.recurrence.Recurrence
 import models.behaviors.{BotResult, SimpleTextResult}
+import models.team.Team
 import play.api.{Configuration, Logger}
 import services.DataService
 import slack.api.{ApiError, SlackApiClient}
@@ -18,36 +19,37 @@ import utils.SlackChannels
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class ScheduledMessage(
-                             id: String,
-                             text: String,
-                             maybeUser: Option[User],
-                             team: Team,
-                             maybeChannelName: Option[String],
-                             isForIndividualMembers: Boolean,
-                             recurrence: Recurrence,
-                             nextSentAt: OffsetDateTime,
-                             createdAt: OffsetDateTime
-                           ) {
+trait Scheduled {
+
+  val id: String
+  val maybeUser: Option[User]
+  val team: Team
+  val maybeChannelName: Option[String]
+  val isForIndividualMembers: Boolean
+  val recurrence: Recurrence
+  val nextSentAt: OffsetDateTime
+  val createdAt: OffsetDateTime
+
+  val displayText: String
 
   def followingSentAt: OffsetDateTime = recurrence.nextAfter(nextSentAt)
 
   def successResponse: String = shortDescription("OK, I will run")
 
-  def scheduleInfoResultFor(event: ScheduledMessageEvent, result: BotResult, configuration: Configuration, didInterrupt: Boolean) = {
+  def scheduleInfoResultFor(event: ScheduledEvent, result: BotResult, configuration: Configuration, didInterrupt: Boolean) = {
     val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.HelpController.scheduledMessages()
       s"$baseUrl$path"
     }.get
     val resultText = if (didInterrupt) {
-      s"""Meanwhile, I’m running `$text` [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
+      s"""Meanwhile, I’m running `$displayText` [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
          |
          |───
        """.stripMargin
     } else {
       s""":wave: Hi.
          |
-         |I’m running `$text` [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
+         |I’m running `$displayText` [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
          |
          |───
          |""".stripMargin
@@ -79,16 +81,16 @@ case class ScheduledMessage(
   }
 
   def shortDescription(prefix: String = ""): String = {
-    s"$prefix `$text` $recurrenceAndChannel."
+    s"$prefix `$displayText` $recurrenceAndChannel."
   }
 
   def listResponse: String = {
     s"""
-        |
+       |
         |**${shortDescription("Run")}**
-        |
+       |
         |$nextRunsString
-        |
+       |
         |
      """.stripMargin
   }
@@ -114,9 +116,9 @@ case class ScheduledMessage(
 
   def nextRunsString: String = {
     s"""The next two times will be:
-        | - ${nextRunStringFor(nextSentAt)}
-        | - ${nextRunStringFor(followingSentAt)}
-        |
+       | - ${nextRunStringFor(nextSentAt)}
+       | - ${nextRunStringFor(followingSentAt)}
+       |
      """.stripMargin
   }
 
@@ -138,13 +140,13 @@ case class ScheduledMessage(
   case class SlackDMInfo(userId: String, channelId: String)
 
   private def sendDMsSequentiallyFor(
-                          infos: List[SlackDMInfo],
-                          eventHandler: EventHandler,
-                          client: SlackApiClient,
-                          profile: SlackBotProfile,
-                          dataService: DataService,
-                          configuration: Configuration
-                        )(implicit actorSystem: ActorSystem): Future[Unit] = {
+                                      infos: List[SlackDMInfo],
+                                      eventHandler: EventHandler,
+                                      client: SlackApiClient,
+                                      profile: SlackBotProfile,
+                                      dataService: DataService,
+                                      configuration: Configuration
+                                    )(implicit actorSystem: ActorSystem): Future[Unit] = {
     if (infos.isEmpty) {
       Future.successful({})
     } else {
@@ -180,6 +182,8 @@ case class ScheduledMessage(
     } yield {}
   }
 
+  def eventFor(channelName: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent
+
   // TODO: don't be slack-specific
   def sendFor(
                channelName: String,
@@ -190,7 +194,7 @@ case class ScheduledMessage(
                dataService: DataService,
                configuration: Configuration
              )(implicit actorSystem: ActorSystem): Future[Unit] = {
-    val event = ScheduledMessageEvent(SlackMessageEvent(profile, channelName, None, slackUserId, text, "ts"), this)
+    val event = eventFor(channelName, slackUserId, profile)
     for {
       didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
       results <- eventHandler.handle(event, None)
@@ -201,7 +205,7 @@ case class ScheduledMessage(
 
   def sendResult(
                   result: BotResult,
-                  event: ScheduledMessageEvent,
+                  event: ScheduledEvent,
                   configuration: Configuration,
                   didInterrupt: Boolean,
                   dataService: DataService
@@ -218,13 +222,13 @@ case class ScheduledMessage(
         event.maybeChannel.
           map { channel => s" in channel $channel" }.
           getOrElse("")
-      Logger.info(s"Sending result [${result.fullText}] for scheduled message [${text}]$channelInfo")
+      Logger.info(s"Sending result [${result.fullText}] for scheduled message [${displayText}]$channelInfo")
     }
   }
 
   def sendResults(
                    results: List[BotResult],
-                   event: ScheduledMessageEvent,
+                   event: ScheduledEvent,
                    configuration: Configuration,
                    didInterrupt: Boolean,
                    dataService: DataService
@@ -257,40 +261,5 @@ case class ScheduledMessage(
     }.getOrElse(Future.successful(Unit))
   }
 
-  def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {
-    this.copy(nextSentAt = recurrence.nextAfter(when))
-  }
 
-  def toRaw: RawScheduledMessage = {
-    RawScheduledMessage(
-      RawScheduledMessageBase(
-        id,
-        text,
-        maybeUser.map(_.id),
-        team.id,
-        maybeChannelName,
-        isForIndividualMembers,
-        recurrence.typeName,
-        recurrence.frequency,
-        nextSentAt,
-        createdAt
-      ),
-      RawScheduledMessageOptions(
-        recurrence.maybeTimeOfDay,
-        recurrence.maybeTimeZone,
-        recurrence.maybeMinuteOfHour,
-        recurrence.maybeDayOfWeek.map(_.getValue),
-        recurrence.maybeMonday,
-        recurrence.maybeTuesday,
-        recurrence.maybeWednesday,
-        recurrence.maybeThursday,
-        recurrence.maybeFriday,
-        recurrence.maybeSaturday,
-        recurrence.maybeSunday,
-        recurrence.maybeDayOfMonth,
-        recurrence.maybeNthDayOfWeek,
-        recurrence.maybeMonth
-      )
-    )
-  }
 }
