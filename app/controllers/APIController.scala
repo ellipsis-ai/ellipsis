@@ -326,27 +326,17 @@ class APIController @Inject() (
             slackProfile <- context.maybeSlackProfile
             behavior <- context.maybeBehavior
           } yield {
-            dataService.users.ensureUserFor(slackProfile.loginInfo, behavior.team.id).map { user =>
-              context.maybeBehavior.map { behavior =>
-                dataService.scheduledBehaviors.maybeCreateFor(behavior, info.recurrenceString, user, behavior.team, context.maybeSlackChannelId, info.sendPrivateMessages)
+            for {
+              user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behavior.team.id)
+              maybeScheduled <- dataService.scheduledBehaviors.maybeCreateFor(behavior, info.recurrenceString, user, behavior.team, context.maybeSlackChannelId, info.sendPrivateMessages)
+            } yield {
+              maybeScheduled.map { scheduled =>
+                Ok(scheduled.successResponse)
+              }.getOrElse {
+                BadRequest(s"Unable to schedule for `${info.recurrenceString}`")
               }
             }
-          }).getOrElse(Future.successful(None))
-          maybeEvent <- Future.successful(
-            for {
-              botProfile <- context.maybeBotProfile
-              behavior <- context.maybeBehavior
-            } yield RunEvent(
-              botProfile,
-              behavior,
-              info.paramsMap,
-              context.maybeSlackChannelId.getOrElse(info.channel),
-              None,
-              context.maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
-              SlackTimestamp.now
-            )
-          )
-          result <- runBehaviorFor(maybeEvent, context)
+          }).getOrElse(Future.successful(NotFound(s"Couldn't find an action with name `${info.actionName}`")))
         } yield result
 
         eventualResult.recover {
