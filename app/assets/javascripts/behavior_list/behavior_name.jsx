@@ -15,9 +15,15 @@ define(function(require) {
 
     getLabelFromTrigger: function(trigger, showLink) {
       var className = showLink ? "link" : "";
-      return trigger && trigger.text ?
-        (<span className={`${className} type-monospace`}>{trigger.displayText}</span>) :
-        (<span className={`${className} type-italic`}>(No triggers)</span>);
+      if (trigger && trigger.text) {
+        return (
+          <span className={`${className} type-monospace`}>{trigger.displayText}</span>
+        );
+      } else {
+        return (
+          <span className={`${className} type-italic`}>(No triggers)</span>
+        );
+      }
     },
 
     getNonRegexTriggerLabelsFromTriggers: function(triggers) {

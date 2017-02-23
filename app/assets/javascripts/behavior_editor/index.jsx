@@ -585,19 +585,19 @@ const BehaviorEditor = React.createClass({
     return mainHeader ? mainHeader.offsetHeight : 0;
   },
 
-  fixHeaderHeight: debounce(function() {
-    if (this.refs.pageTitle) {
-      this.refs.pageTitle.style.top = `${this.getHeaderHeight()}px`;
-    }
-  }, 50),
+  // fixHeaderHeight: debounce(function() {
+  //   if (this.refs.pageTitle) {
+  //     this.refs.pageTitle.style.top = `${this.getHeaderHeight()}px`;
+  //   }
+  // }, 50),
 
-  getFixedTitleHeight: function() {
-    if (this.refs.pageTitle) {
-      return this.refs.pageTitle.offsetHeight;
-    } else {
-      return 0;
-    }
-  },
+  // getFixedTitleHeight: function() {
+  //   if (this.refs.pageTitle) {
+  //     return this.refs.pageTitle.offsetHeight;
+  //   } else {
+  //     return 0;
+  //   }
+  // },
 
   loadVersions: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.props.behavior.behaviorId).url;
@@ -824,11 +824,8 @@ const BehaviorEditor = React.createClass({
   },
 
   toggleBehaviorSwitcher: function() {
-    this.toggleActivePanel('behaviorSwitcher', true, () => {
-      if (this.props.activePanelName === 'behaviorSwitcher') {
-        this.fixLeftPanelPosition();
-        this.refs.behaviorSwitcher.focus();
-      }
+    this.setState({
+      behaviorSwitcherVisible: !this.state.behaviorSwitcherVisible
     });
   },
 
@@ -1154,10 +1151,6 @@ const BehaviorEditor = React.createClass({
     return this.getAllBehaviors().filter(ea => ea.isDataType());
   },
 
-  countActionBehaviorsInGroup: function() {
-    return this.getActionBehaviors().length;
-  },
-
   hasUserParameters: function() {
     return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
   },
@@ -1322,8 +1315,7 @@ const BehaviorEditor = React.createClass({
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
-    window.addEventListener('resize', this.fixHeaderHeight, false);
-    this.refs.pageTitleLayoutReplacer.style.height = `${this.getFixedTitleHeight()}px`;
+    // window.addEventListener('resize', this.fixHeaderHeight, false);
   },
 
   getInitialBehavior: function(behavior) {
@@ -1359,7 +1351,8 @@ const BehaviorEditor = React.createClass({
       requiredOAuth2ApiConfigId: "",
       paramNameToSync: null,
       error: null,
-      selectedSavedAnswerInputId: null
+      selectedSavedAnswerInputId: null,
+      behaviorSwitcherVisible: true
     };
   },
 
@@ -1806,93 +1799,51 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getPageHeading: function() {
-    var actionCount = this.getActionBehaviors().length;
-    var dataTypeCount = this.getDataTypeBehaviors().length;
-
-    return (
-      <span>
-        <span className="align-m">
-          {this.getPageName(this.state.lastSavedGroupName, actionCount)}
-        </span>
-        <span className="type-m type-regular align-m">
-          {this.getPageDescription(this.state.lastSavedGroupDescription, actionCount, dataTypeCount)}
-        </span>
-      </span>
-    );
-  },
-
   getBehaviorHeading: function() {
-    if (this.getAllBehaviors().length > 1) {
-      return (
-        <div className="container container-wide">
-          <h4 className="type-blue-faded mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h4>
-        </div>
-      );
-    } else {
-      return null;
-    }
+    return (
+      <h4 className="type-blue-faded mbn align-button">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h4>
+    );
   },
 
   shouldShowBehaviorSwitcher: function() {
-    return true;
-    //return !!this.props.behavior.groupId;
+    return this.state.behaviorSwitcherVisible;
   },
 
-  renderPageHeadingContent: function() {
-    if (this.shouldShowBehaviorSwitcher()) {
+  renderSwitcherToggle: function() {
+    if (!this.shouldShowBehaviorSwitcher()) {
       return (
-        <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
-          <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
+        <button type="button" className="button-subtle button-shrink mrxs" onClick={this.toggleBehaviorSwitcher}>
+          <span className="display-inline-block align-t" style={{ height: "24px" }}>
             <SVGHamburger />
           </span>
-          <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
         </button>
       );
-    } else {
-      return (
-        <h4 className="man">{this.getPageHeading()}</h4>
-      );
     }
-  },
-
-  renderPageHeading: function() {
-    return (
-      <div>
-        <div ref="pageTitle"
-          className="bg-white-translucent border-bottom position-fixed-top position-z-almost-front display-ellipsis display-limit-width"
-          style={{ top: `${this.getHeaderHeight()}px` }}
-        >
-          <div className="container container-wide pts type-weak">
-            {this.renderPageHeadingContent()}
-          </div>
-        </div>
-        <div ref="pageTitleLayoutReplacer" style={{ height: `${this.getFixedTitleHeight()}px` }}></div>
-      </div>
-    );
   },
 
   renderBehaviorSwitcher: function() {
     if (this.shouldShowBehaviorSwitcher()) {
       return (
-        <div ref="leftPanel">
-          <BehaviorSwitcher
-            ref="behaviorSwitcher"
-            onToggle={this.toggleBehaviorSwitcher}
-            actionBehaviors={this.getActionBehaviors()}
-            dataTypeBehaviors={this.getDataTypeBehaviors()}
-            currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
-            groupId={this.props.behavior.groupId}
-            groupName={this.state.groupName}
-            lastSavedGroupName={this.state.lastSavedGroupName}
-            groupDescription={this.state.groupDescription}
-            lastSavedGroupDescription={this.state.lastSavedGroupDescription}
-            teamId={this.props.teamId}
-            onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
-            onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
-            onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
-            onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
-          />
+        <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn">
+          <div ref="leftPanel">
+            <BehaviorSwitcher
+              ref="behaviorSwitcher"
+              onToggle={this.toggleBehaviorSwitcher}
+              actionBehaviors={this.getActionBehaviors()}
+              dataTypeBehaviors={this.getDataTypeBehaviors()}
+              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
+              groupId={this.props.behavior.groupId}
+              groupName={this.state.groupName}
+              lastSavedGroupName={this.state.lastSavedGroupName}
+              groupDescription={this.state.groupDescription}
+              lastSavedGroupDescription={this.state.lastSavedGroupDescription}
+              teamId={this.props.teamId}
+              onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
+              onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+              onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
+              onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
+            />
+          </div>
         </div>
       );
     } else {
@@ -1904,8 +1855,6 @@ const BehaviorEditor = React.createClass({
     return (
 
       <div>
-        {this.renderPageHeading()}
-
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
           {this.renderHiddenFormValues()}
@@ -1914,12 +1863,13 @@ const BehaviorEditor = React.createClass({
           <div>
 
             <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
-              <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn">
-                {this.renderBehaviorSwitcher()}
-              </div>
+              {this.renderBehaviorSwitcher()}
               <div className="column column-page-main-wide flex-column flex-column-center">
 
-                {this.getBehaviorHeading()}
+                <div className={"container container-wide mtm " + (this.shouldShowBehaviorSwitcher() ? "" : "pll")}>
+                  {this.renderSwitcherToggle()}
+                  {this.getBehaviorHeading()}
+                </div>
 
                 <div className="columns container container-wide">
                   <div className="column column-one-third mobile-column-full">
@@ -2043,18 +1993,16 @@ const BehaviorEditor = React.createClass({
   renderDataTypeBehavior: function() {
     return (
       <div>
-        {this.renderPageHeading()}
 
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
 
           <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
-            <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn">
-              {this.renderBehaviorSwitcher()}
-            </div>
+            {this.renderBehaviorSwitcher()}
             <div className="column column-page-main-wide flex-column flex-column-left">
 
-              <div className="pts">
+              <div className="container container-wide pts">
+                {this.renderSwitcherToggle()}
                 {this.getBehaviorHeading()}
               </div>
 

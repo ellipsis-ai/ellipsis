@@ -28,10 +28,10 @@ define(function(require) {
     render: function() {
       return (
         <div className="mtxl mbxxl">
-          <div className="container container-wide">
+          <div className="container container-wide mbs">
             <div className="columns columns-elastic">
               <div className="column column-expand">
-                <h4>{this.props.heading}</h4>
+                <h5>{this.props.heading}</h5>
               </div>
               <div className="column column-shrink">
                 <AddNewBehaviorToGroup
