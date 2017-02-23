@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    Checklist = require('./checklist'),
     HelpButton = require('../help/help_button'),
     SectionHeading = require('./section_heading'),
     TriggerInput = require('./trigger_input'),
@@ -73,12 +74,23 @@ define(function(require) {
           <div className="mbxxl">
             <SectionHeading number="1">
               <span>
-                <span className="mrm">Triggers</span>
+                <span className="mrm">When someone says</span>
                 <span className="display-inline-block">
                   <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible}/>
                 </span>
               </span>
             </SectionHeading>
+            <div>
+              <Checklist disabledWhen={this.props.isFinishedBehavior}>
+                <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.props.isFinishedBehavior}>
+                  Write a question or phrase people should use to trigger a response.
+                </Checklist.Item>
+                <Checklist.Item checkedWhen={this.triggersUseParams()}>
+                  <span>A trigger can include “fill-in-the-blank” inputs, e.g. <code
+        className="plxs">{"Call me {name}"}</code></span>
+                </Checklist.Item>
+              </Checklist>
+            </div>
             <div className="mbm">
               {this.props.triggers.map(function(trigger, index) {
                 return (

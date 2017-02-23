@@ -103,6 +103,20 @@ define(function(require) {
           <div className="mbxxxl ptxl">
             <SectionHeading number={this.props.sectionNumber}>Then respond</SectionHeading>
 
+            <div className="type-s">
+              <Checklist disabledWhen={this.props.isFinishedBehavior}>
+                <Checklist.Item checkedWhen={this.props.template.usesMarkdown()}>
+                  <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
+                  <span>to format the response, add links, etc.</span>
+                </Checklist.Item>
+                {this.props.behaviorUsesCode ? (
+                    <Checklist.Item>You can include data from your code in your response.</Checklist.Item>
+                  ) : (
+                    <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
+                  )}
+              </Checklist>
+            </div>
+
             <div className="border-top border-left border-right border-light pas">
               <ToggleGroup className="form-toggle-group-s align-m">
                 <ToggleGroup.Item

@@ -9,6 +9,7 @@ var React = require('react'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   CodeEditor = require('./code_editor'),
+  CodeEditorHelp = require('./code_editor_help'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('../panels/confirm_action'),
@@ -1963,6 +1964,15 @@ const BehaviorEditor = React.createClass({
                           <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
                         </span>
                       </SectionHeading>
+
+                      <CodeEditorHelp
+                        isFinishedBehavior={this.isFinishedBehavior()}
+                        functionBody={this.getBehaviorFunctionBody()}
+                        onToggleHelp={this.toggleBoilerplateHelp}
+                        helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
+                        hasUserParameters={this.hasUserParameters()}
+                      />
+
                       {this.renderCodeEditor()}
                     </div>
                   </div>
