@@ -1352,21 +1352,25 @@ const BehaviorEditor = React.createClass({
       paramNameToSync: null,
       error: null,
       selectedSavedAnswerInputId: null,
-      behaviorSwitcherVisible: true
+      behaviorSwitcherVisible: this.isExistingBehavior()
     };
   },
 
   componentWillReceiveProps: function(nextProps) {
     if (nextProps.behavior !== this.props.behavior) {
       var newBehaviorVersion = this.getInitialBehavior(nextProps.behavior);
-      this.props.onClearActivePanel();
-      this.setState({
+      var newState = {
         justSaved: true,
         behavior: newBehaviorVersion,
         versions: [this.getTimestampedBehavior(newBehaviorVersion)],
         versionsLoadStatus: null,
         error: null
-      });
+      };
+      if (!this.props.behavior.behaviorId && nextProps.behavior.behaviorId) {
+        newState.behaviorSwitcherVisible = true;
+      }
+      this.props.onClearActivePanel();
+      this.setState(newState);
       if (typeof(nextProps.onLoad) === 'function') {
         nextProps.onLoad();
       }
@@ -1812,11 +1816,13 @@ const BehaviorEditor = React.createClass({
   renderSwitcherToggle: function() {
     if (!this.shouldShowBehaviorSwitcher()) {
       return (
-        <button type="button" className="button-subtle button-shrink mrxs" onClick={this.toggleBehaviorSwitcher}>
-          <span className="display-inline-block align-t" style={{ height: "24px" }}>
-            <SVGHamburger />
-          </span>
-        </button>
+        <span className="type-weak">
+          <button type="button" className="button-subtle button-shrink mrxs" onClick={this.toggleBehaviorSwitcher}>
+            <span className="display-inline-block align-t" style={{ height: "24px" }}>
+              <SVGHamburger />
+            </span>
+          </button>
+        </span>
       );
     }
   },
