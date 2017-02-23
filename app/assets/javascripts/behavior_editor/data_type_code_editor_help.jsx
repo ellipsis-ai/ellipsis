@@ -33,7 +33,7 @@ define(function(require) {
         <div>
           <Checklist disabledWhen={false}>
             <Checklist.Item hiddenWhen={this.hasCode()}>
-              <span>Write a node.js function. You can <code>require()</code> any </span>
+              <span>Write a Node.js function. You can <code>require()</code> any </span>
               <span><a href="https://www.npmjs.com/" target="_blank">NPM package</a>.</span>
             </Checklist.Item>
 
@@ -45,7 +45,7 @@ define(function(require) {
               <span>End the function by calling </span>
               <code className="type-bold">ellipsis.success(<span className="type-regular">…</span>)</code>
               <span> with an array of objects, each with <code className="type-bold">id</code> and <code className="type-bold">label</code> properties.</span>
-              <pre className="box-code-example"><code>
+              <pre className="box-code-example width-30"><code>
 {`ellipsis.success([
   { label: 'one', id: '1' },
   { label: 'two', id: '2' },

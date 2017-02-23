@@ -7,15 +7,11 @@ define(function(require) {
       label: React.PropTypes.string
     },
 
-    onAddNewBehavior: function() {
-      window.location.href = this.props.url;
-    },
-
     render: function() {
       return (
-        <button
-          onClick={this.onAddNewBehavior}
-          className="button-s button-shrink">{this.props.label || "Add another"}</button>
+        <a
+          href={this.props.url}
+          className="button button-s button-shrink">{this.props.label || "Add another"}</a>
       );
     }
   });

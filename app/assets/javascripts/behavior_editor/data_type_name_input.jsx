@@ -12,22 +12,16 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="container ptxl">
-          <div className="columns">
-            <div className="column column-page-sidebar mts mbl mobile-mbs">
-              <SectionHeading number="1">Name of data type</SectionHeading>
-            </div>
-            <div className="column column-page-main mbl">
-              <div className="mbm">
-                <Input
-                  className="form-input-borderless form-input-l"
-                  ref="input"
-                  value={this.props.name}
-                  placeholder="Give data type a name"
-                  onChange={this.props.onChange}
-                />
-              </div>
-            </div>
+        <div className="container ptm">
+          <SectionHeading number="1">Name of data type</SectionHeading>
+          <div className="mbm">
+            <Input
+              className="form-input-borderless form-input-l"
+              ref="input"
+              value={this.props.name}
+              placeholder="Give data type a name"
+              onChange={this.props.onChange}
+            />
           </div>
         </div>
       );

@@ -1173,6 +1173,10 @@ const BehaviorEditor = React.createClass({
     return !!this.props.behavior.behaviorId;
   },
 
+  isExistingGroup: function() {
+    return !!this.props.behavior.groupId;
+  },
+
   isFinishedBehavior: function() {
     return this.isExistingBehavior() && !!(this.props.behavior.functionBody || this.props.behavior.responseTemplate.text);
   },
@@ -1353,7 +1357,7 @@ const BehaviorEditor = React.createClass({
       paramNameToSync: null,
       error: null,
       selectedSavedAnswerInputId: null,
-      behaviorSwitcherVisible: this.isExistingBehavior()
+      behaviorSwitcherVisible: this.isExistingGroup()
     };
   },
 
@@ -2018,7 +2022,7 @@ const BehaviorEditor = React.createClass({
 
           <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
             {this.renderBehaviorSwitcher()}
-            <div className="column column-page-main-wide flex-column flex-column-left">
+            <div className="column column-page-main-wide flex-column flex-column-center">
 
               <div className="container container-wide pts">
                 {this.renderSwitcherToggle()}
@@ -2039,23 +2043,17 @@ const BehaviorEditor = React.createClass({
 
               <hr className="man thin bg-gray-light" />
 
-              <div className="container container-wide pbxxxl">
-                <div className="columns flex-columns mobile-flex-no-columns">
-                  <div className="flex-column flex-column-left column column-page-sidebar ptxl mbxxl mobile-mbs">
+              <div className="container container-wide ptxl pbxxxl">
+                <SectionHeading number="3">Run code to generate a list</SectionHeading>
 
-                    <SectionHeading number="3">Run code to generate a list</SectionHeading>
-
-                    <DataTypeCodeEditorHelp
-                      functionBody={this.getBehaviorFunctionBody()}
-                      usesSearch={this.hasUserParameterNamed('searchQuery')}
-                    />
-
-                  </div>
-
-                  <div className="flex-column flex-column-left column column-page-main column-page-main-wide mbxxl">
-                    {this.renderCodeEditor()}
-                  </div>
+                <div className="mbxl">
+                  <DataTypeCodeEditorHelp
+                  functionBody={this.getBehaviorFunctionBody()}
+                  usesSearch={this.hasUserParameterNamed('searchQuery')}
+                  />
                 </div>
+
+                {this.renderCodeEditor()}
               </div>
 
               {this.renderFooter()}

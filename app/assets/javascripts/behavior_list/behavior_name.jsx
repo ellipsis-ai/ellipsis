@@ -84,7 +84,7 @@ define(function(require) {
     getDataTypeLabelFromVersion: function(version) {
       return (
         <div className={"type-italic " + (this.props.limitTriggers ? "display-limit-width display-ellipsis" : "")}>
-          <span className="link">{version.getDataTypeName()}</span>
+          <span className={this.props.disableLink ? "" : "link"}>{version.getDataTypeName() || "New data type"}</span>
           {this.props.labelDataType ? (
             <span className="type-weak"> (data type)</span>
           ) : null}
