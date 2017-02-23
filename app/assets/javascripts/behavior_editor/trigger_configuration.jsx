@@ -72,7 +72,14 @@ define(function(require) {
       return (
         <div className="columns container container-narrow ptxl">
           <div className="mbxxl">
-            <SectionHeading number="1">Triggers</SectionHeading>
+            <SectionHeading number="1">
+              <span>
+                <span className="mrm">Triggers</span>
+                <span className="display-inline-block">
+                  <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible}/>
+                </span>
+              </span>
+            </SectionHeading>
             <div className="mbm">
               {this.props.triggers.map(function(trigger, index) {
                 return (

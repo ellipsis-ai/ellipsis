@@ -9,7 +9,6 @@ var React = require('react'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   CodeEditor = require('./code_editor'),
-  CodeEditorHelp = require('./code_editor_help'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('../panels/confirm_action'),
@@ -21,6 +20,7 @@ var React = require('react'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
   FixedFooter = require('../shared_ui/fixed_footer'),
+  HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../form/input'),
   ModalScrim = require('../shared_ui/modal_scrim'),
@@ -1434,8 +1434,6 @@ const BehaviorEditor = React.createClass({
 
           <CodeHeader
             ref="codeHeader"
-            helpVisible={this.props.activePanelName === 'helpForBoilerplateParameters'}
-            onToggleHelp={this.toggleBoilerplateHelp}
             userParams={this.getBehaviorParams()}
             systemParams={this.getSystemParams()}
           />
@@ -1959,7 +1957,12 @@ const BehaviorEditor = React.createClass({
 
                   <div className="container container-wide">
                     <div className="ptxl">
-                      <SectionHeading number={this.hasUserParameters() ? "3" : "2"}>Run code</SectionHeading>
+                      <SectionHeading number={this.hasUserParameters() ? "3" : "2"}>
+                        <span className="mrm">Run code</span>
+                        <span className="display-inline-block">
+                          <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
+                        </span>
+                      </SectionHeading>
                       {this.renderCodeEditor()}
                     </div>
                   </div>

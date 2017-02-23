@@ -4,8 +4,8 @@ define(function(require) {
     BehaviorVersion = require('../models/behavior_version'),
     Collapsible = require('../shared_ui/collapsible'),
     Input = require('../form/input'),
-    SVGXIcon = require('../svg/x'),
-    ifPresent = require('../lib/if_present');
+    Textarea = require('../form/textarea'),
+    SVGXIcon = require('../svg/x');
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',
@@ -86,7 +86,7 @@ define(function(require) {
 
     getSkillTitle: function() {
       return (
-        <div className="container container-wide">
+        <div className="mbm">
           <h4 className="mbn">{this.getSkillName()}</h4>
           <div className="type-s type-weak">{this.props.lastSavedGroupDescription}</div>
         </div>
@@ -112,31 +112,11 @@ define(function(require) {
             <button ref="closeButton" type="button" className="button-symbol button-s button-subtle" onClick={this.props.onToggle}><SVGXIcon /></button>
           </div>
 
-          <div className="border-bottom pvl mbl">
-            {this.getSkillTitle()}
-          </div>
+          <div className="border-bottom ptl pbxl mbl container container-wide">
 
-          <BehaviorSwitcherGroup
-            ref="actionSwitcher"
-            heading="Actions"
-            behaviors={this.props.actionBehaviors}
-            currentBehavior={this.props.currentBehavior}
-            addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
-            addNewLabel="Add new action"
-            emptyMessage="Add actions to provide a response using custom data types for input."
-          />
-          <BehaviorSwitcherGroup
-            ref="dataTypeSwitcher"
-            heading="Custom data types"
-            behaviors={this.props.dataTypeBehaviors}
-            currentBehavior={this.props.currentBehavior}
-            addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
-            addNewLabel="Add new data type"
-            emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
-          />
-
-          <div className="mtxl mbxxxl container container-wide">
             <Collapsible revealWhen={!this.state.revealSkillDetails}>
+              {this.getSkillTitle()}
+
               <button type="button" className="button-s button-shrink" onClick={this.toggleSkillDetails}>
                 {this.getEditButtonLabel()}
               </button>
@@ -158,11 +138,12 @@ define(function(require) {
                 />
               </div>
               <div className="mbs">
-                <Input
-                  className="form-input-borderless mbn"
+                <Textarea
+                  className="form-input-height-auto form-input-borderless mbn"
                   placeholder="Description (optional)"
                   onChange={this.props.onBehaviorGroupDescriptionChange}
                   value={this.getBehaviorGroupDescription()}
+                  rows={"3"}
                 />
               </div>
               <div className="mtxl">
@@ -179,6 +160,27 @@ define(function(require) {
               </div>
             </Collapsible>
           </div>
+
+          <BehaviorSwitcherGroup
+            ref="actionSwitcher"
+            heading="Actions"
+            behaviors={this.props.actionBehaviors}
+            currentBehavior={this.props.currentBehavior}
+            addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
+            addNewLabel="Add new action"
+            emptyMessage="Add actions to provide a response using custom data types for input."
+          />
+
+          <BehaviorSwitcherGroup
+            ref="dataTypeSwitcher"
+            heading="Data types"
+            behaviors={this.props.dataTypeBehaviors}
+            currentBehavior={this.props.currentBehavior}
+            addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
+            addNewLabel="Add new data type"
+            emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
+          />
+
         </div>
       );
     }

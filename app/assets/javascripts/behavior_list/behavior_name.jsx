@@ -83,7 +83,7 @@ define(function(require) {
 
     getDataTypeLabelFromVersion: function(version) {
       return (
-        <div className={"type-italic " + (this.props.limitTriggers ? "display-ellipsis" : "")}>
+        <div className={"type-italic " + (this.props.limitTriggers ? "display-limit-width display-ellipsis" : "")}>
           <span className="link">{version.getDataTypeName()}</span>
           {this.props.labelDataType ? (
             <span className="type-weak"> (data type)</span>
@@ -96,7 +96,7 @@ define(function(require) {
       const name = version.name;
       if (name && name.trim().length > 0) {
         return (
-          <div className={(this.props.limitTriggers ? "display-ellipsis" : "")}>
+          <div className={(this.props.limitTriggers ? "display-limit-width display-ellipsis" : "")}>
             <span className={"mrm " + (this.props.disableLink ? "" : "link")}>{name}:</span>
             {this.getTriggersFromVersion(version, false)}
           </div>
@@ -127,14 +127,14 @@ define(function(require) {
     render: function() {
       if (this.props.disableLink) {
         return (
-          <div className={this.props.limitTriggers ? "display-ellipsis" : ""}>
+          <div className={this.props.limitTriggers ? "display-limit-width display-ellipsis" : ""}>
             {this.getLabelFromVersion(this.props.version)}
             {this.getDescriptionFromVersion(this.props.version)}
           </div>
         );
       } else {
         return (
-          <div className={this.props.limitTriggers ? "display-ellipsis" : ""}>
+          <div className={this.props.limitTriggers ? "display-limit-width display-ellipsis" : ""}>
             <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.behaviorId).url}
               className="link-block">
               {this.getLabelFromVersion(this.props.version)}

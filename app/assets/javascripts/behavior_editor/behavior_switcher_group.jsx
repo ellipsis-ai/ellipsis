@@ -27,19 +27,9 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="mtxl mbxxl">
+        <div className="border-bottom mtl pbl">
           <div className="container container-wide mbs">
-            <div className="columns columns-elastic">
-              <div className="column column-expand">
-                <h5>{this.props.heading}</h5>
-              </div>
-              <div className="column column-shrink">
-                <AddNewBehaviorToGroup
-                  url={this.props.addNewUrl}
-                  label={this.props.addNewLabel}
-                />
-              </div>
-            </div>
+            <h6>{this.props.heading}</h6>
           </div>
           <div className="type-s">
             {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version) => (
@@ -57,6 +47,12 @@ define(function(require) {
             )), () => (
               <p className="container container-wide type-weak">{this.props.emptyMessage}</p>
             ))}
+          </div>
+          <div className="container container-wide mvm">
+            <AddNewBehaviorToGroup
+              url={this.props.addNewUrl}
+              label={this.props.addNewLabel}
+            />
           </div>
         </div>
       );

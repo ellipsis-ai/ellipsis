@@ -1,11 +1,8 @@
 define(function(require) {
-var React = require('react'),
-  HelpButton = require('../help/help_button');
+var React = require('react');
 
 return React.createClass({
   propTypes: {
-    helpVisible: React.PropTypes.bool,
-    onToggleHelp: React.PropTypes.func.isRequired,
     userParams: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
     systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
   },
@@ -25,9 +22,8 @@ return React.createClass({
               {this.props.userParams.map((param, paramIndex) => (
                 <span key={`param${paramIndex}`}>{param.name}<span className="type-weak">, </span></span>
               ))}
-              <span className="type-weak mrxs">{this.boilerplateLine()}</span>
-              <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible} />
-              <span className="type-weak mlxs">{") {"}</span>
+              <span className="type-weak">{this.boilerplateLine()}</span>
+              <span className="type-weak">{") \u007B"}</span>
             </code>
           </div>
         </div>
