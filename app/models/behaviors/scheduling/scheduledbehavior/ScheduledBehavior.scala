@@ -22,7 +22,7 @@ case class ScheduledBehavior(
                              createdAt: OffsetDateTime
                            ) extends Scheduled {
 
-  val displayText: String = s"Running ${behavior.id}"
+  val displayText: String = s"${behavior.id}"
 
   def eventFor(channelName: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
     ScheduledEvent(RunEvent(profile, behavior, Map(), channelName, None, slackUserId, "ts"), this)

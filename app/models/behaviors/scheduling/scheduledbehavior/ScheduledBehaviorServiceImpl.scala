@@ -30,7 +30,7 @@ case class RawScheduledBehavior(
 class ScheduledBehaviorsTable(tag: Tag) extends Table[RawScheduledBehavior](tag, "scheduled_behaviors") {
 
   def id = column[String]("id")
-  def behaviorId = column[String]("behaivor_id")
+  def behaviorId = column[String]("behavior_id")
   def maybeUserId = column[Option[String]]("user_id")
   def teamId = column[String]("team_id")
   def maybeChannelName = column[Option[String]]("channel_name")

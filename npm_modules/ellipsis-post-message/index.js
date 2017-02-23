@@ -187,20 +187,59 @@ const PM = {
     }
   },
 
+  scheduleAction: function (args) {
+    const ellipsis = args.ellipsis;
+    if (typeof ellipsis !== "object") {
+      errorHandler(null, args, errorMessages.ELLIPSIS_OBJECT_MISSING);
+    } else {
+      const actionName = args.actionName;
+      if (!actionName) {
+        errorHandler(ellipsis, args, errorMessages.ACTION_NAME_MISSING);
+      } else {
+        const responseContext = args.responseContext ? args.responseContext : ellipsis.userInfo.messageInfo.medium;
+        const channel = args.channel ? args.channel : ellipsis.userInfo.messageInfo.channel;
+        const formData = Object.assign({
+          actionName: actionName,
+          responseContext: responseContext,
+          channel: channel,
+          recurrence: args.recurrence,
+          token: ellipsis.token
+        }, paramsFormDataFor(args.params));
+        request.
+          post(
+            {
+              url: ellipsis.apiBaseUrl + "/api/schedule_action",
+              form: formData
+            }, (error, response, body) => handleResponse(args, ellipsis, error, response, body)
+        );
+      }
+    }
+  },
+
   promiseToSchedule: function(args) {
     const ellipsis = args.ellipsis;
-    const action = args.action;
+    const actionName = args.actionName;
+    const message = args.message;
     const recurrence = args.recurrence;
-    if (!action) {
+    if (!actionName && !message) {
       errorHandler(ellipsis, args, errorMessages.SCHEDULE_ACTION_MISSING);
     } else if (!recurrence) {
       errorHandler(ellipsis, args, errorMessages.RECURRENCE_MISSING);
     } else {
-      const useDM = args.useDM ? "privately for everyone in this channel" : "";
-      const message = `...schedule "${action}" ${useDM} ${recurrence}`;
-      return PM.promiseToPostMessage(Object.assign({}, args, {
-        message: message
-      }));
+      if (actionName) {
+        return new Promise((resolve, reject) => {
+          PM.scheduleAction(Object.assign({}, args, {
+            success: resolve,
+            error: reject
+          }));
+        });
+      } else {
+        const useDM = args.useDM ? "privately for everyone in this channel" : "";
+        const fullMessage = `...schedule "${message}" ${useDM} ${recurrence}`;
+        return PM.promiseToPostMessage(Object.assign({}, args, {
+          message: fullMessage
+        }));
+      }
     }
   },
 

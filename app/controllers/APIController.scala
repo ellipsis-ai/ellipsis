@@ -288,13 +288,13 @@ class APIController @Inject() (
   }
 
   case class ScheduleActionInfo(
-                                  actionName: String,
-                                  params: Seq[RunActionParamInfo],
-                                  recurrenceString: String,
-                                  sendPrivateMessages: Boolean,
-                                  responseContext: String,
-                                  channel: String,
-                                  token: String
+                                 actionName: String,
+                                 params: Seq[RunActionParamInfo],
+                                 recurrenceString: String,
+                                 useDM: Boolean,
+                                 responseContext: String,
+                                 channel: String,
+                                 token: String
                                 ) extends ApiMethodWithActionInfo
 
   private val scheduleActionForm = Form(
@@ -307,7 +307,7 @@ class APIController @Inject() (
         )(RunActionParamInfo.apply)(RunActionParamInfo.unapply)
       ),
       "recurrence" -> nonEmptyText,
-      "sendPrivateMessages" -> boolean,
+      "useDM" -> boolean,
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
       "token" -> nonEmptyText
@@ -328,7 +328,7 @@ class APIController @Inject() (
           } yield {
             for {
               user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behavior.team.id)
-              maybeScheduled <- dataService.scheduledBehaviors.maybeCreateFor(behavior, info.recurrenceString, user, behavior.team, context.maybeSlackChannelId, info.sendPrivateMessages)
+              maybeScheduled <- dataService.scheduledBehaviors.maybeCreateFor(behavior, info.recurrenceString, user, behavior.team, context.maybeSlackChannelId, info.useDM)
             } yield {
               maybeScheduled.map { scheduled =>
                 Ok(scheduled.successResponse)

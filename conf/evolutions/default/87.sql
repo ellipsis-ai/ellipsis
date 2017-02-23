@@ -44,7 +44,9 @@ CREATE TABLE scheduled_behaviors (
   id TEXT PRIMARY KEY,
   behavior_id TEXT NOT NULL REFERENCES behaviors(id),
   team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
   channel_name TEXT,
+  is_for_individual_members BOOLEAN NOT NULL DEFAULT FALSE,
   recurrence_id TEXT NOT NULL REFERENCES recurrences(id) ON DELETE CASCADE,
   next_sent_at TIMESTAMP NOT NULL,
   created_at TIMESTAMP NOT NULL
