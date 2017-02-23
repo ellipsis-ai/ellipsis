@@ -1397,7 +1397,7 @@ const BehaviorEditor = React.createClass({
   renderCodeEditor: function() {
     return (
       <div>
-        <div className="border-top border-left border-right border-light mtxxl mobile-mtn ptm">
+        <div className="border-top border-left border-right border-light ptm">
           <div className="type-s">
             <div className="plxxxl prs mbm">
               <APISelectorMenu
@@ -1720,17 +1720,17 @@ const BehaviorEditor = React.createClass({
   renderHiddenForms: function() {
     return (
       <div>
-        <form className="pbxxxl" ref="deleteBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.delete().url} method="POST">
+        <form ref="deleteBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.delete().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
         </form>
 
-        <form className="pbxxxl" ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
+        <form ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorGroupIds[0]" value={this.props.behavior.groupId} />
         </form>
 
-        <form className="pbxxxl" ref="cloneBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.duplicate().url} method="POST">
+        <form ref="cloneBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.duplicate().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
         </form>
@@ -1825,7 +1825,9 @@ const BehaviorEditor = React.createClass({
   getBehaviorHeading: function() {
     if (this.getAllBehaviors().length > 1) {
       return (
-        <h4 className="type-blue-faded mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h4>
+        <div className="container container-wide">
+          <h4 className="type-blue-faded mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h4>
+        </div>
       );
     } else {
       return null;
@@ -1833,7 +1835,8 @@ const BehaviorEditor = React.createClass({
   },
 
   shouldShowBehaviorSwitcher: function() {
-    return !!this.props.behavior.groupId;
+    return true;
+    //return !!this.props.behavior.groupId;
   },
 
   renderPageHeadingContent: function() {
@@ -1872,27 +1875,24 @@ const BehaviorEditor = React.createClass({
   renderBehaviorSwitcher: function() {
     if (this.shouldShowBehaviorSwitcher()) {
       return (
-        <div ref="leftPanel" className={"position-fixed-left position-z-front bg-white-translucent " +
-        (this.props.activePanelName === 'behaviorSwitcher' ? "border-right" : "")}>
-          <Collapsible revealWhen={this.props.activePanelName === 'behaviorSwitcher'} isHorizontal={true}>
-            <BehaviorSwitcher
-              ref="behaviorSwitcher"
-              onToggle={this.toggleBehaviorSwitcher}
-              actionBehaviors={this.getActionBehaviors()}
-              dataTypeBehaviors={this.getDataTypeBehaviors()}
-              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
-              groupId={this.props.behavior.groupId}
-              groupName={this.state.groupName}
-              lastSavedGroupName={this.state.lastSavedGroupName}
-              groupDescription={this.state.groupDescription}
-              lastSavedGroupDescription={this.state.lastSavedGroupDescription}
-              teamId={this.props.teamId}
-              onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
-              onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
-              onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
-              onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
-            />
-          </Collapsible>
+        <div ref="leftPanel">
+          <BehaviorSwitcher
+            ref="behaviorSwitcher"
+            onToggle={this.toggleBehaviorSwitcher}
+            actionBehaviors={this.getActionBehaviors()}
+            dataTypeBehaviors={this.getDataTypeBehaviors()}
+            currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
+            groupId={this.props.behavior.groupId}
+            groupName={this.state.groupName}
+            lastSavedGroupName={this.state.lastSavedGroupName}
+            groupDescription={this.state.groupDescription}
+            lastSavedGroupDescription={this.state.lastSavedGroupDescription}
+            teamId={this.props.teamId}
+            onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
+            onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+            onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
+            onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
+          />
         </div>
       );
     } else {
@@ -1906,136 +1906,133 @@ const BehaviorEditor = React.createClass({
       <div>
         {this.renderPageHeading()}
 
-        {this.renderBehaviorSwitcher()}
-
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
-        {this.renderHiddenFormValues()}
+          {this.renderHiddenFormValues()}
 
-        {/* Start of container */}
-        <div className="pbxxxl">
+          {/* Start of container */}
+          <div>
 
-          <div className="container pts">
-            {this.getBehaviorHeading()}
-
-            <div className="columns">
-              <div className="column column-one-third mobile-column-full">
-                <Input
-                  className="form-input-borderless form-input-l type-bold"
-                  placeholder="Action name (optional)"
-                  onChange={this.updateName}
-                  value={this.getBehaviorName()}
-                />
+            <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
+              <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn">
+                {this.renderBehaviorSwitcher()}
               </div>
+              <div className="column column-page-main-wide flex-column flex-column-center">
 
-              <div className="column column-full mobile-column-full">
-                <Input
-                  className="form-input-borderless form-input-m mbneg1"
-                  placeholder="Action description (optional)"
-                  onChange={this.updateDescription}
-                  value={this.getBehaviorDescription()}
+                {this.getBehaviorHeading()}
+
+                <div className="columns container container-wide">
+                  <div className="column column-one-third mobile-column-full">
+                    <Input
+                      className="form-input-borderless form-input-l type-bold"
+                      placeholder="Action name (optional)"
+                      onChange={this.updateName}
+                      value={this.getBehaviorName()}
+                    />
+                  </div>
+
+                  <div className="column column-full mobile-column-full">
+                    <Input
+                      className="form-input-borderless form-input-m mbneg1"
+                      placeholder="Action description (optional)"
+                      onChange={this.updateDescription}
+                      value={this.getBehaviorDescription()}
+                    />
+                  </div>
+                </div>
+
+                <hr className="mtn mbn thin bg-gray-light" />
+
+                <TriggerConfiguration
+                  isFinishedBehavior={this.isFinishedBehavior()}
+                  triggers={this.getBehaviorTriggers()}
+                  onToggleHelp={this.toggleTriggerHelp}
+                  helpVisible={this.props.activePanelName === 'helpForTriggerParameters'}
+                  onTriggerAdd={this.addTrigger}
+                  onTriggerChange={this.updateTriggerAtIndexWithTrigger}
+                  onTriggerDelete={this.deleteTriggerAtIndex}
+                  onTriggerDropdownToggle={this.toggleActiveDropdown}
+                  openDropdownName={this.getActiveDropdown()}
                 />
+
+                <UserInputConfiguration
+                  ref="userInputConfiguration"
+                  onParamChange={this.updateParamAtIndexWithParam}
+                  onParamDelete={this.deleteParamAtIndex}
+                  onParamAdd={this.addNewParam}
+                  onParamNameFocus={this.onParamNameFocus}
+                  onParamNameBlur={this.onParamNameBlur}
+                  onEnterKey={this.onParamEnterKey}
+                  userParams={this.getBehaviorParams()}
+                  paramTypes={this.props.paramTypes}
+                  triggers={this.getBehaviorTriggers()}
+                  isFinishedBehavior={this.isFinishedBehavior()}
+                  behaviorHasCode={this.state.revealCodeEditor}
+                  hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
+                  otherBehaviorsInGroup={this.props.otherBehaviorsInGroup}
+                  onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
+                  savedAnswers={this.props.savedAnswers}
+                  onToggleSavedAnswer={this.toggleSavedAnswerEditor}
+                />
+
+                <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
+                  <hr className="man thin bg-gray-light" />
+                </Collapsible>
+
+                <Collapsible revealWhen={!this.state.revealCodeEditor}>
+                  <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
+                    <div className="container container-wide">
+                      <div className="columns columns-elastic mobile-columns-float">
+                        <div className="column column-expand">
+                          <p className="mbn">
+                            <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
+                            <span>or provide a simple response below.</span>
+                          </p>
+                        </div>
+                        <div className="column column-shrink align-m mobile-mtm">
+                          <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
+                            Add code
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Collapsible>
+
+                <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
+
+                  <div className="container container-wide">
+                    <div className="ptxl">
+                      <SectionHeading number={this.hasUserParameters() ? "3" : "2"}>Run code</SectionHeading>
+                      {this.renderCodeEditor()}
+                    </div>
+                  </div>
+
+                  <hr className="man thin bg-gray-light" />
+
+                </Collapsible>
+
+                <ResponseTemplateConfiguration
+                  template={this.getBehaviorTemplate()}
+                  onChangeTemplate={this.updateTemplate}
+                  isFinishedBehavior={this.isFinishedBehavior()}
+                  behaviorUsesCode={!!this.state.revealCodeEditor}
+                  shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
+                  onChangeForcePrivateResponse={this.updateForcePrivateResponse}
+                  onCursorChange={this.ensureCursorVisible}
+                  userParams={this.getBehaviorParams()}
+                  sectionNumber={this.getResponseTemplateSectionNumber()}
+                />
+
               </div>
             </div>
           </div>
 
-          <hr className="mtn mbn thin bg-gray-light" />
+          {/* End of container */}
 
-          <TriggerConfiguration
-            isFinishedBehavior={this.isFinishedBehavior()}
-            triggers={this.getBehaviorTriggers()}
-            onToggleHelp={this.toggleTriggerHelp}
-            helpVisible={this.props.activePanelName === 'helpForTriggerParameters'}
-            onTriggerAdd={this.addTrigger}
-            onTriggerChange={this.updateTriggerAtIndexWithTrigger}
-            onTriggerDelete={this.deleteTriggerAtIndex}
-            onTriggerDropdownToggle={this.toggleActiveDropdown}
-            openDropdownName={this.getActiveDropdown()}
-          />
+          {this.renderFooter()}
 
-          <UserInputConfiguration
-            ref="userInputConfiguration"
-            onParamChange={this.updateParamAtIndexWithParam}
-            onParamDelete={this.deleteParamAtIndex}
-            onParamAdd={this.addNewParam}
-            onParamNameFocus={this.onParamNameFocus}
-            onParamNameBlur={this.onParamNameBlur}
-            onEnterKey={this.onParamEnterKey}
-            userParams={this.getBehaviorParams()}
-            paramTypes={this.props.paramTypes}
-            triggers={this.getBehaviorTriggers()}
-            isFinishedBehavior={this.isFinishedBehavior()}
-            behaviorHasCode={this.state.revealCodeEditor}
-            hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
-            otherBehaviorsInGroup={this.props.otherBehaviorsInGroup}
-            onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
-            savedAnswers={this.props.savedAnswers}
-            onToggleSavedAnswer={this.toggleSavedAnswerEditor}
-          />
-
-          <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
-            <hr className="man thin bg-gray-light" />
-          </Collapsible>
-
-          <Collapsible revealWhen={!this.state.revealCodeEditor}>
-            <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
-              <div className="container container-wide">
-                <div className="columns columns-elastic mobile-columns-float">
-                  <div className="column column-expand">
-                    <p className="mbn">
-                      <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
-                      <span>or provide a simple response below.</span>
-                    </p>
-                  </div>
-                  <div className="column column-shrink align-m mobile-mtm">
-                    <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
-                      Add code
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Collapsible>
-
-          <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
-
-            <div className="columns container container-wide flex-columns mobile-flex-no-columns">
-              <div className="flex-column flex-column-left column column-page-sidebar mbxxl mobile-mbs ptxxl">
-                <CodeEditorHelp
-                  sectionNumber={this.hasUserParameters() ? "3" : "2"}
-                  isFinishedBehavior={this.isFinishedBehavior()}
-                  functionBody={this.getBehaviorFunctionBody()}
-                  onToggleHelp={this.toggleBoilerplateHelp}
-                  helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
-                  hasUserParameters={this.hasUserParameters()}
-                />
-              </div>
-
-              <div className="flex-column flex-column-left column column-page-main column-page-main-wide">
-                {this.renderCodeEditor()}
-              </div>
-            </div>
-
-            <hr className="man full-bleed thin bg-gray-light" />
-          </Collapsible>
-
-          <ResponseTemplateConfiguration
-            template={this.getBehaviorTemplate()}
-            onChangeTemplate={this.updateTemplate}
-            isFinishedBehavior={this.isFinishedBehavior()}
-            behaviorUsesCode={!!this.state.revealCodeEditor}
-            shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
-            onChangeForcePrivateResponse={this.updateForcePrivateResponse}
-            onCursorChange={this.ensureCursorVisible}
-            userParams={this.getBehaviorParams()}
-            sectionNumber={this.getResponseTemplateSectionNumber()}
-          />
-
-        </div> {/* End of container */}
-
-        {this.renderFooter()}
-
-      </form>
+        </form>
 
         {this.renderHiddenForms()}
 
@@ -2048,49 +2045,55 @@ const BehaviorEditor = React.createClass({
       <div>
         {this.renderPageHeading()}
 
-        {this.renderBehaviorSwitcher()}
-
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
 
-          <div className="container pts">
-            {this.getBehaviorHeading()}
-          </div>
+          <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
+            <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn">
+              {this.renderBehaviorSwitcher()}
+            </div>
+            <div className="column column-page-main-wide flex-column flex-column-left">
 
-          <DataTypeNameInput
-            name={this.getDataTypeName()}
-            onChange={this.updateDataTypeName}
-          />
-
-          <hr className="man thin bg-gray-light" />
-
-          <DataTypeResultConfig
-            usesSearch={this.hasUserParameterNamed('searchQuery')}
-            onChange={this.updateDataTypeResultConfig}
-          />
-
-          <hr className="man thin bg-gray-light" />
-
-          <div className="container container-wide pbxxxl">
-            <div className="columns flex-columns mobile-flex-no-columns">
-              <div className="flex-column flex-column-left column column-page-sidebar ptxl mbxxl mobile-mbs">
-
-                <SectionHeading number="3">Run code to generate a list</SectionHeading>
-
-                <DataTypeCodeEditorHelp
-                  functionBody={this.getBehaviorFunctionBody()}
-                  usesSearch={this.hasUserParameterNamed('searchQuery')}
-                />
-
+              <div className="pts">
+                {this.getBehaviorHeading()}
               </div>
 
-              <div className="flex-column flex-column-left column column-page-main column-page-main-wide mbxxl">
-                {this.renderCodeEditor()}
+              <DataTypeNameInput
+                name={this.getDataTypeName()}
+                onChange={this.updateDataTypeName}
+              />
+
+              <hr className="man thin bg-gray-light" />
+
+              <DataTypeResultConfig
+                usesSearch={this.hasUserParameterNamed('searchQuery')}
+                onChange={this.updateDataTypeResultConfig}
+              />
+
+              <hr className="man thin bg-gray-light" />
+
+              <div className="container container-wide pbxxxl">
+                <div className="columns flex-columns mobile-flex-no-columns">
+                  <div className="flex-column flex-column-left column column-page-sidebar ptxl mbxxl mobile-mbs">
+
+                    <SectionHeading number="3">Run code to generate a list</SectionHeading>
+
+                    <DataTypeCodeEditorHelp
+                      functionBody={this.getBehaviorFunctionBody()}
+                      usesSearch={this.hasUserParameterNamed('searchQuery')}
+                    />
+
+                  </div>
+
+                  <div className="flex-column flex-column-left column column-page-main column-page-main-wide mbxxl">
+                    {this.renderCodeEditor()}
+                  </div>
+                </div>
               </div>
+
+              {this.renderFooter()}
             </div>
           </div>
-
-          {this.renderFooter()}
         </form>
 
         {this.renderHiddenForms()}

@@ -98,27 +98,12 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="columns container container-wide flex-columns mobile-flex-no-columns">
+        <div className="columns container container-wide">
 
-          <div className="flex-column flex-column-left column column-page-sidebar mbxl mobile-mbs type-s ptxxl">
-
+          <div className="mbxxxl ptxl">
             <SectionHeading number={this.props.sectionNumber}>Then respond</SectionHeading>
 
-            <Checklist disabledWhen={this.props.isFinishedBehavior}>
-              <Checklist.Item checkedWhen={this.props.template.usesMarkdown()}>
-                <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
-                <span>to format the response, add links, etc.</span>
-              </Checklist.Item>
-              {this.props.behaviorUsesCode ? "" : (
-                <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
-              )}
-            </Checklist>
-
-            {this.getTemplateDataHelp()}
-          </div>
-
-          <div className="flex-column flex-column-left column column-page-main column-page-main-wide mbxxxl">
-            <div className="mtxxl mobile-mtn border-top border-left border-right border-light pas">
+            <div className="border-top border-left border-right border-light pas">
               <ToggleGroup className="form-toggle-group-s align-m">
                 <ToggleGroup.Item
                   title="Ellipsis will respond wherever you talk to it"

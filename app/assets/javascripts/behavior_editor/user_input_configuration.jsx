@@ -136,29 +136,12 @@ define(function(require) {
 
           <Collapsible revealWhen={this.hasParams()}>
 
-            <hr className="mtn full-bleed thin bg-gray-light" />
+            <hr className="mtn thin bg-gray-light" />
 
-            <div className="columns container">
-              <div className="column column-page-sidebar mbxxl mobile-mbs">
-                <SectionHeading number="2">Collect input</SectionHeading>
-
-                <Checklist disabledWhen={this.props.isFinishedBehavior}>
-                  <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>
-                    <span>If the skill runs code, each input will be sent to the function as a parameter </span>
-                    <span>with the same name.</span>
-                  </Checklist.Item>
-                  <Checklist.Item checkedWhen={this.hasLinkedTriggers()}>
-                    <span>User input can also come from triggers that include matching fill-in-the-blank </span>
-                    <code>{"{labels}"}</code>
-                  </Checklist.Item>
-                  <Checklist.Item hiddenWhen={!this.hasRegexTriggers()} checkedWhen={this.hasRegexCapturingTriggers()}>
-                    <span>Regex triggers will send text captured in parentheses in the same order as </span>
-                    <span>the inputs are defined.</span>
-                  </Checklist.Item>
-                </Checklist>
-              </div>
-              <div className="column column-page-main mbxxl">
+            <div className="columns container container-narrow">
+              <div className="mbxxl">
                 <div>
+                  <SectionHeading number="2">Collect input</SectionHeading>
                   <div className="mbm">
                     {this.props.userParams.map((param, paramIndex) => (
                       <div key={`userParam${paramIndex}`}>

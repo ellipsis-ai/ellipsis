@@ -122,7 +122,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="position-relative width-30 mobile-width-full" ref="behaviorSwitcher">
+        <div className="position-relative" ref="behaviorSwitcher">
           <div className="align-r ptxs prxs">
             <button ref="closeButton" type="button" className="button-symbol button-s button-subtle" onClick={this.props.onToggle}><SVGXIcon /></button>
           </div>
