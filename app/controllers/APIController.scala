@@ -352,13 +352,16 @@ class APIController @Inject() (
           context <- ApiMethodContext.createFor(info.token)
           maybeBehavior <- context.maybeBehaviorFor(info.actionName)
           result <- maybeBehavior.map { behavior =>
-            for {
-              didDelete <- dataService.scheduledBehaviors.deleteFor(behavior, behavior.team)
-            } yield {
-              if (didDelete) {
-                Ok("deleted")
+            dataService.scheduledBehaviors.allForBehavior(behavior).flatMap { scheduledBehaviors =>
+              if (scheduledBehaviors.isEmpty) {
+                Future.successful(Ok("There was nothing to unschedule for this action"))
               } else {
-                NotFound("unable to delete")
+                for {
+                  displayText <- scheduledBehaviors.head.displayText(dataService)
+                  _ <- dataService.scheduledBehaviors.deleteFor(behavior, behavior.team)
+                } yield {
+                  Ok(s"Ok, I unscheduled everything for $displayText")
+                }
               }
             }
           }.getOrElse(Future.successful(NotFound(s"Couldn't find an action with name `${info.actionName}`")))

@@ -350,6 +350,9 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(mockVersion.maybeName).thenReturn(Some(actionName))
         when(dataService.behaviors.maybeCurrentVersionFor(targetBehavior)).thenReturn(Future.successful(Some(mockVersion)))
         when(dataService.scheduledBehaviors.deleteFor(targetBehavior, team)).thenReturn(Future.successful(true))
+        val mockScheduledBehavior = mock[ScheduledBehavior]
+        when(mockScheduledBehavior.displayText(dataService)).thenReturn(Future.successful(s"an action named $actionName"))
+        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
 
         val body = unscheduleActionBodyFor(actionName, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
