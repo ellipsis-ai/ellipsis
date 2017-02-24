@@ -12,6 +12,7 @@ import models.accounts.user.User
 import models.behaviors.SimpleTextResult
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventHandler, SlackMessageEvent}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.recurrence.Daily
@@ -278,6 +279,9 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviors.findWithoutAccessCheck(originatingBehavior.id)).thenReturn(Future.successful(Some(originatingBehavior)))
         when(dataService.behaviors.findByIdOrName(org.mockito.Matchers.eq(actionName), any[BehaviorGroup])).thenReturn(Future.successful(Some(targetBehavior)))
         when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
+        val mockVersion = mock[BehaviorVersion]
+        when(mockVersion.maybeName).thenReturn(Some(actionName))
+        when(dataService.behaviors.maybeCurrentVersionFor(targetBehavior)).thenReturn(Future.successful(Some(mockVersion)))
         when(dataService.scheduledBehaviors.maybeCreateFor(targetBehavior, recurrenceString, user, team, Some(defaultChannel), false)).thenReturn {
           Future.successful(
             Some(
