@@ -41,7 +41,8 @@ define(function(require) {
         <div>
           <Checklist disabledWhen={this.props.isFinishedBehavior}>
             <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.props.isFinishedBehavior}>
-              <span>Write a node.js function. You can <code>require()</code> any </span>
+              <span>Write a Node.js (<a href="https://nodejs.org/docs/latest-v4.x/api/" target="_blank">v4.3.2</a>) </span>
+              <span>function. You can <code>require()</code> any </span>
               <span><a href="https://www.npmjs.com/" target="_blank">NPM package</a>.</span>
             </Checklist.Item>
 
