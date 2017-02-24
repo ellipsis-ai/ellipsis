@@ -30,6 +30,7 @@ var React = require('react'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
+  ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
   SectionHeading = require('./section_heading'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
@@ -188,6 +189,15 @@ const BehaviorEditor = React.createClass({
 
   getBehaviorParams: function() {
     return this.getBehaviorProp('params') || [];
+  },
+
+  getFirstBehaviorParamName: function() {
+    var params = this.getBehaviorParams();
+    if (params[0] && params[0].name) {
+      return params[0].name;
+    } else {
+      return "";
+    }
   },
 
   getBehaviorProp: function(key) {
@@ -877,6 +887,10 @@ const BehaviorEditor = React.createClass({
     this.toggleActiveDropdown('manageBehavior');
   },
 
+  toggleResponseTemplateHelp: function() {
+    this.toggleActivePanel('helpForResponseTemplate');
+  },
+
   toggleSavedAnswerEditor: function(savedAnswerId) {
     if (this.props.activePanelName === 'savedAnswerEditor') {
       this.toggleActivePanel('savedAnswerEditor', true, () => {
@@ -1521,6 +1535,14 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForResponseTemplate'}>
+            <ResponseTemplateHelp
+              firstParamName={this.getFirstBehaviorParamName()}
+              template={this.getBehaviorTemplate()}
+              onCollapseClick={this.props.onClearActivePanel}
+            />
+          </Collapsible>
+
           <Collapsible revealWhen={this.props.activePanelName === 'helpForAWS'}>
             <AWSHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
@@ -2004,7 +2026,8 @@ const BehaviorEditor = React.createClass({
                   shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
                   onChangeForcePrivateResponse={this.updateForcePrivateResponse}
                   onCursorChange={this.ensureCursorVisible}
-                  userParams={this.getBehaviorParams()}
+                  onToggleHelp={this.toggleResponseTemplateHelp}
+                  helpVisible={this.props.activePanelName === 'helpForResponseTemplate'}
                   sectionNumber={this.getResponseTemplateSectionNumber()}
                 />
 

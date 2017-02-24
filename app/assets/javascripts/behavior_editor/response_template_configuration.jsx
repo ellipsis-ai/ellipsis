@@ -2,7 +2,7 @@ define(function(require) {
   var React = require('react'),
     Checklist = require('./checklist'),
     Codemirror = require('../shared_ui/react-codemirror'),
-    Param = require('../models/param'),
+    HelpButton = require('../help/help_button'),
     ResponseTemplate = require('../models/response_template'),
     SectionHeading = require('./section_heading'),
     ToggleGroup = require('../form/toggle_group');
@@ -17,75 +17,9 @@ define(function(require) {
       shouldForcePrivateResponse: React.PropTypes.bool.isRequired,
       onChangeForcePrivateResponse: React.PropTypes.func.isRequired,
       onCursorChange: React.PropTypes.func.isRequired,
-      userParams: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired,
+      onToggleHelp: React.PropTypes.func.isRequired,
+      helpVisible: React.PropTypes.bool.isRequired,
       sectionNumber: React.PropTypes.string.isRequired
-    },
-
-    getTemplateDataHelp: function() {
-      if (this.props.behaviorUsesCode) {
-        return (
-          <div>
-            <span>You can include data in your response.<br /></span>
-            <Checklist className="mtxs" disabledWhen={this.props.isFinishedBehavior}>
-              {this.getUserParamTemplateHelp()}
-              {this.getSuccessResultTemplateHelp()}
-              {this.getPathTemplateHelp()}
-              {this.getIterationTemplateHelp()}
-            </Checklist>
-          </div>
-        );
-      }
-    },
-
-    getUserParamTemplateHelp: function() {
-      return (
-        <Checklist.Item checkedWhen={this.props.template.includesAnyParam()}>
-          User-supplied parameters:<br />
-          <div className="box-code-example">
-            You said {this.getExampleParamName()}
-          </div>
-        </Checklist.Item>
-      );
-    },
-
-    getExampleParamName: function() {
-      var firstParamName = this.props.userParams[0] && this.props.userParams[0].name;
-      return firstParamName ? `{${firstParamName}}` : "{exampleParamName}";
-    },
-
-    getSuccessResultTemplateHelp: function() {
-      return (
-        <Checklist.Item checkedWhen={this.props.template.includesSuccessResult()}>
-          The result provided to <code>ellipsis.success</code>:<br />
-          <div className="box-code-example">
-            The answer is {"{successResult}"}
-          </div>
-        </Checklist.Item>
-      );
-    },
-
-    getPathTemplateHelp: function() {
-      return (
-        <Checklist.Item checkedWhen={this.props.template.includesPath()}>
-          Properties of the result:<br />
-          <div className="box-code-example">
-            Name: {"{successResult.user.name}"}
-          </div>
-        </Checklist.Item>
-      );
-    },
-
-    getIterationTemplateHelp: function() {
-      return (
-        <Checklist.Item checkedWhen={this.props.template.includesIteration()}>
-          Iterating through a list:<br />
-          <div className="box-code-example">
-            {"{for item in successResult.items}"}<br />
-            &nbsp;* {"{item}"}<br />
-            {"{endfor}"}
-          </div>
-        </Checklist.Item>
-      );
     },
 
     unsetForcePrivateResponse: function() {
@@ -101,7 +35,12 @@ define(function(require) {
         <div className="columns container container-wide">
 
           <div className="mbxxxl ptxl">
-            <SectionHeading number={this.props.sectionNumber}>Then respond</SectionHeading>
+            <SectionHeading number={this.props.sectionNumber}>
+              <span className="mrm">Then respond</span>
+              <span className="display-inline-block">
+                <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible}/>
+              </span>
+            </SectionHeading>
 
             <div className="type-s">
               <Checklist disabledWhen={this.props.isFinishedBehavior}>

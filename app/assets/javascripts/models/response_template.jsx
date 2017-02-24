@@ -67,7 +67,10 @@ define(function() {
     }
 
     includesAnyParam() {
-      return /\{\S+?\}/.test(this.text);
+      var matches = this.text.match(/\{\S+?\}/g);
+      return matches && matches.some((ea) => {
+        return !validTemplateKeywordPatterns.some((pattern) => pattern.test(ea.replace(/^\{|}$/g, '')));
+      });
     }
 
     includesIteration() {
@@ -80,6 +83,11 @@ define(function() {
 
     includesSuccessResult() {
       return /\{successResult.*?\}/.test(this.text);
+    }
+
+    includesIfLogic() {
+      return /\{if \S.*?\}/.test(this.text) &&
+        /\{endif\}/.test(this.text);
     }
 
     usesMarkdown() {
