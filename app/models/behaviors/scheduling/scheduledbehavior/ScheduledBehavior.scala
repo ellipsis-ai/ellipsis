@@ -11,6 +11,7 @@ import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import services.DataService
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class ScheduledBehavior(
@@ -25,7 +26,22 @@ case class ScheduledBehavior(
                              createdAt: OffsetDateTime
                            ) extends Scheduled {
 
-  val displayText: String = s"${behavior.id}"
+  def displayText(dataService: DataService): Future[String] = {
+    dataService.behaviors.maybeCurrentVersionFor(behavior).map { maybeVersion =>
+      maybeVersion.map { version =>
+        val actionText = version.maybeName.map { name =>
+          s"""an action named `${name}`"""
+        }.getOrElse("an unnamed action")
+        val groupText = (for {
+          group <- behavior.maybeGroup
+          groupName <- Option(group.name).filter(_.trim.nonEmpty)
+        } yield {
+          s" in skill `$groupName`"
+        }).getOrElse("")
+        s"$actionText$groupText"
+      }.getOrElse("an unnamed action")
+    }
+  }
 
   def eventFor(channelName: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
     ScheduledEvent(RunEvent(profile, behavior, Map(), channelName, None, slackUserId, "ts"), this)

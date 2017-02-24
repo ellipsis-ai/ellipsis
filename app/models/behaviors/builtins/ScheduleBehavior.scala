@@ -25,11 +25,10 @@ case class ScheduleBehavior(
       maybeScheduledMessage <- maybeTeam.map { team =>
         dataService.scheduledMessages.maybeCreateFor(text, recurrence, user, team, event.maybeChannel, isForIndividualMembers)
       }.getOrElse(Future.successful(None))
+      responseText <- maybeScheduledMessage.map { scheduledMessage =>
+        scheduledMessage.successResponse(dataService)
+      }.getOrElse(Future.successful(s"Sorry, I don’t know how to schedule `$recurrence`"))
     } yield {
-      val responseText = maybeScheduledMessage.map { scheduledMessage =>
-        scheduledMessage.successResponse
-      }.getOrElse(s"Sorry, I don’t know how to schedule `$recurrence`")
-
       SimpleTextResult(event, responseText, forcePrivateResponse = false)
     }
   }

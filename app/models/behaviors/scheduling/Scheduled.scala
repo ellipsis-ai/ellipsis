@@ -30,28 +30,36 @@ trait Scheduled {
   val nextSentAt: OffsetDateTime
   val createdAt: OffsetDateTime
 
-  val displayText: String
+  def displayText(dataService: DataService): Future[String]
 
   def followingSentAt: OffsetDateTime = recurrence.nextAfter(nextSentAt)
 
-  def successResponse: String = shortDescription("OK, I will run")
+  def successResponse(dataService: DataService): Future[String] = {
+    shortDescription("OK, I will run", dataService)
+  }
 
-  def scheduleInfoResultFor(event: ScheduledEvent, result: BotResult, configuration: Configuration, didInterrupt: Boolean) = {
+  def scheduleInfoResultFor(
+                             event: ScheduledEvent,
+                             result: BotResult,
+                             configuration: Configuration,
+                             didInterrupt: Boolean,
+                             displayText: String
+                           ): BotResult = {
     val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.HelpController.scheduledMessages()
       s"$baseUrl$path"
     }.get
     val resultText = if (didInterrupt) {
-      s"""Meanwhile, I’m running `$displayText` [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
+      s"""Meanwhile, I’m running $displayText [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
          |
-         |───
-       """.stripMargin
+       |───
+     """.stripMargin
     } else {
       s""":wave: Hi.
          |
-         |I’m running `$displayText` [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
+       |I’m running $displayText [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
          |
-         |───
+       |───
          |""".stripMargin
     }
     SimpleTextResult(event, resultText, result.forcePrivateResponse)
@@ -80,19 +88,23 @@ trait Scheduled {
     s"${recurrence.displayString.trim} $channelInfo"
   }
 
-  def shortDescription(prefix: String = ""): String = {
-    s"$prefix `$displayText` $recurrenceAndChannel."
+  def shortDescription(prefix: String, dataService: DataService): Future[String] = {
+    displayText(dataService).map { displayText =>
+      s"$prefix $displayText $recurrenceAndChannel."
+    }
   }
 
-  def listResponse: String = {
-    s"""
-       |
-        |**${shortDescription("Run")}**
-       |
+  def listResponse(dataService: DataService): Future[String] = {
+    shortDescription("Run", dataService).map { desc =>
+      s"""
+         |
+        |**$desc**
+         |
         |$nextRunsString
-       |
+         |
         |
      """.stripMargin
+    }
   }
 
   val nextRunDateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
@@ -211,8 +223,9 @@ trait Scheduled {
                   dataService: DataService
                 )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
+      displayText <- displayText(dataService)
       _ <- if (result.hasText) {
-        scheduleInfoResultFor(event, result, configuration, didInterrupt).sendIn(None, None, dataService)
+        scheduleInfoResultFor(event, result, configuration, didInterrupt, displayText).sendIn(None, None, dataService)
       } else {
         Future.successful({})
       }
@@ -222,7 +235,7 @@ trait Scheduled {
         event.maybeChannel.
           map { channel => s" in channel $channel" }.
           getOrElse("")
-      Logger.info(s"Sending result [${result.fullText}] for scheduled message [${displayText}]$channelInfo")
+      Logger.info(s"Sending result [${result.fullText}] for scheduled message [$displayText]$channelInfo")
     }
   }
 
@@ -262,5 +275,23 @@ trait Scheduled {
   }
 
   def updateNextTriggeredFor(dataService: DataService): Future[Scheduled]
+
+}
+
+object Scheduled {
+
+  def allToBeSent(dataService: DataService): Future[Seq[Scheduled]] = {
+    for {
+      scheduledMessages <- dataService.scheduledMessages.allToBeSent
+      scheduledBehaviors <- dataService.scheduledBehaviors.allToBeSent
+    } yield scheduledMessages ++ scheduledBehaviors
+  }
+
+  def allForTeam(team: Team, dataService: DataService): Future[Seq[Scheduled]] = {
+    for {
+      scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
+      scheduledBehaviors <- dataService.scheduledBehaviors.allForTeam(team)
+    } yield scheduledMessages ++ scheduledBehaviors
+  }
 
 }

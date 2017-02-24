@@ -329,13 +329,12 @@ class APIController @Inject() (
             for {
               user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behavior.team.id)
               maybeScheduled <- dataService.scheduledBehaviors.maybeCreateFor(behavior, info.recurrenceString, user, behavior.team, context.maybeSlackChannelId, info.useDM)
-            } yield {
-              maybeScheduled.map { scheduled =>
-                Ok(scheduled.successResponse)
+              result <- maybeScheduled.map { scheduled =>
+                scheduled.successResponse(dataService).map(Ok(_))
               }.getOrElse {
-                BadRequest(s"Unable to schedule for `${info.recurrenceString}`")
+                Future.successful(BadRequest(s"Unable to schedule for `${info.recurrenceString}`"))
               }
-            }
+            } yield result
           }).getOrElse(Future.successful(NotFound(s"Couldn't find an action with name `${info.actionName}`")))
         } yield result
 

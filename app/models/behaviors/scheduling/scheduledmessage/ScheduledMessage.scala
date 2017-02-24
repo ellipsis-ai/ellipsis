@@ -24,7 +24,9 @@ case class ScheduledMessage(
                              createdAt: OffsetDateTime
                            ) extends Scheduled {
 
-  val displayText = text
+  def displayText(dataService: DataService): Future[String] = {
+    Future.successful("`text`")
+  }
 
   def eventFor(channelName: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
     ScheduledEvent(SlackMessageEvent(profile, channelName, None, slackUserId, text, "ts"), this)

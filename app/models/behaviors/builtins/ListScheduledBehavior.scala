@@ -2,6 +2,7 @@ package models.behaviors.builtins
 
 import akka.actor.ActorSystem
 import models.behaviors.events.Event
+import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
@@ -24,32 +25,33 @@ case class ListScheduledBehavior(
       |```
     """.stripMargin
 
-  def responseForMessages(messages: Seq[ScheduledMessage]): String = {
-    s"""Here’s what you have scheduled:
-       |
-       |${messages.map(_.listResponse).mkString}
-       |
+  def responseFor(scheduled: Seq[Scheduled]): Future[String] = {
+    Future.sequence(scheduled.map(_.listResponse(dataService))).map { listResponses =>
+      s"""Here’s what you have scheduled:
+         |
+       |${listResponses.mkString}
+         |
        |You can unschedule by typing something like:
-       |
+         |
        |```
-       |${event.botPrefix}unschedule "go bananas"
-       |```
+         |${event.botPrefix}unschedule "go bananas"
+         |```
      """.stripMargin
+    }
   }
 
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       scheduled <- maybeTeam.map { team =>
-        dataService.scheduledMessages.allForTeam(team)
+        Scheduled.allForTeam(team, dataService)
       }.getOrElse(Future.successful(Seq()))
-    } yield {
-      val responseText = if (scheduled.isEmpty) {
-        noMessagesResponse
+      responseText <- if (scheduled.isEmpty) {
+        Future.successful(noMessagesResponse)
       } else {
-        responseForMessages(scheduled)
+        responseFor(scheduled)
       }
-
+    } yield {
       SimpleTextResult(event, responseText, forcePrivateResponse = false)
     }
   }

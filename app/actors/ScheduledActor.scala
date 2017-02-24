@@ -31,26 +31,21 @@ class ScheduledActor @Inject()(
     tick.cancel()
   }
 
-  def scheduled: Future[Seq[Scheduled]] = {
-    for {
-      scheduledMessages <- dataService.scheduledMessages.allToBeSent
-      scheduledBehaviors <- dataService.scheduledBehaviors.allToBeSent
-    } yield scheduledMessages ++ scheduledBehaviors
-  }
-
   def receive = {
     case "tick" => {
-      scheduled.flatMap { scheduleds =>
+      Scheduled.allToBeSent(dataService).flatMap { scheduleds =>
         Future.sequence(scheduleds.map { scheduled =>
-          scheduled.botProfile(dataService).flatMap { maybeProfile =>
-            maybeProfile.map { profile =>
-              scheduled.updateNextTriggeredFor(dataService).flatMap { _ =>
-                scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration)
+          scheduled.displayText(dataService).flatMap { displayText =>
+            scheduled.botProfile(dataService).flatMap { maybeProfile =>
+              maybeProfile.map { profile =>
+                scheduled.updateNextTriggeredFor(dataService).flatMap { _ =>
+                  scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration)
+                }
+              }.getOrElse(Future.successful(Unit))
+            }.recover {
+              case t: Throwable => {
+                Logger.error(s"Exception handling scheduled message: $displayText", t)
               }
-            }.getOrElse(Future.successful(Unit))
-          }.recover {
-            case t: Throwable => {
-              Logger.error(s"Exception handling scheduled message: ${scheduled.displayText}", t)
             }
           }
         })
