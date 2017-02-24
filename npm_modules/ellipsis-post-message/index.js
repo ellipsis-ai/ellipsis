@@ -6,6 +6,7 @@ const errorMessages = {
   ELLIPSIS_OBJECT_MISSING: "You need to pass an `ellipsis` object through from an Ellipsis action",
   MESSAGE_MISSING: "You need to pass a `message` argument",
   ACTION_NAME_MISSING: "You need to pass an `actionName` argument",
+  MESSAGE_AND_ACTION_NAME_MISSING: "You need to pass either an `actionName` or a `message` argument",
   SCHEDULE_ACTION_MISSING: "You need to pass an `action` argument for the thing you want to schedule",
   UNSCHEDULE_ACTION_MISSING: "You need to pass an `action` argument for the thing you want to unschedule",
   RECURRENCE_MISSING: "You need to pass a `recurrence` argument to specify when you want to schedule the action to recur, e.g. \"every weekday at 9am\""
@@ -222,7 +223,7 @@ const PM = {
     const message = args.message;
     const recurrence = args.recurrence;
     if (!actionName && !message) {
-      errorHandler(ellipsis, args, errorMessages.SCHEDULE_ACTION_MISSING);
+      errorHandler(ellipsis, args, errorMessages.MESSAGE_AND_ACTION_NAME_MISSING);
     } else if (!recurrence) {
       errorHandler(ellipsis, args, errorMessages.RECURRENCE_MISSING);
     } else {
@@ -243,16 +244,50 @@ const PM = {
     }
   },
 
+  unscheduleAction: function (args) {
+    const ellipsis = args.ellipsis;
+    if (typeof ellipsis !== "object") {
+      errorHandler(null, args, errorMessages.ELLIPSIS_OBJECT_MISSING);
+    } else {
+      const actionName = args.actionName;
+      if (!actionName) {
+        errorHandler(ellipsis, args, errorMessages.ACTION_NAME_MISSING);
+      } else {
+        const formData = {
+          actionName: actionName,
+          token: ellipsis.token
+        };
+        request.
+          post(
+            {
+              url: ellipsis.apiBaseUrl + "/api/unschedule_action",
+              form: formData
+            }, (error, response, body) => handleResponse(args, ellipsis, error, response, body)
+        );
+      }
+    }
+  },
+
   promiseToUnschedule: function(args) {
     const ellipsis = args.ellipsis;
-    const action = args.action;
-    if (!action) {
-      errorHandler(ellipsis, args, errorMessages.UNSCHEDULE_ACTION_MISSING);
+    const actionName = args.actionName;
+    const message = args.message;
+    if (!actionName && !message) {
+      errorHandler(ellipsis, args, errorMessages.MESSAGE_AND_ACTION_NAME_MISSING);
     } else {
-      const message = `...unschedule "${action}"`;
-      return PM.promiseToPostMessage(Object.assign({}, args, {
-        message: message
-      }));
+      if (actionName) {
+        return new Promise((resolve, reject) => {
+          PM.unscheduleAction(Object.assign({}, args, {
+            success: resolve,
+            error: reject
+          }));
+        });
+      } else {
+        const fullMessage = `...unschedule "${message}"`;
+        return PM.promiseToPostMessage(Object.assign({}, args, {
+          message: fullMessage
+        }));
+      }
     }
   }
 
