@@ -99,6 +99,8 @@ POST        /api/run_action                           @controllers.APIController
 #NOCSRF
 POST        /api/schedule_action                      @controllers.APIController.scheduleAction
 #NOCSRF
+POST        /api/unschedule_action                    @controllers.APIController.unscheduleAction
+#NOCSRF
 POST        /api/say                                  @controllers.APIController.say
 #NOCSRF
 GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
