@@ -39,23 +39,6 @@ class APIController @Inject() (
 
   class InvalidTokenException extends Exception
 
-  private def maybeUserForApiToken(token: String): Future[Option[User]] = {
-    for {
-      maybeToken <- dataService.apiTokens.find(token)
-      maybeValidToken <- maybeToken.map { token =>
-        if (token.isValid) {
-          dataService.apiTokens.use(token).map(_ => Some(token))
-        } else {
-          Future.successful(None)
-        }
-      }.getOrElse(Future.successful(None))
-
-      maybeUser <- maybeValidToken.map { token =>
-        dataService.users.find(token.userId)
-      }.getOrElse(Future.successful(None))
-    } yield maybeUser
-  }
-
   trait ApiMethodInfo {
     val responseContext: String
     val channel: String
@@ -66,23 +49,81 @@ class APIController @Inject() (
     val message: String
   }
 
-  trait ApiMethodContextTrait {
+  trait ApiMethodContext {
     val maybeInvocationToken: Option[InvocationToken]
     val maybeUserForApiToken: Option[User]
     val maybeBotProfile: Option[SlackBotProfile]
     val maybeSlackProfile: Option[SlackProfile]
     val maybeScheduledMessage: Option[ScheduledMessage]
-    val maybeSlackChannelId: Option[String]
   }
 
-  case class ApiMethodContext(
+  case class BaseApiMethodContext(
                                maybeInvocationToken: Option[InvocationToken],
                                maybeUserForApiToken: Option[User],
                                maybeBotProfile: Option[SlackBotProfile],
                                maybeSlackProfile: Option[SlackProfile],
-                               maybeScheduledMessage: Option[ScheduledMessage],
-                               maybeSlackChannelId: Option[String]
-                             ) extends ApiMethodContextTrait {
+                               maybeScheduledMessage: Option[ScheduledMessage]
+                             ) extends ApiMethodContext
+
+  object BaseApiMethodContext {
+
+    private def maybeUserForApiToken(token: String): Future[Option[User]] = {
+      for {
+        maybeToken <- dataService.apiTokens.find(token)
+        maybeValidToken <- maybeToken.map { token =>
+          if (token.isValid) {
+            dataService.apiTokens.use(token).map(_ => Some(token))
+          } else {
+            Future.successful(None)
+          }
+        }.getOrElse(Future.successful(None))
+
+        maybeUser <- maybeValidToken.map { token =>
+          dataService.users.find(token.userId)
+        }.getOrElse(Future.successful(None))
+      } yield maybeUser
+    }
+
+    def createFor(info: ApiMethodInfo): Future[BaseApiMethodContext] = {
+      for {
+        maybeUserForApiToken <- maybeUserForApiToken(info.token)
+        maybeInvocationToken <- dataService.invocationTokens.findNotExpired(info.token)
+        maybeScheduledMessage <- maybeInvocationToken.flatMap { token =>
+          token.maybeScheduledMessageId.map { msgId =>
+            dataService.scheduledMessages.find(msgId)
+          }
+        }.getOrElse(Future.successful(None))
+        maybeUserForInvocationToken <- dataService.users.findForInvocationToken(info.token)
+        maybeUser <- Future.successful(maybeUserForApiToken.orElse(maybeUserForInvocationToken))
+        maybeTeam <- maybeUser.map { user =>
+          dataService.teams.find(user.teamId)
+        }.getOrElse {
+          throw new InvalidTokenException()
+        }
+        maybeBotProfile <- maybeTeam.map { team =>
+          dataService.slackBotProfiles.allFor(team).map(_.headOption)
+        }.getOrElse(Future.successful(None))
+        maybeSlackLinkedAccount <- maybeUser.map { user =>
+          dataService.linkedAccounts.maybeForSlackFor(user)
+        }.getOrElse(Future.successful(None))
+        maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
+          dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
+        }.getOrElse(Future.successful(None))
+      } yield {
+        BaseApiMethodContext(maybeInvocationToken, maybeUserForApiToken, maybeBotProfile, maybeSlackProfile, maybeScheduledMessage)
+      }
+    }
+
+  }
+
+  case class ApiMethodWithChannelContext(
+                                         maybeInvocationToken: Option[InvocationToken],
+                                         maybeUserForApiToken: Option[User],
+                                         maybeBotProfile: Option[SlackBotProfile],
+                                         maybeSlackProfile: Option[SlackProfile],
+                                         maybeScheduledMessage: Option[ScheduledMessage],
+                                         maybeSlackChannelId: Option[String]
+                                       ) extends ApiMethodContext {
 
     def maybeEventFor(info: ApiMethodWithMessageInfo): Option[Event] = {
       maybeBotProfile.map { botProfile =>
@@ -103,37 +144,30 @@ class APIController @Inject() (
 
   }
 
-  def apiMethodContextFor(info: ApiMethodInfo): Future[ApiMethodContext] = {
-    for {
-      maybeUserForApiToken <- maybeUserForApiToken(info.token)
-      maybeInvocationToken <- dataService.invocationTokens.findNotExpired(info.token)
-      maybeScheduledMessage <- maybeInvocationToken.flatMap { token =>
-        token.maybeScheduledMessageId.map { msgId =>
-          dataService.scheduledMessages.find(msgId)
+  object ApiMethodWithChannelContext {
+
+    def createFor(info: ApiMethodInfo, channel: String): Future[ApiMethodWithChannelContext] = {
+      for {
+        baseContext <- BaseApiMethodContext.createFor(info)
+        context <- baseContext.maybeBotProfile.map { botProfile =>
+          dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
+        }.getOrElse(Future.successful(None)).map { maybeSlackChannelId =>
+          ApiMethodWithChannelContext(
+            baseContext.maybeInvocationToken,
+            baseContext.maybeUserForApiToken,
+            baseContext.maybeBotProfile,
+            baseContext.maybeSlackProfile,
+            baseContext.maybeScheduledMessage,
+            maybeSlackChannelId
+          )
         }
-      }.getOrElse(Future.successful(None))
-      maybeUserForInvocationToken <- dataService.users.findForInvocationToken(info.token)
-      maybeUser <- Future.successful(maybeUserForApiToken.orElse(maybeUserForInvocationToken))
-      maybeTeam <- maybeUser.map { user =>
-        dataService.teams.find(user.teamId)
-      }.getOrElse {
-        throw new InvalidTokenException()
-      }
-      maybeBotProfile <- maybeTeam.map { team =>
-        dataService.slackBotProfiles.allFor(team).map(_.headOption)
-      }.getOrElse(Future.successful(None))
-      maybeSlackLinkedAccount <- maybeUser.map { user =>
-        dataService.linkedAccounts.maybeForSlackFor(user)
-      }.getOrElse(Future.successful(None))
-      maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
-        dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
-      }.getOrElse(Future.successful(None))
-      maybeSlackChannelId <- maybeBotProfile.map { botProfile =>
-        dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(info.channel)
-      }.getOrElse(Future.successful(None))
-    } yield {
-      ApiMethodContext(maybeInvocationToken, maybeUserForApiToken, maybeBotProfile, maybeSlackProfile, maybeScheduledMessage, maybeSlackChannelId)
+      } yield context
     }
+
+    def createFor(info: ApiMethodWithMessageInfo): Future[ApiMethodWithChannelContext] = {
+      createFor(info, info.channel)
+    }
+
   }
 
   case class ApiMethodWithActionContext(
@@ -144,10 +178,11 @@ class APIController @Inject() (
                                          maybeScheduledMessage: Option[ScheduledMessage],
                                          maybeSlackChannelId: Option[String],
                                          maybeBehavior: Option[Behavior]
-                                       ) extends ApiMethodContextTrait
+                                       ) extends ApiMethodContext
 
   object ApiMethodWithActionContext {
-    def apply(context: ApiMethodContext, maybeBehavior: Option[Behavior]): ApiMethodWithActionContext = {
+
+    def apply(context: ApiMethodWithChannelContext, maybeBehavior: Option[Behavior]): ApiMethodWithActionContext = {
       apply(
         context.maybeInvocationToken,
         context.maybeUserForApiToken,
@@ -158,24 +193,25 @@ class APIController @Inject() (
         maybeBehavior
       )
     }
-  }
 
-  def apiMethodWithActionContextFor(info: ApiMethodWithActionInfo): Future[ApiMethodWithActionContext] = {
-    for {
-      context <- apiMethodContextFor(info)
-      maybeOriginatingBehavior <- context.maybeInvocationToken.map { invocationToken =>
-        dataService.behaviors.findWithoutAccessCheck(invocationToken.behaviorId)
-      }.getOrElse(Future.successful(None))
-      maybeGroup <- Future.successful(maybeOriginatingBehavior.flatMap(_.maybeGroup))
-      maybeBehavior <- maybeGroup.map { group =>
-        dataService.behaviors.findByIdOrName(info.actionName, group)
-      }.getOrElse(Future.successful(None))
-    } yield {
-      ApiMethodWithActionContext(context, maybeBehavior)
+    def createFor(info: ApiMethodWithActionInfo): Future[ApiMethodWithActionContext] = {
+      for {
+        context <- ApiMethodWithChannelContext.createFor(info, info.channel)
+        maybeOriginatingBehavior <- context.maybeInvocationToken.map { invocationToken =>
+          dataService.behaviors.findWithoutAccessCheck(invocationToken.behaviorId)
+        }.getOrElse(Future.successful(None))
+        maybeGroup <- Future.successful(maybeOriginatingBehavior.flatMap(_.maybeGroup))
+        maybeBehavior <- maybeGroup.map { group =>
+          dataService.behaviors.findByIdOrName(info.actionName, group)
+        }.getOrElse(Future.successful(None))
+      } yield {
+        ApiMethodWithActionContext(context, maybeBehavior)
+      }
     }
+
   }
 
-  private def runBehaviorFor(maybeEvent: Option[Event], context: ApiMethodContextTrait) = {
+  private def runBehaviorFor(maybeEvent: Option[Event], context: ApiMethodContext) = {
     for {
       isInvokedExternally <- Future.successful(context.maybeUserForApiToken.isDefined)
       result <- maybeEvent.map { event =>
@@ -261,7 +297,7 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- apiMethodWithActionContextFor(info)
+          context <- ApiMethodWithActionContext.createFor(info)
           maybeEvent <- Future.successful(
             for {
               botProfile <- context.maybeBotProfile
@@ -321,7 +357,7 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- apiMethodWithActionContextFor(info)
+          context <- ApiMethodWithActionContext.createFor(info)
           result <- (for {
             slackProfile <- context.maybeSlackProfile
             behavior <- context.maybeBehavior
@@ -377,7 +413,7 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- apiMethodContextFor(info)
+          context <- ApiMethodWithChannelContext.createFor(info)
           maybeEvent <- Future.successful(
             context.maybeBotProfile.map { botProfile =>
               val slackEvent = SlackMessageEvent(
@@ -428,7 +464,7 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- apiMethodContextFor(info)
+          context <- ApiMethodWithChannelContext.createFor(info)
           maybeEvent <- Future.successful(context.maybeEventFor(info))
           result <- maybeEvent.map { event =>
             val botResult = SimpleTextResult(event, info.message, forcePrivateResponse = false)
