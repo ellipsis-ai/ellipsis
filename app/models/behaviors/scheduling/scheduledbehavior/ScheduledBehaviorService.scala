@@ -14,6 +14,8 @@ trait ScheduledBehaviorService {
 
   def find(id: String): Future[Option[ScheduledBehavior]]
 
+  def allForBehavior(behavior: Behavior): Future[Seq[ScheduledBehavior]]
+
   def save(scheduledBehavior: ScheduledBehavior): Future[ScheduledBehavior]
 
   def updateNextTriggeredFor(scheduledBehavior: ScheduledBehavior): Future[ScheduledBehavior]

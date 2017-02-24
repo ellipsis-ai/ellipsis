@@ -131,6 +131,18 @@ class ScheduledBehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledFindByBehaviorIdQueryFor(behaviorId: Rep[String]) = {
+    allWithUser.filter { case((((msg, _), _), _), _) => msg.behaviorId === behaviorId }
+  }
+  val findByBehaviorIdQueryFor = Compiled(uncompiledFindByBehaviorIdQueryFor _)
+
+  def allForBehavior(behavior: Behavior): Future[Seq[ScheduledBehavior]] = {
+    val action = findByBehaviorIdQueryFor(behavior.id).result.map { r =>
+      r.map(tuple2ScheduledBehavior)
+    }
+    dataService.run(action)
+  }
+
   def save(scheduledBehavior: ScheduledBehavior): Future[ScheduledBehavior] = {
     val raw = scheduledBehavior.toRaw
     val query = all.filter(_.id === raw.id)
