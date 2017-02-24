@@ -261,5 +261,6 @@ trait Scheduled {
     }.getOrElse(Future.successful(Unit))
   }
 
+  def updateNextTriggeredFor(dataService: DataService): Future[Scheduled]
 
 }

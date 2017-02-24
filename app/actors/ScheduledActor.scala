@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.{Actor, ActorSystem}
 import models.behaviors.events.EventHandler
+import models.behaviors.scheduling.Scheduled
 import play.api.{Configuration, Logger}
 import services.DataService
 import slack.api.SlackApiClient
@@ -12,11 +13,11 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object ScheduledMessageActor {
-  final val name = "scheduled-messages"
+object ScheduledActor {
+  final val name = "scheduled"
 }
 
-class ScheduledMessageActor @Inject() (
+class ScheduledActor @Inject()(
                                         val dataService: DataService,
                                         val eventHandler: EventHandler,
                                         val configuration: Configuration,
@@ -30,19 +31,26 @@ class ScheduledMessageActor @Inject() (
     tick.cancel()
   }
 
+  def scheduled: Future[Seq[Scheduled]] = {
+    for {
+      scheduledMessages <- dataService.scheduledMessages.allToBeSent
+      scheduledBehaviors <- dataService.scheduledBehaviors.allToBeSent
+    } yield scheduledMessages ++ scheduledBehaviors
+  }
+
   def receive = {
     case "tick" => {
-      dataService.scheduledMessages.allToBeSent.flatMap { messages =>
-        Future.sequence(messages.map { message =>
-          message.botProfile(dataService).flatMap { maybeProfile =>
+      scheduled.flatMap { scheduleds =>
+        Future.sequence(scheduleds.map { scheduled =>
+          scheduled.botProfile(dataService).flatMap { maybeProfile =>
             maybeProfile.map { profile =>
-              dataService.scheduledMessages.updateNextTriggeredFor(message).flatMap { _ =>
-                message.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration)
+              scheduled.updateNextTriggeredFor(dataService).flatMap { _ =>
+                scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration)
               }
             }.getOrElse(Future.successful(Unit))
           }.recover {
             case t: Throwable => {
-              Logger.error(s"Exception handling scheduled message: ${message.text}", t)
+              Logger.error(s"Exception handling scheduled message: ${scheduled.displayText}", t)
             }
           }
         })

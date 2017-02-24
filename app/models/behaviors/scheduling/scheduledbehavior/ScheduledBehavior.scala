@@ -9,6 +9,9 @@ import models.behaviors.events.{RunEvent, ScheduledEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
+import services.DataService
+
+import scala.concurrent.Future
 
 case class ScheduledBehavior(
                              id: String,
@@ -30,6 +33,10 @@ case class ScheduledBehavior(
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledBehavior = {
     this.copy(nextSentAt = recurrence.nextAfter(when))
+  }
+
+  def updateNextTriggeredFor(dataService: DataService): Future[ScheduledBehavior] = {
+    dataService.scheduledBehaviors.updateNextTriggeredFor(this)
   }
 
   def toRaw: RawScheduledBehavior = {

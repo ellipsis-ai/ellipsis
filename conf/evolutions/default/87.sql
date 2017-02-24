@@ -48,8 +48,8 @@ CREATE TABLE scheduled_behaviors (
   channel_name TEXT,
   is_for_individual_members BOOLEAN NOT NULL DEFAULT FALSE,
   recurrence_id TEXT NOT NULL REFERENCES recurrences(id) ON DELETE CASCADE,
-  next_sent_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP NOT NULL
+  next_sent_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL
 );
 
 # --- !Downs

@@ -8,6 +8,9 @@ import models.behaviors.events.{ScheduledEvent, SlackMessageEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
+import services.DataService
+
+import scala.concurrent.Future
 
 case class ScheduledMessage(
                              id: String,
@@ -29,6 +32,10 @@ case class ScheduledMessage(
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {
     this.copy(nextSentAt = recurrence.nextAfter(when))
+  }
+
+  def updateNextTriggeredFor(dataService: DataService): Future[ScheduledMessage] = {
+    dataService.scheduledMessages.updateNextTriggeredFor(this)
   }
 
   def toRaw: RawScheduledMessage = {
