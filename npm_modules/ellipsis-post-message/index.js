@@ -204,6 +204,7 @@ const PM = {
           responseContext: responseContext,
           channel: channel,
           recurrence: args.recurrence,
+          useDM: args.useDM,
           token: ellipsis.token
         }, argsFormDataFor(args.args));
         request.
