@@ -1,15 +1,21 @@
-package models.behaviors.scheduledmessage
+package models.behaviors.scheduling.recurrence
 
 import java.time._
 import java.time.format.{DateTimeFormatter, TextStyle}
 import java.util.{Calendar, Date, Locale, TimeZone}
 
 import com.joestelmach.natty._
+import models.IDs
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
 
 sealed trait Recurrence {
+  val id: String
+
+  // for testing
+  def copyWithEmptyId: Recurrence
+
   val frequency: Int
   val typeName: String
   val maybeTimeOfDay: Option[LocalTime] = None
@@ -47,8 +53,31 @@ sealed trait Recurrence {
   }
   def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = when.withSecond(0).withNano(0)
   def displayString: String = ""
+
+  def toRaw: RawRecurrence = RawRecurrence(
+    id,
+    typeName,
+    frequency: Int,
+    maybeTimeOfDay,
+    maybeTimeZone,
+    maybeMinuteOfHour,
+    maybeDayOfWeek.map(_.getValue),
+    maybeMonday,
+    maybeTuesday,
+    maybeWednesday,
+    maybeThursday,
+    maybeFriday,
+    maybeSaturday,
+    maybeSunday,
+    maybeDayOfMonth,
+    maybeNthDayOfWeek,
+    maybeMonth
+  )
 }
-case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
+
+case class Hourly(id: String, frequency: Int, minuteOfHour: Int) extends Recurrence {
+
+  def copyWithEmptyId: Hourly = copy(id = "")
 
   override def displayString: String = {
     val frequencyString = if (frequency == 1) { "hour" } else { s"$frequency hours" }
@@ -84,7 +113,7 @@ case class Hourly(frequency: Int, minuteOfHour: Int) extends Recurrence {
 object Hourly {
   val recurrenceType = "hourly"
 
-  def maybeFromText(text: String): Option[Hourly] = {
+  def maybeUnsavedFromText(text: String): Option[Hourly] = {
     val singleRegex = """(?i).*every hour.*""".r
     val nRegex = """(?i).*every\s+(\d+)\s+hours?.*""".r
     val maybeFrequency = text match {
@@ -98,7 +127,7 @@ object Hourly {
         case minutesRegex(minutes) => Some(minutes.toInt)
         case _ => None
       }
-      Hourly(frequency, maybeMinuteOfHour.getOrElse(OffsetDateTime.now.getMinute))
+      Hourly(IDs.next, frequency, maybeMinuteOfHour.getOrElse(OffsetDateTime.now.getMinute))
     }
   }
 }
@@ -124,7 +153,9 @@ trait RecurrenceWithTimeOfDay extends Recurrence {
   }
 }
 
-case class Daily(frequency: Int, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
+case class Daily(id: String, frequency: Int, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
+
+  def copyWithEmptyId: Daily = copy(id = "")
 
   override def displayString: String = {
     val frequencyString = if (frequency == 1) { "day" } else { s"$frequency days" }
@@ -161,7 +192,7 @@ case class Daily(frequency: Int, timeOfDay: LocalTime, timeZone: ZoneId) extends
 object Daily {
   val recurrenceType = "daily"
 
-  def maybeFromText(text: String, defaultTimeZone: ZoneId): Option[Daily] = {
+  def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[Daily] = {
     val singleRegex = """(?i)every day.*""".r
     val nRegex = """(?i)every\s+(\d+)\s+days?.*""".r
     val maybeFrequency = text match {
@@ -171,17 +202,20 @@ object Daily {
     }
     maybeFrequency.map { frequency =>
       val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
-      Daily(frequency, maybeTime.getOrElse(Recurrence.currentAdjustedTime(defaultTimeZone)), defaultTimeZone)
+      Daily(IDs.next, frequency, maybeTime.getOrElse(Recurrence.currentAdjustedTime(defaultTimeZone)), defaultTimeZone)
     }
   }
 }
 
 case class Weekly(
+                   id: String,
                    frequency: Int,
                    override val daysOfWeek: Seq[DayOfWeek],
                    timeOfDay: LocalTime,
                    timeZone: ZoneId
                  ) extends RecurrenceWithTimeOfDay {
+
+  def copyWithEmptyId: Weekly = copy(id = "")
 
   lazy val daysOfWeekValues = daysOfWeek.map(_.getValue)
 
@@ -254,7 +288,7 @@ case class Weekly(
 object Weekly {
   val recurrenceType = "weekly"
 
-  def maybeFromText(text: String, defaultTimeZone: ZoneId): Option[Weekly] = {
+  def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[Weekly] = {
     val singleRegex = """(?i)every week.*""".r
     val nRegex = """(?i)every\s+(\d+)\s+weeks?.*""".r
     val maybeFrequency = text match {
@@ -269,6 +303,7 @@ object Weekly {
       }
       val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
       Weekly(
+        IDs.next,
         frequency,
         daysOfWeek,
         maybeTime.getOrElse(Recurrence.currentAdjustedTime(defaultTimeZone)),
@@ -278,7 +313,9 @@ object Weekly {
   }
 }
 
-case class MonthlyByDayOfMonth(frequency: Int, dayOfMonth: Int, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
+case class MonthlyByDayOfMonth(id: String, frequency: Int, dayOfMonth: Int, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
+
+  def copyWithEmptyId: MonthlyByDayOfMonth = copy(id = "")
 
   override def displayString: String = {
     val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
@@ -324,7 +361,7 @@ object MonthlyByDayOfMonth {
     Recurrence.maybeOrdinalFor(text, Some(" month"))
   }
 
-  def maybeFromText(text: String, defaultTimeZone: ZoneId): Option[MonthlyByDayOfMonth] = {
+  def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[MonthlyByDayOfMonth] = {
     if (Recurrence.includesDayOfWeek(text)) {
       return None
     }
@@ -332,6 +369,7 @@ object MonthlyByDayOfMonth {
     Recurrence.maybeMonthlyFrequencyFrom(text).map { frequency =>
       val maybeDayOfMonth = maybeDayOfMonthFrom(text)
       MonthlyByDayOfMonth(
+        IDs.next,
         frequency,
         maybeDayOfMonth.getOrElse(OffsetDateTime.now.getDayOfMonth),
         Recurrence.ensureTimeFrom(text, defaultTimeZone),
@@ -341,7 +379,9 @@ object MonthlyByDayOfMonth {
   }
 }
 
-case class MonthlyByNthDayOfWeek(frequency: Int, dayOfWeek: DayOfWeek, nth: Int, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
+case class MonthlyByNthDayOfWeek(id: String, frequency: Int, dayOfWeek: DayOfWeek, nth: Int, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
+
+  def copyWithEmptyId: MonthlyByNthDayOfWeek = copy(id = "")
 
   override def displayString: String = {
     val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
@@ -394,12 +434,13 @@ object MonthlyByNthDayOfWeek {
     } yield NthDayOfWeek(dayOfWeek, ordinal)
   }
 
-  def maybeFromText(text: String, defaultTimeZone: ZoneId): Option[MonthlyByNthDayOfWeek] = {
+  def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[MonthlyByNthDayOfWeek] = {
     for {
       nthDayOfWeek <- maybeNthDayOfWeekFrom(text)
       frequency <- Recurrence.maybeMonthlyFrequencyFrom(text)
     } yield {
       MonthlyByNthDayOfWeek(
+        IDs.next,
         frequency,
         nthDayOfWeek.dayOfWeek,
         nthDayOfWeek.n,
@@ -410,7 +451,9 @@ object MonthlyByNthDayOfWeek {
   }
 }
 
-case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
+case class Yearly(id: String, frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
+
+  def copyWithEmptyId: Yearly = copy(id = "")
 
   val month = monthDay.getMonthValue
   val dayOfMonth = monthDay.getDayOfMonth
@@ -455,7 +498,7 @@ case class Yearly(frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime, time
 object Yearly {
   val recurrenceType = "yearly"
 
-  def maybeFromText(text: String, defaultTimeZone: ZoneId): Option[Yearly] = {
+  def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[Yearly] = {
 
     val singleRegex = """(?i).*every year.*""".r
     val nRegex = """(?i).*every\s+(\S+)\s+years?.*""".r
@@ -467,6 +510,7 @@ object Yearly {
 
     maybeYearlyFrequency.map { frequency =>
       Yearly(
+        IDs.next,
         frequency,
         Recurrence.ensureMonthDayFrom(text, defaultTimeZone),
         Recurrence.ensureTimeFrom(text, defaultTimeZone),
@@ -655,29 +699,31 @@ object Recurrence {
   }
 
   private def buildFrom(
-                 recurrenceType: String,
-                 frequency: Int,
-                 daysOfWeek: Seq[DayOfWeek],
-                 maybeTimeOfDay: Option[LocalTime],
-                 timeZone: ZoneId,
-                 maybeMinuteOfHour: Option[Int],
-                 maybeDayOfWeek: Option[DayOfWeek],
-                 maybeDayOfMonth: Option[Int],
-                 maybeNthDayOfWeek: Option[Int],
-                 maybeMonth: Option[Int]
-                 ): Recurrence = {
+                       id: String,
+                       recurrenceType: String,
+                       frequency: Int,
+                       daysOfWeek: Seq[DayOfWeek],
+                       maybeTimeOfDay: Option[LocalTime],
+                       timeZone: ZoneId,
+                       maybeMinuteOfHour: Option[Int],
+                       maybeDayOfWeek: Option[DayOfWeek],
+                       maybeDayOfMonth: Option[Int],
+                       maybeNthDayOfWeek: Option[Int],
+                       maybeMonth: Option[Int]
+                       ): Recurrence = {
     recurrenceType match {
-      case(Hourly.recurrenceType) => Hourly(frequency, maybeMinuteOfHour.get)
-      case(Daily.recurrenceType) => Daily(frequency, maybeTimeOfDay.get, timeZone)
-      case(Weekly.recurrenceType) => Weekly(frequency, daysOfWeek, maybeTimeOfDay.get, timeZone)
-      case(MonthlyByDayOfMonth.recurrenceType) => MonthlyByDayOfMonth(frequency, maybeDayOfMonth.get, maybeTimeOfDay.get, timeZone)
-      case(MonthlyByNthDayOfWeek.recurrenceType) => MonthlyByNthDayOfWeek(frequency, maybeDayOfWeek.get, maybeNthDayOfWeek.get, maybeTimeOfDay.get, timeZone)
-      case(Yearly.recurrenceType) => Yearly(frequency, MonthDay.of(maybeMonth.get, maybeDayOfMonth.get), maybeTimeOfDay.get, timeZone)
+      case(Hourly.recurrenceType) => Hourly(id, frequency, maybeMinuteOfHour.get)
+      case(Daily.recurrenceType) => Daily(id, frequency, maybeTimeOfDay.get, timeZone)
+      case(Weekly.recurrenceType) => Weekly(id, frequency, daysOfWeek, maybeTimeOfDay.get, timeZone)
+      case(MonthlyByDayOfMonth.recurrenceType) => MonthlyByDayOfMonth(id, frequency, maybeDayOfMonth.get, maybeTimeOfDay.get, timeZone)
+      case(MonthlyByNthDayOfWeek.recurrenceType) => MonthlyByNthDayOfWeek(id, frequency, maybeDayOfWeek.get, maybeNthDayOfWeek.get, maybeTimeOfDay.get, timeZone)
+      case(Yearly.recurrenceType) => Yearly(id, frequency, MonthDay.of(maybeMonth.get, maybeDayOfMonth.get), maybeTimeOfDay.get, timeZone)
     }
   }
 
-  def buildFor(raw: RawScheduledMessage, defaultTimeZone: ZoneId): Recurrence = {
+  def buildFor(raw: RawRecurrence, defaultTimeZone: ZoneId): Recurrence = {
     buildFrom(
+      raw.id,
       raw.recurrenceType,
       raw.frequency,
       raw.daysOfWeek,
@@ -691,13 +737,13 @@ object Recurrence {
     )
   }
 
-  def maybeFromText(text: String, defaultTimeZone: ZoneId): Option[Recurrence] = {
-    Hourly.maybeFromText(text).orElse {
-      Daily.maybeFromText(text, defaultTimeZone).orElse {
-        Weekly.maybeFromText(text, defaultTimeZone).orElse {
-          MonthlyByDayOfMonth.maybeFromText(text, defaultTimeZone).orElse {
-            MonthlyByNthDayOfWeek.maybeFromText(text, defaultTimeZone).orElse {
-              Yearly.maybeFromText(text, defaultTimeZone).orElse {
+  def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[Recurrence] = {
+    Hourly.maybeUnsavedFromText(text).orElse {
+      Daily.maybeUnsavedFromText(text, defaultTimeZone).orElse {
+        Weekly.maybeUnsavedFromText(text, defaultTimeZone).orElse {
+          MonthlyByDayOfMonth.maybeUnsavedFromText(text, defaultTimeZone).orElse {
+            MonthlyByNthDayOfWeek.maybeUnsavedFromText(text, defaultTimeZone).orElse {
+              Yearly.maybeUnsavedFromText(text, defaultTimeZone).orElse {
                 None
               }
             }

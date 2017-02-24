@@ -3,11 +3,11 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
-import models.behaviors.behavior.Behavior
 import models.behaviors._
+import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.scheduledmessage.ScheduledMessage
+import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -28,7 +28,7 @@ trait Event {
   val messageText: String
   val relevantMessageText: String = messageText
   val maybeMessageText: Option[String] = Option(messageText).filter(_.trim.nonEmpty)
-  val maybeScheduledMessage: Option[ScheduledMessage] = None
+  val maybeScheduled: Option[Scheduled] = None
   val context = name
   val isResponseExpected: Boolean
   val includesBotMention: Boolean

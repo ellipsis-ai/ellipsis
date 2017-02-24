@@ -26,11 +26,13 @@ import models.behaviors.conversations.conversation.{ConversationService, Convers
 import models.behaviors.events.EventHandler
 import models.behaviors.input.{InputService, InputServiceImpl}
 import models.behaviors.invocationlogentry.{InvocationLogEntryService, InvocationLogEntryServiceImpl}
-import models.behaviors.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
+import models.behaviors.scheduling.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
 import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
 import models.environmentvariable._
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
 import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
+import models.behaviors.scheduling.recurrence.{RecurrenceService, RecurrenceServiceImpl}
+import models.behaviors.scheduling.scheduledbehavior.{ScheduledBehaviorService, ScheduledBehaviorServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import services._
 import net.codingwell.scalaguice.ScalaModule
@@ -69,6 +71,8 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[ConversationService].to[ConversationServiceImpl]
     bind[CollectedParameterValueService].to[CollectedParameterValueServiceImpl]
     bind[ScheduledMessageService].to[ScheduledMessageServiceImpl]
+    bind[ScheduledBehaviorService].to[ScheduledBehaviorServiceImpl]
+    bind[RecurrenceService].to[RecurrenceServiceImpl]
     bind[InvocationLogEntryService].to[InvocationLogEntryServiceImpl]
     bind[AWSDynamoDBService].to[AWSDynamoDBServiceImpl]
 

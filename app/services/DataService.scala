@@ -23,11 +23,13 @@ import models.behaviors.conversations.collectedparametervalue.CollectedParameter
 import models.behaviors.conversations.conversation.ConversationService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
-import models.behaviors.scheduledmessage.ScheduledMessageService
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.savedanswer.SavedAnswerService
+import models.behaviors.scheduling.recurrence.RecurrenceService
+import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -64,6 +66,8 @@ trait DataService {
   val conversations: ConversationService
   val collectedParameterValues: CollectedParameterValueService
   val scheduledMessages: ScheduledMessageService
+  val scheduledBehaviors: ScheduledBehaviorService
+  val recurrences: RecurrenceService
   val invocationLogEntries: InvocationLogEntryService
 
   def run[T](action: DBIO[T]): Future[T]

@@ -18,7 +18,7 @@ import scala.concurrent.Future
 case class RunEvent(
                      profile: SlackBotProfile,
                      behavior: Behavior,
-                     paramValues: Map[String, String],
+                     arguments: Map[String, String],
                      channel: String,
                      maybeThreadId: Option[String],
                      user: String,
@@ -74,7 +74,7 @@ case class RunEvent(
       responses <- maybeBehaviorVersion.map { behaviorVersion =>
         for {
           params <- dataService.behaviorParameters.allFor(behaviorVersion)
-          invocationParams <- Future.successful(paramValues.flatMap { case(name, value) =>
+          invocationParams <- Future.successful(arguments.flatMap { case(name, value) =>
             params.find(_.name == name).map { param =>
               (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
             }

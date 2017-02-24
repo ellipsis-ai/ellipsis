@@ -141,7 +141,7 @@ object InvokeBehaviorConversation {
         event.userIdForContext,
         OffsetDateTime.now,
         Conversation.NEW_STATE,
-        event.maybeScheduledMessage.map(_.id)
+        event.maybeScheduled.map(_.id)
       )
     dataService.conversations.save(newInstance).map(_ => newInstance)
   }

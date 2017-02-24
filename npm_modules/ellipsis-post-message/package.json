@@ -1,6 +1,6 @@
 {
   "name": "ellipsis-post-message",
-  "version": "0.0.32",
+  "version": "0.0.39",
   "description": "Interface to post messages to ellipsis",
   "main": "index.js",
   "scripts": {

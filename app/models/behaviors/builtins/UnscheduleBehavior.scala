@@ -24,6 +24,7 @@ case class UnscheduleBehavior(
       scheduled <- maybeTeam.map { team =>
         dataService.scheduledMessages.allForTeam(team)
       }.getOrElse(Future.successful(Seq()))
+      listResponses <- Future.sequence(scheduled.map(_.listResponse(dataService)))
     } yield {
       val msg = if (didDelete) {
         s"OK, I unscheduled `$text`"
@@ -31,7 +32,7 @@ case class UnscheduleBehavior(
         val alternativesMessage = if(scheduled.isEmpty) {
           "You don’t currently have anything scheduled."
         } else {
-          s"Here’s what you have scheduled currently:\n\n${scheduled.map(_.listResponse).mkString}"
+          s"Here’s what you have scheduled currently:\n\n${listResponses.mkString}"
         }
         s"I couldn't find `$text` scheduled. $alternativesMessage"
       }
