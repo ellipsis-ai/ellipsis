@@ -35,7 +35,7 @@ object BuiltinBehavior {
 
   def maybeFrom(event: Event, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
     if (event.includesBotMention) {
-      uneducateQuotes(event.messageText) match {
+      uneducateQuotes(event.relevantMessageText) match {
         case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, event, lambdaService, dataService))
         case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, event, lambdaService, dataService))
         case startLearnConversationRegex() => Some(LearnBehavior(event, lambdaService, dataService))
