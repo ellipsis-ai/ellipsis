@@ -9,21 +9,23 @@ import models.behaviors.events.{RunEvent, ScheduledEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
+import play.api.libs.json.Json
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class ScheduledBehavior(
-                             id: String,
-                             behavior: Behavior,
-                             maybeUser: Option[User],
-                             team: Team,
-                             maybeChannelName: Option[String],
-                             isForIndividualMembers: Boolean,
-                             recurrence: Recurrence,
-                             nextSentAt: OffsetDateTime,
-                             createdAt: OffsetDateTime
+                              id: String,
+                              behavior: Behavior,
+                              arguments: Map[String, String],
+                              maybeUser: Option[User],
+                              team: Team,
+                              maybeChannelName: Option[String],
+                              isForIndividualMembers: Boolean,
+                              recurrence: Recurrence,
+                              nextSentAt: OffsetDateTime,
+                              createdAt: OffsetDateTime
                            ) extends Scheduled {
 
   def displayText(dataService: DataService): Future[String] = {
@@ -44,7 +46,7 @@ case class ScheduledBehavior(
   }
 
   def eventFor(channelName: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
-    ScheduledEvent(RunEvent(profile, behavior, Map(), channelName, None, slackUserId, "ts"), this)
+    ScheduledEvent(RunEvent(profile, behavior, arguments, channelName, None, slackUserId, "ts"), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledBehavior = {
@@ -59,6 +61,7 @@ case class ScheduledBehavior(
     RawScheduledBehavior(
       id,
       behavior.id,
+      Json.toJson(arguments),
       maybeUser.map(_.id),
       team.id,
       maybeChannelName,

@@ -43,6 +43,7 @@ ALTER TABLE scheduled_messages DROP COLUMN sunday;
 CREATE TABLE scheduled_behaviors (
   id TEXT PRIMARY KEY,
   behavior_id TEXT NOT NULL REFERENCES behaviors(id),
+  arguments JSONB NOT NULL,
   team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
   user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
   channel_name TEXT,

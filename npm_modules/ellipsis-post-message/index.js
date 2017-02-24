@@ -29,16 +29,16 @@ function handleResponse(args, ellipsis, error, response, body) {
   } else if (args.success) {
     args.success(response, body);
   } else {
-    // do nothing if no success parameter was provided
+    // do nothing if no success argument was provided
   }
 }
 
-function paramsFormDataFor(params) {
-  if (params) {
+function argsFormDataFor(args) {
+  if (args) {
     let data = {};
-    params.forEach((ea, i) => {
-      data[`params[${i}].name`] = ea.name;
-      data[`params[${i}].value`] = ea.value;
+    args.forEach((ea, i) => {
+      data[`arguments[${i}].name`] = ea.name;
+      data[`arguments[${i}].value`] = ea.value;
     });
     return data;
   } else {
@@ -64,7 +64,7 @@ const PM = {
           responseContext: responseContext,
           channel: channel,
           token: ellipsis.token
-        }, paramsFormDataFor(args.params));
+        }, argsFormDataFor(args.args));
         request.
           post(
             {
@@ -204,7 +204,7 @@ const PM = {
           channel: channel,
           recurrence: args.recurrence,
           token: ellipsis.token
-        }, paramsFormDataFor(args.params));
+        }, argsFormDataFor(args.args));
         request.
           post(
             {

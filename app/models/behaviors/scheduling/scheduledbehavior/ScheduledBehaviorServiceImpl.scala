@@ -10,27 +10,30 @@ import models.accounts.user.{User, UserQueries}
 import models.behaviors.behavior.{Behavior, BehaviorQueries}
 import models.behaviors.scheduling.recurrence.{RawRecurrence, Recurrence, RecurrenceQueries}
 import models.team.{Team, TeamQueries}
+import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class RawScheduledBehavior(
-                                id: String,
-                                behaviorId: String,
-                                maybeUserId: Option[String],
-                                teamId: String,
-                                maybeChannelName: Option[String],
-                                isForIndividualMembers: Boolean,
-                                recurrenceId: String,
-                                nextSentAt: OffsetDateTime,
-                                createdAt: OffsetDateTime
+                                 id: String,
+                                 behaviorId: String,
+                                 arguments: JsValue,
+                                 maybeUserId: Option[String],
+                                 teamId: String,
+                                 maybeChannelName: Option[String],
+                                 isForIndividualMembers: Boolean,
+                                 recurrenceId: String,
+                                 nextSentAt: OffsetDateTime,
+                                 createdAt: OffsetDateTime
                               )
 
 class ScheduledBehaviorsTable(tag: Tag) extends Table[RawScheduledBehavior](tag, "scheduled_behaviors") {
 
   def id = column[String]("id")
   def behaviorId = column[String]("behavior_id")
+  def arguments = column[JsValue]("arguments")
   def maybeUserId = column[Option[String]]("user_id")
   def teamId = column[String]("team_id")
   def maybeChannelName = column[Option[String]]("channel_name")
@@ -42,6 +45,7 @@ class ScheduledBehaviorsTable(tag: Tag) extends Table[RawScheduledBehavior](tag,
   def * = (
     id,
     behaviorId,
+    arguments,
     maybeUserId,
     teamId,
     maybeChannelName,
@@ -73,9 +77,14 @@ class ScheduledBehaviorServiceImpl @Inject() (
     val team = tuple._1._2
     val recurrence = Recurrence.buildFor(tuple._1._1._2, team.timeZone)
     val maybeUser = tuple._2
+    val arguments: Map[String, String] = raw.arguments.validate[Map[String, String]] match {
+      case JsSuccess(data, jsPath) => data
+      case e: JsError => Map()
+    }
     ScheduledBehavior(
       raw.id,
       behavior,
+      arguments,
       maybeUser,
       team,
       raw.maybeChannelName,
@@ -141,6 +150,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
 
   def maybeCreateFor(
                       behavior: Behavior,
+                      arguments: Map[String, String],
                       recurrenceText: String,
                       user: User,
                       team: Team,
@@ -153,6 +163,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
         val newMessage = ScheduledBehavior(
           IDs.next,
           behavior,
+          arguments,
           Some(user),
           team,
           maybeChannelName,

@@ -282,12 +282,13 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val mockVersion = mock[BehaviorVersion]
         when(mockVersion.maybeName).thenReturn(Some(actionName))
         when(dataService.behaviors.maybeCurrentVersionFor(targetBehavior)).thenReturn(Future.successful(Some(mockVersion)))
-        when(dataService.scheduledBehaviors.maybeCreateFor(targetBehavior, recurrenceString, user, team, Some(defaultChannel), false)).thenReturn {
+        when(dataService.scheduledBehaviors.maybeCreateFor(targetBehavior, Map(), recurrenceString, user, team, Some(defaultChannel), false)).thenReturn {
           Future.successful(
             Some(
               ScheduledBehavior(
                 IDs.next,
                 targetBehavior,
+                Map(),
                 Some(user),
                 team,
                 Some(defaultChannel),
@@ -305,7 +306,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe OK
 
-        verify(dataService.scheduledBehaviors, times(1)).maybeCreateFor(targetBehavior, recurrenceString, user, team, Some(defaultChannel), false)
+        verify(dataService.scheduledBehaviors, times(1)).maybeCreateFor(targetBehavior, Map(), recurrenceString, user, team, Some(defaultChannel), false)
       }
     }
   }

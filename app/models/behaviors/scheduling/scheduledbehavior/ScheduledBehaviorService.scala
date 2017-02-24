@@ -20,6 +20,7 @@ trait ScheduledBehaviorService {
 
   def maybeCreateFor(
                       behavior: Behavior,
+                      arguments: Map[String, String],
                       recurrenceText: String,
                       user: User,
                       team: Team,

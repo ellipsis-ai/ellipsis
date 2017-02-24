@@ -220,20 +220,20 @@ class APIController @Inject() (
 
   trait ApiMethodWithActionInfo extends ApiMethodInfo {
     val actionName: String
-    val params: Seq[RunActionParamInfo]
+    val arguments: Seq[RunActionArgumentInfo]
 
-    val paramsMap: Map[String, String] = {
-      params.map { ea =>
+    val argumentsMap: Map[String, String] = {
+      arguments.map { ea =>
         (ea.name, ea.value)
       }.toMap
     }
   }
 
-  case class RunActionParamInfo(name: String, value: String)
+  case class RunActionArgumentInfo(name: String, value: String)
 
   case class RunActionInfo(
                             actionName: String,
-                            params: Seq[RunActionParamInfo],
+                            arguments: Seq[RunActionArgumentInfo],
                             responseContext: String,
                             channel: String,
                             token: String
@@ -242,11 +242,11 @@ class APIController @Inject() (
   private val runActionForm = Form(
     mapping(
       "actionName" -> nonEmptyText,
-      "params" -> seq(
+      "arguments" -> seq(
         mapping(
           "name" -> nonEmptyText,
           "value" -> nonEmptyText
-        )(RunActionParamInfo.apply)(RunActionParamInfo.unapply)
+        )(RunActionArgumentInfo.apply)(RunActionArgumentInfo.unapply)
       ),
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
@@ -269,7 +269,7 @@ class APIController @Inject() (
             } yield RunEvent(
               botProfile,
               behavior,
-              info.paramsMap,
+              info.argumentsMap,
               context.maybeSlackChannelId.getOrElse(info.channel),
               None,
               context.maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
@@ -289,7 +289,7 @@ class APIController @Inject() (
 
   case class ScheduleActionInfo(
                                  actionName: String,
-                                 params: Seq[RunActionParamInfo],
+                                 arguments: Seq[RunActionArgumentInfo],
                                  recurrenceString: String,
                                  useDM: Boolean,
                                  responseContext: String,
@@ -300,11 +300,11 @@ class APIController @Inject() (
   private val scheduleActionForm = Form(
     mapping(
       "actionName" -> nonEmptyText,
-      "params" -> seq(
+      "arguments" -> seq(
         mapping(
           "name" -> nonEmptyText,
           "value" -> nonEmptyText
-        )(RunActionParamInfo.apply)(RunActionParamInfo.unapply)
+        )(RunActionArgumentInfo.apply)(RunActionArgumentInfo.unapply)
       ),
       "recurrence" -> nonEmptyText,
       "useDM" -> boolean,
@@ -328,7 +328,15 @@ class APIController @Inject() (
           } yield {
             for {
               user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behavior.team.id)
-              maybeScheduled <- dataService.scheduledBehaviors.maybeCreateFor(behavior, info.recurrenceString, user, behavior.team, context.maybeSlackChannelId, info.useDM)
+              maybeScheduled <- dataService.scheduledBehaviors.maybeCreateFor(
+                behavior,
+                info.argumentsMap,
+                info.recurrenceString,
+                user,
+                behavior.team,
+                context.maybeSlackChannelId,
+                info.useDM
+              )
               result <- maybeScheduled.map { scheduled =>
                 scheduled.successResponse(dataService).map(Ok(_))
               }.getOrElse {
