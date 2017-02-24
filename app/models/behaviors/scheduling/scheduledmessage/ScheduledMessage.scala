@@ -25,7 +25,7 @@ case class ScheduledMessage(
                            ) extends Scheduled {
 
   def displayText(dataService: DataService): Future[String] = {
-    Future.successful("`text`")
+    Future.successful(s"`$text`")
   }
 
   def eventFor(channelName: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
