@@ -49,7 +49,10 @@ define(function(require) {
                   <span>to format the response, add links, etc.</span>
                 </Checklist.Item>
                 {this.props.behaviorUsesCode ? (
-                    <Checklist.Item>You can include data from your code in your response.</Checklist.Item>
+                    <Checklist.Item checkedWhen={this.props.template.includesData()}>
+                      <span>You can include data in your response. </span>
+                      <button type="button" className="button-raw" onClick={this.props.onToggleHelp}>Examples</button>
+                    </Checklist.Item>
                   ) : (
                     <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
                   )}
