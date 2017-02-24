@@ -115,16 +115,16 @@ class APIController @Inject() (
       } yield maybeUser
     }
 
-    def createFor(info: ApiMethodInfo): Future[ApiMethodContext] = {
+    def createFor(token: String): Future[ApiMethodContext] = {
       for {
-        maybeUserForApiToken <- maybeUserForApiToken(info.token)
-        maybeInvocationToken <- dataService.invocationTokens.findNotExpired(info.token)
+        maybeUserForApiToken <- maybeUserForApiToken(token)
+        maybeInvocationToken <- dataService.invocationTokens.findNotExpired(token)
         maybeScheduledMessage <- maybeInvocationToken.flatMap { token =>
           token.maybeScheduledMessageId.map { msgId =>
             dataService.scheduledMessages.find(msgId)
           }
         }.getOrElse(Future.successful(None))
-        maybeUserForInvocationToken <- dataService.users.findForInvocationToken(info.token)
+        maybeUserForInvocationToken <- dataService.users.findForInvocationToken(token)
         maybeUser <- Future.successful(maybeUserForApiToken.orElse(maybeUserForInvocationToken))
         maybeTeam <- maybeUser.map { user =>
           dataService.teams.find(user.teamId)
@@ -233,7 +233,7 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info)
+          context <- ApiMethodContext.createFor(info.token)
           maybeSlackChannelId <- context.maybeSlackChannelIdFor(info.channel)
           maybeBehavior <- context.maybeBehaviorFor(info.actionName)
           maybeEvent <- Future.successful(
@@ -295,7 +295,7 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info)
+          context <- ApiMethodContext.createFor(info.token)
           maybeSlackChannelId <- context.maybeSlackChannelIdFor(info.channel)
           maybeBehavior <- context.maybeBehaviorFor(info.actionName)
           result <- (for {
@@ -330,6 +330,50 @@ class APIController @Inject() (
 
   }
 
+  case class UnscheduleActionInfo(
+                                   actionName: String,
+                                   token: String
+                                 )
+
+  private val unscheduleActionForm = Form(
+    mapping(
+      "actionName" -> nonEmptyText,
+      "token" -> nonEmptyText
+    )(UnscheduleActionInfo.apply)(UnscheduleActionInfo.unapply)
+  )
+
+  def unscheduleAction = Action.async { implicit request =>
+    unscheduleActionForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.toString))
+      },
+      info => {
+        val eventualResult = for {
+          context <- ApiMethodContext.createFor(info.token)
+          maybeBehavior <- context.maybeBehaviorFor(info.actionName)
+          result <- maybeBehavior.map { behavior =>
+            for {
+              didDelete <- dataService.scheduledBehaviors.deleteFor(behavior, behavior.team)
+            } yield {
+              if (didDelete) {
+                Ok("deleted")
+              } else {
+                NotFound("unable to delete")
+              }
+            }
+          }.getOrElse(Future.successful(NotFound(s"Couldn't find an action with name `${info.actionName}`")))
+        } yield result
+
+        eventualResult.recover {
+          case e: InvalidTokenException => BadRequest("Invalid token")
+        }
+      }
+    )
+
+  }
+
+
+
   case class PostMessageInfo(
                               message: String,
                               responseContext: String,
@@ -353,7 +397,7 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info)
+          context <- ApiMethodContext.createFor(info.token)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel)
           result <- runBehaviorFor(maybeEvent, context)
         } yield result
@@ -389,7 +433,7 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info)
+          context <- ApiMethodContext.createFor(info.token)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel)
           result <- maybeEvent.map { event =>
             val botResult = SimpleTextResult(event, info.message, forcePrivateResponse = false)

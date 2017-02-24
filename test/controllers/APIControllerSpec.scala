@@ -311,4 +311,55 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     }
   }
 
+  def unscheduleActionBodyFor(
+                             actionName: String,
+                             token: String
+                           ): JsValue = {
+    JsObject(Seq(
+      ("actionName", JsString(actionName)),
+      ("token", JsString(token))
+    ))
+  }
+
+  "unscheduleAction" should {
+
+    "400 for invalid token" in new ControllerTestContext {
+      running(app) {
+        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService)
+        val body = unscheduleActionBodyFor("foo", token)
+        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val result = route(app, request).get
+        status(result) mustBe BAD_REQUEST
+        contentAsString(result) mustBe "Invalid token"
+        verify(dataService.apiTokens, times(1)).find(token)
+      }
+    }
+
+    "respond with a valid result" in new ControllerTestContext {
+      running(app) {
+        val group = BehaviorGroup(IDs.next, "group", None, None, None, team, OffsetDateTime.now)
+        val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, None, OffsetDateTime.now)
+        val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, None, OffsetDateTime.now)
+        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService)
+        val actionName = "foo"
+        when(dataService.behaviors.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
+        when(dataService.behaviors.findWithoutAccessCheck(originatingBehavior.id)).thenReturn(Future.successful(Some(originatingBehavior)))
+        when(dataService.behaviors.findByIdOrName(org.mockito.Matchers.eq(actionName), any[BehaviorGroup])).thenReturn(Future.successful(Some(targetBehavior)))
+        when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
+        val mockVersion = mock[BehaviorVersion]
+        when(mockVersion.maybeName).thenReturn(Some(actionName))
+        when(dataService.behaviors.maybeCurrentVersionFor(targetBehavior)).thenReturn(Future.successful(Some(mockVersion)))
+        when(dataService.scheduledBehaviors.deleteFor(targetBehavior, team)).thenReturn(Future.successful(true))
+
+        val body = unscheduleActionBodyFor(actionName, token)
+        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val result = route(app, request).get
+        status(result) mustBe OK
+
+        verify(dataService.scheduledBehaviors, times(1)).deleteFor(targetBehavior, team)
+      }
+    }
+  }
+
+
 }
