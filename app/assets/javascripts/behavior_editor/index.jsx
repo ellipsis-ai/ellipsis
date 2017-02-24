@@ -3,6 +3,7 @@ var React = require('react'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
+  BehaviorNameInput = require('./behavior_name_input'),
   BehaviorVersion = require('../models/behavior_version'),
   BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
@@ -14,7 +15,6 @@ var React = require('react'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
-  DataTypeNameInput = require('./data_type_name_input'),
   DataTypeResultConfig = require('./data_type_result_config'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   DropdownMenu = require('../shared_ui/dropdown_menu'),
@@ -1806,9 +1806,23 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  getBehaviorHeadingText: function() {
+    if (this.isDataTypeBehavior()) {
+      if (this.isExistingBehavior()) {
+        return "Edit data type";
+      } else {
+        return "New data type";
+      }
+    } else if (this.isExistingBehavior()) {
+      return "Edit action";
+    } else {
+      return "New action";
+    }
+  },
+
   getBehaviorHeading: function() {
     return (
-      <h4 className="type-blue-faded mbn align-button">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h4>
+      <h4 className="type-blue-faded mbn align-button">{this.getBehaviorHeadingText()}</h4>
     );
   },
 
@@ -1880,16 +1894,13 @@ const BehaviorEditor = React.createClass({
                   {this.getBehaviorHeading()}
                 </div>
 
-                <div className="columns container container-wide">
-                  <div className="column column-one-third mobile-column-full">
-                    <Input
-                      className="form-input-borderless form-input-l type-bold"
-                      placeholder="Action name (optional)"
-                      onChange={this.updateName}
-                      value={this.getBehaviorName()}
-                    />
-                  </div>
+                <BehaviorNameInput
+                  name={this.getBehaviorName()}
+                  onChange={this.updateName}
+                  placeholder="Action name (optional)"
+                />
 
+                <div className="columns container container-wide">
                   <div className="column column-full mobile-column-full">
                     <Input
                       className="form-input-borderless form-input-m mbneg1"
@@ -2029,12 +2040,13 @@ const BehaviorEditor = React.createClass({
                 {this.getBehaviorHeading()}
               </div>
 
-              <DataTypeNameInput
+              <BehaviorNameInput
                 name={this.getDataTypeName()}
                 onChange={this.updateDataTypeName}
+                placeholder="Data type name"
               />
 
-              <hr className="man thin bg-gray-light" />
+              <hr className="mtl mbn thin bg-gray-light" />
 
               <DataTypeResultConfig
                 usesSearch={this.hasUserParameterNamed('searchQuery')}
@@ -2044,7 +2056,7 @@ const BehaviorEditor = React.createClass({
               <hr className="man thin bg-gray-light" />
 
               <div className="container container-wide ptxl pbxxxl">
-                <SectionHeading number="3">Run code to generate a list</SectionHeading>
+                <SectionHeading number="2">Run code to generate a list</SectionHeading>
 
                 <div className="mbxl">
                   <DataTypeCodeEditorHelp
