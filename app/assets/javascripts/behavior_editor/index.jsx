@@ -590,12 +590,12 @@ const BehaviorEditor = React.createClass({
     var newHeight = availableHeight > 0 ? availableHeight : window.innerHeight;
     return {
       top: headerHeight,
-      left: 0,
+      left: window.scrollX > 0 ? -window.scrollX : 0,
       bottom: newHeight
     };
   },
 
-  footerDidChange: function() {
+  layoutDidUpdate: function() {
     this.refs.leftPanel.resetCoordinates();
   },
 
@@ -1333,6 +1333,7 @@ const BehaviorEditor = React.createClass({
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
+    window.addEventListener('scroll', debounce(this.layoutDidUpdate), false);
   },
 
   // componentDidUpdate: function() {
@@ -1499,35 +1500,35 @@ const BehaviorEditor = React.createClass({
       <div>
         <ModalScrim ref="scrim" isActive={this.props.activePanelIsModal} onClick={this.props.onClearActivePanel} />
         <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
-          <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.footerDidChange}>
+          <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteBehavior" revealWhen={this.props.activePanelName === 'confirmDeleteBehavior'} onChange={this.footerDidChange}>
+          <Collapsible ref="confirmDeleteBehavior" revealWhen={this.props.activePanelName === 'confirmDeleteBehavior'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to delete this action?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroup'} onChange={this.footerDidChange}>
+          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroup'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehaviorGroup} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to delete this skill and all of its actions and data types?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteCode" revealWhen={this.props.activePanelName === 'confirmDeleteCode'} onChange={this.footerDidChange}>
+          <Collapsible ref="confirmDeleteCode" revealWhen={this.props.activePanelName === 'confirmDeleteCode'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to remove all of the code?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForTriggerParameters'} onChange={this.footerDidChange}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForTriggerParameters'} onChange={this.layoutDidUpdate}>
             <TriggerHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForBoilerplateParameters'} onChange={this.footerDidChange}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForBoilerplateParameters'} onChange={this.layoutDidUpdate}>
             <BoilerplateParameterHelp
               envVariableNames={this.getEnvVariableNames()}
               apiAccessTokens={this.getApiApplications()}
@@ -1536,7 +1537,7 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForResponseTemplate'} onChange={this.footerDidChange}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForResponseTemplate'} onChange={this.layoutDidUpdate}>
             <ResponseTemplateHelp
               firstParamName={this.getFirstBehaviorParamName()}
               template={this.getBehaviorTemplate()}
@@ -1544,11 +1545,11 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForAWS'} onChange={this.footerDidChange}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForAWS'} onChange={this.layoutDidUpdate}>
             <AWSHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
-          <Collapsible ref="versionHistory" revealWhen={this.props.activePanelName === 'versionHistory'} onChange={this.footerDidChange}>
+          <Collapsible ref="versionHistory" revealWhen={this.props.activePanelName === 'versionHistory'} onChange={this.layoutDidUpdate}>
             <VersionsPanel
               ref="versionsPanel"
               menuToggle={this.toggleVersionListMenu}
@@ -1561,7 +1562,7 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible ref="envVariableSetter" revealWhen={this.props.activePanelName === 'envVariableSetter'} onChange={this.footerDidChange}>
+          <Collapsible ref="envVariableSetter" revealWhen={this.props.activePanelName === 'envVariableSetter'} onChange={this.layoutDidUpdate}>
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
@@ -1579,7 +1580,7 @@ const BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible ref="envVariableAdder" revealWhen={this.props.activePanelName === 'envVariableAdder'} onChange={this.footerDidChange}>
+          <Collapsible ref="envVariableAdder" revealWhen={this.props.activePanelName === 'envVariableAdder'} onChange={this.layoutDidUpdate}>
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
@@ -1598,7 +1599,7 @@ const BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'behaviorTester'} onChange={this.footerDidChange}>
+          <Collapsible revealWhen={this.props.activePanelName === 'behaviorTester'} onChange={this.layoutDidUpdate}>
             <BehaviorTester
               ref="behaviorTester"
               triggers={this.getBehaviorTriggers()}
@@ -1610,7 +1611,7 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.footerDidChange}>
+          <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.layoutDidUpdate}>
             <DataTypeTester
               ref="dataTypeTester"
               behaviorId={this.props.behavior.behaviorId}
@@ -1622,7 +1623,7 @@ const BehaviorEditor = React.createClass({
           </Collapsible>
 
           {this.getOtherSavedParametersInGroup().length > 0 ? (
-            <Collapsible revealWhen={this.props.activePanelName === 'sharedAnswerInputSelector'} onChange={this.footerDidChange}>
+            <Collapsible revealWhen={this.props.activePanelName === 'sharedAnswerInputSelector'} onChange={this.layoutDidUpdate}>
               <SharedAnswerInputSelector
                 ref="sharedAnswerInputSelector"
                 onToggle={this.toggleSharedAnswerInputSelector}
@@ -1632,7 +1633,7 @@ const BehaviorEditor = React.createClass({
             </Collapsible>
           ) : null}
 
-          <Collapsible revealWhen={this.props.activePanelName === 'savedAnswerEditor'} onChange={this.footerDidChange}>
+          <Collapsible revealWhen={this.props.activePanelName === 'savedAnswerEditor'} onChange={this.layoutDidUpdate}>
             <SavedAnswerEditor
               ref="savedAnswerEditor"
               onToggle={this.toggleSavedAnswerEditor}
@@ -1643,7 +1644,7 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible ref="saving" revealWhen={this.isSaving()} onChange={this.footerDidChange}>
+          <Collapsible ref="saving" revealWhen={this.isSaving()} onChange={this.layoutDidUpdate}>
             <div className="box-action">
               <div className="container phn">
                 <p className="align-c">
@@ -1653,7 +1654,7 @@ const BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.footerDidChange}>
+          <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.layoutDidUpdate}>
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
