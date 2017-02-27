@@ -19,7 +19,8 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     className: React.PropTypes.string,
     revealWhen: React.PropTypes.bool.isRequired,
     animateInitialRender: React.PropTypes.bool,
-    isHorizontal: React.PropTypes.bool
+    isHorizontal: React.PropTypes.bool,
+    onChange: React.PropTypes.func
   },
 
   getInitialState: function() {
@@ -36,10 +37,15 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     return this.props.animationDuration || 0.25;
   },
   after: function(callback) {
-    window.setTimeout(function() { callback(); }, 1);
+    window.setTimeout(() => { callback(); }, 1);
   },
   afterAnimation: function(callback) {
-    window.setTimeout(function() { callback(); }, this.animationDurationSeconds() * 1000);
+    window.setTimeout(() => {
+      callback();
+      if (this.props.onChange) {
+        this.props.onChange();
+      }
+    }, this.animationDurationSeconds() * 1000);
   },
 
   addTransition: function() {
