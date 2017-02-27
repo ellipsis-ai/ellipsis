@@ -67,7 +67,12 @@ define(function() {
     }
 
     includesAnyParam() {
-      return /\{\S+?\}/.test(this.text);
+      var matches = this.text.match(/\{\S+?\}/g);
+      return matches && matches.some((ea) => {
+        var paramName = ea.replace(/^\{|}$/g, '');
+        return !validTemplateKeywordPatterns.some((pattern) => pattern.test(paramName)) &&
+          !/^successResult(\.\S+)?$/.test(paramName);
+      });
     }
 
     includesIteration() {
@@ -80,6 +85,15 @@ define(function() {
 
     includesSuccessResult() {
       return /\{successResult.*?\}/.test(this.text);
+    }
+
+    includesIfLogic() {
+      return /\{if \S.*?\}/.test(this.text) &&
+        /\{endif\}/.test(this.text);
+    }
+
+    includesData() {
+      return this.includesAnyParam() || this.includesSuccessResult();
     }
 
     usesMarkdown() {

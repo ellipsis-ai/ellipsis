@@ -15,9 +15,19 @@ define(function(require) {
 
     getLabelFromTrigger: function(trigger, showLink) {
       var className = showLink ? "link" : "";
-      return trigger && trigger.text ?
-        (<span className={`${className} type-monospace`}>{trigger.displayText}</span>) :
-        (<span className={`${className} type-italic`}>(No triggers)</span>);
+      if (trigger && trigger.text) {
+        return (
+          <span className={`${className} type-monospace`}>{trigger.displayText}</span>
+        );
+      } else if (!this.props.version.behaviorId) {
+        return (
+          <span className={`${className} type-italic`}>New action</span>
+        );
+      } else {
+        return (
+          <span className={`${className} type-italic`}>(No triggers)</span>
+        );
+      }
     },
 
     getNonRegexTriggerLabelsFromTriggers: function(triggers) {
@@ -73,8 +83,8 @@ define(function(require) {
 
     getDataTypeLabelFromVersion: function(version) {
       return (
-        <div className={"type-italic " + (this.props.limitTriggers ? "display-ellipsis" : "")}>
-          <span className="link">{version.getDataTypeName()}</span>
+        <div className={"type-italic " + (this.props.limitTriggers ? "display-limit-width display-ellipsis" : "")}>
+          <span className={this.props.disableLink ? "" : "link"}>{version.getDataTypeName() || "New data type"}</span>
           {this.props.labelDataType ? (
             <span className="type-weak"> (data type)</span>
           ) : null}
@@ -86,13 +96,13 @@ define(function(require) {
       const name = version.name;
       if (name && name.trim().length > 0) {
         return (
-          <div className={(this.props.limitTriggers ? "display-ellipsis" : "")}>
-            <span className="link mrm">{name}:</span>
+          <div className={(this.props.limitTriggers ? "display-limit-width display-ellipsis" : "")}>
+            <span className={"mrm " + (this.props.disableLink ? "" : "link")}>{name}:</span>
             {this.getTriggersFromVersion(version, false)}
           </div>
         );
       } else {
-        return this.getTriggersFromVersion(version, true);
+        return this.getTriggersFromVersion(version, !this.props.disableLink);
       }
     },
 
@@ -117,14 +127,14 @@ define(function(require) {
     render: function() {
       if (this.props.disableLink) {
         return (
-          <div className={this.props.limitTriggers ? "display-ellipsis" : ""}>
+          <div className={this.props.limitTriggers ? "display-limit-width display-ellipsis" : ""}>
             {this.getLabelFromVersion(this.props.version)}
             {this.getDescriptionFromVersion(this.props.version)}
           </div>
         );
       } else {
         return (
-          <div className={this.props.limitTriggers ? "display-ellipsis" : ""}>
+          <div className={this.props.limitTriggers ? "display-limit-width display-ellipsis" : ""}>
             <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.behaviorId).url}
               className="link-block">
               {this.getLabelFromVersion(this.props.version)}

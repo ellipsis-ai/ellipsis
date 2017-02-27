@@ -79,12 +79,14 @@ return React.createClass({
   render: function() {
     return (
       <HelpPanel
-        heading="Available methods and properties"
+        heading="Writing a function"
         onCollapseClick={this.props.onCollapseClick}
       >
         <p>
+          <span>Write a JavaScript function compatible with <a href="https://nodejs.org/docs/latest-v4.x/api/">Node.js 4.3.2</a>. </span>
           <span>The function will automatically receive the <code className="type-bold">ellipsis</code> object, which contains </span>
-          <span>important methods and properties.</span>
+          <span>important methods and properties. Ensure your function calls at least one of the <code className="type-bold">success</code>, </span>
+          <span><code className="type-bold">error</code> or <code className="type-bold">noResponse</code> methods below to finish.</span>
         </p>
 
         <div className="columns columns-elastic">

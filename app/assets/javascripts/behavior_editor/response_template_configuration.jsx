@@ -2,7 +2,7 @@ define(function(require) {
   var React = require('react'),
     Checklist = require('./checklist'),
     Codemirror = require('../shared_ui/react-codemirror'),
-    Param = require('../models/param'),
+    HelpButton = require('../help/help_button'),
     ResponseTemplate = require('../models/response_template'),
     SectionHeading = require('./section_heading'),
     ToggleGroup = require('../form/toggle_group');
@@ -17,75 +17,9 @@ define(function(require) {
       shouldForcePrivateResponse: React.PropTypes.bool.isRequired,
       onChangeForcePrivateResponse: React.PropTypes.func.isRequired,
       onCursorChange: React.PropTypes.func.isRequired,
-      userParams: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired,
+      onToggleHelp: React.PropTypes.func.isRequired,
+      helpVisible: React.PropTypes.bool.isRequired,
       sectionNumber: React.PropTypes.string.isRequired
-    },
-
-    getTemplateDataHelp: function() {
-      if (this.props.behaviorUsesCode) {
-        return (
-          <div>
-            <span>You can include data in your response.<br /></span>
-            <Checklist className="mtxs" disabledWhen={this.props.isFinishedBehavior}>
-              {this.getUserParamTemplateHelp()}
-              {this.getSuccessResultTemplateHelp()}
-              {this.getPathTemplateHelp()}
-              {this.getIterationTemplateHelp()}
-            </Checklist>
-          </div>
-        );
-      }
-    },
-
-    getUserParamTemplateHelp: function() {
-      return (
-        <Checklist.Item checkedWhen={this.props.template.includesAnyParam()}>
-          User-supplied parameters:<br />
-          <div className="box-code-example">
-            You said {this.getExampleParamName()}
-          </div>
-        </Checklist.Item>
-      );
-    },
-
-    getExampleParamName: function() {
-      var firstParamName = this.props.userParams[0] && this.props.userParams[0].name;
-      return firstParamName ? `{${firstParamName}}` : "{exampleParamName}";
-    },
-
-    getSuccessResultTemplateHelp: function() {
-      return (
-        <Checklist.Item checkedWhen={this.props.template.includesSuccessResult()}>
-          The result provided to <code>ellipsis.success</code>:<br />
-          <div className="box-code-example">
-            The answer is {"{successResult}"}
-          </div>
-        </Checklist.Item>
-      );
-    },
-
-    getPathTemplateHelp: function() {
-      return (
-        <Checklist.Item checkedWhen={this.props.template.includesPath()}>
-          Properties of the result:<br />
-          <div className="box-code-example">
-            Name: {"{successResult.user.name}"}
-          </div>
-        </Checklist.Item>
-      );
-    },
-
-    getIterationTemplateHelp: function() {
-      return (
-        <Checklist.Item checkedWhen={this.props.template.includesIteration()}>
-          Iterating through a list:<br />
-          <div className="box-code-example">
-            {"{for item in successResult.items}"}<br />
-            &nbsp;* {"{item}"}<br />
-            {"{endfor}"}
-          </div>
-        </Checklist.Item>
-      );
     },
 
     unsetForcePrivateResponse: function() {
@@ -98,27 +32,34 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="columns container container-wide flex-columns mobile-flex-no-columns">
+        <div className="columns container container-wide">
 
-          <div className="flex-column flex-column-left column column-page-sidebar mbxl mobile-mbs type-s ptxxl">
+          <div className="mbxxxl ptxl">
+            <SectionHeading number={this.props.sectionNumber}>
+              <span className="mrm">Then respond</span>
+              <span className="display-inline-block">
+                <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible}/>
+              </span>
+            </SectionHeading>
 
-            <SectionHeading number={this.props.sectionNumber}>Then respond</SectionHeading>
+            <div className="type-s">
+              <Checklist disabledWhen={this.props.isFinishedBehavior}>
+                <Checklist.Item checkedWhen={this.props.template.usesMarkdown()}>
+                  <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
+                  <span>to format the response, add links, etc.</span>
+                </Checklist.Item>
+                {this.props.behaviorUsesCode ? (
+                    <Checklist.Item checkedWhen={this.props.template.includesData()}>
+                      <span>You can include data in your response. </span>
+                      <button type="button" className="button-raw" onClick={this.props.onToggleHelp}>Examples</button>
+                    </Checklist.Item>
+                  ) : (
+                    <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
+                  )}
+              </Checklist>
+            </div>
 
-            <Checklist disabledWhen={this.props.isFinishedBehavior}>
-              <Checklist.Item checkedWhen={this.props.template.usesMarkdown()}>
-                <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
-                <span>to format the response, add links, etc.</span>
-              </Checklist.Item>
-              {this.props.behaviorUsesCode ? "" : (
-                <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
-              )}
-            </Checklist>
-
-            {this.getTemplateDataHelp()}
-          </div>
-
-          <div className="flex-column flex-column-left column column-page-main column-page-main-wide mbxxxl">
-            <div className="mtxxl mobile-mtn border-top border-left border-right border-light pas">
+            <div className="border-top border-left border-right border-light pas">
               <ToggleGroup className="form-toggle-group-s align-m">
                 <ToggleGroup.Item
                   title="Ellipsis will respond wherever you talk to it"

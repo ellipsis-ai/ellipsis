@@ -9,7 +9,7 @@ return React.createClass({
   },
   render: function() {
     return (
-      <h4 className="position-relative">
+      <h4 className="position-relative mbl">
         {ifPresent(this.props.number, (number) => (
           <span className="box-number bg-blue-medium type-white mrm">{number}</span>
         ))}

@@ -27,25 +27,15 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="mtxl mbxxl">
-          <div className="container container-wide">
-            <div className="columns columns-elastic">
-              <div className="column column-expand">
-                <h4>{this.props.heading}</h4>
-              </div>
-              <div className="column column-shrink">
-                <AddNewBehaviorToGroup
-                  url={this.props.addNewUrl}
-                  label={this.props.addNewLabel}
-                />
-              </div>
-            </div>
+        <div className="border-bottom mtl pbl">
+          <div className="container container-wide mbs">
+            <h6>{this.props.heading}</h6>
           </div>
           <div className="type-s">
             {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version) => (
               <div
                 key={`behavior-${version.behaviorId}`}
-                className={`border-top border-bottom pvs container container-wide mbneg1 ${this.isCurrentVersion(version) ? "bg-blue-lighter border-blue" : ""}`}
+                className={`border-top border-light pvxs container container-wide ${this.isCurrentVersion(version) ? "bg-blue border-blue-medium type-white" : ""}`}
               >
                 <BehaviorName
                   version={version}
@@ -57,6 +47,12 @@ define(function(require) {
             )), () => (
               <p className="container container-wide type-weak">{this.props.emptyMessage}</p>
             ))}
+          </div>
+          <div className="container container-wide mvm">
+            <AddNewBehaviorToGroup
+              url={this.props.addNewUrl}
+              label={this.props.addNewLabel}
+            />
           </div>
         </div>
       );
