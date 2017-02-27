@@ -596,7 +596,10 @@ const BehaviorEditor = React.createClass({
   },
 
   layoutDidUpdate: function() {
-    this.refs.leftPanel.resetCoordinates();
+    var panel = this.refs.leftPanel;
+    if (panel) {
+      panel.resetCoordinates();
+    }
   },
 
   getHeaderHeight: function() {

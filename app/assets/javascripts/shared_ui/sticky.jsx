@@ -17,6 +17,10 @@ define(function(require) {
     },
 
     resetCoordinates: function() {
+      if (!this.innerContainer) {
+        return;
+      }
+
       var coords = this.props.onGetCoordinates();
 
       setStyles(this.placeholder, { width: "" });
