@@ -14,6 +14,7 @@ var React = require('react'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('../panels/confirm_action'),
+  CollapseButton = require('../shared_ui/collapse_button'),
   DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
   DataTypeResultConfig = require('./data_type_result_config'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
@@ -35,7 +36,6 @@ var React = require('react'),
   SectionHeading = require('./section_heading'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   Sticky = require('../shared_ui/sticky'),
-  SVGCollapse = require('../svg/collapse'),
   SVGHamburger = require('../svg/hamburger'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
@@ -1917,9 +1917,7 @@ const BehaviorEditor = React.createClass({
         <div ref="leftColumn" className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn position-relative mobile-position-fixed-top-full">
           <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
             <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
-              <button type="button" className="button-raw type-weak" onClick={this.toggleBehaviorSwitcher} style={{ height: "22px" }}>
-                <SVGCollapse direction={this.windowIsMobile() ? "up" : "left"} />
-              </button>
+              <CollapseButton onClick={this.toggleBehaviorSwitcher} direction={this.windowIsMobile() ? "up" : "left"} />
             </div>
             <BehaviorSwitcher
               ref="behaviorSwitcher"
