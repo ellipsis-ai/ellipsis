@@ -113,7 +113,15 @@
     position: fixed;
   }
 
-  .mobile-position-fixed-full {
+  .mobile-position-fixed-top-full {
+    .position-fixed-top;
+    .position-z-front;
+    box-sizing: border-box;
+    overflow: auto;
+    max-height: 100%;
+  }
+
+  .mobile-position-fixed-bottom-full {
     .position-fixed-bottom;
     .position-z-front;
     box-sizing: border-box;

@@ -63,6 +63,8 @@ var AWSEnvVariableStrings = {
 
 var magic8BallResponse = Magic8Ball.response();
 
+var MOBILE_MAX_WIDTH = 768;
+
 const BehaviorEditor = React.createClass({
   displayName: 'BehaviorEditor',
 
@@ -593,6 +595,23 @@ const BehaviorEditor = React.createClass({
       left: window.scrollX > 0 ? -window.scrollX : 0,
       bottom: newHeight
     };
+  },
+
+  hasMobileLayout: function() {
+    return this.state.hasMobileLayout;
+  },
+
+  windowIsMobile: function() {
+    return window.innerWidth <= MOBILE_MAX_WIDTH;
+  },
+
+  checkMobileLayout: function() {
+    if (this.hasMobileLayout() !== this.windowIsMobile()) {
+      this.setState({
+        behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
+        hasMobileLayout: this.windowIsMobile()
+      });
+    }
   },
 
   layoutDidUpdate: function() {
@@ -1336,7 +1355,7 @@ const BehaviorEditor = React.createClass({
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
-    window.addEventListener('scroll', debounce(this.layoutDidUpdate), false);
+    window.addEventListener('resize', this.checkMobileLayout, false);
   },
 
   // componentDidUpdate: function() {
@@ -1376,7 +1395,8 @@ const BehaviorEditor = React.createClass({
       paramNameToSync: null,
       error: null,
       selectedSavedAnswerInputId: null,
-      behaviorSwitcherVisible: this.isExistingGroup()
+      behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
+      hasMobileLayout: this.windowIsMobile()
     };
   },
 
@@ -1390,7 +1410,7 @@ const BehaviorEditor = React.createClass({
         versionsLoadStatus: null,
         error: null
       };
-      if (!this.props.behavior.behaviorId && nextProps.behavior.behaviorId) {
+      if (!this.props.behavior.behaviorId && nextProps.behavior.behaviorId && !this.windowIsMobile()) {
         newState.behaviorSwitcherVisible = true;
       }
       this.props.onClearActivePanel();
@@ -1874,8 +1894,8 @@ const BehaviorEditor = React.createClass({
   renderBehaviorSwitcher: function() {
     if (this.shouldShowBehaviorSwitcher()) {
       return (
-        <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn position-relative">
-          <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates}>
+        <div ref="leftColumn" className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn position-relative mobile-position-fixed-top-full">
+          <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
             <BehaviorSwitcher
               ref="behaviorSwitcher"
               onToggle={this.toggleBehaviorSwitcher}
