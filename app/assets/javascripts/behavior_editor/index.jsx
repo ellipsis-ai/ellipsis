@@ -232,15 +232,14 @@ const BehaviorEditor = React.createClass({
   },
 
   getOriginalSelectedBehavior: function() {
-    return this.getSelectedBehaviorFor(this.props.group);
+    return this.getSelectedBehaviorFor(this.props.group, this.props.selectedBehaviorId);
   },
 
   getSelectedBehavior: function() {
-    return this.getSelectedBehaviorFor(this.getBehaviorGroup());
+    return this.getSelectedBehaviorFor(this.getBehaviorGroup(), this.getSelectedBehaviorId());
   },
 
-  getSelectedBehaviorFor: function(group) {
-    const selectedBehaviorId = this.getSelectedBehaviorId();
+  getSelectedBehaviorFor: function(group, selectedBehaviorId) {
     return group.behaviorVersions.find(ea => {
       return (!ea.behaviorId && !selectedBehaviorId) || (ea.behaviorId === selectedBehaviorId);
     });
@@ -502,16 +501,6 @@ const BehaviorEditor = React.createClass({
         details: notifications[key]
       };
     });
-  },
-
-  getInitialTriggersFromBehavior: function(behavior) {
-    if (behavior.triggers && behavior.triggers.length > 0) {
-      return behavior.triggers;
-    } else if (!this.isDataTypeBehavior()) {
-      return [new Trigger()];
-    } else {
-      return [];
-    }
   },
 
   getLastLineNumberForCode: function() {
@@ -810,7 +799,7 @@ const BehaviorEditor = React.createClass({
 
   setBehaviorProps: function(props, callback) {
     var existingGroup = this.getBehaviorGroup();
-    var existingBehavior = this.getSelectedBehaviorFor(existingGroup);
+    var existingBehavior = this.getSelectedBehaviorFor(existingGroup, this.getSelectedBehaviorId());
     var timestampedBehavior = this.getTimestampedBehavior(existingBehavior.clone(props));
     var newVersionsForBehavior = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     var newVersionsForGroup =
@@ -1941,9 +1930,26 @@ const BehaviorEditor = React.createClass({
   onSelectBehavior: function(groupId, behaviorId) {
     this.setState({
       selectedBehaviorId: behaviorId
-    }, function() {
+    }, () => {
       BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
     });
+  },
+
+  addNewBehavior: function(groupWithNewBehavior) {
+    this.setState({
+      group: groupWithNewBehavior,
+      selectedBehaviorId: null
+    }, () => {
+      this.onSelectBehavior(groupWithNewBehavior.id, null)
+    });
+  },
+
+  addNewAction: function() {
+    this.addNewBehavior(this.getBehaviorGroup().withNewAction());
+  },
+
+  addNewDataType: function() {
+    this.addNewBehavior(this.getBehaviorGroup().withNewDataType());
   },
 
   renderBehaviorSwitcher: function() {
@@ -1968,6 +1974,8 @@ const BehaviorEditor = React.createClass({
               onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
               onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
               onSelectBehavior={this.onSelectBehavior}
+              addNewAction={this.addNewAction}
+              addNewDataType={this.addNewDataType}
             />
           </Sticky>
         </div>

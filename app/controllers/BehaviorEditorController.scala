@@ -162,7 +162,9 @@ class BehaviorEditorController @Inject() (
               }
             }
           }
-          case e: JsError => Future.successful(BadRequest(s"Malformatted data: ${e.toString}"))
+          case e: JsError => {
+            Future.successful(BadRequest(s"Malformatted data: ${e.errors.mkString("\n")}"))
+          }
         }
       }
     )

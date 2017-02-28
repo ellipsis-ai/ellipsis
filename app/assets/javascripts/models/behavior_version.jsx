@@ -5,20 +5,28 @@ define(function(require) {
 
   class BehaviorVersion {
     constructor(props) {
+      var initialTriggerProps = (props.config && props.config.dataTypeName) ? [] : [{}]
+      var initialProps = Object.assign({
+        functionBody: '',
+        triggers: initialTriggerProps.map(ea => new Trigger(ea)),
+        config: {},
+        knownEnvVarsUsed: []
+      }, props);
+
       Object.defineProperties(this, {
-        groupId: { value: props.groupId, enumerable: true },
-        teamId: { value: props.teamId, enumerable: true },
-        behaviorId: { value: props.behaviorId, enumerable: true },
-        name: { value: props.name, enumerable: true },
-        description: { value: props.description, enumerable: true },
-        functionBody: { value: props.functionBody, enumerable: true },
-        responseTemplate: { value: props.responseTemplate, enumerable: true },
-        params: { value: props.params, enumerable: true },
-        triggers: { value: props.triggers, enumerable: true },
-        config: { value: props.config, enumerable: true },
-        knownEnvVarsUsed: { value: props.knownEnvVarsUsed, enumerable: true },
-        createdAt: { value: props.createdAt, enumerable: false },
-        exportId: { value: props.exportId, enumerable: false }
+        groupId: { value: initialProps.groupId, enumerable: true },
+        teamId: { value: initialProps.teamId, enumerable: true },
+        behaviorId: { value: initialProps.behaviorId, enumerable: true },
+        name: { value: initialProps.name, enumerable: true },
+        description: { value: initialProps.description, enumerable: true },
+        functionBody: { value: initialProps.functionBody, enumerable: true },
+        responseTemplate: { value: initialProps.responseTemplate, enumerable: true },
+        params: { value: initialProps.params, enumerable: true },
+        triggers: { value: initialProps.triggers, enumerable: true },
+        config: { value: initialProps.config, enumerable: true },
+        knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
+        createdAt: { value: initialProps.createdAt, enumerable: false },
+        exportId: { value: initialProps.exportId, enumerable: false }
       });
     }
 

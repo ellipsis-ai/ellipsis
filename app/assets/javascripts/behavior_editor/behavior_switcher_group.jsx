@@ -12,7 +12,7 @@ define(function(require) {
       heading: React.PropTypes.string.isRequired,
       behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       currentBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-      addNewUrl: React.PropTypes.string.isRequired,
+      onAddNew: React.PropTypes.func.isRequired,
       addNewLabel: React.PropTypes.string,
       emptyMessage: React.PropTypes.string.isRequired,
       onSelectBehavior: React.PropTypes.func.isRequired
@@ -52,7 +52,7 @@ define(function(require) {
           </div>
           <div className="container container-wide mvm">
             <AddNewBehaviorToGroup
-              url={this.props.addNewUrl}
+              onClick={this.props.onAddNew}
               label={this.props.addNewLabel}
             />
           </div>
