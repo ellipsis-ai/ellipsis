@@ -10,6 +10,12 @@ define(function(require) {
       return new BehaviorGroup(Object.assign({}, this, props));
     }
 
+    withNewBehaviorData(behaviorProps) {
+      var newVersion = BehaviorVersion.fromJson(behaviorProps);
+      var updatedVersions = this.behaviorVersions.filter(ea => ea.behaviorId !== newVersion.behaviorId).concat([newVersion]);
+      return this.clone({ behaviorVersions: updatedVersions });
+    }
+
     static fromJson(props) {
       return new BehaviorGroup(Object.assign({}, props, {
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(ea))

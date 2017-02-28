@@ -23,7 +23,8 @@ define(function(require) {
       onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
       onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
       onSaveBehaviorGroupDetails: React.PropTypes.func.isRequired,
-      onCancelBehaviorGroupDetails: React.PropTypes.func.isRequired
+      onCancelBehaviorGroupDetails: React.PropTypes.func.isRequired,
+      onSelectBehavior: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
@@ -166,9 +167,10 @@ define(function(require) {
             heading="Actions"
             behaviors={this.props.actionBehaviors}
             currentBehavior={this.props.currentBehavior}
-            addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
+            addNewUrl={"#"}
             addNewLabel="Add new action"
             emptyMessage="Add actions to provide a response using custom data types for input."
+            onSelectBehavior={this.props.onSelectBehavior}
           />
 
           <BehaviorSwitcherGroup
@@ -176,9 +178,10 @@ define(function(require) {
             heading="Data types"
             behaviors={this.props.dataTypeBehaviors}
             currentBehavior={this.props.currentBehavior}
-            addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
+            addNewUrl={"#"}
             addNewLabel="Add new data type"
             emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
+            onSelectBehavior={this.props.onSelectBehavior}
           />
 
         </div>

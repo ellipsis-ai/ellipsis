@@ -14,7 +14,8 @@ define(function(require) {
       currentBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
       addNewUrl: React.PropTypes.string.isRequired,
       addNewLabel: React.PropTypes.string,
-      emptyMessage: React.PropTypes.string.isRequired
+      emptyMessage: React.PropTypes.string.isRequired,
+      onSelectBehavior: React.PropTypes.func.isRequired
     },
 
     getBehaviorList: function() {
@@ -42,6 +43,7 @@ define(function(require) {
                   disableLink={this.isCurrentVersion(version)}
                   limitTriggers={true}
                   omitDescription={true}
+                  onClick={this.props.onSelectBehavior}
                 />
               </div>
             )), () => (

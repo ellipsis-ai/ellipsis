@@ -2,19 +2,21 @@
 
 requirejs(['../common'], function() {
   requirejs(
-    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './behavior_editor/index', './models/behavior_version'],
-    function(Core, Fetch, React, ReactDOM, BehaviorEditor, BehaviorVersion) {
+    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './behavior_editor/index', './models/behavior_group'],
+    function(Core, Fetch, React, ReactDOM, BehaviorEditor, BehaviorGroup) {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
-        otherBehaviorsInGroup: BehaviorEditorConfiguration.otherBehaviorsInGroup.map((ea) => BehaviorVersion.fromJson(ea)),
+        groupData: BehaviorEditorConfiguration.group,
+        group: BehaviorGroup.fromJson(BehaviorEditorConfiguration.group),
         onSave: onSaveBehavior,
         onForgetSavedAnswerForInput: resetSavedAnswerForInput
       });
 
       var currentProps = config;
 
-      function onSaveBehavior(newData) {
-        var props = Object.assign({}, currentProps, newData, {
-          behavior: BehaviorVersion.fromJson(newData),
+      function onSaveBehavior(newBehaviorData) {
+
+        var props = Object.assign({}, currentProps, {
+          group: currentProps.group.withNewBehaviorData(newBehaviorData),
           justSaved: true
         });
         reload(props);
@@ -42,8 +44,8 @@ requirejs(['../common'], function() {
         }));
       }
 
-      reload(Object.assign({}, config, config.data, {
-        behavior: BehaviorVersion.fromJson(config.data),
+      reload(Object.assign({}, config, {
+        group: BehaviorGroup.fromJson(config.groupData),
         justSaved: false
       }));
     }

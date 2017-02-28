@@ -10,12 +10,8 @@ GET         /install_behaviors                        @controllers.ApplicationCo
 POST        /merge_skills                             @controllers.ApplicationController.mergeBehaviorGroups
 POST        /delete_skills                            @controllers.ApplicationController.deleteBehaviorGroups
 
-GET         /new_skill                                @controllers.BehaviorEditorController.newForNormalBehavior(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
-GET         /new_behavior                             @controllers.BehaviorEditorController.newForNormalBehavior(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
-GET         /new_data_type                            @controllers.BehaviorEditorController.newForDataType(groupId: Option[String] ?= None, teamId: Option[String] ?= None)
-GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
-GET         /edit_behavior/:id                        @controllers.BehaviorEditorController.edit(id: String, justSaved: Option[Boolean] ?= None)
-GET         /edit_behavior_group/:id                  @controllers.BehaviorEditorController.editGroup(id: String)
+GET         /new_skill                                @controllers.BehaviorEditorController.newGroup(teamId: Option[String] ?= None)
+GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, actionId: Option[String] ?= None, justSaved: Option[Boolean] ?= None)
 GET         /export_skill/:id                         @controllers.BehaviorImportExportController.export(id: String)
 GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
 GET         /import_skill_zip                         @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)
@@ -41,8 +37,6 @@ POST        /save_skill_description                   @controllers.BehaviorEdito
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
-
-GET         /data_types                               @controllers.BehaviorBackedDataTypeController.list(teamId: Option[String] ?= None)
 
 POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
 POST        /delete_environment_variable              @controllers.EnvironmentVariablesController.delete

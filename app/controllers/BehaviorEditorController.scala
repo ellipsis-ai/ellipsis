@@ -31,13 +31,30 @@ class BehaviorEditorController @Inject() (
                                            val ws: WSClient
                                          ) extends ReAuthable {
 
-  private def newBehavior(
-                           isForDataType: Boolean,
-                           maybeGroupId: Option[String],
-                           maybeTeamId: Option[String]
-                         ) = silhouette.SecuredAction.async { implicit request =>
+  def newGroup(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    BehaviorEditorData.buildForNew(user, maybeGroupId, maybeTeamId, isForDataType, dataService, ws).flatMap { maybeEditorData =>
+    BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws).flatMap { maybeEditorData =>
+      maybeEditorData.map { editorData =>
+        Future.successful(Ok(views.html.editBehavior(viewConfig(Some(editorData.teamAccess)), editorData)))
+      }.getOrElse {
+        dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
+          val response = NotFound(
+            views.html.notFound(
+              viewConfig(Some(teamAccess)),
+              Some(""),
+              Some("The skill you are trying to access could not be found."),
+              Some(reAuthLinkFor(request, None))
+            ))
+
+          withAuthDiscarded(request, response)
+        }
+      }
+    }
+  }
+
+  def edit(groupId: String, maybeBehaviorId: Option[String], maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, maybeJustSaved, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
         Future.successful(Ok(views.html.editBehavior(viewConfig(Some(editorData.teamAccess)), editorData)))
       }.getOrElse {
@@ -52,50 +69,6 @@ class BehaviorEditorController @Inject() (
 
           withAuthDiscarded(request, response)
         }
-      }
-    }
-  }
-
-  def newForNormalBehavior(maybeGroupId: Option[String], maybeTeamId: Option[String]) = {
-    newBehavior(isForDataType = false, maybeGroupId, maybeTeamId)
-  }
-
-  def newForDataType(maybeGroupId: Option[String], maybeTeamId: Option[String]) = {
-    newBehavior(isForDataType = true, maybeGroupId, maybeTeamId)
-  }
-
-  def edit(id: String, maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
-    val user = request.identity
-    BehaviorEditorData.buildForEdit(user, id, maybeJustSaved, dataService, ws).flatMap { maybeEditorData =>
-      maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.html.editBehavior(viewConfig(Some(editorData.teamAccess)), editorData)))
-      }.getOrElse {
-        dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
-          val response = NotFound(
-            views.html.notFound(
-              viewConfig(Some(teamAccess)),
-              Some("Skill not found"),
-              Some("The skill you are trying to access could not be found."),
-              Some(reAuthLinkFor(request, None))
-            ))
-
-          withAuthDiscarded(request, response)
-        }
-      }
-    }
-  }
-
-  def editGroup(id: String) = silhouette.SecuredAction.async { implicit request =>
-    for {
-      maybeGroup <- dataService.behaviorGroups.find(id)
-      maybeBehavior <- maybeGroup.map { group =>
-        dataService.behaviors.allForGroup(group).map(_.headOption)
-      }.getOrElse(Future.successful(None))
-    } yield {
-      maybeBehavior.map { behavior =>
-        Redirect(routes.BehaviorEditorController.edit(behavior.id))
-      }.getOrElse {
-        NotFound("")
       }
     }
   }
@@ -284,8 +257,6 @@ class BehaviorEditorController @Inject() (
           BehaviorVersionData.buildFor(
             version.team.id,
             behavior.maybeGroup.map(_.id),
-            behavior.maybeGroup.map(_.name),
-            behavior.maybeGroup.flatMap(_.maybeDescription),
             Some(behavior.id),
             version.maybeDescription,
             version.functionBody,

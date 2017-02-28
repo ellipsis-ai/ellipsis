@@ -12,8 +12,9 @@ import scala.concurrent.Future
 
 case class BehaviorGroupData(
                               id: Option[String],
-                              name: String,
-                              description: String,
+                              teamId: String,
+                              name: Option[String],
+                              description: Option[String],
                               icon: Option[String],
                               actionInputs: Seq[InputData],
                               dataTypeInputs: Seq[InputData],
@@ -23,7 +24,7 @@ case class BehaviorGroupData(
                               createdAt: OffsetDateTime
                             ) extends Ordered[BehaviorGroupData] {
 
-  val maybeNonEmptyName: Option[String] = Option(name.trim).filter(_.nonEmpty)
+  val maybeNonEmptyName: Option[String] = name.map(_.trim).filter(_.nonEmpty)
 
   def copyForTeam(team: Team): BehaviorGroupData = {
     copy(behaviorVersions = behaviorVersions.map(_.copyForTeam(team)))
@@ -39,19 +40,17 @@ case class BehaviorGroupData(
   lazy val maybeFirstTrigger: Option[String] = maybeFirstActionBehaviorVersion.flatMap(_.maybeFirstTrigger)
 
   lazy val maybeSortString: Option[String] = {
-    if (!this.name.isEmpty) {
-      Some(this.name.toLowerCase)
-    } else {
-      this.maybeFirstTrigger
-    }
+    maybeNonEmptyName.map { nonEmptyName =>
+      nonEmptyName.toLowerCase
+    }.orElse(this.maybeFirstTrigger)
   }
 
   lazy val fuzzyMatchName: FuzzyMatchable = {
-    FuzzyBehaviorGroupDetail(name)
+    FuzzyBehaviorGroupDetail(name.getOrElse(""))
   }
 
   lazy val fuzzyMatchDescription: FuzzyMatchable = {
-    FuzzyBehaviorGroupDetail(description)
+    FuzzyBehaviorGroupDetail(description.getOrElse(""))
   }
 
   import scala.math.Ordered.orderingToOrdered
@@ -104,8 +103,9 @@ object BehaviorGroupData {
       maybeGroup.map { group =>
         BehaviorGroupData(
           Some(group.id),
-          group.name,
-          group.maybeDescription.getOrElse(""),
+          group.team.id,
+          Some(group.name),
+          group.maybeDescription,
           None,
           actionInputsData,
           dataTypeInputsData,

@@ -31,8 +31,6 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
           BehaviorVersionData.buildFor(
             behavior.team.id,
             behavior.maybeGroup.map(_.id),
-            behavior.maybeGroup.map(_.name),
-            behavior.maybeGroup.flatMap(_.maybeDescription),
             Some(behavior.id),
             None,
             "",

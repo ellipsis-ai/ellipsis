@@ -8,7 +8,7 @@
 @main("Welcome to Ellipsis", config, pageId = "intro", selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorImportExportController.doImport,
-    routes.javascript.BehaviorEditorController.editGroup
+    routes.javascript.BehaviorEditorController.edit
   )
   <div id="content" class="content bg-white">
     <div class="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
@@ -34,7 +34,7 @@
 
           @config.maybeTeamAccess.map { teamAccess =>
             <h4>
-              Or else <a href='@routes.BehaviorEditorController.newForNormalBehavior(teamAccess.maybeAdminAccessToTeamId)'>
+              Or else <a href='@routes.BehaviorEditorController.newGroup(teamAccess.maybeAdminAccessToTeamId)'>
               teach Ellipsis something brand new.</a>
             </h4>
           }

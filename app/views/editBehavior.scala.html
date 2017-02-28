@@ -6,14 +6,8 @@
 @import play.filters.csrf._
 @import play.api.libs.json._
 @import json.Formatting._
-@titleForBehaviorData(behaviorData: json.BehaviorEditorData) = @{
-  if (behaviorData.isForDataType) {
-    "Edit data type"
-  } else {
-    "Edit skill"
-  }
-}
-@main(titleForBehaviorData(data), config, selectedNav = "skills") {
+
+@main("Edit skill", config, selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.ApplicationController.deleteBehaviorGroups,
     routes.javascript.BehaviorEditorController.edit,
@@ -22,8 +16,6 @@
     routes.javascript.BehaviorEditorController.versionInfoFor,
     routes.javascript.BehaviorEditorController.testTriggers,
     routes.javascript.BehaviorEditorController.testInvocation,
-    routes.javascript.BehaviorEditorController.newForNormalBehavior,
-    routes.javascript.BehaviorEditorController.newForDataType,
     routes.javascript.BehaviorEditorController.saveBehaviorGroupName,
     routes.javascript.BehaviorEditorController.saveBehaviorGroupDescription,
     routes.javascript.BehaviorEditorController.delete,
@@ -41,12 +33,12 @@
       <script src='@RemoteAssets.getUrl("lib/jshint/dist/jshint.js")'></script>
       <script>
         var BehaviorEditorConfiguration = {
-          data: @Html(Json.toJson(data.behaviorVersion).toString),
+          group: @Html(Json.toJson(data.group).toString),
+          selectedBehaviorId: @Html(Json.toJson(data.maybeSelectedBehaviorId).toString()),
           containerId: 'editorContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
           justSaved: @data.justSaved,
           envVariables: @Html(Json.toJson(data.environmentVariables).toString),
-          otherBehaviorsInGroup: @Html(Json.toJson(data.otherBehaviorsInGroup).toString),
           paramTypes: @Html(Json.toJson(data.paramTypes).toString),
           savedAnswers: @Html(Json.toJson(data.savedAnswers).toString),
           oauth2Applications: @Html(Json.toJson(data.oauth2Applications).toString),

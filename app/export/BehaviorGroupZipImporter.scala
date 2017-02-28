@@ -47,8 +47,8 @@ case class BehaviorGroupZipImporter(
     val actionInputsRegex = """^action_inputs\.json$$""".r
     val dataTypeInputsRegex = """^data_type_inputs\.json$$""".r
 
-    var groupName: String = ""
-    var groupDescription: String = ""
+    var maybeGroupName: Option[String] = None
+    var maybeGroupDescription: Option[String] = None
     var maybeExportId: Option[String] = None
     var maybeIcon: Option[String] = None
     var actionInputs: Seq[InputData] = Seq()
@@ -67,13 +67,13 @@ case class BehaviorGroupZipImporter(
         map.put(filename, readDataFrom(zipInputStream))
       }
       readmeRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
-        groupDescription = readDataFrom(zipInputStream)
+        maybeGroupDescription = Some(readDataFrom(zipInputStream))
       }
       configRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val readData = readDataFrom(zipInputStream)
         Json.parse(readData).validate[BehaviorGroupConfig] match {
           case JsSuccess(data, jsPath) => {
-            groupName = data.name
+            maybeGroupName = Some(data.name)
             maybeExportId = data.exportId
             maybeIcon = data.icon
           }
@@ -117,8 +117,9 @@ case class BehaviorGroupZipImporter(
 
     val data = BehaviorGroupData(
       None,
-      groupName,
-      groupDescription,
+      team.id,
+      maybeGroupName,
+      maybeGroupDescription,
       maybeIcon,
       actionInputs,
       dataTypeInputs,

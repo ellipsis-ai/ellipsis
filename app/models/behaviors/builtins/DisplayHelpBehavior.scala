@@ -87,8 +87,9 @@ case class DisplayHelpBehavior(
   private def flattenUnnamedBehaviorGroupData(untitledGroups: Seq[BehaviorGroupData]): BehaviorGroupData = {
     BehaviorGroupData(
       id = None,
-      name = "Miscellaneous",
-      description = "",
+      event.teamId,
+      name = Some("Miscellaneous"),
+      description = None,
       icon = None,
       actionInputs = untitledGroups.flatMap(_.actionInputs),
       dataTypeInputs = untitledGroups.flatMap(_.dataTypeInputs),
@@ -119,7 +120,7 @@ case class DisplayHelpBehavior(
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
     val skillActions = groupsToShow.map(group => {
-      val label = group.name
+      val label = group.name.getOrElse("(untitled skill)")
       val helpActionValue = group.id.getOrElse("(untitled)")
       maybeHelpSearch.map { helpSearch =>
         SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
@@ -163,7 +164,7 @@ case class DisplayHelpBehavior(
       ""
     } else {
       val description = maybeMatchingItems.filter(_.contains(groupData.fuzzyMatchDescription)).flatMap { _ =>
-        maybeHelpSearch.map(helpSearch => searchPatternFor(helpSearch).replaceAllIn(groupData.description, "$1**$2**$3"))
+        maybeHelpSearch.map(helpSearch => searchPatternFor(helpSearch).replaceAllIn(groupData.description.getOrElse(""), "$1**$2**$3"))
       }.getOrElse(groupData.description)
       description + "\n\n"
     }
