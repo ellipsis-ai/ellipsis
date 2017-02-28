@@ -226,7 +226,9 @@ const BehaviorEditor = React.createClass({
   },
 
   getSelectedBehaviorFor: function(group) {
-    return group.behaviorVersions.find(ea => ea.behaviorId === this.getSelectedBehaviorId());
+    return group.behaviorVersions.find(ea => {
+      return (!ea.behaviorId && !this.getSelectedBehaviorId()) || (ea.behaviorId === this.getSelectedBehaviorId());
+    });
   },
 
   getBehaviorProp: function(key) {
@@ -1034,13 +1036,13 @@ const BehaviorEditor = React.createClass({
 
   onBehaviorGroupNameChange: function(name) {
     this.setState({
-      groupName: name
+      group: this.getBehaviorGroup().clone({ name: name })
     });
   },
 
   onBehaviorGroupDescriptionChange: function(desc) {
     this.setState({
-      groupDescription: desc
+      group: this.getBehaviorGroup().clone({ description: desc })
     });
   },
 
@@ -1061,11 +1063,11 @@ const BehaviorEditor = React.createClass({
     var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupName().url;
     var data = {
       groupId: this.props.group.id,
-      name: this.state.groupName
+      name: this.getBehaviorGroup().name
     };
     // TODO: error handling!
     fetch(url, this.jsonPostOptions(data)).then(() => {
-      this.setState({ lastSavedGroupName: this.state.groupName });
+      this.setState({ lastSavedGroupName: this.getBehaviorGroup().name });
     });
   },
 
@@ -1073,11 +1075,11 @@ const BehaviorEditor = React.createClass({
     var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupDescription().url;
     var data = {
       groupId: this.props.group.id,
-      description: this.state.groupDescription
+      description: this.getBehaviorGroup().description
     };
     // TODO: error handling!
     fetch(url, this.jsonPostOptions(data)).then(() => {
-      this.setState({ lastSavedGroupDescription: this.state.groupDescription });
+      this.setState({ lastSavedGroupDescription: this.getBehaviorGroup().description });
     });
   },
 
@@ -1376,8 +1378,8 @@ const BehaviorEditor = React.createClass({
     return {
       group: this.props.group,
       selectedBehaviorId: this.props.selectedBehaviorId,
-      lastSavedGroupName: this.props.groupName || "",
-      lastSavedGroupDescription: this.props.groupDescription || "",
+      lastSavedGroupName: this.props.group.name || "",
+      lastSavedGroupDescription: this.props.group.description || "",
       activeDropdown: null,
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
@@ -1768,17 +1770,17 @@ const BehaviorEditor = React.createClass({
       <div>
         <form ref="deleteBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.delete().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.getSelectedBehaviorId()} />
+          <input type="hidden" name="behaviorId" value={this.getSelectedBehaviorId() || ""} />
         </form>
 
         <form ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorGroupIds[0]" value={this.props.group.id} />
+          <input type="hidden" name="behaviorGroupIds[0]" value={this.props.group.id || ""} />
         </form>
 
         <form ref="cloneBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.duplicate().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.getSelectedBehaviorId()} />
+          <input type="hidden" name="behaviorId" value={this.getSelectedBehaviorId() || ""} />
         </form>
       </div>
     );

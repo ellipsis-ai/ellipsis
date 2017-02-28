@@ -31,8 +31,12 @@ define(function(require) {
       return !(this.getDataTypeName() === null || this.getDataTypeName() === undefined);
     }
 
+    getTriggers() {
+      return this.triggers || [];
+    }
+
     findFirstTriggerIndexForDisplay() {
-      var firstTriggerIndex = this.triggers.findIndex(function(trigger) {
+      var firstTriggerIndex = this.getTriggers().findIndex(function(trigger) {
         return !!trigger.text && !trigger.isRegex;
       });
       if (firstTriggerIndex === -1) {
@@ -42,7 +46,7 @@ define(function(require) {
     }
 
     getFirstTriggerText() {
-      var trigger = this.triggers[this.findFirstTriggerIndexForDisplay()];
+      var trigger = this.getTriggers()[this.findFirstTriggerIndexForDisplay()];
       if (trigger) {
         return trigger.text;
       } else {

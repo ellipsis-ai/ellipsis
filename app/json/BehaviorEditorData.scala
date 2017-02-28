@@ -145,7 +145,7 @@ object BehaviorEditorData {
             "",
             "",
             Seq(),
-            Seq(),
+            Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
             BehaviorConfig(None, None, None, None, None, None, None),
             None,
             None,
