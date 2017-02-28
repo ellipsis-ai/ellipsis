@@ -178,6 +178,16 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  getBehaviorGroupName: function() {
+    if (this.state.lastSavedGroupName) {
+      return this.state.lastSavedGroupName;
+    } else if (this.isExistingGroup()) {
+      return "Untitled skill";
+    } else {
+      return "New skill";
+    }
+  },
+
   getBehaviorName: function() {
     return this.getBehaviorProp('name') || "";
   },
@@ -1869,30 +1879,39 @@ const BehaviorEditor = React.createClass({
 
   getBehaviorHeading: function() {
     return (
-      <h4 className="type-blue-faded mbn align-button">{this.getBehaviorHeadingText()}</h4>
+      <h5 className="type-blue-faded mbn">{this.getBehaviorHeadingText()}</h5>
     );
   },
 
-  shouldShowBehaviorSwitcher: function() {
+  behaviorSwitcherIsVisible: function() {
     return this.state.behaviorSwitcherVisible;
   },
 
   renderSwitcherToggle: function() {
-    if (!this.shouldShowBehaviorSwitcher()) {
+    if (!this.behaviorSwitcherIsVisible() && this.isExistingGroup()) {
       return (
-        <span className="type-weak">
-          <button type="button" className="button-subtle button-shrink mrxs" onClick={this.toggleBehaviorSwitcher}>
-            <span className="display-inline-block align-t" style={{ height: "24px" }}>
+        <div className="bg-white container container-wide type-weak border-bottom display-ellipsis display-limit-width">
+          <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
+            <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
               <SVGHamburger />
             </span>
+            <h4 className="type-black display-inline-block align-m man">
+              {this.getBehaviorGroupName()}
+            </h4>
           </button>
-        </span>
+        </div>
+      );
+    } else if (!this.isExistingGroup()) {
+      return (
+        <div className="bg-white container container-wide pvm border-bottom">
+          <h4 className="man">New skill</h4>
+        </div>
       );
     }
   },
 
   renderBehaviorSwitcher: function() {
-    if (this.shouldShowBehaviorSwitcher()) {
+    if (this.behaviorSwitcherIsVisible()) {
       return (
         <div ref="leftColumn" className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn position-relative mobile-position-fixed-top-full">
           <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
@@ -1936,8 +1955,9 @@ const BehaviorEditor = React.createClass({
               {this.renderBehaviorSwitcher()}
               <div className="column column-page-main-wide flex-column flex-column-center">
 
-                <div className={"container container-wide mtm " + (this.shouldShowBehaviorSwitcher() ? "" : "pll")}>
-                  {this.renderSwitcherToggle()}
+                {this.renderSwitcherToggle()}
+
+                <div className="container container-wide mtl">
                   {this.getBehaviorHeading()}
                 </div>
 
@@ -2083,8 +2103,9 @@ const BehaviorEditor = React.createClass({
             {this.renderBehaviorSwitcher()}
             <div className="column column-page-main-wide flex-column flex-column-center">
 
-              <div className="container container-wide pts">
-                {this.renderSwitcherToggle()}
+              {this.renderSwitcherToggle()}
+
+              <div className="container container-wide mtl">
                 {this.getBehaviorHeading()}
               </div>
 
