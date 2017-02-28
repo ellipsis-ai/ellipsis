@@ -4,13 +4,11 @@ define(function(require) {
     BehaviorVersion = require('../models/behavior_version'),
     Collapsible = require('../shared_ui/collapsible'),
     Input = require('../form/input'),
-    Textarea = require('../form/textarea'),
-    SVGXIcon = require('../svg/x');
+    Textarea = require('../form/textarea');
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',
     propTypes: {
-      onToggle: React.PropTypes.func.isRequired,
       actionBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       dataTypeBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       currentBehavior: React.PropTypes.instanceOf(BehaviorVersion),
@@ -107,10 +105,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="position-relative" ref="behaviorSwitcher">
-          <div className="position-absolute position-top-right ptxs prxs type-weak">
-            <button ref="closeButton" type="button" className="button-symbol button-s button-subtle" onClick={this.props.onToggle}><SVGXIcon /></button>
-          </div>
+        <div>
 
           <div className="border-bottom ptl pbxl mbl container container-wide">
 

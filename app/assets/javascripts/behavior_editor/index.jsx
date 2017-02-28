@@ -35,6 +35,7 @@ var React = require('react'),
   SectionHeading = require('./section_heading'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   Sticky = require('../shared_ui/sticky'),
+  SVGCollapse = require('../svg/collapse'),
   SVGHamburger = require('../svg/hamburger'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
@@ -1915,9 +1916,13 @@ const BehaviorEditor = React.createClass({
       return (
         <div ref="leftColumn" className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn position-relative mobile-position-fixed-top-full">
           <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
+            <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
+              <button type="button" className="button-raw type-weak" onClick={this.toggleBehaviorSwitcher} style={{ height: "22px" }}>
+                <SVGCollapse direction={this.windowIsMobile() ? "up" : "left"} />
+              </button>
+            </div>
             <BehaviorSwitcher
               ref="behaviorSwitcher"
-              onToggle={this.toggleBehaviorSwitcher}
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
