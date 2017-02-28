@@ -14,7 +14,7 @@ define(function(require) {
       actionBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       dataTypeBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       currentBehavior: React.PropTypes.instanceOf(BehaviorVersion),
-      groupId: React.PropTypes.string.isRequired,
+      groupId: React.PropTypes.string,
       groupName: React.PropTypes.string.isRequired,
       lastSavedGroupName: React.PropTypes.string.isRequired,
       groupDescription: React.PropTypes.string.isRequired,
@@ -161,25 +161,29 @@ define(function(require) {
             </Collapsible>
           </div>
 
-          <BehaviorSwitcherGroup
-            ref="actionSwitcher"
-            heading="Actions"
-            behaviors={this.props.actionBehaviors}
-            currentBehavior={this.props.currentBehavior}
-            addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
-            addNewLabel="Add new action"
-            emptyMessage="Add actions to provide a response using custom data types for input."
-          />
+          {this.props.groupId ? (
+            <div>
+              <BehaviorSwitcherGroup
+                ref="actionSwitcher"
+                heading="Actions"
+                behaviors={this.props.actionBehaviors}
+                currentBehavior={this.props.currentBehavior}
+                addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior(this.props.groupId, this.props.teamId).url}
+                addNewLabel="Add new action"
+                emptyMessage="Add actions to provide a response using custom data types for input."
+              />
 
-          <BehaviorSwitcherGroup
-            ref="dataTypeSwitcher"
-            heading="Data types"
-            behaviors={this.props.dataTypeBehaviors}
-            currentBehavior={this.props.currentBehavior}
-            addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
-            addNewLabel="Add new data type"
-            emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
-          />
+              <BehaviorSwitcherGroup
+                ref="dataTypeSwitcher"
+                heading="Data types"
+                behaviors={this.props.dataTypeBehaviors}
+                currentBehavior={this.props.currentBehavior}
+                addNewUrl={jsRoutes.controllers.BehaviorEditorController.newForDataType(this.props.groupId, this.props.teamId).url}
+                addNewLabel="Add new data type"
+                emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
+              />
+            </div>
+          ) : null}
 
         </div>
       );
