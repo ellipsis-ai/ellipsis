@@ -833,7 +833,7 @@ const BehaviorEditor = React.createClass({
   },
 
   exportVersion: function() {
-    window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.group.id).url;
+    window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.getBehaviorGroup().id).url;
   },
 
   toggleActiveDropdown: function(name) {
@@ -986,10 +986,10 @@ const BehaviorEditor = React.createClass({
   updateEnvVariables: function(envVars, options) {
     var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
     var data = {
-      teamId: this.props.group.teamId,
+      teamId: this.getBehaviorGroup().teamId,
       variables: envVars
     };
-    fetch(url, this.jsonPostOptions({ teamId: this.props.group.teamId, dataJson: JSON.stringify(data) }))
+    fetch(url, this.jsonPostOptions({ teamId: this.getBehaviorGroup().teamId, dataJson: JSON.stringify(data) }))
       .then((response) => response.json())
       .then((json) => {
         this.props.onClearActivePanel();
@@ -1062,7 +1062,7 @@ const BehaviorEditor = React.createClass({
   saveBehaviorGroupName: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupName().url;
     var data = {
-      groupId: this.props.group.id,
+      groupId: this.getBehaviorGroup().id,
       name: this.getBehaviorGroup().name
     };
     // TODO: error handling!
@@ -1074,7 +1074,7 @@ const BehaviorEditor = React.createClass({
   saveBehaviorGroupDescription: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupDescription().url;
     var data = {
-      groupId: this.props.group.id,
+      groupId: this.getBehaviorGroup().id,
       description: this.getBehaviorGroup().description
     };
     // TODO: error handling!
@@ -1090,8 +1090,7 @@ const BehaviorEditor = React.createClass({
 
   cancelBehaviorGroupDetailChanges: function() {
     this.setState({
-      groupName: this.state.lastSavedGroupName,
-      groupDescription: this.state.lastSavedGroupDescription
+      group: this.getBehaviorGroup().clone({ name: this.state.lastSavedGroupName, description: this.state.lastSavedGroupDescription })
     });
   },
 
@@ -1220,7 +1219,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isExistingGroup: function() {
-    return !!this.props.group.id;
+    return !!this.getBehaviorGroup().id;
   },
 
   isFinishedBehavior: function() {
@@ -1775,7 +1774,7 @@ const BehaviorEditor = React.createClass({
 
         <form ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorGroupIds[0]" value={this.props.group.id || ""} />
+          <input type="hidden" name="behaviorGroupIds[0]" value={this.getBehaviorGroup().id || ""} />
         </form>
 
         <form ref="cloneBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.duplicate().url} method="POST">
@@ -1911,12 +1910,12 @@ const BehaviorEditor = React.createClass({
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               currentBehavior={this.getTimestampedBehavior(this.getSelectedBehavior())}
-              groupId={this.props.group.id}
+              groupId={this.getBehaviorGroup().id}
               groupName={this.getBehaviorGroup().name}
               lastSavedGroupName={this.state.lastSavedGroupName}
               groupDescription={this.getBehaviorGroup().description}
               lastSavedGroupDescription={this.state.lastSavedGroupDescription}
-              teamId={this.props.group.teamId}
+              teamId={this.getBehaviorGroup().teamId}
               onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
               onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
               onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
