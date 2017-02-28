@@ -1249,7 +1249,10 @@ const BehaviorEditor = React.createClass({
   },
 
   isModified: function() {
-    var currentMatchesInitial = this.getSelectedBehavior().isIdenticalToVersion(this.getOriginalSelectedBehavior());
+    var selectedBehaviorId = this.getSelectedBehaviorId();
+    var currentVersionOfSelectedBehavior = this.getSelectedBehavior();
+    var originalVersionOfSelectedBehavior = this.getSelectedBehaviorFor(this.props.group, selectedBehaviorId);
+    var currentMatchesInitial = currentVersionOfSelectedBehavior.isIdenticalToVersion(originalVersionOfSelectedBehavior);
     var previewingVersions = this.props.activePanelName === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
   },
