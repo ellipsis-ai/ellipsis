@@ -13,7 +13,7 @@ define(function(require) {
     withNewBehaviorData(behaviorProps) {
       var newVersion = BehaviorVersion.fromJson(behaviorProps);
       var updatedVersions = this.behaviorVersions.filter(ea => ea.behaviorId !== newVersion.behaviorId).concat([newVersion]);
-      return this.clone({ behaviorVersions: updatedVersions });
+      return this.clone({ behaviorVersions: updatedVersions, id: newVersion.groupId });
     }
 
     static fromJson(props) {

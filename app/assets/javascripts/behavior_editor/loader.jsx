@@ -17,6 +17,7 @@ requirejs(['../common'], function() {
 
         var props = Object.assign({}, currentProps, {
           group: currentProps.group.withNewBehaviorData(newBehaviorData),
+          selectedBehaviorId: newBehaviorData.behaviorId,
           justSaved: true
         });
         reload(props);
