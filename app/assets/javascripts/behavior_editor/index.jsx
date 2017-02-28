@@ -35,6 +35,7 @@ var React = require('react'),
   SavedAnswerEditor = require('./saved_answer_editor'),
   SectionHeading = require('./section_heading'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
+  Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
@@ -62,6 +63,8 @@ var AWSEnvVariableStrings = {
 };
 
 var magic8BallResponse = Magic8Ball.response();
+
+var MOBILE_MAX_WIDTH = 768;
 
 const BehaviorEditor = React.createClass({
   displayName: 'BehaviorEditor',
@@ -174,6 +177,16 @@ const BehaviorEditor = React.createClass({
       return config[property];
     } else {
       return "";
+    }
+  },
+
+  getBehaviorGroupName: function() {
+    if (this.state.lastSavedGroupName) {
+      return this.state.lastSavedGroupName;
+    } else if (this.isExistingGroup()) {
+      return "Untitled skill";
+    } else {
+      return "New skill";
     }
   },
 
@@ -609,14 +622,41 @@ const BehaviorEditor = React.createClass({
     this.setBehaviorProp('triggers', triggers);
   },
 
-  fixLeftPanelPosition: function() {
-    var form = this.refs.behaviorForm;
+  getLeftPanelCoordinates: function() {
+    var headerHeight = this.getHeaderHeight();
+    var footerHeight = this.getFooterHeight();
+    var windowHeight = window.innerHeight;
+
+    var availableHeight = windowHeight - headerHeight - footerHeight;
+    var newHeight = availableHeight > 0 ? availableHeight : window.innerHeight;
+    return {
+      top: headerHeight,
+      left: window.scrollX > 0 ? -window.scrollX : 0,
+      bottom: newHeight
+    };
+  },
+
+  hasMobileLayout: function() {
+    return this.state.hasMobileLayout;
+  },
+
+  windowIsMobile: function() {
+    return window.innerWidth <= MOBILE_MAX_WIDTH;
+  },
+
+  checkMobileLayout: function() {
+    if (this.hasMobileLayout() !== this.windowIsMobile()) {
+      this.setState({
+        behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
+        hasMobileLayout: this.windowIsMobile()
+      });
+    }
+  },
+
+  layoutDidUpdate: function() {
     var panel = this.refs.leftPanel;
-    var scrim = this.refs.scrim.getElement();
-    if (form && panel && scrim) {
-      var topStyle = `${form.offsetTop}px`;
-      panel.style.top = topStyle;
-      scrim.style.top = topStyle;
+    if (panel) {
+      panel.resetCoordinates();
     }
   },
 
@@ -625,19 +665,10 @@ const BehaviorEditor = React.createClass({
     return mainHeader ? mainHeader.offsetHeight : 0;
   },
 
-  // fixHeaderHeight: debounce(function() {
-  //   if (this.refs.pageTitle) {
-  //     this.refs.pageTitle.style.top = `${this.getHeaderHeight()}px`;
-  //   }
-  // }, 50),
-
-  // getFixedTitleHeight: function() {
-  //   if (this.refs.pageTitle) {
-  //     return this.refs.pageTitle.offsetHeight;
-  //   } else {
-  //     return 0;
-  //   }
-  // },
+  getFooterHeight: function() {
+    var mainFooter = this.refs.footer;
+    return mainFooter ? mainFooter.getHeight() : 0;
+  },
 
   loadVersions: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.getSelectedBehaviorId()).url;
@@ -1367,8 +1398,11 @@ const BehaviorEditor = React.createClass({
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
-    // window.addEventListener('resize', this.fixHeaderHeight, false);
+    window.addEventListener('resize', this.checkMobileLayout, false);
   },
+
+  // componentDidUpdate: function() {
+  // },
 
   getInitialEnvVariables: function() {
     return Sort.arrayAlphabeticalBy(this.props.envVariables || [], (variable) => variable.name);
@@ -1397,7 +1431,8 @@ const BehaviorEditor = React.createClass({
       paramNameToSync: null,
       error: null,
       selectedSavedAnswerInputId: null,
-      behaviorSwitcherVisible: this.isExistingGroup()
+      behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
+      hasMobileLayout: this.windowIsMobile()
     };
   },
 
@@ -1413,7 +1448,7 @@ const BehaviorEditor = React.createClass({
         versionsLoadStatus: null,
         error: null
       };
-      if (!this.props.group.id && nextProps.group.id) {
+      if (!this.props.group.id && nextProps.group.id  && !this.windowIsMobile()) {
         newState.behaviorSwitcherVisible = true;
       }
       this.props.onClearActivePanel();
@@ -1526,35 +1561,35 @@ const BehaviorEditor = React.createClass({
       <div>
         <ModalScrim ref="scrim" isActive={this.props.activePanelIsModal} onClick={this.props.onClearActivePanel} />
         <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
-          <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'}>
+          <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteBehavior" revealWhen={this.props.activePanelName === 'confirmDeleteBehavior'}>
+          <Collapsible ref="confirmDeleteBehavior" revealWhen={this.props.activePanelName === 'confirmDeleteBehavior'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to delete this action?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroup'}>
+          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroup'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehaviorGroup} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to delete this skill and all of its actions and data types?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteCode" revealWhen={this.props.activePanelName === 'confirmDeleteCode'}>
+          <Collapsible ref="confirmDeleteCode" revealWhen={this.props.activePanelName === 'confirmDeleteCode'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to remove all of the code?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForTriggerParameters'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForTriggerParameters'} onChange={this.layoutDidUpdate}>
             <TriggerHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForBoilerplateParameters'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForBoilerplateParameters'} onChange={this.layoutDidUpdate}>
             <BoilerplateParameterHelp
               envVariableNames={this.getEnvVariableNames()}
               apiAccessTokens={this.getApiApplications()}
@@ -1563,7 +1598,7 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForResponseTemplate'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForResponseTemplate'} onChange={this.layoutDidUpdate}>
             <ResponseTemplateHelp
               firstParamName={this.getFirstBehaviorParamName()}
               template={this.getBehaviorTemplate()}
@@ -1571,11 +1606,11 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForAWS'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForAWS'} onChange={this.layoutDidUpdate}>
             <AWSHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
-          <Collapsible ref="versionHistory" revealWhen={this.props.activePanelName === 'versionHistory'}>
+          <Collapsible ref="versionHistory" revealWhen={this.props.activePanelName === 'versionHistory'} onChange={this.layoutDidUpdate}>
             <VersionsPanel
               ref="versionsPanel"
               menuToggle={this.toggleVersionListMenu}
@@ -1588,7 +1623,7 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible ref="envVariableSetter" revealWhen={this.props.activePanelName === 'envVariableSetter'}>
+          <Collapsible ref="envVariableSetter" revealWhen={this.props.activePanelName === 'envVariableSetter'} onChange={this.layoutDidUpdate}>
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
@@ -1606,7 +1641,7 @@ const BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible ref="envVariableAdder" revealWhen={this.props.activePanelName === 'envVariableAdder'}>
+          <Collapsible ref="envVariableAdder" revealWhen={this.props.activePanelName === 'envVariableAdder'} onChange={this.layoutDidUpdate}>
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
@@ -1625,7 +1660,7 @@ const BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'behaviorTester'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'behaviorTester'} onChange={this.layoutDidUpdate}>
             <BehaviorTester
               ref="behaviorTester"
               triggers={this.getBehaviorTriggers()}
@@ -1637,7 +1672,7 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.layoutDidUpdate}>
             <DataTypeTester
               ref="dataTypeTester"
               behaviorId={this.getSelectedBehaviorId()}
@@ -1649,7 +1684,7 @@ const BehaviorEditor = React.createClass({
           </Collapsible>
 
           {this.getOtherSavedParametersInGroup().length > 0 ? (
-            <Collapsible revealWhen={this.props.activePanelName === 'sharedAnswerInputSelector'}>
+            <Collapsible revealWhen={this.props.activePanelName === 'sharedAnswerInputSelector'} onChange={this.layoutDidUpdate}>
               <SharedAnswerInputSelector
                 ref="sharedAnswerInputSelector"
                 onToggle={this.toggleSharedAnswerInputSelector}
@@ -1659,7 +1694,7 @@ const BehaviorEditor = React.createClass({
             </Collapsible>
           ) : null}
 
-          <Collapsible revealWhen={this.props.activePanelName === 'savedAnswerEditor'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'savedAnswerEditor'} onChange={this.layoutDidUpdate}>
             <SavedAnswerEditor
               ref="savedAnswerEditor"
               onToggle={this.toggleSavedAnswerEditor}
@@ -1670,7 +1705,7 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible ref="saving" revealWhen={this.isSaving()}>
+          <Collapsible ref="saving" revealWhen={this.isSaving()} onChange={this.layoutDidUpdate}>
             <div className="box-action">
               <div className="container phn">
                 <p className="align-c">
@@ -1680,7 +1715,7 @@ const BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={!this.props.activePanelIsModal}>
+          <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.layoutDidUpdate}>
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
@@ -1872,24 +1907,33 @@ const BehaviorEditor = React.createClass({
 
   getBehaviorHeading: function() {
     return (
-      <h4 className="type-blue-faded mbn align-button">{this.getBehaviorHeadingText()}</h4>
+      <h5 className="type-blue-faded mbn">{this.getBehaviorHeadingText()}</h5>
     );
   },
 
-  shouldShowBehaviorSwitcher: function() {
+  behaviorSwitcherIsVisible: function() {
     return this.state.behaviorSwitcherVisible;
   },
 
   renderSwitcherToggle: function() {
-    if (!this.shouldShowBehaviorSwitcher()) {
+    if (!this.behaviorSwitcherIsVisible() && this.isExistingGroup()) {
       return (
-        <span className="type-weak">
-          <button type="button" className="button-subtle button-shrink mrxs" onClick={this.toggleBehaviorSwitcher}>
-            <span className="display-inline-block align-t" style={{ height: "24px" }}>
+        <div className="bg-white container container-wide type-weak border-bottom display-ellipsis display-limit-width">
+          <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
+            <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
               <SVGHamburger />
             </span>
+            <h4 className="type-black display-inline-block align-m man">
+              {this.getBehaviorGroupName()}
+            </h4>
           </button>
-        </span>
+        </div>
+      );
+    } else if (!this.isExistingGroup()) {
+      return (
+        <div className="bg-white container container-wide pvm border-bottom">
+          <h4 className="man">New skill</h4>
+        </div>
       );
     }
   },
@@ -1903,10 +1947,10 @@ const BehaviorEditor = React.createClass({
   },
 
   renderBehaviorSwitcher: function() {
-    if (this.shouldShowBehaviorSwitcher()) {
+    if (this.behaviorSwitcherIsVisible()) {
       return (
-        <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn">
-          <div ref="leftPanel">
+        <div ref="leftColumn" className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn position-relative mobile-position-fixed-top-full">
+          <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
             <BehaviorSwitcher
               ref="behaviorSwitcher"
               onToggle={this.toggleBehaviorSwitcher}
@@ -1925,7 +1969,7 @@ const BehaviorEditor = React.createClass({
               onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
               onSelectBehavior={this.onSelectBehavior}
             />
-          </div>
+          </Sticky>
         </div>
       );
     } else {
@@ -1948,8 +1992,9 @@ const BehaviorEditor = React.createClass({
               {this.renderBehaviorSwitcher()}
               <div className="column column-page-main-wide flex-column flex-column-center">
 
-                <div className={"container container-wide mtm " + (this.shouldShowBehaviorSwitcher() ? "" : "pll")}>
-                  {this.renderSwitcherToggle()}
+                {this.renderSwitcherToggle()}
+
+                <div className="container container-wide mtl">
                   {this.getBehaviorHeading()}
                 </div>
 
@@ -2095,8 +2140,9 @@ const BehaviorEditor = React.createClass({
             {this.renderBehaviorSwitcher()}
             <div className="column column-page-main-wide flex-column flex-column-center">
 
-              <div className="container container-wide pts">
-                {this.renderSwitcherToggle()}
+              {this.renderSwitcherToggle()}
+
+              <div className="container container-wide mtl">
                 {this.getBehaviorHeading()}
               </div>
 
