@@ -75,11 +75,14 @@ define(function(require) {
     }
 
     static fromJson(props) {
-      return new BehaviorVersion(Object.assign({}, props, {
+      const materializedProps = Object.assign({}, props, {
         params: Param.paramsFromJson(props.params || []),
-        responseTemplate: ResponseTemplate.fromString(props.responseTemplate || ''),
-        triggers: Trigger.triggersFromJson(props.triggers || [])
-      }));
+        responseTemplate: ResponseTemplate.fromString(props.responseTemplate || '')
+      });
+      if (props.triggers) {
+        materializedProps.triggers = Trigger.triggersFromJson(props.triggers)
+      }
+      return new BehaviorVersion(materializedProps);
     }
   }
 

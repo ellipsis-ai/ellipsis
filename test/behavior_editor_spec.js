@@ -23,21 +23,26 @@ jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => 
 describe('BehaviorEditor', () => {
   const defaultConfig = {
     teamId: "A",
-    behavior: {
-      behaviorId: "1",
-      functionBody: "onSuccess('Woot')",
-      responseTemplate: "{successResult}",
-      params: [],
-      triggers: [{
-        text: "Do the tests run?",
-        requiresMention: false,
-        isRegex: false,
-        caseSensitive: false
-      }],
-      config: {},
-      knownEnvVarsUsed: [],
-      groupId: '1'
+    group: {
+      behaviorVersions: [
+        {
+          behaviorId: "1",
+          functionBody: "onSuccess('Woot')",
+          responseTemplate: "{successResult}",
+          params: [],
+          triggers: [{
+            text: "Do the tests run?",
+            requiresMention: false,
+            isRegex: false,
+            caseSensitive: false
+          }],
+          config: {},
+          knownEnvVarsUsed: [],
+          groupId: '1'
+        }
+      ]
     },
+    selectedBehaviorId: "1",
     csrfToken: "2",
     justSaved: false,
     envVariables: [ { name: "HOT_DOG" } ],
@@ -63,7 +68,6 @@ describe('BehaviorEditor', () => {
     notifications: [],
     shouldRevealCodeEditor: true,
     onSave: jest.fn(),
-    otherBehaviorsInGroup: [],
     savedAnswers: [],
     onForgetSavedAnswerForInput: jest.fn()
   };
@@ -82,20 +86,6 @@ describe('BehaviorEditor', () => {
       <BehaviorEditor {...props} />
     ).refs.component;
   }
-
-  describe('getInitialTriggersFromProps', () => {
-    it('returns the defined triggers', () => {
-      editorConfig.behavior.triggers = [{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }];
-      let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggersFromBehavior(editor.props.behavior)).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
-    });
-
-    it('returns a single blank trigger when no triggers are defined', () => {
-      delete editorConfig.behavior.triggers;
-      let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggersFromBehavior(editor.props.behavior)).toEqual([new Trigger()]);
-    });
-  });
 
   describe('getBehaviorFunctionBody', () => {
     it('returns the defined function', () => {
