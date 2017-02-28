@@ -68,6 +68,7 @@ const BehaviorEditor = React.createClass({
 
   propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
+    selectedBehaviorId: React.PropTypes.string,
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
@@ -226,8 +227,9 @@ const BehaviorEditor = React.createClass({
   },
 
   getSelectedBehaviorFor: function(group) {
+    const selectedBehaviorId = this.getSelectedBehaviorId();
     return group.behaviorVersions.find(ea => {
-      return (!ea.behaviorId && !this.getSelectedBehaviorId()) || (ea.behaviorId === this.getSelectedBehaviorId());
+      return (!ea.behaviorId && !selectedBehaviorId) || (ea.behaviorId === selectedBehaviorId);
     });
   },
 
@@ -1406,6 +1408,7 @@ const BehaviorEditor = React.createClass({
       var newState = {
         justSaved: true,
         group: newGroup,
+        selectedBehaviorId: newSelectedBehaviorVersion.behaviorId,
         versions: [this.getTimestampedBehavior(newSelectedBehaviorVersion)],
         versionsLoadStatus: null,
         error: null
@@ -1911,9 +1914,9 @@ const BehaviorEditor = React.createClass({
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               currentBehavior={this.getTimestampedBehavior(this.getSelectedBehavior())}
               groupId={this.getBehaviorGroup().id}
-              groupName={this.getBehaviorGroup().name}
+              groupName={this.getBehaviorGroup().name || ""}
               lastSavedGroupName={this.state.lastSavedGroupName}
-              groupDescription={this.getBehaviorGroup().description}
+              groupDescription={this.getBehaviorGroup().description || ""}
               lastSavedGroupDescription={this.state.lastSavedGroupDescription}
               teamId={this.getBehaviorGroup().teamId}
               onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
