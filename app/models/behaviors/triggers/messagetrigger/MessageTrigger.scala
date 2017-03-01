@@ -6,17 +6,19 @@ import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.events.{Event, MessageEvent}
 import models.behaviors.triggers.Trigger
 import services.AWSLambdaConstants
+import utils.FuzzyMatchable
 
 import scala.util.matching.Regex
 
-trait MessageTrigger extends Trigger {
+trait MessageTrigger extends Trigger with FuzzyMatchable {
 
   val pattern: String
+  val text: String = pattern
+  val maybeFuzzyMatchPattern: Option[String] = None
   def regex: Regex
   val requiresBotMention: Boolean
   val shouldTreatAsRegex: Boolean
   val isCaseSensitive: Boolean
-  val sortRank: Int
 
   protected def paramIndexMaybesFor(params: Seq[BehaviorParameter]): Seq[Option[Int]]
 
@@ -41,7 +43,7 @@ trait MessageTrigger extends Trigger {
 
   def invocationParamsFor(event: Event, params: Seq[BehaviorParameter]): Map[String, String] = {
     event match {
-      case e: MessageEvent => invocationParamsFor(e.context.relevantMessageText, params)
+      case e: MessageEvent => invocationParamsFor(e.relevantMessageText, params)
       case _ => Map()
     }
   }
@@ -52,9 +54,10 @@ trait MessageTrigger extends Trigger {
 
   def isActivatedBy(event: Event): Boolean = {
     event match {
-      case e: MessageEvent => matches(e.context.relevantMessageText, e.context.includesBotMention)
+      case e: MessageEvent => matches(e.relevantMessageText, e.includesBotMention)
       case _ => false
     }
+
   }
 
 }
@@ -70,4 +73,23 @@ object MessageTrigger {
     }
   }
 
+  private def textBeginsWithAlphanumeric(text: String) = {
+    """^[A-Za-z0-9]""".r.findFirstMatchIn(text).isDefined
+  }
+
+  private def textContainsTemplateParam(text: String) = {
+    """\{.+\}""".r.findFirstMatchIn(text).isDefined
+  }
+
+  def sortKeyFor(text: String, isRegex: Boolean): (Int, String) = {
+    if (isRegex) {
+      (3, text)
+    } else if (!textBeginsWithAlphanumeric(text)) {
+      (2, text)
+    } else if (textContainsTemplateParam(text)) {
+      (1, text)
+    } else {
+      (0, text)
+    }
+  }
 }

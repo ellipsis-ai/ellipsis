@@ -2,6 +2,7 @@ package utils
 
 import javax.inject.Inject
 
+import models.ViewConfig
 import play.api.http.DefaultHttpErrorHandler
 import play.api.i18n.MessagesApi
 import play.api.mvc.Results._
@@ -27,7 +28,7 @@ class ErrorHandler @Inject() (
     Future.successful(
       NotFound(
         views.html.notFound(
-          None,
+          ViewConfig(config, None),
           None,
           maybeNonEmptyMessage
         )
@@ -41,7 +42,7 @@ class ErrorHandler @Inject() (
     Future.successful(
       InternalServerError(
         views.html.serverError(
-          Some(exception.id)
+          ViewConfig(config, None), Some(exception.id)
         )
       )
     )

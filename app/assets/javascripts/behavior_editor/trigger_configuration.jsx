@@ -70,24 +70,27 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="columns container ptxl">
-          <div className="column column-page-sidebar mbxxl mobile-mbs">
-            <SectionHeading number="1">When someone says</SectionHeading>
-
-            <Checklist disabledWhen={this.props.isFinishedBehavior}>
-              <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.props.isFinishedBehavior}>
-                Write a question or phrase people should use to trigger a response.
-              </Checklist.Item>
-              <Checklist.Item checkedWhen={this.triggersUseParams()}>
-                <span>A trigger can include “fill-in-the-blank” inputs, e.g. <code className="plxs">{"Call me {name}"}</code></span>
-                <span className="pls">
-                  <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible} />
+        <div className="columns container container-narrow ptxl">
+          <div className="mbxxl">
+            <SectionHeading number="1">
+              <span>
+                <span className="mrm">When someone says</span>
+                <span className="display-inline-block">
+                  <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible}/>
                 </span>
-              </Checklist.Item>
-            </Checklist>
-
-          </div>
-          <div className="column column-page-main mbxxl">
+              </span>
+            </SectionHeading>
+            <div>
+              <Checklist disabledWhen={this.props.isFinishedBehavior}>
+                <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.props.isFinishedBehavior}>
+                  Write a question or phrase people should use to trigger a response.
+                </Checklist.Item>
+                <Checklist.Item checkedWhen={this.triggersUseParams()}>
+                  <span>A trigger can include “fill-in-the-blank” inputs, e.g. <code
+        className="plxs">{"Call me {name}"}</code></span>
+                </Checklist.Item>
+              </Checklist>
+            </div>
             <div className="mbm">
               {this.props.triggers.map(function(trigger, index) {
                 return (

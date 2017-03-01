@@ -1,12 +1,15 @@
 package models.behaviors.invocationtoken
 
-import models.team.Team
+import models.accounts.user.User
+import models.behaviors.behavior.Behavior
+import models.behaviors.scheduling.Scheduled
+
 import scala.concurrent.Future
 
 trait InvocationTokenService {
 
-  def find(id: String): Future[Option[InvocationToken]]
+  def findNotExpired(id: String): Future[Option[InvocationToken]]
 
-  def createFor(team: Team): Future[InvocationToken]
+  def createFor(user: User, behavior: Behavior, maybeScheduled: Option[Scheduled]): Future[InvocationToken]
 
 }

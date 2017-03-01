@@ -4,7 +4,7 @@ function findMissingArgs(keysToEnsure, args) {
     var missing = [];
     keysToEnsure.forEach(function(key) {
         if (args[key] === undefined) {
-            missing.push(key)
+            missing.push(key);
         }
     });
     return missing;
@@ -28,7 +28,7 @@ module.exports = {
                       item: args.item
                     }
                 }, function (error, response, body) {
-                    if (!error && response.statusCode == 200) {
+                    if (!error && response.statusCode === 200) {
                         if (args.onSuccess) {
                             args.onSuccess(response, body);
                         }
@@ -52,7 +52,7 @@ module.exports = {
             request.get(
                 args.ellipsis.apiBaseUrl + "/get_item/" + encodeURIComponent(args.itemId) + "/" + encodeURIComponent(args.itemType) + "/" + encodeURIComponent(args.ellipsis.token),
                 function (error, response, body) {
-                    if (!error && response.statusCode == 200) {
+                    if (!error && response.statusCode === 200) {
                         if (args.onSuccess) {
                             args.onSuccess(response, body);
                         }

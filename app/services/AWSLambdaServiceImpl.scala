@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.file.{Files, Paths}
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
 import models.Models
@@ -13,7 +14,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.behaviors.invocationtoken.InvocationToken
 import models.team.Team
@@ -37,7 +38,8 @@ class AWSLambdaServiceImpl @Inject() (
                                        val ws: WSClient,
                                        val cache: CacheApi,
                                        val dataService: DataService,
-                                       val logsService: AWSLogsService
+                                       val logsService: AWSLogsService,
+                                       implicit val actorSystem: ActorSystem
                                        ) extends AWSLambdaService {
 
   import AWSLambdaConstants._
@@ -103,16 +105,16 @@ class AWSLambdaServiceImpl @Inject() (
 
   def invokeFunction(
                       functionName: String,
+                      token: InvocationToken,
                       payloadData: Seq[(String, JsValue)],
                       team: Team,
-                      event: MessageEvent,
+                      event: Event,
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                       environmentVariables: Seq[EnvironmentVariable],
                       successFn: InvokeResult => BotResult
                     ): Future[BotResult] = {
     for {
-      token <- dataService.invocationTokens.createFor(team)
-      userInfo <- event.context.userInfo(ws, dataService)
+      userInfo <- event.userInfo(ws, dataService)
       result <- {
         val oauth2ApplicationsNeedingRefresh =
           requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
@@ -133,7 +135,7 @@ class AWSLambdaServiceImpl @Inject() (
           JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recover {
             case e: java.util.concurrent.ExecutionException => {
               e.getMessage match {
-                case amazonServiceExceptionRegex() => new AWSDownResult()
+                case amazonServiceExceptionRegex() => AWSDownResult(event)
                 case _ => throw e
               }
             }
@@ -147,26 +149,31 @@ class AWSLambdaServiceImpl @Inject() (
               behaviorVersion: BehaviorVersion,
               parametersWithValues: Seq[ParameterWithValue],
               environmentVariables: Seq[EnvironmentVariable],
-              event: MessageEvent
+              event: Event
               ): Future[BotResult] = {
     for {
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
       result <- if (behaviorVersion.functionBody.isEmpty) {
-        Future.successful(SuccessResult(JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
+        Future.successful(SuccessResult(event, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
       } else {
-        invokeFunction(
-          behaviorVersion.functionName,
-          parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
-          behaviorVersion.team,
-          event,
-          requiredOAuth2ApiConfigs,
-          environmentVariables,
-          result => {
-            val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
-            val logResult = AWSLambdaLogResult.fromText(logString)
-            behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, configuration)
-          }
-        )
+        for {
+          user <- event.ensureUser(dataService)
+          token <- dataService.invocationTokens.createFor(user, behaviorVersion.behavior, event.maybeScheduled)
+          invocationResult <- invokeFunction(
+            behaviorVersion.functionName,
+            token,
+            parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
+            behaviorVersion.team,
+            event,
+            requiredOAuth2ApiConfigs,
+            environmentVariables,
+            result => {
+              val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
+              val logResult = AWSLambdaLogResult.fromText(logString)
+              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration, event)
+            }
+          )
+        } yield invocationResult
       }
     } yield result
   }
@@ -219,7 +226,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   def functionWithParams(params: Array[String], functionBody: String): String = {
     s"""function(${(params ++ Array(CONTEXT_PARAM)).mkString(", ")}) {
-        |  $functionBody
+        |  ${functionBody.trim}
         |}\n""".stripMargin
   }
 

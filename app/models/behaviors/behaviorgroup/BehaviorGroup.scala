@@ -1,26 +1,29 @@
 package models.behaviors.behaviorgroup
 
+import java.time.OffsetDateTime
+
 import models.team.Team
-import org.joda.time.DateTime
+import utils.SafeFileName
 
 case class BehaviorGroup(
                           id: String,
                           name: String,
+                          maybeIcon: Option[String],
                           maybeDescription: Option[String],
-                          maybeImportedId: Option[String],
+                          maybeExportId: Option[String],
                           team: Team,
-                          createdAt: DateTime) {
+                          createdAt: OffsetDateTime) {
 
   def exportName: String = {
-    val safeName = name.trim.replaceAll("""\s""", "_").replaceAll("""[^A-Za-z0-9_-]""", "")
-    Option(safeName).filter(_.nonEmpty).getOrElse(id)
+    Option(SafeFileName.forName(name)).filter(_.nonEmpty).getOrElse(id)
   }
 
   def toRaw: RawBehaviorGroup = RawBehaviorGroup(
     id,
     name,
+    maybeIcon,
     maybeDescription,
-    maybeImportedId,
+    maybeExportId,
     team.id,
     createdAt
   )

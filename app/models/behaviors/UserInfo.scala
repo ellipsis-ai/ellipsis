@@ -1,8 +1,9 @@
 package models.behaviors
 
+import akka.actor.ActorSystem
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
-import models.behaviors.events.{MessageContext, MessageEvent}
+import models.behaviors.events.Event
 import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
@@ -23,13 +24,13 @@ case class LinkedInfo(externalSystem: String, accessToken: String) {
 
 }
 
-case class MessageInfo(medium: String, userId: String, details: JsObject)
+case class MessageInfo(medium: String, channel: Option[String], userId: String, details: JsObject)
 
 object MessageInfo {
 
-  def buildFor(context: MessageContext, ws: WSClient, dataService: DataService): Future[MessageInfo] = {
-    context.detailsFor(ws, dataService).map { details =>
-      MessageInfo(context.name, context.userIdForContext, details)
+  def buildFor(event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
+    event.detailsFor(ws, dataService).map { details =>
+      MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details)
     }
   }
 
@@ -59,7 +60,7 @@ case class UserInfo(
 
 object UserInfo {
 
-  def buildFor(maybeUser: Option[User], context: MessageContext, ws: WSClient, dataService: DataService): Future[UserInfo] = {
+  def buildFor(maybeUser: Option[User], event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
     for {
       linkedOAuth2Tokens <- maybeUser.map { user =>
         dataService.linkedOAuth2Tokens.allForUser(user, ws)
@@ -74,17 +75,17 @@ object UserInfo {
           LinkedInfo(ea.api.name, ea.accessToken)
         }
       }
-      messageInfo <- context.messageInfo(ws, dataService)
+      messageInfo <- event.messageInfo(ws, dataService)
     } yield {
       UserInfo(maybeUser, links, Some(messageInfo))
     }
   }
 
-  def buildFor(context: MessageContext, teamId: String, ws: WSClient, dataService: DataService): Future[UserInfo] = {
+  def buildFor(event: Event, teamId: String, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
     for {
-      maybeLinkedAccount <- dataService.linkedAccounts.find(context.loginInfo, teamId)
+      maybeLinkedAccount <- dataService.linkedAccounts.find(event.loginInfo, teamId)
       maybeUser <- Future.successful(maybeLinkedAccount.map(_.user))
-      info <- buildFor(maybeUser, context, ws, dataService)
+      info <- buildFor(maybeUser, event, ws, dataService)
     } yield info
   }
 
@@ -93,10 +94,11 @@ object UserInfo {
 case class TeamInfo(team: Team, links: Seq[LinkedInfo]) {
 
   def toJson: JsObject = {
-    val parts: Seq[(String, JsValue)] = Seq(
+    val linkParts: Seq[(String, JsValue)] = Seq(
       "links" -> JsArray(links.map(_.toJson))
     )
-    JsObject(parts)
+    val timeZonePart = Seq("timeZone" -> JsString(team.timeZone.toString))
+    JsObject(linkParts ++ timeZonePart)
   }
 
 }

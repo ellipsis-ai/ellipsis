@@ -1,7 +1,9 @@
 package models.behaviors.builtins
 
-import models.behaviors.events.MessageContext
-import models.behaviors.scheduledmessage.ScheduledMessage
+import akka.actor.ActorSystem
+import models.behaviors.events.Event
+import models.behaviors.scheduling.Scheduled
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
@@ -10,42 +12,47 @@ import scala.concurrent.Future
 
 
 case class ListScheduledBehavior(
-                                 messageContext: MessageContext,
-                                 lambdaService: AWSLambdaService,
-                                 dataService: DataService
+                                  event: Event,
+                                  lambdaService: AWSLambdaService,
+                                  dataService: DataService
                                  ) extends BuiltinBehavior {
 
   lazy val noMessagesResponse: String =
-    """You haven't yet scheduled anything. To do so, try something like:
+    s"""You haven’t yet scheduled anything. To do so, try something like:
       |
-      |@ellipsis: schedule `some ellipsis skill` every day at 3pm
+      |```
+      |${event.botPrefix}schedule "go bananas" every day at 3pm
+      |```
     """.stripMargin
 
-  def responseForMessages(messages: Seq[ScheduledMessage]): String = {
-    s"""Here is what you have scheduled:
-       |
-       |${messages.map(_.listResponse).mkString("\n\n")}
-       |
+  def responseFor(scheduled: Seq[Scheduled]): Future[String] = {
+    Future.sequence(scheduled.map(_.listResponse(dataService))).map { listResponses =>
+      s"""Here’s what you have scheduled:
+         |
+       |${listResponses.mkString}
+         |
        |You can unschedule by typing something like:
-       |
-       |@ellipsis: unschedule `some ellipsis skill`
+         |
+       |```
+         |${event.botPrefix}unschedule "go bananas"
+         |```
      """.stripMargin
+    }
   }
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
-      maybeTeam <- dataService.teams.find(messageContext.teamId)
+      maybeTeam <- dataService.teams.find(event.teamId)
       scheduled <- maybeTeam.map { team =>
-        dataService.scheduledMessages.allForTeam(team)
+        Scheduled.allForTeam(team, dataService)
       }.getOrElse(Future.successful(Seq()))
-    } yield {
-      val responseText = if (scheduled.isEmpty) {
-        noMessagesResponse
+      responseText <- if (scheduled.isEmpty) {
+        Future.successful(noMessagesResponse)
       } else {
-        responseForMessages(scheduled)
+        responseFor(scheduled)
       }
-
-      SimpleTextResult(responseText, forcePrivateResponse = false)
+    } yield {
+      SimpleTextResult(event, responseText, forcePrivateResponse = false)
     }
   }
 

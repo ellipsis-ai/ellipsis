@@ -1,0 +1,43 @@
+@(
+  heading: String,
+  config: ViewConfig
+)(implicit messages: Messages, r: RequestHeader)
+
+@main(heading, config) {
+
+  <div id="content" class="content">
+    <div class="bg-pink border-emphasis-bottom border-pink bg-large-logo">
+      <div class="container ptxxxxl pbl">
+        <h1 class="type-white">
+          <span>Help: @heading</span>
+        </h1>
+      </div>
+    </div>
+    <div class="bg-white border-bottom pvxxxl">
+      <div class="container">
+        <div class="columns">
+          <div class="column column-three-quarters">
+            <p class="type-bold">
+              You can schedule actions by doing something like:
+            </p>
+            <p class="mbxxl"><code>
+              @@ellipsis: schedule "go bananas" every day at 3pm
+            </code></p>
+            <p class="type-bold">
+              To see what is currently scheduled, type:
+            </p>
+            <p class="mbxxl"><code>
+              @@ellipsis: scheduled
+            </code></p>
+            <p class="type-bold">
+              To unschedule, type:
+            </p>
+            <p class="mbxxl"><code>
+              @@ellipsis: unschedule "go bananas"
+            </code></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

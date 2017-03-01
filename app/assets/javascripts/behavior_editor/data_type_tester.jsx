@@ -2,7 +2,7 @@ define(function(require) {
   var React = require('react'),
     BehaviorTest = require('./behavior_test'),
     Input = require('../form/input'),
-    Collapsible = require('../collapsible'),
+    Collapsible = require('../shared_ui/collapsible'),
     oauth2ApplicationShape = require('./oauth2_application_shape'),
     TesterAuthRequired = require('./tester_auth_required'),
     InvocationResults = require('./behavior_tester_invocation_results'),

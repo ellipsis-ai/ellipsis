@@ -1,11 +1,17 @@
 package json
 
-import play.api.libs.json.Json
+import play.api.libs.json._
 
 object Formatting {
 
   implicit val behaviorParameterTypeReads = Json.reads[BehaviorParameterTypeData]
   implicit val behaviorParameterTypeWrites = Json.writes[BehaviorParameterTypeData]
+
+  implicit val inputSavedAnswerReads = Json.reads[InputSavedAnswerData]
+  implicit val inputSavedAnswerWrites = Json.writes[InputSavedAnswerData]
+
+  implicit val inputReads = Json.reads[InputData]
+  implicit val inputWrites = Json.writes[InputData]
 
   implicit val behaviorParameterReads = Json.reads[BehaviorParameterData]
   implicit val behaviorParameterWrites = Json.writes[BehaviorParameterData]
@@ -63,4 +69,10 @@ object Formatting {
 
   implicit val invocationLogEntriesByDayReads = Json.reads[InvocationLogsByDayData]
   implicit val invocationLogEntriesByDayWrites = Json.writes[InvocationLogsByDayData]
+
+  implicit val scheduledActionDataReads = Json.reads[ScheduledActionData]
+  implicit val scheduledActionDataWrites = Json.writes[ScheduledActionData]
+
+  implicit val scheduledActionsDataReads = Json.reads[ScheduledActionsData]
+  implicit val scheduledActionsDataWrites = Json.writes[ScheduledActionsData]
 }

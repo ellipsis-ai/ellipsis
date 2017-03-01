@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    Collapsible = require('../collapsible'),
+    Collapsible = require('../shared_ui/collapsible'),
     SVGTip = require('../svg/tip'),
     SVGWarning = require('../svg/warning'),
     NotificationForEnvVarMissing = require('./env_var_not_defined'),
@@ -110,7 +110,7 @@ define(function(require) {
       var notification = this.getNotificationForKind(this.props.notification.kind);
       return (
         <Collapsible revealWhen={!this.props.notification.hidden} animateInitialRender={true}>
-          <div className={"type-s phn position-z-above " + notification.containerClass} style={{ marginTop: -1 }}>
+          <div className={"type-s phn position-z-above mbneg1 " + notification.containerClass}>
             <div className="container">
               {notification.icon}
               {notification.message}

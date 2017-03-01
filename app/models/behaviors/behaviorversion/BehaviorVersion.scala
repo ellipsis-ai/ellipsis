@@ -2,38 +2,44 @@ package models.behaviors.behaviorversion
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.time.OffsetDateTime
 
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.events.Event
 import models.team.Team
-import org.joda.time.DateTime
-import play.api.libs.json.{JsValue, Json}
 import play.api.Configuration
+import play.api.libs.json.{JsValue, Json}
 import services.AWSLambdaConstants._
-import services.AWSLambdaLogResult
+import services.{AWSLambdaLogResult, DataService}
 
 case class BehaviorVersion(
                             id: String,
                             behavior: Behavior,
                             maybeDescription: Option[String],
-                            maybeShortName: Option[String],
+                            maybeName: Option[String],
                             maybeFunctionBody: Option[String],
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
                             maybeAuthor: Option[User],
-                            createdAt: DateTime
+                            createdAt: OffsetDateTime
                           ) {
 
+  def group: BehaviorGroup = behavior.group
+
   val team: Team = behavior.team
+
+  val exportName: String = {
+    behavior.maybeDataTypeName.orElse(maybeName).getOrElse(id)
+  }
 
   def isSkill: Boolean = {
     maybeFunctionBody.exists { body =>
       Option(body).exists(_.trim.nonEmpty)
     }
   }
-
-  def editLinkFor(configuration: Configuration) = behavior.editLinkFor(configuration)
 
   def description: String = maybeDescription.getOrElse("")
 
@@ -59,26 +65,28 @@ case class BehaviorVersion(
                  payload: ByteBuffer,
                  logResult: AWSLambdaLogResult,
                  parametersWithValues: Seq[ParameterWithValue],
-                 configuration: Configuration
+                 dataService: DataService,
+                 configuration: Configuration,
+                 event: Event
                ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
     val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(successResult, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
+      SuccessResult(event, successResult, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(logResultOption)
+        NoResponseResult(event, logResultOption)
       } else {
         if (isUnhandledError(json)) {
-          UnhandledErrorResult(this, configuration, logResultOption)
+          UnhandledErrorResult(event, this, dataService, configuration, logResultOption)
         } else if (json.toString == "null") {
-          NoCallbackTriggeredResult(this, configuration)
+          NoCallbackTriggeredResult(event, this, dataService, configuration)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(this, configuration, json, logResultOption)
+          SyntaxErrorResult(event, this, dataService, configuration, json, logResultOption)
         } else {
-          HandledErrorResult(this, configuration, json, logResultOption)
+          HandledErrorResult(event, this, dataService, configuration, json, logResultOption)
         }
       }
     }
@@ -89,7 +97,7 @@ case class BehaviorVersion(
       id,
       behavior.id,
       maybeDescription,
-      maybeShortName,
+      maybeName,
       maybeFunctionBody,
       maybeResponseTemplate,
       forcePrivateResponse,

@@ -1,16 +1,15 @@
 package models.behaviors.savedanswer
 
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.input.Input
-import org.joda.time.DateTime
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -20,7 +19,7 @@ case class RawSavedAnswer(
                           inputId: String,
                           valueString: String,
                           maybeUserId: Option[String],
-                          createdAt: DateTime
+                          createdAt: OffsetDateTime
                          )
 
 class SavedAnswersTable(tag: Tag) extends Table[RawSavedAnswer](tag, "saved_answers") {
@@ -29,7 +28,7 @@ class SavedAnswersTable(tag: Tag) extends Table[RawSavedAnswer](tag, "saved_answ
   def inputId = column[String]("input_id")
   def valueString = column[String]("value_string")
   def maybeUserId = column[Option[String]]("user_id")
-  def createdAt = column[DateTime]("created_at")
+  def createdAt = column[OffsetDateTime]("created_at")
 
   def * = (id, inputId, valueString, maybeUserId, createdAt) <> ((RawSavedAnswer.apply _).tupled, RawSavedAnswer.unapply _)
 }
@@ -64,7 +63,7 @@ class SavedAnswerServiceImpl @Inject() (
         val updated = existing.copy(valueString = valueString)
         query.update(updated).map(_ => updated)
       }.getOrElse {
-        val raw = RawSavedAnswer(IDs.next, input.id, valueString, maybeUserId, DateTime.now)
+        val raw = RawSavedAnswer(IDs.next, input.id, valueString, maybeUserId, OffsetDateTime.now)
         (all += raw).map(_ => raw)
       }
     } yield SavedAnswer(raw.id, input, valueString, maybeUserId, raw.createdAt)
@@ -72,10 +71,14 @@ class SavedAnswerServiceImpl @Inject() (
   }
 
   def maybeFor(user: User, param: BehaviorParameter): Future[Option[SavedAnswer]] = {
-    val action = maybeForQuery(maybeUserIdFor(param.input, user), param.input.id).result.map { r =>
-      r.headOption.map(tuple2SavedAnswer)
+    if (param.input.isSaved) {
+      val action = maybeForQuery(maybeUserIdFor(param.input, user), param.input.id).result.map { r =>
+        r.headOption.map(tuple2SavedAnswer)
+      }
+      dataService.run(action)
+    } else {
+      Future.successful(None)
     }
-    dataService.run(action)
   }
 
   def allFor(user: User, params: Seq[BehaviorParameter]): Future[Seq[SavedAnswer]] = {
@@ -84,11 +87,32 @@ class SavedAnswerServiceImpl @Inject() (
     }).map(_.flatten)
   }
 
+  def allFor(input: Input): Future[Seq[SavedAnswer]] = {
+    val action = allForInputQuery(input.id).result.map { r =>
+      r.map(tuple2SavedAnswer)
+    }
+    dataService.run(action)
+  }
+
   def updateForInputId(maybeOldInputId: Option[String], newInputId: String): Future[Unit] = {
     maybeOldInputId.map { oldInputId =>
-      val action = all.filter(_.inputId === oldInputId).map(_.inputId).update(newInputId).map(_ => {})
-      dataService.run(action)
+      if (oldInputId != newInputId) {
+        val action = all.filter(_.inputId === oldInputId).map(_.inputId).update(newInputId).map(_ => {})
+        dataService.run(action)
+      } else {
+        Future.successful({})
+      }
     }.getOrElse(Future.successful({}))
+  }
+
+  def deleteForUser(input: Input, user: User): Future[Int] = {
+    val action = uncompiledRawFindQueryFor(input.id, Some(user.id)).delete
+    dataService.run(action)
+  }
+
+  def deleteAllFor(input: Input): Future[Int] = {
+    val action = rawFindQueryIgnoringUserFor(input.id).delete
+    dataService.run(action)
   }
 
 }

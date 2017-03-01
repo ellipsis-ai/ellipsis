@@ -1,41 +1,45 @@
 package models.behaviors
 
+import akka.actor.ActorSystem
 import models.IDs
 import models.accounts.logintoken.LoginToken
 import models.accounts.oauth2application.OAuth2Application
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageContext, MessageEvent}
+import models.behaviors.events._
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsDefined, JsValue}
 import services.AWSLambdaConstants._
-import services.AWSLambdaLogResult
+import services.{AWSLambdaLogResult, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BotResult {
   val resultType: ResultType.Value
   val forcePrivateResponse: Boolean
+  val event: Event
   def text: String
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
 
   def sendIn(
-              context: MessageContext,
               maybeShouldUnfurl: Option[Boolean],
-              maybeConversation: Option[Conversation]
-            ): Unit = {
-    context.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation)
+              maybeConversation: Option[Conversation],
+              dataService: DataService
+            )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, maybeActions, dataService)
   }
+
+  def maybeActions: Option[MessageActions] = None
 }
 
 trait BotResultWithLogResult extends BotResult {
@@ -47,6 +51,7 @@ trait BotResultWithLogResult extends BotResult {
 }
 
 case class SuccessResult(
+                          event: Event,
                           result: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
@@ -62,15 +67,25 @@ case class SuccessResult(
   }
 }
 
-case class SimpleTextResult(simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
+case class SimpleTextResult(event: Event, simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
 
-  val resultType = ResultType.ConversationPrompt
+  val resultType = ResultType.SimpleText
 
   def text: String = simpleText
 
 }
 
-case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
+case class TextWithActionsResult(event: Event, simpleText: String, forcePrivateResponse: Boolean, actions: MessageActions) extends BotResult {
+  val resultType = ResultType.TextWithActions
+
+  def text: String = simpleText
+
+  override def maybeActions: Option[MessageActions] = {
+    Some(actions)
+  }
+}
+
+case class NoResponseResult(event: Event, maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
 
   val resultType = ResultType.NoResponse
   val forcePrivateResponse = false // N/A
@@ -78,11 +93,12 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
   def text: String = ""
 
   override def sendIn(
-                       context: MessageContext,
                        maybeShouldUnfurl: Option[Boolean],
-                       maybeConversation: Option[Conversation]
-                     ): Unit = {
+                       maybeConversation: Option[Conversation],
+                       dataService: DataService
+                     )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     // do nothing
+    Future.successful(None)
   }
 
 }
@@ -90,10 +106,11 @@ case class NoResponseResult(maybeLogResult: Option[AWSLambdaLogResult]) extends 
 trait WithBehaviorLink {
 
   val behaviorVersion: BehaviorVersion
+  val dataService: DataService
   val configuration: Configuration
   val forcePrivateResponse = behaviorVersion.forcePrivateResponse
 
-  def link: String = behaviorVersion.editLinkFor(configuration)
+  def link: String = dataService.behaviors.editLinkFor(behaviorVersion.behavior.id, configuration)
 
   def linkToBehaviorFor(text: String): String = {
     s"[$text](${link})"
@@ -101,7 +118,9 @@ trait WithBehaviorLink {
 }
 
 case class UnhandledErrorResult(
+                                 event: Event,
                                  behaviorVersion: BehaviorVersion,
+                                 dataService: DataService,
                                  configuration: Configuration,
                                  maybeLogResult: Option[AWSLambdaLogResult]
                                ) extends BotResultWithLogResult with WithBehaviorLink {
@@ -116,7 +135,9 @@ case class UnhandledErrorResult(
 }
 
 case class HandledErrorResult(
+                               event: Event,
                                behaviorVersion: BehaviorVersion,
+                               dataService: DataService,
                                configuration: Configuration,
                                json: JsValue,
                                maybeLogResult: Option[AWSLambdaLogResult]
@@ -139,7 +160,9 @@ case class HandledErrorResult(
 }
 
 case class SyntaxErrorResult(
+                              event: Event,
                               behaviorVersion: BehaviorVersion,
+                              dataService: DataService,
                               configuration: Configuration,
                               json: JsValue,
                               maybeLogResult: Option[AWSLambdaLogResult]
@@ -159,7 +182,9 @@ case class SyntaxErrorResult(
 }
 
 case class NoCallbackTriggeredResult(
+                                      event: Event,
                                       behaviorVersion: BehaviorVersion,
+                                      dataService: DataService,
                                       configuration: Configuration
                                     ) extends BotResult with WithBehaviorLink {
 
@@ -171,7 +196,9 @@ case class NoCallbackTriggeredResult(
 }
 
 case class MissingTeamEnvVarsResult(
+                                 event: Event,
                                  behaviorVersion: BehaviorVersion,
+                                 dataService: DataService,
                                  configuration: Configuration,
                                  missingEnvVars: Seq[String]
                                ) extends BotResult with WithBehaviorLink {
@@ -185,13 +212,13 @@ case class MissingTeamEnvVarsResult(
        |
        |You can define an environment variable by typing something like:
        |
-       |`@ellipsis: set env ENV_VAR_NAME value`
+       |`${event.botPrefix}set env ENV_VAR_NAME value`
     """.stripMargin
   }
 
 }
 
-class AWSDownResult extends BotResult {
+case class AWSDownResult(event: Event) extends BotResult {
 
   val resultType = ResultType.AWSDown
   val forcePrivateResponse = false
@@ -208,7 +235,7 @@ class AWSDownResult extends BotResult {
 
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
-                               event: MessageEvent,
+                               event: Event,
                                loginToken: LoginToken,
                                cache: CacheApi,
                                configuration: Configuration
@@ -236,26 +263,27 @@ case class OAuth2TokenMissing(
   }
 
   override def sendIn(
-                       context: MessageContext,
                        maybeShouldUnfurl: Option[Boolean],
-                       maybeConversation: Option[Conversation]
-                     ): Unit = {
+                       maybeConversation: Option[Conversation],
+                       dataService: DataService
+                     )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(context, maybeShouldUnfurl, maybeConversation)
+    super.sendIn(maybeShouldUnfurl, maybeConversation, dataService)
   }
 }
 
 case class RequiredApiNotReady(
                                 required: RequiredOAuth2ApiConfig,
-                                event: MessageEvent,
+                                event: Event,
                                 cache: CacheApi,
+                                dataService: DataService,
                                 configuration: Configuration
                              ) extends BotResult {
 
   val resultType = ResultType.RequiredApiNotReady
   val forcePrivateResponse = true
 
-  def configLink: String = required.behaviorVersion.editLinkFor(configuration)
+  def configLink: String = dataService.behaviors.editLinkFor(required.behaviorVersion.behavior.id, configuration)
   def configText: String = {
     s"You first must [configure the ${required.api.name} API]($configLink)"
   }

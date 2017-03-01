@@ -1,6 +1,6 @@
 define(function(require) {
 var React = require('react'),
-  HelpButton = require('./help_button');
+  CollapseButton = require('../shared_ui/collapse_button');
 
 return React.createClass({
   propTypes: {
@@ -10,19 +10,25 @@ return React.createClass({
   },
   render: function() {
     return (
-      <div className="box-help type-s pts mobile-position-fixed-full container container-wide">
-        <div className="position-relative columns">
-          <div className="column column-page-sidebar mts mobile-prxxl">
+      <div className="box-help type-s ptn mobile-position-fixed-bottom-full container container-wide mbneg1">
+        <div className="columns">
+          <div className="column column-page-sidebar mobile-display-none" />
+          <div className="column column-page-main position-relative">
+            <div className="position-absolute position-top-right">
+              <CollapseButton onClick={this.props.onCollapseClick} direction="down" />
+            </div>
+          </div>
+        </div>
+        <div className="columns">
+          <div className="column column-page-sidebar mtl mobile-prxl">
             <h4 className="type-weak">
               {this.props.heading}
             </h4>
           </div>
-          <div className="column column-page-main mts prxxl mobile-mtn">
-            <div className="position-absolute position-top-right">
-              <HelpButton onClick={this.props.onCollapseClick} toggled={true} inline={true} />
+          <div className="column column-page-main prxl">
+            <div className="mtl mobile-mtn">
+              {React.Children.map(this.props.children, function(child) { return child; })}
             </div>
-
-            {React.Children.map(this.props.children, function(child) { return child; })}
           </div>
         </div>
       </div>

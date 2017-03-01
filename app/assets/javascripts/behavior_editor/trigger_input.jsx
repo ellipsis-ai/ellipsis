@@ -4,9 +4,9 @@ var React = require('react'),
   DeleteButton = require('./delete_button'),
   HelpButton = require('../help/help_button'),
   Input = require('../form/input'),
-  Collapsible = require('../collapsible'),
+  Collapsible = require('../shared_ui/collapsible'),
   ToggleGroup = require('../form/toggle_group'),
-  DropdownMenu = require('../dropdown_menu'),
+  DropdownMenu = require('../shared_ui/dropdown_menu'),
   Trigger = require('../models/trigger');
 
 return React.createClass({
@@ -269,17 +269,17 @@ return React.createClass({
         <div className="column column-shrink align-b display-ellipsis prn mobile-pts mobile-pln pbs">
           <ToggleGroup className="form-toggle-group-s align-m">
             <ToggleGroup.Item
-              title="Ellipsis will respond to any message with this phrase"
-              label="Any message"
-              activeWhen={!this.props.trigger.requiresMention}
-              onClick={this.onChange.bind(this, 'requiresMention', false)}
-            />
-            <ToggleGroup.Item
               title="Ellipsis will only respond when mentioned, or when a message begins with three periods
               “…”."
               label="To Ellipsis"
               activeWhen={this.props.trigger.requiresMention}
               onClick={this.onChange.bind(this, 'requiresMention', true)}
+            />
+            <ToggleGroup.Item
+              title="Ellipsis will respond to any message with this phrase"
+              label="Any message"
+              activeWhen={!this.props.trigger.requiresMention}
+              onClick={this.onChange.bind(this, 'requiresMention', false)}
             />
           </ToggleGroup>
         </div>

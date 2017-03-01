@@ -1,6 +1,7 @@
 package models.behaviors.builtins
 
-import models.behaviors.events.{MessageContext, SlackMessageContext}
+import akka.actor.ActorSystem
+import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
@@ -10,32 +11,25 @@ import scala.concurrent.Future
 
 case class ScheduleBehavior(
                              text: String,
+                             isForIndividualMembers: Boolean,
                              recurrence: String,
-                             messageContext: MessageContext,
+                             event: Event,
                              lambdaService: AWSLambdaService,
                              dataService: DataService
                              ) extends BuiltinBehavior {
 
-  def maybeChannel: Option[String] = {
-    messageContext match {
-      case mc: SlackMessageContext => Some(mc.message.channel)
-      case _ => None
-    }
-  }
-
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
-      user <- messageContext.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       maybeTeam <- dataService.teams.find(user.teamId)
       maybeScheduledMessage <- maybeTeam.map { team =>
-        dataService.scheduledMessages.maybeCreateFor(text, recurrence, user, team, maybeChannel)
+        dataService.scheduledMessages.maybeCreateFor(text, recurrence, user, team, event.maybeChannel, isForIndividualMembers)
       }.getOrElse(Future.successful(None))
+      responseText <- maybeScheduledMessage.map { scheduledMessage =>
+        scheduledMessage.successResponse(dataService)
+      }.getOrElse(Future.successful(s"Sorry, I don’t know how to schedule `$recurrence`"))
     } yield {
-      val responseText = maybeScheduledMessage.map { scheduledMessage =>
-        scheduledMessage.successResponse
-      }.getOrElse(s"Sorry, I don't know how to schedule `$recurrence`")
-
-      SimpleTextResult(responseText, forcePrivateResponse = false)
+      SimpleTextResult(event, responseText, forcePrivateResponse = false)
     }
   }
 

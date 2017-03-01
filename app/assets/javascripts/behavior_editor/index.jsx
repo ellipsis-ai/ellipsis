@@ -1,9 +1,9 @@
 define((require) => {
 var React = require('react'),
-  ReactDOM = require('react-dom'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
+  BehaviorNameInput = require('./behavior_name_input'),
   BehaviorVersion = require('../models/behavior_version'),
   BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
@@ -13,40 +13,46 @@ var React = require('react'),
   CodeEditorHelp = require('./code_editor_help'),
   CodeFooter = require('./code_footer'),
   CodeHeader = require('./code_header'),
-  ConfirmActionPanel = require('./confirm_action_panel'),
+  ConfirmActionPanel = require('../panels/confirm_action'),
+  CollapseButton = require('../shared_ui/collapse_button'),
   DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
-  DataTypeNameInput = require('./data_type_name_input'),
   DataTypeResultConfig = require('./data_type_result_config'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
-  DropdownMenu = require('../dropdown_menu'),
+  DropdownMenu = require('../shared_ui/dropdown_menu'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
-  FixedFooter = require('../fixed_footer'),
+  FixedFooter = require('../shared_ui/fixed_footer'),
+  HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../form/input'),
-  ModalScrim = require('./modal_scrim'),
+  ModalScrim = require('../shared_ui/modal_scrim'),
   Notification = require('../notifications/notification'),
+  PageWithPanels = require('../shared_ui/page_with_panels'),
   Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
+  ResponseTemplateHelp = require('./response_template_help'),
+  SavedAnswerEditor = require('./saved_answer_editor'),
   SectionHeading = require('./section_heading'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
+  Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
   Trigger = require('../models/trigger'),
   TriggerConfiguration = require('./trigger_configuration'),
   TriggerHelp = require('./trigger_help'),
+  UniqueBy = require('../lib/unique_by'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
   SVGSettingsIcon = require('../svg/settings'),
   SVGWarning = require('../svg/warning'),
-  Collapsible = require('../collapsible'),
-  CsrfTokenHiddenInput = require('../csrf_token_hidden_input'),
-  BrowserUtils = require('../browser_utils'),
-  Event = require('../event'),
-  ImmutableObjectUtils = require('../immutable_object_utils'),
+  Collapsible = require('../shared_ui/collapsible'),
+  CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
+  BrowserUtils = require('../lib/browser_utils'),
+  Event = require('../lib/event'),
+  ImmutableObjectUtils = require('../lib/immutable_object_utils'),
   debounce = require('javascript-debounce'),
-  Sort = require('../sort'),
-  Magic8Ball = require('../magic_8_ball'),
+  Sort = require('../lib/sort'),
+  Magic8Ball = require('../lib/magic_8_ball'),
   oauth2ApplicationShape = require('./oauth2_application_shape');
   require('codemirror/mode/markdown/markdown');
 
@@ -58,10 +64,12 @@ var AWSEnvVariableStrings = {
 
 var magic8BallResponse = Magic8Ball.response();
 
-return React.createClass({
+var MOBILE_MAX_WIDTH = 768;
+
+const BehaviorEditor = React.createClass({
   displayName: 'BehaviorEditor',
 
-  propTypes: {
+  propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
     teamId: React.PropTypes.string.isRequired,
     groupName: React.PropTypes.string,
     groupDescription: React.PropTypes.string,
@@ -89,9 +97,17 @@ return React.createClass({
     linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     shouldRevealCodeEditor: React.PropTypes.bool,
+    savedAnswers: React.PropTypes.arrayOf(
+      React.PropTypes.shape({
+        inputId: React.PropTypes.string.isRequired,
+        userAnswerCount: React.PropTypes.number.isRequired,
+        myValueString: React.PropTypes.string
+      })
+    ).isRequired,
     onSave: React.PropTypes.func.isRequired,
+    onForgetSavedAnswerForInput: React.PropTypes.func.isRequired,
     onLoad: React.PropTypes.func
-  },
+  }),
 
 
   /* Getters */
@@ -100,26 +116,14 @@ return React.createClass({
     return this.state.activeDropdown && this.state.activeDropdown.name ? this.state.activeDropdown.name : "";
   },
 
-  getActiveModalElement: function() {
-    if (this.state.activePanel && this.state.activePanel.name && this.state.activePanel.modal) {
-      return ReactDOM.findDOMNode(this.refs[this.state.activePanel.name]);
-    } else {
-      return null;
-    }
-  },
-
-  getActivePanel: function() {
-    return this.state.activePanel && this.state.activePanel.name ? this.state.activePanel.name : "";
-  },
-
   getOtherSavedParametersInGroup: function() {
     const currentInputIds = this.getBehaviorParams().map(ea => ea.inputId);
-    return this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
+    const all = this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
       return arr.concat(ea.params);
     }, [])
       .filter(ea => currentInputIds.indexOf(ea.inputId) === -1)
-      .filter(ea => ea.isSaved())
-      .map(ea => ea.clone({ groupId: this.props.behavior.groupId }));
+      .filter(ea => ea.isSaved());
+    return UniqueBy.forArray(all, 'inputId');
   },
 
   getAllOAuth2Applications: function() {
@@ -175,6 +179,20 @@ return React.createClass({
     }
   },
 
+  getBehaviorGroupName: function() {
+    if (this.state.lastSavedGroupName) {
+      return this.state.lastSavedGroupName;
+    } else if (this.isExistingGroup()) {
+      return "Untitled skill";
+    } else {
+      return "New skill";
+    }
+  },
+
+  getBehaviorName: function() {
+    return this.getBehaviorProp('name') || "";
+  },
+
   getBehaviorDescription: function() {
     return this.getBehaviorProp('description') || "";
   },
@@ -185,6 +203,15 @@ return React.createClass({
 
   getBehaviorParams: function() {
     return this.getBehaviorProp('params') || [];
+  },
+
+  getFirstBehaviorParamName: function() {
+    var params = this.getBehaviorParams();
+    if (params[0] && params[0].name) {
+      return params[0].name;
+    } else {
+      return "";
+    }
   },
 
   getBehaviorProp: function(key) {
@@ -287,6 +314,14 @@ return React.createClass({
         <span className="mobile-display-only">Manage</span>
       </span>
     );
+  },
+
+  getParamWithSavedAnswers: function() {
+    if (this.state.selectedSavedAnswerInputId) {
+      return this.getBehaviorParams().find((param) => param.inputId === this.state.selectedSavedAnswerInputId);
+    } else {
+      return null;
+    }
   },
 
   getRedirectValue: function() {
@@ -511,7 +546,7 @@ return React.createClass({
   },
 
   cancelVersionPanel: function() {
-    this.hideActivePanel();
+    this.props.onClearActivePanel();
     this.showVersionIndex(0);
   },
 
@@ -547,7 +582,7 @@ return React.createClass({
     this.setBehaviorProp('params', []);
     this.setBehaviorProp('functionBody', '');
     this.toggleCodeEditor();
-    this.hideActivePanel();
+    this.props.onClearActivePanel();
   },
 
   deleteParamAtIndex: function(index) {
@@ -559,14 +594,41 @@ return React.createClass({
     this.setBehaviorProp('triggers', triggers);
   },
 
-  fixLeftPanelPosition: function() {
-    var form = this.refs.behaviorForm;
+  getLeftPanelCoordinates: function() {
+    var headerHeight = this.getHeaderHeight();
+    var footerHeight = this.getFooterHeight();
+    var windowHeight = window.innerHeight;
+
+    var availableHeight = windowHeight - headerHeight - footerHeight;
+    var newHeight = availableHeight > 0 ? availableHeight : window.innerHeight;
+    return {
+      top: headerHeight,
+      left: window.scrollX > 0 ? -window.scrollX : 0,
+      bottom: newHeight
+    };
+  },
+
+  hasMobileLayout: function() {
+    return this.state.hasMobileLayout;
+  },
+
+  windowIsMobile: function() {
+    return window.innerWidth <= MOBILE_MAX_WIDTH;
+  },
+
+  checkMobileLayout: function() {
+    if (this.hasMobileLayout() !== this.windowIsMobile()) {
+      this.setState({
+        behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
+        hasMobileLayout: this.windowIsMobile()
+      });
+    }
+  },
+
+  layoutDidUpdate: function() {
     var panel = this.refs.leftPanel;
-    var scrim = this.refs.scrim.getElement();
-    if (form && panel && scrim) {
-      var topStyle = `${form.offsetTop}px`;
-      panel.style.top = topStyle;
-      scrim.style.top = topStyle;
+    if (panel) {
+      panel.resetCoordinates();
     }
   },
 
@@ -575,29 +637,9 @@ return React.createClass({
     return mainHeader ? mainHeader.offsetHeight : 0;
   },
 
-  getFixedTitleHeight: function() {
-    if (this.refs.pageTitle) {
-      return this.refs.pageTitle.offsetHeight;
-    } else {
-      return 0;
-    }
-  },
-
-  focusOnFirstPossibleElement: function(parentElement) {
-    var tabSelector = 'a[href], area[href], input:not([disabled]), button:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, object, embed, *[tabindex], *[contenteditable]';
-    var firstFocusableElement = parentElement.querySelector(tabSelector);
-    if (firstFocusableElement) {
-      firstFocusableElement.focus();
-    }
-  },
-
-  focusOnPrimaryOrFirstPossibleElement: function(parentElement) {
-    var primaryElement = parentElement.querySelector('button.button-primary');
-    if (primaryElement) {
-      primaryElement.focus();
-    } else {
-      this.focusOnFirstPossibleElement(parentElement);
-    }
+  getFooterHeight: function() {
+    var mainFooter = this.refs.footer;
+    return mainFooter ? mainFooter.getHeight() : 0;
   },
 
   loadVersions: function() {
@@ -627,37 +669,12 @@ return React.createClass({
   handleEscKey: function() {
     if (this.getActiveDropdown()) {
       this.hideActiveDropdown();
-    } else if (this.getActivePanel()) {
-      this.hideActivePanel();
-    }
-  },
-
-  handleModalFocus: function(event) {
-    var activeModal = this.getActiveModalElement();
-    if (!activeModal) {
-      return;
-    }
-    var focusTarget = event.target;
-    var possibleMatches = activeModal.getElementsByTagName(focusTarget.tagName);
-    var match = Array.prototype.some.call(possibleMatches, function(element) {
-      return element === focusTarget;
-    });
-    if (!match) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      this.focusOnFirstPossibleElement(activeModal);
     }
   },
 
   hideActiveDropdown: function() {
     this.setState({
       activeDropdown: null
-    });
-  },
-
-  hideActivePanel: function() {
-    this.setState({
-      activePanel: null
     });
   },
 
@@ -678,8 +695,8 @@ return React.createClass({
   },
 
   onSaveError: function() {
+    this.props.onClearActivePanel();
     this.setState({
-      activePanel: null,
       error: "not_saved"
     });
   },
@@ -699,7 +716,7 @@ return React.createClass({
       .then((json) => {
         if (json.behaviorId) {
           let newProps = Object.assign({}, json, { onLoad: optionalCallback });
-          this.props.onSave(newProps, true);
+          this.props.onSave(newProps);
         } else {
           this.onSaveError();
         }
@@ -826,24 +843,11 @@ return React.createClass({
   },
 
   toggleActivePanel: function(name, beModal, optionalCallback) {
-    var alreadyOpen = this.getActivePanel() === name;
+    var alreadyOpen = this.props.activePanelName === name;
     if (!alreadyOpen) {
       this.refs.scrim.getElement().style.top = '';
     }
-    this.setState({
-      activePanel: alreadyOpen ? null : { name: name, modal: !!beModal }
-    }, optionalCallback || function() {
-      var activeModal = this.getActiveModalElement();
-      if (activeModal) {
-        this.focusOnPrimaryOrFirstPossibleElement(activeModal);
-      }
-    });
-  },
-
-  clearActivePanel: function() {
-    this.setState({
-      activePanel: null
-    });
+    this.props.onToggleActivePanel(name, beModal, optionalCallback);
   },
 
   toggleSharedAnswerInputSelector: function() {
@@ -863,11 +867,8 @@ return React.createClass({
   },
 
   toggleBehaviorSwitcher: function() {
-    this.toggleActivePanel('behaviorSwitcher', true, () => {
-      if (this.getActivePanel() === 'behaviorSwitcher') {
-        this.fixLeftPanelPosition();
-        this.refs.behaviorSwitcher.focus();
-      }
+    this.setState({
+      behaviorSwitcherVisible: !this.state.behaviorSwitcherVisible
     });
   },
 
@@ -875,27 +876,23 @@ return React.createClass({
     const ref = this.isDataTypeBehavior() ? 'dataTypeTester' : 'behaviorTester';
     if (this.isModified()) {
       this.onSaveBehavior(() => {
-        this.toggleTester(ref);
+        this.props.onClearActivePanel(() => {
+          this.toggleTester(ref);
+        });
       });
     } else {
-      this.toggleTester(ref);
+      this.props.onClearActivePanel(() => {
+        this.toggleTester(ref);
+      });
     }
   },
 
   toggleTester: function(ref) {
     this.toggleActivePanel(ref, true, () => {
-      if (this.getActivePanel() === ref) {
+      if (this.props.activePanelName === ref) {
         this.refs[ref].focus();
       }
     });
-  },
-
-  toggleBehaviorTester: function() {
-    this.toggleTester('behaviorTester');
-  },
-
-  toggleDataTypeTester: function() {
-    this.toggleTester('dataTypeTester');
   },
 
   toggleBoilerplateHelp: function() {
@@ -920,6 +917,22 @@ return React.createClass({
 
   toggleManageBehaviorMenu: function() {
     this.toggleActiveDropdown('manageBehavior');
+  },
+
+  toggleResponseTemplateHelp: function() {
+    this.toggleActivePanel('helpForResponseTemplate');
+  },
+
+  toggleSavedAnswerEditor: function(savedAnswerId) {
+    if (this.props.activePanelName === 'savedAnswerEditor') {
+      this.toggleActivePanel('savedAnswerEditor', true, () => {
+        this.setState({ selectedSavedAnswerInputId: null });
+      });
+    } else {
+      this.setState({ selectedSavedAnswerInputId: savedAnswerId }, () => {
+        this.toggleActivePanel('savedAnswerEditor', true, () => null);
+      });
+    }
   },
 
   toggleTriggerHelp: function() {
@@ -965,6 +978,10 @@ return React.createClass({
     this.setBehaviorProp('description', newDescription);
   },
 
+  updateName: function(newName) {
+    this.setBehaviorProp('name', newName);
+  },
+
   updateEnvVariables: function(envVars, options) {
     var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
     var data = {
@@ -974,7 +991,7 @@ return React.createClass({
     fetch(url, this.jsonPostOptions({ teamId: this.props.teamId, dataJson: JSON.stringify(data) }))
       .then((response) => response.json())
       .then((json) => {
-        this.hideActivePanel();
+        this.props.onClearActivePanel();
         this.refs.envVariableAdderPanel.reset();
         this.setState({
           envVariables: json.variables
@@ -991,6 +1008,29 @@ return React.createClass({
           options.errorCallback();
         }
       });
+  },
+
+  forgetSavedAnswerRequest: function(url, inputId) {
+    var data = {
+      inputId: inputId
+    };
+    fetch(url, this.jsonPostOptions(data))
+      .then((response) => response.json())
+      .then((json) => {
+        if (json.numDeleted > 0) {
+          this.props.onForgetSavedAnswerForInput(inputId, json.numDeleted);
+        }
+      });
+  },
+
+  forgetSavedAnswerForUser: function(inputId) {
+    var url = jsRoutes.controllers.SavedAnswerController.resetForUser().url;
+    this.forgetSavedAnswerRequest(url, inputId);
+  },
+
+  forgetSavedAnswersForTeam: function(inputId) {
+    var url = jsRoutes.controllers.SavedAnswerController.resetForTeam().url;
+    this.forgetSavedAnswerRequest(url, inputId);
   },
 
   onBehaviorGroupNameChange: function(name) {
@@ -1123,7 +1163,7 @@ return React.createClass({
       versions: newVersions,
       revealCodeEditor: this.shouldRevealCodeEditor()
     }, () => {
-      this.hideActivePanel();
+      this.props.onClearActivePanel();
       this.resetNotifications();
     });
   },
@@ -1142,10 +1182,6 @@ return React.createClass({
     return pattern.test(code);
   },
 
-  hasModalPanel: function() {
-    return !!(this.state.activePanel && this.state.activePanel.modal);
-  },
-
   hasModifiedTemplate: function() {
     return this.state && this.state.hasModifiedTemplate;
   },
@@ -1160,10 +1196,6 @@ return React.createClass({
 
   getDataTypeBehaviors: function() {
     return this.getAllBehaviors().filter(ea => ea.isDataType());
-  },
-
-  countActionBehaviorsInGroup: function() {
-    return this.getActionBehaviors().length;
   },
 
   hasUserParameters: function() {
@@ -1187,18 +1219,22 @@ return React.createClass({
     return !!this.props.behavior.behaviorId;
   },
 
+  isExistingGroup: function() {
+    return !!this.props.behavior.groupId;
+  },
+
   isFinishedBehavior: function() {
     return this.isExistingBehavior() && !!(this.props.behavior.functionBody || this.props.behavior.responseTemplate.text);
   },
 
   isModified: function() {
     var currentMatchesInitial = this.state.behavior.isIdenticalToVersion(this.getInitialBehavior(this.props.behavior));
-    var previewingVersions = this.getActivePanel() === 'versionHistory';
+    var previewingVersions = this.props.activePanelName === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
   },
 
   isSaving: function() {
-    return this.getActivePanel() === 'saving';
+    return this.props.activePanelName === 'saving';
   },
 
   shouldFilterCurrentVersion: function() {
@@ -1330,9 +1366,11 @@ return React.createClass({
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
-    window.document.addEventListener('focus', this.handleModalFocus, true);
-    this.refs.pageTitleLayoutReplacer.style.height = `${this.getFixedTitleHeight()}px`;
+    window.addEventListener('resize', this.checkMobileLayout, false);
   },
+
+  // componentDidUpdate: function() {
+  // },
 
   getInitialBehavior: function(behavior) {
     return behavior.clone({
@@ -1353,7 +1391,6 @@ return React.createClass({
       lastSavedGroupName: this.props.groupName || "",
       lastSavedGroupDescription: this.props.groupDescription || "",
       activeDropdown: null,
-      activePanel: null,
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
       envVariables: this.getInitialEnvVariables(),
@@ -1367,25 +1404,34 @@ return React.createClass({
       redirectValue: "",
       requiredOAuth2ApiConfigId: "",
       paramNameToSync: null,
-      error: null
+      error: null,
+      selectedSavedAnswerInputId: null,
+      behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
+      hasMobileLayout: this.windowIsMobile()
     };
   },
 
   componentWillReceiveProps: function(nextProps) {
-    var newBehaviorVersion = this.getInitialBehavior(nextProps.behavior);
-    this.setState({
-      activePanel: null,
-      justSaved: true,
-      behavior: newBehaviorVersion,
-      versions: [this.getTimestampedBehavior(newBehaviorVersion)],
-      versionsLoadStatus: null,
-      error: null
-    });
-    if (typeof(nextProps.onLoad) === 'function') {
-      nextProps.onLoad();
-    }
-    if (newBehaviorVersion.behaviorId) {
-      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newBehaviorVersion.behaviorId).url);
+    if (nextProps.behavior !== this.props.behavior) {
+      var newBehaviorVersion = this.getInitialBehavior(nextProps.behavior);
+      var newState = {
+        justSaved: true,
+        behavior: newBehaviorVersion,
+        versions: [this.getTimestampedBehavior(newBehaviorVersion)],
+        versionsLoadStatus: null,
+        error: null
+      };
+      if (!this.props.behavior.behaviorId && nextProps.behavior.behaviorId && !this.windowIsMobile()) {
+        newState.behaviorSwitcherVisible = true;
+      }
+      this.props.onClearActivePanel();
+      this.setState(newState);
+      if (typeof(nextProps.onLoad) === 'function') {
+        nextProps.onLoad();
+      }
+      if (newBehaviorVersion.behaviorId) {
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newBehaviorVersion.behaviorId).url);
+      }
     }
   },
 
@@ -1403,7 +1449,7 @@ return React.createClass({
   renderCodeEditor: function() {
     return (
       <div>
-        <div className="border-top border-left border-right border-light mtxxl mobile-mtn ptm">
+        <div className="border-top border-left border-right border-light ptm">
           <div className="type-s">
             <div className="plxxxl prs mbm">
               <APISelectorMenu
@@ -1435,7 +1481,7 @@ return React.createClass({
                   onChange={this.onAWSConfigChange}
                   onRemoveAWSConfig={this.toggleAWSConfig}
                   onToggleHelp={this.toggleAWSHelp}
-                  helpVisible={this.getActivePanel() === 'helpForAWS'}
+                  helpVisible={this.props.activePanelName === 'helpForAWS'}
                 />
               </div>
             </Collapsible>
@@ -1443,8 +1489,6 @@ return React.createClass({
 
           <CodeHeader
             ref="codeHeader"
-            helpVisible={this.getActivePanel() === 'helpForBoilerplateParameters'}
-            onToggleHelp={this.toggleBoilerplateHelp}
             userParams={this.getBehaviorParams()}
             systemParams={this.getSystemParams()}
           />
@@ -1488,50 +1532,58 @@ return React.createClass({
   renderFooter: function() {
     return (
       <div>
-        <ModalScrim ref="scrim" isActive={this.hasModalPanel()} onClick={this.clearActivePanel} />
+        <ModalScrim ref="scrim" isActive={this.props.activePanelIsModal} onClick={this.props.onClearActivePanel} />
         <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
-          <Collapsible ref="confirmUndo" revealWhen={this.getActivePanel() === 'confirmUndo'}>
-            <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.hideActivePanel}>
+          <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
+            <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteBehavior" revealWhen={this.getActivePanel() === 'confirmDeleteBehavior'}>
-            <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.hideActivePanel}>
+          <Collapsible ref="confirmDeleteBehavior" revealWhen={this.props.activePanelName === 'confirmDeleteBehavior'} onChange={this.layoutDidUpdate}>
+            <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to delete this action?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.getActivePanel() === 'confirmDeleteBehaviorGroup'}>
-            <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehaviorGroup} onCancelClick={this.hideActivePanel}>
+          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroup'} onChange={this.layoutDidUpdate}>
+            <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehaviorGroup} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to delete this skill and all of its actions and data types?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteCode" revealWhen={this.getActivePanel() === 'confirmDeleteCode'}>
-            <ConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.hideActivePanel}>
+          <Collapsible ref="confirmDeleteCode" revealWhen={this.props.activePanelName === 'confirmDeleteCode'} onChange={this.layoutDidUpdate}>
+            <ConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to remove all of the code?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'helpForTriggerParameters'}>
-            <TriggerHelp onCollapseClick={this.toggleTriggerHelp} />
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForTriggerParameters'} onChange={this.layoutDidUpdate}>
+            <TriggerHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'helpForBoilerplateParameters'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForBoilerplateParameters'} onChange={this.layoutDidUpdate}>
             <BoilerplateParameterHelp
               envVariableNames={this.getEnvVariableNames()}
               apiAccessTokens={this.getApiApplications()}
               onAddNewEnvVariable={this.onAddNewEnvVariable}
-              onCollapseClick={this.toggleBoilerplateHelp}
+              onCollapseClick={this.props.onClearActivePanel}
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'helpForAWS'}>
-            <AWSHelp onCollapseClick={this.toggleAWSHelp} />
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForResponseTemplate'} onChange={this.layoutDidUpdate}>
+            <ResponseTemplateHelp
+              firstParamName={this.getFirstBehaviorParamName()}
+              template={this.getBehaviorTemplate()}
+              onCollapseClick={this.props.onClearActivePanel}
+            />
           </Collapsible>
 
-          <Collapsible ref="versionHistory" revealWhen={this.getActivePanel() === 'versionHistory'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForAWS'} onChange={this.layoutDidUpdate}>
+            <AWSHelp onCollapseClick={this.props.onClearActivePanel} />
+          </Collapsible>
+
+          <Collapsible ref="versionHistory" revealWhen={this.props.activePanelName === 'versionHistory'} onChange={this.layoutDidUpdate}>
             <VersionsPanel
               ref="versionsPanel"
               menuToggle={this.toggleVersionListMenu}
@@ -1544,7 +1596,7 @@ return React.createClass({
             />
           </Collapsible>
 
-          <Collapsible ref="envVariableSetter" revealWhen={this.getActivePanel() === 'envVariableSetter'}>
+          <Collapsible ref="envVariableSetter" revealWhen={this.props.activePanelName === 'envVariableSetter'} onChange={this.layoutDidUpdate}>
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
@@ -1553,7 +1605,7 @@ return React.createClass({
                     <EnvVariableSetter
                       ref="envVariableSetterPanel"
                       vars={this.getEnvVariables()}
-                      onCancelClick={this.hideActivePanel}
+                      onCancelClick={this.props.onClearActivePanel}
                       onSave={this.updateEnvVariables}
                     />
                   </div>
@@ -1562,7 +1614,7 @@ return React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible ref="envVariableAdder" revealWhen={this.getActivePanel() === 'envVariableAdder'}>
+          <Collapsible ref="envVariableAdder" revealWhen={this.props.activePanelName === 'envVariableAdder'} onChange={this.layoutDidUpdate}>
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
@@ -1570,7 +1622,7 @@ return React.createClass({
                   <div className="column column-page-main">
                     <EnvVariableAdder
                       ref="envVariableAdderPanel"
-                      onCancelClick={this.hideActivePanel}
+                      onCancelClick={this.props.onClearActivePanel}
                       onSave={this.addEnvVar}
                       prompt={this.state.envVariableAdderPrompt}
                       existingNames={this.getEnvVariableNames()}
@@ -1581,31 +1633,31 @@ return React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'behaviorTester'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'behaviorTester'} onChange={this.layoutDidUpdate}>
             <BehaviorTester
               ref="behaviorTester"
               triggers={this.getBehaviorTriggers()}
               params={this.getBehaviorParams()}
               behaviorId={this.props.behavior.behaviorId}
               csrfToken={this.props.csrfToken}
-              onDone={this.toggleBehaviorTester}
+              onDone={this.props.onClearActivePanel}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.getActivePanel() === 'dataTypeTester'}>
+          <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.layoutDidUpdate}>
             <DataTypeTester
               ref="dataTypeTester"
               behaviorId={this.props.behavior.behaviorId}
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
-              onDone={this.toggleDataTypeTester}
+              onDone={this.props.onClearActivePanel}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
             />
           </Collapsible>
 
           {this.getOtherSavedParametersInGroup().length > 0 ? (
-            <Collapsible revealWhen={this.getActivePanel() === 'sharedAnswerInputSelector'}>
+            <Collapsible revealWhen={this.props.activePanelName === 'sharedAnswerInputSelector'} onChange={this.layoutDidUpdate}>
               <SharedAnswerInputSelector
                 ref="sharedAnswerInputSelector"
                 onToggle={this.toggleSharedAnswerInputSelector}
@@ -1615,7 +1667,18 @@ return React.createClass({
             </Collapsible>
           ) : null}
 
-          <Collapsible ref="saving" revealWhen={this.isSaving()}>
+          <Collapsible revealWhen={this.props.activePanelName === 'savedAnswerEditor'} onChange={this.layoutDidUpdate}>
+            <SavedAnswerEditor
+              ref="savedAnswerEditor"
+              onToggle={this.toggleSavedAnswerEditor}
+              savedAnswers={this.props.savedAnswers}
+              selectedParam={this.getParamWithSavedAnswers()}
+              onForgetSavedAnswerForUser={this.forgetSavedAnswerForUser}
+              onForgetSavedAnswersForTeam={this.forgetSavedAnswersForTeam}
+            />
+          </Collapsible>
+
+          <Collapsible ref="saving" revealWhen={this.isSaving()} onChange={this.layoutDidUpdate}>
             <div className="box-action">
               <div className="container phn">
                 <p className="align-c">
@@ -1625,11 +1688,11 @@ return React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={!this.hasModalPanel()}>
+          <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.layoutDidUpdate}>
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
-            <div className="container container-wide ptm">
+            <div className="container container-wide ptm border-top">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand mobile-column-auto">
                   <DynamicLabelButton
@@ -1715,17 +1778,17 @@ return React.createClass({
   renderHiddenForms: function() {
     return (
       <div>
-        <form className="pbxxxl" ref="deleteBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.delete().url} method="POST">
+        <form ref="deleteBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.delete().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
         </form>
 
-        <form className="pbxxxl" ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
+        <form ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorGroupIds[0]" value={this.props.behavior.groupId} />
         </form>
 
-        <form className="pbxxxl" ref="cloneBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.duplicate().url} method="POST">
+        <form ref="cloneBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.duplicate().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
         </form>
@@ -1776,15 +1839,15 @@ return React.createClass({
     if (optionalDescription && summary) {
       return (
         <span>
-          <span className="mhs">·</span>
-          <span className="type-black">{optionalDescription}</span>
+          <span className="mhs mobile-display-none">·</span>
+          <span className="type-black mobile-display-none">{optionalDescription}</span>
           <span className="mhs">·</span>
           <i>{summary}</i>
         </span>
       );
     } else if (optionalDescription && !summary) {
       return (
-        <span>
+        <span className="mobile-display-none">
           <span className="mhs">·</span>
           <span className="type-black">{optionalDescription}</span>
         </span>
@@ -1801,77 +1864,63 @@ return React.createClass({
     }
   },
 
-  getPageHeading: function() {
-    var actionCount = this.getActionBehaviors().length;
-    var dataTypeCount = this.getDataTypeBehaviors().length;
-
-    return (
-      <span>
-        <span className="align-m">
-          {this.getPageName(this.state.lastSavedGroupName, actionCount)}
-        </span>
-        <span className="type-m type-regular align-m">
-          {this.getPageDescription(this.state.lastSavedGroupDescription, actionCount, dataTypeCount)}
-        </span>
-      </span>
-    );
+  getBehaviorHeadingText: function() {
+    if (this.isDataTypeBehavior()) {
+      if (this.isExistingBehavior()) {
+        return "Edit data type";
+      } else {
+        return "New data type";
+      }
+    } else if (this.isExistingBehavior()) {
+      return "Edit action";
+    } else {
+      return "New action";
+    }
   },
 
   getBehaviorHeading: function() {
-    if (this.getAllBehaviors().length > 1) {
-      return (
-        <h3 className="type-blue-faded mtl mbn">{this.isDataTypeBehavior() ? "Edit data type" : "Edit action"}</h3>
-      );
-    } else {
-      return null;
-    }
-  },
-
-  shouldShowBehaviorSwitcher: function() {
-    return !!this.props.behavior.groupId;
-  },
-
-  renderPageHeadingContent: function() {
-    if (this.shouldShowBehaviorSwitcher()) {
-      return (
-        <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
-          <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
-            <SVGHamburger />
-          </span>
-          <h4 className="display-inline-block align-m man">{this.getPageHeading()}</h4>
-        </button>
-      );
-    } else {
-      return (
-        <h4 className="man">{this.getPageHeading()}</h4>
-      );
-    }
-  },
-
-  renderPageHeading: function() {
     return (
-      <div>
-        <div ref="pageTitle"
-          className="bg-white-translucent border-bottom position-fixed-top position-z-almost-front"
-          style={{ top: `${this.getHeaderHeight()}px` }}
-        >
-          <div className="container container-wide pts type-weak">
-            {this.renderPageHeadingContent()}
-          </div>
-        </div>
-        <div ref="pageTitleLayoutReplacer" style={{ height: `${this.getFixedTitleHeight()}px` }}></div>
-      </div>
+      <h5 className="type-blue-faded mbn">{this.getBehaviorHeadingText()}</h5>
     );
   },
 
-  renderBehaviorSwitcher: function() {
-    if (this.shouldShowBehaviorSwitcher()) {
+  behaviorSwitcherIsVisible: function() {
+    return this.state.behaviorSwitcherVisible;
+  },
+
+  renderSwitcherToggle: function() {
+    if (!this.behaviorSwitcherIsVisible() && this.isExistingGroup()) {
       return (
-        <div ref="leftPanel" className="position-fixed-left position-z-front bg-white-translucent border-left">
-          <Collapsible revealWhen={this.getActivePanel() === 'behaviorSwitcher'} isHorizontal={true}>
+        <div className="bg-white container container-wide type-weak border-bottom display-ellipsis display-limit-width">
+          <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
+            <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
+              <SVGHamburger />
+            </span>
+            <h4 className="type-black display-inline-block align-m man">
+              {this.getBehaviorGroupName()}
+            </h4>
+          </button>
+        </div>
+      );
+    } else if (!this.isExistingGroup()) {
+      return (
+        <div className="bg-white container container-wide pvm border-bottom">
+          <h4 className="man">New skill</h4>
+        </div>
+      );
+    }
+  },
+
+  renderBehaviorSwitcher: function() {
+    if (this.behaviorSwitcherIsVisible()) {
+      return (
+        <div ref="leftColumn" className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn position-relative mobile-position-fixed-top-full">
+          <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
+            <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
+              <CollapseButton onClick={this.toggleBehaviorSwitcher} direction={this.windowIsMobile() ? "up" : "left"} />
+            </div>
             <BehaviorSwitcher
               ref="behaviorSwitcher"
-              onToggle={this.toggleBehaviorSwitcher}
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
@@ -1886,7 +1935,7 @@ return React.createClass({
               onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
               onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
             />
-          </Collapsible>
+          </Sticky>
         </div>
       );
     } else {
@@ -1898,122 +1947,147 @@ return React.createClass({
     return (
 
       <div>
-        {this.renderPageHeading()}
-
-        {this.renderBehaviorSwitcher()}
-
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
 
-        {this.renderHiddenFormValues()}
+          {this.renderHiddenFormValues()}
 
-        {/* Start of container */}
-        <div className="pbxxxl">
+          {/* Start of container */}
+          <div>
 
-          <div className="container pts">
-            {this.getBehaviorHeading()}
+            <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
+              {this.renderBehaviorSwitcher()}
+              <div className="column column-page-main-wide flex-column flex-column-center">
 
-            <Input
-              className="form-input-borderless form-input-m type-bold mbn"
-              placeholder="Add a description (optional)"
-              onChange={this.updateDescription}
-              value={this.getBehaviorDescription()}
-            />
-          </div>
+                {this.renderSwitcherToggle()}
 
-          <hr className="mtneg1 mbn thin bg-gray-light" />
+                <div className="container container-wide mtl">
+                  {this.getBehaviorHeading()}
+                </div>
 
-          <TriggerConfiguration
-            isFinishedBehavior={this.isFinishedBehavior()}
-            triggers={this.getBehaviorTriggers()}
-            onToggleHelp={this.toggleTriggerHelp}
-            helpVisible={this.getActivePanel() === 'helpForTriggerParameters'}
-            onTriggerAdd={this.addTrigger}
-            onTriggerChange={this.updateTriggerAtIndexWithTrigger}
-            onTriggerDelete={this.deleteTriggerAtIndex}
-            onTriggerDropdownToggle={this.toggleActiveDropdown}
-            openDropdownName={this.getActiveDropdown()}
-          />
+                <BehaviorNameInput
+                  name={this.getBehaviorName()}
+                  onChange={this.updateName}
+                  placeholder="Action name (optional)"
+                />
 
-          <UserInputConfiguration
-            ref="userInputConfiguration"
-            onParamChange={this.updateParamAtIndexWithParam}
-            onParamDelete={this.deleteParamAtIndex}
-            onParamAdd={this.addNewParam}
-            onParamNameFocus={this.onParamNameFocus}
-            onParamNameBlur={this.onParamNameBlur}
-            onEnterKey={this.onParamEnterKey}
-            userParams={this.getBehaviorParams()}
-            paramTypes={this.props.paramTypes}
-            triggers={this.getBehaviorTriggers()}
-            isFinishedBehavior={this.isFinishedBehavior()}
-            behaviorHasCode={this.state.revealCodeEditor}
-            hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
-            onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
-          />
-
-          <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
-            <hr className="man thin bg-gray-light" />
-          </Collapsible>
-
-          <Collapsible revealWhen={!this.state.revealCodeEditor}>
-            <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
-              <div className="container container-wide">
-                <div className="columns columns-elastic mobile-columns-float">
-                  <div className="column column-expand">
-                    <p className="mbn">
-                      <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
-                      <span>or provide a simple response below.</span>
-                    </p>
-                  </div>
-                  <div className="column column-shrink align-m mobile-mtm">
-                    <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
-                      Add code
-                    </button>
+                <div className="columns container container-wide">
+                  <div className="column column-full mobile-column-full">
+                    <Input
+                      className="form-input-borderless form-input-m mbneg1"
+                      placeholder="Action description (optional)"
+                      onChange={this.updateDescription}
+                      value={this.getBehaviorDescription()}
+                    />
                   </div>
                 </div>
-              </div>
-            </div>
-          </Collapsible>
 
-          <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
+                <hr className="mtn mbn thin bg-gray-light" />
 
-            <div className="columns container container-wide flex-columns mobile-flex-no-columns">
-              <div className="flex-column flex-column-left column column-page-sidebar mbxxl mobile-mbs ptxxl">
-                <CodeEditorHelp
-                  sectionNumber={this.hasUserParameters() ? "3" : "2"}
+                <TriggerConfiguration
                   isFinishedBehavior={this.isFinishedBehavior()}
-                  functionBody={this.getBehaviorFunctionBody()}
-                  onToggleHelp={this.toggleBoilerplateHelp}
-                  helpIsActive={this.getActivePanel() === 'helpForBoilerplateParameters'}
-                  hasUserParameters={this.hasUserParameters()}
+                  triggers={this.getBehaviorTriggers()}
+                  onToggleHelp={this.toggleTriggerHelp}
+                  helpVisible={this.props.activePanelName === 'helpForTriggerParameters'}
+                  onTriggerAdd={this.addTrigger}
+                  onTriggerChange={this.updateTriggerAtIndexWithTrigger}
+                  onTriggerDelete={this.deleteTriggerAtIndex}
+                  onTriggerDropdownToggle={this.toggleActiveDropdown}
+                  openDropdownName={this.getActiveDropdown()}
                 />
-              </div>
 
-              <div className="flex-column flex-column-left column column-page-main column-page-main-wide">
-                {this.renderCodeEditor()}
+                <UserInputConfiguration
+                  ref="userInputConfiguration"
+                  onParamChange={this.updateParamAtIndexWithParam}
+                  onParamDelete={this.deleteParamAtIndex}
+                  onParamAdd={this.addNewParam}
+                  onParamNameFocus={this.onParamNameFocus}
+                  onParamNameBlur={this.onParamNameBlur}
+                  onEnterKey={this.onParamEnterKey}
+                  userParams={this.getBehaviorParams()}
+                  paramTypes={this.props.paramTypes}
+                  triggers={this.getBehaviorTriggers()}
+                  isFinishedBehavior={this.isFinishedBehavior()}
+                  behaviorHasCode={this.state.revealCodeEditor}
+                  hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
+                  otherBehaviorsInGroup={this.props.otherBehaviorsInGroup}
+                  onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
+                  savedAnswers={this.props.savedAnswers}
+                  onToggleSavedAnswer={this.toggleSavedAnswerEditor}
+                />
+
+                <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
+                  <hr className="man thin bg-gray-light" />
+                </Collapsible>
+
+                <Collapsible revealWhen={!this.state.revealCodeEditor}>
+                  <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
+                    <div className="container container-wide">
+                      <div className="columns columns-elastic mobile-columns-float">
+                        <div className="column column-expand">
+                          <p className="mbn">
+                            <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
+                            <span>or provide a simple response below.</span>
+                          </p>
+                        </div>
+                        <div className="column column-shrink align-m mobile-mtm">
+                          <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
+                            Add code
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Collapsible>
+
+                <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
+
+                  <div className="container container-wide">
+                    <div className="ptxl">
+                      <SectionHeading number={this.hasUserParameters() ? "3" : "2"}>
+                        <span className="mrm">Run code</span>
+                        <span className="display-inline-block">
+                          <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
+                        </span>
+                      </SectionHeading>
+
+                      <CodeEditorHelp
+                        isFinishedBehavior={this.isFinishedBehavior()}
+                        functionBody={this.getBehaviorFunctionBody()}
+                        onToggleHelp={this.toggleBoilerplateHelp}
+                        helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
+                        hasUserParameters={this.hasUserParameters()}
+                      />
+
+                      {this.renderCodeEditor()}
+                    </div>
+                  </div>
+
+                  <hr className="man thin bg-gray-light" />
+
+                </Collapsible>
+
+                <ResponseTemplateConfiguration
+                  template={this.getBehaviorTemplate()}
+                  onChangeTemplate={this.updateTemplate}
+                  isFinishedBehavior={this.isFinishedBehavior()}
+                  behaviorUsesCode={!!this.state.revealCodeEditor}
+                  shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
+                  onChangeForcePrivateResponse={this.updateForcePrivateResponse}
+                  onCursorChange={this.ensureCursorVisible}
+                  onToggleHelp={this.toggleResponseTemplateHelp}
+                  helpVisible={this.props.activePanelName === 'helpForResponseTemplate'}
+                  sectionNumber={this.getResponseTemplateSectionNumber()}
+                />
+
               </div>
             </div>
+          </div>
 
-            <hr className="man full-bleed thin bg-gray-light" />
-          </Collapsible>
+          {/* End of container */}
 
-          <ResponseTemplateConfiguration
-            template={this.getBehaviorTemplate()}
-            onChangeTemplate={this.updateTemplate}
-            isFinishedBehavior={this.isFinishedBehavior()}
-            behaviorUsesCode={!!this.state.revealCodeEditor}
-            shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
-            onChangeForcePrivateResponse={this.updateForcePrivateResponse}
-            onCursorChange={this.ensureCursorVisible}
-            userParams={this.getBehaviorParams()}
-            sectionNumber={this.getResponseTemplateSectionNumber()}
-          />
+          {this.renderFooter()}
 
-        </div> {/* End of container */}
-
-        {this.renderFooter()}
-
-      </form>
+        </form>
 
         {this.renderHiddenForms()}
 
@@ -2024,51 +2098,51 @@ return React.createClass({
   renderDataTypeBehavior: function() {
     return (
       <div>
-        {this.renderPageHeading()}
-
-        {this.renderBehaviorSwitcher()}
 
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           {this.renderHiddenFormValues()}
 
-          <div className="container pts">
-            {this.getBehaviorHeading()}
-          </div>
+          <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
+            {this.renderBehaviorSwitcher()}
+            <div className="column column-page-main-wide flex-column flex-column-center">
 
-          <DataTypeNameInput
-            name={this.getDataTypeName()}
-            onChange={this.updateDataTypeName}
-          />
+              {this.renderSwitcherToggle()}
 
-          <hr className="man thin bg-gray-light" />
+              <div className="container container-wide mtl">
+                {this.getBehaviorHeading()}
+              </div>
 
-          <DataTypeResultConfig
-            usesSearch={this.hasUserParameterNamed('searchQuery')}
-            onChange={this.updateDataTypeResultConfig}
-          />
+              <BehaviorNameInput
+                name={this.getDataTypeName()}
+                onChange={this.updateDataTypeName}
+                placeholder="Data type name"
+              />
 
-          <hr className="man thin bg-gray-light" />
+              <hr className="mtl mbn thin bg-gray-light" />
 
-          <div className="container container-wide pbxxxl">
-            <div className="columns flex-columns mobile-flex-no-columns">
-              <div className="flex-column flex-column-left column column-page-sidebar ptxl mbxxl mobile-mbs">
+              <DataTypeResultConfig
+                usesSearch={this.hasUserParameterNamed('searchQuery')}
+                onChange={this.updateDataTypeResultConfig}
+              />
 
-                <SectionHeading number="3">Run code to generate a list</SectionHeading>
+              <hr className="man thin bg-gray-light" />
 
-                <DataTypeCodeEditorHelp
+              <div className="container container-wide ptxl pbxxxl">
+                <SectionHeading number="2">Run code to generate a list</SectionHeading>
+
+                <div className="mbxl">
+                  <DataTypeCodeEditorHelp
                   functionBody={this.getBehaviorFunctionBody()}
                   usesSearch={this.hasUserParameterNamed('searchQuery')}
-                />
+                  />
+                </div>
 
-              </div>
-
-              <div className="flex-column flex-column-left column column-page-main column-page-main-wide mbxxl">
                 {this.renderCodeEditor()}
               </div>
+
+              {this.renderFooter()}
             </div>
           </div>
-
-          {this.renderFooter()}
         </form>
 
         {this.renderHiddenForms()}
@@ -2085,5 +2159,7 @@ return React.createClass({
     }
   }
 });
+
+return PageWithPanels.with(BehaviorEditor);
 
 });

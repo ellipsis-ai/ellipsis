@@ -1,27 +1,28 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import com.amazonaws.AmazonServiceException
+import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
-import models.behaviors.events.MessageContext
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class ResetBehaviorsBehavior(
-                            messageContext: MessageContext,
-                            lambdaService: AWSLambdaService,
-                            dataService: DataService
+                                   event: Event,
+                                   lambdaService: AWSLambdaService,
+                                   dataService: DataService
                             ) extends BuiltinBehavior {
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     val eventualReply = try {
       for {
-        maybeTeam <- dataService.teams.find(messageContext.teamId)
-        behaviors <- maybeTeam.map { team =>
-          dataService.behaviors.allForTeam(team)
+        maybeTeam <- dataService.teams.find(event.teamId)
+        groups <- maybeTeam.map { team =>
+          dataService.behaviorGroups.allFor(team)
         }.getOrElse(Future.successful(Seq()))
-        _ <- Future.sequence(behaviors.map(b => dataService.behaviors.unlearn(b)))
+        _ <- Future.sequence(groups.map(dataService.behaviorGroups.delete))
       } yield {
         "OK, I've forgotten all the things"
       }
@@ -29,7 +30,7 @@ case class ResetBehaviorsBehavior(
       case e: AmazonServiceException => Future.successful("Got an error from AWS")
     }
     eventualReply.map { reply =>
-      SimpleTextResult(reply, forcePrivateResponse = false)
+      SimpleTextResult(event, reply, forcePrivateResponse = false)
     }
   }
 

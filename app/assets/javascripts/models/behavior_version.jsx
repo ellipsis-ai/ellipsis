@@ -9,6 +9,7 @@ define(function(require) {
         groupId: { value: props.groupId, enumerable: true },
         teamId: { value: props.teamId, enumerable: true },
         behaviorId: { value: props.behaviorId, enumerable: true },
+        name: { value: props.name, enumerable: true },
         description: { value: props.description, enumerable: true },
         functionBody: { value: props.functionBody, enumerable: true },
         responseTemplate: { value: props.responseTemplate, enumerable: true },
@@ -17,7 +18,7 @@ define(function(require) {
         config: { value: props.config, enumerable: true },
         knownEnvVarsUsed: { value: props.knownEnvVarsUsed, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: false },
-        importedId: { value: props.importedId, enumerable: false }
+        exportId: { value: props.exportId, enumerable: false }
       });
     }
 
@@ -51,6 +52,10 @@ define(function(require) {
 
     isIdenticalToVersion(behaviorVersion) {
       return JSON.stringify(this) === JSON.stringify(behaviorVersion);
+    }
+
+    get sortKey() {
+      return this.name || this.getFirstTriggerText();
     }
 
     clone(props) {

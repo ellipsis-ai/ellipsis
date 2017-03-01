@@ -1,11 +1,11 @@
 @(
-  teamAccess: models.accounts.user.UserTeamAccess,
+  config: ViewConfig,
   environmentVariableJsonString: String
   )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
 
-@main("Environment variables", Some(teamAccess)) {
+@main("Environment variables", config, selectedNav = "settings") {
   @views.html.settingsRoutes()
   <div id="content" class="content flex-row-cascade">
     <div id="environmentVariableList" class="flex-row-cascade"></div>

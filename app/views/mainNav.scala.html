@@ -1,27 +1,30 @@
 @(
-  maybeTeamAccess: Option[models.accounts.user.UserTeamAccess]
+  config: ViewConfig,
+  selectedNav: String
 )(implicit r: RequestHeader)
+@tabClassFor(tabId: String) = @{
+  if (tabId == selectedNav) {
+    "link-light display-inline-block align-button border-emphasis-bottom border-pink mhs pbs mobile-pbxs"
+  } else {
+    "link-light display-inline-block align-button mhs pbm mobile-pbs"
+  }
+}
 <div class="columns columns-elastic">
-  <div class="column column-expand pts pbxs">
-    <a class="link-green display-inline-block align-b mrs" style="height: 36px"
-      href='@routes.ApplicationController.index(maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
-      @if(maybeTeamAccess.exists(_.isAdminAccess)) {
-        <div class="type-l mobile-ptxs">👻</div>
-      } else {
-        <span class="mobile-display-none">@views.html.logo()</span>
-        <span class="mobile-display-only">@views.html.logoSymbol()</span>
-      }
+  <div class="column column-expand pts mobile-ptxs">
+    <a class="link-pink display-inline-block align-b mrs"
+      href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+      @views.html.mainLogo(config)
     </a>
 
-    <a class="link-light display-inline-block align-button mhs"
-      href='@routes.ApplicationController.index(maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+    <a class="@tabClassFor("skills")"
+      href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
       Skills
     </a>
 
-    <a class="link-light display-inline-block align-button mhs"
-      href='@routes.EnvironmentVariablesController.list(maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+    <a class="@tabClassFor("settings")"
+      href='@routes.EnvironmentVariablesController.list(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
       Settings
     </a>
   </div>
-  @maybeTeamAccess.map { teamAccess => @views.html.teamMenu(teamAccess) }
+  @config.maybeTeamAccess.map { teamAccess => @views.html.teamMenu(teamAccess) }
 </div>

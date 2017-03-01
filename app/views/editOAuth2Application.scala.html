@@ -1,5 +1,5 @@
 @(
-  teamAccess: models.accounts.user.UserTeamAccess,
+  config: ViewConfig,
   apis: Seq[json.OAuth2ApiData],
   application: models.accounts.oauth2application.OAuth2Application
   )(implicit messages: Messages, r: RequestHeader)
@@ -8,7 +8,7 @@
 @import play.api.libs.json._
 @import json.Formatting._
 
-@main("Edit API application", Some(teamAccess)) {
+@main("Edit API application", config, selectedNav = "settings") {
   @views.html.settingsRoutes()
   <div id="content" class="content">
     <div id="applicationEditor"></div>
@@ -16,7 +16,7 @@
       var ApplicationEditorConfig = {
         containerId: 'applicationEditor',
         csrfToken: "@CSRF.getToken(r).map(_.value)",
-        teamId: "@teamAccess.maybeTargetTeam.map(_.id)",
+        teamId: "@config.maybeTargetTeamId.getOrElse("")",
         apis: @Html(Json.toJson(apis).toString),
         callbackUrl: "@routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true)",
         mainUrl: "@routes.ApplicationController.index().absoluteURL(secure = true)",

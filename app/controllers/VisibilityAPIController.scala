@@ -1,11 +1,11 @@
 package controllers
 
+import java.time.{OffsetDateTime, ZoneOffset}
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-import json.{InvocationLogEntryData, InvocationLogsByDayData}
+import json.InvocationLogEntryData
 import json.Formatting._
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 import play.api.Configuration
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
@@ -31,16 +31,16 @@ class VisibilityAPIController @Inject() (
 
   implicit val invocationCountWrites = Json.writes[InvocationCount]
 
-  private val dateFormatter =  DateTimeFormat.forPattern("EEE, dd MMM yyyy").withLocale(java.util.Locale.ENGLISH)
+  private val dateFormatter =  DateTimeFormatter.ofPattern("EEE, dd MMM yyyy").withLocale(java.util.Locale.ENGLISH)
 
-  private def dateFor(year: String, month: String, day: String): DateTime = {
-    new DateTime(year.toInt, month.toInt, day.toInt, 0, 0)
+  private def dateFor(year: String, month: String, day: String): OffsetDateTime = {
+    OffsetDateTime.of(year.toInt, month.toInt, day.toInt, 0, 0, 0, 0, ZoneOffset.UTC)
   }
 
   def invocationCountsForDate(token: String, year: String, month: String, day: String) = Action.async { implicit request =>
     val date = dateFor(year, month, day)
     for {
-      maybeTeam <- dataService.teams.findForToken(token)
+      maybeTeam <- dataService.teams.findForInvocationToken(token)
       isAdmin <- maybeTeam.map { team =>
         dataService.teams.isAdmin(team)
       }.getOrElse(Future.successful(false))
@@ -63,7 +63,7 @@ class VisibilityAPIController @Inject() (
                   uniqueUserCounts.
                     find { case(tid, bCount) => teamId == tid }.
                     map(_._2).getOrElse(0)
-                InvocationCount(date.toString(dateFormatter), teamName, totalCount, uniqueBehaviorCount, uniqueUserCount)
+                InvocationCount(dateFormatter.format(date), teamName, totalCount, uniqueBehaviorCount, uniqueUserCount)
               }
           )
         )
@@ -76,7 +76,7 @@ class VisibilityAPIController @Inject() (
   def forTeamForDate(token: String, targetTeamName: String, year: String, month: String, day: String) = Action.async { implicit request =>
     val date = dateFor(year, month, day)
     for {
-      maybeRequestingTeam <- dataService.teams.findForToken(token)
+      maybeRequestingTeam <- dataService.teams.findForInvocationToken(token)
       isAdmin <- maybeRequestingTeam.map { team =>
         dataService.teams.isAdmin(team)
       }.getOrElse(Future.successful(false))

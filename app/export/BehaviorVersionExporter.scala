@@ -6,6 +6,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import play.api.libs.json.Json
 import services.DataService
+import utils.SafeFileName
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,8 +23,8 @@ case class BehaviorVersionExporter(
 
   val fullPath = {
     val behaviorType = if (behaviorVersion.behavior.isDataType) { "data_types" } else { "actions" }
-    val dirName = behaviorVersion.behavior.maybeDataTypeName.getOrElse(behaviorVersion.id)
-    s"$parentPath/$behaviorType/$dirName"
+    val safeDirName = SafeFileName.forName(behaviorVersion.exportName)
+    s"$parentPath/$behaviorType/$safeDirName"
   }
 
   def functionString: String = maybeFunction.getOrElse("")
@@ -42,40 +43,40 @@ case class BehaviorVersionExporter(
     writeFileFor("config.json", configString)
   }
 
+  def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorVersionExporter = {
+    copy(paramsData = paramsData.map(_.copyForExport(groupExporter)))
+  }
+
 }
 
 object BehaviorVersionExporter {
 
   def maybeFor(behaviorId: String, user: User, parentPath: String, dataService: DataService): Future[Option[BehaviorVersionExporter]] = {
     for {
-      maybeBehavior <- dataService.behaviors.find(behaviorId, user)
+      maybeBehavior <- dataService.behaviors.find(behaviorId, user).flatMap { maybeBehavior =>
+        maybeBehavior.map { behavior =>
+          dataService.behaviors.ensureExportIdFor(behavior).map(Some(_))
+        }.getOrElse(Future.successful(None))
+      }
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
         dataService.behaviors.maybeCurrentVersionFor(behavior)
       }.getOrElse(Future.successful(None))
       maybeFunction <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.behaviorVersions.maybeFunctionFor(behaviorVersion)
       }.getOrElse(Future.successful(None))
-      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, Some(behaviorId))
+      maybeExportId <- Future.successful(maybeBehavior.flatMap(_.maybeExportId))
+      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, maybeExportId)
     } yield {
       for {
         behaviorVersion <- maybeBehaviorVersion
-        function <- maybeFunction
         versionData <- maybeVersionData
       } yield {
-        // we don't want to export the team-specific application, but we want to keep the scope
-        val requiredOAuth2ApiConfigsForExport = versionData.config.requiredOAuth2ApiConfigs.map { configs =>
-          configs.map { ea =>
-            val maybeScope = ea.application.flatMap(_.scope)
-            ea.copy(application = None, recommendedScope = maybeScope)
-          }
-        }
-        val configForExport = versionData.config.copy(requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsForExport)
         BehaviorVersionExporter(
           behaviorVersion,
           maybeFunction,
           versionData.params,
           versionData.triggers,
-          configForExport,
+          versionData.config.copyForExport,
           versionData.responseTemplate,
           parentPath
         )

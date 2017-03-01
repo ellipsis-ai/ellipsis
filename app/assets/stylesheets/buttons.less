@@ -123,6 +123,7 @@ button.button-warning {
   line-height: @l;
 }
 
+a.button-s,
 button.button-s,
 .form-select-s .form-select-element,
 .form-toggle-group-s {
@@ -196,6 +197,7 @@ button[disabled] {
   cursor: default !important;
 }
 
+a.button-shrink,
 button.button-shrink {
   min-width: 0;
   padding-left: (@s - @border-width);
@@ -212,7 +214,8 @@ button.button-symbol {
   text-align: center !important;
 }
 
-button.button-raw {
+button.button-raw,
+button.button-block {
   padding: 0;
   border: none;
   min-width: 0;
@@ -221,6 +224,20 @@ button.button-raw {
   font-style: inherit;
   line-height: inherit;
   height: auto;
+}
+
+button.button-no-wrap {
+  white-space: nowrap;
+}
+
+button.button-block {
+  display: block;
+  text-align: left;
+  color: inherit;
+}
+
+button.button-block .link {
+  color: @blue-medium-text;
 }
 
 button.button-s.button-symbol {
@@ -374,7 +391,8 @@ button.button-warning:focus {
   border-color: @pink-dark;
 }
 
-button.button-s:focus {
+button.button-s:focus,
+a.button-s:focus {
   padding: (@xs - @border-width-thick + 1) (@m - @border-width-thick) (@xs - @border-width-thick - 1);
 }
 
@@ -386,6 +404,7 @@ button.button-dropdown-trigger-menu-open:focus {
   border-color: @border-color !important;
 }
 
+a.button-shrink:focus,
 button.button-shrink:focus,
 button.button-symbol:focus {
   padding-left: (@s - @border-width-thick) !important;
@@ -397,12 +416,18 @@ button.button-s.button-symbol:focus {
   padding-right: (@xs - @border-width-thick) !important;
 }
 
-button.button-raw:hover {
+button.button-raw:hover,
+button.button-block:hover .link {
   text-decoration: underline;
 }
 
-button.button-raw:focus {
+button.button-raw:focus,
+button.button-block:focus {
   padding: 0;
+}
+
+button.button-raw:focus,
+button.button-block:focus .link {
   color: @blue-medium-alt;
 }
 
@@ -419,9 +444,14 @@ button.button-subtle:active {
   border-color: @blue-dark !important;
 }
 
-button.button-raw:active {
+button.button-raw:active,
+button.button-block:active {
   border: none;
   background-color: transparent;
+}
+
+button.button-raw:active,
+button.button-block:active .link {
   color: @blue-dark;
 }
 

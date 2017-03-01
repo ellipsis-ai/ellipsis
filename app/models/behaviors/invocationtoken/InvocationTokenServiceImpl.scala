@@ -1,14 +1,15 @@
 package models.behaviors.invocationtoken
 
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import com.google.inject.Provider
 import models.IDs
-import models.team.Team
-import org.joda.time.DateTime
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
+import models.accounts.user.User
+import models.behaviors.behavior.Behavior
+import models.behaviors.scheduling.Scheduled
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -16,10 +17,12 @@ import scala.concurrent.Future
 class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invocation_tokens") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def teamId = column[String]("team_id")
-  def createdAt = column[DateTime]("created_at")
+  def userId = column[String]("user_id")
+  def behaviorId = column[String]("behavior_id")
+  def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
+  def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, teamId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
+  def * = (id, userId, behaviorId, maybeScheduledMessageId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
 }
 
 class InvocationTokenServiceImpl @Inject() (
@@ -35,12 +38,18 @@ class InvocationTokenServiceImpl @Inject() (
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
-  def find(id: String): Future[Option[InvocationToken]] = {
+  private def find(id: String): Future[Option[InvocationToken]] = {
     dataService.run(findQueryFor(id).result.map(_.headOption))
   }
 
-  def createFor(team: Team): Future[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, team.id, DateTime.now)
+  def findNotExpired(id: String): Future[Option[InvocationToken]] = {
+    find(id).map { maybeToken =>
+      maybeToken.filterNot(_.isExpired)
+    }
+  }
+
+  def createFor(user: User, behavior: Behavior, maybeScheduled: Option[Scheduled]): Future[InvocationToken] = {
+    val newInstance = InvocationToken(IDs.next, user.id, behavior.id, maybeScheduled.map(_.id), OffsetDateTime.now)
     dataService.run((all += newInstance).map(_ => newInstance))
   }
 

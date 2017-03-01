@@ -1,10 +1,10 @@
 define(function(require) {
   var React = require('react'),
-    ImmutableObjectUtils = require('../immutable_object_utils'),
+    ImmutableObjectUtils = require('../lib/immutable_object_utils'),
     Input = require('../form/input'),
     Textarea = require('../form/textarea'),
-    formatEnvVarName = require('./formatter'),
-    ifPresent = require('../if_present'),
+    formatEnvVarName = require('../lib/formatter').formatEnvironmentVariableName,
+    ifPresent = require('../lib/if_present'),
     SetterActions = require('./setter_actions');
 
   return React.createClass({

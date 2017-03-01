@@ -3,7 +3,7 @@ package models.behaviors.input
 import models.behaviors.behavior.BehaviorQueries
 import models.behaviors.behaviorgroup.BehaviorGroupQueries
 import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType, TextType}
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 object InputQueries {
 
@@ -21,7 +21,7 @@ object InputQueries {
         findBuiltIn(raw.paramType).
         orElse(tuple._2.map { dataTypeBehavior => BehaviorBackedDataType(BehaviorQueries.tuple2Behavior(dataTypeBehavior)) }).
         getOrElse(TextType)
-    Input(raw.id, raw.name, raw.maybeQuestion, paramType, raw.isSavedForTeam, raw.isSavedForUser, maybeGroup)
+    Input(raw.id, raw.maybeExportId, raw.name, raw.maybeQuestion, paramType, raw.isSavedForTeam, raw.isSavedForUser, maybeGroup)
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {

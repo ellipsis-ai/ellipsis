@@ -16,7 +16,7 @@ case class TriggerTestReport(
                                maybeBehaviorResponse: Option[BehaviorResponse]
                                ) {
 
-  val maybeActivatedTrigger = maybeBehaviorResponse.map(_.activatedTrigger)
+  val maybeActivatedTrigger = maybeBehaviorResponse.flatMap(_.maybeActivatedTrigger)
 
   def paramValues: Map[String, String] = maybeBehaviorResponse.map { behaviorResponse =>
     behaviorResponse.parametersWithValues.flatMap { p =>
@@ -28,7 +28,7 @@ case class TriggerTestReport(
 
   def json: JsValue = {
     val data = TriggerTestReportOutput(
-      event.context.fullMessageText,
+      event.messageText,
       maybeActivatedTrigger.map(_.pattern),
       paramValues
     )

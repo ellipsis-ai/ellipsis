@@ -1,7 +1,11 @@
+.ctags
+.cache
+.DS_Store
+.eclipse
+.sbtserver/
 bin/
 core/
 /db
-.eclipse
 /lib/
 /logs/
 /modules
@@ -14,7 +18,6 @@ test-result
 server.pid
 *.eml
 /dist/
-.cache
 /.idea
 /.idea_modules
 /.classpath
@@ -22,12 +25,10 @@ server.pid
 /.settings
 /RUNNING_PID
 activator
-.DS_Store
 node_modules
-npm-debug.log
 /conf/version.conf
 tags
-.ctags
 actw
 .byebug_history
 /.sbtserver
+**/npm-debug.log

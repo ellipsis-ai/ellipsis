@@ -3,6 +3,7 @@
 @import (reference) "borders";
 @import (reference) "type";
 @import (reference) "position";
+@import (reference) "animation";
 
 .box-help {
   .bg-blue-lighter();
@@ -28,6 +29,15 @@
   .border-black();
   color: @white;
   .blink-twice();
+}
+
+.box-chat-example {
+  .bg-white();
+  .border();
+  padding: 0 @xs;
+  .type-monospace();
+  margin-left: @xs;
+  margin-right: @xs;
 }
 
 .box-action {

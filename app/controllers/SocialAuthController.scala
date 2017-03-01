@@ -1,12 +1,12 @@
 package controllers
 
 import java.net.{URI, URLEncoder}
+import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 import services.DataService
 import com.mohiva.play.silhouette.api.util.Clock
-import org.joda.time.DateTime
 import play.api.Configuration
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -109,7 +109,7 @@ class SocialAuthController @Inject() (
                 dataService.users.createFor(botProfile.teamId)
               }
               eventualUser.flatMap { user =>
-                dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, DateTime.now))
+                dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, OffsetDateTime.now))
               }
             }
           }
@@ -178,7 +178,7 @@ class SocialAuthController @Inject() (
                     dataService.users.createFor(teamId)
                   }
                   eventualUser.flatMap { user =>
-                    dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, DateTime.now))
+                    dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, OffsetDateTime.now))
                   }
                 }
                 user <- Future.successful(linkedAccount.user)
@@ -209,7 +209,6 @@ class SocialAuthController @Inject() (
           Future.successful(Redirect(successRedirect))
         } else if (token.isValid) {
           for {
-            _ <- dataService.loginTokens.use(token)
             maybeUser <- dataService.users.find(token.userId)
             resultForValidToken <- maybeUser.map { user =>
               authenticatorResultForUserAndResult(user, Redirect(successRedirect))
@@ -218,7 +217,7 @@ class SocialAuthController @Inject() (
             }
           } yield resultForValidToken
         } else {
-          Future.successful(Ok(views.html.loginTokenExpired()))
+          Future.successful(Ok(views.html.loginTokenExpired(viewConfig(None))))
         }
       }.getOrElse {
         Future.successful(NotFound("Token not found"))

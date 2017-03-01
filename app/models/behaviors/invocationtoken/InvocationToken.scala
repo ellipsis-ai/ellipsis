@@ -1,11 +1,14 @@
 package models.behaviors.invocationtoken
 
-import org.joda.time.DateTime
+import java.time.OffsetDateTime
 
 case class InvocationToken(
                             id: String,
-                            teamId: String,
-                            createdAt: DateTime
+                            userId: String,
+                            behaviorId: String,
+                            maybeScheduledMessageId: Option[String],
+                            createdAt: OffsetDateTime
                           ) {
-  def isExpired: Boolean = createdAt.isBefore(DateTime.now.minusSeconds(10))
+  // Ellipsis's function time out is 10 seconds, but there can be a delay in starting, so we allow an extra 5
+  def isExpired: Boolean = createdAt.isBefore(OffsetDateTime.now.minusSeconds(15))
 }

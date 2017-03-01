@@ -1,10 +1,10 @@
 @(
-  teamAccess: models.accounts.user.UserTeamAccess
+  config: ViewConfig
   )(implicit messages: Messages, r: RequestHeader)
 
 @import helper._
 
-@main("Import a skill", Some(teamAccess)) {
+@main("Import a skill", config) {
 
   <div id="content" class="content">
     <div class="container ptxxxxl">
@@ -16,7 +16,7 @@
 
       <form action="@routes.BehaviorImportExportController.doImportZip()" method="POST" enctype="multipart/form-data">
         @CSRF.formField
-        <input type="hidden" name="teamId" value="@teamAccess.maybeTargetTeam.map(_.id)"/>
+        <input type="hidden" name="teamId" value="@config.maybeTargetTeamId.getOrElse("")"/>
         <input type="file" name="zipFile">
         <div class="actions">
           <input type="submit" value="Import"/>

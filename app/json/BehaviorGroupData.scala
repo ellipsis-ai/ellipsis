@@ -1,9 +1,11 @@
 package json
 
+import java.time.OffsetDateTime
+
 import models.accounts.user.User
 import models.team.Team
-import org.joda.time.DateTime
 import services.DataService
+import utils.FuzzyMatchable
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -12,12 +14,16 @@ case class BehaviorGroupData(
                               id: Option[String],
                               name: String,
                               description: String,
+                              icon: Option[String],
+                              actionInputs: Seq[InputData],
+                              dataTypeInputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
                               githubUrl: Option[String],
-                              importedId: Option[String],
-                              publishedId: Option[String],
-                              createdAt: DateTime
+                              exportId: Option[String],
+                              createdAt: OffsetDateTime
                             ) extends Ordered[BehaviorGroupData] {
+
+  val maybeNonEmptyName: Option[String] = Option(name.trim).filter(_.nonEmpty)
 
   def copyForTeam(team: Team): BehaviorGroupData = {
     copy(behaviorVersions = behaviorVersions.map(_.copyForTeam(team)))
@@ -40,9 +46,21 @@ case class BehaviorGroupData(
     }
   }
 
+  lazy val fuzzyMatchName: FuzzyMatchable = {
+    FuzzyBehaviorGroupDetail(name)
+  }
+
+  lazy val fuzzyMatchDescription: FuzzyMatchable = {
+    FuzzyBehaviorGroupDetail(description)
+  }
+
   import scala.math.Ordered.orderingToOrdered
   def compare(that: BehaviorGroupData): Int = {
-    if (this.maybeSortString.isEmpty && that.maybeSortString.isDefined) {
+    if (this.maybeNonEmptyName.isEmpty && that.maybeNonEmptyName.isDefined) {
+      1
+    } else if (this.maybeNonEmptyName.isDefined && that.maybeNonEmptyName.isEmpty) {
+      -1
+    } else if (this.maybeSortString.isEmpty && that.maybeSortString.isDefined) {
       1
     } else if (this.maybeSortString.isDefined && that.maybeSortString.isEmpty) {
       -1
@@ -53,6 +71,20 @@ case class BehaviorGroupData(
 }
 
 object BehaviorGroupData {
+
+  private def inputsFor(versionsData: Seq[BehaviorVersionData], dataService: DataService) = {
+    Future.sequence(versionsData.flatMap { version =>
+      version.params.map { param =>
+        param.inputId.map(dataService.inputs.find).getOrElse(Future.successful(None))
+      }
+    }).map(_.flatten)
+  }
+
+  private def inputsDataFor(versionsData: Seq[BehaviorVersionData], dataService: DataService) = {
+    inputsFor(versionsData, dataService).flatMap { inputs =>
+      Future.sequence(inputs.map(InputData.fromInput(_, dataService)))
+    }
+  }
 
   def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService): Future[Option[BehaviorGroupData]] = {
     for {
@@ -65,18 +97,29 @@ object BehaviorGroupData {
       }).map(_.flatten.sortBy { ea =>
         (ea.isDataType, ea.maybeFirstTrigger)
       })
-    } yield maybeGroup.map { group =>
-      BehaviorGroupData(
-        Some(group.id),
-        group.name,
-        group.maybeDescription.getOrElse(""),
-        versionsData,
-        maybeGithubUrl,
-        group.maybeImportedId,
-        None,
-        group.createdAt
-      )
+      (dataTypeVersionsData, actionVersionsData) <- Future.successful(versionsData.partition(_.isDataType))
+      dataTypeInputsData <- inputsDataFor(dataTypeVersionsData, dataService)
+      actionInputsData <- inputsDataFor(actionVersionsData, dataService)
+    } yield {
+      maybeGroup.map { group =>
+        BehaviorGroupData(
+          Some(group.id),
+          group.name,
+          group.maybeDescription.getOrElse(""),
+          None,
+          actionInputsData,
+          dataTypeInputsData,
+          versionsData,
+          maybeGithubUrl,
+          group.maybeExportId,
+          group.createdAt
+        )
+      }
     }
   }
 
+}
+
+case class FuzzyBehaviorGroupDetail(text: String) extends FuzzyMatchable {
+  val maybeFuzzyMatchPattern = Option(text).filter(_.trim.nonEmpty)
 }

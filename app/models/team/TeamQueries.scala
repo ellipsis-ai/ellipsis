@@ -1,14 +1,17 @@
 package models.team
 
-import slick.driver.PostgresDriver.api._
+import java.time.ZoneId
+
+import drivers.SlickPostgresDriver.api._
 
 class TeamsTable(tag: Tag) extends Table[Team](tag, "teams") {
 
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
+  def maybeTimeZone = column[Option[ZoneId]]("time_zone")
 
   def * =
-    (id, name) <> ((Team.apply _).tupled, Team.unapply _)
+    (id, name, maybeTimeZone) <> ((Team.apply _).tupled, Team.unapply _)
 }
 
 object TeamQueries {

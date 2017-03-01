@@ -1,34 +1,23 @@
 @(
-  teamAccess: models.accounts.user.UserTeamAccess,
+  config: ViewConfig,
   behaviorGroups: Seq[json.BehaviorGroupData],
-  installedBehaviorGroups: Seq[json.InstalledBehaviorGroupData]
+  installedBehaviorGroups: Seq[json.InstalledBehaviorGroupData],
+  maybeSlackTeamId: Option[String]
   )(implicit messages: Messages, r: RequestHeader)
 
-@import play.filters.csrf._
-@import play.api.libs.json._
-@import json.Formatting._
-
-@main("Published skills", Some(teamAccess)) {
+@main("Install new skills", config, selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorImportExportController.doImport,
     routes.javascript.BehaviorEditorController.editGroup
   )
-  <div id="content" class="content">
-    @views.html.behaviorTabs("install", teamAccess)
+  <div id="content" class="content bg-white">
+    @config.maybeTeamAccess.map(teamAccess => views.html.behaviorTabs("install", teamAccess))
     <div>
       <div class="bg-white container container-c pbxxl">
         <div id="importerContainer"></div>
       </div>
     </div>
-    <script>
-      var BehaviorGroupImporterConfig = {
-        teamId: '@(teamAccess.maybeTargetTeam.getOrElse(""))',
-        installedBehaviorGroups: @Html(Json.toJson(installedBehaviorGroups).toString),
-        containerId: 'importerContainer',
-        csrfToken: "@CSRF.getToken(r).map(_.value)",
-        behaviorGroups: @Html(Json.toJson(behaviorGroups).toString)
-      };
-    </script>
+    @views.html.behaviorGroupImporterConfig(config, behaviorGroups, installedBehaviorGroups, maybeSlackTeamId)
     <script data-main='@RemoteAssets.getUrl("javascripts/behavior_importer/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
   </div>
 }

@@ -1,11 +1,11 @@
 package models.behaviors.conversations
 
-import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import models.behaviors.savedanswer.SavedAnswer
+import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.{AWSLambdaConstants, DataService}
@@ -14,20 +14,20 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class ParamCollectionState(
-                                params: Seq[BehaviorParameter],
-                                collected: Seq[CollectedParameterValue],
-                                savedAnswers: Seq[SavedAnswer],
-                                event: MessageEvent,
-                                dataService: DataService,
-                                cache: CacheApi,
-                                configuration: Configuration
+                                 params: Seq[BehaviorParameter],
+                                 collected: Seq[CollectedParameterValue],
+                                 savedAnswers: Seq[SavedAnswer],
+                                 event: Event,
+                                 dataService: DataService,
+                                 cache: CacheApi,
+                                 configuration: Configuration
                                ) extends CollectionState {
 
   val name = InvokeBehaviorConversation.COLLECT_PARAM_VALUES_STATE
 
   val rankedParams = params.sortBy(_.rank)
 
-  def maybeNextToCollect(conversation: Conversation): Future[Option[(BehaviorParameter, Option[String])]] = {
+  def allLeftToCollect(conversation: Conversation): Future[Seq[(BehaviorParameter, Option[String])]] = {
     val tuples = rankedParams.map { ea =>
       (ea, collected.find(_.parameter == ea), savedAnswers.find(_.input == ea.input))
     }
@@ -46,9 +46,13 @@ case class ParamCollectionState(
 
     eventualWithHasValidValue.map { withHasValidValue =>
       withHasValidValue.
-        find { case (param, maybeValue, hasValidValue) => !hasValidValue }.
+        filter { case (param, maybeValue, hasValidValue) => !hasValidValue }.
         map { case (param, maybeValue, hasValidValue) => (param, maybeValue) }
     }
+  }
+
+  def maybeNextToCollect(conversation: Conversation): Future[Option[(BehaviorParameter, Option[String])]] = {
+    allLeftToCollect(conversation).map(_.headOption)
   }
 
   def isCompleteIn(conversation: Conversation): Future[Boolean] = maybeNextToCollect(conversation).map(_.isEmpty)
@@ -78,11 +82,11 @@ case class ParamCollectionState(
       maybeNextToCollect <- maybeNextToCollect(conversation)
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
         val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration)
-        param.prompt(maybeValue, context)
+        param.prompt(maybeValue, context, this)
       }.getOrElse {
         Future.successful("All done!")
       }.map { prompt =>
-        SimpleTextResult(prompt, conversation.behaviorVersion.forcePrivateResponse)
+        SimpleTextResult(event, prompt, conversation.behaviorVersion.forcePrivateResponse)
       }
     } yield result
   }
@@ -93,7 +97,7 @@ object ParamCollectionState {
 
   def from(
             conversation: Conversation,
-            event: MessageEvent,
+            event: Event,
             dataService: DataService,
             cache: CacheApi,
             configuration: Configuration
@@ -101,7 +105,7 @@ object ParamCollectionState {
     for {
       params <- dataService.behaviorParameters.allFor(conversation.behaviorVersion)
       collected <- dataService.collectedParameterValues.allFor(conversation)
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       savedAnswers <- dataService.savedAnswers.allFor(user, params)
     } yield ParamCollectionState(params, collected, savedAnswers, event, dataService, cache, configuration)
   }

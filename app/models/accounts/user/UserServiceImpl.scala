@@ -1,22 +1,28 @@
 package models.accounts.user
 
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.linkedaccount.LinkedAccount
-import models.behaviors.events.{MessageContext, SlackMessageContext}
+import drivers.SlickPostgresDriver.api._
 import models.IDs
+import models.accounts.linkedaccount.LinkedAccount
+import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
-import org.joda.time.DateTime
+import play.api.Configuration
 import services.DataService
 import slack.api.ApiError
-import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) extends UserService {
+class UserServiceImpl @Inject() (
+                                  dataServiceProvider: Provider[DataService],
+                                  configuration: Configuration,
+                                  implicit val actorSystem: ActorSystem
+                                ) extends UserService {
 
   def dataService = dataServiceProvider.get
 
@@ -35,9 +41,9 @@ class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) ext
     dataService.run(findQueryFor(id).result.map(_.headOption))
   }
 
-  def findFromMessageContext(context: MessageContext, team: Team): Future[Option[User]] = {
-    context match {
-      case mc: SlackMessageContext => dataService.linkedAccounts.find(LoginInfo(mc.name, mc.userIdForContext), team.id).map { maybeLinked =>
+  def findFromEvent(event: Event, team: Team): Future[Option[User]] = {
+    event match {
+      case slackEvent: SlackMessageEvent => dataService.linkedAccounts.find(LoginInfo(slackEvent.name, slackEvent.user), team.id).map { maybeLinked =>
         maybeLinked.map(_.user)
       }
       case _ => Future.successful(None)
@@ -65,7 +71,7 @@ class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) ext
     dataService.linkedAccounts.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
       maybeLinkedAccount.map(Future.successful).getOrElse {
         save(createOnTeamWithId(teamId)).flatMap { user =>
-          dataService.linkedAccounts.save(LinkedAccount(user, loginInfo, DateTime.now))
+          dataService.linkedAccounts.save(LinkedAccount(user, loginInfo, OffsetDateTime.now))
         }
       }.map(_.user)
     }
@@ -99,19 +105,31 @@ class UserServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) ext
     }
   }
 
-  def maybeNameFor(user: User, slackMessageContext: SlackMessageContext): Future[Option[String]] = {
+  def maybeNameFor(user: User, event: SlackMessageEvent): Future[Option[String]] = {
     for {
       maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-      maybeName <- Future {
-        maybeSlackAccount.flatMap { acc =>
-          try {
-            Some(slackMessageContext.client.apiClient.getUserInfo(acc.loginInfo.providerKey).name)
-          } catch {
-            case e: ApiError => None
-          }
+      maybeName <- maybeSlackAccount.map { acc =>
+        event.clientFor(dataService).getUserInfo(acc.loginInfo.providerKey).map(info => Some(info.name)).recover {
+          case e: ApiError => None
+        }
+      }.getOrElse(Future.successful(None))
+    } yield maybeName
+  }
+
+  def findForInvocationToken(tokenId: String): Future[Option[User]] = {
+    for {
+      maybeToken <- dataService.invocationTokens.findNotExpired(tokenId)
+      maybeUser <- maybeToken.map { token =>
+        find(token.userId)
+      }.getOrElse {
+        if (configuration.getString("application.version").contains("Development")) {
+          // in dev, if not found, we assume the tokenId is a user ID
+          find(tokenId)
+        } else {
+          Future.successful(None)
         }
       }
-    } yield maybeName
+    } yield maybeUser
   }
 
 }

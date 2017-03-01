@@ -2,8 +2,8 @@ define(function(require) {
   var React = require('react'),
     Input = require('../form/input'),
     Textarea = require('../form/textarea'),
-    formatEnvVarName = require('./formatter'),
-    ifPresent = require('../if_present');
+    formatEnvVarName = require('../lib/formatter').formatEnvironmentVariableName,
+    ifPresent = require('../lib/if_present');
 
   return React.createClass({
     propTypes: {

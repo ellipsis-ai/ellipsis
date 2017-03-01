@@ -1,7 +1,8 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
+import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
-import models.behaviors.events.MessageContext
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -9,15 +10,15 @@ import scala.concurrent.Future
 
 
 case class UnsetEnvironmentVariableBehavior(
-                                           name: String,
-                                           messageContext: MessageContext,
-                                           lambdaService: AWSLambdaService,
-                                           dataService: DataService
+                                             name: String,
+                                             event: Event,
+                                             lambdaService: AWSLambdaService,
+                                             dataService: DataService
                                            ) extends BuiltinBehavior {
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
-      maybeTeam <- dataService.teams.find(messageContext.teamId)
+      maybeTeam <- dataService.teams.find(event.teamId)
       didDelete <- maybeTeam.map { team =>
         dataService.teamEnvironmentVariables.deleteFor(name, team)
       }.getOrElse(Future.successful(false))
@@ -27,7 +28,7 @@ case class UnsetEnvironmentVariableBehavior(
       } else {
         s"I couldn't find `$name` to delete"
       }
-      SimpleTextResult(msg, forcePrivateResponse = false)
+      SimpleTextResult(event, msg, forcePrivateResponse = false)
     }
   }
 

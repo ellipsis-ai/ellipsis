@@ -1,7 +1,10 @@
 package models.accounts.slack.botprofile
 
+import java.time.OffsetDateTime
+
 import models.team.Team
-import org.joda.time.DateTime
+import slack.api.SlackApiClient
+import utils.SlackChannels
 
 import scala.concurrent.Future
 
@@ -13,8 +16,14 @@ trait SlackBotProfileService {
 
   def allForSlackTeamId(slackTeamId: String): Future[Seq[SlackBotProfile]]
 
-  def allSince(when: DateTime): Future[Seq[SlackBotProfile]]
+  def allSince(when: OffsetDateTime): Future[Seq[SlackBotProfile]]
 
   def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile]
+
+  def channelsFor(botProfile: SlackBotProfile): SlackChannels = {
+    SlackChannels(SlackApiClient(botProfile.token))
+  }
+
+  def clientFor(botProfile: SlackBotProfile): SlackApiClient = SlackApiClient(botProfile.token)
 
 }

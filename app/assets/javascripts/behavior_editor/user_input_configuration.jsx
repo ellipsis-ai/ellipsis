@@ -3,11 +3,13 @@ define(function(require) {
     SectionHeading = require('./section_heading'),
     UserInputDefinition = require('./user_input_definition'),
     Checklist = require('./checklist'),
-    Collapsible = require('../collapsible'),
+    Collapsible = require('../shared_ui/collapsible'),
+    BehaviorVersion = require('../models/behavior_version'),
     Param = require('../models/param'),
     Trigger = require('../models/trigger');
 
   return React.createClass({
+    displayName: 'UserInputConfiguration',
     propTypes: {
       onParamChange: React.PropTypes.func.isRequired,
       onParamDelete: React.PropTypes.func.isRequired,
@@ -26,7 +28,16 @@ define(function(require) {
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       behaviorHasCode: React.PropTypes.bool.isRequired,
       hasSharedAnswers: React.PropTypes.bool.isRequired,
-      onToggleSharedAnswer: React.PropTypes.func.isRequired
+      otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
+      onToggleSharedAnswer: React.PropTypes.func.isRequired,
+      savedAnswers: React.PropTypes.arrayOf(
+        React.PropTypes.shape({
+          inputId: React.PropTypes.string.isRequired,
+          userAnswerCount: React.PropTypes.number.isRequired,
+          myValueString: React.PropTypes.string
+        })
+      ).isRequired,
+      onToggleSavedAnswer: React.PropTypes.func.isRequired
     },
 
     onChange: function(index, data) {
@@ -55,6 +66,14 @@ define(function(require) {
       return this.props.userParams.length > 0;
     },
 
+    isShared: function(param) {
+      const firstBehaviorWithSameInput = this.props.otherBehaviorsInGroup.find(behavior => {
+        const inputIds = behavior.params.map(ea => ea.inputId);
+        return inputIds.indexOf(param.inputId) !== -1;
+      });
+      return !!firstBehaviorWithSameInput;
+    },
+
     countLinkedTriggersForParam: function(paramName, paramIndex) {
       return this.props.triggers.filter((trigger) => trigger.usesParamName(paramName) || trigger.capturesParamIndex(paramIndex)).length;
     },
@@ -71,6 +90,10 @@ define(function(require) {
 
     hasRegexTriggers: function() {
       return this.props.triggers.some((trigger) => trigger.isRegex);
+    },
+
+    getSavedAnswersFor: function(inputId) {
+      return this.props.savedAnswers.find((answers) => answers.inputId === inputId);
     },
 
     renderReuseParameter: function(optionalProperties) {
@@ -113,29 +136,28 @@ define(function(require) {
 
           <Collapsible revealWhen={this.hasParams()}>
 
-            <hr className="mtn full-bleed thin bg-gray-light" />
+            <hr className="mtn thin bg-gray-light" />
 
-            <div className="columns container">
-              <div className="column column-page-sidebar mbxxl mobile-mbs">
-                <SectionHeading number="2">Collect input</SectionHeading>
-
-                <Checklist disabledWhen={this.props.isFinishedBehavior}>
-                  <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>
-                    <span>If the skill runs code, each input will be sent to the function as a parameter </span>
-                    <span>with the same name.</span>
-                  </Checklist.Item>
-                  <Checklist.Item checkedWhen={this.hasLinkedTriggers()}>
-                    <span>User input can also come from triggers that include matching fill-in-the-blank </span>
-                    <code>{"{labels}"}</code>
-                  </Checklist.Item>
-                  <Checklist.Item hiddenWhen={!this.hasRegexTriggers()} checkedWhen={this.hasRegexCapturingTriggers()}>
-                    <span>Regex triggers will send text captured in parentheses in the same order as </span>
-                    <span>the inputs are defined.</span>
-                  </Checklist.Item>
-                </Checklist>
-              </div>
-              <div className="column column-page-main mbxxl">
+            <div className="columns container container-narrow">
+              <div className="mbxxl">
                 <div>
+                  <SectionHeading number="2">Collect input</SectionHeading>
+                  <div>
+                    <Checklist disabledWhen={this.props.isFinishedBehavior}>
+                      <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>
+                        <span>If the action runs code, each input will be sent to the function as a parameter </span>
+                        <span>with the same name.</span>
+                      </Checklist.Item>
+                      <Checklist.Item checkedWhen={this.hasLinkedTriggers()}>
+                        <span>User input can also come from triggers that include matching fill-in-the-blank </span>
+                        <code>{"{labels}"}</code>
+                      </Checklist.Item>
+                      <Checklist.Item hiddenWhen={!this.hasRegexTriggers()} checkedWhen={this.hasRegexCapturingTriggers()}>
+                        <span>Regex triggers will send text captured in parentheses in the same order as </span>
+                        <span>the inputs are defined.</span>
+                      </Checklist.Item>
+                    </Checklist>
+                  </div>
                   <div className="mbm">
                     {this.props.userParams.map((param, paramIndex) => (
                       <div key={`userParam${paramIndex}`}>
@@ -143,6 +165,7 @@ define(function(require) {
                           key={'UserInputDefinition' + paramIndex}
                           ref={'param' + paramIndex}
                           param={param}
+                          isShared={this.isShared(param)}
                           paramTypes={this.props.paramTypes}
                           onChange={this.onChange.bind(this, paramIndex)}
                           onDelete={this.onDelete.bind(this, paramIndex)}
@@ -151,6 +174,8 @@ define(function(require) {
                           onNameBlur={this.onNameBlur.bind(this, paramIndex)}
                           numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
                           id={paramIndex}
+                          savedAnswers={this.getSavedAnswersFor(param.inputId)}
+                          onToggleSavedAnswer={this.props.onToggleSavedAnswer}
                         />
                         {paramIndex + 1 < this.props.userParams.length ? (
                           <div className="pvxs type-label type-disabled align-c">and</div>

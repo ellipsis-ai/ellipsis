@@ -1,9 +1,9 @@
 package models.behaviors.conversations
 
 import models.accounts.user.User
-import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
+import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
@@ -13,7 +13,7 @@ import scala.concurrent.Future
 
 case class UserEnvVarCollectionState(
                                       missingEnvVarNames: Seq[String],
-                                      event: MessageEvent,
+                                      event: Event,
                                       dataService: DataService,
                                       cache: CacheApi,
                                       configuration: Configuration
@@ -32,9 +32,9 @@ case class UserEnvVarCollectionState(
   def collectValueFrom(conversation: InvokeBehaviorConversation): Future[Conversation] = {
     for {
       maybeNextToCollect <- maybeNextToCollect
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       updatedConversation <- maybeNextToCollect.map { envVarName =>
-        dataService.userEnvironmentVariables.ensureFor(envVarName, Some(event.context.relevantMessageText), user).map(_ => conversation)
+        dataService.userEnvironmentVariables.ensureFor(envVarName, Some(event.relevantMessageText), user).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
       updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration)
     } yield updatedConversation
@@ -47,7 +47,7 @@ case class UserEnvVarCollectionState(
       }.getOrElse {
         "All done!"
       }
-      SimpleTextResult(prompt, forcePrivateResponse = true)
+      SimpleTextResult(event, prompt, forcePrivateResponse = true)
     }
   }
 
@@ -58,7 +58,7 @@ object UserEnvVarCollectionState {
   def from(
             user: User,
             conversation: Conversation,
-            event: MessageEvent,
+            event: Event,
             dataService: DataService,
             cache: CacheApi,
             configuration: Configuration

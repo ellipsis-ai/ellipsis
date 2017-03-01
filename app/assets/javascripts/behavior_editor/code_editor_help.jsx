@@ -1,8 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    Checklist = require('./checklist'),
-    HelpButton = require('../help/help_button'),
-    SectionHeading = require('./section_heading');
+    Checklist = require('./checklist');
 
   return React.createClass({
     propTypes: {
@@ -10,8 +8,7 @@ define(function(require) {
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       onToggleHelp: React.PropTypes.func.isRequired,
       helpIsActive: React.PropTypes.bool.isRequired,
-      hasUserParameters: React.PropTypes.bool.isRequired,
-      sectionNumber: React.PropTypes.string.isRequired
+      hasUserParameters: React.PropTypes.bool.isRequired
     },
 
     hasCalledNoResponse: function() {
@@ -42,43 +39,19 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <SectionHeading number={this.props.sectionNumber}>Run code</SectionHeading>
-
           <Checklist disabledWhen={this.props.isFinishedBehavior}>
             <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.props.isFinishedBehavior}>
-              <span>Write a node.js function. You can <code>require()</code> any </span>
+              <span>Write a Node.js (<a href="https://nodejs.org/docs/latest-v4.x/api/" target="_blank">v4.3.2</a>) </span>
+              <span>function. You can <code>require()</code> any </span>
               <span><a href="https://www.npmjs.com/" target="_blank">NPM package</a>.</span>
             </Checklist.Item>
 
-            <Checklist.Item checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={this.props.isFinishedBehavior}>
-              <span>End the function by calling </span>
-              <code className="type-bold">ellipsis.success(<span className="type-regular">…</span>)</code>
-              <span> with text or data to include in the response. </span>
-              <button type="button" className="button-raw link button-s" onClick={this.props.onToggleHelp}>Examples</button>
-            </Checklist.Item>
-
-            <Checklist.Item checkedWhen={this.hasCalledOnError()} hiddenWhen={this.props.isFinishedBehavior}>
-              <span>To end with an error message, call </span>
-              <code className="type-bold">ellipsis.error(<span className="type-regular">…</span>)</code>
-              <span> with a string. </span>
-              <button type="button" className="button-raw link button-s" onClick={this.props.onToggleHelp}>Example</button>
-            </Checklist.Item>
-
-            <Checklist.Item checkedWhen={this.hasCalledNoResponse()} hiddenWhen={this.props.isFinishedBehavior}>
-              <span>To end with no response, call <code className="type-bold">ellipsis.noResponse()</code>.</span>
-            </Checklist.Item>
-
-            <Checklist.Item hiddenWhen={!this.props.isFinishedBehavior}>
-              <span>Call <code>ellipsis.success(…)</code>, <code>ellipsis.error(…)</code> and/or <code>ellipsis.noResponse()</code> </span>
-              <span>to end your function. </span>
-              <span className="pls">
-                <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpIsActive} />
-              </span>
+            <Checklist.Item checkedWhen={this.hasCalledOnSuccess() || this.hasCalledOnError() || this.hasCalledNoResponse()}>
+              <span>Finish by calling <code>ellipsis.success(…)</code>, <code>ellipsis.error(…)</code>, and/or <code>ellipsis.noResponse()</code>.</span>
             </Checklist.Item>
 
             <Checklist.Item checkedWhen={this.props.hasUserParameters} hiddenWhen={this.props.isFinishedBehavior && this.props.hasUserParameters}>
-              <span>If you need more information from the user, add one or more inputs above </span>
-              <span>and the function will receive them as parameters.</span>
+              <span>Add inputs above to collect data from the user. The function will receive each one as a parameter.</span>
             </Checklist.Item>
 
             <Checklist.Item hiddenWhen={!this.props.isFinishedBehavior || this.hasCalledRequire()}>

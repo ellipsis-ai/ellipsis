@@ -1,8 +1,9 @@
 package json
 
+import java.time.OffsetDateTime
+
 import models.team.Team
 import models.accounts.user.User
-import org.joda.time.DateTime
 import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,16 +18,17 @@ case class BehaviorVersionData(
                                 groupName: Option[String],
                                 groupDescription: Option[String],
                                 behaviorId: Option[String],
+                                name: Option[String],
                                 description: Option[String],
                                 functionBody: String,
                                 responseTemplate: String,
                                 params: Seq[BehaviorParameterData],
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
-                                importedId: Option[String],
+                                exportId: Option[String],
                                 githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
-                                createdAt: Option[DateTime]
+                                createdAt: Option[OffsetDateTime]
                                 ) {
   val awsConfig: Option[AWSConfigData] = config.aws
 
@@ -59,9 +61,9 @@ object BehaviorVersionData {
                 params: Seq[BehaviorParameterData],
                 triggers: Seq[BehaviorTriggerData],
                 config: BehaviorConfig,
-                importedId: Option[String],
+                exportId: Option[String],
                 githubUrl: Option[String],
-                createdAt: Option[DateTime],
+                createdAt: Option[OffsetDateTime],
                 dataService: DataService
               ): BehaviorVersionData = {
 
@@ -76,13 +78,14 @@ object BehaviorVersionData {
       groupName,
       groupDescription,
       behaviorId,
+      config.name,
       description,
       functionBody,
       responseTemplate,
       params,
-      triggers,
+      triggers.sorted,
       config,
-      importedId,
+      exportId,
       githubUrl,
       knownEnvVarsUsed,
       createdAt
@@ -113,14 +116,14 @@ object BehaviorVersionData {
       Json.parse(params).validate[Seq[BehaviorParameterData]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
       config,
-      importedId = None,
+      exportId = None,
       maybeGithubUrl,
       createdAt = None,
       dataService
     )
   }
 
-  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybePublishedId: Option[String] = None): Future[Option[BehaviorVersionData]] = {
+  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybeExportId: Option[String] = None): Future[Option[BehaviorVersionData]] = {
     for {
       maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
@@ -163,7 +166,7 @@ object BehaviorVersionData {
         }
         val requiredOAuth2ApiConfigData = requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
         val requiredSimpleTokenApiData = requiredSimpleTokenApis.map(ea => RequiredSimpleTokenApiData.from(ea))
-        val config = BehaviorConfig(maybePublishedId, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
+        val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
         BehaviorVersionData.buildFor(
           behaviorVersion.team.id,
           behavior.maybeGroup.map(_.id),
@@ -181,14 +184,15 @@ object BehaviorVersionData {
               Some(ea.input.isSavedForTeam),
               Some(ea.input.isSavedForUser),
               Some(ea.input.id),
+              ea.input.maybeExportId,
               ea.input.maybeBehaviorGroup.map(_.id)
             )
           },
-          triggers.sortBy(ea => (ea.sortRank, ea.pattern)).map(ea =>
+          triggers.map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
           config,
-          behavior.maybeImportedId,
+          behavior.maybeExportId,
           githubUrl = None,
           Some(behaviorVersion.createdAt),
           dataService

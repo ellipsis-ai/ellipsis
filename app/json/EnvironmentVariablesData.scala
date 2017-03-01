@@ -6,7 +6,7 @@ case class EnvironmentVariableData(
                                     name: String,
                                     isAlreadySavedWithValue: Boolean,
                                     value: Option[String] // can be None even when there is a value when we want to hide it
-                                    )
+                                  )
 
 object EnvironmentVariableData {
 

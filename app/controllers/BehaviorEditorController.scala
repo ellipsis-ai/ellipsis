@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
-import models.behaviors.testing.{InvocationTester, TestEvent, TestMessageContext, TriggerTester}
+import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -39,12 +39,12 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     BehaviorEditorData.buildForNew(user, maybeGroupId, maybeTeamId, isForDataType, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.html.editBehavior(editorData)))
+        Future.successful(Ok(views.html.editBehavior(viewConfig(Some(editorData.teamAccess)), editorData)))
       }.getOrElse {
         dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
           val response = NotFound(
             views.html.notFound(
-              Some(teamAccess),
+              viewConfig(Some(teamAccess)),
               Some("Skill not found"),
               Some("The skill you are trying to access could not be found."),
               Some(reAuthLinkFor(request, None))
@@ -68,12 +68,12 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     BehaviorEditorData.buildForEdit(user, id, maybeJustSaved, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.html.editBehavior(editorData)))
+        Future.successful(Ok(views.html.editBehavior(viewConfig(Some(editorData.teamAccess)), editorData)))
       }.getOrElse {
         dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
           val response = NotFound(
             views.html.notFound(
-              Some(teamAccess),
+              viewConfig(Some(teamAccess)),
               Some("Skill not found"),
               Some("The skill you are trying to access could not be found."),
               Some(reAuthLinkFor(request, None))
@@ -180,7 +180,7 @@ class BehaviorEditorController @Inject() (
               }).getOrElse {
                 NotFound(
                   views.html.notFound(
-                    Some(teamAccess),
+                    viewConfig(Some(teamAccess)),
                     Some("Skill not found"),
                     Some("The skill you were trying to save could not be found."
                     )
@@ -207,10 +207,22 @@ class BehaviorEditorController @Inject() (
       behaviorId => {
         for {
           maybeBehavior <- dataService.behaviors.find(behaviorId, request.identity)
+          otherBehaviorsInGroup <- maybeBehavior.map { behavior =>
+            dataService.behaviors.allForGroup(behavior.group).map { all =>
+              all.diff(Seq(behavior))
+            }
+          }.getOrElse(Future.successful(Seq()))
           _ <- maybeBehavior.map { behavior =>
             dataService.behaviors.unlearn(behavior)
           }.getOrElse(Future.successful(Unit))
-        } yield Redirect(routes.ApplicationController.index())
+        } yield {
+          val redirect = otherBehaviorsInGroup.headOption.map { otherBehavior =>
+            routes.BehaviorEditorController.edit(otherBehavior.id)
+          }.getOrElse {
+            routes.ApplicationController.index()
+          }
+          Redirect(redirect)
+        }
       }
     )
   }
@@ -287,6 +299,7 @@ class BehaviorEditorController @Inject() (
                   Some(ea.input.isSavedForTeam),
                   Some(ea.input.isSavedForUser),
                   Some(ea.input.id),
+                  ea.input.maybeExportId,
                   ea.input.maybeBehaviorGroup.map(_.id)
                 )
               }
@@ -298,13 +311,14 @@ class BehaviorEditorController @Inject() (
             }.getOrElse(Seq()),
             BehaviorConfig(
               None,
+              version.maybeName,
               maybeAwsConfigData,
               maybeRequiredOAuth2ApiConfigsData,
               maybeRequiredSimpleTokenApisData,
               Some(version.forcePrivateResponse),
               behavior.maybeDataTypeName
             ),
-            behavior.maybeImportedId,
+            behavior.maybeExportId,
             None,
             Some(version.createdAt),
             dataService
@@ -339,8 +353,8 @@ class BehaviorEditorController @Inject() (
             dataService.behaviors.maybeCurrentVersionFor(behavior)
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-            val context = TestMessageContext(user, behaviorVersion.team, info.message, includesBotMention = true)
-            TriggerTester(lambdaService, dataService, cache, ws, configuration).test(TestEvent(context), behaviorVersion).map(Some(_))
+            val event = TestEvent(user, behaviorVersion.team, info.message, includesBotMention = true)
+            TriggerTester(lambdaService, dataService, cache, ws, configuration).test(event, behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 
         } yield {

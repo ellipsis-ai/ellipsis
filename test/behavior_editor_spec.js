@@ -3,8 +3,7 @@ jest
   .unmock('../app/assets/javascripts/models/behavior_version')
   .unmock('../app/assets/javascripts/models/param')
   .unmock('../app/assets/javascripts/models/response_template')
-  .unmock('../app/assets/javascripts/models/trigger')
-  .unmock('../app/assets/javascripts/sort');
+  .unmock('../app/assets/javascripts/models/trigger');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
@@ -64,7 +63,9 @@ describe('BehaviorEditor', () => {
     notifications: [],
     shouldRevealCodeEditor: true,
     onSave: jest.fn(),
-    otherBehaviorsInGroup: []
+    otherBehaviorsInGroup: [],
+    savedAnswers: [],
+    onForgetSavedAnswerForInput: jest.fn()
   };
 
   let editorConfig;
@@ -79,7 +80,7 @@ describe('BehaviorEditor', () => {
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
-    );
+    ).refs.component;
   }
 
   describe('getInitialTriggersFromProps', () => {
@@ -113,7 +114,7 @@ describe('BehaviorEditor', () => {
 
   describe('getBehaviorParams', () => {
     it('returns the defined parameters', () => {
-      editorConfig.behavior.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234", groupId: null }];
+      editorConfig.behavior.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234", inputExportId: null }];
       let editor = createEditor(editorConfig);
       expect(editor.getBehaviorParams()).toEqual(editorConfig.behavior.params);
     });
@@ -294,6 +295,47 @@ describe('BehaviorEditor', () => {
       let newParam = editor.createNewParam({ name: "clownCar", question: "how did twitter propel itself?" });
       expect(newParam.name).toEqual("clownCar");
       expect(newParam.question).toEqual("how did twitter propel itself?");
+    });
+  });
+
+  describe('getOtherSavedParametersInGroup', () => {
+    it("returns the (unique by inputId) saved params", () => {
+      const groupId = editorConfig.behavior.groupId;
+      const inputId = "abcd12345";
+      const savedAnswerParam = {
+        name: 'foo',
+        question: '',
+        paramType: editorConfig.paramTypes[0],
+        isSavedForTeam: false,
+        isSavedForUser: true,
+        inputId: inputId,
+        groupId: groupId
+      };
+      const otherBehaviorsInGroup = [
+          {
+            behaviorId: "2",
+            functionBody: "",
+            responseTemplate: "",
+            params: [savedAnswerParam],
+            triggers: [],
+            config: {},
+            knownEnvVarsUsed: [],
+            groupId: groupId
+          },
+          {
+            behaviorId: "3",
+            functionBody: "",
+            responseTemplate: "",
+            params: [savedAnswerParam],
+            triggers: [],
+            config: {},
+            knownEnvVarsUsed: [],
+            groupId: groupId
+          }
+        ].map(ea => BehaviorVersion.fromJson(ea));
+      let config = Object.assign({}, editorConfig, { otherBehaviorsInGroup: otherBehaviorsInGroup });
+      let editor = createEditor(config);
+      expect(editor.getOtherSavedParametersInGroup()).toEqual([otherBehaviorsInGroup[0].params[0]]);
     });
   });
 });

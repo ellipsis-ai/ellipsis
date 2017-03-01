@@ -1,45 +1,52 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import models.behaviors.BotResult
-import models.behaviors.events.MessageContext
+import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.Future
 
 trait BuiltinBehavior {
-  val messageContext: MessageContext
+  val event: Event
   val lambdaService: AWSLambdaService
   val dataService: DataService
 
-  def result: Future[BotResult]
+  def result(implicit actorSystem: ActorSystem): Future[BotResult]
 }
 
 object BuiltinBehavior {
 
-  def maybeFrom(messageContext: MessageContext, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
-    val setEnvironmentVariableRegex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
-    val unsetEnvironmentVariableRegex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
-    val startLearnConversationRegex = s"""(?i)^learn\\s*$$""".r
-    val unlearnRegex = s"""(?i)^unlearn\\s+(\\S+)""".r
-    val helpRegex = s"""(?i)^help\\s*(\\S*.*)$$""".r
-    val rememberRegex = s"""(?i)^(remember|\\^)\\s*$$""".r
-    val scheduledRegex = s"""(?i)^scheduled$$""".r
-    val scheduleRegex = s"""(?i)^schedule\\s+`(.*?)`\\s+(.*)\\s*$$""".r
-    val unscheduleRegex = s"""(?i)^unschedule\\s+`(.*?)`\\s*$$""".r
-    val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
+  def uneducateQuotes(text: String): String = {
+    text.replaceAll("[“”]", "\"").replaceAll("[‘’]", "'")
+  }
 
-    if (messageContext.includesBotMention) {
-      messageContext.relevantMessageText match {
-        case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, messageContext, lambdaService, dataService))
-        case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, messageContext, lambdaService, dataService))
-        case startLearnConversationRegex() => Some(LearnBehavior(messageContext, lambdaService, dataService))
-        case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, messageContext, lambdaService, dataService))
-        case helpRegex(helpString) => Some(DisplayHelpBehavior(helpString, messageContext, lambdaService, dataService))
-        case rememberRegex(cmd) => Some(RememberBehavior(messageContext, lambdaService, dataService))
-        case scheduledRegex() => Some(ListScheduledBehavior(messageContext, lambdaService, dataService))
-        case scheduleRegex(text, recurrence) => Some(ScheduleBehavior(text, recurrence, messageContext, lambdaService, dataService))
-        case unscheduleRegex(text) => Some(UnscheduleBehavior(text, messageContext, lambdaService, dataService))
-        case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(messageContext, lambdaService, dataService))
+  val setEnvironmentVariableRegex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
+  val unsetEnvironmentVariableRegex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
+  val startLearnConversationRegex = s"""(?i)^learn\\s*$$""".r
+  val unlearnRegex = s"""(?i)^unlearn\\s+(\\S+)""".r
+  val helpRegex = s"""(?i)^help\\s*(\\S*.*)$$""".r
+  val rememberRegex = s"""(?i)^(remember|\\^)\\s*$$""".r
+  val scheduledRegex = s"""(?i)^scheduled$$""".r
+  val scheduleRegex = s"""(?i)^schedule\\s+([`"'])(.*?)\\1(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
+  val unscheduleRegex = s"""(?i)^unschedule\\s+([`"'])(.*?)\\1\\s*$$""".r
+  val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
+  val setTimeZoneRegex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
+
+  def maybeFrom(event: Event, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
+    if (event.includesBotMention) {
+      uneducateQuotes(event.relevantMessageText) match {
+        case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, event, lambdaService, dataService))
+        case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, event, lambdaService, dataService))
+        case startLearnConversationRegex() => Some(LearnBehavior(event, lambdaService, dataService))
+        case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, event, lambdaService, dataService))
+        case helpRegex(helpString) => Some(DisplayHelpBehavior(Some(helpString), None, Some(0), isFirstTrigger = true, event, lambdaService, dataService))
+        case rememberRegex(cmd) => Some(RememberBehavior(event, lambdaService, dataService))
+        case scheduledRegex() => Some(ListScheduledBehavior(event, lambdaService, dataService))
+        case scheduleRegex(_, text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, lambdaService, dataService))
+        case unscheduleRegex(_, text) => Some(UnscheduleBehavior(text, event, lambdaService, dataService))
+        case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(event, lambdaService, dataService))
+        case setTimeZoneRegex(tzString) => Some(SetDefaultTimeZoneBehavior(tzString, event, lambdaService, dataService))
         case _ => None
       }
     } else {

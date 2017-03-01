@@ -1,0 +1,17 @@
+{
+  "name": "ellipsis-cal-date-format",
+  "version": "0.0.1",
+  "description": "Format calendar dates into human-friendly text",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/jest"
+  },
+  "author": "Ellipsis Co. <luke@ellipsis.ai> (http://ellipsis.ai)",
+  "license": "ISC",
+  "dependencies": {
+    "moment-timezone": "^0.5.11"
+  },
+  "devDependencies": {
+    "jest-cli": "^18.1.0"
+  }
+}

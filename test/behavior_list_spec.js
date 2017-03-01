@@ -1,5 +1,4 @@
 jest.unmock('../app/assets/javascripts/behavior_list/index');
-jest.unmock('../app/assets/javascripts/sort');
 jest.unmock('../app/assets/javascripts/models/behavior_version');
 jest.unmock('../app/assets/javascripts/models/behavior_group');
 jest.unmock('../app/assets/javascripts/models/param');
@@ -85,7 +84,7 @@ describe('BehaviorList', () => {
   function createBehaviorList(config) {
     return TestUtils.renderIntoDocument(
       <BehaviorList {...config} />
-    );
+    ).refs.component;
   }
 
   let config = {};

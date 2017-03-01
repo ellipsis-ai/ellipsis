@@ -39,6 +39,9 @@ POST        /test_behavior_invocation                 @controllers.BehaviorEdito
 POST        /save_skill_name                          @controllers.BehaviorEditorController.saveBehaviorGroupName
 POST        /save_skill_description                   @controllers.BehaviorEditorController.saveBehaviorGroupDescription
 
+POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
+POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
+
 GET         /data_types                               @controllers.BehaviorBackedDataTypeController.list(teamId: Option[String] ?= None)
 
 POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
@@ -67,6 +70,8 @@ GET         /login_with_token/:token                  @controllers.SocialAuthCon
 
 GET         /add_to_slack                             @controllers.SlackController.add
 GET         /sign_in_with_slack                       @controllers.SlackController.signIn(redirect: Option[String] ?= None)
+POST        /slack/event                              @controllers.SlackController.event
+POST        /slack/action                             @controllers.SlackController.action
 
 GET         /link_oauth2/:configId                    @controllers.APIAccessController.linkCustomOAuth2Service(configId: String, code: Option[String], state: Option[String], invocationId: Option[String], redirect: Option[String])
 GET         /authenticated/:message                   @controllers.APIAccessController.authenticated(message: String)
@@ -76,6 +81,8 @@ POST        /admin/redeploy/:versionId                @controllers.AdminControll
 
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
 GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @controllers.VisibilityAPIController.forTeamForDate(token: String, teamName: String, year: String, month: String, day: String)
+
+GET         /help/scheduling                          @controllers.HelpController.scheduledMessages
 
 GET         /health_check                             @controllers.HealthController.check
 
@@ -89,6 +96,17 @@ GET         /analytics                                @controllers.AnalyticsCont
 GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorage.getItem(itemId: String, itemType: String, token: String)
 POST        /put_item                                 @controllers.DefaultStorage.putItem
 POST        /api/post_message                         @controllers.APIController.postMessage
+#NOCSRF
+POST        /api/run_action                           @controllers.APIController.runAction
+#NOCSRF
+POST        /api/schedule_action                      @controllers.APIController.scheduleAction
+#NOCSRF
+POST        /api/unschedule_action                    @controllers.APIController.unscheduleAction
+#NOCSRF
+POST        /api/say                                  @controllers.APIController.say
+#NOCSRF
+GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
+
 
 
 # API for developers
@@ -98,3 +116,10 @@ GET         /api/dev/v1/small_storage/items/:token    @controllers.api.dev.v1.sm
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)
+
+
+#
+# Teams Routes
+#
+
+GET         /teams/:teamId/settings/scheduled_actions         @controllers.teams.settings.ScheduledActionsController.index(teamId: String)

@@ -3,8 +3,9 @@ package models.behaviors.behavior
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.SlackMessageContext
+import models.behaviors.events.SlackMessageEvent
 import models.team.Team
+import play.api.Configuration
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -13,13 +14,21 @@ trait BehaviorService {
 
   def findWithoutAccessCheck(id: String): Future[Option[Behavior]]
 
-  def find(id: String, user: User): Future[Option[Behavior]]
+  def findByIdOrName(idOrName: String, group: BehaviorGroup): Future[Option[Behavior]]
 
-  def findWithImportedId(id: String, team: Team): Future[Option[Behavior]]
+  def findByIdOrNameOrTrigger(idOrNameOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]]
+
+  def find(id: String, user: User): Future[Option[Behavior]]
 
   def allForTeam(team: Team): Future[Seq[Behavior]]
 
   def allForGroup(group: BehaviorGroup): Future[Seq[Behavior]]
+
+  def regularForGroup(group: BehaviorGroup): Future[Seq[Behavior]] = {
+    allForGroup(group).map { all =>
+      all.filterNot(_.isDataType)
+    }
+  }
 
   def regularForTeam(team: Team): Future[Seq[Behavior]] = {
     allForTeam(team).map { all =>
@@ -39,9 +48,9 @@ trait BehaviorService {
     }
   }
 
-  def createFor(team: Team, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
+  def createFor(team: Team, maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
 
-  def createFor(group: BehaviorGroup, maybeImportedId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
+  def createFor(group: BehaviorGroup, maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
 
   def updateDataTypeNameFor(behavior: Behavior, maybeName: Option[String]): Future[Behavior]
 
@@ -53,6 +62,14 @@ trait BehaviorService {
 
   def unlearn(behavior: Behavior): Future[Unit]
 
-  def authorNamesFor(behavior: Behavior, slackMessageContext: SlackMessageContext): Future[Seq[String]]
+  def authorNamesFor(behavior: Behavior, event: SlackMessageEvent): Future[Seq[String]]
+
+  def editLinkFor(behaviorId: String, configuration: Configuration): String = {
+    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val path = controllers.routes.BehaviorEditorController.edit(behaviorId)
+    s"$baseUrl$path"
+  }
+
+  def ensureExportIdFor(behavior: Behavior): Future[Behavior]
 
 }

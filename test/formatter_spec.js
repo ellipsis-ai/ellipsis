@@ -1,6 +1,6 @@
-jest.unmock('../app/assets/javascripts/formatter');
+jest.unmock('../app/assets/javascripts/lib/formatter');
 
-const Formatter = require('../app/assets/javascripts/formatter');
+const Formatter = require('../app/assets/javascripts/lib/formatter');
 
 describe("Formatter", () => {
   describe("formatCamelCaseIdentifier", () => {
@@ -13,6 +13,32 @@ describe("Formatter", () => {
     });
     it('ensures the first character is valid', () => {
       expect(Formatter.formatCamelCaseIdentifier('1 for the money')).toEqual("_1ForTheMoney");
+    });
+  });
+
+  describe("formatList", () => {
+    it("returns nothing with an empty list", () => {
+      expect(Formatter.formatList([])).toEqual("");
+    });
+
+    it("returns the single item with a list of 1", () => {
+      expect(Formatter.formatList(["foo"])).toEqual("foo");
+    });
+
+    it("combines two items with “and”", () => {
+      expect(Formatter.formatList(["a", "b"])).toEqual("a and b");
+    });
+
+    it("combines three items with oxford commas", () => {
+      expect(Formatter.formatList(["a", "b", "c"])).toEqual("a, b, and c");
+    });
+
+    it("combines five items with oxford commas", () => {
+      expect(Formatter.formatList(["a", "b", "c", "d", "e"])).toEqual("a, b, c, d, and e");
+    });
+
+    it("uses a mapper if provided", () => {
+      expect(Formatter.formatList(["a", "b", "c"], (ea) => ea.toUpperCase())).toEqual("A, B, and C");
     });
   });
 });

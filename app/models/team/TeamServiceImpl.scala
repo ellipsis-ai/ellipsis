@@ -1,5 +1,6 @@
 package models.team
 
+import java.time.ZoneId
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -8,7 +9,7 @@ import models.IDs
 import models.accounts.user.User
 import play.api.Configuration
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -53,27 +54,16 @@ class TeamServiceImpl @Inject() (
     }
   }
 
-  def findForToken(tokenId: String): Future[Option[Team]] = {
+  def findForInvocationToken(tokenId: String): Future[Option[Team]] = {
     for {
-      maybeToken <- dataService.invocationTokens.find(tokenId)
-      maybeTeam <- maybeToken.map { token =>
-        if (token.isExpired) {
-          Future.successful(None)
-        } else {
-          find(token.teamId)
-        }
-      }.getOrElse {
-        if (configuration.getString("application.version").contains("Development")) {
-          // in dev, if not found, we assume the tokenId is a teamId
-          find(tokenId)
-        } else {
-          Future.successful(None)
-        }
-      }
+      maybeUser <- dataService.users.findForInvocationToken(tokenId)
+      maybeTeam <- maybeUser.map { user =>
+        dataService.teams.find(user.teamId)
+      }.getOrElse(Future.successful(None))
     } yield maybeTeam
   }
 
-  def create(name: String): Future[Team] = save(Team(IDs.next, name))
+  def create(name: String): Future[Team] = save(Team(IDs.next, name, None))
 
   def setInitialNameFor(team: Team, name: String): Future[Team] = {
     if (team.maybeNonEmptyName.isEmpty) {
@@ -81,6 +71,10 @@ class TeamServiceImpl @Inject() (
     } else {
       Future.successful(team)
     }
+  }
+
+  def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team] = {
+    save(team.copy(maybeTimeZone = Some(tz)))
   }
 
   def save(team: Team): Future[Team] = {

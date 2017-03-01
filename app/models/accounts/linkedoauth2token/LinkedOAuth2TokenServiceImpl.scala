@@ -1,16 +1,15 @@
 package models.accounts.linkedoauth2token
 
+import java.time.OffsetDateTime
 import javax.inject.{Inject, Provider}
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
 import models.accounts.user.User
 import models.accounts.oauth2application.OAuth2ApplicationQueries
-import org.joda.time.DateTime
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.WSClient
 import play.api.mvc.Results
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -18,7 +17,7 @@ import scala.concurrent.Future
 case class RawLinkedOAuth2Token(
                                  accessToken: String,
                                  maybeTokenType: Option[String],
-                                 maybeExpirationTime: Option[DateTime],
+                                 maybeExpirationTime: Option[OffsetDateTime],
                                  maybeRefreshToken: Option[String],
                                  maybeScopeGranted: Option[String],
                                  userId: String,
@@ -28,7 +27,7 @@ case class RawLinkedOAuth2Token(
 class LinkedOAuth2TokensTable(tag: Tag) extends Table[RawLinkedOAuth2Token](tag, "linked_oauth2_tokens") {
   def accessToken = column[String]("access_token")
   def maybeTokenType = column[Option[String]]("token_type")
-  def maybeExpirationTime = column[Option[DateTime]]("expiration_time")
+  def maybeExpirationTime = column[Option[OffsetDateTime]]("expiration_time")
   def maybeRefreshToken = column[Option[String]]("refresh_token")
   def maybeScopeGranted = column[Option[String]]("scope_granted")
   def userId = column[String]("user_id")
@@ -87,7 +86,7 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
             val maybeTokenType = (json \ "token_type").asOpt[String]
             val maybeScopeGranted = (json \ "scope").asOpt[String]
             val maybeExpirationTime = (json \ "expires_in").asOpt[Int].map { seconds =>
-              DateTime.now.plusSeconds(seconds)
+              OffsetDateTime.now.plusSeconds(seconds)
             }
             save(linkedOAuth2Token.copy(
               accessToken = accessToken,

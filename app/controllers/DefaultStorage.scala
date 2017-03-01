@@ -39,7 +39,7 @@ class DefaultStorage @Inject() (
       info => {
 //        Logger.debug("Attempting risky calculation.")
         for {
-          maybeTeam <- dataService.teams.findForToken(info.token)
+          maybeTeam <- dataService.teams.findForInvocationToken(info.token)
           result <- maybeTeam.map { team =>
             dynamoDBService.putItem(info.itemId, Json.toJson(info.itemJson), info.itemType, team).map { _ =>
               Ok("success")
@@ -52,7 +52,7 @@ class DefaultStorage @Inject() (
 
   def getItem(itemId: String, itemType: String, token: String) = Action.async { implicit request =>
     for {
-      maybeTeam <- dataService.teams.findForToken(token)
+      maybeTeam <- dataService.teams.findForInvocationToken(token)
       result <- maybeTeam.map { team =>
         dynamoDBService.getItem(itemId, itemType, team).map { maybeItem =>
           maybeItem.map { item =>

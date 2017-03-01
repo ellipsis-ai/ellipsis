@@ -3,9 +3,9 @@ package models.behaviors.conversations
 import models.accounts.linkedsimpletoken.LinkedSimpleToken
 import models.accounts.simpletokenapi.SimpleTokenApi
 import models.accounts.user.User
-import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
+import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
@@ -15,7 +15,7 @@ import scala.concurrent.Future
 
 case class SimpleTokenCollectionState(
                                        missingTokenApis: Seq[SimpleTokenApi],
-                                       event: MessageEvent,
+                                       event: Event,
                                        dataService: DataService,
                                        cache: CacheApi,
                                        configuration: Configuration
@@ -32,9 +32,9 @@ case class SimpleTokenCollectionState(
   def collectValueFrom(conversation: InvokeBehaviorConversation): Future[Conversation] = {
     for {
       maybeNextToCollect <- maybeNextToCollect
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       updatedConversation <- maybeNextToCollect.map { api =>
-        val token = event.context.relevantMessageText.trim
+        val token = event.relevantMessageText.trim
         dataService.linkedSimpleTokens.save(LinkedSimpleToken(token, user.id, api)).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
       updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration)
@@ -49,12 +49,12 @@ case class SimpleTokenCollectionState(
            |
            |You can find it by visiting ${api.maybeTokenUrl.getOrElse("")}.
            |
-           |Once you have found it, enter it here or type `…cancel` if you're not ready yet.
+           |Once you have found it, enter it here or type `...cancel` if you're not ready yet.
            |""".stripMargin
       }.getOrElse {
         "All done!"
       }
-      SimpleTextResult(prompt, forcePrivateResponse = true)
+      SimpleTextResult(event, prompt, forcePrivateResponse = true)
     }
   }
 
@@ -65,7 +65,7 @@ object SimpleTokenCollectionState {
   def from(
             user: User,
             conversation: Conversation,
-            event: MessageEvent,
+            event: Event,
             dataService: DataService,
             cache: CacheApi,
             configuration: Configuration

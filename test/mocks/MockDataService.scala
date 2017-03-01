@@ -25,11 +25,13 @@ import models.behaviors.conversations.collectedparametervalue.CollectedParameter
 import models.behaviors.conversations.conversation.ConversationService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
-import models.behaviors.scheduledmessage.ScheduledMessageService
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.savedanswer.SavedAnswerService
+import models.behaviors.scheduling.recurrence.RecurrenceService
+import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.team.TeamService
 import org.scalatest.mock.MockitoSugar
 import slick.dbio.DBIO
@@ -69,6 +71,8 @@ class MockDataService extends DataService with MockitoSugar {
   val conversations = mock[ConversationService]
   val collectedParameterValues = mock[CollectedParameterValueService]
   val scheduledMessages = mock[ScheduledMessageService]
+  val scheduledBehaviors = mock[ScheduledBehaviorService]
+  val recurrences = mock[RecurrenceService]
   val invocationLogEntries = mock[InvocationLogEntryService]
 
   private def dontCallMe = throw new Exception("Don't call me")

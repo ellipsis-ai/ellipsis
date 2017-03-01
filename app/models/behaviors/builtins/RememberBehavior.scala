@@ -1,23 +1,24 @@
 package models.behaviors.builtins
 
+import akka.actor.ActorSystem
 import json.{BehaviorConfig, BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.MessageContext
 import models.behaviors._
+import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
+case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
-  def result: Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     for {
-      maybeTeam <- dataService.teams.find(messageContext.teamId)
+      maybeTeam <- dataService.teams.find(event.teamId)
       maybeUser <- maybeTeam.map { team =>
-        dataService.users.findFromMessageContext(messageContext, team)
+        dataService.users.findFromEvent(event, team)
       }.getOrElse(Future.successful(None))
-      messages <- messageContext.recentMessages(dataService)
+      messages <- event.recentMessages(dataService)
       qaExtractor <- Future.successful(QuestionAnswerExtractor(messages))
       maybeBehavior <- maybeTeam.map { team =>
         dataService.behaviors.createFor(team, None, None).map(Some(_))
@@ -38,7 +39,7 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
             qaExtractor.possibleAnswerContent,
             Seq(),
             triggerData,
-            BehaviorConfig(None, None, None, None, None, None),
+            BehaviorConfig(None, None, None, None, None, None, None),
             None,
             None,
             None,
@@ -54,10 +55,10 @@ case class RememberBehavior(messageContext: MessageContext, lambdaService: AWSLa
       }).getOrElse(Future.successful(None))
     } yield {
       maybeBehaviorVersion.map { behaviorVersion =>
-        val link = behaviorVersion.editLinkFor(lambdaService.configuration)
-        SimpleTextResult(s"OK, I compiled recent messages into [a new skill]($link)", forcePrivateResponse = false)
+        val link = dataService.behaviors.editLinkFor(behaviorVersion.behavior.id, lambdaService.configuration)
+        SimpleTextResult(event, s"OK, I compiled recent messages into [a new skill]($link)", forcePrivateResponse = false)
       }.getOrElse{
-        NoResponseResult(None)
+        NoResponseResult(event, None)
       }
     }
   }

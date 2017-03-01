@@ -16,7 +16,7 @@ define(function() {
         isSavedForTeam: false,
         isSavedForUser: false,
         inputId: null,
-        groupId: null
+        inputExportId: null
       }, props);
 
       // TODO: We can re-enable this once all published skills have params with param types
@@ -48,19 +48,20 @@ define(function() {
           value: initialProps.inputId,
           enumerable: true
         },
-        groupId: {
-          value: initialProps.groupId,
+        inputExportId: {
+          value: initialProps.inputExportId,
           enumerable: true
         }
       });
     }
 
-    isShared() {
-      return !!this.groupId;
-    }
-
     isSaved() {
       return this.isSavedForUser || this.isSavedForTeam;
+    }
+
+    isSameNameAndTypeAs(otherParam) {
+      return this.name === otherParam.name &&
+        this.paramType.id === otherParam.paramType.id;
     }
 
     clone(props) {

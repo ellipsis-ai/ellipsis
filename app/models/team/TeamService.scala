@@ -1,5 +1,7 @@
 package models.team
 
+import java.time.ZoneId
+
 import models.accounts.user.User
 
 import scala.concurrent.Future
@@ -12,13 +14,15 @@ trait TeamService {
 
   def setInitialNameFor(team: Team, name: String): Future[Team]
 
+  def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team]
+
   def find(id: String): Future[Option[Team]]
 
   def findByName(name: String): Future[Option[Team]]
 
   def find(id: String, user: User): Future[Option[Team]]
 
-  def findForToken(tokenId: String): Future[Option[Team]]
+  def findForInvocationToken(tokenId: String): Future[Option[Team]]
 
   def create(name: String): Future[Team]
 

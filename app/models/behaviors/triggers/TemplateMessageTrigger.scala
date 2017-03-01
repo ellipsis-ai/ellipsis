@@ -16,14 +16,16 @@ case class TemplateMessageTrigger(
 
   val shouldTreatAsRegex: Boolean = false
 
-  val sortRank: Int = 1
-
   val pattern: String = template
+
+  val paramRegex: Regex = """\{.*?\}""".r
+
+  override val maybeFuzzyMatchPattern: Option[String] = Some(paramRegex.replaceAllIn(pattern, ""))
 
   def regex: Regex = {
     var pattern = template
     pattern = TemplateMessageTriggerUtils.escapeRegexCharactersIn(pattern)
-    pattern = """\{.*?\}""".r.replaceAllIn(pattern, """(.+)""")
+    pattern = paramRegex.replaceAllIn(pattern, """(.+)""")
     pattern = """\s+""".r.replaceAllIn(pattern, """\\s+""")
     pattern = """[“”\"]""".r.replaceAllIn(pattern, """[“”\"]""")
     pattern = """[‘’']""".r.replaceAllIn(pattern, """[‘’']""")

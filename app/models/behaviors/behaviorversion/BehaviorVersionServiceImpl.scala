@@ -2,23 +2,23 @@ package models.behaviors.behaviorversion
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
-import com.github.tototoshi.slick.PostgresJodaSupport._
+import akka.actor.ActorSystem
 import com.google.inject.Provider
 import json.BehaviorVersionData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.MessageEvent
-import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
+import models.behaviors.events.{Event, MessageEvent}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -27,12 +27,12 @@ case class RawBehaviorVersion(
                                id: String,
                                behaviorId: String,
                                maybeDescription: Option[String],
-                               maybeShortName: Option[String],
+                               maybeName: Option[String],
                                maybeFunctionBody: Option[String],
                                maybeResponseTemplate: Option[String],
                                forcePrivateResponse: Boolean,
                                maybeAuthorId: Option[String],
-                               createdAt: DateTime
+                               createdAt: OffsetDateTime
                              )
 
 class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "behavior_versions") {
@@ -40,15 +40,15 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def id = column[String]("id", O.PrimaryKey)
   def behaviorId = column[String]("behavior_id")
   def maybeDescription = column[Option[String]]("description")
-  def maybeShortName = column[Option[String]]("short_name")
+  def maybeName = column[Option[String]]("name")
   def maybeFunctionBody = column[Option[String]]("code")
   def maybeResponseTemplate = column[Option[String]]("response_template")
   def forcePrivateResponse = column[Boolean]("private_response")
   def maybeAuthorId = column[Option[String]]("author_id")
-  def createdAt = column[DateTime]("created_at")
+  def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, maybeDescription, maybeShortName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
+    (id, behaviorId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -57,7 +57,8 @@ class BehaviorVersionServiceImpl @Inject() (
                                       lambdaServiceProvider: Provider[AWSLambdaService],
                                       ws: WSClient,
                                       configuration: Configuration,
-                                      cache: CacheApi
+                                      cache: CacheApi,
+                                      implicit val actorSystem: ActorSystem
                                     ) extends BehaviorVersionService {
 
   def dataService = dataServiceProvider.get
@@ -109,10 +110,10 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def createFor(behavior: Behavior, maybeUser: Option[User]): Future[BehaviorVersion] = {
-    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), DateTime.now)
+    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), OffsetDateTime.now)
 
     val action = (all += raw).map { _ =>
-      BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeShortName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)
+      BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)
     }
     dataService.run(action)
   }
@@ -127,6 +128,7 @@ class BehaviorVersionServiceImpl @Inject() (
       _ <-
       for {
         updated <- DBIO.from(save(behaviorVersion.copy(
+          maybeName = data.name,
           maybeDescription = data.description,
           maybeFunctionBody = Some(data.functionBody),
           maybeResponseTemplate = Some(data.responseTemplate),
@@ -230,24 +232,24 @@ class BehaviorVersionServiceImpl @Inject() (
     }
   }
 
-  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: MessageEvent): Future[Option[BotResult]] = {
+  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: Event): Future[Option[BotResult]] = {
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingIn(behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
-      userInfo <- event.context.userInfo(ws, dataService)
+      userInfo <- event.userInfo(ws, dataService)
       notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)
       })
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
-        Future.successful(Some(MissingTeamEnvVarsResult(behaviorVersion, configuration, missingTeamEnvVars)))
+        Future.successful(Some(MissingTeamEnvVarsResult(event, behaviorVersion, dataService, configuration, missingTeamEnvVars)))
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          Future.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, configuration)))
+          Future.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, dataService, configuration)))
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
-            event.context.ensureUser(dataService).flatMap { user =>
+            event.ensureUser(dataService).flatMap { user =>
               dataService.loginTokens.createFor(user).map { loginToken =>
                 OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
               }
@@ -261,11 +263,11 @@ class BehaviorVersionServiceImpl @Inject() (
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
-                 event: MessageEvent
+                 event: Event
                ): Future[BotResult] = {
     for {
       teamEnvVars <- dataService.teamEnvironmentVariables.allFor(behaviorVersion.team)
-      user <- event.context.ensureUser(dataService)
+      user <- event.ensureUser(dataService)
       userEnvVars <- dataService.userEnvironmentVariables.allFor(user)
       result <- maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(Future.successful).getOrElse {
@@ -309,26 +311,27 @@ class BehaviorVersionServiceImpl @Inject() (
                  payload: ByteBuffer,
                  logResult: AWSLambdaLogResult,
                  parametersWithValues: Seq[ParameterWithValue],
-                 configuration: Configuration
+                 configuration: Configuration,
+                 event: MessageEvent
                ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
     val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(successResult, parametersWithValues, behaviorVersion.maybeResponseTemplate, logResultOption, behaviorVersion.forcePrivateResponse)
+      SuccessResult(event, successResult, parametersWithValues, behaviorVersion.maybeResponseTemplate, logResultOption, behaviorVersion.forcePrivateResponse)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(logResultOption)
+        NoResponseResult(event, logResultOption)
       } else {
         if (isUnhandledError(json)) {
-          UnhandledErrorResult(behaviorVersion, configuration, logResultOption)
+          UnhandledErrorResult(event, behaviorVersion, dataService, configuration, logResultOption)
         } else if (json.toString == "null") {
-          NoCallbackTriggeredResult(behaviorVersion, configuration)
+          NoCallbackTriggeredResult(event, behaviorVersion, dataService, configuration)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(behaviorVersion, configuration, json, logResultOption)
+          SyntaxErrorResult(event, behaviorVersion, dataService, configuration, json, logResultOption)
         } else {
-          HandledErrorResult(behaviorVersion, configuration, json, logResultOption)
+          HandledErrorResult(event, behaviorVersion, dataService, configuration, json, logResultOption)
         }
       }
     }

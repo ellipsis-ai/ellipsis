@@ -7,7 +7,7 @@ import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterQ
 import models.behaviors.conversations.conversation.{Conversation, ConversationQueries}
 import play.api.cache.CacheApi
 import services.DataService
-import slick.driver.PostgresDriver.api._
+import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -35,7 +35,7 @@ class CollectedParameterValueServiceImpl @Inject() (
   val joined =
     all.
       join(BehaviorParameterQueries.allWithBehaviorVersion).on(_.parameterId === _._1._1.id).
-      join(ConversationQueries.allWithTrigger).on(_._1.conversationId === _._1.id)
+      join(ConversationQueries.allWithTrigger).on(_._1.conversationId === _._1._1.id)
 
   type TupleType = ((RawCollectedParameterValue, BehaviorParameterQueries.TupleType), ConversationQueries.TupleType)
 
@@ -87,6 +87,10 @@ class CollectedParameterValueServiceImpl @Inject() (
     dataService.run(action).flatMap { _ =>
       find(parameter, conversation).map(_.get)
     }
+  }
+
+  def deleteAll(): Future[Unit] = {
+    dataService.run(all.delete).map(_ => Unit)
   }
 
 }

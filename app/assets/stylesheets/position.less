@@ -21,6 +21,14 @@
   right: 0;
 }
 
+.position-top-full {
+  top: 0;
+  left: 0;
+  right: 0;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
 .position-fixed-full {
   position: fixed;
   left: 0;
@@ -57,6 +65,12 @@
   right: 0;
   top: 0;
   bottom: 0;
+}
+
+.position-fixed-top-left {
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 .position-hanging-indent {
@@ -99,7 +113,15 @@
     position: fixed;
   }
 
-  .mobile-position-fixed-full {
+  .mobile-position-fixed-top-full {
+    .position-fixed-top;
+    .position-z-front;
+    box-sizing: border-box;
+    overflow: auto;
+    max-height: 100%;
+  }
+
+  .mobile-position-fixed-bottom-full {
     .position-fixed-bottom;
     .position-z-front;
     box-sizing: border-box;

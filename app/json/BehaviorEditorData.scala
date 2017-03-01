@@ -16,6 +16,7 @@ case class BehaviorEditorData(
                                environmentVariables: Seq[EnvironmentVariableData],
                                otherBehaviorsInGroup: Seq[BehaviorVersionData],
                                paramTypes: Seq[BehaviorParameterTypeData],
+                               savedAnswers: Seq[InputSavedAnswerData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
                                simpleTokenApis: Seq[SimpleTokenApiData],
@@ -99,6 +100,22 @@ object BehaviorEditorData {
     } yield maybeData
   }
 
+  private def inputSavedAnswerDataFor(
+                               maybeBehaviorVersionData: Option[BehaviorVersionData],
+                               otherBehaviorsInGroupData: Seq[BehaviorVersionData],
+                               user: User,
+                               dataService: DataService
+                             ): Future[Seq[InputSavedAnswerData]] = {
+    val behaviorVersionDataForGroup = otherBehaviorsInGroupData ++ maybeBehaviorVersionData.map(Seq(_)).getOrElse(Seq())
+    Future.sequence(behaviorVersionDataForGroup.map { behaviorVersionData =>
+      Future.sequence(behaviorVersionData.params.flatMap { param =>
+        param.inputId.map { inputId =>
+          InputSavedAnswerData.maybeFor(inputId, user, dataService)
+        }
+      }).map(_.flatten)
+    }).map(_.flatten.distinct)
+  }
+
   def buildFor(
                 user: User,
                 maybeBehaviorVersionData: Option[BehaviorVersionData],
@@ -134,6 +151,7 @@ object BehaviorEditorData {
         BehaviorParameterType.allFor(maybeGroup, dataService)
       }.getOrElse(Future.successful(Seq()))
       paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
+      inputSavedAnswerData <- inputSavedAnswerDataFor(maybeBehaviorVersionData, otherBehaviorsInGroupData, user, dataService)
     } yield {
       val maybeDataTypeName = if (isForNewDataType) { Some("") } else { None }
       val versionData = maybeBehaviorVersionData.getOrElse {
@@ -148,7 +166,7 @@ object BehaviorEditorData {
           "",
           Seq(),
           Seq(),
-          BehaviorConfig(None, None, None, None, None, maybeDataTypeName),
+          BehaviorConfig(None, None, None, None, None, None, maybeDataTypeName),
           None,
           None,
           None,
@@ -161,6 +179,7 @@ object BehaviorEditorData {
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         otherBehaviorsInGroupData,
         paramTypeData,
+        inputSavedAnswerData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
         simpleTokenApis.map(SimpleTokenApiData.from),

@@ -2,7 +2,7 @@ package models.behaviors.conversations
 
 import models.behaviors.BotResult
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.Event
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
@@ -13,7 +13,7 @@ trait CollectionState {
 
   val name: String
 
-  val event: MessageEvent
+  val event: Event
   val dataService: DataService
   val cache: CacheApi
   val configuration: Configuration

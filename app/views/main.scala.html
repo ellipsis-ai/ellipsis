@@ -1,11 +1,11 @@
 @(
   title: String,
-  maybeTeamAccess: Option[models.accounts.user.UserTeamAccess],
-  pageId: String = ""
-  )(content: Html)(implicit messages: Messages, r: RequestHeader)
+  config: ViewConfig,
+  pageId: String = "",
+  selectedNav: String = ""
+)(content: Html)(implicit messages: Messages, r: RequestHeader)
 
-@navBorderColorForPage = @{if (pageId == "intro") " border-blue-medium " else " border-pink "}
-@navBgColorForPage = @{if (maybeTeamAccess.exists(_.isAdminAccess)) " bg-pink " else " bg-blue-dark "}
+@navBgColorForPage = @{if (config.maybeTeamAccess.exists(_.isAdminAccess)) " bg-pink " else " bg-black "}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -31,9 +31,9 @@
     <link rel="icon" href="/assets/images/favicon-16x16.png" sizes="16x16">
   </head>
   <body class="bg-lightest flex-rows flex-rows-viewport">
-    <header id="main-header" class='@("position-fixed-top position-z-almost-front border-emphasis-bottom type-white " + navBgColorForPage + navBorderColorForPage)'>
-      <div class="container container-wide">
-        @views.html.mainNav(maybeTeamAccess)
+    <header id="main-header" class='@("position-fixed-top position-z-almost-front border-emphasis-bottom type-white border-pink " + navBgColorForPage)'>
+      <div class="container container-wide prm mobile-prs">
+        @views.html.mainNav(config, selectedNav)
       </div>
     </header>
     <script>
@@ -49,7 +49,17 @@
   <script>
   (function() {
     var header = document.getElementById('main-header');
-    document.body.style.paddingTop = header.offsetHeight + 'px';
+    var timerId;
+    function adjustPadding() {
+      if (timerId) {
+        window.clearTimeout(timerId);
+      }
+      timerId = window.setTimeout(function() {
+        document.body.style.paddingTop = header.offsetHeight + 'px'
+      }, 50);
+    }
+    window.addEventListener('resize', adjustPadding);
+    adjustPadding();
    })();
   </script>
 </html>

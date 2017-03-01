@@ -1,10 +1,11 @@
 package controllers
 
+import java.time.OffsetDateTime
+
 import com.mohiva.play.silhouette.test._
 import models.IDs
 import models.accounts.logintoken.LoginToken
 import models.accounts.user.User
-import org.joda.time.DateTime
 import org.scalatest.mock.MockitoSugar
 import org.mockito.Mockito._
 import org.scalatestplus.play.PlaySpec
@@ -16,7 +17,14 @@ import scala.concurrent.Future
 
 class SocialAuthControllerSpec extends PlaySpec with MockitoSugar {
 
-  def newLoginTokenFor(user: User, isUsed: Boolean = false): LoginToken = LoginToken(IDs.next, user.id, isUsed, DateTime.now)
+  def newLoginTokenFor(user: User, isExpired: Boolean = false): LoginToken = {
+    val createdAt = if (isExpired) {
+      OffsetDateTime.now.minusSeconds(LoginToken.EXPIRY_SECONDS + 1)
+    } else {
+      OffsetDateTime.now
+    }
+    LoginToken(IDs.next, user.id, createdAt)
+  }
 
   "SocialAuthController.loginWithToken" should {
 
@@ -36,7 +44,6 @@ class SocialAuthControllerSpec extends PlaySpec with MockitoSugar {
         val validToken = newLoginTokenFor(user)
         when(dataService.loginTokens.find(validToken.value)).thenReturn(Future.successful(Some(validToken)))
         when(dataService.users.find(validToken.userId)).thenReturn(Future.successful(Some(user)))
-        when(dataService.loginTokens.use(validToken)).thenReturn(Future.successful({}))
         val result = route(app, FakeRequest(controllers.routes.SocialAuthController.loginWithToken(validToken.value, Some(redirect)))).get
         status(result) mustBe SEE_OTHER
         redirectLocation(result) mustBe Some(redirect)
@@ -47,7 +54,7 @@ class SocialAuthControllerSpec extends PlaySpec with MockitoSugar {
 
     "Don't log in and inform the user if invalid token" in new ControllerTestContext {
       running(app) {
-        val invalidToken = newLoginTokenFor(user, isUsed = true)
+        val invalidToken = newLoginTokenFor(user, isExpired = true)
         when(dataService.loginTokens.find(invalidToken.value)).thenReturn(Future.successful(Some(invalidToken)))
         val result = route(app, FakeRequest(controllers.routes.SocialAuthController.loginWithToken(invalidToken.value, Some(redirect)))).get
         status(result) mustBe OK
@@ -63,7 +70,6 @@ class SocialAuthControllerSpec extends PlaySpec with MockitoSugar {
         val validToken = newLoginTokenFor(initiallyLoggedOutUser)
         when(dataService.loginTokens.find(validToken.value)).thenReturn(Future.successful(Some(validToken)))
         when(dataService.users.find(validToken.userId)).thenReturn(Future.successful(Some(initiallyLoggedOutUser)))
-        when(dataService.loginTokens.use(validToken)).thenReturn(Future.successful({}))
         val request = FakeRequest(controllers.routes.SocialAuthController.loginWithToken(validToken.value, Some(redirect))).withAuthenticator(user.loginInfo)
         val result = route(app, request).get
         status(result) mustBe SEE_OTHER
@@ -75,7 +81,7 @@ class SocialAuthControllerSpec extends PlaySpec with MockitoSugar {
 
     "Redirect correctly, ignore the token, don't log in if already logged in as correct user" in new ControllerTestContextWithLoggedInUser {
       running(app) {
-        val alreadyUsedToken = newLoginTokenFor(user, isUsed = true)
+        val alreadyUsedToken = newLoginTokenFor(user, isExpired = true)
         when(dataService.loginTokens.find(alreadyUsedToken.value)).thenReturn(Future.successful(Some(alreadyUsedToken)))
         val request = FakeRequest(controllers.routes.SocialAuthController.loginWithToken(alreadyUsedToken.value, Some(redirect))).withAuthenticator(user.loginInfo)
         val result = route(app, request).get
