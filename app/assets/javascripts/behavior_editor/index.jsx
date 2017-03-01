@@ -1081,35 +1081,6 @@ const BehaviorEditor = React.createClass({
     };
   },
 
-  saveBehaviorGroupName: function() {
-    var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupName().url;
-    var data = {
-      groupId: this.getBehaviorGroup().id,
-      name: this.getBehaviorGroup().name
-    };
-    // TODO: error handling!
-    fetch(url, this.jsonPostOptions(data)).then(() => {
-      this.setState({ lastSavedGroupName: this.getBehaviorGroup().name });
-    });
-  },
-
-  saveBehaviorGroupDescription: function() {
-    var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupDescription().url;
-    var data = {
-      groupId: this.getBehaviorGroup().id,
-      description: this.getBehaviorGroup().description
-    };
-    // TODO: error handling!
-    fetch(url, this.jsonPostOptions(data)).then(() => {
-      this.setState({ lastSavedGroupDescription: this.getBehaviorGroup().description });
-    });
-  },
-
-  saveBehaviorGroupDetailChanges: function() {
-    this.saveBehaviorGroupName();
-    this.saveBehaviorGroupDescription();
-  },
-
   cancelBehaviorGroupDetailChanges: function() {
     this.setState({
       group: this.getBehaviorGroup().clone({ name: this.state.lastSavedGroupName, description: this.state.lastSavedGroupDescription })
@@ -1965,8 +1936,6 @@ const BehaviorEditor = React.createClass({
               teamId={this.getBehaviorGroup().teamId}
               onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
               onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
-              onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
-              onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
               onSelectBehavior={this.onSelectBehavior}
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
