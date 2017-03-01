@@ -82,7 +82,7 @@ define(function(require) {
         );
       } else if (this.isImported()) {
         return (
-          <a href={jsRoutes.controllers.BehaviorEditorController.editGroup(this.props.localId).url}
+          <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.localId).url}
             className="link-block">
             {this.getDescription()}
             <div className="link">View installed version</div>
