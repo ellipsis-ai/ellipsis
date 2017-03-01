@@ -22,8 +22,6 @@ define(function(require) {
       teamId: React.PropTypes.string.isRequired,
       onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
       onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
-      onSaveBehaviorGroupDetails: React.PropTypes.func.isRequired,
-      onCancelBehaviorGroupDetails: React.PropTypes.func.isRequired,
       onSelectBehavior: React.PropTypes.func.isRequired,
       addNewAction: React.PropTypes.func.isRequired,
       addNewDataType: React.PropTypes.func.isRequired,
@@ -46,25 +44,8 @@ define(function(require) {
       return this.props.groupDescription;
     },
 
-    saveNameAndDescription: function() {
-      if (this.groupDetailsHaveUnsavedChanges()) {
-        this.props.onSaveBehaviorGroupDetails();
-      }
-      this.toggleSkillDetails();
-    },
-
-    cancelNameAndDescription: function() {
-      this.props.onCancelBehaviorGroupDetails();
-      this.toggleSkillDetails();
-    },
-
     hasSavedNameOrDescription: function() {
       return !!(this.props.lastSavedGroupName || this.props.lastSavedGroupDescription);
-    },
-
-    groupDetailsHaveUnsavedChanges: function() {
-      return this.props.groupName !== this.props.lastSavedGroupName ||
-        this.props.groupDescription !== this.props.lastSavedGroupDescription;
     },
 
     getEditButtonLabel: function() {
@@ -149,18 +130,6 @@ define(function(require) {
                   value={this.getBehaviorGroupDescription()}
                   rows={"3"}
                 />
-              </div>
-              <div className="mtxl">
-                <button type="button"
-                  onClick={this.saveNameAndDescription}
-                  className="button-shrink button-s button-primary mrs mbs"
-                  disabled={!this.groupDetailsHaveUnsavedChanges()}
-                >
-                  Save
-                </button>
-                <button type="button" onClick={this.cancelNameAndDescription} className="button-shrink button-s mbs">
-                  Cancel
-                </button>
               </div>
             </Collapsible>
           </div>
