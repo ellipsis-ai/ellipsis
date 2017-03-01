@@ -45,22 +45,18 @@ requirejs(['../common'], function() {
         }));
       }
 
-      function selectedBehaviorIdToUseFor(config, group) {
-        if (config.selectedBehaviorId) {
-          return config.selectedBehaviorId;
+      function fallbackSelectedBehaviorIdFor(group) {
+        if (group.behaviorVersions.find(ea => ea.behaviorId === null)) {
+          return null;
         } else {
-          if (!!group.behaviorVersions.find(ea => ea.behaviorId === null)) {
-            return null;
-          } else {
-            return group.behaviorVersions[0].behaviorId;
-          }
+          return group.behaviorVersions[0].behaviorId;
         }
       }
 
       const group = BehaviorGroup.fromJson(config.groupData);
       reload(Object.assign({}, config, {
         group: group,
-        selectedBehaviorId: selectedBehaviorIdToUseFor(config, group),
+        selectedBehaviorId: config.selectedBehaviorId ? config.selectedBehaviorId : fallbackSelectedBehaviorIdFor(group),
         justSaved: false
       }));
     }

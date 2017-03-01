@@ -180,7 +180,7 @@ define(function(require) {
     },
 
     onSelectBehavior: function(groupId, behaviorId) {
-      window.location.href = jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url
+      window.location.href = jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url;
     },
 
     renderBehaviorVersionRow: function(version, versionIndex, group) {

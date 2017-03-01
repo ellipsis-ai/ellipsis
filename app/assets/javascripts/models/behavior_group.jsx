@@ -25,7 +25,7 @@ define(function(require) {
         groupId: this.id,
         teamId: this.teamId
       });
-      return this.withNewBehaviorVersion(newVersion)
+      return this.withNewBehaviorVersion(newVersion);
     }
 
     withNewDataType() {
@@ -34,7 +34,7 @@ define(function(require) {
         groupId: this.id,
         teamId: this.teamId
       });
-      return this.withNewBehaviorVersion(newVersion)
+      return this.withNewBehaviorVersion(newVersion);
     }
 
     withNewBehaviorVersion(behaviorVersion) {

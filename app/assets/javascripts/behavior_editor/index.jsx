@@ -1942,7 +1942,7 @@ const BehaviorEditor = React.createClass({
     this.setState({
       group: groupWithNewBehavior
     }, () => {
-      this.onSelectBehavior(groupWithNewBehavior.id, null)
+      this.onSelectBehavior(groupWithNewBehavior.id, null);
     });
   },
 

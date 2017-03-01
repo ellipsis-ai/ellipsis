@@ -5,7 +5,7 @@ define(function(require) {
 
   class BehaviorVersion {
     constructor(props) {
-      var initialTriggerProps = (props.config && props.config.dataTypeName) ? [] : [{}]
+      var initialTriggerProps = (props.config && props.config.dataTypeName) ? [] : [{}];
       var initialProps = Object.assign({
         functionBody: '',
         triggers: initialTriggerProps.map(ea => new Trigger(ea)),
@@ -80,7 +80,7 @@ define(function(require) {
         responseTemplate: ResponseTemplate.fromString(props.responseTemplate || '')
       });
       if (props.triggers) {
-        materializedProps.triggers = Trigger.triggersFromJson(props.triggers)
+        materializedProps.triggers = Trigger.triggersFromJson(props.triggers);
       }
       return new BehaviorVersion(materializedProps);
     }

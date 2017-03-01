@@ -3,7 +3,6 @@ jest.unmock('../app/assets/javascripts/models/param');
 jest.unmock('../app/assets/javascripts/models/response_template');
 jest.unmock('../app/assets/javascripts/models/trigger');
 
-const ReactTestUtils = require('react-addons-test-utils')
 const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
 const Trigger = require('../app/assets/javascripts/models/trigger');
 
