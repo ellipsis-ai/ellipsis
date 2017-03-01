@@ -1991,23 +1991,6 @@ const BehaviorEditor = React.createClass({
     return (
 
       <div>
-        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
-
-          {this.renderHiddenFormValues()}
-
-          {/* Start of container */}
-          <div>
-
-            <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
-              {this.renderBehaviorSwitcher()}
-              <div className="column column-page-main-wide flex-column flex-column-center">
-
-                {this.renderSwitcherToggle()}
-
-                <div className="container container-wide mtl">
-                  {this.getBehaviorHeading()}
-                </div>
-
                 <BehaviorNameInput
                   name={this.getBehaviorName()}
                   onChange={this.updateName}
@@ -2123,18 +2106,6 @@ const BehaviorEditor = React.createClass({
                   sectionNumber={this.getResponseTemplateSectionNumber()}
                 />
 
-              </div>
-            </div>
-          </div>
-
-          {/* End of container */}
-
-          {this.renderFooter()}
-
-        </form>
-
-        {this.renderHiddenForms()}
-
       </div>
     );
   },
@@ -2142,20 +2113,6 @@ const BehaviorEditor = React.createClass({
   renderDataTypeBehavior: function() {
     return (
       <div>
-
-        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
-          {this.renderHiddenFormValues()}
-
-          <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
-            {this.renderBehaviorSwitcher()}
-            <div className="column column-page-main-wide flex-column flex-column-center">
-
-              {this.renderSwitcherToggle()}
-
-              <div className="container container-wide mtl">
-                {this.getBehaviorHeading()}
-              </div>
-
               <BehaviorNameInput
                 name={this.getDataTypeName()}
                 onChange={this.updateDataTypeName}
@@ -2183,24 +2140,44 @@ const BehaviorEditor = React.createClass({
 
                 {this.renderCodeEditor()}
               </div>
+      </div>
+    );
+  },
 
-              {this.renderFooter()}
+  renderForBehaviorType: function() {
+    if (this.isDataTypeBehavior()) {
+      return this.renderDataTypeBehavior();
+    } else {
+      return this.renderNormalBehavior();
+    }
+  },
+
+  render: function() {
+    return (
+      <div>
+        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
+          <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
+            {this.renderBehaviorSwitcher()}
+            <div className="column column-page-main-wide flex-column flex-column-center">
+              {this.renderSwitcherToggle()}
+
+              <div className="container container-wide mtl">
+                {this.getBehaviorHeading()}
+              </div>
+
+              {this.renderForBehaviorType()}
             </div>
           </div>
+
+          {this.renderFooter()}
+
+          {this.renderHiddenFormValues()}
         </form>
 
         {this.renderHiddenForms()}
 
       </div>
     );
-  },
-
-  render: function() {
-    if (this.isDataTypeBehavior()) {
-      return this.renderDataTypeBehavior();
-    } else {
-      return this.renderNormalBehavior();
-    }
   }
 });
 
