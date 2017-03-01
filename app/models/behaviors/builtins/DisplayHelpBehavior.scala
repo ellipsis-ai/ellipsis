@@ -120,7 +120,7 @@ case class DisplayHelpBehavior(
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
     val skillActions = groupsToShow.map(group => {
-      val label = group.name.getOrElse("(untitled skill)")
+      val label = group.name.getOrElse("")
       val helpActionValue = group.id.getOrElse("(untitled)")
       maybeHelpSearch.map { helpSearch =>
         SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
