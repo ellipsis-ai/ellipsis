@@ -1,5 +1,6 @@
 define(function(require) {
   var BehaviorVersion = require('./behavior_version');
+  var DeepEqual = require('../lib/deep_equal');
 
   class BehaviorGroup {
     constructor(props) {
@@ -10,14 +11,12 @@ define(function(require) {
       return new BehaviorGroup(Object.assign({}, this, props));
     }
 
-    withNewBehaviorData(behaviorProps) {
-      var newVersion = BehaviorVersion.fromJson(behaviorProps);
-      var updatedVersions =
-        this.behaviorVersions.
-          filter(ea => !!ea.behaviorId).
-          filter(ea => ea.behaviorId !== newVersion.behaviorId).
-          concat([newVersion]);
-      return this.clone({ behaviorVersions: updatedVersions, id: newVersion.groupId });
+    forEqualityComparison() {
+      return this.clone({ behaviorVersions: this.sortedForComparison(this.behaviorVersions) });
+    }
+
+    isIdenticalTo(group) {
+      return DeepEqual.isEqual(this.forEqualityComparison(), group.forEqualityComparison());
     }
 
     withNewAction() {
@@ -40,6 +39,18 @@ define(function(require) {
     withNewBehaviorVersion(behaviorVersion) {
       return this.clone({
         behaviorVersions: this.behaviorVersions.concat([behaviorVersion])
+      });
+    }
+
+    sortedForComparison(versions) {
+      return versions.sort((a, b) => {
+        if (a.behaviorId < b.behaviorId) {
+          return -1;
+        } else if (a.behaviorId > b.behaviorId) {
+          return 1;
+        } else {
+          return 0;
+        }
       });
     }
 

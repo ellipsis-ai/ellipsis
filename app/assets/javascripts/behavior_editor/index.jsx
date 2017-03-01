@@ -731,9 +731,9 @@ const BehaviorEditor = React.createClass({
       body: form
     }).then((response) => response.json())
       .then((json) => {
-        if (json.behaviorId) {
+        if (json.id) {
           let newProps = Object.assign({}, json, { onLoad: optionalCallback });
-          this.props.onSave(newProps);
+          this.props.onSave(newProps, this.state);
         } else {
           this.onSaveError();
         }
@@ -1177,18 +1177,13 @@ const BehaviorEditor = React.createClass({
   },
 
   undoChanges: function() {
-    var timestampedBehavior = this.getTimestampedBehavior(this.getOriginalSelectedBehavior());
-    var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     this.setState({
-      behavior: timestampedBehavior,
-      versions: newVersions,
-      revealCodeEditor: this.shouldRevealCodeEditor()
+      group: this.props.group
     }, () => {
       this.props.onClearActivePanel();
       this.resetNotifications();
     });
   },
-
 
   /* Booleans */
 
@@ -1249,10 +1244,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isModified: function() {
-    var selectedBehaviorId = this.getSelectedBehaviorId();
-    var currentVersionOfSelectedBehavior = this.getSelectedBehavior();
-    var originalVersionOfSelectedBehavior = this.getSelectedBehaviorFor(this.props.group, selectedBehaviorId);
-    var currentMatchesInitial = currentVersionOfSelectedBehavior.isIdenticalToVersion(originalVersionOfSelectedBehavior);
+    var currentMatchesInitial = this.props.group.isIdenticalTo(this.getBehaviorGroup())
     var previewingVersions = this.props.activePanelName === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
   },
@@ -1458,9 +1450,7 @@ const BehaviorEditor = React.createClass({
     return (
       <div>
         <CsrfTokenHiddenInput value={this.props.csrfToken} />
-        <HiddenJsonInput value={JSON.stringify(this.getSelectedBehavior())} />
-        <input type="hidden" name="redirect" value={this.getRedirectValue()} />
-        <input type="hidden" name="requiredOAuth2ApiConfigId" value={this.state.requiredOAuth2ApiConfigId} />
+        <HiddenJsonInput value={JSON.stringify(this.getBehaviorGroup())} />
       </div>
     );
   },
