@@ -30,8 +30,6 @@ case class BehaviorGroupData(
     copy(behaviorVersions = behaviorVersions.map(_.copyForTeam(team)))
   }
 
-  def isMisc: Boolean = name == "Miscellaneous"
-
   lazy val sortedActionBehaviorVersions = {
     behaviorVersions.filterNot(_.isDataType).sortBy(_.maybeFirstTrigger)
   }
