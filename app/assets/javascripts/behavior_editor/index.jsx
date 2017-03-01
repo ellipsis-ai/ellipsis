@@ -1177,8 +1177,10 @@ const BehaviorEditor = React.createClass({
   },
 
   undoChanges: function() {
+    const selectedBehaviorIdAfter = this.getSelectedBehaviorId() || this.props.group.behaviorVersions[0].behaviorId;
     this.setState({
-      group: this.props.group
+      group: this.props.group,
+      selectedBehaviorId: selectedBehaviorIdAfter
     }, () => {
       this.props.onClearActivePanel();
       this.resetNotifications();
