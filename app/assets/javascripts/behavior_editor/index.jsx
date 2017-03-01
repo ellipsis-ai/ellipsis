@@ -1246,9 +1246,15 @@ const BehaviorEditor = React.createClass({
   },
 
   isModified: function() {
-    var currentMatchesInitial = this.props.group.isIdenticalTo(this.getBehaviorGroup())
+    var currentMatchesInitial = this.props.group.isIdenticalTo(this.getBehaviorGroup());
     var previewingVersions = this.props.activePanelName === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
+  },
+
+  behaviorIdIsModified: function(behaviorId) {
+    var currentBehavior = this.getAllBehaviors().find((ea) => ea.behaviorId === behaviorId);
+    var originalBehavior = this.props.group.behaviorVersions.find((ea) => ea.behaviorId === behaviorId);
+    return !(currentBehavior && originalBehavior && currentBehavior.isIdenticalToVersion(originalBehavior));
   },
 
   isSaving: function() {
@@ -1956,7 +1962,7 @@ const BehaviorEditor = React.createClass({
               onToggle={this.toggleBehaviorSwitcher}
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
-              currentBehavior={this.getTimestampedBehavior(this.getSelectedBehavior())}
+              selectedBehavior={this.getTimestampedBehavior(this.getSelectedBehavior())}
               groupId={this.getBehaviorGroup().id}
               groupName={this.getBehaviorGroup().name || ""}
               lastSavedGroupName={this.state.lastSavedGroupName}
@@ -1970,6 +1976,7 @@ const BehaviorEditor = React.createClass({
               onSelectBehavior={this.onSelectBehavior}
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
+              isBehaviorIdModified={this.behaviorIdIsModified}
             />
           </Sticky>
         </div>

@@ -11,19 +11,20 @@ define(function(require) {
     propTypes: {
       heading: React.PropTypes.string.isRequired,
       behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-      currentBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
+      selectedBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
       onAddNew: React.PropTypes.func.isRequired,
       addNewLabel: React.PropTypes.string,
       emptyMessage: React.PropTypes.string.isRequired,
-      onSelectBehavior: React.PropTypes.func.isRequired
+      onSelectBehavior: React.PropTypes.func.isRequired,
+      isBehaviorIdModified: React.PropTypes.func.isRequired
     },
 
     getBehaviorList: function() {
       return Sort.arrayAlphabeticalBy(this.props.behaviors, (behavior) => behavior.sortKey);
     },
 
-    isCurrentVersion: function(version) {
-      return version.behaviorId === this.props.currentBehavior.behaviorId;
+    isSelectedVersion: function(version) {
+      return version.behaviorId === this.props.selectedBehavior.behaviorId;
     },
 
     render: function() {
@@ -36,11 +37,14 @@ define(function(require) {
             {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version) => (
               <div
                 key={`behavior-${version.behaviorId}`}
-                className={`border-top border-light pvxs container container-wide ${this.isCurrentVersion(version) ? "bg-blue border-blue-medium type-white" : ""}`}
+                className={`border-top border-light pvxs container container-wide ${this.isSelectedVersion(version) ? "bg-blue border-blue-medium type-white" : ""}`}
               >
+                <div className={"position-absolute position-left plm type-bold type-m " + (this.isSelectedVersion(version) ? "" : "type-pink")}>
+                  {this.props.isBehaviorIdModified(version.behaviorId) ? "•" : ""}
+                </div>
                 <BehaviorName
                   version={version}
-                  disableLink={this.isCurrentVersion(version)}
+                  disableLink={this.isSelectedVersion(version)}
                   limitTriggers={true}
                   omitDescription={true}
                   onClick={this.props.onSelectBehavior}

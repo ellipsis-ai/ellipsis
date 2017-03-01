@@ -13,7 +13,7 @@ define(function(require) {
       onToggle: React.PropTypes.func.isRequired,
       actionBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       dataTypeBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-      currentBehavior: React.PropTypes.instanceOf(BehaviorVersion),
+      selectedBehavior: React.PropTypes.instanceOf(BehaviorVersion),
       groupId: React.PropTypes.string,
       groupName: React.PropTypes.string.isRequired,
       lastSavedGroupName: React.PropTypes.string.isRequired,
@@ -26,7 +26,8 @@ define(function(require) {
       onCancelBehaviorGroupDetails: React.PropTypes.func.isRequired,
       onSelectBehavior: React.PropTypes.func.isRequired,
       addNewAction: React.PropTypes.func.isRequired,
-      addNewDataType: React.PropTypes.func.isRequired
+      addNewDataType: React.PropTypes.func.isRequired,
+      isBehaviorIdModified: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
@@ -170,22 +171,24 @@ define(function(require) {
                 ref="actionSwitcher"
                 heading="Actions"
                 behaviors={this.props.actionBehaviors}
-                currentBehavior={this.props.currentBehavior}
+                selectedBehavior={this.props.selectedBehavior}
                 onAddNew={this.props.addNewAction}
                 addNewLabel="Add new action"
                 emptyMessage="Add actions to provide a response using custom data types for input."
                 onSelectBehavior={this.props.onSelectBehavior}
+                isBehaviorIdModified={this.props.isBehaviorIdModified}
               />
 
               <BehaviorSwitcherGroup
                 ref="dataTypeSwitcher"
                 heading="Data types"
                 behaviors={this.props.dataTypeBehaviors}
-                currentBehavior={this.props.currentBehavior}
+                selectedBehavior={this.props.selectedBehavior}
                 onAddNew={this.props.addNewDataType}
                 addNewLabel="Add new data type"
                 emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
                 onSelectBehavior={this.props.onSelectBehavior}
+                isBehaviorIdModified={this.props.isBehaviorIdModified}
               />
             </div>
           ) : null}
