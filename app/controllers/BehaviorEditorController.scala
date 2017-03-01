@@ -6,6 +6,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import export.BehaviorVersionImporter
 import json._
 import json.Formatting._
+import models.accounts.user.User
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
@@ -74,18 +75,48 @@ class BehaviorEditorController @Inject() (
   }
 
   case class SaveBehaviorInfo(
-                               dataJson: String,
-                               maybeRedirect: Option[String],
-                               maybeRequiredOAuth2ApiConfigId: Option[String]
+                               dataJson: String
                              )
 
   private val saveForm = Form(
     mapping(
-      "dataJson" -> nonEmptyText,
-      "redirect" -> optional(nonEmptyText),
-      "requiredOAuth2ApiConfigId" -> optional(nonEmptyText)
+      "dataJson" -> nonEmptyText
     )(SaveBehaviorInfo.apply)(SaveBehaviorInfo.unapply)
   )
+
+  private def saveBehavior(data: BehaviorVersionData, user: User): Future[Option[BehaviorVersionData]] = {
+    val maybeDataTypeName = data.config.dataTypeName
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
+      maybeBehaviorGroup <- data.groupId.map { groupId =>
+        dataService.behaviorGroups.find(groupId)
+      }.getOrElse(Future.successful(None))
+      maybeBehavior <- data.behaviorId.map { behaviorId =>
+        dataService.behaviors.find(behaviorId, user)
+      }.getOrElse {
+        teamAccess.maybeTargetTeam.map { team =>
+          maybeBehaviorGroup.map { behaviorGroup =>
+            dataService.behaviors.createFor(behaviorGroup, None, maybeDataTypeName).map(Some(_))
+          }.getOrElse {
+            dataService.behaviors.createFor(team, None, maybeDataTypeName).map(Some(_))
+          }
+        }.getOrElse(Future.successful(None))
+      }
+      maybeBehaviorVersion <- maybeBehavior.map { behavior =>
+        dataService.behaviorVersions.createFor(behavior, Some(user), data).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      _ <- maybeBehavior.map { behavior =>
+        if (behavior.maybeDataTypeName != maybeDataTypeName) {
+          dataService.behaviors.updateDataTypeNameFor(behavior, maybeDataTypeName)
+        } else {
+          Future.successful({})
+        }
+      }.getOrElse(Future.successful({}))
+      maybeBehaviorVersionData <- maybeBehavior.map { behavior =>
+        BehaviorVersionData.maybeFor(behavior.id, user, dataService)
+      }.getOrElse(Future.successful(None))
+    } yield maybeBehaviorVersionData
+  }
 
   def save = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
@@ -95,70 +126,22 @@ class BehaviorEditorController @Inject() (
       },
       info => {
         val json = Json.parse(info.dataJson)
-        json.validate[BehaviorVersionData] match {
+        json.validate[BehaviorGroupData] match {
           case JsSuccess(data, jsPath) => {
-            val maybeDataTypeName = data.config.dataTypeName
             for {
-              teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
-              maybeBehaviorGroup <- data.groupId.map { groupId =>
-                dataService.behaviorGroups.find(groupId)
-              }.getOrElse(Future.successful(None))
-              maybeBehavior <- data.behaviorId.map { behaviorId =>
-                dataService.behaviors.find(behaviorId, user)
-              }.getOrElse {
-                teamAccess.maybeTargetTeam.map { team =>
-                  maybeBehaviorGroup.map { behaviorGroup =>
-                    dataService.behaviors.createFor(behaviorGroup, None, maybeDataTypeName).map(Some(_))
-                  }.getOrElse {
-                    dataService.behaviors.createFor(team, None, maybeDataTypeName).map(Some(_))
-                  }
-                }.getOrElse(Future.successful(None))
-              }
-              maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-                dataService.behaviorVersions.createFor(behavior, Some(user), data).map(Some(_))
-              }.getOrElse(Future.successful(None))
-              _ <- maybeBehavior.map { behavior =>
-                if (behavior.maybeDataTypeName != maybeDataTypeName) {
-                  dataService.behaviors.updateDataTypeNameFor(behavior, maybeDataTypeName)
-                } else {
-                  Future.successful({})
+              behaviorVersions <- Future.sequence(data.behaviorVersions.map { ea =>
+                saveBehavior(ea, user)
+              }).map(_.flatten)
+              maybeGroupData <- behaviorVersions.headOption.flatMap { version =>
+                version.groupId.map { groupId =>
+                  BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService)
                 }
-              }.getOrElse(Future.successful({}))
-              maybePreviousRequiredOAuth2ApiConfig <- info.maybeRequiredOAuth2ApiConfigId.map { id =>
-                dataService.requiredOAuth2ApiConfigs.find(id)
-              }.getOrElse(Future.successful(None))
-              maybeRequiredOAuth2ApiConfig <- maybePreviousRequiredOAuth2ApiConfig.flatMap { config =>
-                maybeBehaviorVersion.map { version =>
-                  dataService.requiredOAuth2ApiConfigs.allFor(config.api, version).map(_.headOption)
-                }
-              }.getOrElse(Future.successful(None))
-              maybeBehaviorVersionData <- maybeBehavior.map { behavior =>
-                BehaviorVersionData.maybeFor(behavior.id, user, dataService)
               }.getOrElse(Future.successful(None))
             } yield {
-              (for {
-                behavior <- maybeBehavior
-                behaviorVersionData <- maybeBehaviorVersionData
-              } yield {
-                if (info.maybeRedirect.contains("newOAuth2Application")) {
-                  val maybeApiId = maybeRequiredOAuth2ApiConfig.map(_.api.id)
-                  val maybeRecommendedScope = maybeRequiredOAuth2ApiConfig.flatMap(_.maybeRecommendedScope)
-                  Redirect(routes.OAuth2ApplicationController.newApp(maybeApiId, maybeRecommendedScope, Some(data.teamId), Some(behavior.id)))
-                } else {
-                  render {
-                    case Accepts.Html() => Redirect(routes.BehaviorEditorController.edit(behavior.id, justSaved = Some(true)))
-                    case Accepts.Json() => Ok(Json.toJson(behaviorVersionData))
-                  }
-                }
-              }).getOrElse {
-                NotFound(
-                  views.html.notFound(
-                    viewConfig(Some(teamAccess)),
-                    Some("Skill not found"),
-                    Some("The skill you were trying to save could not be found."
-                    )
-                  )
-                )
+              maybeGroupData.map { groupData =>
+                Ok(Json.toJson(groupData))
+              }.getOrElse {
+                NotFound("")
               }
             }
           }

@@ -13,13 +13,15 @@ requirejs(['../common'], function() {
 
       var currentProps = config;
 
-      function onSaveBehavior(newBehaviorData) {
+      function onSaveBehavior(newGroupData, state) {
 
         var props = Object.assign({}, currentProps, {
-          group: currentProps.group.withNewBehaviorData(newBehaviorData),
-          selectedBehaviorId: newBehaviorData.behaviorId,
+          group: BehaviorGroup.fromJson(newGroupData),
           justSaved: true
         });
+        if (state) {
+          props.selectedBehaviorId = state.selectedBehaviorId;
+        }
         reload(props);
       }
 
