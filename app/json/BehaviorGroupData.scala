@@ -104,7 +104,7 @@ object BehaviorGroupData {
         BehaviorGroupData(
           Some(group.id),
           group.team.id,
-          Some(group.name),
+          Option(group.name).filter(_.trim.nonEmpty),
           group.maybeDescription,
           None,
           actionInputsData,

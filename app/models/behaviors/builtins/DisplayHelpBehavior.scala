@@ -222,7 +222,7 @@ case class DisplayHelpBehavior(
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
     } yield {
-      val (named, unnamed) = groupData.partition(_.name.nonEmpty)
+      val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
       val flattenedGroupData = ArrayBuffer[BehaviorGroupData]()
       flattenedGroupData ++= named
       if (unnamed.nonEmpty) {
