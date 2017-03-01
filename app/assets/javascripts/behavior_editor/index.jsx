@@ -770,7 +770,7 @@ const BehaviorEditor = React.createClass({
     var newBehavior = version.clone({
       groupId: this.getSelectedBehavior().groupId,
       teamId: this.getSelectedBehavior().teamId,
-      behaviorId: this.props.selectedBehaviorId
+      behaviorId: this.getSelectedBehaviorId()
     });
     this.setState({
       behavior: newBehavior,
@@ -1237,7 +1237,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isExistingBehavior: function() {
-    return !!this.props.selectedBehaviorId;
+    return !!this.getSelectedBehaviorId();
   },
 
   isExistingGroup: function() {
@@ -1940,8 +1940,7 @@ const BehaviorEditor = React.createClass({
 
   addNewBehavior: function(groupWithNewBehavior) {
     this.setState({
-      group: groupWithNewBehavior,
-      selectedBehaviorId: null
+      group: groupWithNewBehavior
     }, () => {
       this.onSelectBehavior(groupWithNewBehavior.id, null)
     });
