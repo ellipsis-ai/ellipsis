@@ -9,9 +9,9 @@ define(function(require) {
 
     render: function() {
       return (
-        <a
+        <button type="button"
           onClick={this.props.onClick}
-          className="button button-s button-shrink">{this.props.label || "Add another"}</a>
+          className="button button-s button-shrink">{this.props.label || "Add another"}</button>
       );
     }
   });

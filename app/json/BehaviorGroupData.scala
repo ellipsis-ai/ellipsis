@@ -46,11 +46,11 @@ case class BehaviorGroupData(
   }
 
   lazy val fuzzyMatchName: FuzzyMatchable = {
-    FuzzyBehaviorGroupDetail(name.getOrElse(""))
+    FuzzyBehaviorGroupDetail(name)
   }
 
   lazy val fuzzyMatchDescription: FuzzyMatchable = {
-    FuzzyBehaviorGroupDetail(description.getOrElse(""))
+    FuzzyBehaviorGroupDetail(description)
   }
 
   import scala.math.Ordered.orderingToOrdered
@@ -120,6 +120,6 @@ object BehaviorGroupData {
 
 }
 
-case class FuzzyBehaviorGroupDetail(text: String) extends FuzzyMatchable {
-  val maybeFuzzyMatchPattern = Option(text).filter(_.trim.nonEmpty)
+case class FuzzyBehaviorGroupDetail(maybeText: Option[String]) extends FuzzyMatchable {
+  val maybeFuzzyMatchPattern = maybeText.filter(_.trim.nonEmpty)
 }

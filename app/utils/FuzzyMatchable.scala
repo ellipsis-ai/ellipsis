@@ -4,6 +4,6 @@ trait FuzzyMatchable {
 
   val maybeFuzzyMatchPattern: Option[String]
 
-  val text: String
+  val maybeText: Option[String]
 
 }
