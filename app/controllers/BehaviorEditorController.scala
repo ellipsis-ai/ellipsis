@@ -192,7 +192,7 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(Unit))
         } yield {
           val redirect = otherBehaviorsInGroup.headOption.map { otherBehavior =>
-            routes.BehaviorEditorController.edit(otherBehavior.id)
+            routes.BehaviorEditorController.edit(otherBehavior.group.id, Some(otherBehavior.id))
           }.getOrElse {
             routes.ApplicationController.index()
           }
