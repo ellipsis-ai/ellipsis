@@ -1953,7 +1953,7 @@ const BehaviorEditor = React.createClass({
     }, () => {
       BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
       var newScrollPosition = this.getBehaviorProp('editorScrollPosition');
-      if (typeof(newScrollPosition) !== 'undefined') {
+      if (typeof(newScrollPosition) === 'number') {
         window.scrollTo(window.scrollX, newScrollPosition);
       }
     });
