@@ -179,10 +179,6 @@ define(function(require) {
       return !!(group.name || group.description);
     },
 
-    onSelectBehavior: function(groupId, behaviorId) {
-      window.location.href = jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url;
-    },
-
     renderBehaviorVersionRow: function(version, versionIndex, group) {
       var isFirstRow = versionIndex === 0 && !this.groupHasTitle(group);
       var borderAndSpacingClass = isFirstRow ? "border-top pts " : "";
@@ -198,7 +194,6 @@ define(function(require) {
                 <BehaviorName
                   version={version}
                   labelDataType={true}
-                  onClick={this.onSelectBehavior}
                 />
               </div>
             </div>

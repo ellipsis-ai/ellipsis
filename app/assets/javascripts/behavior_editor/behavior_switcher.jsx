@@ -25,7 +25,7 @@ define(function(require) {
       onSelectBehavior: React.PropTypes.func.isRequired,
       addNewAction: React.PropTypes.func.isRequired,
       addNewDataType: React.PropTypes.func.isRequired,
-      isBehaviorIdModified: React.PropTypes.func.isRequired
+      isBehaviorModified: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
@@ -145,7 +145,7 @@ define(function(require) {
                 addNewLabel="Add new action"
                 emptyMessage="Add actions to provide a response using custom data types for input."
                 onSelectBehavior={this.props.onSelectBehavior}
-                isBehaviorIdModified={this.props.isBehaviorIdModified}
+                isBehaviorModified={this.props.isBehaviorModified}
               />
 
               <BehaviorSwitcherGroup
@@ -157,7 +157,7 @@ define(function(require) {
                 addNewLabel="Add new data type"
                 emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
                 onSelectBehavior={this.props.onSelectBehavior}
-                isBehaviorIdModified={this.props.isBehaviorIdModified}
+                isBehaviorModified={this.props.isBehaviorModified}
               />
             </div>
           ) : null}

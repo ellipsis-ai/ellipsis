@@ -81,6 +81,7 @@ define(function(require) {
                 version={behavior}
                 disableLink={true}
                 limitTriggers={true}
+                isImportable={true}
               />
             </div>
           ))}

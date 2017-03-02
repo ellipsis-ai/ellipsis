@@ -16,7 +16,7 @@ define(function(require) {
       addNewLabel: React.PropTypes.string,
       emptyMessage: React.PropTypes.string.isRequired,
       onSelectBehavior: React.PropTypes.func.isRequired,
-      isBehaviorIdModified: React.PropTypes.func.isRequired
+      isBehaviorModified: React.PropTypes.func.isRequired
     },
 
     getBehaviorList: function() {
@@ -34,13 +34,13 @@ define(function(require) {
             <h6>{this.props.heading}</h6>
           </div>
           <div className="type-s">
-            {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version) => (
+            {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version, index) => (
               <div
-                key={`behavior-${version.behaviorId}`}
+                key={`behavior${index}`}
                 className={`border-top border-light pvxs container container-wide ${this.isSelectedVersion(version) ? "bg-blue border-blue-medium type-white" : ""}`}
               >
-                <div className={"position-absolute position-left plm type-bold type-m " + (this.isSelectedVersion(version) ? "" : "type-pink")}>
-                  {this.props.isBehaviorIdModified(version.behaviorId) ? "•" : ""}
+                <div className={"position-absolute position-left pls type-bold type-m " + (this.isSelectedVersion(version) ? "" : "type-pink")}>
+                  {this.props.isBehaviorModified(version) ? "•" : ""}
                 </div>
                 <BehaviorName
                   version={version}
