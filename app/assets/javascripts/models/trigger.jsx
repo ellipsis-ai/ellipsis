@@ -76,8 +76,12 @@ define(function() {
       return new Trigger(Object.assign({}, this, props));
     }
 
-    static triggersFromJson(jsonArray) {
-      return jsonArray.map((triggerObj) => new Trigger(triggerObj));
+    static triggersFromJson(jsonArrayOrNull) {
+      if (jsonArrayOrNull) {
+        return jsonArrayOrNull.map((triggerObj) => new Trigger(triggerObj));
+      } else {
+        return null;
+      }
     }
   }
 

@@ -21,7 +21,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
       messages <- event.recentMessages(dataService)
       qaExtractor <- Future.successful(QuestionAnswerExtractor(messages))
       maybeBehavior <- maybeTeam.map { team =>
-        dataService.behaviors.createFor(team, None, None).map(Some(_))
+        dataService.behaviors.createFor(team, None, None, None).map(Some(_))
       }.getOrElse(Future.successful(None))
       maybeVersionData <- Future.successful(maybeBehavior.map { behavior =>
         val triggerData = qaExtractor.maybeLastQuestion.map { lastQuestion =>
@@ -31,9 +31,8 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
           BehaviorVersionData.buildFor(
             behavior.team.id,
             behavior.maybeGroup.map(_.id),
-            behavior.maybeGroup.map(_.name),
-            behavior.maybeGroup.flatMap(_.maybeDescription),
             Some(behavior.id),
+            isNewBehavior = false,
             None,
             "",
             qaExtractor.possibleAnswerContent,

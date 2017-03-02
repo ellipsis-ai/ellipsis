@@ -4,6 +4,7 @@ var React = require('react'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorNameInput = require('./behavior_name_input'),
+  BehaviorGroup = require('../models/behavior_group'),
   BehaviorVersion = require('../models/behavior_version'),
   BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
@@ -70,14 +71,11 @@ const BehaviorEditor = React.createClass({
   displayName: 'BehaviorEditor',
 
   propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
-    teamId: React.PropTypes.string.isRequired,
-    groupName: React.PropTypes.string,
-    groupDescription: React.PropTypes.string,
-    behavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
+    group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
+    selectedBehaviorId: React.PropTypes.string,
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
-    otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
     paramTypes: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         id: React.PropTypes.string.isRequired,
@@ -96,7 +94,6 @@ const BehaviorEditor = React.createClass({
     })),
     linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
-    shouldRevealCodeEditor: React.PropTypes.bool,
     savedAnswers: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         inputId: React.PropTypes.string.isRequired,
@@ -116,9 +113,13 @@ const BehaviorEditor = React.createClass({
     return this.state.activeDropdown && this.state.activeDropdown.name ? this.state.activeDropdown.name : "";
   },
 
+  otherBehaviorsInGroup: function() {
+    return this.getBehaviorGroup().behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedBehaviorId());
+  },
+
   getOtherSavedParametersInGroup: function() {
     const currentInputIds = this.getBehaviorParams().map(ea => ea.inputId);
-    const all = this.props.otherBehaviorsInGroup.reduce((arr, ea) => {
+    const all = this.otherBehaviorsInGroup().reduce((arr, ea) => {
       return arr.concat(ea.params);
     }, [])
       .filter(ea => currentInputIds.indexOf(ea.inputId) === -1)
@@ -133,8 +134,8 @@ const BehaviorEditor = React.createClass({
   getRequiredOAuth2ApiConfigs: function() {
     if (this.state) {
       return this.getBehaviorConfig()['requiredOAuth2ApiConfigs'] || [];
-    } else if (this.props.behavior.config) {
-      return this.props.behavior.config.requiredOAuth2ApiConfigs || [];
+    } else if (this.getSelectedBehavior().config) {
+      return this.getSelectedBehavior().config.requiredOAuth2ApiConfigs || [];
     } else {
       return [];
     }
@@ -147,8 +148,8 @@ const BehaviorEditor = React.createClass({
   getRequiredSimpleTokenApis: function() {
     if (this.state) {
       return this.getBehaviorConfig()['requiredSimpleTokenApis'] || [];
-    } else if (this.props.behavior.config) {
-      return this.props.behavior.config.requiredSimpleTokenApis || [];
+    } else if (this.getSelectedBehavior().config) {
+      return this.getSelectedBehavior().config.requiredSimpleTokenApis || [];
     } else {
       return [];
     }
@@ -163,8 +164,8 @@ const BehaviorEditor = React.createClass({
   getAWSConfig: function() {
     if (this.state) {
       return this.getBehaviorConfig()['aws'];
-    } else if (this.props.behavior.config) {
-      return this.props.behavior.config.aws;
+    } else if (this.getSelectedBehavior().config) {
+      return this.getSelectedBehavior().config.aws;
     } else {
       return undefined;
     }
@@ -214,12 +215,38 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getBehaviorProp: function(key) {
+  getSelectedBehaviorId: function() {
     if (this.state) {
-      return this.state.behavior[key];
+      return this.state.selectedBehaviorId;
     } else {
-      return this.props.behavior[key];
+      return this.props.selectedBehaviorId;
     }
+  },
+
+  getBehaviorGroup: function() {
+    if (this.state) {
+      return this.state.group;
+    } else {
+      return this.props.group;
+    }
+  },
+
+  getOriginalSelectedBehavior: function() {
+    return this.getSelectedBehaviorFor(this.props.group, this.props.selectedBehaviorId);
+  },
+
+  getSelectedBehavior: function() {
+    return this.getSelectedBehaviorFor(this.getBehaviorGroup(), this.getSelectedBehaviorId());
+  },
+
+  getSelectedBehaviorFor: function(group, selectedBehaviorId) {
+    return group.behaviorVersions.find(ea => {
+      return ea.behaviorId === selectedBehaviorId;
+    });
+  },
+
+  getBehaviorProp: function(key) {
+    return this.getSelectedBehavior()[key];
   },
 
   getBehaviorTemplate: function() {
@@ -232,7 +259,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getBehaviorTriggers: function() {
-    return this.getBehaviorProp('triggers') || this.getInitialTriggersFromBehavior(this.props.behavior);
+    return this.getBehaviorProp('triggers') || this.getInitialTriggersFromBehavior(this.getSelectedBehavior());
   },
 
   getBehaviorConfig: function() {
@@ -273,9 +300,8 @@ const BehaviorEditor = React.createClass({
   },
 
   getDefaultBehaviorTemplate: function() {
-    var isUsingCode = this.state ? this.state.revealCodeEditor : this.shouldRevealCodeEditor();
     return new ResponseTemplate({
-      text: isUsingCode ? 'The answer is: {successResult}.' : magic8BallResponse
+      text: this.getSelectedBehavior().shouldRevealCodeEditor ? 'The answer is: {successResult}.' : magic8BallResponse
     });
   },
 
@@ -334,7 +360,7 @@ const BehaviorEditor = React.createClass({
 
   buildEnvVarNotifications: function() {
     return this.getEnvVariables().
-      filter((ea) => this.props.behavior.knownEnvVarsUsed.includes(ea.name)).
+      filter((ea) => this.getSelectedBehavior().knownEnvVarsUsed.includes(ea.name)).
       filter((ea) => !ea.isAlreadySavedWithValue).
       map((ea) => ({
         kind: "env_var_not_defined",
@@ -476,16 +502,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  getInitialTriggersFromBehavior: function(behavior) {
-    if (behavior.triggers && behavior.triggers.length > 0) {
-      return behavior.triggers;
-    } else if (!this.isDataTypeBehavior()) {
-      return [new Trigger()];
-    } else {
-      return [];
-    }
-  },
-
   getLastLineNumberForCode: function() {
     var numLines = this.getBehaviorFunctionBody().split('\n').length;
     return this.getFirstLineNumberForCode() + numLines;
@@ -505,7 +521,7 @@ const BehaviorEditor = React.createClass({
 
   getResponseTemplateSectionNumber: function() {
     var hasParams = this.hasUserParameters();
-    var hasCode = this.state.revealCodeEditor;
+    var hasCode = this.getSelectedBehavior().shouldRevealCodeEditor;
     if (hasParams && hasCode) {
       return "4";
     } else if (hasParams || hasCode) {
@@ -643,7 +659,7 @@ const BehaviorEditor = React.createClass({
   },
 
   loadVersions: function() {
-    var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.props.behavior.behaviorId).url;
+    var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.getSelectedBehaviorId()).url;
     this.setState({
       versionsLoadStatus: 'loading'
     });
@@ -694,7 +710,7 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  onSaveError: function() {
+  onSaveError: function(error) {
     this.props.onClearActivePanel();
     this.setState({
       error: "not_saved"
@@ -714,9 +730,9 @@ const BehaviorEditor = React.createClass({
       body: form
     }).then((response) => response.json())
       .then((json) => {
-        if (json.behaviorId) {
+        if (json.id) {
           let newProps = Object.assign({}, json, { onLoad: optionalCallback });
-          this.props.onSave(newProps);
+          this.props.onSave(newProps, this.state);
         } else {
           this.onSaveError();
         }
@@ -751,13 +767,12 @@ const BehaviorEditor = React.createClass({
   showVersionIndex: function(versionIndex, optionalCallback) {
     var version = this.getVersions()[versionIndex];
     var newBehavior = version.clone({
-      groupId: this.props.behavior.groupId,
-      teamId: this.props.behavior.teamId,
-      behaviorId: this.props.behavior.behaviorId
+      groupId: this.getSelectedBehavior().groupId,
+      teamId: this.getSelectedBehavior().teamId,
+      behaviorId: this.getSelectedBehaviorId()
     });
     this.setState({
       behavior: newBehavior,
-      revealCodeEditor: !!version.functionBody,
       justSaved: false
     }, optionalCallback);
   },
@@ -781,15 +796,21 @@ const BehaviorEditor = React.createClass({
   },
 
   setBehaviorProps: function(props, callback) {
-    var newBehavior = this.state.behavior.clone(props);
-    var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
-    var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
+    var existingGroup = this.getBehaviorGroup();
+    var existingBehavior = this.getSelectedBehaviorFor(existingGroup, this.getSelectedBehaviorId());
+    var timestampedBehavior = this.getTimestampedBehavior(existingBehavior.clone(props));
+    var newVersionsForBehavior = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
+    var newVersionsForGroup =
+      existingGroup.behaviorVersions.
+        filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
+        concat([timestampedBehavior]);
+    var newGroup = this.getBehaviorGroup().clone({ behaviorVersions: newVersionsForGroup });
     if (this.state.justSaved) {
       BrowserUtils.removeQueryParam('justSaved');
     }
     this.setState({
-      behavior: newBehavior,
-      versions: newVersions,
+      group: newGroup,
+      versions: newVersionsForBehavior,
       justSaved: false
     }, () => {
       if (callback) {
@@ -832,7 +853,7 @@ const BehaviorEditor = React.createClass({
   },
 
   exportVersion: function() {
-    window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.behavior.groupId).url;
+    window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.getBehaviorGroup().id).url;
   },
 
   toggleActiveDropdown: function(name) {
@@ -900,8 +921,15 @@ const BehaviorEditor = React.createClass({
   },
 
   toggleCodeEditor: function() {
+    const updatedBehaviorVersions = this.getBehaviorGroup().behaviorVersions.map(ea => {
+      if (ea.behaviorId === this.getSelectedBehaviorId()) {
+        return ea.clone({ shouldRevealCodeEditor: !ea.shouldRevealCodeEditor });
+      } else {
+        return ea;
+      }
+    });
     this.setState({
-      revealCodeEditor: !this.state.revealCodeEditor
+      group: this.getBehaviorGroup().clone({ behaviorVersions: updatedBehaviorVersions })
     }, this.resetNotifications);
   },
 
@@ -985,10 +1013,10 @@ const BehaviorEditor = React.createClass({
   updateEnvVariables: function(envVars, options) {
     var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
     var data = {
-      teamId: this.props.teamId,
+      teamId: this.getBehaviorGroup().teamId,
       variables: envVars
     };
-    fetch(url, this.jsonPostOptions({ teamId: this.props.teamId, dataJson: JSON.stringify(data) }))
+    fetch(url, this.jsonPostOptions({ teamId: this.getBehaviorGroup().teamId, dataJson: JSON.stringify(data) }))
       .then((response) => response.json())
       .then((json) => {
         this.props.onClearActivePanel();
@@ -1035,13 +1063,13 @@ const BehaviorEditor = React.createClass({
 
   onBehaviorGroupNameChange: function(name) {
     this.setState({
-      groupName: name
+      group: this.getBehaviorGroup().clone({ name: name })
     });
   },
 
   onBehaviorGroupDescriptionChange: function(desc) {
     this.setState({
-      groupDescription: desc
+      group: this.getBehaviorGroup().clone({ description: desc })
     });
   },
 
@@ -1058,39 +1086,9 @@ const BehaviorEditor = React.createClass({
     };
   },
 
-  saveBehaviorGroupName: function() {
-    var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupName().url;
-    var data = {
-      groupId: this.props.behavior.groupId,
-      name: this.state.groupName
-    };
-    // TODO: error handling!
-    fetch(url, this.jsonPostOptions(data)).then(() => {
-      this.setState({ lastSavedGroupName: this.state.groupName });
-    });
-  },
-
-  saveBehaviorGroupDescription: function() {
-    var url = jsRoutes.controllers.BehaviorEditorController.saveBehaviorGroupDescription().url;
-    var data = {
-      groupId: this.props.behavior.groupId,
-      description: this.state.groupDescription
-    };
-    // TODO: error handling!
-    fetch(url, this.jsonPostOptions(data)).then(() => {
-      this.setState({ lastSavedGroupDescription: this.state.groupDescription });
-    });
-  },
-
-  saveBehaviorGroupDetailChanges: function() {
-    this.saveBehaviorGroupName();
-    this.saveBehaviorGroupDescription();
-  },
-
   cancelBehaviorGroupDetailChanges: function() {
     this.setState({
-      groupName: this.state.lastSavedGroupName,
-      groupDescription: this.state.lastSavedGroupDescription
+      group: this.getBehaviorGroup().clone({ name: this.state.lastSavedGroupName, description: this.state.lastSavedGroupDescription })
     });
   },
 
@@ -1155,19 +1153,17 @@ const BehaviorEditor = React.createClass({
   },
 
   undoChanges: function() {
-    var newBehavior = this.getInitialBehavior(this.props.behavior);
-    var timestampedBehavior = this.getTimestampedBehavior(newBehavior);
-    var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
+    const hasValidSelectedBehaviorId = !!this.props.group.behaviorVersions.find(ea => ea.behaviorId === this.getSelectedBehaviorId());
+    const selectedBehaviorIdAfter = hasValidSelectedBehaviorId ? this.getSelectedBehaviorId() : this.props.group.behaviorVersions[0].behaviorId;
     this.setState({
-      behavior: newBehavior,
-      versions: newVersions,
-      revealCodeEditor: this.shouldRevealCodeEditor()
+      group: this.props.group,
+      selectedBehaviorId: selectedBehaviorIdAfter
     }, () => {
+      this.onSelectBehavior(this.getBehaviorGroup().id, selectedBehaviorIdAfter);
       this.props.onClearActivePanel();
       this.resetNotifications();
     });
   },
-
 
   /* Booleans */
 
@@ -1187,7 +1183,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getAllBehaviors: function() {
-    return this.props.otherBehaviorsInGroup.concat([this.getTimestampedBehavior(this.state.behavior)]);
+    return this.getBehaviorGroup().behaviorVersions;
   },
 
   getActionBehaviors: function() {
@@ -1216,21 +1212,66 @@ const BehaviorEditor = React.createClass({
   },
 
   isExistingBehavior: function() {
-    return !!this.props.behavior.behaviorId;
+    return !this.getSelectedBehavior().isNewBehavior;
   },
 
   isExistingGroup: function() {
-    return !!this.props.behavior.groupId;
+    return !!this.getBehaviorGroup().id;
   },
 
   isFinishedBehavior: function() {
-    return this.isExistingBehavior() && !!(this.props.behavior.functionBody || this.props.behavior.responseTemplate.text);
+    return this.isExistingBehavior() && !!(this.getOriginalSelectedBehavior().functionBody || this.getOriginalSelectedBehavior().responseTemplate.text);
   },
 
   isModified: function() {
-    var currentMatchesInitial = this.state.behavior.isIdenticalToVersion(this.getInitialBehavior(this.props.behavior));
+    var currentMatchesInitial = this.props.group.isIdenticalTo(this.getBehaviorGroup());
     var previewingVersions = this.props.activePanelName === 'versionHistory';
     return !currentMatchesInitial && !previewingVersions;
+  },
+
+  behaviorIsModified: function(currentBehavior) {
+    var originalBehavior = this.props.group.behaviorVersions.find((ea) => ea.behaviorId === currentBehavior.behaviorId);
+    return !(originalBehavior && currentBehavior.isIdenticalToVersion(originalBehavior));
+  },
+
+  getChangeSummary: function() {
+    var actionCount = this.getActionBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
+    var dataTypeCount = this.getDataTypeBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
+
+    var result;
+
+    if (actionCount > 1) {
+      if (dataTypeCount > 1) {
+        result = `${actionCount} actions and ${dataTypeCount} data types modified`;
+      } else if (dataTypeCount === 1) {
+        result = `${actionCount} actions and 1 data type modified`;
+      } else {
+        result = `${actionCount} actions modified`;
+      }
+    } else if (actionCount === 1) {
+      if (dataTypeCount > 1) {
+        result = `1 action and ${dataTypeCount} data types modified`;
+      } else if (dataTypeCount === 1) {
+        result = "1 action and 1 data type modified";
+      } else {
+        result = "1 action modified";
+      }
+    } else {
+      if (dataTypeCount > 1) {
+        result = `${dataTypeCount} data types modified`;
+      } else if (dataTypeCount === 1) {
+        result = "1 data type modified";
+      } else {
+        result = "skill title/description modified";
+      }
+    }
+
+    return (
+      <span>
+        <span className="type-bold">Unsaved changes </span>
+        <span>{result ? `(${result})` : ""}</span>
+      </span>
+    );
   },
 
   isSaving: function() {
@@ -1241,10 +1282,6 @@ const BehaviorEditor = React.createClass({
     var firstTwoVersions = this.getVersions().slice(0, 2);
     return firstTwoVersions.length === 2 &&
       firstTwoVersions[0].isIdenticalToVersion(firstTwoVersions[1]);
-  },
-
-  shouldRevealCodeEditor: function() {
-    return !!(this.props.shouldRevealCodeEditor || this.props.behavior.functionBody);
   },
 
   versionsMaybeLoaded: function() {
@@ -1372,32 +1409,24 @@ const BehaviorEditor = React.createClass({
   // componentDidUpdate: function() {
   // },
 
-  getInitialBehavior: function(behavior) {
-    return behavior.clone({
-      triggers: this.getInitialTriggersFromBehavior(behavior)
-    });
-  },
-
   getInitialEnvVariables: function() {
     return Sort.arrayAlphabeticalBy(this.props.envVariables || [], (variable) => variable.name);
   },
 
   getInitialState: function() {
-    var initialBehavior = this.getInitialBehavior(this.props.behavior);
+    const selectedBehavior = this.getSelectedBehavior();
     return {
-      behavior: initialBehavior,
-      groupName: this.props.groupName || "",
-      groupDescription: this.props.groupDescription || "",
-      lastSavedGroupName: this.props.groupName || "",
-      lastSavedGroupDescription: this.props.groupDescription || "",
+      group: this.props.group,
+      selectedBehaviorId: this.props.selectedBehaviorId,
+      lastSavedGroupName: this.props.group.name || "",
+      lastSavedGroupDescription: this.props.group.description || "",
       activeDropdown: null,
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
       envVariables: this.getInitialEnvVariables(),
-      revealCodeEditor: this.shouldRevealCodeEditor(),
-      hasModifiedTemplate: !!(this.props.behavior.responseTemplate && this.props.behavior.responseTemplate.text),
+      hasModifiedTemplate: !!(selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text),
       notifications: this.buildNotifications(),
-      versions: [this.getTimestampedBehavior(initialBehavior)],
+      versions: [this.getTimestampedBehavior(selectedBehavior)],
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
@@ -1412,16 +1441,18 @@ const BehaviorEditor = React.createClass({
   },
 
   componentWillReceiveProps: function(nextProps) {
-    if (nextProps.behavior !== this.props.behavior) {
-      var newBehaviorVersion = this.getInitialBehavior(nextProps.behavior);
+    if (nextProps.group !== this.props.group) {
+      var newGroup = nextProps.group;
+      var newSelectedBehaviorVersion = newGroup.behaviorVersions.find(ea => ea.behaviorId === nextProps.selectedBehaviorId);
       var newState = {
         justSaved: true,
-        behavior: newBehaviorVersion,
-        versions: [this.getTimestampedBehavior(newBehaviorVersion)],
+        group: newGroup,
+        selectedBehaviorId: newSelectedBehaviorVersion.behaviorId,
+        versions: [this.getTimestampedBehavior(newSelectedBehaviorVersion)],
         versionsLoadStatus: null,
         error: null
       };
-      if (!this.props.behavior.behaviorId && nextProps.behavior.behaviorId && !this.windowIsMobile()) {
+      if (!this.props.group.id && nextProps.group.id  && !this.windowIsMobile()) {
         newState.behaviorSwitcherVisible = true;
       }
       this.props.onClearActivePanel();
@@ -1429,8 +1460,8 @@ const BehaviorEditor = React.createClass({
       if (typeof(nextProps.onLoad) === 'function') {
         nextProps.onLoad();
       }
-      if (newBehaviorVersion.behaviorId) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newBehaviorVersion.behaviorId).url);
+      if (newSelectedBehaviorVersion.behaviorId) {
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newGroup.id, newSelectedBehaviorVersion.behaviorId).url);
       }
     }
   },
@@ -1439,9 +1470,7 @@ const BehaviorEditor = React.createClass({
     return (
       <div>
         <CsrfTokenHiddenInput value={this.props.csrfToken} />
-        <HiddenJsonInput value={JSON.stringify(this.state.behavior)} />
-        <input type="hidden" name="redirect" value={this.getRedirectValue()} />
-        <input type="hidden" name="requiredOAuth2ApiConfigId" value={this.state.requiredOAuth2ApiConfigId} />
+        <HiddenJsonInput value={JSON.stringify(this.getBehaviorGroup())} />
       </div>
     );
   },
@@ -1638,7 +1667,7 @@ const BehaviorEditor = React.createClass({
               ref="behaviorTester"
               triggers={this.getBehaviorTriggers()}
               params={this.getBehaviorParams()}
-              behaviorId={this.props.behavior.behaviorId}
+              behaviorId={this.getSelectedBehaviorId()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
@@ -1648,7 +1677,7 @@ const BehaviorEditor = React.createClass({
           <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.layoutDidUpdate}>
             <DataTypeTester
               ref="dataTypeTester"
-              behaviorId={this.props.behavior.behaviorId}
+              behaviorId={this.getSelectedBehaviorId()}
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
@@ -1724,7 +1753,7 @@ const BehaviorEditor = React.createClass({
                     disabledWhen={!this.isExistingBehavior() && !this.isModified()}
                     className="mrl mbm" onClick={this.checkIfModifiedAndTest}
                   />
-                  <div className="display-inline-block align-button mbm type-bold type-italic">
+                  <div className="display-inline-block align-button mbm">
                     {this.renderFooterStatus()}
                   </div>
                 </div>
@@ -1757,18 +1786,18 @@ const BehaviorEditor = React.createClass({
   renderFooterStatus: function() {
     if (this.state.justSaved && !this.isSaving()) {
       return (
-        <span className="fade-in type-green">All changes saved</span>
+        <span className="fade-in type-green type-bold type-italic">All changes saved</span>
       );
     } else if (this.state.error === 'not_saved') {
       return (
-        <span className="fade-in type-pink">
+        <span className="fade-in type-pink type-bold type-italic">
           <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
           <span>Error saving changes — please try again</span>
         </span>
       );
     } else if (this.isModified()) {
       return (
-        <span className="fade-in type-pink">Unsaved changes</span>
+        <span className="fade-in type-pink type-italic">{this.getChangeSummary()}</span>
       );
     } else {
       return "";
@@ -1780,17 +1809,17 @@ const BehaviorEditor = React.createClass({
       <div>
         <form ref="deleteBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.delete().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
+          <input type="hidden" name="behaviorId" value={this.getSelectedBehaviorId() || ""} />
         </form>
 
         <form ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorGroupIds[0]" value={this.props.behavior.groupId} />
+          <input type="hidden" name="behaviorGroupIds[0]" value={this.getBehaviorGroup().id || ""} />
         </form>
 
         <form ref="cloneBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.duplicate().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.props.behavior.behaviorId} />
+          <input type="hidden" name="behaviorId" value={this.getSelectedBehaviorId() || ""} />
         </form>
       </div>
     );
@@ -1911,6 +1940,38 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  onSelectBehavior: function(groupId, behaviorId) {
+    this.setState({
+      selectedBehaviorId: behaviorId
+    }, () => {
+      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
+    });
+  },
+
+  addNewBehavior: function(isDataType) {
+    const group = this.getBehaviorGroup();
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, group.id).url;
+    fetch(url, { credentials: 'same-origin' })
+      .then((response) => response.json())
+      .then((json) => {
+        const newVersion = BehaviorVersion.fromJson(json);
+        const groupWithNewBehavior = group.withNewBehaviorVersion(newVersion);
+        this.setState({
+          group: groupWithNewBehavior
+        }, () => {
+          this.onSelectBehavior(groupWithNewBehavior.id, newVersion.behaviorId);
+        });
+      });
+  },
+
+  addNewAction: function() {
+    this.addNewBehavior(false);
+  },
+
+  addNewDataType: function() {
+    this.addNewBehavior(true);
+  },
+
   renderBehaviorSwitcher: function() {
     if (this.behaviorSwitcherIsVisible()) {
       return (
@@ -1923,17 +1984,19 @@ const BehaviorEditor = React.createClass({
               ref="behaviorSwitcher"
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
-              currentBehavior={this.getTimestampedBehavior(this.state.behavior)}
-              groupId={this.props.behavior.groupId}
-              groupName={this.state.groupName}
+              selectedBehavior={this.getTimestampedBehavior(this.getSelectedBehavior())}
+              groupId={this.getBehaviorGroup().id}
+              groupName={this.getBehaviorGroup().name || ""}
               lastSavedGroupName={this.state.lastSavedGroupName}
-              groupDescription={this.state.groupDescription}
+              groupDescription={this.getBehaviorGroup().description || ""}
               lastSavedGroupDescription={this.state.lastSavedGroupDescription}
-              teamId={this.props.teamId}
+              teamId={this.getBehaviorGroup().teamId}
               onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
               onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
-              onSaveBehaviorGroupDetails={this.saveBehaviorGroupDetailChanges}
-              onCancelBehaviorGroupDetails={this.cancelBehaviorGroupDetailChanges}
+              onSelectBehavior={this.onSelectBehavior}
+              addNewAction={this.addNewAction}
+              addNewDataType={this.addNewDataType}
+              isBehaviorModified={this.behaviorIsModified}
             />
           </Sticky>
         </div>
@@ -2007,19 +2070,19 @@ const BehaviorEditor = React.createClass({
                   paramTypes={this.props.paramTypes}
                   triggers={this.getBehaviorTriggers()}
                   isFinishedBehavior={this.isFinishedBehavior()}
-                  behaviorHasCode={this.state.revealCodeEditor}
+                  behaviorHasCode={this.getSelectedBehavior().shouldRevealCodeEditor}
                   hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
-                  otherBehaviorsInGroup={this.props.otherBehaviorsInGroup}
+                  otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
                   onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
                   savedAnswers={this.props.savedAnswers}
                   onToggleSavedAnswer={this.toggleSavedAnswerEditor}
                 />
 
-                <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
+                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0}>
                   <hr className="man thin bg-gray-light" />
                 </Collapsible>
 
-                <Collapsible revealWhen={!this.state.revealCodeEditor}>
+                <Collapsible revealWhen={!this.getSelectedBehavior().shouldRevealCodeEditor}>
                   <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
                     <div className="container container-wide">
                       <div className="columns columns-elastic mobile-columns-float">
@@ -2039,7 +2102,7 @@ const BehaviorEditor = React.createClass({
                   </div>
                 </Collapsible>
 
-                <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
+                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0.5}>
 
                   <div className="container container-wide">
                     <div className="ptxl">
@@ -2070,7 +2133,7 @@ const BehaviorEditor = React.createClass({
                   template={this.getBehaviorTemplate()}
                   onChangeTemplate={this.updateTemplate}
                   isFinishedBehavior={this.isFinishedBehavior()}
-                  behaviorUsesCode={!!this.state.revealCodeEditor}
+                  behaviorUsesCode={!!this.getSelectedBehavior().shouldRevealCodeEditor}
                   shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
                   onChangeForcePrivateResponse={this.updateForcePrivateResponse}
                   onCursorChange={this.ensureCursorVisible}

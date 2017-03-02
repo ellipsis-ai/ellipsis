@@ -3,15 +3,15 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
-      url: React.PropTypes.string.isRequired,
+      onClick: React.PropTypes.func.isRequired,
       label: React.PropTypes.string
     },
 
     render: function() {
       return (
-        <a
-          href={this.props.url}
-          className="button button-s button-shrink">{this.props.label || "Add another"}</a>
+        <button type="button"
+          onClick={this.props.onClick}
+          className="button button-s button-shrink">{this.props.label || "Add another"}</button>
       );
     }
   });

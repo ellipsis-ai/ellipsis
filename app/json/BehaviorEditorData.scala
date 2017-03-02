@@ -1,5 +1,7 @@
 package json
 
+import java.time.OffsetDateTime
+
 import models.accounts.user.{User, UserTeamAccess}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,9 +14,9 @@ import scala.concurrent.Future
 
 case class BehaviorEditorData(
                                teamAccess: UserTeamAccess,
-                               behaviorVersion: BehaviorVersionData,
+                               group: BehaviorGroupData,
+                               maybeSelectedBehaviorId: Option[String],
                                environmentVariables: Seq[EnvironmentVariableData],
-                               otherBehaviorsInGroup: Seq[BehaviorVersionData],
                                paramTypes: Seq[BehaviorParameterTypeData],
                                savedAnswers: Seq[InputSavedAnswerData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
@@ -22,45 +24,34 @@ case class BehaviorEditorData(
                                simpleTokenApis: Seq[SimpleTokenApiData],
                                linkedOAuth2ApplicationIds: Seq[String],
                                justSaved: Boolean
-                              ) {
-
-  def isForDataType: Boolean = behaviorVersion.config.dataTypeName.isDefined
-
-}
+                              )
 
 object BehaviorEditorData {
 
   def buildForEdit(
                     user: User,
-                    behaviorId: String,
+                    groupId: String,
+                    maybeBehaviorId: Option[String],
                     maybeJustSaved: Option[Boolean],
                     dataService: DataService,
                     ws: WSClient
                   ): Future[Option[BehaviorEditorData]] = {
 
     for {
-      maybeBehaviorVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService)
-      maybeTeam <- maybeBehaviorVersionData.map { data =>
+      maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService)
+      maybeTeam <- maybeGroupData.map { data =>
         dataService.teams.find(data.teamId, user)
       }.getOrElse(Future.successful(None))
-      maybeGroup <- maybeBehaviorVersionData.flatMap { data =>
-        data.groupId.map { gid =>
-          dataService.behaviorGroups.find(gid)
-        }
-      }.getOrElse(Future.successful(None))
       maybeEditorData <- (for {
-        data <- maybeBehaviorVersionData
+        data <- maybeGroupData
         team <- maybeTeam
       } yield {
         buildFor(
           user,
           Some(data),
-          data.groupId,
-          maybeGroup.map(_.name),
-          maybeGroup.flatMap(_.maybeDescription),
+          maybeBehaviorId,
           team,
           maybeJustSaved,
-          isForNewDataType = false,
           dataService,
           ws
         ).map(Some(_))
@@ -70,9 +61,7 @@ object BehaviorEditorData {
 
   def buildForNew(
                   user: User,
-                  maybeGroupId: Option[String],
                   maybeTeamId: Option[String],
-                  isForNewDataType: Boolean,
                   dataService: DataService,
                   ws: WSClient
                  ): Future[Option[BehaviorEditorData]] = {
@@ -80,19 +69,13 @@ object BehaviorEditorData {
     val teamId = maybeTeamId.getOrElse(user.teamId)
     for {
       maybeTeam <- dataService.teams.find(teamId, user)
-      maybeGroup <- maybeGroupId.map { gid =>
-        dataService.behaviorGroups.find(gid)
-      }.getOrElse(Future.successful(None))
       maybeData <- maybeTeam.map { team =>
         buildFor(
           user,
-          None,
-          maybeGroupId,
-          maybeGroup.map(_.name),
-          maybeGroup.flatMap(_.maybeDescription),
+          maybeGroupData = None,
+          maybeBehaviorId = None,
           team,
-          None,
-          isForNewDataType,
+          maybeJustSaved = None,
           dataService,
           ws
         ).map(Some(_))
@@ -101,30 +84,27 @@ object BehaviorEditorData {
   }
 
   private def inputSavedAnswerDataFor(
-                               maybeBehaviorVersionData: Option[BehaviorVersionData],
-                               otherBehaviorsInGroupData: Seq[BehaviorVersionData],
-                               user: User,
-                               dataService: DataService
-                             ): Future[Seq[InputSavedAnswerData]] = {
-    val behaviorVersionDataForGroup = otherBehaviorsInGroupData ++ maybeBehaviorVersionData.map(Seq(_)).getOrElse(Seq())
-    Future.sequence(behaviorVersionDataForGroup.map { behaviorVersionData =>
-      Future.sequence(behaviorVersionData.params.flatMap { param =>
-        param.inputId.map { inputId =>
-          InputSavedAnswerData.maybeFor(inputId, user, dataService)
-        }
-      }).map(_.flatten)
-    }).map(_.flatten.distinct)
+                                     maybeBehaviorGroupData: Option[BehaviorGroupData],
+                                     user: User,
+                                     dataService: DataService
+                                     ): Future[Seq[InputSavedAnswerData]] = {
+    maybeBehaviorGroupData.map { data =>
+      Future.sequence(data.behaviorVersions.map { behaviorVersionData =>
+        Future.sequence(behaviorVersionData.params.flatMap { param =>
+          param.inputId.map { inputId =>
+            InputSavedAnswerData.maybeFor(inputId, user, dataService)
+          }
+        }).map(_.flatten)
+      }).map(_.flatten.distinct)
+    }.getOrElse(Future.successful(Seq()))
   }
 
   def buildFor(
                 user: User,
-                maybeBehaviorVersionData: Option[BehaviorVersionData],
-                maybeGroupId: Option[String],
-                maybeGroupName: Option[String],
-                maybeGroupDescription: Option[String],
+                maybeGroupData: Option[BehaviorGroupData],
+                maybeBehaviorId: Option[String],
                 team: Team,
                 maybeJustSaved: Option[Boolean],
-                isForNewDataType: Boolean,
                 dataService: DataService,
                 ws: WSClient
               ): Future[BehaviorEditorData] = {
@@ -132,52 +112,48 @@ object BehaviorEditorData {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
       userEnvironmentVariables <- dataService.userEnvironmentVariables.allFor(user)
-      maybeGroup <- maybeGroupId.map { groupId =>
-        dataService.behaviorGroups.find(groupId)
-      }.getOrElse(Future.successful(None))
-      otherBehaviorsInGroup <- maybeGroup.map { group =>
-        dataService.behaviors.allForGroup(group).map { behaviors =>
-          behaviors.filterNot(b => maybeBehaviorVersionData.exists(_.behaviorId.contains(b.id)))
-        }
-      }.getOrElse(Future.successful(Seq()))
-      otherBehaviorsInGroupData <- Future.sequence(otherBehaviorsInGroup.map { ea =>
-        BehaviorVersionData.maybeFor(ea.id, user, dataService)
-      }).map(_.flatten)
       oAuth2Applications <- dataService.oauth2Applications.allFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       simpleTokenApis <- dataService.simpleTokenApis.allFor(teamAccess.maybeTargetTeam)
       linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUser(user, ws)
+      // TODO: use the group data or some such to avoid grabbing group from DB again
+      maybeGroup <- maybeGroupData.flatMap { groupData =>
+        groupData.id.map { groupId =>
+          dataService.behaviorGroups.find(groupId)
+        }
+      }.getOrElse(Future.successful(None))
       paramTypes <- teamAccess.maybeTargetTeam.map { team =>
         BehaviorParameterType.allFor(maybeGroup, dataService)
       }.getOrElse(Future.successful(Seq()))
       paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
-      inputSavedAnswerData <- inputSavedAnswerDataFor(maybeBehaviorVersionData, otherBehaviorsInGroupData, user, dataService)
+      inputSavedAnswerData <- inputSavedAnswerDataFor(maybeGroupData, user, dataService)
+      // make sure the behavior exists and is accesible
+      maybeRealBehaviorId <- maybeBehaviorId.map { behaviorId =>
+        dataService.behaviors.find(behaviorId, user).map { maybeBehavior =>
+          maybeBehavior.map(_.id)
+        }
+      }.getOrElse(Future.successful(None))
     } yield {
-      val maybeDataTypeName = if (isForNewDataType) { Some("") } else { None }
-      val versionData = maybeBehaviorVersionData.getOrElse {
-        BehaviorVersionData.buildFor(
+      val data = maybeGroupData.getOrElse {
+        BehaviorGroupData(
+          None,
           team.id,
-          maybeGroupId,
-          maybeGroupName,
-          maybeGroupDescription,
-          None,
-          None,
-          "",
-          "",
-          Seq(),
-          Seq(),
-          BehaviorConfig(None, None, None, None, None, None, maybeDataTypeName),
-          None,
-          None,
-          None,
-          dataService
+          name = None,
+          description = None,
+          icon = None,
+          actionInputs = Seq(),
+          dataTypeInputs = Seq(),
+          Seq(BehaviorVersionData.newUnsavedFor(team.id, maybeGroupId = None, isDataType = false, dataService)),
+          githubUrl = None,
+          exportId = None,
+          OffsetDateTime.now
         )
       }
       BehaviorEditorData(
         teamAccess,
-        versionData,
+        data,
+        maybeRealBehaviorId,
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
-        otherBehaviorsInGroupData,
         paramTypeData,
         inputSavedAnswerData,
         oAuth2Applications.map(OAuth2ApplicationData.from),

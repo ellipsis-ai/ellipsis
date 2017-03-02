@@ -13,7 +13,7 @@ import scala.util.matching.Regex
 trait MessageTrigger extends Trigger with FuzzyMatchable {
 
   val pattern: String
-  val text: String = pattern
+  val maybeText: Option[String] = Some(pattern)
   val maybeFuzzyMatchPattern: Option[String] = None
   def regex: Regex
   val requiresBotMention: Boolean

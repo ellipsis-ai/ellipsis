@@ -7,8 +7,8 @@
 
 @main("Install new skills", config, selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
-    routes.javascript.BehaviorImportExportController.doImport,
-    routes.javascript.BehaviorEditorController.editGroup
+    routes.javascript.BehaviorEditorController.edit,
+    routes.javascript.BehaviorImportExportController.doImport
   )
   <div id="content" class="content bg-white">
     @config.maybeTeamAccess.map(teamAccess => views.html.behaviorTabs("install", teamAccess))

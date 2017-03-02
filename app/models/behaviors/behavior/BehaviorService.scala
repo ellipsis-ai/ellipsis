@@ -48,9 +48,9 @@ trait BehaviorService {
     }
   }
 
-  def createFor(team: Team, maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
+  def createFor(team: Team, maybeIdToUse: Option[String], maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
 
-  def createFor(group: BehaviorGroup, maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
+  def createFor(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior]
 
   def updateDataTypeNameFor(behavior: Behavior, maybeName: Option[String]): Future[Behavior]
 

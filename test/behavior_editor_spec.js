@@ -1,6 +1,7 @@
 jest
   .unmock('../app/assets/javascripts/behavior_editor/index')
   .unmock('../app/assets/javascripts/models/behavior_version')
+  .unmock('../app/assets/javascripts/models/behavior_group')
   .unmock('../app/assets/javascripts/models/param')
   .unmock('../app/assets/javascripts/models/response_template')
   .unmock('../app/assets/javascripts/models/trigger');
@@ -9,12 +10,11 @@ import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index');
 const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
+const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group');
 const ResponseTemplate = require('../app/assets/javascripts/models/response_template');
-const Trigger = require('../app/assets/javascripts/models/trigger');
 
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
-jsRoutes.controllers.BehaviorEditorController.newForNormalBehavior = jest.fn(() => ({ url: '/mock_new_for_normal_behavior' }));
-jsRoutes.controllers.BehaviorEditorController.newForDataType = jest.fn(() => ({ url: '/mock_new_for_data_type' }));
+jsRoutes.controllers.BehaviorEditorController.newGroup = jest.fn(() => ({ url: '/mock_new_skill' }));
 jsRoutes.controllers.BehaviorEditorController.delete = jest.fn(() => ({ url: '/mock_delete_behavior' }));
 jsRoutes.controllers.BehaviorEditorController.duplicate = jest.fn(() => ({ url: '/mock_duplicate_behavior' }));
 jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => ({ url: '/mock_delete_behavior_group' }));
@@ -23,21 +23,27 @@ jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => 
 describe('BehaviorEditor', () => {
   const defaultConfig = {
     teamId: "A",
-    behavior: {
-      behaviorId: "1",
-      functionBody: "onSuccess('Woot')",
-      responseTemplate: "{successResult}",
-      params: [],
-      triggers: [{
-        text: "Do the tests run?",
-        requiresMention: false,
-        isRegex: false,
-        caseSensitive: false
-      }],
-      config: {},
-      knownEnvVarsUsed: [],
-      groupId: '1'
+    group: {
+      behaviorVersions: [
+        {
+          behaviorId: "1",
+          functionBody: "onSuccess('Woot')",
+          responseTemplate: "{successResult}",
+          params: [],
+          triggers: [{
+            text: "Do the tests run?",
+            requiresMention: false,
+            isRegex: false,
+            caseSensitive: false
+          }],
+          config: {},
+          knownEnvVarsUsed: [],
+          groupId: '1',
+          shouldRevealCodeEditor: true
+        }
+      ]
     },
+    selectedBehaviorId: "1",
     csrfToken: "2",
     justSaved: false,
     envVariables: [ { name: "HOT_DOG" } ],
@@ -63,50 +69,37 @@ describe('BehaviorEditor', () => {
     notifications: [],
     shouldRevealCodeEditor: true,
     onSave: jest.fn(),
-    otherBehaviorsInGroup: [],
     savedAnswers: [],
     onForgetSavedAnswerForInput: jest.fn()
   };
 
   let editorConfig;
+  let firstBehavior;
 
   beforeEach(function() {
     editorConfig = Object.assign({}, defaultConfig);
+    firstBehavior = editorConfig.group.behaviorVersions[0];
   });
 
   function createEditor(config) {
     const props = Object.assign({}, config, {
-      behavior: BehaviorVersion.fromJson(config.behavior)
+      group: BehaviorGroup.fromJson(config.group)
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
     ).refs.component;
   }
 
-  describe('getInitialTriggersFromProps', () => {
-    it('returns the defined triggers', () => {
-      editorConfig.behavior.triggers = [{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }];
-      let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggersFromBehavior(editor.props.behavior)).toEqual([{ text: 'bang', requiresMention: false, isRegex: false, caseSensitive: false }]);
-    });
-
-    it('returns a single blank trigger when no triggers are defined', () => {
-      delete editorConfig.behavior.triggers;
-      let editor = createEditor(editorConfig);
-      expect(editor.getInitialTriggersFromBehavior(editor.props.behavior)).toEqual([new Trigger()]);
-    });
-  });
-
   describe('getBehaviorFunctionBody', () => {
     it('returns the defined function', () => {
-      editorConfig.behavior.functionBody = 'return;';
+      firstBehavior.functionBody = 'return;';
       let editor = createEditor(editorConfig);
       expect(editor.getBehaviorFunctionBody()).toEqual('return;');
     });
 
     it('returns a string even when no function is defined', () => {
-      delete editorConfig.behavior.functionBody;
-      editorConfig.shouldRevealCodeEditor = false;
+      delete firstBehavior.functionBody;
+      firstBehavior.shouldRevealCodeEditor = false;
       let editor = createEditor(editorConfig);
       expect(editor.getBehaviorFunctionBody()).toEqual("");
     });
@@ -114,13 +107,13 @@ describe('BehaviorEditor', () => {
 
   describe('getBehaviorParams', () => {
     it('returns the defined parameters', () => {
-      editorConfig.behavior.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234", inputExportId: null }];
+      firstBehavior.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234", inputExportId: null }];
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorParams()).toEqual(editorConfig.behavior.params);
+      expect(editor.getBehaviorParams()).toEqual(firstBehavior.params);
     });
 
     it('returns an array even when no params are defined', () => {
-      delete editorConfig.behavior.params;
+      delete firstBehavior.params;
       let editor = createEditor(editorConfig);
       expect(editor.getBehaviorParams()).toEqual([]);
     });
@@ -128,13 +121,13 @@ describe('BehaviorEditor', () => {
 
   describe('getBehaviorTemplate', () => {
     it('returns the template the defined template when it’s non-empty', () => {
-      editorConfig.behavior.responseTemplate = 'clowncar';
+      firstBehavior.responseTemplate = 'clowncar';
       let editor = createEditor(editorConfig);
       expect(editor.getBehaviorTemplate().toString()).toEqual('clowncar');
     });
 
     it('returns a default template when no template is defined', () => {
-      delete editorConfig.behavior.responseTemplate;
+      delete firstBehavior.responseTemplate;
       let editor = createEditor(editorConfig);
       editor.getDefaultBehaviorTemplate = jest.fn();
       editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
@@ -142,7 +135,7 @@ describe('BehaviorEditor', () => {
     });
 
     it('returns a default template when the template is blank', () => {
-      editorConfig.behavior.responseTemplate = '';
+      firstBehavior.responseTemplate = '';
       let editor = createEditor(editorConfig);
       editor.getDefaultBehaviorTemplate = jest.fn();
       editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
@@ -150,7 +143,7 @@ describe('BehaviorEditor', () => {
     });
 
     it('returns the original template when it has been modified', () => {
-      editorConfig.behavior.responseTemplate = '';
+      firstBehavior.responseTemplate = '';
       let editor = createEditor(editorConfig);
       editor.hasModifiedTemplate = jest.fn();
       editor.hasModifiedTemplate.mockReturnValue(true);
@@ -160,7 +153,7 @@ describe('BehaviorEditor', () => {
 
   describe('checkDataAndCallback', () => {
     it('sets the default template when that\'s all there is', () => {
-      editorConfig.behavior.responseTemplate = '';
+      firstBehavior.responseTemplate = '';
       let editor = createEditor(editorConfig);
       let defaultTemplate = ResponseTemplate.fromString('default');
       editor.getDefaultBehaviorTemplate = jest.fn();
@@ -177,7 +170,7 @@ describe('BehaviorEditor', () => {
 
   describe('onParamEnterKey', () => {
     it('focuses on the next param if there is one', () => {
-      editorConfig.behavior.params = [{
+      firstBehavior.params = [{
         name: 'param1', question: 'What am I?', paramType: editorConfig.paramTypes[0]
       }, {
         name: 'param2', question: 'Who are you?', paramType: editorConfig.paramTypes[0]
@@ -191,7 +184,7 @@ describe('BehaviorEditor', () => {
     });
 
     it('adds a param if this is the last one and it has a question', () => {
-      editorConfig.behavior.params = [{
+      firstBehavior.params = [{
         name: 'param1', question: 'What am I?', paramType: editorConfig.paramTypes[0]
       }, {
         name: 'param2', question: 'Who are you?', paramType: editorConfig.paramTypes[0]
@@ -205,7 +198,7 @@ describe('BehaviorEditor', () => {
     });
 
     it('does nothing if this is the last one and has no question', () => {
-      editorConfig.behavior.params = [{
+      firstBehavior.params = [{
         name: 'param1', question: 'What am I?', paramType: editorConfig.paramTypes[0]
       }, {
         name: 'param2', question: '', paramType: editorConfig.paramTypes[0]
@@ -264,7 +257,7 @@ describe('BehaviorEditor', () => {
 
   describe('render', () => {
     it("renders the normal editor when there's no dataTypeName property", () => {
-      editorConfig.behavior.config.dataTypeName = null;
+      firstBehavior.config.dataTypeName = null;
       let editor = createEditor(editorConfig);
       editor.renderDataTypeBehavior = jest.fn();
       editor.renderNormalBehavior = jest.fn();
@@ -273,7 +266,7 @@ describe('BehaviorEditor', () => {
       expect(editor.renderNormalBehavior).toBeCalled();
     });
     it("renders the data type editor when there's a dataTypeName property", () => {
-      editorConfig.behavior.config.dataTypeName = 'My pretend data type';
+      editorConfig.group.behaviorVersions[0].config.dataTypeName = 'My pretend data type';
       let editor = createEditor(editorConfig);
       editor.renderDataTypeBehavior = jest.fn();
       editor.renderNormalBehavior = jest.fn();
@@ -300,7 +293,7 @@ describe('BehaviorEditor', () => {
 
   describe('getOtherSavedParametersInGroup', () => {
     it("returns the (unique by inputId) saved params", () => {
-      const groupId = editorConfig.behavior.groupId;
+      const groupId = editorConfig.group.id;
       const inputId = "abcd12345";
       const savedAnswerParam = {
         name: 'foo',
@@ -333,7 +326,9 @@ describe('BehaviorEditor', () => {
             groupId: groupId
           }
         ].map(ea => BehaviorVersion.fromJson(ea));
-      let config = Object.assign({}, editorConfig, { otherBehaviorsInGroup: otherBehaviorsInGroup });
+      let allVersions = editorConfig.group.behaviorVersions.concat(otherBehaviorsInGroup);
+      let newGroup = Object.assign({}, editorConfig.group, { behaviorVersions: allVersions });
+      let config = Object.assign({}, editorConfig, { group: newGroup });
       let editor = createEditor(config);
       expect(editor.getOtherSavedParametersInGroup()).toEqual([otherBehaviorsInGroup[0].params[0]]);
     });

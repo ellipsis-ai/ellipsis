@@ -117,8 +117,8 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def createFor(group: BehaviorGroup, maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
-    val raw = RawBehavior(IDs.next, group.team.id, Some(group.id), None, maybeExportId, maybeDataTypeName, OffsetDateTime.now)
+  def createFor(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
+    val raw = RawBehavior(maybeIdToUse.getOrElse(IDs.next), group.team.id, Some(group.id), None, maybeExportId, maybeDataTypeName, OffsetDateTime.now)
 
     val action = (all += raw).map { _ =>
       Behavior(raw.id, group.team, Some(group), raw.maybeCurrentVersionId, raw.maybeExportId, raw.maybeDataTypeName, raw.createdAt)
@@ -127,10 +127,10 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def createFor(team: Team, maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
+  def createFor(team: Team, maybeIdToUse: Option[String], maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
     for {
-      group <- dataService.behaviorGroups.createFor("", None, "", maybeExportId, team)
-      behavior <- createFor(group, maybeExportId, maybeDataTypeName)
+      group <- dataService.behaviorGroups.createFor(None, None, None, maybeExportId, team)
+      behavior <- createFor(group, maybeIdToUse, maybeExportId, maybeDataTypeName)
     } yield behavior
   }
 

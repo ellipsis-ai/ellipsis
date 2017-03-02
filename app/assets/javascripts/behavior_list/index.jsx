@@ -190,7 +190,12 @@ define(function(require) {
               <div className="column column-shrink prs">
                 {isFirstRow ? this.renderGroupSelectionCheckbox(group.id) : this.renderPlaceholderCheckbox()}
               </div>
-              <div className="column column-expand"><BehaviorName version={version} labelDataType={true} /></div>
+              <div className="column column-expand">
+                <BehaviorName
+                  version={version}
+                  labelDataType={true}
+                />
+              </div>
             </div>
           </div>
           <div className={"column column-shrink type-s type-weak display-ellipsis align-r mobile-display-none " + borderAndSpacingClass}>

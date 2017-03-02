@@ -10,7 +10,9 @@ define(function(require) {
       disableLink: React.PropTypes.bool,
       omitDescription: React.PropTypes.bool,
       limitTriggers: React.PropTypes.bool,
-      labelDataType: React.PropTypes.bool
+      labelDataType: React.PropTypes.bool,
+      onClick: React.PropTypes.func,
+      isImportable: React.PropTypes.bool
     },
 
     getLabelFromTrigger: function(trigger, showLink) {
@@ -19,7 +21,7 @@ define(function(require) {
         return (
           <span className={`${className} type-monospace`}>{trigger.displayText}</span>
         );
-      } else if (!this.props.version.behaviorId) {
+      } else if (this.props.version.isNewBehavior && !this.props.isImportable) {
         return (
           <span className={`${className} type-italic`}>New action</span>
         );
@@ -124,6 +126,13 @@ define(function(require) {
       }
     },
 
+    onLinkClick: function(event) {
+      if (this.props.onClick) {
+        this.props.onClick(this.props.version.groupId, this.props.version.behaviorId);
+        event.preventDefault();
+      }
+    },
+
     render: function() {
       if (this.props.disableLink) {
         return (
@@ -135,7 +144,9 @@ define(function(require) {
       } else {
         return (
           <div className={this.props.limitTriggers ? "display-limit-width display-ellipsis" : ""}>
-            <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.behaviorId).url}
+            <a
+              href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.groupId, this.props.version.behaviorId).url}
+              onClick={this.onLinkClick}
               className="link-block">
               {this.getLabelFromVersion(this.props.version)}
               {this.getDescriptionFromVersion(this.props.version)}

@@ -4,6 +4,7 @@ jest.unmock('../app/assets/javascripts/models/response_template');
 jest.unmock('../app/assets/javascripts/models/trigger');
 
 const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
+const Trigger = require('../app/assets/javascripts/models/trigger');
 
 const behaviorVersionTask1 = Object.freeze({
   "teamId": "abcdef",
@@ -96,6 +97,22 @@ describe('BehaviorVersion', () => {
     it('returns the first trigger when none have text', () => {
       const version = BehaviorVersion.fromJson(behaviorVersionKnowledge1);
       expect(version.findFirstTriggerIndexForDisplay()).toBe(0);
+    });
+  });
+
+  describe('fromJson/construction', () => {
+    it('includes the defined triggers', () => {
+      const data = behaviorVersionTask1;
+      const version = BehaviorVersion.fromJson(data);
+      expect(version.triggers.length).toEqual(2);
+      expect(version.triggers.map(ea => ea.text)).toEqual(["B", "C"]);
+    });
+
+    it('includes a single blank trigger when no triggers are defined', () => {
+      const data = Object.assign({}, behaviorVersionTask1);
+      delete data.triggers;
+      const version = BehaviorVersion.fromJson(data);
+      expect(version.triggers).toEqual([new Trigger()]);
     });
   });
 });

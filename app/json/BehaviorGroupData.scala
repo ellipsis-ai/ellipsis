@@ -12,8 +12,9 @@ import scala.concurrent.Future
 
 case class BehaviorGroupData(
                               id: Option[String],
-                              name: String,
-                              description: String,
+                              teamId: String,
+                              name: Option[String],
+                              description: Option[String],
                               icon: Option[String],
                               actionInputs: Seq[InputData],
                               dataTypeInputs: Seq[InputData],
@@ -23,13 +24,11 @@ case class BehaviorGroupData(
                               createdAt: OffsetDateTime
                             ) extends Ordered[BehaviorGroupData] {
 
-  val maybeNonEmptyName: Option[String] = Option(name.trim).filter(_.nonEmpty)
+  val maybeNonEmptyName: Option[String] = name.map(_.trim).filter(_.nonEmpty)
 
   def copyForTeam(team: Team): BehaviorGroupData = {
     copy(behaviorVersions = behaviorVersions.map(_.copyForTeam(team)))
   }
-
-  def isMisc: Boolean = name == "Miscellaneous"
 
   lazy val sortedActionBehaviorVersions = {
     behaviorVersions.filterNot(_.isDataType).sortBy(_.maybeFirstTrigger)
@@ -39,11 +38,9 @@ case class BehaviorGroupData(
   lazy val maybeFirstTrigger: Option[String] = maybeFirstActionBehaviorVersion.flatMap(_.maybeFirstTrigger)
 
   lazy val maybeSortString: Option[String] = {
-    if (!this.name.isEmpty) {
-      Some(this.name.toLowerCase)
-    } else {
-      this.maybeFirstTrigger
-    }
+    maybeNonEmptyName.map { nonEmptyName =>
+      nonEmptyName.toLowerCase
+    }.orElse(this.maybeFirstTrigger)
   }
 
   lazy val fuzzyMatchName: FuzzyMatchable = {
@@ -104,8 +101,9 @@ object BehaviorGroupData {
       maybeGroup.map { group =>
         BehaviorGroupData(
           Some(group.id),
-          group.name,
-          group.maybeDescription.getOrElse(""),
+          group.team.id,
+          Option(group.name).filter(_.trim.nonEmpty),
+          group.maybeDescription,
           None,
           actionInputsData,
           dataTypeInputsData,
@@ -120,6 +118,6 @@ object BehaviorGroupData {
 
 }
 
-case class FuzzyBehaviorGroupDetail(text: String) extends FuzzyMatchable {
-  val maybeFuzzyMatchPattern = Option(text).filter(_.trim.nonEmpty)
+case class FuzzyBehaviorGroupDetail(maybeText: Option[String]) extends FuzzyMatchable {
+  val maybeFuzzyMatchPattern = maybeText.filter(_.trim.nonEmpty)
 }

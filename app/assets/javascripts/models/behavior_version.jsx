@@ -5,20 +5,31 @@ define(function(require) {
 
   class BehaviorVersion {
     constructor(props) {
+      var initialTriggerProps = (props.config && props.config.dataTypeName) ? [] : [{}];
+      var initialProps = Object.assign({
+        functionBody: '',
+        triggers: initialTriggerProps.map(ea => new Trigger(ea)),
+        config: {},
+        knownEnvVarsUsed: [],
+        shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0)
+      }, props);
+
       Object.defineProperties(this, {
-        groupId: { value: props.groupId, enumerable: true },
-        teamId: { value: props.teamId, enumerable: true },
-        behaviorId: { value: props.behaviorId, enumerable: true },
-        name: { value: props.name, enumerable: true },
-        description: { value: props.description, enumerable: true },
-        functionBody: { value: props.functionBody, enumerable: true },
-        responseTemplate: { value: props.responseTemplate, enumerable: true },
-        params: { value: props.params, enumerable: true },
-        triggers: { value: props.triggers, enumerable: true },
-        config: { value: props.config, enumerable: true },
-        knownEnvVarsUsed: { value: props.knownEnvVarsUsed, enumerable: true },
-        createdAt: { value: props.createdAt, enumerable: false },
-        exportId: { value: props.exportId, enumerable: false }
+        groupId: { value: initialProps.groupId, enumerable: true },
+        teamId: { value: initialProps.teamId, enumerable: true },
+        behaviorId: { value: initialProps.behaviorId, enumerable: true },
+        isNewBehavior: { value: initialProps.isNewBehavior, enumerable: true },
+        name: { value: initialProps.name, enumerable: true },
+        description: { value: initialProps.description, enumerable: true },
+        functionBody: { value: initialProps.functionBody, enumerable: true },
+        responseTemplate: { value: initialProps.responseTemplate, enumerable: true },
+        params: { value: initialProps.params, enumerable: true },
+        triggers: { value: initialProps.triggers, enumerable: true },
+        config: { value: initialProps.config, enumerable: true },
+        knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
+        createdAt: { value: initialProps.createdAt, enumerable: false },
+        exportId: { value: initialProps.exportId, enumerable: false },
+        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: false }
       });
     }
 
@@ -31,8 +42,12 @@ define(function(require) {
       return !(this.getDataTypeName() === null || this.getDataTypeName() === undefined);
     }
 
+    getTriggers() {
+      return this.triggers || [];
+    }
+
     findFirstTriggerIndexForDisplay() {
-      var firstTriggerIndex = this.triggers.findIndex(function(trigger) {
+      var firstTriggerIndex = this.getTriggers().findIndex(function(trigger) {
         return !!trigger.text && !trigger.isRegex;
       });
       if (firstTriggerIndex === -1) {
@@ -42,7 +57,7 @@ define(function(require) {
     }
 
     getFirstTriggerText() {
-      var trigger = this.triggers[this.findFirstTriggerIndexForDisplay()];
+      var trigger = this.getTriggers()[this.findFirstTriggerIndexForDisplay()];
       if (trigger) {
         return trigger.text;
       } else {
@@ -63,11 +78,14 @@ define(function(require) {
     }
 
     static fromJson(props) {
-      return new BehaviorVersion(Object.assign({}, props, {
+      const materializedProps = Object.assign({}, props, {
         params: Param.paramsFromJson(props.params || []),
-        responseTemplate: ResponseTemplate.fromString(props.responseTemplate || ''),
-        triggers: Trigger.triggersFromJson(props.triggers || [])
-      }));
+        responseTemplate: ResponseTemplate.fromString(props.responseTemplate || '')
+      });
+      if (props.triggers) {
+        materializedProps.triggers = Trigger.triggersFromJson(props.triggers);
+      }
+      return new BehaviorVersion(materializedProps);
     }
   }
 

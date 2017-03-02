@@ -96,15 +96,15 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
   }
 
   def newSavedBehaviorFor(group: BehaviorGroup): Behavior = {
-    runNow(dataService.behaviors.createFor(group, None, None))
+    runNow(dataService.behaviors.createFor(group, None, None, None))
   }
 
   def newSavedDataTypeFor(group: BehaviorGroup): Behavior = {
-    runNow(dataService.behaviors.createFor(group, None, Some("Some type")))
+    runNow(dataService.behaviors.createFor(group, None, None, Some("Some type")))
   }
 
   def newSavedBehaviorGroupFor(team: Team): BehaviorGroup = {
-    runNow(dataService.behaviorGroups.createFor("", None, "", None, team))
+    runNow(dataService.behaviorGroups.createFor(None, None, None, None, team))
   }
 
   def withEmptyDB[T](dataService: PostgresDataService, fn: PostgresDatabase => T) = {
