@@ -127,6 +127,12 @@ object BehaviorEditorData {
       }.getOrElse(Future.successful(Seq()))
       paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
       inputSavedAnswerData <- inputSavedAnswerDataFor(maybeGroupData, user, dataService)
+      // make sure the behavior exists and is accesible
+      maybeRealBehaviorId <- maybeBehaviorId.map { behaviorId =>
+        dataService.behaviors.find(behaviorId, user).map { maybeBehavior =>
+          maybeBehavior.map(_.id)
+        }
+      }.getOrElse(Future.successful(None))
     } yield {
       val data = maybeGroupData.getOrElse {
         BehaviorGroupData(
@@ -146,7 +152,7 @@ object BehaviorEditorData {
       BehaviorEditorData(
         teamAccess,
         data,
-        maybeBehaviorId,
+        maybeRealBehaviorId,
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         paramTypeData,
         inputSavedAnswerData,
