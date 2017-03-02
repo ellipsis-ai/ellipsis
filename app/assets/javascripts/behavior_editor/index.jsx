@@ -93,7 +93,6 @@ const BehaviorEditor = React.createClass({
     })),
     linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     notifications: React.PropTypes.arrayOf(React.PropTypes.object),
-    shouldRevealCodeEditor: React.PropTypes.bool,
     savedAnswers: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         inputId: React.PropTypes.string.isRequired,
@@ -300,9 +299,8 @@ const BehaviorEditor = React.createClass({
   },
 
   getDefaultBehaviorTemplate: function() {
-    var isUsingCode = this.state ? this.state.revealCodeEditor : this.shouldRevealCodeEditor();
     return new ResponseTemplate({
-      text: isUsingCode ? 'The answer is: {successResult}.' : magic8BallResponse
+      text: this.getSelectedBehavior().shouldRevealCodeEditor ? 'The answer is: {successResult}.' : magic8BallResponse
     });
   },
 
@@ -522,7 +520,7 @@ const BehaviorEditor = React.createClass({
 
   getResponseTemplateSectionNumber: function() {
     var hasParams = this.hasUserParameters();
-    var hasCode = this.state.revealCodeEditor;
+    var hasCode = this.getSelectedBehavior().shouldRevealCodeEditor;
     if (hasParams && hasCode) {
       return "4";
     } else if (hasParams || hasCode) {
@@ -774,7 +772,6 @@ const BehaviorEditor = React.createClass({
     });
     this.setState({
       behavior: newBehavior,
-      revealCodeEditor: !!version.functionBody,
       justSaved: false
     }, optionalCallback);
   },
@@ -923,8 +920,15 @@ const BehaviorEditor = React.createClass({
   },
 
   toggleCodeEditor: function() {
+    const updatedBehaviorVersions = this.getBehaviorGroup().behaviorVersions.map(ea => {
+      if (ea.behaviorId === this.getSelectedBehaviorId()) {
+        return ea.clone({ shouldRevealCodeEditor: !ea.shouldRevealCodeEditor });
+      } else {
+        return ea;
+      }
+    });
     this.setState({
-      revealCodeEditor: !this.state.revealCodeEditor
+      group: this.getBehaviorGroup().clone({ behaviorVersions: updatedBehaviorVersions })
     }, this.resetNotifications);
   },
 
@@ -1238,10 +1242,6 @@ const BehaviorEditor = React.createClass({
       firstTwoVersions[0].isIdenticalToVersion(firstTwoVersions[1]);
   },
 
-  shouldRevealCodeEditor: function() {
-    return !!(this.props.shouldRevealCodeEditor || this.getSelectedBehavior().functionBody);
-  },
-
   versionsMaybeLoaded: function() {
     return this.state.versionsLoadStatus === 'loading' || this.state.versionsLoadStatus === 'loaded';
   },
@@ -1382,7 +1382,6 @@ const BehaviorEditor = React.createClass({
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
       envVariables: this.getInitialEnvVariables(),
-      revealCodeEditor: this.shouldRevealCodeEditor(),
       hasModifiedTemplate: !!(selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text),
       notifications: this.buildNotifications(),
       versions: [this.getTimestampedBehavior(selectedBehavior)],
@@ -2019,7 +2018,7 @@ const BehaviorEditor = React.createClass({
                   paramTypes={this.props.paramTypes}
                   triggers={this.getBehaviorTriggers()}
                   isFinishedBehavior={this.isFinishedBehavior()}
-                  behaviorHasCode={this.state.revealCodeEditor}
+                  behaviorHasCode={this.getSelectedBehavior().shouldRevealCodeEditor}
                   hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
                   otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
                   onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
@@ -2027,11 +2026,11 @@ const BehaviorEditor = React.createClass({
                   onToggleSavedAnswer={this.toggleSavedAnswerEditor}
                 />
 
-                <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0}>
+                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0}>
                   <hr className="man thin bg-gray-light" />
                 </Collapsible>
 
-                <Collapsible revealWhen={!this.state.revealCodeEditor}>
+                <Collapsible revealWhen={!this.getSelectedBehavior().shouldRevealCodeEditor}>
                   <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
                     <div className="container container-wide">
                       <div className="columns columns-elastic mobile-columns-float">
@@ -2051,7 +2050,7 @@ const BehaviorEditor = React.createClass({
                   </div>
                 </Collapsible>
 
-                <Collapsible revealWhen={this.state.revealCodeEditor} animationDuration={0.5}>
+                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0.5}>
 
                   <div className="container container-wide">
                     <div className="ptxl">
@@ -2082,7 +2081,7 @@ const BehaviorEditor = React.createClass({
                   template={this.getBehaviorTemplate()}
                   onChangeTemplate={this.updateTemplate}
                   isFinishedBehavior={this.isFinishedBehavior()}
-                  behaviorUsesCode={!!this.state.revealCodeEditor}
+                  behaviorUsesCode={!!this.getSelectedBehavior().shouldRevealCodeEditor}
                   shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
                   onChangeForcePrivateResponse={this.updateForcePrivateResponse}
                   onCursorChange={this.ensureCursorVisible}
