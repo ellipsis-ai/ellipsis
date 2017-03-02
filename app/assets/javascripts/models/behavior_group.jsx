@@ -19,23 +19,6 @@ define(function(require) {
       return DeepEqual.isEqual(this.forEqualityComparison(), group.forEqualityComparison());
     }
 
-    withNewAction() {
-      var newVersion = BehaviorVersion.fromJson({
-        groupId: this.id,
-        teamId: this.teamId
-      });
-      return this.withNewBehaviorVersion(newVersion);
-    }
-
-    withNewDataType() {
-      var newVersion = BehaviorVersion.fromJson({
-        config: { dataTypeName: "" },
-        groupId: this.id,
-        teamId: this.teamId
-      });
-      return this.withNewBehaviorVersion(newVersion);
-    }
-
     withNewBehaviorVersion(behaviorVersion) {
       return this.clone({
         behaviorVersions: this.behaviorVersions.concat([behaviorVersion])
