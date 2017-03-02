@@ -137,21 +137,7 @@ object BehaviorEditorData {
           icon = None,
           actionInputs = Seq(),
           dataTypeInputs = Seq(),
-          Seq(BehaviorVersionData.buildFor(
-            team.id,
-            groupId = None,
-            None,
-            None,
-            "",
-            "",
-            Seq(),
-            Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
-            BehaviorConfig(None, None, None, None, None, None, None),
-            None,
-            None,
-            None,
-            dataService
-          )),
+          Seq(BehaviorVersionData.newUnsavedFor(team.id, maybeGroupId = None, isDataType = false, dataService)),
           githubUrl = None,
           exportId = None,
           OffsetDateTime.now

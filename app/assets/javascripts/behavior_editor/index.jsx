@@ -240,7 +240,7 @@ const BehaviorEditor = React.createClass({
 
   getSelectedBehaviorFor: function(group, selectedBehaviorId) {
     return group.behaviorVersions.find(ea => {
-      return (!ea.behaviorId && !selectedBehaviorId) || (ea.behaviorId === selectedBehaviorId);
+      return ea.behaviorId === selectedBehaviorId;
     });
   },
 
@@ -709,7 +709,7 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  onSaveError: function() {
+  onSaveError: function(error) {
     this.props.onClearActivePanel();
     this.setState({
       error: "not_saved"
@@ -1152,11 +1152,13 @@ const BehaviorEditor = React.createClass({
   },
 
   undoChanges: function() {
-    const selectedBehaviorIdAfter = this.getSelectedBehaviorId() || this.props.group.behaviorVersions[0].behaviorId;
+    const hasValidSelectedBehaviorId = !!this.props.group.behaviorVersions.find(ea => ea.behaviorId === this.getSelectedBehaviorId());
+    const selectedBehaviorIdAfter = hasValidSelectedBehaviorId ? this.getSelectedBehaviorId() : this.props.group.behaviorVersions[0].behaviorId;
     this.setState({
       group: this.props.group,
       selectedBehaviorId: selectedBehaviorIdAfter
     }, () => {
+      this.onSelectBehavior(this.getBehaviorGroup().id, selectedBehaviorIdAfter);
       this.props.onClearActivePanel();
       this.resetNotifications();
     });
@@ -1209,7 +1211,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isExistingBehavior: function() {
-    return !!this.getSelectedBehaviorId();
+    return !this.getSelectedBehavior().isNewBehavior;
   },
 
   isExistingGroup: function() {
@@ -1906,20 +1908,28 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  addNewBehavior: function(groupWithNewBehavior) {
-    this.setState({
-      group: groupWithNewBehavior
-    }, () => {
-      this.onSelectBehavior(groupWithNewBehavior.id, null);
-    });
+  addNewBehavior: function(isDataType) {
+    const group = this.getBehaviorGroup();
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, group.id).url;
+    fetch(url, { credentials: 'same-origin' })
+      .then((response) => response.json())
+      .then((json) => {
+        const newVersion = BehaviorVersion.fromJson(json);
+        const groupWithNewBehavior = group.withNewBehaviorVersion(newVersion);
+        this.setState({
+          group: groupWithNewBehavior
+        }, () => {
+          this.onSelectBehavior(groupWithNewBehavior.id, newVersion.behaviorId);
+        });
+      });
   },
 
   addNewAction: function() {
-    this.addNewBehavior(this.getBehaviorGroup().withNewAction());
+    this.addNewBehavior(false);
   },
 
   addNewDataType: function() {
-    this.addNewBehavior(this.getBehaviorGroup().withNewDataType());
+    this.addNewBehavior(true);
   },
 
   renderBehaviorSwitcher: function() {

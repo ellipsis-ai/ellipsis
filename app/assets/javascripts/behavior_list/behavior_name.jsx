@@ -20,7 +20,7 @@ define(function(require) {
         return (
           <span className={`${className} type-monospace`}>{trigger.displayText}</span>
         );
-      } else if (!this.props.version.behaviorId) {
+      } else if (this.props.version.isNewBehavior) {
         return (
           <span className={`${className} type-italic`}>New action</span>
         );

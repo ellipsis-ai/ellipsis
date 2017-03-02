@@ -8,6 +8,7 @@ import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import Formatting._
+import models.IDs
 import services.DataService
 
 import scala.concurrent.Future
@@ -16,6 +17,7 @@ case class BehaviorVersionData(
                                 teamId: String,
                                 groupId: Option[String],
                                 behaviorId: Option[String],
+                                isNewBehavior: Option[Boolean],
                                 name: Option[String],
                                 description: Option[String],
                                 functionBody: String,
@@ -51,6 +53,7 @@ object BehaviorVersionData {
                 teamId: String,
                 groupId: Option[String],
                 behaviorId: Option[String],
+                isNewBehavior: Boolean,
                 description: Option[String],
                 functionBody: String,
                 responseTemplate: String,
@@ -68,10 +71,12 @@ object BehaviorVersionData {
         dataService.teamEnvironmentVariables.lookForInCode(functionBody) ++
         dataService.userEnvironmentVariables.lookForInCode(functionBody)
 
+
     BehaviorVersionData(
       teamId,
       groupId,
       behaviorId,
+      Some(isNewBehavior),
       config.name,
       description,
       functionBody,
@@ -83,6 +88,25 @@ object BehaviorVersionData {
       githubUrl,
       knownEnvVarsUsed,
       createdAt
+    )
+  }
+
+  def newUnsavedFor(teamId: String, maybeGroupId: Option[String], isDataType: Boolean, dataService: DataService): BehaviorVersionData = {
+    buildFor(
+      teamId,
+      maybeGroupId,
+      Some(IDs.next),
+      isNewBehavior = true,
+      None,
+      "",
+      "",
+      Seq(),
+      Seq(),
+      BehaviorConfig(None, None, None, None, None, None, if (isDataType) { Some("") } else { None }),
+      None,
+      None,
+      None,
+      dataService
     )
   }
 
@@ -102,6 +126,7 @@ object BehaviorVersionData {
       teamId,
       None,
       None,
+      isNewBehavior = false,
       maybeDescription,
       extractFunctionBodyFrom(function),
       response,
@@ -163,6 +188,7 @@ object BehaviorVersionData {
           behaviorVersion.team.id,
           behavior.maybeGroup.map(_.id),
           Some(behavior.id),
+          isNewBehavior = false,
           behaviorVersion.maybeDescription,
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),

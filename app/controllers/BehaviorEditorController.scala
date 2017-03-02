@@ -91,14 +91,15 @@ class BehaviorEditorController @Inject() (
       maybeBehaviorGroup <- data.groupId.map { groupId =>
         dataService.behaviorGroups.find(groupId)
       }.getOrElse(Future.successful(None))
-      maybeBehavior <- data.behaviorId.map { behaviorId =>
+      maybeExistingBehavior <- data.behaviorId.map { behaviorId =>
         dataService.behaviors.find(behaviorId, user)
-      }.getOrElse {
+      }.getOrElse(Future.successful(None))
+      maybeBehavior <- maybeExistingBehavior.map(b => Future.successful(Some(b))).getOrElse {
         teamAccess.maybeTargetTeam.map { team =>
           maybeBehaviorGroup.map { behaviorGroup =>
-            dataService.behaviors.createFor(behaviorGroup, None, maybeDataTypeName).map(Some(_))
+            dataService.behaviors.createFor(behaviorGroup, data.behaviorId, None, maybeDataTypeName).map(Some(_))
           }.getOrElse {
-            dataService.behaviors.createFor(team, None, maybeDataTypeName).map(Some(_))
+            dataService.behaviors.createFor(team, data.behaviorId, None, maybeDataTypeName).map(Some(_))
           }
         }.getOrElse(Future.successful(None))
       }
@@ -161,6 +162,11 @@ class BehaviorEditorController @Inject() (
         }
       }
     )
+  }
+
+  def newUnsavedBehavior(isDataType: Boolean, teamId: String, maybeGroupId: Option[String]) = silhouette.SecuredAction { implicit request =>
+    val data = BehaviorVersionData.newUnsavedFor(teamId, maybeGroupId, isDataType, dataService)
+    Ok(Json.toJson(data))
   }
 
   private val deleteForm = Form(
@@ -253,6 +259,7 @@ class BehaviorEditorController @Inject() (
             version.team.id,
             behavior.maybeGroup.map(_.id),
             Some(behavior.id),
+            isNewBehavior = false,
             version.maybeDescription,
             version.functionBody,
             version.maybeResponseTemplate.getOrElse(""),
