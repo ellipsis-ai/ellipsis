@@ -12,7 +12,7 @@ define(function(require) {
     }
 
     forEqualityComparison() {
-      return this.clone({ behaviorVersions: this.sortedForComparison(this.behaviorVersions) });
+      return this.clone({ behaviorVersions: this.sortedForComparison(this.behaviorVersions).map((ea) => ea.forEqualityComparison()) });
     }
 
     isIdenticalTo(group) {

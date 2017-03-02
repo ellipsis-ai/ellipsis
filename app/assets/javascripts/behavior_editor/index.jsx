@@ -658,6 +658,12 @@ const BehaviorEditor = React.createClass({
     return mainFooter ? mainFooter.getHeight() : 0;
   },
 
+  updateBehaviorScrollPosition: function() {
+    this.setBehaviorProp('editorScrollPosition', window.scrollY, () => {
+      this.getBehaviorProp('editorScrollPosition');
+    });
+  },
+
   loadVersions: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.getSelectedBehaviorId()).url;
     this.setState({
@@ -710,7 +716,7 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  onSaveError: function(error) {
+  onSaveError: function(error) { // eslint-disable-line no-unused-vars
     this.props.onClearActivePanel();
     this.setState({
       error: "not_saved"
@@ -1404,6 +1410,7 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
+    window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 25), false);
   },
 
   // componentDidUpdate: function() {
@@ -1945,6 +1952,10 @@ const BehaviorEditor = React.createClass({
       selectedBehaviorId: behaviorId
     }, () => {
       BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
+      var newScrollPosition = this.getBehaviorProp('editorScrollPosition');
+      if (typeof(newScrollPosition) !== 'undefined') {
+        window.scrollTo(window.scrollX, newScrollPosition);
+      }
     });
   },
 
