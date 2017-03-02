@@ -1237,31 +1237,40 @@ const BehaviorEditor = React.createClass({
     var actionCount = this.getActionBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
     var dataTypeCount = this.getDataTypeBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
 
+    var result;
+
     if (actionCount > 1) {
       if (dataTypeCount > 1) {
-        return `Unsaved changes in ${actionCount} actions and ${dataTypeCount} data types`;
+        result = `${actionCount} actions and ${dataTypeCount} data types modified`;
       } else if (dataTypeCount === 1) {
-        return `Unsaved changes in ${actionCount} actions and 1 data type`;
+        result = `${actionCount} actions and 1 data type modified`;
       } else {
-        return `Unsaved changes in ${actionCount} actions`;
+        result = `${actionCount} actions modified`;
       }
     } else if (actionCount === 1) {
       if (dataTypeCount > 1) {
-        return `Unsaved changes in 1 action and ${dataTypeCount} data types`;
+        result = `1 action and ${dataTypeCount} data types modified`;
       } else if (dataTypeCount === 1) {
-        return "Unsaved changes in 1 action and 1 data type";
+        result = "1 action and 1 data type modified";
       } else {
-        return "Unsaved changes in 1 action";
+        result = "1 action modified";
       }
     } else {
       if (dataTypeCount > 1) {
-        return `Unsaved changes in ${dataTypeCount} data types`;
+        result = `${dataTypeCount} data types modified`;
       } else if (dataTypeCount === 1) {
-        return "Unsaved changes in 1 data type";
+        result = "1 data type modified";
       } else {
-        return "";
+        result = "skill title/description modified";
       }
     }
+
+    return (
+      <span>
+        <span className="type-bold">Unsaved changes </span>
+        <span>{result ? `(${result})` : ""}</span>
+      </span>
+    );
   },
 
   isSaving: function() {
@@ -1743,7 +1752,7 @@ const BehaviorEditor = React.createClass({
                     disabledWhen={!this.isExistingBehavior() && !this.isModified()}
                     className="mrl mbm" onClick={this.checkIfModifiedAndTest}
                   />
-                  <div className="display-inline-block align-button mbm type-bold type-italic">
+                  <div className="display-inline-block align-button mbm">
                     {this.renderFooterStatus()}
                   </div>
                 </div>
@@ -1776,18 +1785,18 @@ const BehaviorEditor = React.createClass({
   renderFooterStatus: function() {
     if (this.state.justSaved && !this.isSaving()) {
       return (
-        <span className="fade-in type-green">All changes saved</span>
+        <span className="fade-in type-green type-bold type-italic">All changes saved</span>
       );
     } else if (this.state.error === 'not_saved') {
       return (
-        <span className="fade-in type-pink">
+        <span className="fade-in type-pink type-bold type-italic">
           <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
           <span>Error saving changes — please try again</span>
         </span>
       );
     } else if (this.isModified()) {
       return (
-        <span className="fade-in type-pink">{this.getChangeSummary()}</span>
+        <span className="fade-in type-pink type-italic">{this.getChangeSummary()}</span>
       );
     } else {
       return "";
