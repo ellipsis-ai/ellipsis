@@ -32,6 +32,7 @@ define(function() {
       return this.text;
     }
 
+    // Used by JSON.stringify for submitting data to the server
     toJSON() {
       return this.toString();
     }
