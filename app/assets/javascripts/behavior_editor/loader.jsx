@@ -21,6 +21,14 @@ requirejs(['../common'], function() {
         });
         if (state) {
           props.selectedBehaviorId = state.selectedBehaviorId;
+          props.group.behaviorVersions = props.group.behaviorVersions.map(ea => {
+            const versionState = state.group.behaviorVersions.find(v => v.behaviorId === ea.behaviorId);
+            if (versionState) {
+              return ea.clone({ shouldRevealCodeEditor: versionState.shouldRevealCodeEditor });
+            } else {
+              return ea;
+            }
+          });
         }
         reload(props);
       }

@@ -10,7 +10,8 @@ define(function(require) {
         functionBody: '',
         triggers: initialTriggerProps.map(ea => new Trigger(ea)),
         config: {},
-        knownEnvVarsUsed: []
+        knownEnvVarsUsed: [],
+        shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0)
       }, props);
 
       Object.defineProperties(this, {
@@ -26,7 +27,8 @@ define(function(require) {
         config: { value: initialProps.config, enumerable: true },
         knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
         createdAt: { value: initialProps.createdAt, enumerable: false },
-        exportId: { value: initialProps.exportId, enumerable: false }
+        exportId: { value: initialProps.exportId, enumerable: false },
+        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: false }
       });
     }
 
