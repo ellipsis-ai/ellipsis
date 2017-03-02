@@ -11,7 +11,7 @@ define(function(require) {
       omitDescription: React.PropTypes.bool,
       limitTriggers: React.PropTypes.bool,
       labelDataType: React.PropTypes.bool,
-      onClick: React.PropTypes.func.isRequired
+      onClick: React.PropTypes.func
     },
 
     getLabelFromTrigger: function(trigger, showLink) {
@@ -125,8 +125,11 @@ define(function(require) {
       }
     },
 
-    onLinkClick: function() {
-      this.props.onClick(this.props.version.groupId, this.props.version.behaviorId);
+    onLinkClick: function(event) {
+      if (this.props.onClick) {
+        this.props.onClick(this.props.version.groupId, this.props.version.behaviorId);
+        event.preventDefault();
+      }
     },
 
     render: function() {
@@ -141,6 +144,7 @@ define(function(require) {
         return (
           <div className={this.props.limitTriggers ? "display-limit-width display-ellipsis" : ""}>
             <a
+              href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.groupId, this.props.version.behaviorId).url}
               onClick={this.onLinkClick}
               className="link-block">
               {this.getLabelFromVersion(this.props.version)}
