@@ -11,7 +11,8 @@ define(function(require) {
       omitDescription: React.PropTypes.bool,
       limitTriggers: React.PropTypes.bool,
       labelDataType: React.PropTypes.bool,
-      onClick: React.PropTypes.func
+      onClick: React.PropTypes.func,
+      isImportable: React.PropTypes.bool
     },
 
     getLabelFromTrigger: function(trigger, showLink) {
@@ -20,7 +21,7 @@ define(function(require) {
         return (
           <span className={`${className} type-monospace`}>{trigger.displayText}</span>
         );
-      } else if (!this.props.version.behaviorId) {
+      } else if (!this.props.version.behaviorId && !this.props.isImportable) {
         return (
           <span className={`${className} type-italic`}>New action</span>
         );
