@@ -1226,10 +1226,40 @@ const BehaviorEditor = React.createClass({
     return !currentMatchesInitial && !previewingVersions;
   },
 
-  behaviorIdIsModified: function(behaviorId) {
-    var currentBehavior = this.getAllBehaviors().find((ea) => ea.behaviorId === behaviorId);
-    var originalBehavior = this.props.group.behaviorVersions.find((ea) => ea.behaviorId === behaviorId);
-    return !(currentBehavior && originalBehavior && currentBehavior.isIdenticalToVersion(originalBehavior));
+  behaviorIsModified: function(currentBehavior) {
+    var originalBehavior = this.props.group.behaviorVersions.find((ea) => ea.behaviorId === currentBehavior.behaviorId);
+    return !(originalBehavior && currentBehavior.isIdenticalToVersion(originalBehavior));
+  },
+
+  getChangeSummary: function() {
+    var actionCount = this.getActionBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
+    var dataTypeCount = this.getDataTypeBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
+
+    if (actionCount > 1) {
+      if (dataTypeCount > 1) {
+        return `Unsaved changes in ${actionCount} actions and ${dataTypeCount} data types`;
+      } else if (dataTypeCount === 1) {
+        return `Unsaved changes in ${actionCount} actions and 1 data type`;
+      } else {
+        return `Unsaved changes in ${actionCount} actions`;
+      }
+    } else if (actionCount === 1) {
+      if (dataTypeCount > 1) {
+        return `Unsaved changes in 1 action and ${dataTypeCount} data types`;
+      } else if (dataTypeCount === 1) {
+        return "Unsaved changes in 1 action and 1 data type";
+      } else {
+        return "Unsaved changes in 1 action";
+      }
+    } else {
+      if (dataTypeCount > 1) {
+        return `Unsaved changes in ${dataTypeCount} data types`;
+      } else if (dataTypeCount === 1) {
+        return "Unsaved changes in 1 data type";
+      } else {
+        return "";
+      }
+    }
   },
 
   isSaving: function() {
@@ -1755,7 +1785,7 @@ const BehaviorEditor = React.createClass({
       );
     } else if (this.isModified()) {
       return (
-        <span className="fade-in type-pink">Unsaved changes</span>
+        <span className="fade-in type-pink">{this.getChangeSummary()}</span>
       );
     } else {
       return "";
@@ -1944,7 +1974,7 @@ const BehaviorEditor = React.createClass({
               onSelectBehavior={this.onSelectBehavior}
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
-              isBehaviorIdModified={this.behaviorIdIsModified}
+              isBehaviorModified={this.behaviorIsModified}
             />
           </Sticky>
         </div>
