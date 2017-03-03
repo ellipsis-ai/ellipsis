@@ -20,7 +20,7 @@
     "eslint": "^2.13.1",
     "eslint-plugin-react": "^5.2.2",
     "javascript-debounce": "1.0.0",
-    "jest-cli": "^12.1.1",
+    "jest": "^19.0.2",
     "moment": "2.14.1",
     "react": "15.3.1",
     "react-addons-test-utils": "15.3.1",
@@ -36,8 +36,11 @@
     "globals": {
       "jsRoutes": {
         "controllers": {
+          "APITokenController": {},
           "ApplicationController": {},
-          "BehaviorEditorController": {}
+          "BehaviorEditorController": {},
+          "EnvironmentVariablesController": {},
+          "OAuth2ApplicationController": {}
         }
       }
     },
@@ -50,18 +53,8 @@
     "modulePathIgnorePatterns": [
       "Ben Newman"
     ],
-    "scriptPreprocessor": "<rootDir>/app/assets/javascripts/amdefinerator",
-    "unmockedModulePathPatterns": [
-      "amdefine",
-      "codemirror",
-      "react",
-      "react-dom",
-      "react-addons-test-utils",
-      "moment",
-      "<rootDir>/app/assets/javascripts/lib/.+",
-      "<rootDir>/app/assets/javascripts/shared_ui/page_with_panels"
-    ],
-    "testDirectoryName": "test",
+    "transform": {".*": "<rootDir>/app/assets/javascripts/amdefinerator"},
+    "testRegex": "((/__tests__/|/test/).*|(\\.|/)(test|spec))\\.jsx?$",
     "testPathIgnorePatterns": [
       "/node_modules/.+",
       "/project/.+",

@@ -1,10 +1,5 @@
-jest
-  .unmock('../app/assets/javascripts/behavior_editor/index')
-  .unmock('../app/assets/javascripts/models/behavior_version')
-  .unmock('../app/assets/javascripts/models/behavior_group')
-  .unmock('../app/assets/javascripts/models/param')
-  .unmock('../app/assets/javascripts/models/response_template')
-  .unmock('../app/assets/javascripts/models/trigger');
+jest.mock('../app/assets/javascripts/behavior_editor/code_editor')
+  .mock('../app/assets/javascripts/shared_ui/react-codemirror');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
@@ -18,7 +13,6 @@ jsRoutes.controllers.BehaviorEditorController.newGroup = jest.fn(() => ({ url: '
 jsRoutes.controllers.BehaviorEditorController.delete = jest.fn(() => ({ url: '/mock_delete_behavior' }));
 jsRoutes.controllers.BehaviorEditorController.duplicate = jest.fn(() => ({ url: '/mock_duplicate_behavior' }));
 jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => ({ url: '/mock_delete_behavior_group' }));
-
 
 describe('BehaviorEditor', () => {
   const defaultConfig = {
