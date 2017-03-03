@@ -5,6 +5,7 @@ var React = require('react'),
   AWSHelp = require('./aws_help'),
   BehaviorNameInput = require('./behavior_name_input'),
   BehaviorGroup = require('../models/behavior_group'),
+  BehaviorGroupEditor = require('./behavior_group_editor'),
   BehaviorVersion = require('../models/behavior_version'),
   BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
@@ -677,7 +678,9 @@ const BehaviorEditor = React.createClass({
   },
 
   updateBehaviorScrollPosition: function() {
-    this.setBehaviorProp('editorScrollPosition', window.scrollY);
+    if (this.getSelectedBehavior()) {
+      this.setBehaviorProp('editorScrollPosition', window.scrollY);
+    }
   },
 
   loadVersions: function() {
@@ -821,6 +824,9 @@ const BehaviorEditor = React.createClass({
   setBehaviorProps: function(props, callback) {
     var existingGroup = this.getBehaviorGroup();
     var existingBehavior = this.getSelectedBehaviorFor(existingGroup, this.getSelectedBehaviorId());
+    if (!existingBehavior) {
+      return;
+    }
     var timestampedBehavior = this.getTimestampedBehavior(existingBehavior.clone(props));
     var newVersionsForBehavior = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
     var newVersionsForGroup =
@@ -1974,11 +1980,11 @@ const BehaviorEditor = React.createClass({
       animationDisabled: true,
       selectedBehaviorId: behaviorId
     }, () => {
-      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
-      var newScrollPosition = this.getBehaviorProp('editorScrollPosition');
-      if (typeof(newScrollPosition) === 'number') {
-        window.scrollTo(window.scrollX, newScrollPosition);
+      if (groupId) {
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
       }
+      var newScrollPosition = this.getBehaviorProp('editorScrollPosition');
+      window.scrollTo(window.scrollX, typeof(newScrollPosition) === 'number' ? newScrollPosition : 0);
       this.setState({
         animationDisabled: false
       });
@@ -2226,7 +2232,13 @@ const BehaviorEditor = React.createClass({
       );
     } else {
       return (
-        <div>Whee</div>
+        <div>
+          <BehaviorGroupEditor
+            group={this.getBehaviorGroup()}
+            onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
+            onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+          />
+        </div>
       );
     }
   },
