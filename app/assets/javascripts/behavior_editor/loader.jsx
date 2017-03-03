@@ -65,7 +65,9 @@ requirejs(['../common'], function() {
 
       const group = BehaviorGroup.fromJson(config.groupData);
       const selectedBehaviorId = config.selectedBehaviorId ? config.selectedBehaviorId : fallbackSelectedBehaviorIdFor(group);
-      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedBehaviorId).url);
+      if (group.id && selectedBehaviorId) {
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedBehaviorId).url);
+      }
       reload(Object.assign({}, config, {
         group: group,
         selectedBehaviorId: selectedBehaviorId,
