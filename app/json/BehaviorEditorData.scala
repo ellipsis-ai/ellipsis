@@ -127,6 +127,12 @@ object BehaviorEditorData {
       }.getOrElse(Future.successful(Seq()))
       paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
       inputSavedAnswerData <- inputSavedAnswerDataFor(maybeGroupData, user, dataService)
+      // make sure the behavior exists and is accesible
+      maybeRealBehaviorId <- maybeBehaviorId.map { behaviorId =>
+        dataService.behaviors.find(behaviorId, user).map { maybeBehavior =>
+          maybeBehavior.map(_.id)
+        }
+      }.getOrElse(Future.successful(None))
     } yield {
       val data = maybeGroupData.getOrElse {
         BehaviorGroupData(
@@ -137,21 +143,7 @@ object BehaviorEditorData {
           icon = None,
           actionInputs = Seq(),
           dataTypeInputs = Seq(),
-          Seq(BehaviorVersionData.buildFor(
-            team.id,
-            groupId = None,
-            None,
-            None,
-            "",
-            "",
-            Seq(),
-            Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
-            BehaviorConfig(None, None, None, None, None, None, None),
-            None,
-            None,
-            None,
-            dataService
-          )),
+          Seq(BehaviorVersionData.newUnsavedFor(team.id, maybeGroupId = None, isDataType = false, dataService)),
           githubUrl = None,
           exportId = None,
           OffsetDateTime.now
@@ -160,7 +152,7 @@ object BehaviorEditorData {
       BehaviorEditorData(
         teamAccess,
         data,
-        maybeBehaviorId,
+        maybeRealBehaviorId,
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         paramTypeData,
         inputSavedAnswerData,

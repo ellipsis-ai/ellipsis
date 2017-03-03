@@ -4,16 +4,14 @@ define(function(require) {
     BehaviorVersion = require('../models/behavior_version'),
     Collapsible = require('../shared_ui/collapsible'),
     Input = require('../form/input'),
-    Textarea = require('../form/textarea'),
-    SVGXIcon = require('../svg/x');
+    Textarea = require('../form/textarea');
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',
     propTypes: {
-      onToggle: React.PropTypes.func.isRequired,
       actionBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       dataTypeBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-      currentBehavior: React.PropTypes.instanceOf(BehaviorVersion),
+      selectedBehavior: React.PropTypes.instanceOf(BehaviorVersion),
       groupId: React.PropTypes.string,
       groupName: React.PropTypes.string.isRequired,
       lastSavedGroupName: React.PropTypes.string.isRequired,
@@ -22,11 +20,10 @@ define(function(require) {
       teamId: React.PropTypes.string.isRequired,
       onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
       onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
-      onSaveBehaviorGroupDetails: React.PropTypes.func.isRequired,
-      onCancelBehaviorGroupDetails: React.PropTypes.func.isRequired,
       onSelectBehavior: React.PropTypes.func.isRequired,
       addNewAction: React.PropTypes.func.isRequired,
-      addNewDataType: React.PropTypes.func.isRequired
+      addNewDataType: React.PropTypes.func.isRequired,
+      isBehaviorModified: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
@@ -45,25 +42,8 @@ define(function(require) {
       return this.props.groupDescription;
     },
 
-    saveNameAndDescription: function() {
-      if (this.groupDetailsHaveUnsavedChanges()) {
-        this.props.onSaveBehaviorGroupDetails();
-      }
-      this.toggleSkillDetails();
-    },
-
-    cancelNameAndDescription: function() {
-      this.props.onCancelBehaviorGroupDetails();
-      this.toggleSkillDetails();
-    },
-
     hasSavedNameOrDescription: function() {
       return !!(this.props.lastSavedGroupName || this.props.lastSavedGroupDescription);
-    },
-
-    groupDetailsHaveUnsavedChanges: function() {
-      return this.props.groupName !== this.props.lastSavedGroupName ||
-        this.props.groupDescription !== this.props.lastSavedGroupDescription;
     },
 
     getEditButtonLabel: function() {
@@ -110,10 +90,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="position-relative" ref="behaviorSwitcher">
-          <div className="position-absolute position-top-right ptxs prxs type-weak">
-            <button ref="closeButton" type="button" className="button-symbol button-s button-subtle" onClick={this.props.onToggle}><SVGXIcon /></button>
-          </div>
+        <div>
 
           <div className="border-bottom ptl pbxl mbl container container-wide">
 
@@ -149,18 +126,6 @@ define(function(require) {
                   rows={"3"}
                 />
               </div>
-              <div className="mtxl">
-                <button type="button"
-                  onClick={this.saveNameAndDescription}
-                  className="button-shrink button-s button-primary mrs mbs"
-                  disabled={!this.groupDetailsHaveUnsavedChanges()}
-                >
-                  Save
-                </button>
-                <button type="button" onClick={this.cancelNameAndDescription} className="button-shrink button-s mbs">
-                  Cancel
-                </button>
-              </div>
             </Collapsible>
           </div>
 
@@ -170,22 +135,24 @@ define(function(require) {
                 ref="actionSwitcher"
                 heading="Actions"
                 behaviors={this.props.actionBehaviors}
-                currentBehavior={this.props.currentBehavior}
+                selectedBehavior={this.props.selectedBehavior}
                 onAddNew={this.props.addNewAction}
                 addNewLabel="Add new action"
                 emptyMessage="Add actions to provide a response using custom data types for input."
                 onSelectBehavior={this.props.onSelectBehavior}
+                isBehaviorModified={this.props.isBehaviorModified}
               />
 
               <BehaviorSwitcherGroup
                 ref="dataTypeSwitcher"
                 heading="Data types"
                 behaviors={this.props.dataTypeBehaviors}
-                currentBehavior={this.props.currentBehavior}
+                selectedBehavior={this.props.selectedBehavior}
                 onAddNew={this.props.addNewDataType}
                 addNewLabel="Add new data type"
                 emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
                 onSelectBehavior={this.props.onSelectBehavior}
+                isBehaviorModified={this.props.isBehaviorModified}
               />
             </div>
           ) : null}

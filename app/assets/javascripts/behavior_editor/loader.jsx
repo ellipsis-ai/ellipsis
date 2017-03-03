@@ -2,8 +2,8 @@
 
 requirejs(['../common'], function() {
   requirejs(
-    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './behavior_editor/index', './models/behavior_group'],
-    function(Core, Fetch, React, ReactDOM, BehaviorEditor, BehaviorGroup) {
+    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index', './models/behavior_group'],
+    function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor, BehaviorGroup) {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
         groupData: BehaviorEditorConfiguration.group,
         group: BehaviorGroup.fromJson(BehaviorEditorConfiguration.group),
@@ -21,6 +21,14 @@ requirejs(['../common'], function() {
         });
         if (state) {
           props.selectedBehaviorId = state.selectedBehaviorId;
+          props.group.behaviorVersions = props.group.behaviorVersions.map(ea => {
+            const versionState = state.group.behaviorVersions.find(v => v.behaviorId === ea.behaviorId);
+            if (versionState) {
+              return ea.clone({ shouldRevealCodeEditor: versionState.shouldRevealCodeEditor });
+            } else {
+              return ea;
+            }
+          });
         }
         reload(props);
       }
@@ -56,9 +64,11 @@ requirejs(['../common'], function() {
       }
 
       const group = BehaviorGroup.fromJson(config.groupData);
+      const selectedBehaviorId = config.selectedBehaviorId ? config.selectedBehaviorId : fallbackSelectedBehaviorIdFor(group);
+      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedBehaviorId).url);
       reload(Object.assign({}, config, {
         group: group,
-        selectedBehaviorId: config.selectedBehaviorId ? config.selectedBehaviorId : fallbackSelectedBehaviorIdFor(group),
+        selectedBehaviorId: selectedBehaviorId,
         justSaved: false
       }));
     }

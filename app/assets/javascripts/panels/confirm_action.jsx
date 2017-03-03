@@ -28,6 +28,10 @@ define(function(require) {
       return labels;
     },
 
+    onCancelClick: function() {
+      this.props.onCancelClick();
+    },
+
     render: function() {
       return (
         <div className="box-action">
@@ -43,7 +47,7 @@ define(function(require) {
               />
               <button type="button"
                 className="button-primary mbs"
-                onClick={this.props.onCancelClick}
+                onClick={this.onCancelClick}
                 disabled={this.props.isConfirming}>
                 {this.props.cancelText || "Cancel"}
               </button>

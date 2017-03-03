@@ -38,7 +38,8 @@ describe('BehaviorEditor', () => {
           }],
           config: {},
           knownEnvVarsUsed: [],
-          groupId: '1'
+          groupId: '1',
+          shouldRevealCodeEditor: true
         }
       ]
     },
@@ -98,7 +99,7 @@ describe('BehaviorEditor', () => {
 
     it('returns a string even when no function is defined', () => {
       delete firstBehavior.functionBody;
-      editorConfig.shouldRevealCodeEditor = false;
+      firstBehavior.shouldRevealCodeEditor = false;
       let editor = createEditor(editorConfig);
       expect(editor.getBehaviorFunctionBody()).toEqual("");
     });

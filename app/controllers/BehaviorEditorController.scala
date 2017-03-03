@@ -91,14 +91,15 @@ class BehaviorEditorController @Inject() (
       maybeBehaviorGroup <- data.groupId.map { groupId =>
         dataService.behaviorGroups.find(groupId)
       }.getOrElse(Future.successful(None))
-      maybeBehavior <- data.behaviorId.map { behaviorId =>
+      maybeExistingBehavior <- data.behaviorId.map { behaviorId =>
         dataService.behaviors.find(behaviorId, user)
-      }.getOrElse {
+      }.getOrElse(Future.successful(None))
+      maybeBehavior <- maybeExistingBehavior.map(b => Future.successful(Some(b))).getOrElse {
         teamAccess.maybeTargetTeam.map { team =>
           maybeBehaviorGroup.map { behaviorGroup =>
-            dataService.behaviors.createFor(behaviorGroup, None, maybeDataTypeName).map(Some(_))
+            dataService.behaviors.createFor(behaviorGroup, data.behaviorId, None, maybeDataTypeName).map(Some(_))
           }.getOrElse {
-            dataService.behaviors.createFor(team, None, maybeDataTypeName).map(Some(_))
+            dataService.behaviors.createFor(team, data.behaviorId, None, maybeDataTypeName).map(Some(_))
           }
         }.getOrElse(Future.successful(None))
       }
@@ -129,6 +130,16 @@ class BehaviorEditorController @Inject() (
         json.validate[BehaviorGroupData] match {
           case JsSuccess(data, jsPath) => {
             for {
+              maybeGroup <- data.id.map { groupId =>
+                dataService.behaviorGroups.find(groupId)
+              }.getOrElse(Future.successful(None))
+              _ <- maybeGroup.map { group =>
+                val updated = group.copy(
+                  name = data.name.getOrElse(""),
+                  maybeDescription = data.description
+                )
+                dataService.behaviorGroups.save(updated).map(_ => {})
+              }.getOrElse(Future.successful({}))
               behaviorVersions <- Future.sequence(data.behaviorVersions.map { ea =>
                 saveBehavior(ea, user)
               }).map(_.flatten)
@@ -151,6 +162,11 @@ class BehaviorEditorController @Inject() (
         }
       }
     )
+  }
+
+  def newUnsavedBehavior(isDataType: Boolean, teamId: String, maybeGroupId: Option[String]) = silhouette.SecuredAction { implicit request =>
+    val data = BehaviorVersionData.newUnsavedFor(teamId, maybeGroupId, isDataType, dataService)
+    Ok(Json.toJson(data))
   }
 
   private val deleteForm = Form(
@@ -243,6 +259,7 @@ class BehaviorEditorController @Inject() (
             version.team.id,
             behavior.maybeGroup.map(_.id),
             Some(behavior.id),
+            isNewBehavior = false,
             version.maybeDescription,
             version.functionBody,
             version.maybeResponseTemplate.getOrElse(""),
@@ -404,68 +421,6 @@ class BehaviorEditorController @Inject() (
       Array()
     }
     Ok(Json.toJson(Array(content)))
-  }
-
-  case class BehaviorGroupNameInfo(groupId: String, name: String)
-
-  private val saveBehaviorGroupNameForm = Form(
-    mapping(
-      "groupId" -> nonEmptyText,
-      "name" -> text
-    )(BehaviorGroupNameInfo.apply)(BehaviorGroupNameInfo.unapply)
-  )
-
-  def saveBehaviorGroupName = silhouette.SecuredAction.async { implicit request =>
-    saveBehaviorGroupNameForm.bindFromRequest.fold(
-      formWithErrors => {
-        Future.successful(BadRequest(formWithErrors.errorsAsJson))
-      },
-      info => {
-        for {
-          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.groupId)
-          maybeSaved <- maybeBehaviorGroup.map { group =>
-            dataService.behaviorGroups.save(group.copy(name = info.name)).map(Some(_))
-          }.getOrElse(Future.successful(None))
-        } yield {
-          maybeSaved.map { saved =>
-            Ok("Success")
-          }.getOrElse {
-            NotFound(s"Skill not found: ${info.groupId}")
-          }
-        }
-      }
-    )
-  }
-
-  case class BehaviorGroupDescriptionInfo(groupId: String, description: String)
-
-  private val saveBehaviorGroupDescriptionForm = Form(
-    mapping(
-      "groupId" -> nonEmptyText,
-      "description" -> text
-    )(BehaviorGroupDescriptionInfo.apply)(BehaviorGroupDescriptionInfo.unapply)
-  )
-
-  def saveBehaviorGroupDescription = silhouette.SecuredAction.async { implicit request =>
-    saveBehaviorGroupDescriptionForm.bindFromRequest.fold(
-      formWithErrors => {
-        Future.successful(BadRequest(formWithErrors.errorsAsJson))
-      },
-      info => {
-        for {
-          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.groupId)
-          maybeSaved <- maybeBehaviorGroup.map { group =>
-            dataService.behaviorGroups.save(group.copy(maybeDescription = Some(info.description))).map(Some(_))
-          }.getOrElse(Future.successful(None))
-        } yield {
-          maybeSaved.map { saved =>
-            Ok("Success")
-          }.getOrElse {
-            NotFound(s"Skill not found: ${info.groupId}")
-          }
-        }
-      }
-    )
   }
 
 }

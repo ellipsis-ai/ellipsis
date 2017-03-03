@@ -1,5 +1,6 @@
 define(function(require) {
-  var Param = require('./param'),
+  var DeepEqual = require('../lib/deep_equal'),
+    Param = require('./param'),
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
@@ -10,13 +11,16 @@ define(function(require) {
         functionBody: '',
         triggers: initialTriggerProps.map(ea => new Trigger(ea)),
         config: {},
-        knownEnvVarsUsed: []
+        knownEnvVarsUsed: [],
+        shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0),
+        editorScrollPosition: 0
       }, props);
 
       Object.defineProperties(this, {
         groupId: { value: initialProps.groupId, enumerable: true },
         teamId: { value: initialProps.teamId, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
+        isNewBehavior: { value: initialProps.isNewBehavior, enumerable: true },
         name: { value: initialProps.name, enumerable: true },
         description: { value: initialProps.description, enumerable: true },
         functionBody: { value: initialProps.functionBody, enumerable: true },
@@ -25,8 +29,10 @@ define(function(require) {
         triggers: { value: initialProps.triggers, enumerable: true },
         config: { value: initialProps.config, enumerable: true },
         knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
-        createdAt: { value: initialProps.createdAt, enumerable: false },
-        exportId: { value: initialProps.exportId, enumerable: false }
+        createdAt: { value: initialProps.createdAt, enumerable: true },
+        exportId: { value: initialProps.exportId, enumerable: true },
+        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true },
+        editorScrollPosition: { value: initialProps.editorScrollPosition, enumerable: true }
       });
     }
 
@@ -62,8 +68,20 @@ define(function(require) {
       }
     }
 
+    // Used by JSON.stringify for submitting data to the server
+    toJSON() {
+      return this.clone({
+        createdAt: null,
+        editorScrollPosition: null
+      });
+    }
+
+    forEqualityComparison() {
+      return this.toJSON();
+    }
+
     isIdenticalToVersion(behaviorVersion) {
-      return JSON.stringify(this) === JSON.stringify(behaviorVersion);
+      return DeepEqual.isEqual(this.forEqualityComparison(), behaviorVersion.forEqualityComparison());
     }
 
     get sortKey() {
