@@ -1441,7 +1441,8 @@ const BehaviorEditor = React.createClass({
       error: null,
       selectedSavedAnswerInputId: null,
       behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
-      hasMobileLayout: this.windowIsMobile()
+      hasMobileLayout: this.windowIsMobile(),
+      animationDisabled: false
     };
   },
 
@@ -1504,7 +1505,7 @@ const BehaviorEditor = React.createClass({
               />
             </div>
 
-            <Collapsible revealWhen={!!this.getAWSConfig()}>
+            <Collapsible revealWhen={!!this.getAWSConfig()} animationDisabled={this.animationIsDisabled()}>
               <div className="plxxxl prs pbs mbs border-bottom border-light">
                 <AWSConfig
                   envVariableNames={this.getEnvVariableNames()}
@@ -1722,7 +1723,7 @@ const BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.layoutDidUpdate}>
+          <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.layoutDidUpdate} animationDisabled={this.animationIsDisabled()}>
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
@@ -1947,6 +1948,7 @@ const BehaviorEditor = React.createClass({
 
   onSelectBehavior: function(groupId, behaviorId) {
     this.setState({
+      animationDisabled: true,
       selectedBehaviorId: behaviorId
     }, () => {
       BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
@@ -1954,7 +1956,14 @@ const BehaviorEditor = React.createClass({
       if (typeof(newScrollPosition) === 'number') {
         window.scrollTo(window.scrollX, newScrollPosition);
       }
+      this.setState({
+        animationDisabled: false
+      });
     });
+  },
+
+  animationIsDisabled: function() {
+    return this.state.animationDisabled;
   },
 
   addNewBehavior: function(isDataType) {
@@ -2085,13 +2094,14 @@ const BehaviorEditor = React.createClass({
                   onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
                   savedAnswers={this.props.savedAnswers}
                   onToggleSavedAnswer={this.toggleSavedAnswerEditor}
+                  animationDisabled={this.animationIsDisabled()}
                 />
 
                 <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0}>
                   <hr className="man thin bg-gray-light" />
                 </Collapsible>
 
-                <Collapsible revealWhen={!this.getSelectedBehavior().shouldRevealCodeEditor}>
+                <Collapsible revealWhen={!this.getSelectedBehavior().shouldRevealCodeEditor} animationDisabled={this.animationIsDisabled()}>
                   <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
                     <div className="container container-wide">
                       <div className="columns columns-elastic mobile-columns-float">
@@ -2111,7 +2121,7 @@ const BehaviorEditor = React.createClass({
                   </div>
                 </Collapsible>
 
-                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0.5}>
+                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0.5} animationDisabled={this.animationIsDisabled()}>
 
                   <div className="container container-wide">
                     <div className="ptxl">

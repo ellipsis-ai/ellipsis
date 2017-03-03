@@ -37,7 +37,8 @@ define(function(require) {
           myValueString: React.PropTypes.string
         })
       ).isRequired,
-      onToggleSavedAnswer: React.PropTypes.func.isRequired
+      onToggleSavedAnswer: React.PropTypes.func.isRequired,
+      animationDisabled: React.PropTypes.bool
     },
 
     onChange: function(index, data) {
@@ -115,7 +116,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <Collapsible revealWhen={!this.hasParams()}>
+          <Collapsible revealWhen={!this.hasParams()} animationDisabled={this.props.animationDisabled}>
             <div className="bg-blue-lighter border-top border-blue ptl pbs">
               <div className="container container-wide">
                 <div className="columns columns-elastic mobile-columns-float">
@@ -134,7 +135,7 @@ define(function(require) {
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={this.hasParams()}>
+          <Collapsible revealWhen={this.hasParams()} animationDisabled={this.props.animationDisabled}>
 
             <hr className="mtn thin bg-gray-light" />
 
