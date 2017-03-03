@@ -56,15 +56,16 @@ requirejs(['../common'], function() {
       }
 
       function fallbackSelectedBehaviorIdFor(group) {
-        if (group.behaviorVersions.find(ea => ea.behaviorId === null)) {
-          return null;
-        } else {
+        var isSimpleBehaviorGroup = !group.name && !group.description && group.behaviorVersions.length === 1;
+        if (isSimpleBehaviorGroup) {
           return group.behaviorVersions[0].behaviorId;
+        } else {
+          return null;
         }
       }
 
       const group = BehaviorGroup.fromJson(config.groupData);
-      const selectedBehaviorId = config.selectedBehaviorId ? config.selectedBehaviorId : fallbackSelectedBehaviorIdFor(group);
+      const selectedBehaviorId = config.selectedBehaviorId || fallbackSelectedBehaviorIdFor(group);
       if (group.id && selectedBehaviorId) {
         BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedBehaviorId).url);
       }

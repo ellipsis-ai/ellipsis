@@ -7,13 +7,13 @@ var React = require('react'),
 return React.createClass({
   propTypes: {
     firstParamName: React.PropTypes.string,
-    template: React.PropTypes.instanceOf(ResponseTemplate).isRequired,
+    template: React.PropTypes.instanceOf(ResponseTemplate),
     onCollapseClick: React.PropTypes.func.isRequired
   },
 
   getUserParamTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.props.template.includesAnyParam()}>
+      <Checklist.Item checkedWhen={this.props.template && this.props.template.includesAnyParam()}>
         Repeat back user input:<br />
         <div className="box-code-example">
           You said {this.getExampleParamName()}
@@ -28,7 +28,7 @@ return React.createClass({
 
   getSuccessResultTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.props.template.includesSuccessResult()}>
+      <Checklist.Item checkedWhen={this.props.template && this.props.template.includesSuccessResult()}>
         Say the result provided to <code>ellipsis.success</code>, if it’s a string:<br />
         <div className="box-code-example">
           The answer is {"{successResult}"}
@@ -39,7 +39,7 @@ return React.createClass({
 
   getPathTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.props.template.includesPath()}>
+      <Checklist.Item checkedWhen={this.props.template && this.props.template.includesPath()}>
         Include properties of the result if it’s an object:<br />
         <div className="box-code-example">
           Name: {"{successResult.user.name}"}
@@ -50,7 +50,7 @@ return React.createClass({
 
   getIterationTemplateHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.props.template.includesIteration()}>
+      <Checklist.Item checkedWhen={this.props.template && this.props.template.includesIteration()}>
         Iterate through a list/array of items:<br />
         <div className="box-code-example">
           {"{for item in successResult.items}"}<br />
@@ -63,7 +63,7 @@ return React.createClass({
 
   getLogicHelp: function() {
     return (
-      <Checklist.Item checkedWhen={this.props.template.includesIfLogic()}>
+      <Checklist.Item checkedWhen={this.props.template && this.props.template.includesIfLogic()}>
         Use if/else logic with strict boolean values:<br />
         <div className="box-code-example">
           {"{if successResult.booleanValue}"}<br />

@@ -132,10 +132,12 @@ const BehaviorEditor = React.createClass({
   },
 
   getRequiredOAuth2ApiConfigs: function() {
+    var selectedBehavior = this.getSelectedBehavior();
     if (this.state) {
-      return this.getBehaviorConfig()['requiredOAuth2ApiConfigs'] || [];
-    } else if (this.getSelectedBehavior().config) {
-      return this.getSelectedBehavior().config.requiredOAuth2ApiConfigs || [];
+      var config = this.getBehaviorConfig();
+      return config ? config['requiredOAuth2ApiConfigs'] : [];
+    } else if (selectedBehavior && selectedBehavior.config) {
+      return selectedBehavior.config.requiredOAuth2ApiConfigs || [];
     } else {
       return [];
     }
@@ -162,10 +164,11 @@ const BehaviorEditor = React.createClass({
   },
 
   getAWSConfig: function() {
+    var selectedBehavior = this.getSelectedBehavior();
     if (this.state) {
       return this.getBehaviorConfig()['aws'];
-    } else if (this.getSelectedBehavior().config) {
-      return this.getSelectedBehavior().config.aws;
+    } else if (selectedBehavior && selectedBehavior.config) {
+      return selectedBehavior.config.aws;
     } else {
       return undefined;
     }
@@ -246,10 +249,15 @@ const BehaviorEditor = React.createClass({
   },
 
   getBehaviorProp: function(key) {
-    return this.getSelectedBehavior()[key];
+    var selectedBehavior = this.getSelectedBehavior();
+    return selectedBehavior ? selectedBehavior[key] : null;
   },
 
   getBehaviorTemplate: function() {
+    var selectedBehavior = this.getSelectedBehavior();
+    if (!selectedBehavior) {
+      return null;
+    }
     var template = this.getBehaviorProp('responseTemplate');
     if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
       return this.getDefaultBehaviorTemplate();
@@ -259,7 +267,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getBehaviorTriggers: function() {
-    return this.getBehaviorProp('triggers') || this.getInitialTriggersFromBehavior(this.getSelectedBehavior());
+    return this.getBehaviorProp('triggers') || [];
   },
 
   getBehaviorConfig: function() {
@@ -267,7 +275,8 @@ const BehaviorEditor = React.createClass({
   },
 
   getDataTypeName: function() {
-    return this.getBehaviorConfig().dataTypeName;
+    var config = this.getBehaviorConfig();
+    return config && config.dataTypeName;
   },
 
   shouldForcePrivateResponse: function() {
@@ -359,14 +368,18 @@ const BehaviorEditor = React.createClass({
   },
 
   buildEnvVarNotifications: function() {
-    return this.getEnvVariables().
-      filter((ea) => this.getSelectedBehavior().knownEnvVarsUsed.includes(ea.name)).
-      filter((ea) => !ea.isAlreadySavedWithValue).
-      map((ea) => ({
+    var selectedBehavior = this.getSelectedBehavior();
+    if (selectedBehavior) {
+      return this.getEnvVariables().filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name)).filter((ea) => !ea.isAlreadySavedWithValue).map((ea) => ({
         kind: "env_var_not_defined",
         environmentVariableName: ea.name,
-        onClick: () => { this.showEnvVariableSetter(ea.name); }
+        onClick: () => {
+          this.showEnvVariableSetter(ea.name);
+        }
       }));
+    } else {
+      return [];
+    }
   },
 
   getOAuth2ApiWithId: function(apiId) {
@@ -467,13 +480,18 @@ const BehaviorEditor = React.createClass({
   },
 
   buildTemplateNotifications: function() {
-    var template = this.getBehaviorTemplate();
-    var validParams = this.getValidParamNamesForTemplate();
-    var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
-    return unknownTemplateParams.map((paramName) => ({
-      kind: "unknown_param_in_template",
-      name: paramName
-    }));
+    var selectedBehavior = this.getSelectedBehavior();
+    if (selectedBehavior) {
+      var template = this.getBehaviorTemplate();
+      var validParams = this.getValidParamNamesForTemplate();
+      var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
+      return unknownTemplateParams.map((paramName) => ({
+        kind: "unknown_param_in_template",
+        name: paramName
+      }));
+    } else {
+      return [];
+    }
   },
 
   buildNotifications: function() {
@@ -747,7 +765,8 @@ const BehaviorEditor = React.createClass({
   },
 
   checkDataAndCallback: function(callback) {
-    if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
+    var template = this.getBehaviorTemplate();
+    if (template && template.toString() === this.getDefaultBehaviorTemplate().toString()) {
       this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), callback);
     } else {
       callback();
@@ -1216,7 +1235,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isExistingBehavior: function() {
-    return !this.getSelectedBehavior().isNewBehavior;
+    return !!this.getSelectedBehavior() && !this.getSelectedBehavior().isNewBehavior;
   },
 
   isExistingGroup: function() {
@@ -1224,7 +1243,9 @@ const BehaviorEditor = React.createClass({
   },
 
   isFinishedBehavior: function() {
-    return this.isExistingBehavior() && !!(this.getOriginalSelectedBehavior().functionBody || this.getOriginalSelectedBehavior().responseTemplate.text);
+    var originalSelectedBehavior = this.getOriginalSelectedBehavior();
+    var completedOriginal = !!(originalSelectedBehavior && (originalSelectedBehavior.functionBody || originalSelectedBehavior.responseTemplate.text));
+    return this.isExistingBehavior() && completedOriginal;
   },
 
   isModified: function() {
@@ -1420,6 +1441,8 @@ const BehaviorEditor = React.createClass({
 
   getInitialState: function() {
     const selectedBehavior = this.getSelectedBehavior();
+    const hasModifiedTemplate = !!(selectedBehavior && selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text);
+    const versions = selectedBehavior ? [this.getTimestampedBehavior(selectedBehavior)] : [];
     return {
       group: this.props.group,
       selectedBehaviorId: this.props.selectedBehaviorId,
@@ -1429,9 +1452,9 @@ const BehaviorEditor = React.createClass({
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
       envVariables: this.getInitialEnvVariables(),
-      hasModifiedTemplate: !!(selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text),
+      hasModifiedTemplate: hasModifiedTemplate,
       notifications: this.buildNotifications(),
-      versions: [this.getTimestampedBehavior(selectedBehavior)],
+      versions: versions,
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
@@ -1453,8 +1476,8 @@ const BehaviorEditor = React.createClass({
       var newState = {
         justSaved: true,
         group: newGroup,
-        selectedBehaviorId: newSelectedBehaviorVersion.behaviorId,
-        versions: [this.getTimestampedBehavior(newSelectedBehaviorVersion)],
+        selectedBehaviorId: newSelectedBehaviorVersion ? newSelectedBehaviorVersion.behaviorId : null,
+        versions: newSelectedBehaviorVersion ? [this.getTimestampedBehavior(newSelectedBehaviorVersion)] : [],
         versionsLoadStatus: null,
         error: null
       };
@@ -1466,7 +1489,7 @@ const BehaviorEditor = React.createClass({
       if (typeof(nextProps.onLoad) === 'function') {
         nextProps.onLoad();
       }
-      if (newSelectedBehaviorVersion.behaviorId) {
+      if (newSelectedBehaviorVersion && newSelectedBehaviorVersion.behaviorId) {
         BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newGroup.id, newSelectedBehaviorVersion.behaviorId).url);
       }
     }
@@ -2002,7 +2025,7 @@ const BehaviorEditor = React.createClass({
               ref="behaviorSwitcher"
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
-              selectedBehavior={this.getTimestampedBehavior(this.getSelectedBehavior())}
+              selectedBehavior={this.getSelectedBehavior()}
               groupId={this.getBehaviorGroup().id}
               groupName={this.getBehaviorGroup().name || ""}
               lastSavedGroupName={this.state.lastSavedGroupName}
