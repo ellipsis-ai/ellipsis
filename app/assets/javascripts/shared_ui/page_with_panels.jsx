@@ -28,21 +28,24 @@ define(function(require) {
 
         toggleActivePanel: function(name, beModal, optionalCallback) {
           var alreadyOpen = this.state.activePanelName === name;
+          var callback = typeof(optionalCallback) === 'function' ?
+            optionalCallback : (() => {
+              var activeModal = this.getActiveModalElement();
+              if (activeModal) {
+                this.focusOnPrimaryOrFirstPossibleElement(activeModal);
+              }
+            });
           this.setState({
             activePanelName: alreadyOpen ? this.state.previousPanelName : name,
             activePanelIsModal: alreadyOpen ? this.state.previousPanelIsModal : !!beModal,
             previousPanelName: this.state.activePanelName,
             previousPanelIsModal: this.state.activePanelIsModal
-          }, optionalCallback || (() => {
-              var activeModal = this.getActiveModalElement();
-              if (activeModal) {
-                this.focusOnPrimaryOrFirstPossibleElement(activeModal);
-              }
-            }));
+          }, callback);
         },
 
         clearActivePanel: function(optionalCallback) {
-          this.setState(this.getInitialState(), optionalCallback);
+          var callback = typeof(optionalCallback) === 'function' ? optionalCallback : null;
+          this.setState(this.getInitialState(), callback);
         },
 
         handleEscKey: function() {
