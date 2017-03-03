@@ -2190,6 +2190,24 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  renderEditor: function() {
+    if (this.getSelectedBehaviorId()) {
+      return (
+        <div>
+          <div className="container container-wide mtl">
+            {this.getBehaviorHeading()}
+          </div>
+
+          {this.renderForBehaviorType()}
+        </div>
+      );
+    } else {
+      return (
+        <div>Whee</div>
+      );
+    }
+  },
+
   render: function() {
     return (
       <div>
@@ -2199,11 +2217,7 @@ const BehaviorEditor = React.createClass({
             <div className="column column-page-main-wide flex-column flex-column-center">
               {this.renderSwitcherToggle()}
 
-              <div className="container container-wide mtl">
-                {this.getBehaviorHeading()}
-              </div>
-
-              {this.renderForBehaviorType()}
+              {this.renderEditor()}
             </div>
           </div>
 
