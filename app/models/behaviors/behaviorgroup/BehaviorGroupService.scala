@@ -1,6 +1,7 @@
 package models.behaviors.behaviorgroup
 
 import models.team.Team
+import play.api.Configuration
 
 import scala.concurrent.Future
 
@@ -19,5 +20,11 @@ trait BehaviorGroupService {
   def merge(groups: Seq[BehaviorGroup]): Future[BehaviorGroup]
 
   def delete(group: BehaviorGroup): Future[BehaviorGroup]
+
+  def editLinkFor(groupId: String, configuration: Configuration): String = {
+    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val path = controllers.routes.BehaviorEditorController.edit(groupId)
+    s"$baseUrl$path"
+  }
 
 }

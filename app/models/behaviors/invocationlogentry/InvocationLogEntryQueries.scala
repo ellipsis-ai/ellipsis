@@ -10,7 +10,7 @@ object InvocationLogEntryQueries {
 
   val all = TableQuery[InvocationLogEntriesTable]
   val allWithUser = all.joinLeft(UserQueries.all).on(_.maybeUserId === _.id)
-  val allWithVersion = allWithUser.join(BehaviorVersionQueries.allWithBehavior).on(_._1.behaviorVersionId === _._1._1.id)
+  val allWithVersion = allWithUser.join(BehaviorVersionQueries.allWithGroupVersion).on(_._1.behaviorVersionId === _._1._1._1.id)
 
   type TupleType = ((RawInvocationLogEntry, Option[User]), BehaviorVersionQueries.TupleType)
 
@@ -35,7 +35,7 @@ object InvocationLogEntryQueries {
   def uncompiledCountsForDateQuery(date: Rep[OffsetDateTime]) = {
     allWithVersion.
       filter { case((entry, _), _) => entry.createdAt.trunc("day") === date }.
-      groupBy { case(_, (_, ((_, team), _))) => team.id }.
+      groupBy { case(_, (_, ((_, (_, team)), _))) => team.id }.
       map { case(teamId, q) =>
         (teamId, q.length)
       }
@@ -45,7 +45,7 @@ object InvocationLogEntryQueries {
   def uncompiledUniqueInvokingUserCountsForDateQuery(date: Rep[OffsetDateTime]) = {
     allWithVersion.
       filter { case((entry, _), _) => entry.createdAt.trunc("day") === date }.
-      groupBy { case((entry, _), (_, ((_, team), _))) => (team.id, entry.maybeUserIdForContext.getOrElse("<no user>")) }.
+      groupBy { case((entry, _), (_, ((_, (_, team)), _))) => (team.id, entry.maybeUserIdForContext.getOrElse("<no user>")) }.
       map { case((teamId, userId), q) =>
         (teamId, userId, 1)
       }.
@@ -58,7 +58,7 @@ object InvocationLogEntryQueries {
   def uncompiledUniqueInvokedBehaviorCountsForDateQuery(date: Rep[OffsetDateTime]) = {
     allWithVersion.
       filter { case((entry, _), _) => entry.createdAt.trunc("day") === date }.
-      groupBy { case(_, ((_, _), ((behavior, team), _))) => (team.id, behavior.id) }.
+      groupBy { case(_, ((_, _), ((behavior, (_, team)), _))) => (team.id, behavior.id) }.
       map { case((teamId, behaviorId), q) =>
         (teamId, behaviorId, 1)
       }.
@@ -69,7 +69,7 @@ object InvocationLogEntryQueries {
 
   def uncompiledForTeamForDateQuery(teamId: Rep[String], date: Rep[OffsetDateTime]) = {
     allWithVersion.
-      filter { case(_, (_, ((_, team), _))) => teamId === team.id}.
+      filter { case(_, (_, ((_, (_, team)), _))) => teamId === team.id}.
       filter { case((entry, _), _) => entry.createdAt.trunc("day") === date }
   }
   val forTeamForDateQuery = Compiled(uncompiledForTeamForDateQuery _)
@@ -81,7 +81,7 @@ object InvocationLogEntryQueries {
                                      maybeUserId: Rep[Option[String]]
                                    ) = {
     allWithVersion.
-      filter { case(_, ((version, _), _)) => version.behaviorId === behaviorId }.
+      filter { case(_, (((version, _), _), _)) => version.behaviorId === behaviorId }.
       filter { case((entry, _), _) => entry.createdAt >= from && entry.createdAt <= to }.
       filter { case((entry, _), _) => maybeUserId.isEmpty || entry.maybeUserId === maybeUserId }
   }

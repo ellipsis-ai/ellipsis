@@ -1,7 +1,9 @@
 package models.behaviors.builtins
 
+import java.time.OffsetDateTime
+
 import akka.actor.ActorSystem
-import json.{BehaviorConfig, BehaviorTriggerData, BehaviorVersionData}
+import json.{BehaviorConfig, BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors._
 import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
@@ -20,41 +22,57 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
       }.getOrElse(Future.successful(None))
       messages <- event.recentMessages(dataService)
       qaExtractor <- Future.successful(QuestionAnswerExtractor(messages))
-      maybeBehavior <- maybeTeam.map { team =>
-        dataService.behaviors.createFor(team, None, None, None).map(Some(_))
+      maybeGroup <- maybeTeam.map { team =>
+        dataService.behaviorGroups.createFor(None, None, None, None, team).map(Some(_))
       }.getOrElse(Future.successful(None))
-      maybeVersionData <- Future.successful(maybeBehavior.map { behavior =>
+      maybeVersionData <- Future.successful(maybeGroup.map { group =>
         val triggerData = qaExtractor.maybeLastQuestion.map { lastQuestion =>
           Seq(BehaviorTriggerData(lastQuestion, requiresMention = false, isRegex = false, caseSensitive = false))
         }.getOrElse(Seq())
         Some(
-          BehaviorVersionData.buildFor(
-            behavior.team.id,
-            behavior.maybeGroup.map(_.id),
-            Some(behavior.id),
-            isNewBehavior = false,
+          BehaviorGroupData(
+            Some(group.id),
+            group.team.id,
             None,
-            "",
-            qaExtractor.possibleAnswerContent,
+            None,
+            None,
             Seq(),
-            triggerData,
-            BehaviorConfig(None, None, None, None, None, None, None),
+            Seq(),
+            Seq(
+              BehaviorVersionData.buildFor(
+                group.team.id,
+                None,
+                None,
+                isNewBehavior = false,
+                None,
+                "",
+                qaExtractor.possibleAnswerContent,
+                Seq(),
+                triggerData,
+                BehaviorConfig(None, None, None, None, None, None, None),
+                None,
+                None,
+                None,
+                dataService
+              )
+            ),
             None,
             None,
-            None,
-            dataService
+            OffsetDateTime.now
           )
+
         )
       }.getOrElse(None))
-      maybeBehaviorVersion <- (for {
-        behavior <- maybeBehavior
+      maybeVersion <- (for {
+        group <- maybeGroup
+        user <- maybeUser
         data <- maybeVersionData
       } yield {
-        dataService.behaviorVersions.createFor(behavior, maybeUser, data).map(Some(_))
+        dataService.behaviorGroupVersions.createFor(group, user, data).map(Some(_))
       }).getOrElse(Future.successful(None))
     } yield {
-      maybeBehaviorVersion.map { behaviorVersion =>
-        val link = dataService.behaviors.editLinkFor(behaviorVersion.behavior.id, lambdaService.configuration)
+      maybeVersion.map { groupVersion =>
+        val link = dataService.behaviorGroups.editLinkFor(groupVersion.group.id, lambdaService.configuration)
         SimpleTextResult(event, s"OK, I compiled recent messages into [a new skill]($link)", forcePrivateResponse = false)
       }.getOrElse{
         NoResponseResult(event, None)

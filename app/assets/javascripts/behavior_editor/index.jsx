@@ -515,6 +515,10 @@ const BehaviorEditor = React.createClass({
     return behavior.clone({ createdAt: Date.now() });
   },
 
+  getTimestampedGroup: function(group) {
+    return group.clone({ createdAt: Date.now() });
+  },
+
   getVersions: function() {
     return this.state.versions;
   },
@@ -659,18 +663,18 @@ const BehaviorEditor = React.createClass({
   },
 
   loadVersions: function() {
-    var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.getSelectedBehaviorId()).url;
+    var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.getBehaviorGroup().id).url;
     this.setState({
       versionsLoadStatus: 'loading'
     });
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
-        var behaviorVersions = json.map((version) => {
-          return BehaviorVersion.fromJson(version);
+        var versions = json.map((version) => {
+          return BehaviorGroup.fromJson(version);
         });
         this.setState({
-          versions: this.state.versions.concat(behaviorVersions),
+          versions: this.state.versions.concat(versions),
           versionsLoadStatus: 'loaded'
         });
         this.refs.versionsPanel.reset();
@@ -766,13 +770,8 @@ const BehaviorEditor = React.createClass({
 
   showVersionIndex: function(versionIndex, optionalCallback) {
     var version = this.getVersions()[versionIndex];
-    var newBehavior = version.clone({
-      groupId: this.getSelectedBehavior().groupId,
-      teamId: this.getSelectedBehavior().teamId,
-      behaviorId: this.getSelectedBehaviorId()
-    });
     this.setState({
-      behavior: newBehavior,
+      group: version,
       justSaved: false
     }, optionalCallback);
   },
@@ -799,18 +798,21 @@ const BehaviorEditor = React.createClass({
     var existingGroup = this.getBehaviorGroup();
     var existingBehavior = this.getSelectedBehaviorFor(existingGroup, this.getSelectedBehaviorId());
     var timestampedBehavior = this.getTimestampedBehavior(existingBehavior.clone(props));
-    var newVersionsForBehavior = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedBehavior, 0);
+
     var newVersionsForGroup =
       existingGroup.behaviorVersions.
-        filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
-        concat([timestampedBehavior]);
+      filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
+      concat([timestampedBehavior]);
     var newGroup = this.getBehaviorGroup().clone({ behaviorVersions: newVersionsForGroup });
+
+    var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, newGroup, 0);
+
     if (this.state.justSaved) {
       BrowserUtils.removeQueryParam('justSaved');
     }
     this.setState({
       group: newGroup,
-      versions: newVersionsForBehavior,
+      versions: newVersions,
       justSaved: false
     }, () => {
       if (callback) {
@@ -1281,7 +1283,7 @@ const BehaviorEditor = React.createClass({
   shouldFilterCurrentVersion: function() {
     var firstTwoVersions = this.getVersions().slice(0, 2);
     return firstTwoVersions.length === 2 &&
-      firstTwoVersions[0].isIdenticalToVersion(firstTwoVersions[1]);
+      firstTwoVersions[0].isIdenticalTo(firstTwoVersions[1]);
   },
 
   versionsMaybeLoaded: function() {
@@ -1426,7 +1428,7 @@ const BehaviorEditor = React.createClass({
       envVariables: this.getInitialEnvVariables(),
       hasModifiedTemplate: !!(selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text),
       notifications: this.buildNotifications(),
-      versions: [this.getTimestampedBehavior(selectedBehavior)],
+      versions: [this.getTimestampedGroup(this.props.group)],
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
@@ -1448,7 +1450,7 @@ const BehaviorEditor = React.createClass({
         justSaved: true,
         group: newGroup,
         selectedBehaviorId: newSelectedBehaviorVersion.behaviorId,
-        versions: [this.getTimestampedBehavior(newSelectedBehaviorVersion)],
+        versions: [this.getTimestampedGroup(newGroup)],
         versionsLoadStatus: null,
         error: null
       };

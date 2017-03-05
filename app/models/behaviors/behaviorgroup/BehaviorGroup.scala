@@ -12,6 +12,7 @@ case class BehaviorGroup(
                           maybeDescription: Option[String],
                           maybeExportId: Option[String],
                           team: Team,
+                          maybeCurrentVersionId: Option[String],
                           createdAt: OffsetDateTime) {
 
   def exportName: String = {
@@ -25,6 +26,7 @@ case class BehaviorGroup(
     maybeDescription,
     maybeExportId,
     team.id,
+    maybeCurrentVersionId,
     createdAt
   )
 

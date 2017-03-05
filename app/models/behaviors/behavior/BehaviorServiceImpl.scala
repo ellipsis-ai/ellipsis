@@ -21,7 +21,6 @@ case class RawBehavior(
                         id: String,
                         teamId: String,
                         groupId: Option[String],
-                        maybeCurrentVersionId: Option[String],
                         maybeExportId: Option[String],
                         maybeDataTypeName: Option[String],
                         createdAt: OffsetDateTime
@@ -32,12 +31,11 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
   def groupId = column[Option[String]]("group_id")
-  def maybeCurrentVersionId = column[Option[String]]("current_version_id")
   def maybeExportId = column[Option[String]]("export_id")
   def maybeDataTypeName = column[Option[String]]("data_type_name")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, teamId, groupId, maybeCurrentVersionId, maybeExportId, maybeDataTypeName, createdAt) <>
+  def * = (id, teamId, groupId, maybeExportId, maybeDataTypeName, createdAt) <>
     ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
@@ -118,10 +116,10 @@ class BehaviorServiceImpl @Inject() (
   }
 
   def createFor(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
-    val raw = RawBehavior(maybeIdToUse.getOrElse(IDs.next), group.team.id, Some(group.id), None, maybeExportId, maybeDataTypeName, OffsetDateTime.now)
+    val raw = RawBehavior(maybeIdToUse.getOrElse(IDs.next), group.team.id, Some(group.id), maybeExportId, maybeDataTypeName, OffsetDateTime.now)
 
     val action = (all += raw).map { _ =>
-      Behavior(raw.id, group.team, Some(group), raw.maybeCurrentVersionId, raw.maybeExportId, raw.maybeDataTypeName, raw.createdAt)
+      Behavior(raw.id, group.team, Some(group), raw.maybeExportId, raw.maybeDataTypeName, raw.createdAt)
     }
 
     dataService.run(action)
@@ -160,9 +158,14 @@ class BehaviorServiceImpl @Inject() (
   }
 
   def maybeCurrentVersionFor(behavior: Behavior): Future[Option[BehaviorVersion]] = {
-    behavior.maybeCurrentVersionId.map { versionId =>
-      dataService.behaviorVersions.findWithoutAccessCheck(versionId)
-    }.getOrElse(Future.successful(None))
+    for {
+      maybeCurrentGroupVersion <- behavior.group.maybeCurrentVersionId.map { versionId =>
+        dataService.behaviorGroupVersions.findWithoutAccessCheck(versionId)
+      }.getOrElse(Future.successful(None))
+      maybeCurrentBehaviorVersion <- maybeCurrentGroupVersion.map { groupVersion =>
+        dataService.behaviorVersions.findFor(behavior, groupVersion)
+      }.getOrElse(Future.successful(None))
+    } yield maybeCurrentBehaviorVersion
   }
 
   def unlearn(behavior: Behavior): Future[Unit] = {

@@ -1,6 +1,8 @@
 package json
 
 import export.BehaviorGroupExporter
+import models.IDs
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.input.Input
 import services.DataService
 
@@ -22,6 +24,21 @@ case class InputData(
 
   def copyForExport(groupExporter: BehaviorGroupExporter): InputData = {
     copy(id = None, paramType = paramType.map(_.copyForExport(groupExporter)))
+  }
+
+  def copyWithIdsEnsuredFor(group: BehaviorGroup): InputData = {
+    copy(
+      groupId = Some(group.id),
+      id = id.orElse(Some(IDs.next))
+    )
+  }
+
+  def copyWithParamTypeIdsFrom(dataTypeVersions: Seq[BehaviorVersionData]): InputData = {
+    val maybeOldDataTypeId = paramType.flatMap(_.exportId)
+    val maybeNewDataTypeId = maybeOldDataTypeId.flatMap(oldId => dataTypeVersions.find(_.exportId.contains(oldId))).flatMap(_.behaviorId)
+    maybeNewDataTypeId.map { newId =>
+      copy(paramType = paramType.map(_.copy(id = Some(newId))))
+    }.getOrElse(this)
   }
 
 }

@@ -5,12 +5,13 @@ import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
 import services.{AWSLambdaService, PostgresDataService}
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase, _}
-import json.{BehaviorParameterData, BehaviorParameterTypeData, InputData}
+import json.{BehaviorGroupData, BehaviorParameterData, BehaviorParameterTypeData, InputData}
 import mocks.MockAWSLambdaService
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
@@ -91,8 +92,21 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
     runNow(dataService.messageTriggers.createFor(version, "foo", false, false, false))
   }
 
-  def newSavedVersionFor(behavior: Behavior): BehaviorVersion = {
-    runNow(dataService.behaviorVersions.createFor(behavior, None))
+  def newSavedGroupVersionFor(group: BehaviorGroup, user: User): BehaviorGroupVersion = {
+    val groupVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user: User))
+    val behaviors = runNow(dataService.behaviors.allForGroup(group))
+    behaviors.map { ea =>
+      newSavedVersionFor(ea, groupVersion)
+    }
+    groupVersion
+  }
+
+  def behaviorVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {
+    runNow(dataService.behaviorVersions.findFor(behavior, groupVersion)).get
+  }
+
+  def newSavedVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {
+    runNow(dataService.behaviorVersions.createFor(behavior, groupVersion, None))
   }
 
   def newSavedBehaviorFor(group: BehaviorGroup): Behavior = {

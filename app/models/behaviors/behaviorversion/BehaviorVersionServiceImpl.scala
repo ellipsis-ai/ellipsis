@@ -18,6 +18,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.{Event, MessageEvent}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -26,6 +27,7 @@ import scala.concurrent.Future
 case class RawBehaviorVersion(
                                id: String,
                                behaviorId: String,
+                               groupVersionId: String,
                                maybeDescription: Option[String],
                                maybeName: Option[String],
                                maybeFunctionBody: Option[String],
@@ -39,6 +41,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 
   def id = column[String]("id", O.PrimaryKey)
   def behaviorId = column[String]("behavior_id")
+  def groupVersionId = column[String]("group_version_id")
   def maybeDescription = column[Option[String]]("description")
   def maybeName = column[Option[String]]("name")
   def maybeFunctionBody = column[Option[String]]("code")
@@ -48,7 +51,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
+    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -67,17 +70,17 @@ class BehaviorVersionServiceImpl @Inject() (
   import BehaviorVersionQueries._
 
   def allOfThem: Future[Seq[BehaviorVersion]] = {
-    val action = allWithBehavior.result.map { r =>
+    val action = allWithGroupVersion.result.map { r =>
       r.map(tuple2BehaviorVersion)
     }
     dataService.run(action)
   }
 
   def uncompiledCurrentWithFunctionQuery() = {
-    allWithBehavior.
-      filter { case((version, _), ((behavior, team), _)) => behavior.maybeCurrentVersionId === version.id}.
-      filter { case((version, _), _) => version.maybeFunctionBody.map(_.trim.length > 0).getOrElse(false) }.
-      map { case((version, _), _) => version.id }
+    allWithGroupVersion.
+      filter { case(_, ((groupVersion, (group, _)), _)) => group.maybeCurrentVersionId === groupVersion.id }.
+      filter { case(((version, _), _), _) => version.maybeFunctionBody.map(_.trim.length > 0).getOrElse(false) }.
+      map { case(((version, _), _), _) => version.id }
   }
   val currentWithFunctionQuery = Compiled(uncompiledCurrentWithFunctionQuery)
 
@@ -86,9 +89,9 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def uncompiledAllForQuery(behaviorId: Rep[String]) = {
-    allWithBehavior.
-      filter { case((version, _), _) => version.behaviorId === behaviorId }.
-      sortBy { case((version, _), _) => version.createdAt.desc }
+    allWithGroupVersion.
+      filter { case(((version, _), _), _) => version.behaviorId === behaviorId }.
+      sortBy { case(((version, _), _), _) => version.createdAt.desc }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
@@ -100,7 +103,7 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
-    allWithBehavior.filter { case((version, _), _) => version.id === id }
+    allWithGroupVersion.filter { case(((version, _), _), _) => version.id === id }
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
@@ -109,22 +112,35 @@ class BehaviorVersionServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def createFor(behavior: Behavior, maybeUser: Option[User]): Future[BehaviorVersion] = {
-    val raw = RawBehaviorVersion(IDs.next, behavior.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), OffsetDateTime.now)
+  def uncompiledFindForBehaviorAndGroupVersionQuery(behaviorId: Rep[String], groupVersionId: Rep[String]) = {
+    allWithGroupVersion.filter { case(((behaviorVersion, _), _), ((groupVersion, _), _)) => behaviorVersion.behaviorId === behaviorId && groupVersion.id === groupVersionId }
+  }
+  val findForBehaviorAndGroupVersionQuery = Compiled(uncompiledFindForBehaviorAndGroupVersionQuery _)
+
+  def findFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]] = {
+    val action = findForBehaviorAndGroupVersionQuery(behavior.id, groupVersion.id).result.map { r =>
+      r.headOption.map(tuple2BehaviorVersion)
+    }
+    dataService.run(action)
+  }
+
+  def createFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, maybeUser: Option[User]): Future[BehaviorVersion] = {
+    val raw = RawBehaviorVersion(IDs.next, behavior.id, groupVersion.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), OffsetDateTime.now)
 
     val action = (all += raw).map { _ =>
-      BehaviorVersion(raw.id, behavior, raw.maybeDescription, raw.maybeName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)
+      BehaviorVersion(raw.id, behavior, groupVersion, raw.maybeDescription, raw.maybeName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)
     }
     dataService.run(action)
   }
 
   def createFor(
                  behavior: Behavior,
+                 groupVersion: BehaviorGroupVersion,
                  maybeUser: Option[User],
                  data: BehaviorVersionData
                ): Future[BehaviorVersion] = {
     val action = (for {
-      behaviorVersion <- DBIO.from(createFor(behavior, maybeUser))
+      behaviorVersion <- DBIO.from(createFor(behavior, groupVersion, maybeUser))
       _ <-
       for {
         updated <- DBIO.from(save(behaviorVersion.copy(

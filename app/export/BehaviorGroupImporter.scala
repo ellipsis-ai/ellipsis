@@ -1,11 +1,9 @@
 package export
 
-import json.{BehaviorGroupData, BehaviorVersionData, InputData}
-import models.team.Team
+import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.input.Input
+import models.team.Team
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,62 +16,11 @@ case class BehaviorGroupImporter(
                                    dataService: DataService
                                  ) {
 
-  val inputExportIdToIdMapping = collection.mutable.Map[String, String]()
-
-  def importBehaviorVersions(versions: Seq[BehaviorVersionData]): Future[Seq[Option[BehaviorVersion]]] = {
-    Future.sequence(
-      versions.map { versionData =>
-        val paramsWithNewInputIds = versionData.params.map { param =>
-          val maybeNewId = param.inputExportId.flatMap { exportId =>
-            inputExportIdToIdMapping.get(exportId)
-          }
-          param.copy(inputId = maybeNewId)
-        }
-        BehaviorVersionImporter(team, user, versionData.copy(params = paramsWithNewInputIds), dataService).run
-      }
-    )
-  }
-
-  def importInputs(inputs: Seq[InputData], dataTypes: Seq[BehaviorVersion], group: BehaviorGroup): Future[Seq[Input]] = {
-    Future.sequence(
-      inputs.map { inputData =>
-        val maybeOldDataTypeId = inputData.paramType.flatMap(_.exportId)
-        val maybeNewDataTypeId = maybeOldDataTypeId.flatMap(oldId => dataTypes.find(_.behavior.maybeExportId.contains(oldId))).map(_.behavior.id)
-        val withNewDataTypeId = maybeNewDataTypeId.map { newId =>
-          inputData.copy(paramType = inputData.paramType.map(_.copy(id = Some(newId))))
-        }.getOrElse(inputData)
-        val withNewGroupId = if (inputData.groupId.isDefined) {
-          withNewDataTypeId.copy(groupId = Some(group.id))
-        } else {
-          withNewDataTypeId
-        }
-        dataService.inputs.ensureFor(withNewGroupId, group).map { newInput =>
-          inputData.exportId.foreach { exportId =>
-            inputExportIdToIdMapping.put(exportId, newInput.id)
-          }
-          newInput
-        }
-      }
-    )
-  }
-
   def run: Future[Option[BehaviorGroup]] = {
-
-    dataService.behaviorGroups.createFor(data.name, data.icon, data.description, data.exportId, team).flatMap { group =>
-      val behaviorVersionsWithGroupInfo = data.behaviorVersions.map { ea =>
-        ea.copy(groupId = Some(group.id))
-      }
-      val (dataTypesData, actionsData) = behaviorVersionsWithGroupInfo.partition(_.isDataType)
-      for {
-        _ <- importInputs(data.dataTypeInputs, Seq(), group)
-        dataTypes <- importBehaviorVersions(dataTypesData).map(_.flatten)
-        _ <- importInputs(data.actionInputs, dataTypes, group)
-        _ <- importBehaviorVersions(actionsData)
-      } yield {
-        Some(group)
-      }
-
-    }
+    for {
+      group <- dataService.behaviorGroups.createFor(data.name, data.icon, data.description, data.exportId, team)
+      _ <- dataService.behaviorGroupVersions.createFor(group, user, data.copyForImportOf(group))
+    } yield Some(group)
 
   }
 

@@ -4,6 +4,7 @@ import json.BehaviorVersionData
 import models.accounts.user.User
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.Event
 
 import scala.concurrent.Future
@@ -16,10 +17,13 @@ trait BehaviorVersionService {
 
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorVersion]]
 
-  def createFor(behavior: Behavior, maybeUser: Option[User]): Future[BehaviorVersion]
+  def findFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]]
+
+  def createFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, maybeUser: Option[User]): Future[BehaviorVersion]
 
   def createFor(
                  behavior: Behavior,
+                 groupVersion: BehaviorGroupVersion,
                  maybeUser: Option[User],
                  data: BehaviorVersionData
                ): Future[BehaviorVersion]

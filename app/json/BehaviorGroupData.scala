@@ -3,6 +3,8 @@ package json
 import java.time.OffsetDateTime
 
 import models.accounts.user.User
+import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import services.DataService
 import utils.FuzzyMatchable
@@ -24,10 +26,27 @@ case class BehaviorGroupData(
                               createdAt: OffsetDateTime
                             ) extends Ordered[BehaviorGroupData] {
 
+
   val maybeNonEmptyName: Option[String] = name.map(_.trim).filter(_.nonEmpty)
 
   def copyForTeam(team: Team): BehaviorGroupData = {
     copy(behaviorVersions = behaviorVersions.map(_.copyForTeam(team)))
+  }
+
+  def copyForImportOf(group: BehaviorGroup): BehaviorGroupData = {
+    val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsuredFor(group))
+    val dataTypeInputsWithIds = dataTypeInputs.map(_.copyWithIdsEnsuredFor(group))
+    val behaviorVersionsWithIds = behaviorVersions.map(_.copyWithIdsEnsuredFor(group))
+    val dataTypeVersionsWithIds = behaviorVersionsWithIds.filter(_.isDataType)
+    val actionInputsForImport = actionInputsWithIds.map(_.copyWithParamTypeIdsFrom(dataTypeVersionsWithIds))
+    val dataTypeInputsForImport = dataTypeInputsWithIds.map(_.copyWithParamTypeIdsFrom(dataTypeVersionsWithIds))
+    val behaviorVersionsForImport = behaviorVersionsWithIds.map(_.copyWithInputIdsFrom(actionInputsWithIds ++ dataTypeInputsWithIds))
+    copy(
+      id = Some(group.id),
+      actionInputs = actionInputsForImport,
+      dataTypeInputs = dataTypeInputsForImport,
+      behaviorVersions = behaviorVersionsForImport
+    )
   }
 
   lazy val sortedActionBehaviorVersions = {
@@ -83,12 +102,9 @@ object BehaviorGroupData {
     }
   }
 
-  def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService): Future[Option[BehaviorGroupData]] = {
+  def buildFor(version: BehaviorGroupVersion, user: User, dataService: DataService): Future[BehaviorGroupData] = {
     for {
-      maybeGroup <- dataService.behaviorGroups.find(id)
-      behaviors <- maybeGroup.map { group =>
-        dataService.behaviors.allForGroup(group)
-      }.getOrElse(Future.successful(Seq()))
+      behaviors <- dataService.behaviors.allForGroup(version.group)
       versionsData <- Future.sequence(behaviors.map { ea =>
         BehaviorVersionData.maybeFor(ea.id, user, dataService)
       }).map(_.flatten.sortBy { ea =>
@@ -98,22 +114,34 @@ object BehaviorGroupData {
       dataTypeInputsData <- inputsDataFor(dataTypeVersionsData, dataService)
       actionInputsData <- inputsDataFor(actionVersionsData, dataService)
     } yield {
-      maybeGroup.map { group =>
-        BehaviorGroupData(
-          Some(group.id),
-          group.team.id,
-          Option(group.name).filter(_.trim.nonEmpty),
-          group.maybeDescription,
-          None,
-          actionInputsData,
-          dataTypeInputsData,
-          versionsData,
-          maybeGithubUrl,
-          group.maybeExportId,
-          group.createdAt
-        )
-      }
+      BehaviorGroupData(
+        Some(version.group.id),
+        version.team.id,
+        Option(version.name).filter(_.trim.nonEmpty),
+        version.maybeDescription,
+        None,
+        actionInputsData,
+        dataTypeInputsData,
+        versionsData,
+        None,
+        version.group.maybeExportId,
+        version.createdAt
+      )
     }
+  }
+
+  def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService): Future[Option[BehaviorGroupData]] = {
+    for {
+      maybeGroup <- dataService.behaviorGroups.find(id)
+      maybeLatestGroupVersion <- maybeGroup.flatMap { group =>
+        group.maybeCurrentVersionId.map { versionId =>
+          dataService.behaviorGroupVersions.findWithoutAccessCheck(versionId)
+        }
+      }.getOrElse(Future.successful(None))
+      data <- maybeLatestGroupVersion.map { version =>
+        buildFor(version, user, dataService).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield data
   }
 
 }

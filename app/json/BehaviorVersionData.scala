@@ -9,6 +9,7 @@ import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import Formatting._
 import models.IDs
+import models.behaviors.behaviorgroup.BehaviorGroup
 import services.DataService
 
 import scala.concurrent.Future
@@ -34,6 +35,31 @@ case class BehaviorVersionData(
 
   def copyForTeam(team: Team): BehaviorVersionData = {
     copy(teamId = team.id)
+  }
+
+  def copyWithIdsEnsuredFor(group: BehaviorGroup): BehaviorVersionData = {
+    copy(
+      teamId = group.team.id,
+      groupId = Some(group.id),
+      behaviorId = behaviorId.orElse(Some(IDs.next))
+    )
+  }
+
+  def copyWithInputIdsFrom(inputs: Seq[InputData]): BehaviorVersionData = {
+    val paramsWithNewInputIds = params.map { param =>
+      val maybeNewId = param.inputExportId.flatMap { exportId =>
+        inputs.find(_.exportId == exportId).flatMap(_.id)
+      }
+      param.copy(inputId = maybeNewId)
+    }
+    copy(params = paramsWithNewInputIds)
+  }
+
+  def copyForClone: BehaviorVersionData = {
+    copy(
+      behaviorId = Some(IDs.next),
+      exportId = None
+    )
   }
 
   lazy val isDataType: Boolean = config.dataTypeName.isDefined
