@@ -143,7 +143,7 @@ case class DisplayHelpBehavior(
   }
 
   private def actionHeadingFor(group: BehaviorGroupData): String = {
-    val numActions = group.behaviorVersions.length
+    val numActions = group.behaviorVersions.filterNot(version => version.isDataType).length
     if (numActions == 0) {
       "This skill has no actions."
     } else if (numActions == 1) {
