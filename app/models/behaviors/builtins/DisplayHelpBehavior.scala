@@ -57,12 +57,14 @@ case class DisplayHelpBehavior(
       if (triggersString.isEmpty) {
         None
       } else {
-        val link = behaviorVersion.groupId.flatMap { groupId =>
-          behaviorVersion.behaviorId.map { behaviorId =>
-            dataService.behaviors.editLinkFor(groupId, behaviorId, lambdaService.configuration)
-          }
-        }.map { l => s" [✎]($l)" }.getOrElse("")
-        Some(s"$triggersString$link\n\n")
+        val linkText = (for {
+          groupId <- behaviorVersion.groupId
+          behaviorId <- behaviorVersion.behaviorId
+        } yield {
+          val url = dataService.behaviors.editLinkFor(groupId, behaviorId, lambdaService.configuration)
+          s" [✎]($url)"
+        }).getOrElse("")
+        Some(s"$triggersString$linkText\n\n")
       }
     }
   }
