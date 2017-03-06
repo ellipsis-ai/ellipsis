@@ -136,7 +136,8 @@ const BehaviorEditor = React.createClass({
     var selectedBehavior = this.getSelectedBehavior();
     if (this.state) {
       var config = this.getBehaviorConfig();
-      return config ? config['requiredOAuth2ApiConfigs'] : [];
+      return (config && config['requiredOAuth2ApiConfigs']) ?
+        config['requiredOAuth2ApiConfigs'] : [];
     } else if (selectedBehavior && selectedBehavior.config) {
       return selectedBehavior.config.requiredOAuth2ApiConfigs || [];
     } else {
@@ -167,7 +168,8 @@ const BehaviorEditor = React.createClass({
   getAWSConfig: function() {
     var selectedBehavior = this.getSelectedBehavior();
     if (this.state) {
-      return this.getBehaviorConfig()['aws'];
+      var config = this.getBehaviorConfig();
+      return config && config['aws'];
     } else if (selectedBehavior && selectedBehavior.config) {
       return selectedBehavior.config.aws;
     } else {
