@@ -57,10 +57,11 @@ case class DisplayHelpBehavior(
       if (triggersString.isEmpty) {
         None
       } else {
-        val maybeLink = behaviorVersion.behaviorId.map { id =>
-          dataService.behaviors.editLinkFor(id, lambdaService.configuration)
-        }
-        val link = maybeLink.map { l => s" [✎]($l)" }.getOrElse("")
+        val link = behaviorVersion.groupId.flatMap { groupId =>
+          behaviorVersion.behaviorId.map { behaviorId =>
+            dataService.behaviors.editLinkFor(groupId, behaviorId, lambdaService.configuration)
+          }
+        }.map { l => s" [✎]($l)" }.getOrElse("")
         Some(s"$triggersString$link\n\n")
       }
     }
@@ -160,14 +161,14 @@ case class DisplayHelpBehavior(
   }
 
   private def descriptionFor(groupData: BehaviorGroupData, maybeMatchingItems: Option[Seq[FuzzyMatchable]]): String = {
-    if (groupData.description.isEmpty) {
-      ""
-    } else {
-      val description = maybeMatchingItems.filter(_.contains(groupData.fuzzyMatchDescription)).flatMap { _ =>
-        maybeHelpSearch.map(helpSearch => searchPatternFor(helpSearch).replaceAllIn(groupData.description.getOrElse(""), "$1**$2**$3"))
-      }.getOrElse(groupData.description)
-      description + "\n\n"
-    }
+    groupData.description
+      .filter(_.trim.nonEmpty)
+      .map { rawDescription =>
+        val description = maybeMatchingItems.filter(_.contains(groupData.fuzzyMatchDescription)).flatMap { _ =>
+          maybeHelpSearch.map(helpSearch => searchPatternFor(helpSearch).replaceAllIn(groupData.description.getOrElse(""), "$1**$2**$3"))
+        }.getOrElse(rawDescription)
+        description + "\n\n"
+      }.getOrElse("")
   }
 
   def skillResultFor(group: BehaviorGroupData, maybeMatchingItems: Option[Seq[FuzzyMatchable]]): BotResult = {
@@ -178,11 +179,10 @@ case class DisplayHelpBehavior(
       "OK, here’s the help you asked for:"
     }
 
-    val name = if (group.id.isEmpty) {
-      "**Miscellaneous skills**"
-    } else {
-      s"**${group.name}**"
-    }
+    val name = group.name
+      .filterNot(name => group.id.isEmpty || name.trim.isEmpty)
+      .map(name => s"**$name**")
+      .getOrElse("**Miscellaneous skills**")
 
     val actionList = group.behaviorVersions.flatMap(version => helpStringFor(version, maybeMatchingItems)).mkString("")
 
