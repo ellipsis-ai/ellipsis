@@ -136,7 +136,8 @@ class BehaviorEditorController @Inject() (
               _ <- maybeGroup.map { group =>
                 val updated = group.copy(
                   name = data.name.getOrElse(""),
-                  maybeDescription = data.description
+                  maybeDescription = data.description,
+                  maybeIcon = data.icon
                 )
                 dataService.behaviorGroups.save(updated).map(_ => {})
               }.getOrElse(Future.successful({}))

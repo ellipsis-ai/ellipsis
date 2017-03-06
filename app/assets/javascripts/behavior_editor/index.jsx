@@ -1104,6 +1104,12 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  onBehaviorGroupIconChange: function(icon) {
+    this.setState({
+      group: this.getBehaviorGroup().clone({ icon: icon })
+    });
+  },
+
   jsonPostOptions: function(data) {
     return {
       credentials: 'same-origin',
@@ -2239,6 +2245,7 @@ const BehaviorEditor = React.createClass({
             group={this.getBehaviorGroup()}
             onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
             onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+            onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
           />
         </div>
       );
