@@ -93,10 +93,16 @@ class BehaviorEditorController @Inject() (
         json.validate[BehaviorGroupData] match {
           case JsSuccess(data, jsPath) => {
             for {
-              maybeGroup <- data.id.map { groupId =>
+              teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
+              maybeExistingGroup <- data.id.map { groupId =>
                 dataService.behaviorGroups.find(groupId)
               }.getOrElse(Future.successful(None))
-              maybeGroupVersion <- maybeGroup.map { group =>
+              maybeGroup <- maybeExistingGroup.map(g => Future.successful(Some(g))).getOrElse {
+                teamAccess.maybeTargetTeam.map { team =>
+                  dataService.behaviorGroups.createFor(data.exportId, team).map(Some(_))
+                }.getOrElse(Future.successful(None))
+              }
+              _ <- maybeGroup.map { group =>
                 dataService.behaviorGroupVersions.createFor(group, user, data).map(Some(_))
               }.getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
