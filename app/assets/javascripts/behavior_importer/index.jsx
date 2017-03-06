@@ -1,7 +1,7 @@
 define(function(require) {
   var React = require('react'),
-    BehaviorGroupCard = require('./behavior_group_card'),
-    BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
+    BehaviorGroupCard = require('../behavior_list/behavior_group_card'),
+    BehaviorGroupInfoPanel = require('../behavior_list/behavior_group_info_panel'),
     Collapsible = require('../shared_ui/collapsible'),
     FixedFooter = require('../shared_ui/fixed_footer'),
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
@@ -133,6 +133,7 @@ define(function(require) {
                 groupData={this.getSelectedBehaviorGroup()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onToggle={this.toggleInfoPanel}
+                isImportable={true}
               />
             </Collapsible>
 
@@ -167,6 +168,7 @@ define(function(require) {
               onBehaviorGroupImport={this.onBehaviorGroupImport}
               onMoreInfoClick={this.toggleInfoPanel}
               isImporting={this.isImporting(group)}
+              isImportable={true}
             />
           </div>
         ));

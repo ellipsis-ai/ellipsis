@@ -2,6 +2,8 @@ define(function(require) {
   var React = require('react'),
     BehaviorName = require('./behavior_name'),
     BehaviorGroup = require('../models/behavior_group'),
+    BehaviorGroupCard = require('./behavior_group_card'),
+    BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     FixedFooter = require('../shared_ui/fixed_footer'),
@@ -34,6 +36,7 @@ define(function(require) {
 
     getInitialState: function() {
       return {
+        selectedBehaviorGroup: null,
         selectedGroupIds: [],
         isSubmitting: false
       };
@@ -65,23 +68,21 @@ define(function(require) {
       this.props.onToggleActivePanel('confirmMergeBehaviorGroups', true);
     },
 
-    onGroupSelectionCheckboxChange: function(groupId) {
-      return function(event) {
-        var newGroupIds = this.getSelectedGroupIds().slice();
-        var index = newGroupIds.indexOf(groupId);
-        if (event.target.checked) {
-          if (index === -1) {
-            newGroupIds.push(groupId);
-          }
-        } else {
-          if (index >= 0) {
-            newGroupIds.splice(index, 1);
-          }
+    onGroupSelectionCheckboxChange: function(groupId, isChecked) {
+      var newGroupIds = this.getSelectedGroupIds().slice();
+      var index = newGroupIds.indexOf(groupId);
+      if (isChecked) {
+        if (index === -1) {
+          newGroupIds.push(groupId);
         }
-        this.setState({
-          selectedGroupIds: newGroupIds
-        });
-      }.bind(this);
+      } else {
+        if (index >= 0) {
+          newGroupIds.splice(index, 1);
+        }
+      }
+      this.setState({
+        selectedGroupIds: newGroupIds
+      });
     },
 
     clearSelectedGroups: function() {
@@ -124,25 +125,6 @@ define(function(require) {
         var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
         this.runSelectedBehaviorGroupsAction(url);
       });
-    },
-
-    renderGroupSelectionCheckbox: function(groupId) {
-      return (
-        <input
-          type="checkbox"
-          onChange={this.onGroupSelectionCheckboxChange(groupId)}
-          ref={groupId}
-          key={groupId}
-          checked={this.isGroupSelected(groupId)}
-          className="align-t"
-        />
-      );
-    },
-
-    renderPlaceholderCheckbox: function() {
-      return (
-        <input type="checkbox" disabled={true} className="visibility-hidden align-t" />
-      );
     },
 
     getActionsLabel: function(selectedCount) {
@@ -256,18 +238,41 @@ define(function(require) {
       return [this.renderBehaviorGroupTitleRow(group)].concat(versionRows);
     },
 
+    getSelectedBehaviorGroup: function() {
+      return this.state.selectedBehaviorGroup;
+    },
+
+    toggleInfoPanel: function(group) {
+      var previousSelectedGroup = this.state.selectedBehaviorGroup;
+      if (group && group !== previousSelectedGroup) {
+        this.setState({
+          selectedBehaviorGroup: group
+        });
+      }
+      if (!group || group === previousSelectedGroup || this.props.activePanelName !== 'moreInfo') {
+        this.props.onToggleActivePanel('moreInfo');
+      }
+    },
+
     renderBehaviorGroups: function() {
       var groups = this.getBehaviorGroups();
       if (groups.length > 0) {
-        return (
-          <div className="column-group">
-            <div className="column-row type-bold">
-              <div className="column column-expand type-label align-b pbs">Skills</div>
-              <div className="column column-shrink type-label align-r pbs align-b mobile-display-none">Last modified</div>
-            </div>
-            {groups.map(this.renderBehaviorGroup)}
+        return groups.map((group, index) => (
+          <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn"
+            key={"group" + index}>
+            <BehaviorGroupCard
+              name={group.name}
+              description={group.description}
+              icon={group.icon}
+              groupData={group}
+              localId={group.id}
+              onMoreInfoClick={this.toggleInfoPanel}
+              isImportable={false}
+              onSelectChange={this.onGroupSelectionCheckboxChange}
+              isSelected={this.isGroupSelected(group.id)}
+            />
           </div>
-        );
+        ));
       }
     },
 
@@ -306,9 +311,9 @@ define(function(require) {
       if (this.props.behaviorGroups.length > 0) {
         return (
           <div>
-            <p><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>
+            <p className="mhl mbxl"><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>
 
-            <div className="columns columns-elastic mobile-columns-float">
+            <div className="columns">
               {this.renderBehaviorGroups()}
             </div>
           </div>
@@ -327,13 +332,23 @@ define(function(require) {
       return (
         <div>
           <div>
-            <div className="bg-white container container-c pvxxl mobile-ptm">
+            <div className="bg-white container container-c pvxxl mobile-ptm phn">
               {this.renderContent()}
             </div>
           </div>
 
           <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.props.onClearActivePanel} />
           <FixedFooter ref="footer" className="bg-white">
+            <Collapsible
+              ref="moreInfo"
+              revealWhen={this.props.activePanelName === 'moreInfo'}
+            >
+              <BehaviorGroupInfoPanel
+                groupData={this.getSelectedBehaviorGroup()}
+                onToggle={this.toggleInfoPanel}
+                isImportable={false}
+              />
+            </Collapsible>
             <Collapsible revealWhen={!this.props.activePanelName && this.getSelectedGroupIds().length > 0}>
               <div className="container container-c ptm border-top">
                 {this.renderActions()}

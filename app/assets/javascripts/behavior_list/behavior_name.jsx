@@ -98,10 +98,10 @@ define(function(require) {
       const name = version.name;
       if (name && name.trim().length > 0) {
         return (
-          <div className={(this.props.limitTriggers ? "display-limit-width display-ellipsis" : "")}>
+          <span>
             <span className={"mrm " + (this.props.disableLink ? "" : "link")}>{name}:</span>
             {this.getTriggersFromVersion(version, false)}
-          </div>
+          </span>
         );
       } else {
         return this.getTriggersFromVersion(version, !this.props.disableLink);

@@ -8,8 +8,9 @@ define(function(require) {
     displayName: 'BehaviorGroupInfoPanel',
     propTypes: {
       groupData: React.PropTypes.object,
-      onBehaviorGroupImport: React.PropTypes.func.isRequired,
-      onToggle: React.PropTypes.func.isRequired
+      onBehaviorGroupImport: React.PropTypes.func,
+      onToggle: React.PropTypes.func.isRequired,
+      isImportable: React.PropTypes.bool.isRequired
     },
 
     getBehaviors: function() {
@@ -42,11 +43,7 @@ define(function(require) {
                   <span>{this.props.groupData.name}</span>
                 </h3>
 
-                <div className="type-s">
-                  <a target="_blank" href={this.props.groupData.githubUrl}>
-                    View source on Github
-                  </a>
-                </div>
+                {this.renderGithubLink()}
               </div>
               <div className="column column-page-main">
                 {ifPresent(this.props.groupData.description, (desc) => (
@@ -54,12 +51,8 @@ define(function(require) {
                 ))}
 
                 {this.renderBehaviors()}
-
                 <div className="mvxl">
-                  <button type="button" className="button-primary mrs mbs" onClick={this.onImport}>
-                    <span className="display-inline-block align-b mrm pbxs" style={{ width: 25, height: 18 }}><SVGInstall /></span>
-                    <span className="display-inline-block align-b">Install</span>
-                  </button>
+                  {this.renderInstallButton()}
                   <button type="button" className="mrs mbs" onClick={this.toggle}>Done</button>
                 </div>
               </div>
@@ -79,7 +72,7 @@ define(function(require) {
             <div className="mbxs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>
               <BehaviorName
                 version={behavior}
-                disableLink={true}
+                disableLink={!behavior.behaviorId}
                 limitTriggers={true}
                 isImportable={true}
               />
@@ -87,6 +80,30 @@ define(function(require) {
           ))}
         </div>
       );
+    },
+
+    renderInstallButton: function() {
+      if (this.props.isImportable) {
+        return (
+          <button type="button" className="button-primary mrs mbs" onClick={this.onImport}>
+            <span className="display-inline-block align-b mrm pbxs"
+              style={{ width: 25, height: 18 }}><SVGInstall /></span>
+            <span className="display-inline-block align-b">Install</span>
+          </button>
+        );
+      }
+    },
+
+    renderGithubLink: function() {
+      if (this.props.groupData.githubUrl) {
+        return (
+          <div className="type-s">
+            <a target="_blank" href={this.props.groupData.githubUrl}>
+              View source on Github
+            </a>
+          </div>
+        );
+      }
     }
   });
 });
