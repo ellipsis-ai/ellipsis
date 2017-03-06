@@ -9,7 +9,8 @@ define(function(require) {
     propTypes: {
       group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
       onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
-      onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired
+      onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
+      onBehaviorGroupIconChange: React.PropTypes.func.isRequired
     },
 
     focus: function() {
@@ -26,12 +27,20 @@ define(function(require) {
 
           <h5 className="type-blue-faded">Edit skill details</h5>
 
-          <h4 className="mtl mbn">Title</h4>
-          <div className="columns">
-            <div className="column column-one-third">
+          <h4 className="mtl mbn">Icon and title</h4>
+          <div className="columns columns-elastic">
+            <div className="column column-shrink">
+              <Input
+                className="form-input-borderless form-input-l mbn width-2"
+                placeholder="Icon"
+                onChange={this.props.onBehaviorGroupIconChange}
+                value={this.props.group.icon || ""}
+              />
+            </div>
+            <div className="column column-expand">
               <Input
                 ref="skillName"
-                className="form-input-borderless form-input-l type-bold mbn"
+                className="form-input-borderless form-input-l type-bold mbn width-20"
                 placeholder="Add a title (optional)"
                 onChange={this.props.onBehaviorGroupNameChange}
                 value={this.props.group.name || ""}

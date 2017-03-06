@@ -119,7 +119,7 @@ object BehaviorGroupData {
         version.team.id,
         Option(version.name).filter(_.trim.nonEmpty),
         version.maybeDescription,
-        None,
+        version.maybeIcon,
         actionInputsData,
         dataTypeInputsData,
         versionsData,
