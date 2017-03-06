@@ -15,6 +15,10 @@ object BehaviorVersionQueries {
   type TupleType = (((RawBehaviorVersion, Option[User]), BehaviorQueries.TupleType), BehaviorGroupVersionQueries.TupleType)
   type TableTupleType = (((BehaviorVersionsTable, Rep[Option[UsersTable]]), BehaviorQueries.TableTupleType), BehaviorGroupVersionQueries.TableTupleType)
 
+  def uncompiledRawFindQuery(id: Rep[String]) = {
+    all.filter(_.id === id)
+  }
+
   def tuple2BehaviorVersion(tuple: TupleType): BehaviorVersion = {
     val raw = tuple._1._1._1
     val groupVersion = BehaviorGroupVersionQueries.tuple2BehaviorGroupVersion(tuple._2)

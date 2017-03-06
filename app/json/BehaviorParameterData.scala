@@ -30,7 +30,7 @@ case class BehaviorParameterData(
     copy(
       paramType = paramType.map(_.copyForExport(groupExporter)),
       inputId = inputId.flatMap(groupExporter.exportIdForInputId),
-      groupId = groupId.flatMap { _ => groupExporter.behaviorGroup.maybeExportId }
+      groupId = groupId.flatMap { _ => groupExporter.behaviorGroupVersion.group.maybeExportId }
     )
   }
 

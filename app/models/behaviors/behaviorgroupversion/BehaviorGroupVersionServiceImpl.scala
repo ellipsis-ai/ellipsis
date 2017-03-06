@@ -59,8 +59,14 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def createFor(group: BehaviorGroup, user: User): Future[BehaviorGroupVersion] = {
-    val raw = RawBehaviorGroupVersion(IDs.next, group.id, "", None, None, Some(user.id), OffsetDateTime.now)
+  def createFor(
+                 group: BehaviorGroup,
+                 user: User,
+                 maybeName: Option[String] = None,
+                 maybeIcon: Option[String] = None,
+                 maybeDescription: Option[String] = None
+               ): Future[BehaviorGroupVersion] = {
+    val raw = RawBehaviorGroupVersion(IDs.next, group.id, maybeName.getOrElse(""), maybeIcon, maybeDescription, Some(user.id), OffsetDateTime.now)
 
     val action = (all += raw).map { _ =>
       BehaviorGroupVersion(raw.id, group, raw.name, raw.maybeIcon, raw.maybeDescription, Some(user), raw.createdAt)
@@ -74,14 +80,16 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                  data: BehaviorGroupData
                ): Future[BehaviorGroupVersion] = {
     for {
-      groupVersion <- createFor(group, user)
+      groupVersion <- createFor(group, user, data.name, data.icon, data.description)
       _ <- Future.sequence(data.behaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
-          dataService.behaviors.find(behaviorId, user).flatMap { maybeBehavior =>
-            maybeBehavior.map { behavior =>
-              dataService.behaviorVersions.createFor(behavior, groupVersion, Some(user), ea).map(Some(_))
-            }.getOrElse(Future.successful(None))
-          }
+          for {
+            maybeExistingBehavior <- dataService.behaviors.find(behaviorId, user)
+            behavior <- maybeExistingBehavior.map(Future.successful).getOrElse {
+              dataService.behaviors.createFor(group, Some(behaviorId), None, ea.config.dataTypeName)
+            }
+            behaviorVersion <- dataService.behaviorVersions.createFor(behavior, groupVersion, Some(user), ea)
+          } yield Some(behaviorVersion)
         }.getOrElse(Future.successful(None))
       })
     } yield groupVersion

@@ -6,8 +6,10 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.IDs
+import models.accounts.user.User
 import models.behaviors.behavior.{Behavior, BehaviorQueries}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
 import models.behaviors.input.{Input, InputQueries}
 import models.team.Team
 import services.DataService
@@ -18,9 +20,6 @@ import scala.concurrent.Future
 
 case class RawBehaviorGroup(
                              id: String,
-                             name: String,
-                             maybeIcon: Option[String],
-                             maybeDescription: Option[String],
                              maybeExportId: Option[String],
                              teamId: String,
                              maybeCurrentVersionId: Option[String],
@@ -30,15 +29,12 @@ case class RawBehaviorGroup(
 class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavior_groups") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def name = column[String]("name")
-  def maybeIcon = column[Option[String]]("icon")
-  def maybeDescription = column[Option[String]]("description")
   def maybeExportId = column[Option[String]]("export_id")
   def teamId = column[String]("team_id")
   def maybeCurrentVersionId = column[Option[String]]("current_version_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, name, maybeIcon, maybeDescription, maybeExportId, teamId, maybeCurrentVersionId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
+  def * = (id, maybeExportId, teamId, maybeCurrentVersionId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
 }
 
 class BehaviorGroupServiceImpl @Inject() (
@@ -49,8 +45,8 @@ class BehaviorGroupServiceImpl @Inject() (
 
   import BehaviorGroupQueries._
 
-  def createFor(maybeName: Option[String], maybeIcon: Option[String], maybeDescription: Option[String], maybeExportId: Option[String], team: Team): Future[BehaviorGroup] = {
-    val raw = RawBehaviorGroup(IDs.next, maybeName.getOrElse(""), maybeIcon, maybeDescription, maybeExportId, team.id, None, OffsetDateTime.now)
+  def createFor(maybeExportId: Option[String], team: Team): Future[BehaviorGroup] = {
+    val raw = RawBehaviorGroup(IDs.next, maybeExportId, team.id, None, OffsetDateTime.now)
     val action = (all += raw).map(_ => tuple2Group((raw, team)))
     dataService.run(action)
   }
@@ -96,9 +92,18 @@ class BehaviorGroupServiceImpl @Inject() (
     }
   }
 
-  private def moveChildren(fromGroup: BehaviorGroup, toGroup: BehaviorGroup): DBIO[BehaviorGroup] = {
+  private def changeGroupVersion(behaviorVersion: BehaviorVersion, newGroupVersion: BehaviorGroupVersion): DBIO[BehaviorVersion] = {
+    BehaviorVersionQueries.uncompiledRawFindQuery(behaviorVersion.id).map(_.groupVersionId).update(newGroupVersion.id).map { _ =>
+      behaviorVersion.copy(groupVersion = newGroupVersion)
+    }
+  }
+
+  private def moveChildren(fromGroup: BehaviorGroup, toGroup: BehaviorGroup, groupVersion: BehaviorGroupVersion): DBIO[BehaviorGroup] = {
     for {
       behaviorsToMove <- DBIO.from(dataService.behaviors.allForGroup(fromGroup))
+      behaviorVersionsToMove <- DBIO.sequence(behaviorsToMove.map { ea =>
+        DBIO.from(dataService.behaviors.maybeCurrentVersionFor(ea))
+      }).map(_.flatten)
       inputsToMove <- DBIO.from(dataService.inputs.allForGroup(fromGroup))
       _ <- DBIO.sequence(behaviorsToMove.map { ea =>
         changeGroup(ea, toGroup)
@@ -106,22 +111,36 @@ class BehaviorGroupServiceImpl @Inject() (
       _ <- DBIO.sequence(inputsToMove.map { ea =>
         changeGroup(ea, toGroup)
       })
+      _ <- DBIO.sequence(behaviorVersionsToMove.map { ea =>
+        changeGroupVersion(ea, groupVersion)
+      })
     } yield toGroup
   }
 
-  def merge(groups: Seq[BehaviorGroup]): Future[BehaviorGroup] = {
-    val firstGroup = groups.head
-    val team = firstGroup.team
-    val mergedName = groups.map(_.name).filter(_.trim.nonEmpty).mkString("-")
-    val descriptions = groups.flatMap(_.maybeDescription).filter(_.trim.nonEmpty)
+  def merge(groups: Seq[BehaviorGroup], user: User): Future[BehaviorGroup] = {
+    Future.sequence(groups.map { ea =>
+      dataService.behaviorGroups.maybeCurrentVersionFor(ea)
+    }).flatMap { versions =>
+      mergeVersions(versions.flatten, user)
+    }
+  }
+
+  private def mergeVersions(groupVersions: Seq[BehaviorGroupVersion], user: User): Future[BehaviorGroup] = {
+    val groups = groupVersions.map(_.group)
+    val firstGroupVersion = groupVersions.head
+    val team = firstGroupVersion.team
+    val mergedName = groupVersions.map(_.name).filter(_.trim.nonEmpty).mkString("-")
+    val descriptions = groupVersions.flatMap(_.maybeDescription).filter(_.trim.nonEmpty)
     val mergedDescription = if (descriptions.isEmpty) { None } else { Some(descriptions.mkString("\n")) }
     val maybeExportId = None // Don't think it makes sense to have an exportId for something merged
-    val maybeIcon = groups.find(_.maybeIcon.isDefined).flatMap(_.maybeIcon)
-    val rawMerged = RawBehaviorGroup(IDs.next, mergedName, maybeIcon, mergedDescription, maybeExportId, team.id, None, OffsetDateTime.now)
+    val maybeIcon = groupVersions.find(_.maybeIcon.isDefined).flatMap(_.maybeIcon)
+    val rawMerged = RawBehaviorGroup(IDs.next, maybeExportId, team.id, None, OffsetDateTime.now)
     val action = (for {
       merged <- (all += rawMerged).map(_ => tuple2Group((rawMerged, team)))
+      mergedVersion <- DBIO.from(dataService.behaviorGroupVersions.createFor(merged, user))
+      _ <- DBIO.from(dataService.behaviorGroupVersions.createFor(merged, user, Some(mergedName), maybeIcon, mergedDescription))
       _ <- DBIO.sequence(groups.map { ea =>
-        moveChildren(ea, merged)
+        moveChildren(ea, merged, mergedVersion)
       })
       _ <- DBIO.sequence(groups.map { group =>
         all.filter(_.id === group.id).delete

@@ -12,7 +12,13 @@ trait BehaviorGroupVersionService {
 
   def allFor(group: BehaviorGroup): Future[Seq[BehaviorGroupVersion]]
 
-  def createFor(group: BehaviorGroup, user: User): Future[BehaviorGroupVersion]
+  def createFor(
+                 group: BehaviorGroup,
+                 user: User,
+                 maybeName: Option[String] = None,
+                 maybeIcon: Option[String] = None,
+                 maybeDescription: Option[String] = None
+               ): Future[BehaviorGroupVersion]
 
   def createFor(
                  group: BehaviorGroup,

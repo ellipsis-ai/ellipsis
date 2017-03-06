@@ -23,7 +23,7 @@ case class BehaviorGroupData(
                               behaviorVersions: Seq[BehaviorVersionData],
                               githubUrl: Option[String],
                               exportId: Option[String],
-                              createdAt: OffsetDateTime
+                              createdAt: Option[OffsetDateTime]
                             ) extends Ordered[BehaviorGroupData] {
 
 
@@ -106,7 +106,7 @@ object BehaviorGroupData {
     for {
       behaviors <- dataService.behaviors.allForGroup(version.group)
       versionsData <- Future.sequence(behaviors.map { ea =>
-        BehaviorVersionData.maybeFor(ea.id, user, dataService)
+        BehaviorVersionData.maybeFor(ea.id, user, dataService, Some(version))
       }).map(_.flatten.sortBy { ea =>
         (ea.isDataType, ea.maybeFirstTrigger)
       })
@@ -125,7 +125,7 @@ object BehaviorGroupData {
         versionsData,
         None,
         version.group.maybeExportId,
-        version.createdAt
+        Some(version.createdAt)
       )
     }
   }

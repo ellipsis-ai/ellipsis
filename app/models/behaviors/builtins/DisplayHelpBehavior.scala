@@ -96,7 +96,7 @@ case class DisplayHelpBehavior(
       behaviorVersions = untitledGroups.flatMap(_.behaviorVersions),
       githubUrl = None,
       exportId = None,
-      OffsetDateTime.now
+      Some(OffsetDateTime.now)
     )
   }
 
@@ -209,7 +209,11 @@ case class DisplayHelpBehavior(
       maybeBehaviorGroups <- maybeTeam.map { team =>
         maybeSkillId match {
           case Some("(untitled)") =>
-            dataService.behaviorGroups.allFor(team).map(_.filter(_.name.isEmpty)).map(Some(_))
+            dataService.behaviorGroups.allFor(team).flatMap { groups =>
+              Future.sequence(groups.map { ea =>
+                dataService.behaviorGroups.maybeCurrentVersionFor(ea)
+              }).map(_.flatten)
+            }.map(_.filter(_.name.isEmpty)).map(versions => Some(versions.map(_.group)))
           case Some(skillId) => dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
           case None => dataService.behaviorGroups.allFor(team).map(Some(_))
         }

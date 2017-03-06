@@ -65,7 +65,7 @@ object BehaviorVersionExporter {
         dataService.behaviorVersions.maybeFunctionFor(behaviorVersion)
       }.getOrElse(Future.successful(None))
       maybeExportId <- Future.successful(maybeBehavior.flatMap(_.maybeExportId))
-      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, maybeExportId)
+      maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, None, maybeExportId)
     } yield {
       for {
         behaviorVersion <- maybeBehaviorVersion

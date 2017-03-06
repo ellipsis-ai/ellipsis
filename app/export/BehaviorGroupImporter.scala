@@ -18,7 +18,7 @@ case class BehaviorGroupImporter(
 
   def run: Future[Option[BehaviorGroup]] = {
     for {
-      group <- dataService.behaviorGroups.createFor(data.name, data.icon, data.description, data.exportId, team)
+      group <- dataService.behaviorGroups.createFor(data.exportId, team)
       _ <- dataService.behaviorGroupVersions.createFor(group, user, data.copyForImportOf(group))
     } yield Some(group)
 

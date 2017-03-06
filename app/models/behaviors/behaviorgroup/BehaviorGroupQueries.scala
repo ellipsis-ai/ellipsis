@@ -14,7 +14,7 @@ object BehaviorGroupQueries {
   def tuple2Group(tupleType: TupleType): BehaviorGroup = {
     val raw = tupleType._1
     val team = tupleType._2
-    BehaviorGroup(raw.id, raw.name, raw.maybeIcon, raw.maybeDescription, raw.maybeExportId, team, raw.maybeCurrentVersionId, raw.createdAt)
+    BehaviorGroup(raw.id, raw.maybeExportId, team, raw.maybeCurrentVersionId, raw.createdAt)
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {

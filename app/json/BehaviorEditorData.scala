@@ -146,7 +146,7 @@ object BehaviorEditorData {
           Seq(BehaviorVersionData.newUnsavedFor(team.id, maybeGroupId = None, isDataType = false, dataService)),
           githubUrl = None,
           exportId = None,
-          OffsetDateTime.now
+          Some(OffsetDateTime.now)
         )
       }
       BehaviorEditorData(

@@ -5,7 +5,7 @@ import java.io.File
 import json.{BehaviorGroupConfig, InputData}
 import json.Formatting._
 import models.accounts.user.User
-import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import play.api.libs.json.Json
 import services.DataService
 
@@ -15,7 +15,7 @@ import scala.reflect.io.Path
 import scala.sys.process.Process
 
 case class BehaviorGroupExporter(
-                                  behaviorGroup: BehaviorGroup,
+                                  behaviorGroupVersion: BehaviorGroupVersion,
                                   actionInputsData: Seq[InputData],
                                   actionExporters: Seq[BehaviorVersionExporter],
                                   dataTypeInputsData: Seq[InputData],
@@ -23,11 +23,11 @@ case class BehaviorGroupExporter(
                                   parentPath: String
                                 ) extends Exporter {
 
-  val fullPath = s"$parentPath/${behaviorGroup.exportName}"
+  val fullPath = s"$parentPath/${behaviorGroupVersion.exportName}"
   def zipFileName = s"$fullPath.zip"
 
   val config = {
-    BehaviorGroupConfig(behaviorGroup.name, behaviorGroup.maybeExportId, behaviorGroup.maybeIcon)
+    BehaviorGroupConfig(behaviorGroupVersion.name, behaviorGroupVersion.group.maybeExportId, behaviorGroupVersion.maybeIcon)
   }
 
   def configString: String = Json.prettyPrint(Json.toJson(config))
@@ -66,7 +66,7 @@ case class BehaviorGroupExporter(
 
   protected def writeFiles(): Unit = {
     writeFileFor("config.json", configString)
-    behaviorGroup.maybeDescription.foreach { desc =>
+    behaviorGroupVersion.maybeDescription.foreach { desc =>
       writeFileFor("README", desc)
     }
     writeDataTypes()
@@ -105,6 +105,9 @@ object BehaviorGroupExporter {
           dataService.behaviorGroups.ensureExportIdFor(group).map(Some(_))
         }.getOrElse(Future.successful(None))
       }
+      maybeCurrentGroupVersion <- maybeGroup.map { group =>
+        dataService.behaviorGroups.maybeCurrentVersionFor(group)
+      }.getOrElse(Future.successful(None))
       maybeBehaviors <- maybeGroup.map { group =>
         dataService.behaviors.allForGroup(group).map(Some(_))
       }.getOrElse(Future.successful(None))
@@ -114,7 +117,7 @@ object BehaviorGroupExporter {
         }).map(_ => {})
       }.getOrElse(Future.successful({}))
       maybeExporters <- maybeBehaviors.map { behaviors =>
-        val exportName = maybeGroup.map(_.exportName).get
+        val exportName = maybeCurrentGroupVersion.map(_.exportName).get
         val parentPath = s"$mainParentPath/$exportName"
         Future.sequence(behaviors.map { behavior =>
           BehaviorVersionExporter.maybeFor(behavior.id, user, parentPath, dataService)
@@ -126,8 +129,8 @@ object BehaviorGroupExporter {
     } yield {
       val actionInputsData = inputsDataForExporters(actionExporters, dataService)
       val dataTypeInputsData = inputsDataForExporters(dataTypeExporters, dataService)
-      maybeGroup.map { group =>
-        BehaviorGroupExporter(group, actionInputsData, actionExporters, dataTypeInputsData, dataTypeExporters, mainParentPath)
+      maybeCurrentGroupVersion.map { groupVersion =>
+        BehaviorGroupExporter(groupVersion, actionInputsData, actionExporters, dataTypeInputsData, dataTypeExporters, mainParentPath)
       }
     }
   }

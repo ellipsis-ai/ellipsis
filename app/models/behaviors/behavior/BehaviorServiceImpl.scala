@@ -127,7 +127,7 @@ class BehaviorServiceImpl @Inject() (
 
   def createFor(team: Team, maybeIdToUse: Option[String], maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
     for {
-      group <- dataService.behaviorGroups.createFor(None, None, None, maybeExportId, team)
+      group <- dataService.behaviorGroups.createFor(maybeExportId, team)
       behavior <- createFor(group, maybeIdToUse, maybeExportId, maybeDataTypeName)
     } yield behavior
   }

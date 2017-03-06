@@ -165,100 +165,8 @@ class BehaviorEditorController @Inject() (
       versionsData <- Future.sequence(versions.map { ea =>
         BehaviorGroupData.buildFor(ea, user, dataService)
       })
-//      parametersByVersion <- Future.sequence(versions.map { version =>
-//        dataService.behaviorParameters.allFor(version).map { params =>
-//          (version, params)
-//        }
-//      }).map(_.toMap)
-//      triggersByVersion <- Future.sequence(versions.map { version =>
-//        dataService.messageTriggers.allFor(version).map { triggers =>
-//          (version, triggers)
-//        }
-//      }).map(_.toMap)
-//      awsConfigByVersion <- Future.sequence(versions.map { version =>
-//        dataService.awsConfigs.maybeFor(version).map { config =>
-//          (version, config)
-//        }
-//      }).map(_.toMap)
-//      requiredOAuth2ApiConfigsByVersion <- Future.sequence(versions.map { version =>
-//        dataService.requiredOAuth2ApiConfigs.allFor(version).map { apps =>
-//          (version, apps)
-//        }
-//      }).map(_.toMap)
-//      requiredSimpleTokenApisByVersion <- Future.sequence(versions.map { version =>
-//        dataService.requiredSimpleTokenApis.allFor(version).map { apis =>
-//          (version, apis)
-//        }
-//      }).map(_.toMap)
-//      paramTypes <- Future.successful(parametersByVersion.flatMap { case(_, params) =>
-//        params.map(_.paramType)
-//      }.toSeq.distinct)
-//      paramTypeDataByParamTypes <- Future.sequence(paramTypes.map { paramType =>
-//        BehaviorParameterTypeData.from(paramType, dataService).map { data =>
-//          (paramType, data)
-//        }
-//      }).map(_.toMap)
     } yield {
-      Ok(Json.toJson(versionsData))
-//      maybeBehaviorGroup.map { behavior =>
-//        val versionsData = versions.map { version =>
-//          val maybeAwsConfigData = awsConfigByVersion.get(version).flatMap { maybeConfig =>
-//            maybeConfig.map { config =>
-//              AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
-//            }
-//          }
-//          val maybeRequiredOAuth2ApiConfigsData = requiredOAuth2ApiConfigsByVersion.get(version).map { configs =>
-//            configs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
-//          }
-//          val maybeRequiredSimpleTokenApisData = requiredSimpleTokenApisByVersion.get(version).map { apis =>
-//            apis.map(ea => RequiredSimpleTokenApiData.from(ea))
-//          }
-//          BehaviorVersionData.buildFor(
-//            version.team.id,
-//            behavior.maybeGroup.map(_.id),
-//            Some(behavior.id),
-//            isNewBehavior = false,
-//            version.maybeDescription,
-//            version.functionBody,
-//            version.maybeResponseTemplate.getOrElse(""),
-//            parametersByVersion.get(version).map { params =>
-//              params.map { ea =>
-//                BehaviorParameterData(
-//                  ea.name,
-//                  paramTypeDataByParamTypes.get(ea.paramType),
-//                  ea.question,
-//                  Some(ea.input.isSavedForTeam),
-//                  Some(ea.input.isSavedForUser),
-//                  Some(ea.input.id),
-//                  ea.input.maybeExportId,
-//                  ea.input.maybeBehaviorGroup.map(_.id)
-//                )
-//              }
-//            }.getOrElse(Seq()),
-//            triggersByVersion.get(version).map { triggers =>
-//              triggers.map { ea =>
-//                BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
-//              }
-//            }.getOrElse(Seq()),
-//            BehaviorConfig(
-//              None,
-//              version.maybeName,
-//              maybeAwsConfigData,
-//              maybeRequiredOAuth2ApiConfigsData,
-//              maybeRequiredSimpleTokenApisData,
-//              Some(version.forcePrivateResponse),
-//              behavior.maybeDataTypeName
-//            ),
-//            behavior.maybeExportId,
-//            None,
-//            Some(version.createdAt),
-//            dataService
-//          )
-//        }
-//        Ok(Json.toJson(versions))
-//      }.getOrElse {
-//        NotFound(Json.toJson("Error: behavior not found"))
-//      }
+      Ok(Json.toJson(versionsData.sortBy(_.createdAt).reverse))
     }
   }
 
@@ -356,7 +264,7 @@ class BehaviorEditorController @Inject() (
           maybeExistingGroupData <- maybeExistingBehavior.map { behavior =>
             BehaviorGroupData.maybeFor(behavior.group.id, user, None, dataService)
           }.getOrElse(Future.successful(None))
-          maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService).map { maybeVersionData =>
+          maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, None).map { maybeVersionData =>
             maybeVersionData.map(_.copyForClone)
           }
           maybeNewGroupData <- Future.successful(for {

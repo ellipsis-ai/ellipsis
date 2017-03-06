@@ -126,7 +126,7 @@ case class BehaviorGroupZipImporter(
       versionsData,
       githubUrl = None,
       exportId = maybeExportId,
-      OffsetDateTime.now
+      Some(OffsetDateTime.now)
     )
 
     BehaviorGroupImporter(team, user, data, dataService).run

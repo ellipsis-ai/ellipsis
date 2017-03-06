@@ -10,6 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import Formatting._
 import models.IDs
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import services.DataService
 
 import scala.concurrent.Future
@@ -166,11 +167,19 @@ object BehaviorVersionData {
     )
   }
 
-  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybeExportId: Option[String] = None): Future[Option[BehaviorVersionData]] = {
+  def maybeFor(
+                behaviorId: String,
+                user: User,
+                dataService: DataService,
+                maybeGroupVersion: Option[BehaviorGroupVersion],
+                maybeExportId: Option[String] = None
+              ): Future[Option[BehaviorVersionData]] = {
     for {
       maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        dataService.behaviors.maybeCurrentVersionFor(behavior)
+        maybeGroupVersion.map { groupVersion =>
+          dataService.behaviorVersions.findFor(behavior, groupVersion)
+        }.getOrElse(dataService.behaviors.maybeCurrentVersionFor(behavior))
       }.getOrElse(Future.successful(None))
       maybeParameters <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.behaviorParameters.allFor(behaviorVersion).map(Some(_))

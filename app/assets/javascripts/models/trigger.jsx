@@ -27,9 +27,13 @@ define(function() {
       });
     }
 
+    getText() {
+      return this.text || "";
+    }
+
     get paramNames() {
       var names = [];
-      var matches = this.text.match(/\{.+?\}/g);
+      var matches = this.getText().match(/\{.+?\}/g);
       if (!this.isRegex && matches) {
         names = matches.map((name) => name.replace(/^\{|\}$/g, ''));
       }
@@ -37,38 +41,38 @@ define(function() {
     }
 
     get displayText() {
-      return this.text;
+      return this.getText();
     }
 
     hasNonRegexParams() {
-      return !this.isRegex && /\{.+?\}/.test(this.text);
+      return !this.isRegex && /\{.+?\}/.test(this.getText());
     }
 
     usesParamName(name) {
-      return !this.isRegex && this.text.includes(`{${name}}`);
+      return !this.isRegex && this.getText().includes(`{${name}}`);
     }
 
     capturesParamIndex(index) {
       if (!this.isRegex) {
         return false;
       }
-      var matches = this.text.match(/^\(.+?\)|[^\\]\(.*?[^\\]\)/g);
+      var matches = this.getText().match(/^\(.+?\)|[^\\]\(.*?[^\\]\)/g);
       return !!(matches && matches[index]);
     }
 
     hasRegexCapturingParens() {
-      return this.isRegex && /\(.+?\)/.test(this.text);
+      return this.isRegex && /\(.+?\)/.test(this.getText());
     }
 
     hasCaseInsensitiveRegexFlagWhileCaseSensitive() {
-      return this.isRegex && this.caseSensitive && /^\(\?i\)/.test(this.text);
+      return this.isRegex && this.caseSensitive && /^\(\?i\)/.test(this.getText());
     }
 
     getTextWithNewParamName(oldName, newName) {
       if (!this.isRegex) {
-        return this.text.split(`{${oldName}}`).join(`{${newName}}`);
+        return this.getText().split(`{${oldName}}`).join(`{${newName}}`);
       } else {
-        return this.text;
+        return this.getText();
       }
     }
 

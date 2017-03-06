@@ -5,6 +5,19 @@ define(function(require) {
   class BehaviorGroup {
     constructor(props) {
       Object.assign(this, props);
+
+      Object.defineProperties(this, {
+        id: { value: props.id, enumerable: true },
+        teamId: { value: props.teamId, enumerable: true },
+        name: { value: props.name, enumerable: true },
+        icon: { value: props.icon, enumerable: true },
+        description: { value: props.description, enumerable: true },
+        actionInputs: { value: props.actionInputs, enumerable: true },
+        dataTypeInputs: { value: props.dataTypeInputs, enumerable: true },
+        behaviorVersions: { value: props.behaviorVersions, enumerable: true },
+        createdAt: { value: props.createdAt, enumerable: false },
+        exportId: { value: props.exportId, enumerable: false }
+      });
     }
 
     clone(props) {

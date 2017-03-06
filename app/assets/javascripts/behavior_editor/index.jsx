@@ -180,16 +180,6 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getBehaviorGroupName: function() {
-    if (this.state.lastSavedGroupName) {
-      return this.state.lastSavedGroupName;
-    } else if (this.isExistingGroup()) {
-      return "Untitled skill";
-    } else {
-      return "New skill";
-    }
-  },
-
   getBehaviorName: function() {
     return this.getBehaviorProp('name') || "";
   },
@@ -1088,12 +1078,6 @@ const BehaviorEditor = React.createClass({
     };
   },
 
-  cancelBehaviorGroupDetailChanges: function() {
-    this.setState({
-      group: this.getBehaviorGroup().clone({ name: this.state.lastSavedGroupName, description: this.state.lastSavedGroupDescription })
-    });
-  },
-
   updateParamAtIndexWithParam: function(index, newParam) {
     var oldParams = this.getBehaviorParams();
     var oldParamName = oldParams[index].name;
@@ -1420,8 +1404,6 @@ const BehaviorEditor = React.createClass({
     return {
       group: this.props.group,
       selectedBehaviorId: this.props.selectedBehaviorId,
-      lastSavedGroupName: this.props.group.name || "",
-      lastSavedGroupDescription: this.props.group.description || "",
       activeDropdown: null,
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
@@ -1928,7 +1910,7 @@ const BehaviorEditor = React.createClass({
               <SVGHamburger />
             </span>
             <h4 className="type-black display-inline-block align-m man">
-              {this.getBehaviorGroupName()}
+              {this.getBehaviorGroup().name}
             </h4>
           </button>
         </div>
@@ -1989,9 +1971,7 @@ const BehaviorEditor = React.createClass({
               selectedBehavior={this.getTimestampedBehavior(this.getSelectedBehavior())}
               groupId={this.getBehaviorGroup().id}
               groupName={this.getBehaviorGroup().name || ""}
-              lastSavedGroupName={this.state.lastSavedGroupName}
               groupDescription={this.getBehaviorGroup().description || ""}
-              lastSavedGroupDescription={this.state.lastSavedGroupDescription}
               teamId={this.getBehaviorGroup().teamId}
               onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
               onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
