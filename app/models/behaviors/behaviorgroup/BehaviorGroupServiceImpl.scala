@@ -100,11 +100,11 @@ class BehaviorGroupServiceImpl @Inject() (
 
   private def moveChildren(fromGroup: BehaviorGroup, toGroup: BehaviorGroup, groupVersion: BehaviorGroupVersion): DBIO[BehaviorGroup] = {
     for {
-      behaviorsToMove <- DBIO.from(dataService.behaviors.allForGroup(fromGroup))
+      behaviorsToMove <- dataService.behaviors.allForGroupAction(fromGroup)
       behaviorVersionsToMove <- DBIO.sequence(behaviorsToMove.map { ea =>
-        DBIO.from(dataService.behaviors.maybeCurrentVersionFor(ea))
+        dataService.behaviors.maybeCurrentVersionForAction(ea)
       }).map(_.flatten)
-      inputsToMove <- DBIO.from(dataService.inputs.allForGroup(fromGroup))
+      inputsToMove <- dataService.inputs.allForGroupAction(fromGroup)
       _ <- DBIO.sequence(behaviorsToMove.map { ea =>
         changeGroup(ea, toGroup)
       })
@@ -137,8 +137,7 @@ class BehaviorGroupServiceImpl @Inject() (
     val rawMerged = RawBehaviorGroup(IDs.next, maybeExportId, team.id, None, OffsetDateTime.now)
     val action = (for {
       merged <- (all += rawMerged).map(_ => tuple2Group((rawMerged, team)))
-      mergedVersion <- DBIO.from(dataService.behaviorGroupVersions.createFor(merged, user))
-      _ <- DBIO.from(dataService.behaviorGroupVersions.createFor(merged, user, Some(mergedName), maybeIcon, mergedDescription))
+      mergedVersion <- dataService.behaviorGroupVersions.createForAction(merged, user, Some(mergedName), maybeIcon, mergedDescription)
       _ <- DBIO.sequence(groups.map { ea =>
         moveChildren(ea, merged, mergedVersion)
       })

@@ -6,6 +6,7 @@ import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.Event
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -16,6 +17,8 @@ trait BehaviorVersionService {
   def allFor(behavior: Behavior): Future[Seq[BehaviorVersion]]
 
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorVersion]]
+
+  def findForAction(behavior: Behavior, groupVersion: BehaviorGroupVersion): DBIO[Option[BehaviorVersion]]
 
   def findFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]]
 

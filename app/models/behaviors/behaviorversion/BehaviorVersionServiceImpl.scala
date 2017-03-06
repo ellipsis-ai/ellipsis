@@ -117,11 +117,14 @@ class BehaviorVersionServiceImpl @Inject() (
   }
   val findForBehaviorAndGroupVersionQuery = Compiled(uncompiledFindForBehaviorAndGroupVersionQuery _)
 
-  def findFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]] = {
-    val action = findForBehaviorAndGroupVersionQuery(behavior.id, groupVersion.id).result.map { r =>
+  def findForAction(behavior: Behavior, groupVersion: BehaviorGroupVersion): DBIO[Option[BehaviorVersion]] = {
+    findForBehaviorAndGroupVersionQuery(behavior.id, groupVersion.id).result.map { r =>
       r.headOption.map(tuple2BehaviorVersion)
     }
-    dataService.run(action)
+  }
+
+  def findFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]] = {
+    dataService.run(findForAction(behavior, groupVersion))
   }
 
   def createFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, maybeUser: Option[User]): Future[BehaviorVersion] = {

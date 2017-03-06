@@ -113,11 +113,14 @@ class InputServiceImpl @Inject() (
     } yield input
   }
 
-  def allForGroup(group: BehaviorGroup): Future[Seq[Input]] = {
-    val action = allForGroupQuery(group.id).result.map { r =>
+  def allForGroupAction(group: BehaviorGroup): DBIO[Seq[Input]] = {
+    allForGroupQuery(group.id).result.map { r =>
       r.map(tuple2Input)
     }
-    dataService.run(action)
+  }
+
+  def allForGroup(group: BehaviorGroup): Future[Seq[Input]] = {
+    dataService.run(allForGroupAction(group))
   }
 
   def withEnsuredExportId(input: Input): Future[Input] = {

@@ -47,9 +47,12 @@ class BehaviorGroupVersionServiceImpl @Inject() (
 
   import BehaviorGroupVersionQueries._
 
+  def findWithoutAccessCheckAction(id: String): DBIO[Option[BehaviorGroupVersion]] = {
+    findQuery(id).result.map(_.headOption.map(tuple2BehaviorGroupVersion))
+  }
+
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorGroupVersion]] = {
-    val action = findQuery(id).result.map(_.headOption.map(tuple2BehaviorGroupVersion))
-    dataService.run(action)
+    dataService.run(findWithoutAccessCheckAction(id))
   }
 
   def allFor(group: BehaviorGroup): Future[Seq[BehaviorGroupVersion]] = {
@@ -59,6 +62,20 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def createForAction(
+                 group: BehaviorGroup,
+                 user: User,
+                 maybeName: Option[String] = None,
+                 maybeIcon: Option[String] = None,
+                 maybeDescription: Option[String] = None
+               ): DBIO[BehaviorGroupVersion] = {
+    val raw = RawBehaviorGroupVersion(IDs.next, group.id, maybeName.getOrElse(""), maybeIcon, maybeDescription, Some(user.id), OffsetDateTime.now)
+
+    (all += raw).map { _ =>
+      BehaviorGroupVersion(raw.id, group, raw.name, raw.maybeIcon, raw.maybeDescription, Some(user), raw.createdAt)
+    }
+  }
+
   def createFor(
                  group: BehaviorGroup,
                  user: User,
@@ -66,12 +83,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                  maybeIcon: Option[String] = None,
                  maybeDescription: Option[String] = None
                ): Future[BehaviorGroupVersion] = {
-    val raw = RawBehaviorGroupVersion(IDs.next, group.id, maybeName.getOrElse(""), maybeIcon, maybeDescription, Some(user.id), OffsetDateTime.now)
-
-    val action = (all += raw).map { _ =>
-      BehaviorGroupVersion(raw.id, group, raw.name, raw.maybeIcon, raw.maybeDescription, Some(user), raw.createdAt)
-    }
-    dataService.run(action)
+    dataService.run(createForAction(group, user, maybeName, maybeIcon, maybeDescription))
   }
 
   def createFor(
