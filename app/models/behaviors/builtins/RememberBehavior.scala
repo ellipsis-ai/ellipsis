@@ -54,7 +54,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
       }).getOrElse(Future.successful(None))
     } yield {
       maybeBehaviorVersion.map { behaviorVersion =>
-        val link = dataService.behaviors.editLinkFor(behaviorVersion.behavior.id, lambdaService.configuration)
+        val link = dataService.behaviors.editLinkFor(behaviorVersion.group.id, behaviorVersion.behavior.id, lambdaService.configuration)
         SimpleTextResult(event, s"OK, I compiled recent messages into [a new skill]($link)", forcePrivateResponse = false)
       }.getOrElse{
         NoResponseResult(event, None)

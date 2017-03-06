@@ -64,9 +64,9 @@ trait BehaviorService {
 
   def authorNamesFor(behavior: Behavior, event: SlackMessageEvent): Future[Seq[String]]
 
-  def editLinkFor(behaviorId: String, configuration: Configuration): String = {
+  def editLinkFor(groupId: String, behaviorId: String, configuration: Configuration): String = {
     val baseUrl = configuration.getString("application.apiBaseUrl").get
-    val path = controllers.routes.BehaviorEditorController.edit(behaviorId)
+    val path = controllers.routes.BehaviorEditorController.edit(groupId, Some(behaviorId))
     s"$baseUrl$path"
   }
 
