@@ -13,7 +13,7 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
   def triggerFor(template: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): TemplateMessageTrigger = {
     val team = Team(IDs.next, "Team!", None)
     val versionId = IDs.next
-    val group = BehaviorGroup(IDs.next, "", None, None, None, team, None, OffsetDateTime.now)
+    val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
     val groupVersion = BehaviorGroupVersion(IDs.next, group, "", None, None, None, OffsetDateTime.now)
     val behavior = Behavior(IDs.next, team, Some(group), Some(versionId), None, OffsetDateTime.now)
     val behaviorVersion = BehaviorVersion(versionId, behavior, groupVersion, None, None, None, None, forcePrivateResponse = false, None, OffsetDateTime.now)

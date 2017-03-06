@@ -9,6 +9,7 @@ class BehaviorGroupServiceSpec extends DBSpec {
     "merge a list of groups into a new group" in {
       withEmptyDB(dataService, { db =>
         val team = newSavedTeam
+        val user = newSavedUserOn(team)
 
         val groups = 1.to(3).map { _ => newSavedBehaviorGroupFor(team) }
         groups.foreach { group =>
@@ -16,15 +17,21 @@ class BehaviorGroupServiceSpec extends DBSpec {
             newSavedBehaviorFor(group)
             newSavedInputFor(group)
           }
+          newSavedGroupVersionFor(group, user)
         }
-        groups.foreach { group =>
+
+        // so they have current version IDs
+        val reloadedGroups = groups.flatMap { ea =>
+          runNow(dataService.behaviorGroups.find(ea.id))
+        }
+        reloadedGroups.foreach { group =>
           runNow(dataService.behaviors.allForGroup(group)) must have length 3
           runNow(dataService.inputs.allForGroup(group)) must have length 3
         }
 
-        val merged = runNow(dataService.behaviorGroups.merge(groups))
+        val merged = runNow(dataService.behaviorGroups.merge(reloadedGroups, user))
 
-        groups.foreach { group =>
+        reloadedGroups.foreach { group =>
           runNow(dataService.behaviors.allForGroup(group)) mustBe empty
           runNow(dataService.inputs.allForGroup(group)) mustBe empty
           runNow(dataService.behaviorGroups.find(group.id)) mustBe empty

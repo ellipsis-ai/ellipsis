@@ -12,7 +12,7 @@ COMMIT;
 
 BEGIN;
 
-ALTER TABLE behavior_groups ADD COLUMN name TEXT NOT NULL DEFAULT "";
+ALTER TABLE behavior_groups ADD COLUMN name TEXT NOT NULL DEFAULT '';
 ALTER TABLE behavior_groups ADD COLUMN icon TEXT;
 ALTER TABLE behavior_groups ADD COLUMN description TEXT;
 

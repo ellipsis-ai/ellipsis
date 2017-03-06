@@ -12,6 +12,7 @@ import models.accounts.user.User
 import models.behaviors.SimpleTextResult
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventHandler, SlackMessageEvent}
 import models.behaviors.invocationtoken.InvocationToken
@@ -174,7 +175,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, "group", None, None, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
         val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService)
@@ -269,7 +270,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, "group", None, None, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
         val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService)
@@ -279,9 +280,11 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviors.findWithoutAccessCheck(originatingBehavior.id)).thenReturn(Future.successful(Some(originatingBehavior)))
         when(dataService.behaviors.findByIdOrName(org.mockito.Matchers.eq(actionName), any[BehaviorGroup])).thenReturn(Future.successful(Some(targetBehavior)))
         when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
-        val mockVersion = mock[BehaviorVersion]
-        when(mockVersion.maybeName).thenReturn(Some(actionName))
-        when(dataService.behaviors.maybeCurrentVersionFor(targetBehavior)).thenReturn(Future.successful(Some(mockVersion)))
+        val mockBehaviorVersion = mock[BehaviorVersion]
+        when(mockBehaviorVersion.maybeName).thenReturn(Some(actionName))
+        when(dataService.behaviors.maybeCurrentVersionFor(targetBehavior)).thenReturn(Future.successful(Some(mockBehaviorVersion)))
+        val mockVersion = mock[BehaviorGroupVersion]
+        when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).thenReturn(Future.successful(Some(mockVersion)))
         when(dataService.scheduledBehaviors.maybeCreateFor(targetBehavior, Map(), recurrenceString, user, team, Some(defaultChannel), false)).thenReturn {
           Future.successful(
             Some(
@@ -337,7 +340,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, "group", None, None, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
         val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService)
@@ -346,9 +349,9 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviors.findWithoutAccessCheck(originatingBehavior.id)).thenReturn(Future.successful(Some(originatingBehavior)))
         when(dataService.behaviors.findByIdOrName(org.mockito.Matchers.eq(actionName), any[BehaviorGroup])).thenReturn(Future.successful(Some(targetBehavior)))
         when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
-        val mockVersion = mock[BehaviorVersion]
-        when(mockVersion.maybeName).thenReturn(Some(actionName))
-        when(dataService.behaviors.maybeCurrentVersionFor(targetBehavior)).thenReturn(Future.successful(Some(mockVersion)))
+        val mockVersion = mock[BehaviorGroupVersion]
+        when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).thenReturn(Future.successful(Some(mockVersion)))
+
         when(dataService.scheduledBehaviors.deleteFor(targetBehavior, team)).thenReturn(Future.successful(true))
         val mockScheduledBehavior = mock[ScheduledBehavior]
         when(mockScheduledBehavior.displayText(dataService)).thenReturn(Future.successful(s"an action named $actionName"))
