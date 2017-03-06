@@ -71,7 +71,7 @@ define(function(require) {
 
             <div className={`pvxs container container-wide ${this.props.selectedBehavior ? "" : "bg-blue border-blue-medium type-white"}`}>
               <button type="button" className="button-block" onClick={this.onEditSkillDetails} disabled={!this.props.selectedBehavior}>
-                <div className={`type-s ${this.props.selectedBehavior ? "type-link" : "type-white"}`}>{this.getEditButtonLabel()}</div>
+                <span className={`type-s ${this.props.selectedBehavior ? "link" : "type-white"}`}>{this.getEditButtonLabel()}</span>
               </button>
             </div>
           </div>
