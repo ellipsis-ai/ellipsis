@@ -11,7 +11,7 @@ define(function(require) {
     propTypes: {
       heading: React.PropTypes.string.isRequired,
       behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-      selectedBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
+      selectedBehavior: React.PropTypes.instanceOf(BehaviorVersion),
       onAddNew: React.PropTypes.func.isRequired,
       addNewLabel: React.PropTypes.string,
       emptyMessage: React.PropTypes.string.isRequired,
@@ -24,7 +24,7 @@ define(function(require) {
     },
 
     isSelectedVersion: function(version) {
-      return version.behaviorId === this.props.selectedBehavior.behaviorId;
+      return !!this.props.selectedBehavior && version.behaviorId === this.props.selectedBehavior.behaviorId;
     },
 
     render: function() {
