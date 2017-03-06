@@ -5,6 +5,7 @@ var React = require('react'),
   AWSHelp = require('./aws_help'),
   BehaviorNameInput = require('./behavior_name_input'),
   BehaviorGroup = require('../models/behavior_group'),
+  BehaviorGroupEditor = require('./behavior_group_editor'),
   BehaviorVersion = require('../models/behavior_version'),
   BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
@@ -132,10 +133,13 @@ const BehaviorEditor = React.createClass({
   },
 
   getRequiredOAuth2ApiConfigs: function() {
+    var selectedBehavior = this.getSelectedBehavior();
     if (this.state) {
-      return this.getBehaviorConfig()['requiredOAuth2ApiConfigs'] || [];
-    } else if (this.getSelectedBehavior().config) {
-      return this.getSelectedBehavior().config.requiredOAuth2ApiConfigs || [];
+      var config = this.getBehaviorConfig();
+      return (config && config['requiredOAuth2ApiConfigs']) ?
+        config['requiredOAuth2ApiConfigs'] : [];
+    } else if (selectedBehavior && selectedBehavior.config) {
+      return selectedBehavior.config.requiredOAuth2ApiConfigs || [];
     } else {
       return [];
     }
@@ -162,10 +166,12 @@ const BehaviorEditor = React.createClass({
   },
 
   getAWSConfig: function() {
+    var selectedBehavior = this.getSelectedBehavior();
     if (this.state) {
-      return this.getBehaviorConfig()['aws'];
-    } else if (this.getSelectedBehavior().config) {
-      return this.getSelectedBehavior().config.aws;
+      var config = this.getBehaviorConfig();
+      return config && config['aws'];
+    } else if (selectedBehavior && selectedBehavior.config) {
+      return selectedBehavior.config.aws;
     } else {
       return undefined;
     }
@@ -236,10 +242,15 @@ const BehaviorEditor = React.createClass({
   },
 
   getBehaviorProp: function(key) {
-    return this.getSelectedBehavior()[key];
+    var selectedBehavior = this.getSelectedBehavior();
+    return selectedBehavior ? selectedBehavior[key] : null;
   },
 
   getBehaviorTemplate: function() {
+    var selectedBehavior = this.getSelectedBehavior();
+    if (!selectedBehavior) {
+      return null;
+    }
     var template = this.getBehaviorProp('responseTemplate');
     if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
       return this.getDefaultBehaviorTemplate();
@@ -249,7 +260,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getBehaviorTriggers: function() {
-    return this.getBehaviorProp('triggers') || this.getInitialTriggersFromBehavior(this.getSelectedBehavior());
+    return this.getBehaviorProp('triggers') || [];
   },
 
   getBehaviorConfig: function() {
@@ -257,7 +268,8 @@ const BehaviorEditor = React.createClass({
   },
 
   getDataTypeName: function() {
-    return this.getBehaviorConfig().dataTypeName;
+    var config = this.getBehaviorConfig();
+    return config && config.dataTypeName;
   },
 
   shouldForcePrivateResponse: function() {
@@ -349,14 +361,18 @@ const BehaviorEditor = React.createClass({
   },
 
   buildEnvVarNotifications: function() {
-    return this.getEnvVariables().
-      filter((ea) => this.getSelectedBehavior().knownEnvVarsUsed.includes(ea.name)).
-      filter((ea) => !ea.isAlreadySavedWithValue).
-      map((ea) => ({
+    var selectedBehavior = this.getSelectedBehavior();
+    if (selectedBehavior) {
+      return this.getEnvVariables().filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name)).filter((ea) => !ea.isAlreadySavedWithValue).map((ea) => ({
         kind: "env_var_not_defined",
         environmentVariableName: ea.name,
-        onClick: () => { this.showEnvVariableSetter(ea.name); }
+        onClick: () => {
+          this.showEnvVariableSetter(ea.name);
+        }
       }));
+    } else {
+      return [];
+    }
   },
 
   getOAuth2ApiWithId: function(apiId) {
@@ -457,13 +473,18 @@ const BehaviorEditor = React.createClass({
   },
 
   buildTemplateNotifications: function() {
-    var template = this.getBehaviorTemplate();
-    var validParams = this.getValidParamNamesForTemplate();
-    var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
-    return unknownTemplateParams.map((paramName) => ({
-      kind: "unknown_param_in_template",
-      name: paramName
-    }));
+    var selectedBehavior = this.getSelectedBehavior();
+    if (selectedBehavior) {
+      var template = this.getBehaviorTemplate();
+      var validParams = this.getValidParamNamesForTemplate();
+      var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
+      return unknownTemplateParams.map((paramName) => ({
+        kind: "unknown_param_in_template",
+        name: paramName
+      }));
+    } else {
+      return [];
+    }
   },
 
   buildNotifications: function() {
@@ -652,6 +673,12 @@ const BehaviorEditor = React.createClass({
     return mainFooter ? mainFooter.getHeight() : 0;
   },
 
+  updateBehaviorScrollPosition: function() {
+    if (this.getSelectedBehavior()) {
+      this.setBehaviorProp('editorScrollPosition', window.scrollY);
+    }
+  },
+
   loadVersions: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.getBehaviorGroup().id).url;
     this.setState({
@@ -704,7 +731,7 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  onSaveError: function(error) {
+  onSaveError: function(error) { // eslint-disable-line no-unused-vars
     this.props.onClearActivePanel();
     this.setState({
       error: "not_saved"
@@ -737,7 +764,8 @@ const BehaviorEditor = React.createClass({
   },
 
   checkDataAndCallback: function(callback) {
-    if (this.getBehaviorTemplate().toString() === this.getDefaultBehaviorTemplate().toString()) {
+    var template = this.getBehaviorTemplate();
+    if (template && template.toString() === this.getDefaultBehaviorTemplate().toString()) {
       this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), callback);
     } else {
       callback();
@@ -787,6 +815,9 @@ const BehaviorEditor = React.createClass({
   setBehaviorProps: function(props, callback) {
     var existingGroup = this.getBehaviorGroup();
     var existingBehavior = this.getSelectedBehaviorFor(existingGroup, this.getSelectedBehaviorId());
+    if (!existingBehavior) {
+      return;
+    }
     var timestampedBehavior = this.getTimestampedBehavior(existingBehavior.clone(props));
 
     var newVersionsForGroup =
@@ -1198,7 +1229,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isExistingBehavior: function() {
-    return !this.getSelectedBehavior().isNewBehavior;
+    return !!this.getSelectedBehavior() && !this.getSelectedBehavior().isNewBehavior;
   },
 
   isExistingGroup: function() {
@@ -1206,7 +1237,9 @@ const BehaviorEditor = React.createClass({
   },
 
   isFinishedBehavior: function() {
-    return this.isExistingBehavior() && !!(this.getOriginalSelectedBehavior().functionBody || this.getOriginalSelectedBehavior().responseTemplate.text);
+    var originalSelectedBehavior = this.getOriginalSelectedBehavior();
+    var completedOriginal = !!(originalSelectedBehavior && (originalSelectedBehavior.functionBody || originalSelectedBehavior.responseTemplate.text));
+    return this.isExistingBehavior() && completedOriginal;
   },
 
   isModified: function() {
@@ -1390,6 +1423,7 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
+    window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 25), false);
   },
 
   // componentDidUpdate: function() {
@@ -1401,6 +1435,7 @@ const BehaviorEditor = React.createClass({
 
   getInitialState: function() {
     const selectedBehavior = this.getSelectedBehavior();
+    const hasModifiedTemplate = !!(selectedBehavior && selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text);
     return {
       group: this.props.group,
       selectedBehaviorId: this.props.selectedBehaviorId,
@@ -1408,7 +1443,7 @@ const BehaviorEditor = React.createClass({
       codeEditorUseLineWrapping: false,
       justSaved: this.props.justSaved,
       envVariables: this.getInitialEnvVariables(),
-      hasModifiedTemplate: !!(selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text),
+      hasModifiedTemplate: hasModifiedTemplate,
       notifications: this.buildNotifications(),
       versions: [this.getTimestampedGroup(this.props.group)],
       versionsLoadStatus: null,
@@ -1420,7 +1455,8 @@ const BehaviorEditor = React.createClass({
       error: null,
       selectedSavedAnswerInputId: null,
       behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
-      hasMobileLayout: this.windowIsMobile()
+      hasMobileLayout: this.windowIsMobile(),
+      animationDisabled: false
     };
   },
 
@@ -1431,7 +1467,7 @@ const BehaviorEditor = React.createClass({
       var newState = {
         justSaved: true,
         group: newGroup,
-        selectedBehaviorId: newSelectedBehaviorVersion.behaviorId,
+        selectedBehaviorId: newSelectedBehaviorVersion ? newSelectedBehaviorVersion.behaviorId : null,
         versions: [this.getTimestampedGroup(newGroup)],
         versionsLoadStatus: null,
         error: null
@@ -1444,7 +1480,7 @@ const BehaviorEditor = React.createClass({
       if (typeof(nextProps.onLoad) === 'function') {
         nextProps.onLoad();
       }
-      if (newSelectedBehaviorVersion.behaviorId) {
+      if (newSelectedBehaviorVersion && newSelectedBehaviorVersion.behaviorId) {
         BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newGroup.id, newSelectedBehaviorVersion.behaviorId).url);
       }
     }
@@ -1483,7 +1519,7 @@ const BehaviorEditor = React.createClass({
               />
             </div>
 
-            <Collapsible revealWhen={!!this.getAWSConfig()}>
+            <Collapsible revealWhen={!!this.getAWSConfig()} animationDisabled={this.animationIsDisabled()}>
               <div className="plxxxl prs pbs mbs border-bottom border-light">
                 <AWSConfig
                   envVariableNames={this.getEnvVariableNames()}
@@ -1701,7 +1737,7 @@ const BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.layoutDidUpdate}>
+          <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.layoutDidUpdate} animationDisabled={this.animationIsDisabled()}>
             {this.getNotifications().map((notification, index) => (
               <Notification key={"notification" + index} notification={notification} />
             ))}
@@ -1926,10 +1962,22 @@ const BehaviorEditor = React.createClass({
 
   onSelectBehavior: function(groupId, behaviorId) {
     this.setState({
+      animationDisabled: true,
       selectedBehaviorId: behaviorId
     }, () => {
-      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
+      if (groupId) {
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
+      }
+      var newScrollPosition = this.getBehaviorProp('editorScrollPosition');
+      window.scrollTo(window.scrollX, typeof(newScrollPosition) === 'number' ? newScrollPosition : 0);
+      this.setState({
+        animationDisabled: false
+      });
     });
+  },
+
+  animationIsDisabled: function() {
+    return this.state.animationDisabled;
   },
 
   addNewBehavior: function(isDataType) {
@@ -1968,7 +2016,7 @@ const BehaviorEditor = React.createClass({
               ref="behaviorSwitcher"
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
-              selectedBehavior={this.getTimestampedBehavior(this.getSelectedBehavior())}
+              selectedBehavior={this.getSelectedBehavior()}
               groupId={this.getBehaviorGroup().id}
               groupName={this.getBehaviorGroup().name || ""}
               groupDescription={this.getBehaviorGroup().description || ""}
@@ -1992,23 +2040,6 @@ const BehaviorEditor = React.createClass({
     return (
 
       <div>
-        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
-
-          {this.renderHiddenFormValues()}
-
-          {/* Start of container */}
-          <div>
-
-            <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
-              {this.renderBehaviorSwitcher()}
-              <div className="column column-page-main-wide flex-column flex-column-center">
-
-                {this.renderSwitcherToggle()}
-
-                <div className="container container-wide mtl">
-                  {this.getBehaviorHeading()}
-                </div>
-
                 <BehaviorNameInput
                   name={this.getBehaviorName()}
                   onChange={this.updateName}
@@ -2058,13 +2089,14 @@ const BehaviorEditor = React.createClass({
                   onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
                   savedAnswers={this.props.savedAnswers}
                   onToggleSavedAnswer={this.toggleSavedAnswerEditor}
+                  animationDisabled={this.animationIsDisabled()}
                 />
 
                 <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0}>
                   <hr className="man thin bg-gray-light" />
                 </Collapsible>
 
-                <Collapsible revealWhen={!this.getSelectedBehavior().shouldRevealCodeEditor}>
+                <Collapsible revealWhen={!this.getSelectedBehavior().shouldRevealCodeEditor} animationDisabled={this.animationIsDisabled()}>
                   <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
                     <div className="container container-wide">
                       <div className="columns columns-elastic mobile-columns-float">
@@ -2084,7 +2116,7 @@ const BehaviorEditor = React.createClass({
                   </div>
                 </Collapsible>
 
-                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0.5}>
+                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0.5} animationDisabled={this.animationIsDisabled()}>
 
                   <div className="container container-wide">
                     <div className="ptxl">
@@ -2124,18 +2156,6 @@ const BehaviorEditor = React.createClass({
                   sectionNumber={this.getResponseTemplateSectionNumber()}
                 />
 
-              </div>
-            </div>
-          </div>
-
-          {/* End of container */}
-
-          {this.renderFooter()}
-
-        </form>
-
-        {this.renderHiddenForms()}
-
       </div>
     );
   },
@@ -2143,20 +2163,6 @@ const BehaviorEditor = React.createClass({
   renderDataTypeBehavior: function() {
     return (
       <div>
-
-        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
-          {this.renderHiddenFormValues()}
-
-          <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
-            {this.renderBehaviorSwitcher()}
-            <div className="column column-page-main-wide flex-column flex-column-center">
-
-              {this.renderSwitcherToggle()}
-
-              <div className="container container-wide mtl">
-                {this.getBehaviorHeading()}
-              </div>
-
               <BehaviorNameInput
                 name={this.getDataTypeName()}
                 onChange={this.updateDataTypeName}
@@ -2184,24 +2190,64 @@ const BehaviorEditor = React.createClass({
 
                 {this.renderCodeEditor()}
               </div>
+      </div>
+    );
+  },
 
-              {this.renderFooter()}
+  renderForBehaviorType: function() {
+    if (this.isDataTypeBehavior()) {
+      return this.renderDataTypeBehavior();
+    } else {
+      return this.renderNormalBehavior();
+    }
+  },
+
+  renderEditor: function() {
+    if (this.getSelectedBehaviorId()) {
+      return (
+        <div>
+          <div className="container container-wide mtl">
+            {this.getBehaviorHeading()}
+          </div>
+
+          {this.renderForBehaviorType()}
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <BehaviorGroupEditor
+            group={this.getBehaviorGroup()}
+            onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
+            onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+          />
+        </div>
+      );
+    }
+  },
+
+  render: function() {
+    return (
+      <div>
+        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
+          <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
+            {this.renderBehaviorSwitcher()}
+            <div className="column column-page-main-wide flex-column flex-column-center">
+              {this.renderSwitcherToggle()}
+
+              {this.renderEditor()}
             </div>
           </div>
+
+          {this.renderFooter()}
+
+          {this.renderHiddenFormValues()}
         </form>
 
         {this.renderHiddenForms()}
 
       </div>
     );
-  },
-
-  render: function() {
-    if (this.isDataTypeBehavior()) {
-      return this.renderDataTypeBehavior();
-    } else {
-      return this.renderNormalBehavior();
-    }
   }
 });
 

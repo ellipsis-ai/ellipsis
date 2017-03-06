@@ -1,5 +1,6 @@
 define(function(require) {
-  var Param = require('./param'),
+  var DeepEqual = require('../lib/deep_equal'),
+    Param = require('./param'),
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
@@ -11,7 +12,8 @@ define(function(require) {
         triggers: initialTriggerProps.map(ea => new Trigger(ea)),
         config: {},
         knownEnvVarsUsed: [],
-        shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0)
+        shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0),
+        editorScrollPosition: 0
       }, props);
 
       Object.defineProperties(this, {
@@ -27,9 +29,10 @@ define(function(require) {
         triggers: { value: initialProps.triggers, enumerable: true },
         config: { value: initialProps.config, enumerable: true },
         knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
-        createdAt: { value: initialProps.createdAt, enumerable: false },
-        exportId: { value: initialProps.exportId, enumerable: false },
-        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: false }
+        createdAt: { value: initialProps.createdAt, enumerable: true },
+        exportId: { value: initialProps.exportId, enumerable: true },
+        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true },
+        editorScrollPosition: { value: initialProps.editorScrollPosition, enumerable: true }
       });
     }
 
@@ -65,8 +68,20 @@ define(function(require) {
       }
     }
 
+    // Used by JSON.stringify for submitting data to the server
+    toJSON() {
+      return this.clone({
+        createdAt: null,
+        editorScrollPosition: null
+      });
+    }
+
+    forEqualityComparison() {
+      return this.toJSON();
+    }
+
     isIdenticalToVersion(behaviorVersion) {
-      return JSON.stringify(this) === JSON.stringify(behaviorVersion);
+      return DeepEqual.isEqual(this.forEqualityComparison(), behaviorVersion.forEqualityComparison());
     }
 
     get sortKey() {

@@ -98,6 +98,10 @@ define(function(require) {
       }
     },
 
+    onClickDone: function() {
+      this.props.onToggle();
+    },
+
     render: function() {
       var numGroups = this.getInstalledBehaviorGroups().length;
       if (numGroups === 0) {
@@ -128,7 +132,7 @@ define(function(require) {
             <div className="mtxl">
               <a className="button mbs mrs" href={this.getSlackUrl()}>Open your Slack team</a>
 
-              <button type="button" className="mbs mrs" onClick={this.props.onToggle}>Done</button>
+              <button type="button" className="mbs mrs" onClick={this.onClickDone}>Done</button>
             </div>
 
           </div>
