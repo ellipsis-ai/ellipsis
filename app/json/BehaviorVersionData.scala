@@ -16,6 +16,7 @@ import services.DataService
 import scala.concurrent.Future
 
 case class BehaviorVersionData(
+                                id: Option[String],
                                 teamId: String,
                                 groupId: Option[String],
                                 behaviorId: Option[String],
@@ -49,7 +50,7 @@ case class BehaviorVersionData(
   def copyWithInputIdsFrom(inputs: Seq[InputData]): BehaviorVersionData = {
     val paramsWithNewInputIds = params.map { param =>
       val maybeNewId = param.inputExportId.flatMap { exportId =>
-        inputs.find(_.exportId == exportId).flatMap(_.id)
+        inputs.find(_.exportId.contains(exportId)).flatMap(_.id)
       }
       param.copy(inputId = maybeNewId)
     }
@@ -58,9 +59,41 @@ case class BehaviorVersionData(
 
   def copyForClone: BehaviorVersionData = {
     copy(
+      id = None,
       behaviorId = Some(IDs.next),
       exportId = None
     )
+  }
+
+  def copyWithNewIdIn(oldToNewIdMapping: collection.mutable.Map[String, String]): BehaviorVersionData = {
+    val newId = IDs.next
+    val maybeOldID = id
+    maybeOldID.foreach { oldId => oldToNewIdMapping.put(oldId, newId) }
+    copy(id = Some(newId))
+  }
+
+  def copyWithInputIdsIn(
+                          inputs: Seq[InputData],
+                          oldToNewIdMapping: collection.mutable.Map[String, String]
+                        ): BehaviorVersionData = {
+    val paramsWithNewInputIds = params.map { param =>
+      val maybeNewId = param.inputId.flatMap { inputId =>
+        oldToNewIdMapping.get(inputId)
+      }
+      param.copy(inputId = maybeNewId)
+    }
+    copy(params = paramsWithNewInputIds)
+  }
+
+  def copyWithEnsuredInputIds: BehaviorVersionData = {
+    val paramsWithEnsuredInputIds = params.map { param =>
+      if (param.inputId.isDefined) {
+        param
+      } else {
+        param.copy(inputId = Some(IDs.next))
+      }
+    }
+    copy(params = paramsWithEnsuredInputIds)
   }
 
   lazy val isDataType: Boolean = config.dataTypeName.isDefined
@@ -77,6 +110,7 @@ object BehaviorVersionData {
   }
 
   def buildFor(
+                id: Option[String],
                 teamId: String,
                 groupId: Option[String],
                 behaviorId: Option[String],
@@ -100,6 +134,7 @@ object BehaviorVersionData {
 
 
     BehaviorVersionData(
+      id,
       teamId,
       groupId,
       behaviorId,
@@ -120,6 +155,7 @@ object BehaviorVersionData {
 
   def newUnsavedFor(teamId: String, maybeGroupId: Option[String], isDataType: Boolean, dataService: DataService): BehaviorVersionData = {
     buildFor(
+      None,
       teamId,
       maybeGroupId,
       Some(IDs.next),
@@ -150,6 +186,7 @@ object BehaviorVersionData {
                    ): BehaviorVersionData = {
     val config = Json.parse(configString).validate[BehaviorConfig].get
     BehaviorVersionData.buildFor(
+      None,
       teamId,
       None,
       None,
@@ -220,6 +257,7 @@ object BehaviorVersionData {
         val requiredSimpleTokenApiData = requiredSimpleTokenApis.map(ea => RequiredSimpleTokenApiData.from(ea))
         val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
         BehaviorVersionData.buildFor(
+          maybeBehaviorVersion.map(_.id),
           behaviorVersion.team.id,
           behavior.maybeGroup.map(_.id),
           Some(behavior.id),
@@ -236,7 +274,7 @@ object BehaviorVersionData {
               Some(ea.input.isSavedForUser),
               Some(ea.input.id),
               ea.input.maybeExportId,
-              ea.input.maybeBehaviorGroup.map(_.id)
+              Some(ea.input.behaviorGroupVersion.id)
             )
           },
           triggers.map(ea =>

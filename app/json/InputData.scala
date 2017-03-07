@@ -41,6 +41,21 @@ case class InputData(
     }.getOrElse(this)
   }
 
+  def copyWithParamTypeIdsIn(dataTypeVersions: Seq[BehaviorVersionData], oldToNewIdMapping: collection.mutable.Map[String, String]): InputData = {
+    val maybeOldDataTypeId = paramType.flatMap(_.id)
+    val maybeNewDataTypeId = maybeOldDataTypeId.flatMap(oldId => oldToNewIdMapping.get(oldId))
+    maybeNewDataTypeId.map { newId =>
+      copy(paramType = paramType.map(_.copy(id = Some(newId))))
+    }.getOrElse(this)
+  }
+
+  def copyWithNewIdIn(oldToNewIdMapping: collection.mutable.Map[String, String]): InputData = {
+    val newId = IDs.next
+    val maybeOldID = id
+    maybeOldID.foreach { oldId => oldToNewIdMapping.put(oldId, newId) }
+    copy(id = Some(newId))
+  }
+
 }
 
 object InputData {
@@ -55,7 +70,7 @@ object InputData {
         input.question,
         input.isSavedForTeam,
         input.isSavedForUser,
-        input.maybeBehaviorGroup.map(_.id)
+        Some(input.behaviorGroupVersion.id)
       )
     }
 

@@ -40,6 +40,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
             Seq(),
             Seq(
               BehaviorVersionData.buildFor(
+                None,
                 group.team.id,
                 None,
                 None,

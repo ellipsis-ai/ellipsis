@@ -1,27 +1,27 @@
 package models.behaviors.input
 
-import models.behaviors.behavior.BehaviorQueries
-import models.behaviors.behaviorgroup.BehaviorGroupQueries
-import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType, TextType}
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersionQueries
+import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType, TextType}
+import models.behaviors.behaviorversion.BehaviorVersionQueries
 
 object InputQueries {
 
   val all = TableQuery[InputsTable]
-  val allWithGroup = all.joinLeft(BehaviorGroupQueries.allWithTeam).on(_.maybeBehaviorGroupId === _._1.id)
-  val joined = allWithGroup.joinLeft(BehaviorQueries.allWithGroup).on(_._1.paramType === _._1._1.id)
+  val allWithGroupVersion = all.join(BehaviorGroupVersionQueries.allWithUser).on(_.behaviorGroupVersionId === _._1._1.id)
+  val joined = allWithGroupVersion.joinLeft(BehaviorVersionQueries.allWithGroupVersion).on(_._1.paramType === _._1._1._1.id)
 
-  type TupleType = ((RawInput, Option[BehaviorGroupQueries.TupleType]), Option[BehaviorQueries.TupleType])
+  type TupleType = ((RawInput, BehaviorGroupVersionQueries.TupleType), Option[BehaviorVersionQueries.TupleType])
 
   def tuple2Input(tuple: TupleType): Input = {
     val raw = tuple._1._1
-    val maybeGroup = tuple._1._2.map(BehaviorGroupQueries.tuple2Group)
+    val groupVersion = BehaviorGroupVersionQueries.tuple2BehaviorGroupVersion(tuple._1._2)
     val paramType =
       BehaviorParameterType.
         findBuiltIn(raw.paramType).
-        orElse(tuple._2.map { dataTypeBehavior => BehaviorBackedDataType(BehaviorQueries.tuple2Behavior(dataTypeBehavior)) }).
+        orElse(tuple._2.map { dataTypeBehaviorVersion => BehaviorBackedDataType(BehaviorVersionQueries.tuple2BehaviorVersion(dataTypeBehaviorVersion)) }).
         getOrElse(TextType)
-    Input(raw.id, raw.maybeExportId, raw.name, raw.maybeQuestion, paramType, raw.isSavedForTeam, raw.isSavedForUser, maybeGroup)
+    Input(raw.id, raw.maybeExportId, raw.name, raw.maybeQuestion, paramType, raw.isSavedForTeam, raw.isSavedForUser, groupVersion)
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
@@ -31,9 +31,9 @@ object InputQueries {
 
   def uncompiledFindRawQuery(id: Rep[String]) = all.filter(_.id === id)
 
-  def uncompiledAllForGroupQuery(groupId: Rep[String]) = {
-    joined.filter { case((raw, _), _) => raw.maybeBehaviorGroupId === groupId }
+  def uncompiledAllForGroupVersionQuery(groupVersionId: Rep[String]) = {
+    joined.filter { case((raw, _), _) => raw.behaviorGroupVersionId === groupVersionId }
   }
-  val allForGroupQuery = Compiled(uncompiledAllForGroupQuery _)
+  val allForGroupVersionQuery = Compiled(uncompiledAllForGroupVersionQuery _)
 
 }

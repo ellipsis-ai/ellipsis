@@ -57,8 +57,6 @@ trait BehaviorService {
 
   def updateDataTypeNameFor(behavior: Behavior, maybeName: Option[String]): Future[Behavior]
 
-  def hasSearchParam(behavior: Behavior): Future[Boolean]
-
   def delete(behavior: Behavior): Future[Behavior]
 
   def maybeCurrentVersionForAction(behavior: Behavior): DBIO[Option[BehaviorVersion]]

@@ -29,6 +29,10 @@ case class BehaviorVersion(
                             createdAt: OffsetDateTime
                           ) {
 
+  val maybeExportId: Option[String] = behavior.maybeExportId
+
+  def isDataType: Boolean = behavior.isDataType
+
   def group: BehaviorGroup = behavior.group
 
   val team: Team = behavior.team

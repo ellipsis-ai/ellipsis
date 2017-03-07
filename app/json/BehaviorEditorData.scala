@@ -122,8 +122,11 @@ object BehaviorEditorData {
           dataService.behaviorGroups.find(groupId)
         }
       }.getOrElse(Future.successful(None))
+      maybeGroupVersion <- maybeGroup.map { group =>
+        dataService.behaviorGroups.maybeCurrentVersionFor(group)
+      }.getOrElse(Future.successful(None))
       paramTypes <- teamAccess.maybeTargetTeam.map { team =>
-        BehaviorParameterType.allFor(maybeGroup, dataService)
+        BehaviorParameterType.allFor(maybeGroupVersion, dataService)
       }.getOrElse(Future.successful(Seq()))
       paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
       inputSavedAnswerData <- inputSavedAnswerDataFor(maybeGroupData, user, dataService)

@@ -11,7 +11,7 @@ import json.BehaviorVersionData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors._
-import models.behaviors.behavior.Behavior
+import models.behaviors.behavior.{Behavior, BehaviorQueries}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsValue, Json}
@@ -20,6 +20,7 @@ import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.{Event, MessageEvent}
+import models.team.Team
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -102,6 +103,30 @@ class BehaviorVersionServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledAllForGroupVersionQuery(groupVersionId: Rep[String]) = {
+    allWithGroupVersion.filter { case(_, ((groupVersion, _), _)) => groupVersion.id === groupVersionId }
+  }
+  val allForGroupVersionQuery = Compiled(uncompiledAllForGroupVersionQuery _)
+
+  def allForGroupVersion(groupVersion: BehaviorGroupVersion): Future[Seq[BehaviorVersion]] = {
+    val action = allForGroupVersionQuery(groupVersion.id).result.map { r =>
+      r.map(tuple2BehaviorVersion)
+    }
+    dataService.run(action)
+  }
+
+  def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
+    allWithGroupVersion.filter { case(_, ((_, (_, team)), _)) => team.id === teamId }
+  }
+  val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
+
+  def allCurrentForTeam(team: Team): Future[Seq[BehaviorVersion]] = {
+    val action = allForTeamQuery(team.id).result.map { r =>
+      r.map(tuple2BehaviorVersion)
+    }
+    dataService.run(action)
+  }
+
   def uncompiledFindQuery(id: Rep[String]) = {
     allWithGroupVersion.filter { case(((version, _), _), _) => version.id === id }
   }
@@ -127,6 +152,14 @@ class BehaviorVersionServiceImpl @Inject() (
     dataService.run(findForAction(behavior, groupVersion))
   }
 
+  def hasSearchParam(behaviorVersion: BehaviorVersion): Future[Boolean] = {
+    for {
+      params <- dataService.behaviorParameters.allFor(behaviorVersion)
+    } yield {
+      params.exists(_.name == BehaviorQueries.SEARCH_QUERY_PARAM)
+    }
+  }
+
   def createFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, maybeUser: Option[User]): Future[BehaviorVersion] = {
     val raw = RawBehaviorVersion(IDs.next, behavior.id, groupVersion.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), OffsetDateTime.now)
 
@@ -142,40 +175,39 @@ class BehaviorVersionServiceImpl @Inject() (
                  maybeUser: Option[User],
                  data: BehaviorVersionData
                ): Future[BehaviorVersion] = {
-    val action = (for {
-      behaviorVersion <- DBIO.from(createFor(behavior, groupVersion, maybeUser))
+    for {
+      behaviorVersion <- createFor(behavior, groupVersion, maybeUser)
       _ <-
       for {
-        updated <- DBIO.from(save(behaviorVersion.copy(
+        updated <- save(behaviorVersion.copy(
           maybeName = data.name,
           maybeDescription = data.description,
           maybeFunctionBody = Some(data.functionBody),
           maybeResponseTemplate = Some(data.responseTemplate),
           forcePrivateResponse = data.config.forcePrivateResponse.exists(identity)
-        )))
+        ))
         maybeAWSConfig <- data.awsConfig.map { c =>
-          DBIO.from(dataService.awsConfigs.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName)).map(Some(_))
-        }.getOrElse(DBIO.successful(None))
-        requiredOAuth2ApiConfigs <- DBIO.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
-          DBIO.from(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(requiredData, updated))
+          dataService.awsConfigs.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
+        }.getOrElse(Future.successful(None))
+        requiredOAuth2ApiConfigs <- Future.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
+          dataService.requiredOAuth2ApiConfigs.maybeCreateFor(requiredData, updated)
         }).map(_.flatten)
-        requiredSimpleTokenApis <- DBIO.sequence(data.config.requiredSimpleTokenApis.getOrElse(Seq()).map { requiredData =>
-          DBIO.from(dataService.requiredSimpleTokenApis.maybeCreateFor(requiredData, updated))
+        requiredSimpleTokenApis <- Future.sequence(data.config.requiredSimpleTokenApis.getOrElse(Seq()).map { requiredData =>
+          dataService.requiredSimpleTokenApis.maybeCreateFor(requiredData, updated)
         }).map(_.flatten)
-        _ <- DBIO.from(lambdaService.deployFunctionFor(
+        _ <- lambdaService.deployFunctionFor(
           updated,
           data.functionBody,
           withoutBuiltin(data.params.map(_.name).toArray),
           maybeAWSConfig,
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis
-        ))
-        _ <- DBIO.from(dataService.behaviorParameters.ensureFor(updated, data.params))
-        _ <- DBIO.sequence(
+        )
+        _ <- dataService.behaviorParameters.ensureFor(updated, data.params)
+        _ <- Future.sequence(
           data.triggers.
             filterNot(_.text.trim.isEmpty)
             map { trigger =>
-            DBIO.from(
               dataService.messageTriggers.createFor(
                 updated,
                 trigger.text,
@@ -183,13 +215,10 @@ class BehaviorVersionServiceImpl @Inject() (
                 trigger.isRegex,
                 trigger.caseSensitive
               )
-            )
           }
         )
       } yield Unit
-    } yield behaviorVersion) transactionally
-
-    dataService.run(action)
+    } yield behaviorVersion
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)

@@ -18,7 +18,7 @@ object SavedAnswerQueries {
 
   def uncompiledFindQueryFor(inputId: Rep[String], maybeUserId: Rep[Option[String]]) = {
     allWithInput.
-      filter { case(saved, ((input, _), _)) => input.id === inputId }.
+      filter { case(saved, _) => saved.inputId === inputId }.
       filter { case(saved, _) => (saved.maybeUserId.isEmpty && maybeUserId.isEmpty) || saved.maybeUserId === maybeUserId }
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
@@ -38,7 +38,7 @@ object SavedAnswerQueries {
   def uncompiledMaybeForQuery(maybeUserId: Rep[Option[String]], inputId: Rep[String]) = {
     allWithInput.
       filter { case(saved, _) => (saved.maybeUserId.isEmpty && maybeUserId.isEmpty) || saved.maybeUserId === maybeUserId }.
-      filter { case(saved, ((input, _), _)) => input.id === inputId }
+      filter { case(saved, _) => saved.inputId === inputId }
   }
   val maybeForQuery = Compiled(uncompiledMaybeForQuery _)
 

@@ -12,32 +12,35 @@ class BehaviorGroupServiceSpec extends DBSpec {
         val user = newSavedUserOn(team)
 
         val groups = 1.to(3).map { _ => newSavedBehaviorGroupFor(team) }
-        groups.foreach { group =>
+        val groupVersions = groups.map { ea => newSavedGroupVersionFor(ea, user) }
+
+        groupVersions.foreach { ea =>
           1.to(3).map { _ =>
-            newSavedBehaviorFor(group)
-            newSavedInputFor(group)
+            newSavedBehaviorFor(ea.group)
+            newSavedInputFor(ea)
           }
-          newSavedGroupVersionFor(group, user)
         }
 
-        // so they have current version IDs
-        val reloadedGroups = groups.flatMap { ea =>
-          runNow(dataService.behaviorGroups.find(ea.id))
+        val reloadedGroupVersions = groupVersions.flatMap { ea =>
+          runNow(dataService.behaviorGroupVersions.findWithoutAccessCheck(ea.id))
         }
-        reloadedGroups.foreach { group =>
-          runNow(dataService.behaviors.allForGroup(group)) must have length 3
-          runNow(dataService.inputs.allForGroup(group)) must have length 3
+        val reloadedGroups = reloadedGroupVersions.map(_.group)
+
+        reloadedGroupVersions.foreach { ea =>
+          runNow(dataService.behaviors.allForGroup(ea.group)) must have length 3
+          runNow(dataService.inputs.allForGroupVersion(ea)) must have length 3
         }
 
         val merged = runNow(dataService.behaviorGroups.merge(reloadedGroups, user))
+        val mergedVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(merged)).get
 
-        reloadedGroups.foreach { group =>
-          runNow(dataService.behaviors.allForGroup(group)) mustBe empty
-          runNow(dataService.inputs.allForGroup(group)) mustBe empty
-          runNow(dataService.behaviorGroups.find(group.id)) mustBe empty
+        reloadedGroupVersions.foreach { groupVersion =>
+          runNow(dataService.behaviors.allForGroup(groupVersion.group)) mustBe empty
+          runNow(dataService.inputs.allForGroupVersion(groupVersion)) mustBe empty
+          runNow(dataService.behaviorGroups.find(groupVersion.group.id)) mustBe empty
         }
         runNow(dataService.behaviors.allForGroup(merged)) must have length 9
-        runNow(dataService.inputs.allForGroup(merged)) must have length 9
+        runNow(dataService.inputs.allForGroupVersion(mergedVersion)) must have length 9
         runNow(dataService.behaviorGroups.find(merged.id)) must not be empty
       })
     }

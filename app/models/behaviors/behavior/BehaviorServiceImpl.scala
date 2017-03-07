@@ -145,17 +145,6 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def hasSearchParam(behavior: Behavior): Future[Boolean] = {
-    for {
-      maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
-      params <- maybeCurrentVersion.map { version =>
-        dataService.behaviorParameters.allFor(version)
-      }.getOrElse(Future.successful(Seq()))
-    } yield {
-      params.exists(_.name == BehaviorQueries.SEARCH_QUERY_PARAM)
-    }
-  }
-
   def delete(behavior: Behavior): Future[Behavior] = {
     dataService.run(findRawQueryFor(behavior.id).delete.map(_ => behavior))
   }

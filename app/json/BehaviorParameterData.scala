@@ -26,6 +26,17 @@ case class BehaviorParameterData(
     groupId
   )
 
+  def inputData = InputData(
+    inputId,
+    inputExportId,
+    name,
+    paramType,
+    question,
+    isSavedForTeam.exists(identity),
+    isSavedForUser.exists(identity),
+    groupId
+  )
+
   def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterData = {
     copy(
       paramType = paramType.map(_.copyForExport(groupExporter)),

@@ -103,7 +103,7 @@ class BehaviorEditorController @Inject() (
                 }.getOrElse(Future.successful(None))
               }
               _ <- maybeGroup.map { group =>
-                dataService.behaviorGroupVersions.createFor(group, user, data).map(Some(_))
+                dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)).map(Some(_))
               }.getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)

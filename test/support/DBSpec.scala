@@ -47,9 +47,9 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
 
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
 
-  def newSavedInputFor(group: BehaviorGroup): Input = {
-    val data = InputData(Some(IDs.next), None, IDs.next, None, "", false, false, Some(group.id))
-    runNow(dataService.inputs.createFor(data, group))
+  def newSavedInputFor(groupVersion: BehaviorGroupVersion): Input = {
+    val data = InputData(Some(IDs.next), None, IDs.next, None, "", false, false, Some(groupVersion.id))
+    runNow(dataService.inputs.createFor(data, groupVersion))
   }
 
   def newSavedAnswerFor(input: Input, user: User): SavedAnswer = {
@@ -65,11 +65,11 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
                       ): BehaviorParameter = {
     val input = maybeExistingInput.map { input =>
       runNow(InputData.fromInput(input, dataService).flatMap { inputData =>
-        dataService.inputs.ensureFor(inputData, version.group)
+        dataService.inputs.ensureFor(inputData, version.groupVersion)
       })
     }.getOrElse {
       val inputData = InputData(Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity), None)
-      runNow(dataService.inputs.createFor(inputData, version.group))
+      runNow(dataService.inputs.createFor(inputData, version.groupVersion))
     }
     val paramTypeData = runNow(BehaviorParameterTypeData.from(input.paramType, dataService))
     val data =
@@ -82,7 +82,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
           Some(input.isSavedForUser),
           Some(input.id),
           input.maybeExportId,
-          input.maybeBehaviorGroup.map(_.id)
+          Some(input.behaviorGroupVersion.id)
         )
       )
     runNow(dataService.behaviorParameters.ensureFor(version, data)).head

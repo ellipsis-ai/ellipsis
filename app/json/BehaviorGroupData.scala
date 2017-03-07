@@ -2,6 +2,7 @@ package json
 
 import java.time.OffsetDateTime
 
+import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -26,6 +27,7 @@ case class BehaviorGroupData(
                               createdAt: Option[OffsetDateTime]
                             ) extends Ordered[BehaviorGroupData] {
 
+  lazy val inputs = dataTypeInputs ++ actionInputs
 
   val maybeNonEmptyName: Option[String] = name.map(_.trim).filter(_.nonEmpty)
 
@@ -46,6 +48,26 @@ case class BehaviorGroupData(
       actionInputs = actionInputsForImport,
       dataTypeInputs = dataTypeInputsForImport,
       behaviorVersions = behaviorVersionsForImport
+    )
+  }
+
+  def copyForNewVersionOf(group: BehaviorGroup): BehaviorGroupData = {
+    val behaviorVersionsWithEnsuredInputIds = behaviorVersions.map(ea => ea.copyWithEnsuredInputIds)
+    val constructedDataTypeInputs = behaviorVersionsWithEnsuredInputIds.filter(_.isDataType).flatMap(_.params.map(_.inputData))
+    val constructedActionInputs = behaviorVersionsWithEnsuredInputIds.filterNot(_.isDataType).flatMap(_.params.map(_.inputData))
+    val oldToNewIdMapping = collection.mutable.Map[String, String]()
+    val actionInputsWithIds = constructedActionInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
+    val dataTypeInputsWithIds = constructedDataTypeInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
+    val behaviorVersionsWithIds = behaviorVersionsWithEnsuredInputIds.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
+    val dataTypeVersionsWithIds = behaviorVersionsWithIds.filter(_.isDataType)
+    val actionInputsForNewVersion = actionInputsWithIds.map(_.copyWithParamTypeIdsIn(dataTypeVersionsWithIds, oldToNewIdMapping))
+    val dataTypeInputsForNewVersion = dataTypeInputsWithIds.map(_.copyWithParamTypeIdsIn(dataTypeVersionsWithIds, oldToNewIdMapping))
+    val behaviorVersionsForNewVersion = behaviorVersionsWithIds.map(_.copyWithInputIdsIn(actionInputsForNewVersion ++ dataTypeInputsForNewVersion, oldToNewIdMapping))
+    copy(
+      id = Some(group.id),
+      actionInputs = actionInputsForNewVersion,
+      dataTypeInputs = dataTypeInputsForNewVersion,
+      behaviorVersions = behaviorVersionsForNewVersion
     )
   }
 

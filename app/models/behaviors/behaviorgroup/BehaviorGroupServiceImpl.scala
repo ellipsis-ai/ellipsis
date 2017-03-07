@@ -86,9 +86,9 @@ class BehaviorGroupServiceImpl @Inject() (
     }
   }
 
-  private def changeGroup(input: Input, newGroup: BehaviorGroup): DBIO[Input] = {
-    InputQueries.uncompiledFindRawQuery(input.id).map(_.maybeBehaviorGroupId).update(Some(newGroup.id)).map { _ =>
-      input.copy(maybeBehaviorGroup = Some(newGroup))
+  private def changeGroupVersion(input: Input, newGroupVersion: BehaviorGroupVersion): DBIO[Input] = {
+    InputQueries.uncompiledFindRawQuery(input.id).map(_.behaviorGroupVersionId).update(newGroupVersion.id).map { _ =>
+      input.copy(behaviorGroupVersion = newGroupVersion)
     }
   }
 
@@ -104,12 +104,12 @@ class BehaviorGroupServiceImpl @Inject() (
       behaviorVersionsToMove <- DBIO.sequence(behaviorsToMove.map { ea =>
         dataService.behaviors.maybeCurrentVersionForAction(ea)
       }).map(_.flatten)
-      inputsToMove <- dataService.inputs.allForGroupAction(fromGroup)
+      inputsToMove <- dataService.inputs.allForGroupVersionAction(groupVersion)
       _ <- DBIO.sequence(behaviorsToMove.map { ea =>
         changeGroup(ea, toGroup)
       })
       _ <- DBIO.sequence(inputsToMove.map { ea =>
-        changeGroup(ea, toGroup)
+        changeGroupVersion(ea, groupVersion)
       })
       _ <- DBIO.sequence(behaviorVersionsToMove.map { ea =>
         changeGroupVersion(ea, groupVersion)

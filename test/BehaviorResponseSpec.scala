@@ -1,5 +1,6 @@
 import models.IDs
 import models.behaviors.BehaviorResponse
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorParameter, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
@@ -13,7 +14,7 @@ import support.TestContext
 
 import scala.concurrent.Future
 
-class BehaviorResponseSpec extends PlaySpec with MockitoSugar{
+class BehaviorResponseSpec extends PlaySpec with MockitoSugar {
 
   "BehaviorResponse" should {
 
@@ -32,8 +33,9 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar{
         val specificTrigger = generalTrigger.copy(id = IDs.next, template = "trigger me {foo} {bar}")
         when(dataService.messageTriggers.allActiveFor(team)).
           thenReturn(Future.successful(Seq(generalTrigger, mediumTrigger, specificTrigger)))
-        val fooParam = BehaviorParameter(IDs.next, 1, Input(IDs.next, None, "foo", None, TextType, false, false, None), version)
-        val barParam = fooParam.copy(id = IDs.next, input = Input(IDs.next, None, "bar", None, TextType, false, false, None), rank = 2)
+        val groupVersion = mock[BehaviorGroupVersion]
+        val fooParam = BehaviorParameter(IDs.next, 1, Input(IDs.next, None, "foo", None, TextType, false, false, groupVersion), version)
+        val barParam = fooParam.copy(id = IDs.next, input = Input(IDs.next, None, "bar", None, TextType, false, false, groupVersion), rank = 2)
         when(dataService.behaviorParameters.allFor(version)).
           thenReturn(Future.successful(Seq(fooParam, barParam)))
         val responses = await(BehaviorResponse.allFor(event, Some(team), None, lambdaService, dataService, cache, ws, configuration))
