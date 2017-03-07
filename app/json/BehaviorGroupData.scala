@@ -40,25 +40,21 @@ case class BehaviorGroupData(
   }
 
   def copyForImportOf(group: BehaviorGroup): BehaviorGroupData = {
-    val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsuredFor(group))
-    val dataTypeInputsWithIds = dataTypeInputs.map(_.copyWithIdsEnsuredFor(group))
     val behaviorVersionsWithIds = behaviorVersions.map(_.copyWithIdsEnsuredFor(group))
-    val dataTypeVersionsWithIds = behaviorVersionsWithIds.filter(_.isDataType)
-    val actionInputsForImport = actionInputsWithIds.map(_.copyWithParamTypeIdsFrom(dataTypeVersionsWithIds))
-    val dataTypeInputsForImport = dataTypeInputsWithIds.map(_.copyWithParamTypeIdsFrom(dataTypeVersionsWithIds))
-    val behaviorVersionsForImport = behaviorVersionsWithIds.map(_.copyWithInputIdsFrom(actionInputsWithIds ++ dataTypeInputsWithIds))
-    copy(
-      id = Some(group.id),
-      actionInputs = actionInputsForImport,
-      dataTypeInputs = dataTypeInputsForImport,
-      behaviorVersions = behaviorVersionsForImport
-    )
+    copyForNewVersionFor(group, behaviorVersionsWithIds)
   }
 
   def copyForNewVersionOf(group: BehaviorGroup): BehaviorGroupData = {
-    val behaviorVersionsWithEnsuredInputIds = behaviorVersions.map(ea => ea.copyWithEnsuredInputIds)
-    val constructedDataTypeInputs = behaviorVersionsWithEnsuredInputIds.filter(_.isDataType).flatMap(_.params.map(_.inputData))
-    val constructedActionInputs = behaviorVersionsWithEnsuredInputIds.filterNot(_.isDataType).flatMap(_.params.map(_.inputData))
+    copyForNewVersionFor(group, behaviorVersions)
+  }
+
+  def copyForNewVersionFor(
+                            group: BehaviorGroup,
+                            behaviorVersionsToUse: Seq[BehaviorVersionData]
+                          ): BehaviorGroupData = {
+    val behaviorVersionsWithEnsuredInputIds = behaviorVersionsToUse.map(ea => ea.copyWithEnsuredInputIds)
+    val constructedDataTypeInputs = behaviorVersionsWithEnsuredInputIds.filter(_.isDataType).flatMap(_.params.map(_.inputData)).distinct
+    val constructedActionInputs = behaviorVersionsWithEnsuredInputIds.filterNot(_.isDataType).flatMap(_.params.map(_.inputData)).distinct
     val oldToNewIdMapping = collection.mutable.Map[String, String]()
     val actionInputsWithIds = constructedActionInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
     val dataTypeInputsWithIds = constructedDataTypeInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))

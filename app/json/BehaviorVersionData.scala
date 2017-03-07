@@ -41,20 +41,15 @@ case class BehaviorVersionData(
 
   def copyWithIdsEnsuredFor(group: BehaviorGroup): BehaviorVersionData = {
     copy(
+      id = exportId,
       teamId = group.team.id,
       groupId = Some(group.id),
-      behaviorId = behaviorId.orElse(Some(IDs.next))
-    )
-  }
-
-  def copyWithInputIdsFrom(inputs: Seq[InputData]): BehaviorVersionData = {
-    val paramsWithNewInputIds = params.map { param =>
-      val maybeNewId = param.inputExportId.flatMap { exportId =>
-        inputs.find(_.exportId.contains(exportId)).flatMap(_.id)
+      behaviorId = behaviorId.orElse(Some(IDs.next)),
+      params = params.map { p =>
+        val maybeParamType = p.paramType.map(pt => pt.copy(id = pt.exportId))
+        p.copy(inputId = p.inputExportId, groupId = Some(group.id), paramType = maybeParamType)
       }
-      param.copy(inputId = maybeNewId)
-    }
-    copy(params = paramsWithNewInputIds)
+    )
   }
 
   def copyForClone: BehaviorVersionData = {
@@ -202,7 +197,7 @@ object BehaviorVersionData {
       Json.parse(params).validate[Seq[BehaviorParameterData]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
       config,
-      exportId = None,
+      config.exportId,
       maybeGithubUrl,
       createdAt = None,
       dataService

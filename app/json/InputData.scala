@@ -33,14 +33,6 @@ case class InputData(
     )
   }
 
-  def copyWithParamTypeIdsFrom(dataTypeVersions: Seq[BehaviorVersionData]): InputData = {
-    val maybeOldDataTypeId = paramType.flatMap(_.exportId)
-    val maybeNewDataTypeId = maybeOldDataTypeId.flatMap(oldId => dataTypeVersions.find(_.exportId.contains(oldId))).flatMap(_.behaviorId)
-    maybeNewDataTypeId.map { newId =>
-      copy(paramType = paramType.map(_.copy(id = Some(newId))))
-    }.getOrElse(this)
-  }
-
   def copyWithParamTypeIdsIn(dataTypeVersions: Seq[BehaviorVersionData], oldToNewIdMapping: collection.mutable.Map[String, String]): InputData = {
     val maybeOldDataTypeId = paramType.flatMap(_.id)
     val maybeNewDataTypeId = maybeOldDataTypeId.flatMap(oldId => oldToNewIdMapping.get(oldId))

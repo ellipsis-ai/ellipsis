@@ -98,7 +98,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
           for {
             maybeExistingBehavior <- dataService.behaviors.find(behaviorId, user)
             behavior <- maybeExistingBehavior.map(Future.successful).getOrElse {
-              dataService.behaviors.createFor(group, Some(behaviorId), None, ea.config.dataTypeName)
+              dataService.behaviors.createFor(group, Some(behaviorId), ea.exportId, ea.config.dataTypeName)
             }
             behaviorVersion <- dataService.behaviorVersions.createFor(behavior, groupVersion, Some(user), ea)
           } yield Some(behaviorVersion)
