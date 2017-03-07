@@ -4,7 +4,8 @@ define(function(require) {
     Formatter = require('../lib/formatter'),
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
-    ifPresent = require('../lib/if_present');
+    ifPresent = require('../lib/if_present'),
+    Sort = require('../lib/sort');
 
   return React.createClass({
     displayName: 'BehaviorGroupInfoPanel',
@@ -18,7 +19,7 @@ define(function(require) {
 
     getBehaviors: function() {
       var behaviorVersions = this.props.groupData && this.props.groupData.behaviorVersions || [];
-      return behaviorVersions.filter((version) => !version.isDataType());
+      return Sort.arrayAlphabeticalBy(behaviorVersions.filter((version) => !version.isDataType()), (version) => version.sortKey);
     },
 
     getName: function() {
@@ -78,16 +79,17 @@ define(function(require) {
       return (
         <div className="type-s">
           <h5 className="mbxs">{behaviorCount === 1 ? "1 action" : `${behaviorCount} actions`}</h5>
-          {behaviors.map((behavior, index) => (
-            <div className="mbxs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>
-              <BehaviorName
-                version={behavior}
-                disableLink={!behavior.behaviorId}
-                limitTriggers={true}
-                isImportable={true}
-              />
-            </div>
-          ))}
+          <div style={{ overflowY: "auto", maxHeight: "21em" }}>
+            {behaviors.map((behavior, index) => (
+              <div className="pvs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>
+                <BehaviorName
+                  version={behavior}
+                  disableLink={!behavior.behaviorId}
+                  isImportable={true}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       );
     },
