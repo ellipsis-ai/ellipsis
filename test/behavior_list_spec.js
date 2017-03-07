@@ -4,6 +4,7 @@ jest.unmock('../app/assets/javascripts/models/behavior_group');
 jest.unmock('../app/assets/javascripts/models/param');
 jest.unmock('../app/assets/javascripts/models/response_template');
 jest.unmock('../app/assets/javascripts/models/trigger');
+jest.useFakeTimers();
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
@@ -73,12 +74,12 @@ describe('BehaviorList', () => {
     "config": {},
     "createdAt": 1466109904858
   });
-  const group1 = Object.freeze({id:"sfgsdf", name:"", description: "", behaviorVersions: [behaviorVersionTask1], createdAt: 1466109904858});
-  const group2 = Object.freeze({id:"gsdfgsg", name:"", description: "", behaviorVersions: [behaviorVersionTask2], createdAt: 1466109904858});
-  const group3 = Object.freeze({id:"jfghjfg", name:"", description: "", behaviorVersions: [behaviorVersionKnowledge1], createdAt: 1466109904858});
+  const group1 = Object.freeze(BehaviorGroup.fromJson({id:"sfgsdf", name:"", description: "", behaviorVersions: [behaviorVersionTask1], createdAt: 1466109904858}));
+  const group2 = Object.freeze(BehaviorGroup.fromJson({id:"gsdfgsg", name:"", description: "", behaviorVersions: [behaviorVersionTask2], createdAt: 1466109904858}));
+  const group3 = Object.freeze(BehaviorGroup.fromJson({id:"jfghjfg", name:"", description: "", behaviorVersions: [behaviorVersionKnowledge1], createdAt: 1466109904858}));
   const defaultConfig = Object.freeze({
     csrfToken: "2",
-    behaviorGroups: [group1, group2, group3].map((ea) => BehaviorGroup.fromJson(ea))
+    behaviorGroups: [group1, group2, group3]
   });
 
   function createBehaviorList(config) {
@@ -93,38 +94,60 @@ describe('BehaviorList', () => {
     config = Object.assign(config, defaultConfig);
   });
 
-  describe('getTableRowClasses', () => {
-    it('adds a border and top padding to every 3rd index', () => {
-      const list = createBehaviorList(config);
-      const classes0 = list.getTableRowClasses(0);
-      const classes3 = list.getTableRowClasses(3);
-      const classes6 = list.getTableRowClasses(6);
-      expect(classes0).toContain(' pt');
-      expect(classes0).toContain(' border-top ');
-      expect(classes3).toContain(' pt');
-      expect(classes3).toContain(' border-top ');
-      expect(classes6).toContain(' pt');
-      expect(classes6).toContain(' border-top ');
+  describe('toggleInfoPanel', () => {
+    let list;
+
+    beforeEach(() => {
+      list = createBehaviorList(config);
+      list.clearActivePanel = jest.fn();
+      list.toggleActivePanel = jest.fn();
     });
 
-    it('adds bottom padding to every 3rd index minus one', () => {
-      const list = createBehaviorList(config);
-      const classes2 = list.getTableRowClasses(2);
-      const classes5 = list.getTableRowClasses(5);
-      const classes8 = list.getTableRowClasses(8);
-      expect(classes2).toContain(' pb');
-      expect(classes5).toContain(' pb');
-      expect(classes8).toContain(' pb');
+    it('closes the active panel if it was already open when no group provided', () => {
+      list.getActivePanelName = jest.fn(() => "moreInfo");
+      list.toggleInfoPanel();
+      expect(list.clearActivePanel).toBeCalled();
+      expect(list.toggleActivePanel).not.toBeCalled();
     });
 
-    it('adds nothing to every 3rd index minus two', () => {
-      const list = createBehaviorList(config);
-      const classes1 = list.getTableRowClasses(1);
-      const classes4 = list.getTableRowClasses(4);
-      const classes7 = list.getTableRowClasses(7);
-      expect(classes1).toBe('');
-      expect(classes4).toBe('');
-      expect(classes7).toBe('');
+    it('closes the active panel if it was already open when same group provided', () => {
+      list.getActivePanelName = jest.fn(() => "moreInfo");
+      list.setState({
+        selectedBehaviorGroup: group1
+      });
+      list.toggleInfoPanel(group1);
+      expect(list.clearActivePanel).toBeCalled();
+      expect(list.toggleActivePanel).not.toBeCalled();
+    });
+
+    it('opens the panel immediately if provided with a new group', () => {
+      list.getActivePanelName = jest.fn(() => "");
+      list.setState({
+        selectedBehaviorGroup: group1
+      });
+      list.setState = jest.fn((newState, callback) => {
+        callback();
+      });
+      list.toggleInfoPanel(group2);
+      expect(setTimeout).not.toBeCalled();
+      expect(list.setState.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
+      expect(list.toggleActivePanel).toBeCalledWith('moreInfo');
+    });
+
+    it('closes the active panel, waits for animation, then opens the new one when switching groups', () => {
+      list.getActivePanelName = jest.fn(() => "moreInfo");
+      list.setState({
+        selectedBehaviorGroup: group1
+      });
+      list.setState = jest.fn((newState, callback) => {
+        callback();
+      });
+      list.toggleInfoPanel(group2);
+      expect(list.clearActivePanel).toBeCalled();
+      expect(setTimeout).toBeCalled();
+      jest.runAllTimers();
+      expect(list.setState.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
+      expect(list.toggleActivePanel).toBeCalledWith('moreInfo');
     });
   });
 });
