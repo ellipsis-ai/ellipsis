@@ -175,7 +175,9 @@ define(function(require) {
         this.clearActivePanel();
       }
 
-      if (group && group !== previousSelectedGroup) {
+      if (group && group === previousSelectedGroup && !panelOpen) {
+        this.toggleActivePanel('moreInfo');
+      } else if (group && group !== previousSelectedGroup) {
         var openNewGroup = () => {
           this.setState({
             selectedBehaviorGroup: group
