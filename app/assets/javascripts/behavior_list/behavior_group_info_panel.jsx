@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     BehaviorName = require('../behavior_list/behavior_name'),
+    Formatter = require('../lib/formatter'),
     SVGInstall = require('../svg/install'),
     ifPresent = require('../lib/if_present');
 
@@ -16,6 +17,12 @@ define(function(require) {
     getBehaviors: function() {
       var behaviorVersions = this.props.groupData && this.props.groupData.behaviorVersions || [];
       return behaviorVersions.filter((version) => !version.isDataType());
+    },
+
+    getName: function() {
+      return this.props.groupData.name || (
+          <span className="type-italic type-disabled">Untitled skill</span>
+        );
     },
 
     onImport: function() {
@@ -40,14 +47,15 @@ define(function(require) {
                   {ifPresent(this.props.groupData.icon, (icon) => (
                     <span className="mrm">{icon}</span>
                   ))}
-                  <span>{this.props.groupData.name}</span>
+                  <span>{this.getName()}</span>
                 </h3>
 
                 {this.renderGithubLink()}
+                {this.renderLastModified()}
               </div>
               <div className="column column-page-main">
                 {ifPresent(this.props.groupData.description, (desc) => (
-                  <p>{desc}</p>
+                  <p className="mbl">{desc}</p>
                 ))}
 
                 {this.renderBehaviors()}
@@ -66,7 +74,7 @@ define(function(require) {
       var behaviors = this.getBehaviors();
       var behaviorCount = behaviors.length;
       return (
-        <div className="type-s mtl">
+        <div className="type-s">
           <h5 className="mbxs">{behaviorCount === 1 ? "1 action" : `${behaviorCount} actions`}</h5>
           {behaviors.map((behavior, index) => (
             <div className="mbxs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>
@@ -97,10 +105,20 @@ define(function(require) {
     renderGithubLink: function() {
       if (this.props.groupData.githubUrl) {
         return (
-          <div className="type-s">
+          <div className="type-s mvm">
             <a target="_blank" href={this.props.groupData.githubUrl}>
               View source on Github
             </a>
+          </div>
+        );
+      }
+    },
+
+    renderLastModified: function() {
+      if (this.props.groupData.createdAt) {
+        return (
+          <div className="type-weak type-s mvm">
+            Last modified {Formatter.formatTimestampRelative(this.props.groupData.createdAt)}
           </div>
         );
       }

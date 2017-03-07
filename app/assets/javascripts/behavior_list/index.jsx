@@ -13,6 +13,8 @@ define(function(require) {
     Sort = require('../lib/sort'),
     SVGInstalled = require('../svg/installed');
 
+  const ANIMATION_DURATION = 0.25;
+
   const BehaviorList = React.createClass({
     displayName: "BehaviorList",
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
@@ -38,8 +40,16 @@ define(function(require) {
       return {
         selectedBehaviorGroup: null,
         selectedGroupIds: [],
-        isSubmitting: false
+        isSubmitting: false,
+        footerHeight: 0
       };
+    },
+
+    resetFooterHeight: function() {
+      var footerHeight = this.refs.footer.getHeight();
+      if (this.state.footerHeight !== footerHeight) {
+        this.setState({ footerHeight: footerHeight });
+      }
     },
 
     getTableRowClasses: function(index) {
@@ -244,12 +254,26 @@ define(function(require) {
 
     toggleInfoPanel: function(group) {
       var previousSelectedGroup = this.state.selectedBehaviorGroup;
-      if (group && group !== previousSelectedGroup) {
-        this.setState({
-          selectedBehaviorGroup: group
-        });
+      if (group === previousSelectedGroup && this.props.activePanelName === 'moreInfo') {
+        this.props.onClearActivePanel();
+        return;
       }
-      if (!group || group === previousSelectedGroup || this.props.activePanelName !== 'moreInfo') {
+
+      if (group && group !== previousSelectedGroup) {
+        var openNewGroup = () => {
+          this.setState({
+            selectedBehaviorGroup: group
+          }, () => {
+            this.props.onToggleActivePanel('moreInfo');
+          });
+        };
+        if (this.props.activePanelName === 'moreInfo') {
+          this.props.onClearActivePanel();
+          window.setTimeout(openNewGroup, ANIMATION_DURATION * 1000);
+        } else {
+          openNewGroup();
+        }
+      } else {
         this.props.onToggleActivePanel('moreInfo');
       }
     },
@@ -331,8 +355,8 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <div>
-            <div className="bg-white container container-c pvxxl mobile-ptm phn">
+          <div style={{ paddingBottom: `${this.state.footerHeight}px` }}>
+            <div className="bg-white container container-c ptxxl mobile-ptm phn">
               {this.renderContent()}
             </div>
           </div>
@@ -342,6 +366,8 @@ define(function(require) {
             <Collapsible
               ref="moreInfo"
               revealWhen={this.props.activePanelName === 'moreInfo'}
+              animationDuration={ANIMATION_DURATION}
+              onChange={this.resetFooterHeight}
             >
               <BehaviorGroupInfoPanel
                 groupData={this.getSelectedBehaviorGroup()}
@@ -349,12 +375,18 @@ define(function(require) {
                 isImportable={false}
               />
             </Collapsible>
-            <Collapsible revealWhen={!this.props.activePanelName && this.getSelectedGroupIds().length > 0}>
+            <Collapsible
+              revealWhen={!this.props.activePanelName && this.getSelectedGroupIds().length > 0}
+              onChange={this.resetFooterHeight}
+            >
               <div className="container container-c ptm border-top">
                 {this.renderActions()}
               </div>
             </Collapsible>
-            <Collapsible ref="confirmDeleteBehaviorGroups" revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroups'}>
+            <Collapsible ref="confirmDeleteBehaviorGroups"
+              revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroups'}
+              onChange={this.resetFooterHeight}
+            >
               <ConfirmActionPanel
                 confirmText="Delete"
                 confirmingText="Deleting"
@@ -365,7 +397,10 @@ define(function(require) {
                 <p>{this.getTextForDeleteBehaviorGroups(this.getSelectedGroupIds().length)}</p>
               </ConfirmActionPanel>
             </Collapsible>
-            <Collapsible ref="confirmMergeBehaviorGroups" revealWhen={this.props.activePanelName === 'confirmMergeBehaviorGroups'}>
+            <Collapsible ref="confirmMergeBehaviorGroups"
+              revealWhen={this.props.activePanelName === 'confirmMergeBehaviorGroups'}
+              onChange={this.resetFooterHeight}
+            >
               <ConfirmActionPanel
                 confirmText="Merge"
                 confirmingText="Merging"
