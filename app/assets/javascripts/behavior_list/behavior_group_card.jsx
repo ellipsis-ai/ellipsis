@@ -13,7 +13,7 @@ define(function(require) {
       groupData: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
       localId: React.PropTypes.string,
       description: React.PropTypes.string,
-      name: React.PropTypes.string.isRequired,
+      name: React.PropTypes.string,
       icon: React.PropTypes.string,
       onBehaviorGroupImport: React.PropTypes.func,
       onMoreInfoClick: React.PropTypes.func.isRequired,

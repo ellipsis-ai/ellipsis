@@ -3,6 +3,7 @@ define(function(require) {
     BehaviorName = require('../behavior_list/behavior_name'),
     Formatter = require('../lib/formatter'),
     SVGInstall = require('../svg/install'),
+    SVGInstalled = require('../svg/installed'),
     ifPresent = require('../lib/if_present');
 
   return React.createClass({
@@ -11,7 +12,8 @@ define(function(require) {
       groupData: React.PropTypes.object,
       onBehaviorGroupImport: React.PropTypes.func,
       onToggle: React.PropTypes.func.isRequired,
-      isImportable: React.PropTypes.bool.isRequired
+      isImportable: React.PropTypes.bool.isRequired,
+      isImported: React.PropTypes.bool.isRequired
     },
 
     getBehaviors: function() {
@@ -50,7 +52,7 @@ define(function(require) {
                   <span>{this.getName()}</span>
                 </h3>
 
-                {this.renderGithubLink()}
+                {this.renderMetaInfo()}
                 {this.renderLastModified()}
               </div>
               <div className="column column-page-main">
@@ -91,7 +93,7 @@ define(function(require) {
     },
 
     renderInstallButton: function() {
-      if (this.props.isImportable) {
+      if (this.props.isImportable && !this.props.isImported) {
         return (
           <button type="button" className="button-primary mrs mbs" onClick={this.onImport}>
             <span className="display-inline-block align-b mrm pbxs"
@@ -102,13 +104,20 @@ define(function(require) {
       }
     },
 
-    renderGithubLink: function() {
+    renderMetaInfo: function() {
       if (this.props.groupData.githubUrl) {
         return (
           <div className="type-s mvm">
             <a target="_blank" href={this.props.groupData.githubUrl}>
               View source on Github
             </a>
+          </div>
+        );
+      } else if (this.props.isImported) {
+        return (
+          <div className="type-s mvm">
+            <span className="display-inline-block align-m mrs" style={{ width: 30, height: 18 }}><SVGInstalled /></span>
+            <span className="display-inline-block align-m type-green">Installed from Ellipsis.ai</span>
           </div>
         );
       }
@@ -118,7 +127,7 @@ define(function(require) {
       if (this.props.groupData.createdAt) {
         return (
           <div className="type-weak type-s mvm">
-            Last modified {Formatter.formatTimestampRelative(this.props.groupData.createdAt)}
+            Last modified {Formatter.formatTimestampRelativeIfRecent(this.props.groupData.createdAt)}
           </div>
         );
       }

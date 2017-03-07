@@ -22,6 +22,10 @@ define(function(require) {
       csrfToken: React.PropTypes.string.isRequired
     }),
 
+    isGroupImported: function(group) {
+      return !!(group && group.exportId);
+    },
+
     getImportedStatusFromGroupOrVersion: function(groupOrVersion) {
       if (groupOrVersion.exportId) {
         return (
@@ -292,6 +296,7 @@ define(function(require) {
               localId={group.id}
               onMoreInfoClick={this.toggleInfoPanel}
               isImportable={false}
+              isImported={this.isGroupImported(group)}
               onSelectChange={this.onGroupSelectionCheckboxChange}
               isSelected={this.isGroupSelected(group.id)}
             />
@@ -373,6 +378,7 @@ define(function(require) {
                 groupData={this.getSelectedBehaviorGroup()}
                 onToggle={this.toggleInfoPanel}
                 isImportable={false}
+                isImported={this.isGroupImported(this.getSelectedBehaviorGroup())}
               />
             </Collapsible>
             <Collapsible
