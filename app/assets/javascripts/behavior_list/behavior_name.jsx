@@ -11,14 +11,20 @@ define(function(require) {
       omitDescription: React.PropTypes.bool,
       labelDataType: React.PropTypes.bool,
       onClick: React.PropTypes.func,
-      isImportable: React.PropTypes.bool
+      isImportable: React.PropTypes.bool,
+      className: React.PropTypes.string,
+      triggerClassName: React.PropTypes.string
+    },
+
+    getTriggerClass: function() {
+      return "box-chat " + (this.props.triggerClassName || "");
     },
 
     getLabelFromTrigger: function(trigger, showLink) {
       var className = showLink ? "link" : "";
       if (trigger && trigger.text) {
         return (
-          <span className={`${className} box-chat mrs`}>{trigger.displayText}</span>
+          <span className={`${className} ${this.getTriggerClass()} mrs`}>{trigger.displayText}</span>
         );
       } else if (this.props.version.isNewBehavior && !this.props.isImportable) {
         return (
@@ -35,7 +41,7 @@ define(function(require) {
       return triggers.filter((trigger) => !trigger.isRegex).map((trigger, index) => {
         if (trigger.text) {
           return (
-            <span className="box-chat mrs" key={"regularTrigger" + index}>{trigger.displayText}</span>
+            <span className={`${this.getTriggerClass()} mrs`} key={"regularTrigger" + index}>{trigger.displayText}</span>
           );
         } else {
           return null;
@@ -52,7 +58,7 @@ define(function(require) {
 
       if (regexTriggerCount > 0) {
         return (
-          <span className="mrs type-italic type-weak">{text}</span>
+          <span className="mrs type-italic">({text})</span>
         );
       } else {
         return null;
@@ -77,7 +83,7 @@ define(function(require) {
         <div className="type-italic display-limit-width display-ellipsis">
           <span className={this.props.disableLink ? "" : "link"}>{version.getDataTypeName() || "New data type"}</span>
           {this.props.labelDataType ? (
-            <span className="type-weak"> (data type)</span>
+            <span> (data type)</span>
           ) : null}
         </div>
       );
@@ -90,11 +96,13 @@ define(function(require) {
           <div>
             <div className="display-limit-width display-ellipsis">
               <span className={"mrs " + (this.props.disableLink ? "" : "link")}>{name}:</span>
-              {this.getDescriptionFromVersion(this.props.version)}
+              {this.props.omitDescription ? this.getTriggersFromVersion(version, false) : this.getDescriptionFromVersion(this.props.version)}
             </div>
-            <div className="display-limit-width display-ellipsis">
-              {this.getTriggersFromVersion(version, false)}
-            </div>
+            {this.props.omitDescription ? null : (
+                <div className="display-limit-width display-ellipsis">
+                  {this.getTriggersFromVersion(version, false)}
+                </div>
+              )}
           </div>
         );
       } else {
@@ -128,7 +136,7 @@ define(function(require) {
     render: function() {
       if (this.props.disableLink) {
         return (
-          <div>
+          <div className={this.props.className || ""}>
             {this.getLabelFromVersion(this.props.version)}
           </div>
         );
@@ -138,7 +146,7 @@ define(function(require) {
             <a
               href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.groupId, this.props.version.behaviorId).url}
               onClick={this.onLinkClick}
-              className="link-block">
+              className={"link-block " + (this.props.className || "")}>
               {this.getLabelFromVersion(this.props.version)}
             </a>
           </div>

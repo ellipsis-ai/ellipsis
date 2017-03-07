@@ -78,15 +78,17 @@ define(function(require) {
       return (
         <div className="type-s">
           <h5 className="mbxs">{behaviorCount === 1 ? "1 action" : `${behaviorCount} actions`}</h5>
-          {behaviors.map((behavior, index) => (
-            <div className="mbxs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>
-              <BehaviorName
-                version={behavior}
-                disableLink={!behavior.behaviorId}
-                isImportable={true}
-              />
-            </div>
-          ))}
+          <div style={{ overflowY: "auto", maxHeight: "21em" }}>
+            {behaviors.map((behavior, index) => (
+              <div className="pvs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>
+                <BehaviorName
+                  version={behavior}
+                  disableLink={!behavior.behaviorId}
+                  isImportable={true}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       );
     },
