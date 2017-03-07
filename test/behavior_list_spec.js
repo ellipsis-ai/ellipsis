@@ -120,6 +120,16 @@ describe('BehaviorList', () => {
       expect(list.toggleActivePanel).not.toBeCalled();
     });
 
+    it('re-opens the panel immediately for the same group when closed', () => {
+      list.getActivePanelName = jest.fn(() => "");
+      list.setState({
+        selectedBehaviorGroup: group1
+      });
+      list.toggleInfoPanel(group1);
+      expect(list.clearActivePanel).not.toBeCalled();
+      expect(list.toggleActivePanel).toBeCalledWith('moreInfo');
+    });
+
     it('opens the panel immediately if provided with a new group', () => {
       list.getActivePanelName = jest.fn(() => "");
       list.setState({
