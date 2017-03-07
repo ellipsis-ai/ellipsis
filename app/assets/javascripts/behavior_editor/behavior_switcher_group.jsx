@@ -45,7 +45,6 @@ define(function(require) {
                 <BehaviorName
                   version={version}
                   disableLink={this.isSelectedVersion(version)}
-                  limitTriggers={true}
                   omitDescription={true}
                   onClick={this.props.onSelectBehavior}
                 />

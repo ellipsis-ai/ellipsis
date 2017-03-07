@@ -83,7 +83,6 @@ define(function(require) {
               <BehaviorName
                 version={behavior}
                 disableLink={!behavior.behaviorId}
-                limitTriggers={true}
                 isImportable={true}
               />
             </div>
