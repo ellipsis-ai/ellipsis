@@ -3,13 +3,11 @@ package json
 import java.time.OffsetDateTime
 
 import models.accounts.user.{User, UserTeamAccess}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.team.Team
 import play.api.libs.ws.WSClient
 import services.DataService
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class BehaviorEditorData(
@@ -17,7 +15,6 @@ case class BehaviorEditorData(
                                group: BehaviorGroupData,
                                maybeSelectedBehaviorId: Option[String],
                                environmentVariables: Seq[EnvironmentVariableData],
-                               paramTypes: Seq[BehaviorParameterTypeData],
                                savedAnswers: Seq[InputSavedAnswerData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
@@ -125,10 +122,6 @@ object BehaviorEditorData {
       maybeGroupVersion <- maybeGroup.map { group =>
         dataService.behaviorGroups.maybeCurrentVersionFor(group)
       }.getOrElse(Future.successful(None))
-      paramTypes <- teamAccess.maybeTargetTeam.map { team =>
-        BehaviorParameterType.allFor(maybeGroupVersion, dataService)
-      }.getOrElse(Future.successful(Seq()))
-      paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
       inputSavedAnswerData <- inputSavedAnswerDataFor(maybeGroupData, user, dataService)
       // make sure the behavior exists and is accessible
       maybeRealBehaviorId <- maybeBehaviorId.map { behaviorId =>
@@ -138,7 +131,7 @@ object BehaviorEditorData {
       }.getOrElse(Future.successful(None))
     } yield {
       val data = maybeGroupData.getOrElse {
-        BehaviorGroupData(
+        BehaviorGroupData.buildFor(
           None,
           team.id,
           name = None,
@@ -157,7 +150,6 @@ object BehaviorEditorData {
         data,
         maybeRealBehaviorId,
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
-        paramTypeData,
         inputSavedAnswerData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),

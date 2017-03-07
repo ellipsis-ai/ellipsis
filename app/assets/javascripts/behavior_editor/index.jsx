@@ -77,13 +77,6 @@ const BehaviorEditor = React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
-    paramTypes: React.PropTypes.arrayOf(
-      React.PropTypes.shape({
-        id: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired,
-        needsConfig: React.PropTypes.bool.isRequired
-      })
-    ).isRequired,
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
@@ -546,10 +539,14 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  getParamTypes: function() {
+    return this.getBehaviorGroup().paramTypes;
+  },
+
   /* Setters/togglers */
 
   createNewParam: function(optionalValues) {
-    return new Param(Object.assign({ paramType: this.props.paramTypes[0] }, optionalValues));
+    return new Param(Object.assign({ paramType: this.getParamTypes()[0] }, optionalValues));
   },
 
   addParam: function(param) {
@@ -2086,7 +2083,7 @@ const BehaviorEditor = React.createClass({
                   onParamNameBlur={this.onParamNameBlur}
                   onEnterKey={this.onParamEnterKey}
                   userParams={this.getBehaviorParams()}
-                  paramTypes={this.props.paramTypes}
+                  paramTypes={this.getParamTypes()}
                   triggers={this.getBehaviorTriggers()}
                   isFinishedBehavior={this.isFinishedBehavior()}
                   behaviorHasCode={this.getSelectedBehavior().shouldRevealCodeEditor}

@@ -4,11 +4,11 @@ import java.io.{ByteArrayOutputStream, File, FileInputStream}
 import java.time.OffsetDateTime
 import java.util.zip.{ZipEntry, ZipInputStream}
 
-import json.{BehaviorGroupConfig, BehaviorGroupData, BehaviorVersionData, InputData}
 import json.Formatting._
-import models.team.Team
+import json._
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.team.Team
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import services.DataService
 
@@ -115,7 +115,7 @@ case class BehaviorGroupZipImporter(
       )
     }.toSeq
 
-    val data = BehaviorGroupData(
+    val data = BehaviorGroupData.buildFor(
       None,
       team.id,
       maybeGroupName,

@@ -38,7 +38,6 @@
           csrfToken: "@CSRF.getToken(r).map(_.value)",
           justSaved: @data.justSaved,
           envVariables: @Html(Json.toJson(data.environmentVariables).toString),
-          paramTypes: @Html(Json.toJson(data.paramTypes).toString),
           savedAnswers: @Html(Json.toJson(data.savedAnswers).toString),
           oauth2Applications: @Html(Json.toJson(data.oauth2Applications).toString),
           oauth2Apis: @Html(Json.toJson(data.oauth2Apis).toString),

@@ -85,7 +85,7 @@ case class DisplayHelpBehavior(
   }
 
   private def flattenUnnamedBehaviorGroupData(untitledGroups: Seq[BehaviorGroupData]): BehaviorGroupData = {
-    BehaviorGroupData(
+    BehaviorGroupData.buildFor(
       id = None,
       event.teamId,
       name = Some("Miscellaneous"),
