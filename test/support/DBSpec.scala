@@ -106,7 +106,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
   }
 
   def newSavedVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {
-    runNow(dataService.behaviorVersions.createFor(behavior, groupVersion, None))
+    runNow(dataService.behaviorVersions.createFor(behavior, groupVersion, None, None))
   }
 
   def newSavedBehaviorFor(group: BehaviorGroup): Behavior = {

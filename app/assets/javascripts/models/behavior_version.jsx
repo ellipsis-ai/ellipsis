@@ -17,6 +17,7 @@ define(function(require) {
       }, props);
 
       Object.defineProperties(this, {
+        id: { value:initialProps.id, enumerable: true },
         groupId: { value: initialProps.groupId, enumerable: true },
         teamId: { value: initialProps.teamId, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },

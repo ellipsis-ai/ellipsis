@@ -76,13 +76,18 @@ case class BehaviorVersionData(
                           inputs: Seq[InputData],
                           oldToNewIdMapping: collection.mutable.Map[String, String]
                         ): BehaviorVersionData = {
-    val paramsWithNewInputIds = params.map { param =>
+    val newParams = params.map { param =>
       val maybeNewId = param.inputId.flatMap { inputId =>
         oldToNewIdMapping.get(inputId)
       }
-      param.copy(inputId = maybeNewId)
+      (for {
+        newId <- maybeNewId
+        input <- inputs.find(_.id.contains(newId))
+      } yield {
+        param.copy(paramType = input.paramType, inputId = input.id, inputExportId = input.exportId)
+      }).getOrElse(param)
     }
-    copy(params = paramsWithNewInputIds)
+    copy(params = newParams)
   }
 
   def copyWithEnsuredInputIds: BehaviorVersionData = {
@@ -257,7 +262,7 @@ object BehaviorVersionData {
         val requiredSimpleTokenApiData = requiredSimpleTokenApis.map(ea => RequiredSimpleTokenApiData.from(ea))
         val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
         BehaviorVersionData.buildFor(
-          maybeBehaviorVersion.map(_.id),
+          Some(behaviorVersion.id),
           behaviorVersion.team.id,
           behavior.maybeGroup.map(_.id),
           Some(behavior.id),

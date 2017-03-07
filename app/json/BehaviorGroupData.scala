@@ -29,6 +29,9 @@ case class BehaviorGroupData(
 
   lazy val inputs = dataTypeInputs ++ actionInputs
 
+  lazy val dataTypeBehaviorVersions = behaviorVersions.filter(_.isDataType)
+  lazy val actionBehaviorVersions = behaviorVersions.filterNot(_.isDataType)
+
   val maybeNonEmptyName: Option[String] = name.map(_.trim).filter(_.nonEmpty)
 
   def copyForTeam(team: Team): BehaviorGroupData = {

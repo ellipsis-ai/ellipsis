@@ -42,7 +42,7 @@ trait BehaviorVersionService {
 
   def hasSearchParam(behaviorVersion: BehaviorVersion): Future[Boolean]
 
-  def createFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, maybeUser: Option[User]): Future[BehaviorVersion]
+  def createFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, maybeUser: Option[User], maybeId: Option[String]): Future[BehaviorVersion]
 
   def createFor(
                  behavior: Behavior,

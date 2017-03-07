@@ -130,7 +130,7 @@ object BehaviorEditorData {
       }.getOrElse(Future.successful(Seq()))
       paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
       inputSavedAnswerData <- inputSavedAnswerDataFor(maybeGroupData, user, dataService)
-      // make sure the behavior exists and is accesible
+      // make sure the behavior exists and is accessible
       maybeRealBehaviorId <- maybeBehaviorId.map { behaviorId =>
         dataService.behaviors.find(behaviorId, user).map { maybeBehavior =>
           maybeBehavior.map(_.id)

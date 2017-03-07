@@ -93,10 +93,21 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                ): Future[BehaviorGroupVersion] = {
     for {
       groupVersion <- createFor(group, user, data.name, data.icon, data.description)
+      _ <- Future.sequence(data.dataTypeBehaviorVersions.map { ea =>
+        ea.behaviorId.map { behaviorId =>
+          for {
+            maybeExistingBehavior <- dataService.behaviors.find(behaviorId, user)
+            behavior <- maybeExistingBehavior.map(Future.successful).getOrElse {
+              dataService.behaviors.createFor(group, Some(behaviorId), None, ea.config.dataTypeName)
+            }
+            behaviorVersion <- dataService.behaviorVersions.createFor(behavior, groupVersion, Some(user), ea)
+          } yield Some(behaviorVersion)
+        }.getOrElse(Future.successful(None))
+      })
       _ <- Future.sequence(data.inputs.map { ea =>
         dataService.inputs.ensureFor(ea, groupVersion)
       })
-      _ <- Future.sequence(data.behaviorVersions.map { ea =>
+      _ <- Future.sequence(data.actionBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
             maybeExistingBehavior <- dataService.behaviors.find(behaviorId, user)

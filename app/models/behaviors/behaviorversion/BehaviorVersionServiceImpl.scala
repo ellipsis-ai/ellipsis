@@ -160,8 +160,24 @@ class BehaviorVersionServiceImpl @Inject() (
     }
   }
 
-  def createFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, maybeUser: Option[User]): Future[BehaviorVersion] = {
-    val raw = RawBehaviorVersion(IDs.next, behavior.id, groupVersion.id, None, None, None, None, forcePrivateResponse=false, maybeUser.map(_.id), OffsetDateTime.now)
+  def createFor(
+                 behavior: Behavior,
+                 groupVersion: BehaviorGroupVersion,
+                 maybeUser: Option[User],
+                 maybeId: Option[String]
+               ): Future[BehaviorVersion] = {
+    val raw = RawBehaviorVersion(
+      maybeId.getOrElse(IDs.next),
+      behavior.id,
+      groupVersion.id,
+      None,
+      None,
+      None,
+      None,
+      forcePrivateResponse=false,
+      maybeUser.map(_.id),
+      OffsetDateTime.now
+    )
 
     val action = (all += raw).map { _ =>
       BehaviorVersion(raw.id, behavior, groupVersion, raw.maybeDescription, raw.maybeName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)
@@ -176,7 +192,7 @@ class BehaviorVersionServiceImpl @Inject() (
                  data: BehaviorVersionData
                ): Future[BehaviorVersion] = {
     for {
-      behaviorVersion <- createFor(behavior, groupVersion, maybeUser)
+      behaviorVersion <- createFor(behavior, groupVersion, maybeUser, data.id)
       _ <-
       for {
         updated <- save(behaviorVersion.copy(
