@@ -49,14 +49,26 @@ define(function(require) {
       });
     },
 
-    getRegexTriggerLabelFromTriggers: function(triggers) {
+    getNonRegexTriggerText: function(triggers) {
+      return triggers.filter((trigger) => !trigger.isRegex).map((ea) => ea.displayText).filter((ea) => !!ea.trim()).join("\n");
+    },
+
+    getRegexTriggerText: function(triggers) {
       var regexTriggerCount = triggers.filter((trigger) => !!trigger.isRegex).length;
 
-      var text = regexTriggerCount === 1 ?
-        "also matches another pattern" :
-        `also matches ${regexTriggerCount} other patterns`;
+      if (regexTriggerCount === 1) {
+        return "also matches another pattern";
+      } else if (regexTriggerCount > 1) {
+        return `also matches ${regexTriggerCount} other patterns`;
+      } else {
+        return "";
+      }
+    },
 
-      if (regexTriggerCount > 0) {
+    getRegexTriggerLabelFromTriggers: function(triggers) {
+      var text = this.getRegexTriggerText(triggers);
+
+      if (text) {
         return (
           <span className="mrs type-italic">({text})</span>
         );
@@ -65,12 +77,26 @@ define(function(require) {
       }
     },
 
+    getBehaviorSummary: function(firstTrigger, otherTriggers) {
+      var name = this.props.version.name;
+      var description = this.props.version.description;
+      var firstTriggerText = firstTrigger ? firstTrigger.displayText : "(None)";
+      var nonRegex = this.getNonRegexTriggerText(otherTriggers);
+      var regex = this.getRegexTriggerText(otherTriggers);
+      return (name ? `Name: ${name}\n\n` : "") +
+        (description ? `Description: ${description}\n\n` : "") +
+        "Triggers:\n" +
+        firstTriggerText +
+        (nonRegex ? "\n" + nonRegex : "") +
+        (regex ? `\n(${regex})` : "");
+    },
+
     getTriggersFromVersion: function(version, linkFirstTrigger) {
       var firstTriggerIndex = version.findFirstTriggerIndexForDisplay();
       var firstTrigger = version.triggers[firstTriggerIndex];
       var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTriggerIndex);
       return (
-        <span>
+        <span title={this.getBehaviorSummary(firstTrigger, otherTriggers)}>
           {this.getLabelFromTrigger(firstTrigger, linkFirstTrigger)}
           {this.getNonRegexTriggerLabelsFromTriggers(otherTriggers)}
           {this.getRegexTriggerLabelFromTriggers(otherTriggers)}

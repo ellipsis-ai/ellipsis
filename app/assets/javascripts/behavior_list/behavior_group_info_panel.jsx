@@ -4,7 +4,8 @@ define(function(require) {
     Formatter = require('../lib/formatter'),
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
-    ifPresent = require('../lib/if_present');
+    ifPresent = require('../lib/if_present'),
+    Sort = require('../lib/sort');
 
   return React.createClass({
     displayName: 'BehaviorGroupInfoPanel',
@@ -18,7 +19,7 @@ define(function(require) {
 
     getBehaviors: function() {
       var behaviorVersions = this.props.groupData && this.props.groupData.behaviorVersions || [];
-      return behaviorVersions.filter((version) => !version.isDataType());
+      return Sort.arrayAlphabeticalBy(behaviorVersions.filter((version) => !version.isDataType()), (version) => version.sortKey);
     },
 
     getName: function() {
