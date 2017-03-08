@@ -54,7 +54,6 @@ define(function(require) {
                 </h3>
 
                 {this.renderMetaInfo()}
-                {this.renderLastModified()}
               </div>
               <div className="column column-page-main">
                 {ifPresent(this.props.groupData.description, (desc) => (
@@ -106,7 +105,7 @@ define(function(require) {
       }
     },
 
-    renderMetaInfo: function() {
+    renderInstallInfo: function() {
       if (this.props.groupData.githubUrl) {
         return (
           <div className="type-s mvm">
@@ -123,6 +122,26 @@ define(function(require) {
           </div>
         );
       }
+    },
+
+    renderEditLink: function() {
+      if (this.props.groupData.id) {
+        return (
+          <div className="type-s mvm">
+            <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.groupData.id).url}>Edit skill</a>
+          </div>
+        );
+      }
+    },
+
+    renderMetaInfo: function() {
+      return (
+        <div>
+          {this.renderEditLink()}
+          {this.renderLastModified()}
+          {this.renderInstallInfo()}
+        </div>
+      );
     },
 
     renderLastModified: function() {

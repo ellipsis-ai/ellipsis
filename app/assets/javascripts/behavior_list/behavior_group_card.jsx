@@ -4,8 +4,7 @@ define(function(require) {
     BehaviorGroup = require('../models/behavior_group'),
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
-    SVGInstalling = require('../svg/installing'),
-    ifPresent = require('../lib/if_present');
+    SVGInstalling = require('../svg/installing');
 
   return React.createClass({
     displayName: 'BehaviorGroupCard',
@@ -48,7 +47,7 @@ define(function(require) {
         return null;
       } else if (this.isImporting()) {
         return (
-          <button title="Installing, please wait…" type="button" className="button-raw button-no-wrap" disabled="disabled" style={{ height: 24 }}>
+          <button title="Installing, please wait…" type="button" className="mtm button-raw button-no-wrap" disabled="disabled" style={{ height: 24 }}>
             <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstalling /></span>
             <span className="display-inline-block align-m">
               Installing…
@@ -57,7 +56,7 @@ define(function(require) {
         );
       } else if (this.isImported()) {
         return (
-          <button title="Already installed" type="button" className="button-raw button-no-wrap" disabled="disabled" style={{ height: 24 }}>
+          <button title="Already installed" type="button" className="mtm button-raw button-no-wrap" disabled="disabled" style={{ height: 24 }}>
             <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstalled /></span>
             <span className="display-inline-block align-m type-green">
               Installed
@@ -66,7 +65,7 @@ define(function(require) {
         );
       } else {
         return (
-          <button title="Install this skill" type="button" className="button-raw button-no-wrap" onClick={this.importBehavior} style={{ height: 24 }}>
+          <button title="Install this skill" type="button" className="mtm button-raw button-no-wrap" onClick={this.importBehavior} style={{ height: 24 }}>
             <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstall /></span>
             <span className="display-inline-block align-m">
               Install
@@ -93,32 +92,6 @@ define(function(require) {
       }
     },
 
-    renderDescription: function() {
-      if (this.isImporting()) {
-        return (
-          <div>
-            <div>{this.getDescription()}</div>
-            <div className="type-disabled">More info</div>
-          </div>
-        );
-      } else {
-        return (
-          <div>
-            <div>{this.getDescription()}</div>
-            <div>
-              <button type="button" className="button-raw" onClick={this.toggleMoreInfo}>{this.getMoreInfoText()}</button>
-              {this.isImported() ? (
-                <span>
-                  <span className="type-disabled phxs"> · </span>
-                  <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.localId).url}>Edit skill</a>
-                </span>
-                ) : null}
-            </div>
-          </div>
-        );
-      }
-    },
-
     onSelectChange: function(event) {
       this.props.onSelectChange(this.props.localId, event.target.checked);
     },
@@ -142,22 +115,32 @@ define(function(require) {
       );
     },
 
+    renderIcon: function() {
+      if (this.props.icon) {
+        return (
+          <span style={{ width: "1em" }} className="display-inline-block mrm">{this.props.icon}</span>
+        );
+      }
+    },
+
+
     render: function() {
       return (
         <div className="border border-radius bg-lightest plxxxl prl pvl position-relative">
           <div className={this.isImporting() ? "pulse" : ""}>
             {this.renderGroupSelectionCheckbox(this.props.localId)}
-            <div className="type-l display-ellipsis mbm">
-              {ifPresent(this.props.icon, (icon) => (
-                <span style={{ width: "1em" }} className="display-inline-block mrm">
-                  {icon}
-                </span>
-              ))}
-              {this.getName()}
-            </div>
-            <div className="type-s mvm" style={{ height: "5.3333rem", overflow: "hidden" }}>
-              {this.renderDescription()}
-            </div>
+            <button type="button" className="button-block" onClick={this.toggleMoreInfo} disabled={this.isImporting()}>
+              <div className="type-l display-ellipsis mbm">
+                {this.renderIcon()}
+                {this.getName()}
+              </div>
+              <div className="type-s" style={{ height: "5.3333rem", overflow: "hidden" }}>
+                <div>{this.getDescription()}</div>
+                <div>
+                  <span className={this.isImporting() ? "type-disabled" : "link"}>{this.getMoreInfoText()}</span>
+                </div>
+              </div>
+            </button>
             <div>
               {this.getInstallButton()}
             </div>
