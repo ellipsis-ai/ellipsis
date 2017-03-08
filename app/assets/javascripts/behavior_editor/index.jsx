@@ -1604,9 +1604,12 @@ const BehaviorEditor = React.createClass({
   renderFooter: function() {
     return (
       <div>
-        <ModalScrim ref="scrim" isActive={this.props.activePanelIsModal || (this.hasMobileLayout() && this.behaviorSwitcherIsVisible())} onClick={this.props.onClearActivePanel} />
+        <ModalScrim ref="scrim"
+          isActive={this.props.activePanelIsModal || this.mobileBehaviorSwitcherIsVisible()}
+          onClick={this.props.onClearActivePanel}
+        />
         <FixedFooter ref="footer" className={
-          (this.hasMobileLayout() && this.behaviorSwitcherIsVisible() ? " mobile-position-behind-scrim " : "") +
+          (this.mobileBehaviorSwitcherIsVisible() ? " mobile-position-behind-scrim " : "") +
           (this.isModified() ? " bg-white " : " bg-light-translucent ")
         }>
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
@@ -1961,6 +1964,10 @@ const BehaviorEditor = React.createClass({
 
   behaviorSwitcherIsVisible: function() {
     return this.state.behaviorSwitcherVisible;
+  },
+
+  mobileBehaviorSwitcherIsVisible: function() {
+    return this.hasMobileLayout() && this.behaviorSwitcherIsVisible();
   },
 
   renderSwitcherToggle: function() {
