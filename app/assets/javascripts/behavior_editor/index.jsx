@@ -749,12 +749,17 @@ const BehaviorEditor = React.createClass({
     }).then((response) => response.json())
       .then((json) => {
         if (json.id) {
-          const newProps = {
-            group: BehaviorGroup.fromJson(json),
-            onLoad: optionalCallback,
-            justSaved: true
+          if (this.state.shouldRedirectToAddNewOAuth2App) {
+            const apiId = this.state.requiredOAuth2ApiConfigId;
+            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, null, null, this.getSelectedBehaviorId()).url;
+          } else {
+            const newProps = {
+              group: BehaviorGroup.fromJson(json),
+              onLoad: optionalCallback,
+              justSaved: true
+            };
+            this.props.onSave(newProps, this.state);
           }
-          this.props.onSave(newProps, this.state);
         } else {
           this.onSaveError();
         }
@@ -783,10 +788,6 @@ const BehaviorEditor = React.createClass({
     this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
   },
 
-  submitForm: function() {
-    this.refs.behaviorForm.submit();
-  },
-
   showVersionIndex: function(versionIndex, optionalCallback) {
     var version = this.getVersions()[versionIndex];
     this.setState({
@@ -797,7 +798,7 @@ const BehaviorEditor = React.createClass({
 
   restoreVersionIndex: function(versionIndex) {
     this.showVersionIndex(versionIndex, function() {
-      this.refs.behaviorForm.submit();
+      this.onSaveBehaviorGroup();
     });
   },
 
@@ -1386,9 +1387,9 @@ const BehaviorEditor = React.createClass({
 
   onNewOAuth2Application: function(requiredOAuth2ApiConfigId) {
     this.setState({
-      redirectValue: "newOAuth2Application",
+      shouldRedirectToAddNewOAuth2App: true,
       requiredOAuth2ApiConfigId: requiredOAuth2ApiConfigId || ""
-    }, () => { this.checkDataAndCallback(this.submitForm); });
+    }, () => { this.checkDataAndCallback(this.onSaveBehaviorGroup); });
   },
 
   onParamEnterKey: function(index) {
