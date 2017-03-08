@@ -1766,7 +1766,7 @@ const BehaviorEditor = React.createClass({
             ))}
             <div className="container container-wide ptm border-top">
               <div className="columns columns-elastic mobile-columns-float">
-                <div className="column column-expand mobile-column-auto">
+                <div className="column column-expand mobile-column-full">
                   <DynamicLabelButton
                     ref="saveButton"
                     onClick={this.onSaveClick}
@@ -1806,7 +1806,7 @@ const BehaviorEditor = React.createClass({
                       openWhen={this.getActiveDropdown() === 'manageBehavior'}
                       label={this.getManageDropdownLabel()}
                       labelClassName="button-dropdown-trigger-menu-above"
-                      menuClassName="popup-dropdown-menu-right popup-dropdown-menu-above"
+                      menuClassName="popup-dropdown-menu-right popup-dropdown-menu-above mobile-popup-dropdown-menu-left"
                       toggle={this.toggleManageBehaviorMenu}
                     >
                       <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
