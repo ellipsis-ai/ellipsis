@@ -1,3 +1,5 @@
+package models
+
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import models.behaviors.behaviorgroup.BehaviorGroup
 import support.DBSpec
@@ -8,9 +10,9 @@ class BehaviorGroupVersionSpec extends DBSpec {
     runNow(dataService.behaviorGroups.find(group.id)).get
   }
 
-  "BehaviorGroupVersion" should {
+  "createFor" should {
 
-    "should load the current version" in {
+    "should set the current version on the group" in {
       withEmptyDB(dataService, { db =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
