@@ -71,7 +71,7 @@ class InputServiceImpl @Inject() (
       maybeParamType <- DBIO.from(maybeParamTypeFor(data, behaviorGroupVersion))
       raw <- DBIO.successful(RawInput(
         data.id.getOrElse(IDs.next),
-        data.inputId,
+        data.inputId.orElse(Some(IDs.next)),
         Some(data.exportId.getOrElse(IDs.next)),
         data.name,
         data.maybeNonEmptyQuestion,
