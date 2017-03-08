@@ -46,6 +46,10 @@ define(function(require) {
       });
     }
 
+    hasBehaviorVersionWithId(behaviorId) {
+      return !!this.behaviorVersions.find(ea => ea.behaviorId === behaviorId);
+    }
+
     sortedForComparison(versions) {
       return versions.sort((a, b) => {
         if (a.behaviorId < b.behaviorId) {

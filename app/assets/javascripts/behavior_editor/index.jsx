@@ -789,11 +789,15 @@ const BehaviorEditor = React.createClass({
   },
 
   showVersionIndex: function(versionIndex, optionalCallback) {
-    var version = this.getVersions()[versionIndex];
-    this.setState({
+    const version = this.getVersions()[versionIndex];
+    const stateUpdates = {
       group: version,
       justSaved: false
-    }, optionalCallback);
+    };
+    if (!version.hasBehaviorVersionWithId(this.getSelectedBehaviorId())) {
+      stateUpdates.selectedBehaviorId = null
+    }
+    this.setState(stateUpdates, optionalCallback);
   },
 
   restoreVersionIndex: function(versionIndex) {
