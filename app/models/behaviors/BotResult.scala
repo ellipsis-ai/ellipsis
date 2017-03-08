@@ -110,7 +110,7 @@ trait WithBehaviorLink {
   val configuration: Configuration
   val forcePrivateResponse = behaviorVersion.forcePrivateResponse
 
-  def link: String = dataService.behaviors.editLinkFor(behaviorVersion.behavior.id, configuration)
+  def link: String = dataService.behaviors.editLinkFor(behaviorVersion.group.id, behaviorVersion.behavior.id, configuration)
 
   def linkToBehaviorFor(text: String): String = {
     s"[$text](${link})"
@@ -283,7 +283,7 @@ case class RequiredApiNotReady(
   val resultType = ResultType.RequiredApiNotReady
   val forcePrivateResponse = true
 
-  def configLink: String = dataService.behaviors.editLinkFor(required.behaviorVersion.behavior.id, configuration)
+  def configLink: String = dataService.behaviors.editLinkFor(required.behaviorVersion.group.id, required.behaviorVersion.behavior.id, configuration)
   def configText: String = {
     s"You first must [configure the ${required.api.name} API]($configLink)"
   }
