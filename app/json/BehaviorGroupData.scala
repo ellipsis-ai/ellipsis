@@ -40,7 +40,7 @@ case class BehaviorGroupData(
   }
 
   def copyForImportOf(group: BehaviorGroup): BehaviorGroupData = {
-    val behaviorVersionsWithIds = behaviorVersions.map(_.copyWithIdsEnsuredFor(group))
+    val behaviorVersionsWithIds = behaviorVersions.map(_.copyWithIdsEnsuredForImport(group))
     copyForNewVersionFor(group, behaviorVersionsWithIds)
   }
 
@@ -48,10 +48,14 @@ case class BehaviorGroupData(
     copyForNewVersionFor(group, behaviorVersions)
   }
 
-  def copyForNewVersionFor(
-                            group: BehaviorGroup,
-                            behaviorVersionsToUse: Seq[BehaviorVersionData]
-                          ): BehaviorGroupData = {
+  def copyForMergedGroup(group: BehaviorGroup): BehaviorGroupData = {
+    copyForNewVersionFor(group, behaviorVersions.map(_.copyWithIdsEnsuredForMerge(group)))
+  }
+
+  private def copyForNewVersionFor(
+                                    group: BehaviorGroup,
+                                    behaviorVersionsToUse: Seq[BehaviorVersionData]
+                                  ): BehaviorGroupData = {
     val behaviorVersionsWithEnsuredInputIds = behaviorVersionsToUse.map(ea => ea.copyWithEnsuredInputIds)
     val constructedDataTypeInputs = behaviorVersionsWithEnsuredInputIds.filter(_.isDataType).flatMap(_.params.map(_.inputData)).distinct
     val constructedActionInputs = behaviorVersionsWithEnsuredInputIds.filterNot(_.isDataType).flatMap(_.params.map(_.inputData)).distinct

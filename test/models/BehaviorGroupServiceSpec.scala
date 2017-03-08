@@ -16,8 +16,9 @@ class BehaviorGroupServiceSpec extends DBSpec {
 
         groupVersions.foreach { ea =>
           1.to(3).map { _ =>
-            newSavedBehaviorFor(ea.group)
-            newSavedInputFor(ea)
+            val behavior = newSavedBehaviorFor(ea.group)
+            val behaviorVersion = newSavedVersionFor(behavior, ea)
+            newSavedParamFor(behaviorVersion)
           }
         }
 

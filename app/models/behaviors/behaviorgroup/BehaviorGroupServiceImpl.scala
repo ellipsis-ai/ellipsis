@@ -5,12 +5,10 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
+import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
-import models.behaviors.behavior.{Behavior, BehaviorQueries}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorversion.{BehaviorVersion, BehaviorVersionQueries}
-import models.behaviors.input.{Input, InputQueries}
 import models.team.Team
 import services.DataService
 
@@ -80,43 +78,6 @@ class BehaviorGroupServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  private def changeGroup(behavior: Behavior, newGroup: BehaviorGroup): DBIO[Behavior] = {
-    BehaviorQueries.uncompiledFindRawQuery(behavior.id).map(_.groupId).update(Some(newGroup.id)).map { _ =>
-      behavior.copy(maybeGroup = Some(newGroup))
-    }
-  }
-
-  private def changeGroupVersion(input: Input, newGroupVersion: BehaviorGroupVersion): DBIO[Input] = {
-    InputQueries.uncompiledFindRawQuery(input.id).map(_.behaviorGroupVersionId).update(newGroupVersion.id).map { _ =>
-      input.copy(behaviorGroupVersion = newGroupVersion)
-    }
-  }
-
-  private def changeGroupVersion(behaviorVersion: BehaviorVersion, newGroupVersion: BehaviorGroupVersion): DBIO[BehaviorVersion] = {
-    BehaviorVersionQueries.uncompiledRawFindQuery(behaviorVersion.id).map(_.groupVersionId).update(newGroupVersion.id).map { _ =>
-      behaviorVersion.copy(groupVersion = newGroupVersion)
-    }
-  }
-
-  private def moveChildren(fromGroup: BehaviorGroup, toGroup: BehaviorGroup, groupVersion: BehaviorGroupVersion): DBIO[BehaviorGroup] = {
-    for {
-      behaviorsToMove <- dataService.behaviors.allForGroupAction(fromGroup)
-      behaviorVersionsToMove <- DBIO.sequence(behaviorsToMove.map { ea =>
-        dataService.behaviors.maybeCurrentVersionForAction(ea)
-      }).map(_.flatten)
-      inputsToMove <- dataService.inputs.allForGroupVersionAction(groupVersion)
-      _ <- DBIO.sequence(behaviorsToMove.map { ea =>
-        changeGroup(ea, toGroup)
-      })
-      _ <- DBIO.sequence(inputsToMove.map { ea =>
-        changeGroupVersion(ea, groupVersion)
-      })
-      _ <- DBIO.sequence(behaviorVersionsToMove.map { ea =>
-        changeGroupVersion(ea, groupVersion)
-      })
-    } yield toGroup
-  }
-
   def merge(groups: Seq[BehaviorGroup], user: User): Future[BehaviorGroup] = {
     Future.sequence(groups.map { ea =>
       dataService.behaviorGroups.maybeCurrentVersionFor(ea)
@@ -126,27 +87,43 @@ class BehaviorGroupServiceImpl @Inject() (
   }
 
   private def mergeVersions(groupVersions: Seq[BehaviorGroupVersion], user: User): Future[BehaviorGroup] = {
-    val groups = groupVersions.map(_.group)
     val firstGroupVersion = groupVersions.head
     val team = firstGroupVersion.team
     val mergedName = groupVersions.map(_.name).filter(_.trim.nonEmpty).mkString("-")
     val descriptions = groupVersions.flatMap(_.maybeDescription).filter(_.trim.nonEmpty)
     val mergedDescription = if (descriptions.isEmpty) { None } else { Some(descriptions.mkString("\n")) }
-    val maybeExportId = None // Don't think it makes sense to have an exportId for something merged
     val maybeIcon = groupVersions.find(_.maybeIcon.isDefined).flatMap(_.maybeIcon)
-    val rawMerged = RawBehaviorGroup(IDs.next, maybeExportId, team.id, None, OffsetDateTime.now)
-    val action = (for {
-      merged <- (all += rawMerged).map(_ => tuple2Group((rawMerged, team)))
-      mergedVersion <- dataService.behaviorGroupVersions.createForAction(merged, user, Some(mergedName), maybeIcon, mergedDescription)
-      _ <- DBIO.sequence(groups.map { ea =>
-        moveChildren(ea, merged, mergedVersion)
-      })
-      _ <- DBIO.sequence(groups.map { group =>
-        all.filter(_.id === group.id).delete
-      })
-    } yield merged).transactionally
 
-    dataService.run(action)
+    for {
+      groupsData <- Future.sequence(groupVersions.map { ea =>
+        BehaviorGroupData.buildFor(ea, user, dataService)
+      })
+      mergedData <- Future.successful({
+        val actionInputs = groupsData.flatMap(_.actionInputs)
+        val dataTypeInputs = groupsData.flatMap(_.dataTypeInputs)
+        val behaviorVersions = groupsData.flatMap(_.behaviorVersions)
+        val paramTypes = groupsData.flatMap(_.paramTypes).distinct
+        BehaviorGroupData(
+          None,
+          team.id,
+          Some(mergedName),
+          mergedDescription,
+          maybeIcon,
+          actionInputs,
+          dataTypeInputs,
+          behaviorVersions,
+          paramTypes,
+          githubUrl = None,
+          exportId = None, // Don't think it makes sense to have an exportId for something merged
+          None
+        )
+      })
+      _ <- Future.sequence(groupVersions.map { ea =>
+        dataService.behaviorGroups.delete(ea.group)
+      })
+      mergedGroup <- dataService.behaviorGroups.createFor(mergedData.exportId, team)
+      mergedGroupVersion <- dataService.behaviorGroupVersions.createFor(mergedGroup, user, mergedData.copyForMergedGroup(mergedGroup))
+    } yield mergedGroupVersion.group
   }
 
   def delete(group: BehaviorGroup): Future[BehaviorGroup] = {

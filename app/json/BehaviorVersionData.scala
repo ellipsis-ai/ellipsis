@@ -39,7 +39,7 @@ case class BehaviorVersionData(
     copy(teamId = team.id)
   }
 
-  def copyWithIdsEnsuredFor(group: BehaviorGroup): BehaviorVersionData = {
+  def copyWithIdsEnsuredForImport(group: BehaviorGroup): BehaviorVersionData = {
     copy(
       id = exportId,
       teamId = group.team.id,
@@ -48,6 +48,15 @@ case class BehaviorVersionData(
       params = params.map { p =>
         val maybeParamType = p.paramType.map(pt => pt.copy(id = pt.exportId))
         p.copy(inputId = p.inputExportId, groupId = Some(group.id), paramType = maybeParamType)
+      }
+    )
+  }
+
+  def copyWithIdsEnsuredForMerge(group: BehaviorGroup): BehaviorVersionData = {
+    copy(
+      groupId = Some(group.id),
+      params = params.map { p =>
+        p.copy(groupId = Some(group.id))
       }
     )
   }

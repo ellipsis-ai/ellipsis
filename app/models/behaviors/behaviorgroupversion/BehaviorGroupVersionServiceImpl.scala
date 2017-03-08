@@ -8,7 +8,7 @@ import drivers.SlickPostgresDriver.api._
 import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
-import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -71,8 +71,11 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                ): DBIO[BehaviorGroupVersion] = {
     val raw = RawBehaviorGroupVersion(IDs.next, group.id, maybeName.getOrElse(""), maybeIcon, maybeDescription, Some(user.id), OffsetDateTime.now)
 
-    (all += raw).map { _ =>
-      BehaviorGroupVersion(raw.id, group, raw.name, raw.maybeIcon, raw.maybeDescription, Some(user), raw.createdAt)
+    (all += raw).flatMap { _ =>
+      BehaviorGroupQueries.findQuery(group.id).result.map { r =>
+        val reloadedGroup = r.headOption.map(BehaviorGroupQueries.tuple2Group).get // must exist; reload so it has current versionid
+        BehaviorGroupVersion(raw.id, reloadedGroup, raw.name, raw.maybeIcon, raw.maybeDescription, Some(user), raw.createdAt)
+      }
     }
   }
 
