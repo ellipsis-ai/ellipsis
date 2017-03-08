@@ -1443,7 +1443,7 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
-    window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 25), false);
+    window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
   },
 
   // componentDidUpdate: function() {
