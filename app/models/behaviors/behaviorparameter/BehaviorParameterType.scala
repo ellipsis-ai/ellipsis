@@ -152,7 +152,8 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   }
 
   def editLinkFor(context: BehaviorParameterContext) = {
-    val link = context.dataService.behaviors.editLinkFor(behaviorVersion.behavior.group.id, behavior.id, context.configuration)
+    val behavior = behaviorVersion.behavior
+    val link = context.dataService.behaviors.editLinkFor(behavior.group.id, behavior.id, context.configuration)
     s"[${context.parameter.paramType.name}]($link)"
   }
 

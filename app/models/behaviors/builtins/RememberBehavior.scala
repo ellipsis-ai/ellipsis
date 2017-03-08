@@ -64,16 +64,23 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
 
         )
       }.getOrElse(None))
-      maybeVersion <- (for {
+      maybeGroupVersion <- (for {
         group <- maybeGroup
         user <- maybeUser
         data <- maybeVersionData
       } yield {
         dataService.behaviorGroupVersions.createFor(group, user, data).map(Some(_))
       }).getOrElse(Future.successful(None))
+      maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+        dataService.behaviorVersions.allForGroupVersion(groupVersion).map(_.headOption)
+      }.getOrElse(Future.successful(None))
     } yield {
-      maybeVersion.map { groupVersion =>
-        val link = dataService.behaviors.editLinkFor(groupVersion.group.id, behaviorVersion.behavior.id, lambdaService.configuration)
+      maybeGroupVersion.map { groupVersion =>
+        val link = maybeBehaviorVersion.map { behaviorVersion =>
+          dataService.behaviors.editLinkFor(groupVersion.group.id, behaviorVersion.behavior.id, lambdaService.configuration)
+        }.getOrElse {
+          dataService.behaviorGroups.editLinkFor(groupVersion.group.id, lambdaService.configuration)
+        }
         SimpleTextResult(event, s"OK, I compiled recent messages into [a new skill]($link)", forcePrivateResponse = false)
       }.getOrElse{
         NoResponseResult(event, None)
