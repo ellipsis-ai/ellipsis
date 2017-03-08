@@ -1604,8 +1604,11 @@ const BehaviorEditor = React.createClass({
   renderFooter: function() {
     return (
       <div>
-        <ModalScrim ref="scrim" isActive={this.props.activePanelIsModal} onClick={this.props.onClearActivePanel} />
-        <FixedFooter ref="footer" className={(this.isModified() ? "bg-white" : "bg-light-translucent")}>
+        <ModalScrim ref="scrim" isActive={this.props.activePanelIsModal || (this.hasMobileLayout() && this.behaviorSwitcherIsVisible())} onClick={this.props.onClearActivePanel} />
+        <FixedFooter ref="footer" className={
+          (this.hasMobileLayout() && this.behaviorSwitcherIsVisible() ? " mobile-position-behind-scrim " : "") +
+          (this.isModified() ? " bg-white " : " bg-light-translucent ")
+        }>
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
@@ -2032,9 +2035,15 @@ const BehaviorEditor = React.createClass({
   },
 
   renderBehaviorSwitcher: function() {
-    if (this.behaviorSwitcherIsVisible()) {
-      return (
-        <div ref="leftColumn" className="column column-page-sidebar flex-column flex-column-left bg-white border-right prn position-relative mobile-position-fixed-top-full">
+    return (
+      <div ref="leftColumn"
+        className={
+          "column column-page-sidebar flex-column flex-column-left bg-white " +
+          "border-right prn position-relative mobile-position-fixed-top-full mobile-position-z-front " +
+          (this.behaviorSwitcherIsVisible() || this.hasMobileLayout()  ? "" : "display-none")
+        }
+      >
+        <Collapsible revealWhen={this.behaviorSwitcherIsVisible()} animationDisabled={!this.hasMobileLayout()}>
           <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
             <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
               <CollapseButton onClick={this.toggleBehaviorSwitcher} direction={this.windowIsMobile() ? "up" : "left"} />
@@ -2058,11 +2067,9 @@ const BehaviorEditor = React.createClass({
               isBehaviorModified={this.behaviorIsModified}
             />
           </Sticky>
-        </div>
-      );
-    } else {
-      return null;
-    }
+        </Collapsible>
+      </div>
+    );
   },
 
   renderNormalBehavior: function() {
