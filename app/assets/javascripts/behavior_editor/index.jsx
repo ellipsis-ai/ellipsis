@@ -1257,7 +1257,8 @@ const BehaviorEditor = React.createClass({
 
   behaviorIsModified: function(currentBehavior) {
     var originalBehavior = this.props.group.behaviorVersions.find((ea) => ea.behaviorId === currentBehavior.behaviorId);
-    return !(originalBehavior && currentBehavior.isIdenticalToVersion(originalBehavior));
+    var previewingVersions = this.props.activePanelName === 'versionHistory';
+    return !previewingVersions && !(originalBehavior && currentBehavior.isIdenticalToVersion(originalBehavior));
   },
 
   getChangeSummary: function() {
