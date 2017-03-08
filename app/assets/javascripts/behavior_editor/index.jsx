@@ -1961,7 +1961,7 @@ const BehaviorEditor = React.createClass({
   },
 
   renderSwitcherToggle: function() {
-    if (!this.behaviorSwitcherIsVisible() && this.isExistingGroup()) {
+    if ((!this.behaviorSwitcherIsVisible() || this.windowIsMobile()) && this.isExistingGroup()) {
       return (
         <div className="bg-white container container-wide type-weak border-bottom display-ellipsis display-limit-width">
           <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
@@ -1984,10 +1984,14 @@ const BehaviorEditor = React.createClass({
   },
 
   onSelectBehavior: function(groupId, behaviorId) {
-    this.setState({
+    var newState = {
       animationDisabled: true,
       selectedBehaviorId: behaviorId
-    }, () => {
+    };
+    if (this.windowIsMobile()) {
+      newState.behaviorSwitcherVisible = false;
+    }
+    this.setState(newState, () => {
       if (groupId) {
         BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
       }
