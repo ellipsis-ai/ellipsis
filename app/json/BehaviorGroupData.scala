@@ -117,7 +117,7 @@ object BehaviorGroupData {
   private def inputsFor(versionsData: Seq[BehaviorVersionData], dataService: DataService) = {
     Future.sequence(versionsData.flatMap { version =>
       version.params.map { param =>
-        param.inputId.map(dataService.inputs.find).getOrElse(Future.successful(None))
+        param.inputVersionId.map(dataService.inputs.find).getOrElse(Future.successful(None))
       }
     }).map(_.flatten)
   }

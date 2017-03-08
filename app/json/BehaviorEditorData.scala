@@ -88,7 +88,7 @@ object BehaviorEditorData {
     maybeBehaviorGroupData.map { data =>
       Future.sequence(data.behaviorVersions.map { behaviorVersionData =>
         Future.sequence(behaviorVersionData.params.flatMap { param =>
-          param.inputId.map { inputId =>
+          param.inputVersionId.map { inputId =>
             InputSavedAnswerData.maybeFor(inputId, user, dataService)
           }
         }).map(_.flatten)

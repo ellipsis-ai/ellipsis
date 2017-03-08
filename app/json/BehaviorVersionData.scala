@@ -47,7 +47,7 @@ case class BehaviorVersionData(
       behaviorId = behaviorId.orElse(Some(IDs.next)),
       params = params.map { p =>
         val maybeParamType = p.paramType.map(pt => pt.copy(id = pt.exportId))
-        p.copy(inputId = p.inputExportId, groupId = Some(group.id), paramType = maybeParamType)
+        p.copy(inputVersionId = p.inputExportId, groupId = Some(group.id), paramType = maybeParamType)
       }
     )
   }
@@ -81,14 +81,14 @@ case class BehaviorVersionData(
                           oldToNewIdMapping: collection.mutable.Map[String, String]
                         ): BehaviorVersionData = {
     val newParams = params.map { param =>
-      val maybeNewId = param.inputId.flatMap { inputId =>
+      val maybeNewId = param.inputVersionId.flatMap { inputId =>
         oldToNewIdMapping.get(inputId)
       }
       (for {
         newId <- maybeNewId
         input <- inputs.find(_.id.contains(newId))
       } yield {
-        param.copy(paramType = input.paramType, inputId = input.id, inputExportId = input.exportId)
+        param.copy(paramType = input.paramType, inputVersionId = input.id, inputExportId = input.exportId)
       }).getOrElse(param)
     }
     copy(params = newParams)
@@ -96,10 +96,10 @@ case class BehaviorVersionData(
 
   def copyWithEnsuredInputIds: BehaviorVersionData = {
     val paramsWithEnsuredInputIds = params.map { param =>
-      if (param.inputId.isDefined) {
+      if (param.inputVersionId.isDefined) {
         param
       } else {
-        param.copy(inputId = Some(IDs.next))
+        param.copy(inputVersionId = Some(IDs.next))
       }
     }
     copy(params = paramsWithEnsuredInputIds)
@@ -281,6 +281,7 @@ object BehaviorVersionData {
               ea.question,
               Some(ea.input.isSavedForTeam),
               Some(ea.input.isSavedForUser),
+              ea.input.maybeInputId,
               Some(ea.input.id),
               ea.input.maybeExportId,
               Some(ea.input.behaviorGroupVersion.id)

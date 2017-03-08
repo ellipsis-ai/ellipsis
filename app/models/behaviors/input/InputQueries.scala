@@ -21,7 +21,7 @@ object InputQueries {
         findBuiltIn(raw.paramType).
         orElse(tuple._2.map { dataTypeBehaviorVersion => BehaviorBackedDataType(BehaviorVersionQueries.tuple2BehaviorVersion(dataTypeBehaviorVersion)) }).
         getOrElse(TextType)
-    Input(raw.id, raw.maybeExportId, raw.name, raw.maybeQuestion, paramType, raw.isSavedForTeam, raw.isSavedForUser, groupVersion)
+    Input(raw.id, raw.maybeInputId, raw.maybeExportId, raw.name, raw.maybeQuestion, paramType, raw.isSavedForTeam, raw.isSavedForUser, groupVersion)
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {

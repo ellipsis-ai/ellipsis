@@ -11,6 +11,7 @@ import scala.concurrent.Future
 
 case class InputData(
                       id: Option[String],
+                      inputId: Option[String],
                       exportId: Option[String],
                       name: String,
                       paramType: Option[BehaviorParameterTypeData],
@@ -56,6 +57,7 @@ object InputData {
     BehaviorParameterTypeData.from(input.paramType, dataService).map { paramTypeData =>
       InputData(
         Some(input.id),
+        input.maybeInputId,
         input.maybeExportId,
         input.name,
         Some(paramTypeData),

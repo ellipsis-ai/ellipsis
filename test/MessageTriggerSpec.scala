@@ -19,7 +19,7 @@ trait MessageTriggerSpec extends PlaySpec with MockitoSugar {
                     behaviorVersion: BehaviorVersion
                   ): BehaviorParameter = {
     val groupVersion = mock[BehaviorGroupVersion]
-    BehaviorParameter(IDs.next, rank, Input(IDs.next, None, name, None, TextType, false, false, groupVersion), behaviorVersion)
+    BehaviorParameter(IDs.next, rank, Input(IDs.next, Some(IDs.next), None, name, None, TextType, false, false, groupVersion), behaviorVersion)
   }
 
 }

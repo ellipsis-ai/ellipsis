@@ -9,6 +9,7 @@ case class BehaviorParameterData(
                                   isSavedForTeam: Option[Boolean],
                                   isSavedForUser: Option[Boolean],
                                   inputId: Option[String],
+                                  inputVersionId: Option[String],
                                   inputExportId: Option[String],
                                   groupId: Option[String]
                                 ) {
@@ -17,6 +18,7 @@ case class BehaviorParameterData(
 
   def newInputData = InputData(
     None,
+    inputId,
     inputExportId,
     name,
     paramType,
@@ -27,6 +29,7 @@ case class BehaviorParameterData(
   )
 
   def inputData = InputData(
+    inputVersionId,
     inputId,
     inputExportId,
     name,
@@ -40,7 +43,7 @@ case class BehaviorParameterData(
   def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterData = {
     copy(
       paramType = paramType.map(_.copyForExport(groupExporter)),
-      inputId = inputId.flatMap(groupExporter.exportIdForInputId),
+      inputVersionId = inputVersionId.flatMap(groupExporter.exportIdForInputId),
       groupId = groupId.flatMap { _ => groupExporter.behaviorGroupVersion.group.maybeExportId }
     )
   }

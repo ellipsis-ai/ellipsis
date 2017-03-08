@@ -10,6 +10,7 @@ class DataPopulationModule extends AbstractModule with ScalaModule {
     bind(classOf[OAuth2ApiPopulator]).asEagerSingleton()
     bind(classOf[SimpleTokenApiPopulator]).asEagerSingleton()
     bind(classOf[EnsureInvocationLogEntryUsers]).asEagerSingleton()
+    bind(classOf[EnsureInputIds]).asEagerSingleton()
   }
 
 }
