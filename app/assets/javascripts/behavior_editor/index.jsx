@@ -2124,9 +2124,9 @@ const BehaviorEditor = React.createClass({
                 <Collapsible revealWhen={!this.getSelectedBehavior().shouldRevealCodeEditor} animationDisabled={this.animationIsDisabled()}>
                   <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
                     <div className="container container-wide">
-                      <div className="columns columns-elastic mobile-columns-float">
+                      <div className="columns columns-elastic narrow-columns-float">
                         <div className="column column-expand">
-                          <p className="mbn">
+                          <p className="mbs">
                             <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
                             <span>or provide a simple response below.</span>
                           </p>
@@ -2258,7 +2258,7 @@ const BehaviorEditor = React.createClass({
         <form action={this.getFormAction()} method="POST" ref="behaviorForm">
           <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
             {this.renderBehaviorSwitcher()}
-            <div className="column column-page-main-wide flex-column flex-column-center">
+            <div className="column column-page-main-wide flex-column flex-column-main">
               {this.renderSwitcherToggle()}
 
               {this.renderEditor()}
