@@ -15,8 +15,8 @@ define(function(require) {
         actionInputs: { value: props.actionInputs, enumerable: true },
         dataTypeInputs: { value: props.dataTypeInputs, enumerable: true },
         behaviorVersions: { value: props.behaviorVersions, enumerable: true },
-        createdAt: { value: props.createdAt, enumerable: false },
-        exportId: { value: props.exportId, enumerable: false }
+        createdAt: { value: props.createdAt, enumerable: true },
+        exportId: { value: props.exportId, enumerable: true }
       });
     }
 
@@ -24,8 +24,16 @@ define(function(require) {
       return new BehaviorGroup(Object.assign({}, this, props));
     }
 
+    // Used by JSON.stringify for submitting data to the server
+    toJSON() {
+      return this.clone({
+        behaviorVersions: this.sortedForComparison(this.behaviorVersions).map((ea) => ea.forEqualityComparison()),
+        createdAt: null
+      });
+    }
+
     forEqualityComparison() {
-      return this.clone({ behaviorVersions: this.sortedForComparison(this.behaviorVersions).map((ea) => ea.forEqualityComparison()) });
+      return this.toJSON();
     }
 
     isIdenticalTo(group) {

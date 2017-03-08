@@ -723,7 +723,7 @@ const BehaviorEditor = React.createClass({
       event.preventDefault();
       if (this.isModified()) {
         this.refs.saveButton.focus();
-        this.onSaveBehavior();
+        this.onSaveBehaviorGroup();
       }
     }
   },
@@ -749,7 +749,11 @@ const BehaviorEditor = React.createClass({
     }).then((response) => response.json())
       .then((json) => {
         if (json.id) {
-          let newProps = Object.assign({}, json, { onLoad: optionalCallback });
+          const newProps = {
+            group: BehaviorGroup.fromJson(json),
+            onLoad: optionalCallback,
+            justSaved: true
+          }
           this.props.onSave(newProps, this.state);
         } else {
           this.onSaveError();
@@ -770,10 +774,10 @@ const BehaviorEditor = React.createClass({
   },
 
   onSaveClick: function() {
-    this.onSaveBehavior();
+    this.onSaveBehaviorGroup();
   },
 
-  onSaveBehavior: function(optionalCallback) {
+  onSaveBehaviorGroup: function(optionalCallback) {
     this.setState({ error: null });
     this.toggleActivePanel('saving', true);
     this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
@@ -916,7 +920,7 @@ const BehaviorEditor = React.createClass({
   checkIfModifiedAndTest: function() {
     const ref = this.isDataTypeBehavior() ? 'dataTypeTester' : 'behaviorTester';
     if (this.isModified()) {
-      this.onSaveBehavior(() => {
+      this.onSaveBehaviorGroup(() => {
         this.props.onClearActivePanel(() => {
           this.toggleTester(ref);
         });
@@ -1466,11 +1470,9 @@ const BehaviorEditor = React.createClass({
   componentWillReceiveProps: function(nextProps) {
     if (nextProps.group !== this.props.group) {
       var newGroup = nextProps.group;
-      var newSelectedBehaviorVersion = newGroup.behaviorVersions.find(ea => ea.behaviorId === nextProps.selectedBehaviorId);
       var newState = {
         justSaved: true,
         group: newGroup,
-        selectedBehaviorId: newSelectedBehaviorVersion ? newSelectedBehaviorVersion.behaviorId : null,
         versions: [this.getTimestampedGroup(newGroup)],
         versionsLoadStatus: null,
         error: null
@@ -1483,9 +1485,7 @@ const BehaviorEditor = React.createClass({
       if (typeof(nextProps.onLoad) === 'function') {
         nextProps.onLoad();
       }
-      if (newSelectedBehaviorVersion && newSelectedBehaviorVersion.behaviorId) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newGroup.id, newSelectedBehaviorVersion.behaviorId).url);
-      }
+      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newGroup.id, this.getSelectedBehaviorId()).url);
     }
   },
 

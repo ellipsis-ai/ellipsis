@@ -7,20 +7,16 @@ requirejs(['../common'], function() {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
         groupData: BehaviorEditorConfiguration.group,
         group: BehaviorGroup.fromJson(BehaviorEditorConfiguration.group),
-        onSave: onSaveBehavior,
+        onSave: onSave,
         onForgetSavedAnswerForInput: resetSavedAnswerForInput
       });
 
       var currentProps = config;
 
-      function onSaveBehavior(newGroupData, state) {
+      function onSave(newProps, state) {
 
-        var props = Object.assign({}, currentProps, {
-          group: BehaviorGroup.fromJson(newGroupData),
-          justSaved: true
-        });
+        var props = Object.assign({}, currentProps, newProps);
         if (state) {
-          props.selectedBehaviorId = state.selectedBehaviorId;
           props.group.behaviorVersions = props.group.behaviorVersions.map(ea => {
             const versionState = state.group.behaviorVersions.find(v => v.behaviorId === ea.behaviorId);
             if (versionState) {
