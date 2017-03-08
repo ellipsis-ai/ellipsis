@@ -1,6 +1,8 @@
 define(function(require) {
 var React = require('react');
 
+var DEFAULT_DURATION = 0.25;
+
 return React.createClass({
 /*
 The Collapsible component reveals or collapses its children in the DOM in response
@@ -35,7 +37,10 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
   },
 
   animationDurationSeconds: function() {
-    return this.props.animationDuration || 0.25;
+    return this.props.animationDuration || DEFAULT_DURATION;
+  },
+  animationDurationMilliseconds: function() {
+    return this.animationDurationSeconds() * 1000;
   },
   after: function(callback) {
     if (this.props.animationDisabled) {
@@ -56,7 +61,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     if (this.props.animationDisabled) {
       f();
     } else {
-      window.setTimeout(f, this.animationDurationSeconds() * 1000);
+      window.setTimeout(f, this.animationDurationMilliseconds());
     }
   },
 
@@ -184,7 +189,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     if (this.state.isAnimating) {
       window.setTimeout(() => {
         this.componentDidUpdate(prevProps);
-      }, this.animationDurationSeconds() * 1000);
+      }, this.animationDurationMilliseconds());
     } else if (this.props.revealWhen) {
       this.reveal();
     } else {
