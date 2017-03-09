@@ -15,8 +15,20 @@ CREATE TABLE behavior_group_versions(
   created_at TIMESTAMPTZ NOT NULL
 );
 
+CREATE OR REPLACE FUNCTION generate_pseudorandom_id() RETURNS TEXT
+AS
+$$
+  BEGIN
+    RETURN (SELECT array_to_string(array((
+             SELECT SUBSTRING('abcdefghjklmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789-_'
+             FROM mod((random()*58)::int, 58)+1 FOR 1)
+           FROM generate_series(1,22))),''));;
+  END
+$$
+LANGUAGE plpgsql;
+
 INSERT INTO behavior_group_versions (
-  SELECT uuid_generate_v4(), g.id, g.name, g.icon, g.description, MAX(bv.author_id), MAX(bv.created_at)
+  SELECT generate_pseudorandom_id(), g.id, g.name, g.icon, g.description, MAX(bv.author_id), MAX(bv.created_at)
   FROM behavior_groups AS g JOIN behaviors AS b ON b.group_id = g.id JOIN behavior_versions AS bv ON bv.behavior_id = b.id
   GROUP BY g.id
 );
@@ -63,6 +75,8 @@ DROP FUNCTION IF EXISTS update_current_group_version_id();
 ALTER TABLE behaviors ADD COLUMN current_version_id TEXT REFERENCES behavior_versions(id);
 
 ALTER TABLE behavior_versions DROP COLUMN group_version_id;
+
+DROP FUNCTION IF EXISTS generate_pseudorandom_id();
 
 DROP TABLE IF EXISTS behavior_group_versions;
 
