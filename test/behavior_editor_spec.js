@@ -47,7 +47,7 @@ describe('BehaviorEditor', () => {
     csrfToken: "2",
     justSaved: false,
     envVariables: [ { name: "HOT_DOG" } ],
-    paramTypes: [{
+    builtinParamTypes: [{
       id: 'Text',
       name: 'Text',
       needsConfig: false
@@ -107,7 +107,7 @@ describe('BehaviorEditor', () => {
 
   describe('getBehaviorParams', () => {
     it('returns the defined parameters', () => {
-      firstBehavior.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.paramTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234", inputExportId: null }];
+      firstBehavior.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.builtinParamTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234", inputVersionId: "xzy321", inputExportId: null }];
       let editor = createEditor(editorConfig);
       expect(editor.getBehaviorParams()).toEqual(firstBehavior.params);
     });
@@ -171,9 +171,9 @@ describe('BehaviorEditor', () => {
   describe('onParamEnterKey', () => {
     it('focuses on the next param if there is one', () => {
       firstBehavior.params = [{
-        name: 'param1', question: 'What am I?', paramType: editorConfig.paramTypes[0]
+        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0]
       }, {
-        name: 'param2', question: 'Who are you?', paramType: editorConfig.paramTypes[0]
+        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0]
       }];
       const editor = createEditor(editorConfig);
       editor.focusOnParamIndex = jest.fn();
@@ -185,9 +185,9 @@ describe('BehaviorEditor', () => {
 
     it('adds a param if this is the last one and it has a question', () => {
       firstBehavior.params = [{
-        name: 'param1', question: 'What am I?', paramType: editorConfig.paramTypes[0]
+        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0]
       }, {
-        name: 'param2', question: 'Who are you?', paramType: editorConfig.paramTypes[0]
+        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0]
       }];
       const editor = createEditor(editorConfig);
       editor.focusOnParamIndex = jest.fn();
@@ -199,9 +199,9 @@ describe('BehaviorEditor', () => {
 
     it('does nothing if this is the last one and has no question', () => {
       firstBehavior.params = [{
-        name: 'param1', question: 'What am I?', paramType: editorConfig.paramTypes[0]
+        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0]
       }, {
-        name: 'param2', question: '', paramType: editorConfig.paramTypes[0]
+        name: 'param2', question: '', paramType: editorConfig.builtinParamTypes[0]
       }];
       const editor = createEditor(editorConfig);
       editor.focusOnParamIndex = jest.fn();
@@ -280,7 +280,7 @@ describe('BehaviorEditor', () => {
     it("creates a new parameter with the parameter type set to the first possible one", () => {
       let editor = createEditor(editorConfig);
       let newParam = editor.createNewParam();
-      expect(newParam.paramType).toEqual(editorConfig.paramTypes[0]);
+      expect(newParam.paramType).toEqual(editorConfig.builtinParamTypes[0]);
     });
 
     it("creates a new parameter with other attributes as desired", () => {
@@ -298,7 +298,7 @@ describe('BehaviorEditor', () => {
       const savedAnswerParam = {
         name: 'foo',
         question: '',
-        paramType: editorConfig.paramTypes[0],
+        paramType: editorConfig.builtinParamTypes[0],
         isSavedForTeam: false,
         isSavedForUser: true,
         inputId: inputId,

@@ -99,7 +99,7 @@ define(function(require) {
     }
 
     getRequiredOAuth2ApiConfigs() {
-      return this.config.requiredOAuth2ApiConfigs;
+      return this.config.requiredOAuth2ApiConfigs || [];
     }
 
     needsConfig() {
