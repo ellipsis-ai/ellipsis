@@ -4,8 +4,6 @@ define(function(require) {
 
   class BehaviorGroup {
     constructor(props) {
-      Object.assign(this, props);
-
       Object.defineProperties(this, {
         id: { value: props.id, enumerable: true },
         teamId: { value: props.teamId, enumerable: true },

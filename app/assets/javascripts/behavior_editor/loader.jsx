@@ -14,16 +14,17 @@ requirejs(['../common'], function() {
       var currentProps = config;
 
       function onSave(newProps, state) {
-
-        var props = Object.assign({}, currentProps, newProps);
+        const props = Object.assign({}, currentProps, newProps);
         if (state) {
-          props.group.behaviorVersions = props.group.behaviorVersions.map(ea => {
-            const versionState = state.group.behaviorVersions.find(v => v.behaviorId === ea.behaviorId);
-            if (versionState) {
-              return ea.clone({ shouldRevealCodeEditor: versionState.shouldRevealCodeEditor });
-            } else {
-              return ea;
-            }
+          props.group = props.group.clone({
+            behaviorVersions: props.group.behaviorVersions.map(ea => {
+              const versionState = state.group.behaviorVersions.find(v => v.behaviorId === ea.behaviorId);
+              if (versionState) {
+                return ea.clone({ shouldRevealCodeEditor: versionState.shouldRevealCodeEditor });
+              } else {
+                return ea;
+              }
+            })
           });
         }
         reload(props);
