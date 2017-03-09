@@ -30,7 +30,7 @@ define(function(require) {
       return this.props.isImporting;
     },
 
-    isImported: function() {
+    isLocallyEditable: function() {
       return !!this.props.localId;
     },
 
@@ -54,7 +54,7 @@ define(function(require) {
             </span>
           </button>
         );
-      } else if (this.isImported()) {
+      } else if (this.isLocallyEditable()) {
         return (
           <button title="Already installed" type="button" className="mtm button-raw button-no-wrap" disabled="disabled" style={{ height: 24 }}>
             <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstalled /></span>
@@ -97,7 +97,7 @@ define(function(require) {
     },
 
     renderGroupSelectionCheckbox: function() {
-      if (this.props.localId) {
+      if (this.isLocallyEditable() && !this.isImportable()) {
         return (
           <input
             type="checkbox"
@@ -128,8 +128,8 @@ define(function(require) {
       return (
         <div className="border border-radius bg-lightest plxxxl prl pvl position-relative">
           <div className={this.isImporting() ? "pulse" : ""}>
-            {this.renderGroupSelectionCheckbox(this.props.localId)}
-            <button type="button" className="button-block" onClick={this.toggleMoreInfo} disabled={this.isImporting()}>
+            {this.renderGroupSelectionCheckbox()}
+            <button type="button" className="button-block width-full" onClick={this.toggleMoreInfo} disabled={this.isImporting()}>
               <div className="type-l display-ellipsis mbm">
                 {this.renderIcon()}
                 {this.getName()}
