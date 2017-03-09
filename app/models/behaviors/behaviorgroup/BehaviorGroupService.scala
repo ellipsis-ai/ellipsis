@@ -17,6 +17,8 @@ trait BehaviorGroupService {
 
   def allFor(team: Team): Future[Seq[BehaviorGroup]]
 
+  def allWithNoNameFor(team: Team): Future[Seq[BehaviorGroup]]
+
   def find(id: String): Future[Option[BehaviorGroup]]
 
   def merge(groups: Seq[BehaviorGroup], user: User): Future[BehaviorGroup]

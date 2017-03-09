@@ -71,6 +71,19 @@ class BehaviorGroupServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def allWithNoNameFor(team: Team): Future[Seq[BehaviorGroup]] = {
+    for {
+      allGroups <- allFor(team)
+      allCurrentVersions <- Future.sequence(allGroups.map { ea =>
+        dataService.behaviorGroups.maybeCurrentVersionFor(ea)
+      }).map(_.flatten)
+    } yield {
+      allCurrentVersions.
+        filter(_.name.isEmpty).
+        map(_.group)
+    }
+  }
+
   def find(id: String): Future[Option[BehaviorGroup]] = {
     val action = findQuery(id).result.map { r =>
       r.headOption.map(tuple2Group)
