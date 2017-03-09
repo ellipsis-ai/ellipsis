@@ -795,7 +795,7 @@ const BehaviorEditor = React.createClass({
       justSaved: false
     };
     if (!version.hasBehaviorVersionWithId(this.getSelectedBehaviorId())) {
-      stateUpdates.selectedBehaviorId = null
+      stateUpdates.selectedBehaviorId = null;
     }
     this.setState(stateUpdates, optionalCallback);
   },
