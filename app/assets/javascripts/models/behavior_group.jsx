@@ -20,6 +20,10 @@ define(function(require) {
       });
     }
 
+    getName() {
+      return this.name || "Untitled skill";
+    }
+
     clone(props) {
       return new BehaviorGroup(Object.assign({}, this, props));
     }

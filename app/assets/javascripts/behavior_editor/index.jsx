@@ -1955,7 +1955,7 @@ const BehaviorEditor = React.createClass({
               <SVGHamburger />
             </span>
             <h4 className="type-black display-inline-block align-m man">
-              {this.getBehaviorGroup().name}
+              {this.getBehaviorGroup().getName()}
             </h4>
           </button>
         </div>
@@ -2027,7 +2027,7 @@ const BehaviorEditor = React.createClass({
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               selectedBehavior={this.getSelectedBehavior()}
               groupId={this.getBehaviorGroup().id}
-              groupName={this.getBehaviorGroup().name || ""}
+              groupName={this.getBehaviorGroup().getName()}
               groupDescription={this.getBehaviorGroup().description || ""}
               teamId={this.getBehaviorGroup().teamId}
               onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}

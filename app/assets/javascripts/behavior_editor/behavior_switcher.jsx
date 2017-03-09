@@ -23,10 +23,6 @@ define(function(require) {
       return !!(this.props.groupName || this.props.groupDescription);
     },
 
-    getSkillName: function() {
-      return this.props.groupName || "Untitled skill";
-    },
-
     getEditButtonLabel: function() {
       if (this.hasSavedNameOrDescription()) {
         return "Edit title/description";
@@ -38,7 +34,7 @@ define(function(require) {
     getSkillTitle: function() {
       return (
         <div className="mbm">
-          <h4 className="mbn">{this.getSkillName()}</h4>
+          <h4 className="mbn">{this.props.groupName}</h4>
           <div className="type-s type-weak">{this.props.groupDescription}</div>
         </div>
       );
