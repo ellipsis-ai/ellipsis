@@ -6,7 +6,8 @@ define(function(require) {
     propTypes: {
       details: React.PropTypes.arrayOf(React.PropTypes.shape({
         kind: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired
+        name: React.PropTypes.string.isRequired,
+        onClick: React.PropTypes.func.isRequired
       })).isRequired
     },
 
@@ -15,7 +16,11 @@ define(function(require) {
         <span>
           <span>The <b>{detail.name}</b> data type needs to be configured.</span>
           <span className="mhxs">
-            <a href={detail.link}>Configure it</a>
+            <button type="button"
+                    className="button-raw link button-s"
+                    onClick={detail.onClick}>
+              Configure it
+            </button>
           </span>
         </span>
       );

@@ -422,10 +422,12 @@ const BehaviorEditor = React.createClass({
   buildDataTypeNotifications: function() {
     var notifications = [];
     this.getParamTypesNeedingConfiguration().forEach(ea => {
+      const behaviorVersion = this.getBehaviorGroup().behaviorVersions.find(bv => bv.id === ea.id);
+      const behaviorId = behaviorVersion ? behaviorVersion.behaviorId : null;
       notifications.push({
         kind: "data_type_needs_config",
         name: ea.name,
-        link: jsRoutes.controllers.BehaviorEditorController.edit(this.getBehaviorGroup().id, ea.id).url
+        onClick: () => this.onSelectBehavior(this.getBehaviorGroup().id, behaviorId)
       });
     });
     return notifications;
@@ -1995,7 +1997,7 @@ const BehaviorEditor = React.createClass({
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
-        const newVersion = BehaviorVersion.fromJson(json);
+        const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id }));
         const groupWithNewBehavior = group.withNewBehaviorVersion(newVersion);
         this.setState({
           group: groupWithNewBehavior

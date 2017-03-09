@@ -72,7 +72,7 @@ define(function(require) {
 
     static fromJson(props) {
       return new BehaviorGroup(Object.assign({}, props, {
-        behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(ea))
+        behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id })))
       }));
     }
   }
