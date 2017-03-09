@@ -28,7 +28,7 @@ case class DisplayHelpBehavior(
     s"(?i)(\\s|\\A)(\\S*${Regex.quote(searchText)}\\S*)(\\s|\\Z)".r
   }
 
-  private def helpStringFor(behaviorVersion: BehaviorVersionData, maybeMatchingItems: Option[Seq[FuzzyMatchable]]): Option[String] = {
+  private def helpStringFor(group: BehaviorGroupData, behaviorVersion: BehaviorVersionData, maybeMatchingItems: Option[Seq[FuzzyMatchable]]): Option[String] = {
     val triggers = behaviorVersion.triggers
     if (triggers.isEmpty) {
       None
@@ -58,7 +58,7 @@ case class DisplayHelpBehavior(
         None
       } else {
         val linkText = (for {
-          groupId <- behaviorVersion.groupId
+          groupId <- group.id
           behaviorId <- behaviorVersion.behaviorId
         } yield {
           val url = dataService.behaviors.editLinkFor(groupId, behaviorId, lambdaService.configuration)
@@ -186,7 +186,7 @@ case class DisplayHelpBehavior(
       .map(name => s"**$name**")
       .getOrElse("**Miscellaneous skills**")
 
-    val actionList = group.behaviorVersions.flatMap(version => helpStringFor(version, maybeMatchingItems)).mkString("")
+    val actionList = group.behaviorVersions.flatMap(version => helpStringFor(group, version, maybeMatchingItems)).mkString("")
 
     val resultText =
       s"""$intro

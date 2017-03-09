@@ -124,8 +124,8 @@ class BehaviorEditorController @Inject() (
     )
   }
 
-  def newUnsavedBehavior(isDataType: Boolean, teamId: String, maybeGroupId: Option[String]) = silhouette.SecuredAction { implicit request =>
-    val data = BehaviorVersionData.newUnsavedFor(teamId, maybeGroupId, isDataType, dataService)
+  def newUnsavedBehavior(isDataType: Boolean, teamId: String) = silhouette.SecuredAction { implicit request =>
+    val data = BehaviorVersionData.newUnsavedFor(teamId, isDataType, dataService)
     Ok(Json.toJson(data))
   }
 

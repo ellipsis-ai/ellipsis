@@ -18,7 +18,6 @@ import scala.concurrent.Future
 case class BehaviorVersionData(
                                 id: Option[String],
                                 teamId: String,
-                                groupId: Option[String],
                                 behaviorId: Option[String],
                                 isNewBehavior: Option[Boolean],
                                 name: Option[String],
@@ -43,20 +42,10 @@ case class BehaviorVersionData(
     copy(
       id = exportId,
       teamId = group.team.id,
-      groupId = Some(group.id),
       behaviorId = behaviorId.orElse(Some(IDs.next)),
       params = params.map { p =>
         val maybeParamType = p.paramType.map(pt => pt.copy(id = pt.exportId))
-        p.copy(inputVersionId = p.inputExportId, groupId = Some(group.id), paramType = maybeParamType)
-      }
-    )
-  }
-
-  def copyWithIdsEnsuredForMerge(group: BehaviorGroup): BehaviorVersionData = {
-    copy(
-      groupId = Some(group.id),
-      params = params.map { p =>
-        p.copy(groupId = Some(group.id))
+        p.copy(inputVersionId = p.inputExportId, paramType = maybeParamType)
       }
     )
   }
@@ -121,7 +110,6 @@ object BehaviorVersionData {
   def buildFor(
                 id: Option[String],
                 teamId: String,
-                groupId: Option[String],
                 behaviorId: Option[String],
                 isNewBehavior: Boolean,
                 description: Option[String],
@@ -145,7 +133,6 @@ object BehaviorVersionData {
     BehaviorVersionData(
       id,
       teamId,
-      groupId,
       behaviorId,
       Some(isNewBehavior),
       config.name,
@@ -162,11 +149,10 @@ object BehaviorVersionData {
     )
   }
 
-  def newUnsavedFor(teamId: String, maybeGroupId: Option[String], isDataType: Boolean, dataService: DataService): BehaviorVersionData = {
+  def newUnsavedFor(teamId: String, isDataType: Boolean, dataService: DataService): BehaviorVersionData = {
     buildFor(
       Some(IDs.next),
       teamId,
-      maybeGroupId,
       Some(IDs.next),
       isNewBehavior = true,
       None,
@@ -197,7 +183,6 @@ object BehaviorVersionData {
     BehaviorVersionData.buildFor(
       None,
       teamId,
-      None,
       None,
       isNewBehavior = false,
       maybeDescription,
@@ -268,7 +253,6 @@ object BehaviorVersionData {
         BehaviorVersionData.buildFor(
           Some(behaviorVersion.id),
           behaviorVersion.team.id,
-          behavior.maybeGroup.map(_.id),
           Some(behavior.id),
           isNewBehavior = false,
           behaviorVersion.maybeDescription,
@@ -283,8 +267,7 @@ object BehaviorVersionData {
               Some(ea.input.isSavedForUser),
               ea.input.maybeInputId,
               Some(ea.input.id),
-              ea.input.maybeExportId,
-              Some(ea.input.behaviorGroupVersion.id)
+              ea.input.maybeExportId
             )
           },
           triggers.map(ea =>

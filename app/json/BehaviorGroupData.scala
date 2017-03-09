@@ -47,7 +47,7 @@ case class BehaviorGroupData(
   }
 
   def copyForMergedGroup(group: BehaviorGroup): BehaviorGroupData = {
-    copyForNewVersionFor(group, behaviorVersions.map(_.copyWithIdsEnsuredForMerge(group)))
+    copyForNewVersionFor(group, behaviorVersions)
   }
 
   private def copyForNewVersionFor(

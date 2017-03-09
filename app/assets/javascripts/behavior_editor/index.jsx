@@ -425,7 +425,7 @@ const BehaviorEditor = React.createClass({
       notifications.push({
         kind: "data_type_needs_config",
         name: ea.name,
-        link: jsRoutes.controllers.BehaviorEditorController.edit(ea.id).url
+        link: jsRoutes.controllers.BehaviorEditorController.edit(this.getBehaviorGroup().id, ea.id).url
       });
     });
     return notifications;
@@ -1991,7 +1991,7 @@ const BehaviorEditor = React.createClass({
 
   addNewBehavior: function(isDataType) {
     const group = this.getBehaviorGroup();
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, group.id).url;
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {

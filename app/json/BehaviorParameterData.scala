@@ -10,11 +10,8 @@ case class BehaviorParameterData(
                                   isSavedForUser: Option[Boolean],
                                   inputId: Option[String],
                                   inputVersionId: Option[String],
-                                  inputExportId: Option[String],
-                                  groupId: Option[String]
+                                  inputExportId: Option[String]
                                 ) {
-
-  val isShared = groupId.isDefined
 
   def newInputData = InputData(
     None,
@@ -24,8 +21,7 @@ case class BehaviorParameterData(
     paramType,
     question,
     isSavedForTeam.exists(identity),
-    isSavedForUser.exists(identity),
-    groupId
+    isSavedForUser.exists(identity)
   )
 
   def inputData = InputData(
@@ -36,15 +32,14 @@ case class BehaviorParameterData(
     paramType,
     question,
     isSavedForTeam.exists(identity),
-    isSavedForUser.exists(identity),
-    groupId
+    isSavedForUser.exists(identity)
   )
 
   def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterData = {
     copy(
       paramType = paramType.map(_.copyForExport(groupExporter)),
-      inputVersionId = inputVersionId.flatMap(groupExporter.exportIdForInputId),
-      groupId = groupId.flatMap { _ => groupExporter.behaviorGroupVersion.group.maybeExportId }
+      inputId = inputId.flatMap(groupExporter.exportIdForInputId),
+      inputVersionId = None
     )
   }
 

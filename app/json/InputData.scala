@@ -17,19 +17,21 @@ case class InputData(
                       paramType: Option[BehaviorParameterTypeData],
                       question: String,
                       isSavedForTeam: Boolean,
-                      isSavedForUser: Boolean,
-                      groupId: Option[String]
+                      isSavedForUser: Boolean
                     ) {
 
   val maybeNonEmptyQuestion: Option[String] = Option(question).filter(_.nonEmpty)
 
   def copyForExport(groupExporter: BehaviorGroupExporter): InputData = {
-    copy(id = None, paramType = paramType.map(_.copyForExport(groupExporter)))
+    copy(
+      id = None,
+      inputId = None,
+      paramType = paramType.map(_.copyForExport(groupExporter))
+    )
   }
 
   def copyWithIdsEnsuredFor(group: BehaviorGroup): InputData = {
     copy(
-      groupId = Some(group.id),
       id = id.orElse(Some(IDs.next))
     )
   }
@@ -63,8 +65,7 @@ object InputData {
         Some(paramTypeData),
         input.question,
         input.isSavedForTeam,
-        input.isSavedForUser,
-        Some(input.behaviorGroupVersion.id)
+        input.isSavedForUser
       )
     }
 

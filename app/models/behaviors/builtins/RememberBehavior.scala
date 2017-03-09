@@ -43,7 +43,6 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
                 None,
                 group.team.id,
                 None,
-                None,
                 isNewBehavior = false,
                 None,
                 "",
