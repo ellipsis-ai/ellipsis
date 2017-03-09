@@ -48,7 +48,7 @@ define(function(require) {
               <div className="column column-page-sidebar">
                 <h3 className="mtn">
                   {ifPresent(this.props.groupData.icon, (icon) => (
-                    <span className="mrm">{icon}</span>
+                    <span className="mrm type-icon">{icon}</span>
                   ))}
                   <span>{this.getName()}</span>
                 </h3>

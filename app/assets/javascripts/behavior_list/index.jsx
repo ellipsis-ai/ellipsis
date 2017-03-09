@@ -296,8 +296,10 @@ define(function(require) {
               revealWhen={!this.getActivePanelName() && this.getSelectedGroupIds().length > 0}
               onChange={this.resetFooterHeight}
             >
-              <div className="container container-c ptm border-top">
-                {this.renderActions()}
+              <div className="border-top">
+                <div className="container container-c ptm">
+                  {this.renderActions()}
+                </div>
               </div>
             </Collapsible>
             <Collapsible ref="confirmDeleteBehaviorGroups"

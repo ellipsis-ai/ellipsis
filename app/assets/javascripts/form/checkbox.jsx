@@ -5,7 +5,9 @@ return React.createClass({
   propTypes: {
     checked: React.PropTypes.bool.isRequired,
     onChange: React.PropTypes.func.isRequired,
-    onEnterKey: React.PropTypes.func
+    onEnterKey: React.PropTypes.func,
+    className: React.PropTypes.string,
+    label: React.PropTypes.string
   },
   onChange: function() {
     this.props.onChange(!!this.refs.input.checked);
@@ -26,12 +28,16 @@ return React.createClass({
 
   render: function() {
     return (
-      <input type="checkbox"
-        ref="input"
-        checked={this.props.checked}
-        onChange={this.onChange}
-        onKeyPress={this.handleEnterKey}
-      />
+      <label className={this.props.className || ""}>
+        <input type="checkbox"
+          className={this.props.label ? "man mrs" : "man"}
+          ref="input"
+          checked={this.props.checked}
+          onChange={this.onChange}
+          onKeyPress={this.handleEnterKey}
+        />
+        <span>{this.props.label}</span>
+      </label>
     );
   }
 });
