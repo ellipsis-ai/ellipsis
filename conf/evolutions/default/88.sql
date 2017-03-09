@@ -36,7 +36,7 @@ INSERT INTO behavior_group_versions (
 ALTER TABLE behavior_versions ADD COLUMN group_version_id TEXT REFERENCES behavior_group_versions(id);
 
 DELETE FROM behavior_versions
-WHERE id NOT IN (SELECT current_version_id FROM behaviors);
+WHERE id NOT IN (SELECT current_version_id FROM behaviors WHERE current_version_id IS NOT NULL);
 
 UPDATE behavior_versions AS bv SET group_version_id =
   (SELECT bgv.id FROM behavior_group_versions AS bgv JOIN behaviors as b ON b.group_id = bgv.group_id
