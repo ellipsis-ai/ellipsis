@@ -124,9 +124,24 @@ class BehaviorEditorController @Inject() (
     )
   }
 
-  def newUnsavedBehavior(isDataType: Boolean, teamId: String) = silhouette.SecuredAction { implicit request =>
-    val data = BehaviorVersionData.newUnsavedFor(teamId, isDataType, dataService)
-    Ok(Json.toJson(data))
+  def newUnsavedBehavior(
+                          isDataType: Boolean,
+                          teamId: String,
+                          maybeBehaviorIdToClone: Option[String]
+                        ) = silhouette.SecuredAction.async { implicit request =>
+    maybeBehaviorIdToClone.map { behaviorIdToClone =>
+      BehaviorVersionData.maybeFor(behaviorIdToClone, request.identity, dataService, None).map { maybeBehaviorVersionData =>
+        maybeBehaviorVersionData.map(_.copyForClone)
+      }
+    }.getOrElse {
+      Future.successful(Some(BehaviorVersionData.newUnsavedFor(teamId, isDataType, dataService)))
+    }.map { maybeVersionData =>
+      maybeVersionData.map { data =>
+        Ok(Json.toJson(data))
+      }.getOrElse {
+        NotFound(s"""Action not found: ${maybeBehaviorIdToClone.getOrElse("")}""")
+      }
+    }
   }
 
   private val deleteForm = Form(
@@ -249,57 +264,6 @@ class BehaviorEditorController @Inject() (
             }
           }
           case JsError(err) => Future.successful(BadRequest(""))
-        }
-      }
-    )
-  }
-
-  private val cloneForm = Form(
-    "behaviorId" -> nonEmptyText
-  )
-
-  def duplicate = silhouette.SecuredAction.async { implicit request =>
-    cloneForm.bindFromRequest.fold(
-      formWithErrors => {
-        Future.successful(BadRequest(formWithErrors.errorsAsJson))
-      },
-      behaviorId => {
-        val user = request.identity
-        for {
-          maybeExistingBehavior <- dataService.behaviors.find(behaviorId, user)
-          maybeExistingGroupData <- maybeExistingBehavior.map { behavior =>
-            BehaviorGroupData.maybeFor(behavior.group.id, user, None, dataService)
-          }.getOrElse(Future.successful(None))
-          maybeVersionData <- BehaviorVersionData.maybeFor(behaviorId, user, dataService, None).map { maybeVersionData =>
-            maybeVersionData.map(_.copyForClone)
-          }
-          maybeNewGroupData <- Future.successful(for {
-            groupData <- maybeExistingGroupData
-            versionData <- maybeVersionData
-          } yield {
-            groupData.copy(behaviorVersions = groupData.behaviorVersions ++ Seq(versionData))
-          })
-          maybeGroup <- (for {
-            groupData <- maybeExistingGroupData
-            groupId <- groupData.id
-          } yield {
-            dataService.behaviorGroups.find(groupId)
-          }).getOrElse(Future.successful(None))
-          maybeNewGroupVersion <- (for {
-            newGroupData <- maybeNewGroupData
-            group <- maybeGroup
-          } yield {
-            dataService.behaviorGroupVersions.createFor(group, user, newGroupData).map(Some(_))
-          }).getOrElse(Future.successful(None))
-        } yield {
-          (for {
-            newGroupVersion <- maybeNewGroupVersion
-            newBehaviorId <- maybeVersionData.map(_.behaviorId)
-          } yield {
-            Redirect(routes.BehaviorEditorController.edit(newGroupVersion.group.id, newBehaviorId))
-          }).getOrElse {
-            NotFound("")
-          }
         }
       }
     )

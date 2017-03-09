@@ -581,7 +581,10 @@ const BehaviorEditor = React.createClass({
   },
 
   cloneBehavior: function() {
-    this.refs.cloneBehaviorForm.submit();
+    const behaviorVersion = this.getSelectedBehavior();
+    if (behaviorVersion) {
+      this.addNewBehavior(behaviorVersion.isDataType(), behaviorVersion.behaviorId);
+    }
   },
 
   confirmDeleteBehavior: function() {
@@ -1847,11 +1850,6 @@ const BehaviorEditor = React.createClass({
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorGroupIds[0]" value={this.getBehaviorGroup().id || ""} />
         </form>
-
-        <form ref="cloneBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.duplicate().url} method="POST">
-          <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.getSelectedBehaviorId() || ""} />
-        </form>
       </div>
     );
   },
@@ -1991,9 +1989,9 @@ const BehaviorEditor = React.createClass({
     return this.state.animationDisabled;
   },
 
-  addNewBehavior: function(isDataType) {
+  addNewBehavior: function(isDataType, behaviorIdToClone) {
     const group = this.getBehaviorGroup();
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId).url;
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {

@@ -16,7 +16,6 @@ const ResponseTemplate = require('../app/assets/javascripts/models/response_temp
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
 jsRoutes.controllers.BehaviorEditorController.newGroup = jest.fn(() => ({ url: '/mock_new_skill' }));
 jsRoutes.controllers.BehaviorEditorController.delete = jest.fn(() => ({ url: '/mock_delete_behavior' }));
-jsRoutes.controllers.BehaviorEditorController.duplicate = jest.fn(() => ({ url: '/mock_duplicate_behavior' }));
 jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => ({ url: '/mock_delete_behavior_group' }));
 
 

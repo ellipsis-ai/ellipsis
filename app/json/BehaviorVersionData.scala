@@ -52,9 +52,17 @@ case class BehaviorVersionData(
 
   def copyForClone: BehaviorVersionData = {
     copy(
-      id = None,
+      id = Some(IDs.next),
       behaviorId = Some(IDs.next),
-      exportId = None
+      exportId = None,
+      name = name.map(n => s"Copy of $n").orElse(Some("Copy of untitled skill")),
+      params = params.map { p =>
+        if (p.isSaved) {
+          p
+        } else {
+          p.copy(inputVersionId = None, inputId = None, inputExportId = None)
+        }
+      }
     )
   }
 

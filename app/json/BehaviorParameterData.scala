@@ -13,6 +13,8 @@ case class BehaviorParameterData(
                                   inputExportId: Option[String]
                                 ) {
 
+  lazy val isSaved: Boolean = isSavedForTeam.exists(identity) || isSavedForUser.exists(identity)
+
   def newInputData = InputData(
     None,
     inputId,
