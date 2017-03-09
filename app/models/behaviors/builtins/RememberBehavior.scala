@@ -30,7 +30,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
           Seq(BehaviorTriggerData(lastQuestion, requiresMention = false, isRegex = false, caseSensitive = false))
         }.getOrElse(Seq())
         Some(
-          BehaviorGroupData.buildFor(
+          BehaviorGroupData(
             Some(group.id),
             group.team.id,
             None,

@@ -50,6 +50,12 @@ define(function(require) {
       return !!this.behaviorVersions.find(ea => ea.behaviorId === behaviorId);
     }
 
+    getCustomParamTypes() {
+      return this.behaviorVersions.
+        filter(ea => ea.isDataType()).
+        map(ea => ea.toParamType());
+    }
+
     sortedForComparison(versions) {
       return versions.sort((a, b) => {
         if (a.behaviorId < b.behaviorId) {

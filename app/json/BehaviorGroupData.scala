@@ -5,7 +5,6 @@ import java.time.OffsetDateTime
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.team.Team
 import services.DataService
 import utils.FuzzyMatchable
@@ -22,7 +21,6 @@ case class BehaviorGroupData(
                               actionInputs: Seq[InputData],
                               dataTypeInputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
-                              paramTypes: Seq[BehaviorParameterTypeData],
                               githubUrl: Option[String],
                               exportId: Option[String],
                               createdAt: Option[OffsetDateTime]
@@ -140,10 +138,6 @@ object BehaviorGroupData {
       (dataTypeVersionsData, actionVersionsData) <- Future.successful(versionsData.partition(_.isDataType))
       dataTypeInputsData <- inputsDataFor(dataTypeVersionsData, dataService)
       actionInputsData <- inputsDataFor(actionVersionsData, dataService)
-      paramTypes <- teamAccess.maybeTargetTeam.map { team =>
-        BehaviorParameterType.allFor(Some(version), dataService)
-      }.getOrElse(Future.successful(Seq()))
-      paramTypeData <- Future.sequence(paramTypes.map(pt => BehaviorParameterTypeData.from(pt, dataService)))
     } yield {
       BehaviorGroupData(
         Some(version.group.id),
@@ -154,7 +148,6 @@ object BehaviorGroupData {
         actionInputsData,
         dataTypeInputsData,
         versionsData,
-        paramTypeData,
         None,
         version.group.maybeExportId,
         Some(version.createdAt)
@@ -174,44 +167,6 @@ object BehaviorGroupData {
         buildFor(version, user, dataService).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield data
-  }
-
-  def buildFor(
-             id: Option[String],
-             teamId: String,
-             name: Option[String],
-             description: Option[String],
-             icon: Option[String],
-             actionInputs: Seq[InputData],
-             dataTypeInputs: Seq[InputData],
-             behaviorVersions: Seq[BehaviorVersionData],
-             githubUrl: Option[String],
-             exportId: Option[String],
-             createdAt: Option[OffsetDateTime]
-           ): BehaviorGroupData = {
-
-      val builtinParamTypeData = BehaviorParameterType.allBuiltin.map { ea =>
-        BehaviorParameterTypeData(
-          Some(ea.id),
-          Some(ea.exportId),
-          ea.name,
-          needsConfig = Some(false)
-        )
-      }
-
-      val dataTypeVersions = behaviorVersions.filter(_.isDataType)
-      val dataTypeParamTypeData = dataTypeVersions.map { ea =>
-        BehaviorParameterTypeData(
-          ea.id,
-          ea.exportId,
-          ea.config.dataTypeName.getOrElse(""),
-          needsConfig = None
-        )
-      }
-
-      val paramTypeData = builtinParamTypeData ++ dataTypeParamTypeData
-
-      apply(id, teamId, name, description, icon, actionInputs, dataTypeInputs, behaviorVersions, paramTypeData, githubUrl, exportId, createdAt)
   }
 
 }

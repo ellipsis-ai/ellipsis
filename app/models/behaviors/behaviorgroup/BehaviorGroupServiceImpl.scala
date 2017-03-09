@@ -102,7 +102,6 @@ class BehaviorGroupServiceImpl @Inject() (
         val actionInputs = groupsData.flatMap(_.actionInputs)
         val dataTypeInputs = groupsData.flatMap(_.dataTypeInputs)
         val behaviorVersions = groupsData.flatMap(_.behaviorVersions)
-        val paramTypes = groupsData.flatMap(_.paramTypes).distinct
         BehaviorGroupData(
           None,
           team.id,
@@ -112,7 +111,6 @@ class BehaviorGroupServiceImpl @Inject() (
           actionInputs,
           dataTypeInputs,
           behaviorVersions,
-          paramTypes,
           githubUrl = None,
           exportId = None, // Don't think it makes sense to have an exportId for something merged
           None

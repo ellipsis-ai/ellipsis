@@ -126,13 +126,9 @@ const BehaviorEditor = React.createClass({
   },
 
   getRequiredOAuth2ApiConfigs: function() {
-    var selectedBehavior = this.getSelectedBehavior();
-    if (this.state) {
-      var config = this.getBehaviorConfig();
-      return (config && config['requiredOAuth2ApiConfigs']) ?
-        config['requiredOAuth2ApiConfigs'] : [];
-    } else if (selectedBehavior && selectedBehavior.config) {
-      return selectedBehavior.config.requiredOAuth2ApiConfigs || [];
+    const selectedBehavior = this.getSelectedBehavior();
+    if (selectedBehavior) {
+      return selectedBehavior.getRequiredOAuth2ApiConfigs();
     } else {
       return [];
     }
@@ -384,6 +380,10 @@ const BehaviorEditor = React.createClass({
 
   buildOAuthApplicationNotifications: function() {
     var notifications = [];
+    const behavior = this.getSelectedBehavior();
+    if (!behavior) {
+      return [];
+    }
     this.getRequiredOAuth2ApiConfigsWithNoApplication().forEach(ea => {
       notifications.push({
         kind: "oauth2_config_without_application",
@@ -540,7 +540,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getParamTypes: function() {
-    return this.getBehaviorGroup().paramTypes;
+    return this.props.builtinParamTypes.concat(this.getBehaviorGroup().getCustomParamTypes());
   },
 
   /* Setters/togglers */

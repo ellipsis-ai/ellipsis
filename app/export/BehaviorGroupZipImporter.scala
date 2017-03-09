@@ -115,7 +115,7 @@ case class BehaviorGroupZipImporter(
       )
     }.toSeq
 
-    val data = BehaviorGroupData.buildFor(
+    val data = BehaviorGroupData(
       None,
       team.id,
       maybeGroupName,

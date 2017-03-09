@@ -89,6 +89,23 @@ define(function(require) {
       return this.name || this.getFirstTriggerText();
     }
 
+    toParamType() {
+      return {
+        id: this.id,
+        exportId: this.exportId,
+        name: this.config.dataTypeName,
+        needsConfig: this.needsConfig()
+      };
+    }
+
+    getRequiredOAuth2ApiConfigs() {
+      return this.config.requiredOAuth2ApiConfigs;
+    }
+
+    needsConfig() {
+      return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application).length > 0;
+    }
+
     clone(props) {
       return new BehaviorVersion(Object.assign({}, this, props));
     }

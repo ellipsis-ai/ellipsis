@@ -3,6 +3,7 @@ package json
 import java.time.OffsetDateTime
 
 import models.accounts.user.{User, UserTeamAccess}
+import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.team.Team
 import play.api.libs.ws.WSClient
 import services.DataService
@@ -13,6 +14,7 @@ import scala.concurrent.Future
 case class BehaviorEditorData(
                                teamAccess: UserTeamAccess,
                                group: BehaviorGroupData,
+                               builtinParamTypes: Seq[BehaviorParameterTypeData],
                                maybeSelectedBehaviorId: Option[String],
                                environmentVariables: Seq[EnvironmentVariableData],
                                savedAnswers: Seq[InputSavedAnswerData],
@@ -129,9 +131,10 @@ object BehaviorEditorData {
           maybeBehavior.map(_.id)
         }
       }.getOrElse(Future.successful(None))
+      builtinParamTypeData <- Future.sequence(BehaviorParameterType.allBuiltin.map(ea => BehaviorParameterTypeData.from(ea, dataService)))
     } yield {
       val data = maybeGroupData.getOrElse {
-        BehaviorGroupData.buildFor(
+        BehaviorGroupData(
           None,
           team.id,
           name = None,
@@ -148,6 +151,7 @@ object BehaviorEditorData {
       BehaviorEditorData(
         teamAccess,
         data,
+        builtinParamTypeData,
         maybeRealBehaviorId,
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         inputSavedAnswerData,

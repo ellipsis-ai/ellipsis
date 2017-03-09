@@ -164,7 +164,7 @@ object BehaviorVersionData {
 
   def newUnsavedFor(teamId: String, maybeGroupId: Option[String], isDataType: Boolean, dataService: DataService): BehaviorVersionData = {
     buildFor(
-      None,
+      Some(IDs.next),
       teamId,
       maybeGroupId,
       Some(IDs.next),
