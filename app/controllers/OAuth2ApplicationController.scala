@@ -158,8 +158,9 @@ class OAuth2ApplicationController @Inject() (
           }
         } yield {
           maybeApplication.map { application =>
-            info.maybeBehaviorId.map { behaviorId =>
-              Redirect(routes.BehaviorEditorController.edit(behaviorId))
+            maybeBehaviorVersion.map { behaviorVersion =>
+              val behavior = behaviorVersion.behavior
+              Redirect(routes.BehaviorEditorController.edit(behavior.group.id, Some(behavior.id)))
             }.getOrElse {
               Redirect(routes.OAuth2ApplicationController.edit(application.id, Some(application.teamId)))
             }

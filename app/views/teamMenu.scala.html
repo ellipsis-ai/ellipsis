@@ -52,12 +52,12 @@
         userMenu.style.display = oldStyle === 'none' ? '' : 'none';
         if (oldStyle === 'none') {
           addClass(userMenuButton, 'button-dropdown-trigger-menu-open');
-          removeClass(navBar, 'position-z-almost-front');
+          removeClass(navBar, 'position-z-behind-scrim');
           addClass(navBar, 'position-z-front');
         } else {
           removeClass(userMenuButton, 'button-dropdown-trigger-menu-open');
           removeClass(navBar, 'position-z-front');
-          addClass(navBar, 'position-z-almost-front');
+          addClass(navBar, 'position-z-behind-scrim');
         }
         event.stopPropagation();
         event.preventDefault();

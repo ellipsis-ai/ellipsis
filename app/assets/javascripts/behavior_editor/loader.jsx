@@ -7,27 +7,24 @@ requirejs(['../common'], function() {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
         groupData: BehaviorEditorConfiguration.group,
         group: BehaviorGroup.fromJson(BehaviorEditorConfiguration.group),
-        onSave: onSaveBehavior,
+        onSave: onSave,
         onForgetSavedAnswerForInput: resetSavedAnswerForInput
       });
 
       var currentProps = config;
 
-      function onSaveBehavior(newGroupData, state) {
-
-        var props = Object.assign({}, currentProps, {
-          group: BehaviorGroup.fromJson(newGroupData),
-          justSaved: true
-        });
+      function onSave(newProps, state) {
+        const props = Object.assign({}, currentProps, newProps);
         if (state) {
-          props.selectedBehaviorId = state.selectedBehaviorId;
-          props.group.behaviorVersions = props.group.behaviorVersions.map(ea => {
-            const versionState = state.group.behaviorVersions.find(v => v.behaviorId === ea.behaviorId);
-            if (versionState) {
-              return ea.clone({ shouldRevealCodeEditor: versionState.shouldRevealCodeEditor });
-            } else {
-              return ea;
-            }
+          props.group = props.group.clone({
+            behaviorVersions: props.group.behaviorVersions.map(ea => {
+              const versionState = state.group.behaviorVersions.find(v => v.behaviorId === ea.behaviorId);
+              if (versionState) {
+                return ea.clone({ shouldRevealCodeEditor: versionState.shouldRevealCodeEditor });
+              } else {
+                return ea;
+              }
+            })
           });
         }
         reload(props);
@@ -56,16 +53,19 @@ requirejs(['../common'], function() {
       }
 
       function fallbackSelectedBehaviorIdFor(group) {
-        if (group.behaviorVersions.find(ea => ea.behaviorId === null)) {
-          return null;
-        } else {
+        var isSimpleBehaviorGroup = !group.name && !group.description && group.behaviorVersions.length === 1;
+        if (isSimpleBehaviorGroup) {
           return group.behaviorVersions[0].behaviorId;
+        } else {
+          return null;
         }
       }
 
       const group = BehaviorGroup.fromJson(config.groupData);
-      const selectedBehaviorId = config.selectedBehaviorId ? config.selectedBehaviorId : fallbackSelectedBehaviorIdFor(group);
-      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedBehaviorId).url);
+      const selectedBehaviorId = config.selectedBehaviorId || fallbackSelectedBehaviorIdFor(group);
+      if (group.id && selectedBehaviorId) {
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedBehaviorId).url);
+      }
       reload(Object.assign({}, config, {
         group: group,
         selectedBehaviorId: selectedBehaviorId,

@@ -9,28 +9,39 @@ case class BehaviorParameterData(
                                   isSavedForTeam: Option[Boolean],
                                   isSavedForUser: Option[Boolean],
                                   inputId: Option[String],
-                                  inputExportId: Option[String],
-                                  groupId: Option[String]
+                                  inputVersionId: Option[String],
+                                  inputExportId: Option[String]
                                 ) {
 
-  val isShared = groupId.isDefined
+  lazy val isSaved: Boolean = isSavedForTeam.exists(identity) || isSavedForUser.exists(identity)
 
   def newInputData = InputData(
     None,
+    inputId,
     inputExportId,
     name,
     paramType,
     question,
     isSavedForTeam.exists(identity),
-    isSavedForUser.exists(identity),
-    groupId
+    isSavedForUser.exists(identity)
+  )
+
+  def inputData = InputData(
+    inputVersionId,
+    inputId,
+    inputExportId,
+    name,
+    paramType,
+    question,
+    isSavedForTeam.exists(identity),
+    isSavedForUser.exists(identity)
   )
 
   def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterData = {
     copy(
       paramType = paramType.map(_.copyForExport(groupExporter)),
       inputId = inputId.flatMap(groupExporter.exportIdForInputId),
-      groupId = groupId.flatMap { _ => groupExporter.behaviorGroup.maybeExportId }
+      inputVersionId = None
     )
   }
 

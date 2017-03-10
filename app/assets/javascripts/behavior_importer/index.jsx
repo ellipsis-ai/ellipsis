@@ -1,7 +1,8 @@
 define(function(require) {
   var React = require('react'),
-    BehaviorGroupCard = require('./behavior_group_card'),
-    BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
+    BehaviorGroup = require('../models/behavior_group'),
+    BehaviorGroupCard = require('../behavior_list/behavior_group_card'),
+    BehaviorGroupInfoPanel = require('../behavior_list/behavior_group_info_panel'),
     Collapsible = require('../shared_ui/collapsible'),
     FixedFooter = require('../shared_ui/fixed_footer'),
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
@@ -14,7 +15,7 @@ define(function(require) {
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       teamId: React.PropTypes.string.isRequired,
       installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string
     }),
@@ -83,6 +84,10 @@ define(function(require) {
       return this.state.importingList.some((ea) => ea === group);
     },
 
+    isGroupImported: function(group) {
+      return !!(group && this.getLocalId(group));
+    },
+
     getSelectedBehaviorGroup: function() {
       return this.state.selectedBehaviorGroup;
     },
@@ -133,6 +138,8 @@ define(function(require) {
                 groupData={this.getSelectedBehaviorGroup()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onToggle={this.toggleInfoPanel}
+                isImportable={true}
+                isImported={this.isGroupImported(this.getSelectedBehaviorGroup())}
               />
             </Collapsible>
 
@@ -167,6 +174,8 @@ define(function(require) {
               onBehaviorGroupImport={this.onBehaviorGroupImport}
               onMoreInfoClick={this.toggleInfoPanel}
               isImporting={this.isImporting(group)}
+              isImported={this.isGroupImported(group)}
+              isImportable={true}
             />
           </div>
         ));

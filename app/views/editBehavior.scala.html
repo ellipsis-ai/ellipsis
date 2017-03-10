@@ -16,8 +16,6 @@
     routes.javascript.BehaviorEditorController.versionInfoFor,
     routes.javascript.BehaviorEditorController.testTriggers,
     routes.javascript.BehaviorEditorController.testInvocation,
-    routes.javascript.BehaviorEditorController.delete,
-    routes.javascript.BehaviorEditorController.duplicate,
     routes.javascript.BehaviorEditorController.newUnsavedBehavior,
     routes.javascript.EnvironmentVariablesController.submit,
     routes.javascript.OAuth2ApplicationController.newApp,
@@ -33,12 +31,12 @@
       <script>
         var BehaviorEditorConfiguration = {
           group: @Html(Json.toJson(data.group).toString),
+          builtinParamTypes: @Html(Json.toJson(data.builtinParamTypes).toString),
           selectedBehaviorId: @Html(Json.toJson(data.maybeSelectedBehaviorId).toString()),
           containerId: 'editorContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
           justSaved: @data.justSaved,
           envVariables: @Html(Json.toJson(data.environmentVariables).toString),
-          paramTypes: @Html(Json.toJson(data.paramTypes).toString),
           savedAnswers: @Html(Json.toJson(data.savedAnswers).toString),
           oauth2Applications: @Html(Json.toJson(data.oauth2Applications).toString),
           oauth2Apis: @Html(Json.toJson(data.oauth2Apis).toString),

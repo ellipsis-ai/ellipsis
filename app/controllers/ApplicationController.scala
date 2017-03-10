@@ -145,7 +145,7 @@ class ApplicationController @Inject() (
           groups <- Future.sequence(info.behaviorGroupIds.map { id =>
             dataService.behaviorGroups.find(id)
           }).map(_.flatten)
-          merged <- dataService.behaviorGroups.merge(groups)
+          merged <- dataService.behaviorGroups.merge(groups, user)
           maybeData <- BehaviorGroupData.maybeFor(merged.id, user, None, dataService)
         } yield maybeData.map { data =>
           Ok(Json.toJson(data))

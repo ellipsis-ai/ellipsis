@@ -9,13 +9,15 @@ import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import Formatting._
 import models.IDs
+import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import services.DataService
 
 import scala.concurrent.Future
 
 case class BehaviorVersionData(
+                                id: Option[String],
                                 teamId: String,
-                                groupId: Option[String],
                                 behaviorId: Option[String],
                                 isNewBehavior: Option[Boolean],
                                 name: Option[String],
@@ -36,6 +38,71 @@ case class BehaviorVersionData(
     copy(teamId = team.id)
   }
 
+  def copyWithIdsEnsuredForImport(group: BehaviorGroup): BehaviorVersionData = {
+    copy(
+      id = exportId,
+      teamId = group.team.id,
+      behaviorId = behaviorId.orElse(Some(IDs.next)),
+      params = params.map { p =>
+        val maybeParamType = p.paramType.map(pt => pt.copy(id = pt.exportId))
+        p.copy(inputVersionId = p.inputExportId, paramType = maybeParamType)
+      }
+    )
+  }
+
+  def copyForClone: BehaviorVersionData = {
+    copy(
+      id = Some(IDs.next),
+      behaviorId = Some(IDs.next),
+      exportId = None,
+      name = name.map(n => s"Copy of $n").orElse(Some("Copy of untitled skill")),
+      isNewBehavior = Some(true),
+      params = params.map { p =>
+        if (p.isSaved) {
+          p
+        } else {
+          p.copy(inputVersionId = None, inputId = None, inputExportId = None)
+        }
+      }
+    )
+  }
+
+  def copyWithNewIdIn(oldToNewIdMapping: collection.mutable.Map[String, String]): BehaviorVersionData = {
+    val newId = IDs.next
+    val maybeOldID = id
+    maybeOldID.foreach { oldId => oldToNewIdMapping.put(oldId, newId) }
+    copy(id = Some(newId))
+  }
+
+  def copyWithInputIdsIn(
+                          inputs: Seq[InputData],
+                          oldToNewIdMapping: collection.mutable.Map[String, String]
+                        ): BehaviorVersionData = {
+    val newParams = params.map { param =>
+      val maybeNewId = param.inputVersionId.flatMap { inputId =>
+        oldToNewIdMapping.get(inputId)
+      }
+      (for {
+        newId <- maybeNewId
+        input <- inputs.find(_.id.contains(newId))
+      } yield {
+        param.copy(paramType = input.paramType, inputVersionId = input.id, inputExportId = input.exportId)
+      }).getOrElse(param)
+    }
+    copy(params = newParams)
+  }
+
+  def copyWithEnsuredInputIds: BehaviorVersionData = {
+    val paramsWithEnsuredInputIds = params.map { param =>
+      if (param.inputVersionId.isDefined) {
+        param
+      } else {
+        param.copy(inputVersionId = Some(IDs.next))
+      }
+    }
+    copy(params = paramsWithEnsuredInputIds)
+  }
+
   lazy val isDataType: Boolean = config.dataTypeName.isDefined
 
   lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption
@@ -50,8 +117,8 @@ object BehaviorVersionData {
   }
 
   def buildFor(
+                id: Option[String],
                 teamId: String,
-                groupId: Option[String],
                 behaviorId: Option[String],
                 isNewBehavior: Boolean,
                 description: Option[String],
@@ -73,8 +140,8 @@ object BehaviorVersionData {
 
 
     BehaviorVersionData(
+      id,
       teamId,
-      groupId,
       behaviorId,
       Some(isNewBehavior),
       config.name,
@@ -91,10 +158,10 @@ object BehaviorVersionData {
     )
   }
 
-  def newUnsavedFor(teamId: String, maybeGroupId: Option[String], isDataType: Boolean, dataService: DataService): BehaviorVersionData = {
+  def newUnsavedFor(teamId: String, isDataType: Boolean, dataService: DataService): BehaviorVersionData = {
     buildFor(
+      Some(IDs.next),
       teamId,
-      maybeGroupId,
       Some(IDs.next),
       isNewBehavior = true,
       None,
@@ -123,8 +190,8 @@ object BehaviorVersionData {
                    ): BehaviorVersionData = {
     val config = Json.parse(configString).validate[BehaviorConfig].get
     BehaviorVersionData.buildFor(
-      teamId,
       None,
+      teamId,
       None,
       isNewBehavior = false,
       maybeDescription,
@@ -133,18 +200,26 @@ object BehaviorVersionData {
       Json.parse(params).validate[Seq[BehaviorParameterData]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
       config,
-      exportId = None,
+      config.exportId,
       maybeGithubUrl,
       createdAt = None,
       dataService
     )
   }
 
-  def maybeFor(behaviorId: String, user: User, dataService: DataService, maybeExportId: Option[String] = None): Future[Option[BehaviorVersionData]] = {
+  def maybeFor(
+                behaviorId: String,
+                user: User,
+                dataService: DataService,
+                maybeGroupVersion: Option[BehaviorGroupVersion],
+                maybeExportId: Option[String] = None
+              ): Future[Option[BehaviorVersionData]] = {
     for {
       maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        dataService.behaviors.maybeCurrentVersionFor(behavior)
+        maybeGroupVersion.map { groupVersion =>
+          dataService.behaviorVersions.findFor(behavior, groupVersion)
+        }.getOrElse(dataService.behaviors.maybeCurrentVersionFor(behavior))
       }.getOrElse(Future.successful(None))
       maybeParameters <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.behaviorParameters.allFor(behaviorVersion).map(Some(_))
@@ -185,8 +260,8 @@ object BehaviorVersionData {
         val requiredSimpleTokenApiData = requiredSimpleTokenApis.map(ea => RequiredSimpleTokenApiData.from(ea))
         val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
         BehaviorVersionData.buildFor(
+          Some(behaviorVersion.id),
           behaviorVersion.team.id,
-          behavior.maybeGroup.map(_.id),
           Some(behavior.id),
           isNewBehavior = false,
           behaviorVersion.maybeDescription,
@@ -199,9 +274,9 @@ object BehaviorVersionData {
               ea.question,
               Some(ea.input.isSavedForTeam),
               Some(ea.input.isSavedForUser),
+              Some(ea.input.inputId),
               Some(ea.input.id),
-              ea.input.maybeExportId,
-              ea.input.maybeBehaviorGroup.map(_.id)
+              ea.input.maybeExportId
             )
           },
           triggers.map(ea =>

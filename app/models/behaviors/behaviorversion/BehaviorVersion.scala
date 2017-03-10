@@ -8,6 +8,7 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.Event
 import models.team.Team
 import play.api.Configuration
@@ -18,6 +19,7 @@ import services.{AWSLambdaLogResult, DataService}
 case class BehaviorVersion(
                             id: String,
                             behavior: Behavior,
+                            groupVersion: BehaviorGroupVersion,
                             maybeDescription: Option[String],
                             maybeName: Option[String],
                             maybeFunctionBody: Option[String],
@@ -26,6 +28,10 @@ case class BehaviorVersion(
                             maybeAuthor: Option[User],
                             createdAt: OffsetDateTime
                           ) {
+
+  val maybeExportId: Option[String] = behavior.maybeExportId
+
+  def isDataType: Boolean = behavior.isDataType
 
   def group: BehaviorGroup = behavior.group
 
@@ -46,8 +52,6 @@ case class BehaviorVersion(
   def functionBody: String = maybeFunctionBody.getOrElse("")
 
   def functionName: String = id
-
-  def isCurrentVersion: Boolean = behavior.maybeCurrentVersionId.contains(id)
 
   private def isUnhandledError(json: JsValue): Boolean = {
     (json \ "errorMessage").toOption.flatMap { m =>
@@ -96,6 +100,7 @@ case class BehaviorVersion(
     RawBehaviorVersion(
       id,
       behavior.id,
+      groupVersion.id,
       maybeDescription,
       maybeName,
       maybeFunctionBody,

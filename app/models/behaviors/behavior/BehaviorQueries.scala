@@ -1,8 +1,9 @@
 package models.behaviors.behavior
 
 import models.behaviors.behaviorgroup.BehaviorGroupQueries
-import models.team.{Team, TeamQueries}
+import models.team.{Team, TeamQueries, TeamsTable}
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersionQueries
 import models.behaviors.behaviorversion.BehaviorVersionQueries
 
 object BehaviorQueries {
@@ -10,9 +11,12 @@ object BehaviorQueries {
   def all = TableQuery[BehaviorsTable]
   def allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
   def allWithGroup = allWithTeam.joinLeft(BehaviorGroupQueries.allWithTeam).on(_._1.groupId === _._1.id)
-  def allWithCurrentVersion = allWithGroup.join(BehaviorVersionQueries.allWithUser).on(_._1._1.maybeCurrentVersionId === _._1.id)
+  def allWithCurrentGroupVersion = allWithGroup.joinLeft(BehaviorGroupVersionQueries.allWithUser).on(_._2.flatMap(_._1.maybeCurrentVersionId) === _._1._1.id)
+  def allWithCurrentBehaviorVersion = allWithCurrentGroupVersion.join(BehaviorVersionQueries.all).on(_._2.map(_._1._1.id) === _.groupVersionId)
+
 
   type TupleType = ((RawBehavior, Team), Option[BehaviorGroupQueries.TupleType])
+  type TableTupleType = ((BehaviorsTable, TeamsTable), Rep[Option[BehaviorGroupQueries.TableTupleType]])
 
   def tuple2Behavior(tuple: TupleType): Behavior = {
     val raw = tuple._1._1
@@ -22,7 +26,6 @@ object BehaviorQueries {
       raw.id,
       team,
       maybeGroup,
-      raw.maybeCurrentVersionId,
       raw.maybeExportId,
       raw.maybeDataTypeName,
       raw.createdAt
@@ -35,10 +38,10 @@ object BehaviorQueries {
   val findQuery = Compiled(uncompiledFindQuery _)
 
   def uncompiledFindByNameQuery(name: Rep[String], groupId: Rep[Option[String]]) = {
-    allWithCurrentVersion.
-      filter { case((_, groupWithTeam), _) => groupWithTeam.map(_._1.id) === groupId }.
-      filter { case(_, currentVersion) => currentVersion._1.maybeName === name }.
-      map { case(behaviorWithGroup, _) => behaviorWithGroup }
+    allWithCurrentBehaviorVersion.
+      filter { case(_, behaviorVersion) => behaviorVersion.maybeName === name }.
+      map { case((behaviorWithGroup, _), _) => behaviorWithGroup }.
+      filter { case(_, maybeGroup) => maybeGroup.map(_._1.id) === groupId }
   }
   val findByNameQuery = Compiled(uncompiledFindByNameQuery _)
 

@@ -28,7 +28,7 @@ object InputSavedAnswerData {
           savedAnswers.find(_.maybeUserId.contains(user.id))
         }
         InputSavedAnswerData(
-          input.id,
+          input.inputId,
           maybeMySavedAnswer.map(_.valueString),
           savedAnswers.length
         )

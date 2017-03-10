@@ -5,40 +5,42 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import json.InputData
 import models.IDs
-import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorparameter.{BehaviorParameterType, TextType}
-import models.team.Team
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class RawInput(
                      id: String,
+                     inputId: String,
                      maybeExportId: Option[String],
                      name: String,
                      maybeQuestion: Option[String],
                      paramType: String,
                      isSavedForTeam: Boolean,
                      isSavedForUser: Boolean,
-                     maybeBehaviorGroupId: Option[String]
+                     behaviorGroupVersionId: String
                    )
 
 class InputsTable(tag: Tag) extends Table[RawInput](tag, "inputs") {
 
   def id = column[String]("id", O.PrimaryKey)
+  def inputId = column[String]("input_id")
   def maybeExportId = column[Option[String]]("export_id")
   def name = column[String]("name")
   def maybeQuestion = column[Option[String]]("question")
   def paramType = column[String]("param_type")
   def isSavedForTeam = column[Boolean]("is_saved_for_team")
   def isSavedForUser = column[Boolean]("is_saved_for_user")
-  def maybeBehaviorGroupId = column[Option[String]]("group_id")
+  def behaviorGroupVersionId = column[String]("group_version_id")
 
   def * =
-    (id, maybeExportId, name, maybeQuestion, paramType, isSavedForTeam, isSavedForUser, maybeBehaviorGroupId) <> ((RawInput.apply _).tupled, RawInput.unapply _)
+    (id, inputId, maybeExportId, name, maybeQuestion, paramType, isSavedForTeam, isSavedForUser, behaviorGroupVersionId) <>
+      ((RawInput.apply _).tupled, RawInput.unapply _)
 }
 
 class InputServiceImpl @Inject() (
@@ -56,47 +58,49 @@ class InputServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  private def maybeParamTypeFor(data: InputData, behaviorGroup: BehaviorGroup): Future[Option[BehaviorParameterType]] = {
+  private def maybeParamTypeFor(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): Future[Option[BehaviorParameterType]] = {
     (data.paramType.flatMap { paramTypeData =>
       paramTypeData.id.orElse(paramTypeData.exportId).map { id =>
-        BehaviorParameterType.find(id, behaviorGroup, dataService)
+        BehaviorParameterType.find(id, behaviorGroupVersion, dataService)
       }
     }.getOrElse(Future.successful(None)))
   }
 
-  def createFor(data: InputData, behaviorGroup: BehaviorGroup): Future[Input] = {
+  def createFor(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): Future[Input] = {
     val action = for {
-      maybeParamType <- DBIO.from(maybeParamTypeFor(data, behaviorGroup))
+      maybeParamType <- DBIO.from(maybeParamTypeFor(data, behaviorGroupVersion))
       raw <- DBIO.successful(RawInput(
-        IDs.next,
+        data.id.getOrElse(IDs.next),
+        data.inputId.getOrElse(IDs.next),
         Some(data.exportId.getOrElse(IDs.next)),
         data.name,
         data.maybeNonEmptyQuestion,
         maybeParamType.map(_.id).getOrElse(TextType.id),
         data.isSavedForTeam,
         data.isSavedForUser,
-        Some(behaviorGroup.id)
+        behaviorGroupVersion.id
       ))
       input <- (all += raw).map { _ =>
         Input(
           raw.id,
+          raw.inputId,
           raw.maybeExportId,
           raw.name,
           raw.maybeQuestion,
           maybeParamType.getOrElse(TextType),
           raw.isSavedForTeam,
           raw.isSavedForUser,
-          Some(behaviorGroup)
+          behaviorGroupVersion
         )
       }
     } yield input
     dataService.run(action)
   }
 
-  def ensureFor(data: InputData, behaviorGroup: BehaviorGroup): Future[Input] = {
+  def ensureFor(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): Future[Input] = {
     for {
       maybeExisting <- data.id.map(find).getOrElse(Future.successful(None))
-      maybeParamType <- maybeParamTypeFor(data, behaviorGroup)
+      maybeParamType <- maybeParamTypeFor(data, behaviorGroupVersion)
       input <- maybeExisting.map { existing =>
         val updated = existing.copy(
           maybeExportId = Some(data.exportId.getOrElse(IDs.next)),
@@ -105,19 +109,22 @@ class InputServiceImpl @Inject() (
           paramType = maybeParamType.getOrElse(TextType),
           isSavedForTeam = data.isSavedForTeam,
           isSavedForUser = data.isSavedForUser,
-          maybeBehaviorGroup = Some(behaviorGroup)
+          behaviorGroupVersion = behaviorGroupVersion
         )
         val action = uncompiledFindRawQuery(existing.id).update(updated.toRaw).map { _ => updated }
         dataService.run(action)
-      }.getOrElse(createFor(data, behaviorGroup))
+      }.getOrElse(createFor(data, behaviorGroupVersion))
     } yield input
   }
 
-  def allForGroup(group: BehaviorGroup): Future[Seq[Input]] = {
-    val action = allForGroupQuery(group.id).result.map { r =>
+  def allForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[Input]] = {
+    allForGroupVersionQuery(groupVersion.id).result.map { r =>
       r.map(tuple2Input)
     }
-    dataService.run(action)
+  }
+
+  def allForGroupVersion(groupVersion: BehaviorGroupVersion): Future[Seq[Input]] = {
+    dataService.run(allForGroupVersionAction(groupVersion))
   }
 
   def withEnsuredExportId(input: Input): Future[Input] = {

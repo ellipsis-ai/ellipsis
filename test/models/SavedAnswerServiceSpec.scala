@@ -13,7 +13,8 @@ class SavedAnswerServiceSpec extends DBSpec {
         val anotherUser = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
         val behavior = newSavedBehaviorFor(group)
-        val version = newSavedVersionFor(behavior)
+        val groupVersion = newSavedGroupVersionFor(group, user)
+        val version = behaviorVersionFor(behavior, groupVersion)
         val param = newSavedParamFor(version, isSavedForUser = Some(true))
         val input = param.input
         val savedAnswer = newSavedAnswerFor(input, user)
@@ -41,7 +42,8 @@ class SavedAnswerServiceSpec extends DBSpec {
         val anotherUser = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
         val behavior = newSavedBehaviorFor(group)
-        val version = newSavedVersionFor(behavior)
+        val groupVersion = newSavedGroupVersionFor(group, user)
+        val version = behaviorVersionFor(behavior, groupVersion)
         val param = newSavedParamFor(version, isSavedForUser = Some(true))
         val input = param.input
         val savedAnswer = newSavedAnswerFor(input, user)
@@ -64,7 +66,8 @@ class SavedAnswerServiceSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
         val behavior = newSavedBehaviorFor(group)
-        val version = newSavedVersionFor(behavior)
+        val groupVersion = newSavedGroupVersionFor(group, user)
+        val version = behaviorVersionFor(behavior, groupVersion)
         val param = newSavedParamFor(version, isSavedForTeam = Some(true))
         val input = param.input
         val savedAnswer = newSavedAnswerFor(input, user)

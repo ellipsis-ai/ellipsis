@@ -23,7 +23,7 @@ define(function(require) {
         <div
           ref="scrim"
           className={
-            "bg-scrim position-z-almost-front position-fixed-full " +
+            "bg-scrim position-z-scrim position-fixed-full " +
             (this.props.isActive ? "fade-in" : "display-none")
           }
           onClick={this.onClick}

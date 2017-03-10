@@ -5,12 +5,13 @@ import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
 import services.{AWSLambdaService, PostgresDataService}
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase, _}
-import json.{BehaviorParameterData, BehaviorParameterTypeData, InputData}
+import json.{BehaviorGroupData, BehaviorParameterData, BehaviorParameterTypeData, InputData}
 import mocks.MockAWSLambdaService
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
@@ -46,9 +47,9 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
 
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
 
-  def newSavedInputFor(group: BehaviorGroup): Input = {
-    val data = InputData(Some(IDs.next), None, IDs.next, None, "", false, false, Some(group.id))
-    runNow(dataService.inputs.createFor(data, group))
+  def newSavedInputFor(groupVersion: BehaviorGroupVersion): Input = {
+    val data = InputData(Some(IDs.next), Some(IDs.next), None, IDs.next, None, "", false, false)
+    runNow(dataService.inputs.createFor(data, groupVersion))
   }
 
   def newSavedAnswerFor(input: Input, user: User): SavedAnswer = {
@@ -64,11 +65,11 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
                       ): BehaviorParameter = {
     val input = maybeExistingInput.map { input =>
       runNow(InputData.fromInput(input, dataService).flatMap { inputData =>
-        dataService.inputs.ensureFor(inputData, version.group)
+        dataService.inputs.ensureFor(inputData, version.groupVersion)
       })
     }.getOrElse {
-      val inputData = InputData(Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity), None)
-      runNow(dataService.inputs.createFor(inputData, version.group))
+      val inputData = InputData(Some(IDs.next), Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity))
+      runNow(dataService.inputs.createFor(inputData, version.groupVersion))
     }
     val paramTypeData = runNow(BehaviorParameterTypeData.from(input.paramType, dataService))
     val data =
@@ -79,9 +80,9 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
           input.question,
           Some(input.isSavedForTeam),
           Some(input.isSavedForUser),
+          Some(input.inputId),
           Some(input.id),
-          input.maybeExportId,
-          input.maybeBehaviorGroup.map(_.id)
+          input.maybeExportId
         )
       )
     runNow(dataService.behaviorParameters.ensureFor(version, data)).head
@@ -91,8 +92,21 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
     runNow(dataService.messageTriggers.createFor(version, "foo", false, false, false))
   }
 
-  def newSavedVersionFor(behavior: Behavior): BehaviorVersion = {
-    runNow(dataService.behaviorVersions.createFor(behavior, None))
+  def newSavedGroupVersionFor(group: BehaviorGroup, user: User): BehaviorGroupVersion = {
+    val groupVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user: User))
+    val behaviors = runNow(dataService.behaviors.allForGroup(group))
+    behaviors.map { ea =>
+      newSavedVersionFor(ea, groupVersion)
+    }
+    groupVersion
+  }
+
+  def behaviorVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {
+    runNow(dataService.behaviorVersions.findFor(behavior, groupVersion)).get
+  }
+
+  def newSavedVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {
+    runNow(dataService.behaviorVersions.createFor(behavior, groupVersion, None, None))
   }
 
   def newSavedBehaviorFor(group: BehaviorGroup): Behavior = {
@@ -104,7 +118,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
   }
 
   def newSavedBehaviorGroupFor(team: Team): BehaviorGroup = {
-    runNow(dataService.behaviorGroups.createFor(None, None, None, None, team))
+    runNow(dataService.behaviorGroups.createFor(None, team))
   }
 
   def withEmptyDB[T](dataService: PostgresDataService, fn: PostgresDatabase => T) = {

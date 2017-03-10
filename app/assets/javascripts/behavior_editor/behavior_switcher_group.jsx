@@ -11,7 +11,7 @@ define(function(require) {
     propTypes: {
       heading: React.PropTypes.string.isRequired,
       behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-      selectedBehavior: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
+      selectedBehavior: React.PropTypes.instanceOf(BehaviorVersion),
       onAddNew: React.PropTypes.func.isRequired,
       addNewLabel: React.PropTypes.string,
       emptyMessage: React.PropTypes.string.isRequired,
@@ -24,7 +24,7 @@ define(function(require) {
     },
 
     isSelectedVersion: function(version) {
-      return version.behaviorId === this.props.selectedBehavior.behaviorId;
+      return !!this.props.selectedBehavior && version.behaviorId === this.props.selectedBehavior.behaviorId;
     },
 
     render: function() {
@@ -37,15 +37,16 @@ define(function(require) {
             {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version, index) => (
               <div
                 key={`behavior${index}`}
-                className={`border-top border-light pvxs container container-wide ${this.isSelectedVersion(version) ? "bg-blue border-blue-medium type-white" : ""}`}
+                className={`border-top border-light pvs ${this.isSelectedVersion(version) ? "bg-blue border-blue-medium type-white" : ""}`}
               >
                 <div className={"position-absolute position-left pls type-bold type-m " + (this.isSelectedVersion(version) ? "" : "type-pink")}>
                   {this.props.isBehaviorModified(version) ? "•" : ""}
                 </div>
                 <BehaviorName
+                  className="plxl mobile-pll"
+                  triggerClassName={this.isSelectedVersion(version) ? "box-chat-selected" : "opacity-75"}
                   version={version}
                   disableLink={this.isSelectedVersion(version)}
-                  limitTriggers={true}
                   omitDescription={true}
                   onClick={this.props.onSelectBehavior}
                 />

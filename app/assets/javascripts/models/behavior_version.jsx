@@ -17,6 +17,7 @@ define(function(require) {
       }, props);
 
       Object.defineProperties(this, {
+        id: { value:initialProps.id, enumerable: true },
         groupId: { value: initialProps.groupId, enumerable: true },
         teamId: { value: initialProps.teamId, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
@@ -86,6 +87,23 @@ define(function(require) {
 
     get sortKey() {
       return this.name || this.getFirstTriggerText();
+    }
+
+    toParamType() {
+      return {
+        id: this.id,
+        exportId: this.exportId,
+        name: this.config.dataTypeName,
+        needsConfig: this.needsConfig()
+      };
+    }
+
+    getRequiredOAuth2ApiConfigs() {
+      return this.config.requiredOAuth2ApiConfigs || [];
+    }
+
+    needsConfig() {
+      return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application).length > 0;
     }
 
     clone(props) {
