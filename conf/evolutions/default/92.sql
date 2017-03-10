@@ -9,6 +9,10 @@ WHERE id NOT IN (SELECT current_version_id FROM behavior_groups);
 
 DELETE FROM inputs WHERE group_id IS NULL;
 
+DELETE FROM inputs AS i WHERE i.id NOT IN (
+  SELECT bp.input_id FROM behavior_parameters AS bp WHERE bp.input_id IS NOT NULL
+);
+
 UPDATE inputs AS i SET group_version_id = (
   SELECT bg.current_version_id FROM behavior_groups AS bg
   WHERE bg.id = i.group_id

@@ -4,6 +4,10 @@ BEGIN;
 
 ALTER TABLE inputs ADD COLUMN input_id TEXT;
 
+UPDATE inputs SET input_id = generate_pseudorandom_id();
+
+ALTER TABLE inputs ALTER COLUMN input_id SET NOT NULL;
+
 DELETE FROM behavior_group_versions
 WHERE id NOT IN (SELECT current_version_id FROM behavior_groups);
 
