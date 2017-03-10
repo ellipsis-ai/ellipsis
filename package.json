@@ -53,7 +53,9 @@
     "modulePathIgnorePatterns": [
       "Ben Newman"
     ],
-    "transform": {".*": "<rootDir>/app/assets/javascripts/amdefinerator"},
+    "transform": {
+      ".*": "<rootDir>/app/assets/javascripts/amdefinerator"
+    },
     "testRegex": "((/__tests__/|/test/).*|(\\.|/)(test|spec))\\.jsx?$",
     "testPathIgnorePatterns": [
       "/node_modules/.+",
