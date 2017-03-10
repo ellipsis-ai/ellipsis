@@ -1901,11 +1901,6 @@ const BehaviorEditor = React.createClass({
   renderHiddenForms: function() {
     return (
       <div>
-        <form ref="deleteBehaviorForm" action={jsRoutes.controllers.BehaviorEditorController.delete().url} method="POST">
-          <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="behaviorId" value={this.getSelectedBehaviorId() || ""} />
-        </form>
-
         <form ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorGroupIds[0]" value={this.getBehaviorGroup().id || ""} />

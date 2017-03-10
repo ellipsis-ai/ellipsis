@@ -144,38 +144,6 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  private val deleteForm = Form(
-    "behaviorId" -> nonEmptyText
-  )
-
-  def delete = silhouette.SecuredAction.async { implicit request =>
-    deleteForm.bindFromRequest.fold(
-      formWithErrors => {
-        Future.successful(BadRequest(formWithErrors.errorsAsJson))
-      },
-      behaviorId => {
-        for {
-          maybeBehavior <- dataService.behaviors.find(behaviorId, request.identity)
-          otherBehaviorsInGroup <- maybeBehavior.map { behavior =>
-            dataService.behaviors.allForGroup(behavior.group).map { all =>
-              all.diff(Seq(behavior))
-            }
-          }.getOrElse(Future.successful(Seq()))
-          _ <- maybeBehavior.map { behavior =>
-            dataService.behaviors.unlearn(behavior)
-          }.getOrElse(Future.successful(Unit))
-        } yield {
-          val redirect = maybeBehavior.map { behavior =>
-            routes.BehaviorEditorController.edit(behavior.group.id, otherBehaviorsInGroup.headOption.map(_.id))
-          }.getOrElse {
-            routes.ApplicationController.index()
-          }
-          Redirect(redirect)
-        }
-      }
-    )
-  }
-
   def versionInfoFor(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
