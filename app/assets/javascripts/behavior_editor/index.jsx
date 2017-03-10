@@ -1324,7 +1324,7 @@ const BehaviorEditor = React.createClass({
         addedPart = `${actionsAddedText}${dataTypesAddedText}`;
       }
       if (addedPart.length) {
-        addedPart = `${addedPart} added`
+        addedPart = `${addedPart} added`;
       }
 
       let removedPart = "";
@@ -1333,7 +1333,9 @@ const BehaviorEditor = React.createClass({
       } else {
         removedPart = `${actionsRemovedText}${dataTypesRemovedText}`;
       }
-      if (removedPart.length) { removedPart = `${removedPart} removed`}
+      if (removedPart.length) {
+        removedPart = `${removedPart} removed`;
+      }
 
       result = [addedPart, removedPart].filter(ea => ea.length > 0).join(", ");
     } else if (actionCount > 1) {
