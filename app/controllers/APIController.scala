@@ -77,12 +77,15 @@ class APIController @Inject() (
 
     def maybeMessageEventFor(message: String, channel: String): Future[Option[Event]] = {
       maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
-        maybeBotProfile.map { botProfile =>
+        for {
+          botProfile <- maybeBotProfile
+          slackProfile <- maybeSlackProfile
+        } yield {
           val slackEvent = SlackMessageEvent(
             botProfile,
             maybeSlackChannelId.getOrElse(channel),
             None,
-            maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
+            slackProfile.loginInfo.providerKey,
             message,
             SlackTimestamp.now
           )
@@ -239,6 +242,7 @@ class APIController @Inject() (
           maybeEvent <- Future.successful(
             for {
               botProfile <- context.maybeBotProfile
+              slackProfile <- context.maybeSlackProfile
               behavior <- maybeBehavior
             } yield RunEvent(
               botProfile,
@@ -246,7 +250,7 @@ class APIController @Inject() (
               info.argumentsMap,
               maybeSlackChannelId.getOrElse(info.channel),
               None,
-              context.maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse("api"),
+              slackProfile.loginInfo.providerKey,
               SlackTimestamp.now
             )
           )
