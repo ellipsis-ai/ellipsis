@@ -1528,6 +1528,7 @@ const BehaviorEditor = React.createClass({
       envVariableAdderPrompt: null,
       redirectValue: "",
       requiredOAuth2ApiConfigId: "",
+      shouldRedirectToAddNewOAuth2App: false,
       paramNameToSync: null,
       error: null,
       selectedSavedAnswerInputId: null,
