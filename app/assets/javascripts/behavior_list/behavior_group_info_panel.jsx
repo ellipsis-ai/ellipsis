@@ -62,7 +62,7 @@ define(function(require) {
 
                 {this.renderBehaviors()}
                 <div className="mvxl">
-                  {this.renderInstallButton()}
+                  {this.renderPrimaryAction()}
                   <button type="button" className="mrs mbs" onClick={this.toggle}>Done</button>
                 </div>
               </div>
@@ -93,8 +93,14 @@ define(function(require) {
       );
     },
 
-    renderInstallButton: function() {
-      if (this.props.isImportable && !this.props.isImported) {
+    renderPrimaryAction: function() {
+      if (this.props.groupData.id) {
+        return (
+          <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.groupData.id).url} className="button mrs mbs">
+            Edit skill…
+          </a>
+        );
+      } else if (this.props.isImportable && !this.props.isImported) {
         return (
           <button type="button" className="button-primary mrs mbs" onClick={this.onImport}>
             <span className="display-inline-block align-b mrm pbxs"
@@ -124,20 +130,9 @@ define(function(require) {
       }
     },
 
-    renderEditLink: function() {
-      if (this.props.groupData.id) {
-        return (
-          <div className="type-s mvm">
-            <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.groupData.id).url}>Edit skill</a>
-          </div>
-        );
-      }
-    },
-
     renderMetaInfo: function() {
       return (
         <div>
-          {this.renderEditLink()}
           {this.renderLastModified()}
           {this.renderInstallInfo()}
         </div>

@@ -55,8 +55,9 @@ class BehaviorServiceImpl @Inject() (
   }
 
   def findByName(name: String, group: BehaviorGroup): Future[Option[Behavior]] = {
-    val action = findByNameQuery(name, Some(group.id)).result.map(_.headOption.map(tuple2Behavior))
-    dataService.run(action)
+    dataService.behaviorVersions.findCurrentByName(name, group).map { maybeBehaviorVersion =>
+      maybeBehaviorVersion.map(_.behavior)
+    }
   }
 
   def findByTrigger(trigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
