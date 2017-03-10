@@ -22,6 +22,14 @@ define(function(require) {
       return this.name || "Untitled skill";
     }
 
+    getActions() {
+      return this.behaviorVersions.filter(ea => !ea.isDataType());
+    }
+
+    getDataTypes() {
+      return this.behaviorVersions.filter(ea => ea.isDataType());
+    }
+
     clone(props) {
       return new BehaviorGroup(Object.assign({}, this, props));
     }

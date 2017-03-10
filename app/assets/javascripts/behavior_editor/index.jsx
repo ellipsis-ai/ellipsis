@@ -36,6 +36,7 @@ var React = require('react'),
   ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
   SectionHeading = require('./section_heading'),
+  SetOps = require('../lib/set_operations'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
@@ -604,7 +605,14 @@ const BehaviorEditor = React.createClass({
   },
 
   deleteBehavior: function() {
-    this.refs.deleteBehaviorForm.submit();
+    this.props.onClearActivePanel();
+    const group = this.getBehaviorGroup();
+    this.setState({
+      group: group.clone({
+        behaviorVersions: group.behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedBehaviorId())
+      }),
+      selectedBehaviorId: null
+    });
   },
 
   deleteBehaviorGroup: function() {
@@ -1216,16 +1224,20 @@ const BehaviorEditor = React.createClass({
     return this.state && this.state.hasModifiedTemplate;
   },
 
-  getAllBehaviors: function() {
-    return this.getBehaviorGroup().behaviorVersions;
+  getActionBehaviors: function() {
+    return this.getBehaviorGroup().getActions();
   },
 
-  getActionBehaviors: function() {
-    return this.getAllBehaviors().filter(ea => !ea.isDataType());
+  getOriginalActionBehaviors: function() {
+    return this.props.group.getActions();
   },
 
   getDataTypeBehaviors: function() {
-    return this.getAllBehaviors().filter(ea => ea.isDataType());
+    return this.getBehaviorGroup().getDataTypes();
+  },
+
+  getOriginalDataTypeBehaviors: function() {
+    return this.props.group.getDataTypes();
   },
 
   hasUserParameters: function() {
@@ -1271,13 +1283,60 @@ const BehaviorEditor = React.createClass({
     return !previewingVersions && !(originalBehavior && currentBehavior.isIdenticalToVersion(originalBehavior));
   },
 
+  behaviorTextFor: function(baseWord, count) {
+    if (count === 0) {
+      return "";
+    } else if (count === 1) {
+      return `1 ${baseWord}`;
+    } else {
+      return `${count} ${baseWord}s`;
+    }
+  },
+
+  actionsTextFor: function(count) {
+    return this.behaviorTextFor("action", count);
+  },
+
+  dataTypesTextFor: function(count) {
+    return this.behaviorTextFor("data type", count);
+  },
+
   getChangeSummary: function() {
     var actionCount = this.getActionBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
     var dataTypeCount = this.getDataTypeBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
+    const actionsAdded = SetOps.difference(this.getActionBehaviors(), this.getOriginalActionBehaviors()).length;
+    const actionsRemoved = SetOps.difference(this.getOriginalActionBehaviors(), this.getActionBehaviors()).length;
+    const dataTypesAdded = SetOps.difference(this.getDataTypeBehaviors(), this.getOriginalDataTypeBehaviors()).length;
+    const dataTypesRemoved = SetOps.difference(this.getOriginalDataTypeBehaviors(), this.getDataTypeBehaviors()).length;
 
-    var result;
+    let result;
 
-    if (actionCount > 1) {
+    if (actionsAdded || actionsRemoved || dataTypesAdded || dataTypesRemoved) {
+      const actionsAddedText = this.actionsTextFor(actionsAdded);
+      const actionsRemovedText = this.actionsTextFor(actionsRemoved);
+      const dataTypesAddedText = this.dataTypesTextFor(dataTypesAdded);
+      const dataTypesRemovedText = this.dataTypesTextFor(dataTypesRemoved);
+
+      let addedPart = "";
+      if (actionsAddedText.length && dataTypesAddedText.length) {
+        addedPart = `${actionsAddedText} and ${dataTypesAddedText}`;
+      } else {
+        addedPart = `${actionsAddedText}${dataTypesAddedText}`;
+      }
+      if (addedPart.length) {
+        addedPart = `${addedPart} added`
+      }
+
+      let removedPart = "";
+      if (actionsRemovedText.length && dataTypesRemovedText.length) {
+        removedPart = `${actionsRemovedText} and ${dataTypesRemovedText}`;
+      } else {
+        removedPart = `${actionsRemovedText}${dataTypesRemovedText}`;
+      }
+      if (removedPart.length) { removedPart = `${removedPart} removed`}
+
+      result = [addedPart, removedPart].filter(ea => ea.length > 0).join(", ");
+    } else if (actionCount > 1) {
       if (dataTypeCount > 1) {
         result = `${actionCount} actions and ${dataTypeCount} data types modified`;
       } else if (dataTypeCount === 1) {
