@@ -186,7 +186,7 @@ define(function(require) {
           });
         };
         if (panelOpen) {
-          window.setTimeout(openNewGroup, this.getAnimationDuration() * 1000);
+          setTimeout(openNewGroup, this.getAnimationDuration() * 1000);
         } else {
           openNewGroup();
         }

@@ -1,5 +1,3 @@
-jest.unmock('../app/assets/javascripts/shared_ui/dropdown_menu');
-
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const DropdownMenu = require('../app/assets/javascripts/shared_ui/dropdown_menu');

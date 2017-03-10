@@ -1,5 +1,3 @@
-jest.unmock("../app/assets/javascripts/models/trigger");
-
 const Trigger = require("../app/assets/javascripts/models/trigger");
 
 describe("Trigger", () => {

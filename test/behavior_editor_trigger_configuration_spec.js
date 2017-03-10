@@ -1,6 +1,3 @@
-jest.unmock('../app/assets/javascripts/behavior_editor/trigger_configuration');
-jest.unmock('../app/assets/javascripts/models/trigger');
-
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const TriggerConfiguration = require('../app/assets/javascripts/behavior_editor/trigger_configuration');

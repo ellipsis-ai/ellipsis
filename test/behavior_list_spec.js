@@ -1,11 +1,3 @@
-jest.unmock('../app/assets/javascripts/behavior_list/index');
-jest.unmock('../app/assets/javascripts/models/behavior_version');
-jest.unmock('../app/assets/javascripts/models/behavior_group');
-jest.unmock('../app/assets/javascripts/models/param');
-jest.unmock('../app/assets/javascripts/models/response_template');
-jest.unmock('../app/assets/javascripts/models/trigger');
-jest.useFakeTimers();
-
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorList = require('../app/assets/javascripts/behavior_list/index');
@@ -98,6 +90,9 @@ describe('BehaviorList', () => {
     let list;
 
     beforeEach(() => {
+      jest.clearAllTimers();
+      jest.clearAllMocks();
+      jest.useFakeTimers();
       list = createBehaviorList(config);
       list.clearActivePanel = jest.fn();
       list.toggleActivePanel = jest.fn();
@@ -155,7 +150,7 @@ describe('BehaviorList', () => {
       list.toggleInfoPanel(group2);
       expect(list.clearActivePanel).toBeCalled();
       expect(setTimeout).toBeCalled();
-      jest.runAllTimers();
+      jest.runOnlyPendingTimers();
       expect(list.setState.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
       expect(list.toggleActivePanel).toBeCalledWith('moreInfo');
     });

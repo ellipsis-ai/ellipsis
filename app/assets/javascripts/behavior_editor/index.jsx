@@ -2106,7 +2106,6 @@ const BehaviorEditor = React.createClass({
               groupId={this.getBehaviorGroup().id}
               groupName={this.getBehaviorGroup().getName()}
               groupDescription={this.getBehaviorGroup().description || ""}
-              teamId={this.getBehaviorGroup().teamId}
               onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
               onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
               onSelectBehavior={this.onSelectBehavior}

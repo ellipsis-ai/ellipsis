@@ -1,5 +1,3 @@
-jest.unmock('../app/assets/javascripts/environment_variables/setter');
-
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
