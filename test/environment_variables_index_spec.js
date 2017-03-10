@@ -1,9 +1,11 @@
-jest.unmock('../app/assets/javascripts/environment_variables/index');
-
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
 const EnvironmentVariables = require('../app/assets/javascripts/environment_variables/index');
+
+jsRoutes.controllers.EnvironmentVariablesController.list = jest.fn(() => ({ url: '/mock_environment_variables_list' }));
+jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
+jsRoutes.controllers.OAuth2ApplicationController.list = jest.fn(() => ({ url: 'mock_oauth2_list' }));
 
 describe('EnvironmentVariables', () => {
 

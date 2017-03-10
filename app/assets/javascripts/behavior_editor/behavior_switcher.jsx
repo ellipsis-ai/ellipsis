@@ -12,7 +12,6 @@ define(function(require) {
       groupId: React.PropTypes.string,
       groupName: React.PropTypes.string.isRequired,
       groupDescription: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired,
       onSelectBehavior: React.PropTypes.func.isRequired,
       addNewAction: React.PropTypes.func.isRequired,
       addNewDataType: React.PropTypes.func.isRequired,
