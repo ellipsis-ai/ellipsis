@@ -2,10 +2,10 @@ define(function(require) {
   var
     React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
+    Checkbox = require('../form/checkbox'),
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
-    SVGInstalling = require('../svg/installing'),
-    ifPresent = require('../lib/if_present');
+    SVGInstalling = require('../svg/installing');
 
   return React.createClass({
     displayName: 'BehaviorGroupCard',
@@ -31,7 +31,7 @@ define(function(require) {
       return this.props.isImporting;
     },
 
-    isImported: function() {
+    isLocallyEditable: function() {
       return !!this.props.localId;
     },
 
@@ -43,9 +43,16 @@ define(function(require) {
       this.props.onMoreInfoClick(this.props.groupData);
     },
 
-    getInstallButton: function() {
-      if (!this.isImportable()) {
-        return null;
+    renderSecondaryAction: function() {
+      if (!this.isImportable() && this.isLocallyEditable()) {
+        return (
+          <Checkbox
+            className="display-block type-s"
+            onChange={this.onSelectChange}
+            checked={this.props.isSelected}
+            label="Select"
+          />
+        );
       } else if (this.isImporting()) {
         return (
           <button title="Installing, please wait…" type="button" className="button-raw button-no-wrap" disabled="disabled" style={{ height: 24 }}>
@@ -55,7 +62,7 @@ define(function(require) {
             </span>
           </button>
         );
-      } else if (this.isImported()) {
+      } else if (this.isLocallyEditable()) {
         return (
           <button title="Already installed" type="button" className="button-raw button-no-wrap" disabled="disabled" style={{ height: 24 }}>
             <span className="display-inline-block align-m mrs" style={{ width: 40, height: 24 }}><SVGInstalled /></span>
@@ -93,47 +100,8 @@ define(function(require) {
       }
     },
 
-    renderDescription: function() {
-      if (this.isImporting()) {
-        return (
-          <div>
-            <div>{this.getDescription()}</div>
-            <div className="type-disabled">More info</div>
-          </div>
-        );
-      } else {
-        return (
-          <div>
-            <div>{this.getDescription()}</div>
-            <div>
-              <button type="button" className="button-raw" onClick={this.toggleMoreInfo}>{this.getMoreInfoText()}</button>
-              {this.isImported() ? (
-                <span>
-                  <span className="type-disabled phxs"> · </span>
-                  <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.localId).url}>Edit skill</a>
-                </span>
-                ) : null}
-            </div>
-          </div>
-        );
-      }
-    },
-
-    onSelectChange: function(event) {
-      this.props.onSelectChange(this.props.localId, event.target.checked);
-    },
-
-    renderGroupSelectionCheckbox: function() {
-      if (this.props.localId) {
-        return (
-          <input
-            type="checkbox"
-            onChange={this.onSelectChange}
-            checked={this.props.isSelected}
-            className="position-absolute position-top-left mtl mll"
-          />
-        );
-      }
+    onSelectChange: function(isChecked) {
+      this.props.onSelectChange(this.props.localId, isChecked);
     },
 
     getName: function() {
@@ -142,24 +110,34 @@ define(function(require) {
       );
     },
 
+    renderIcon: function() {
+      if (this.props.icon) {
+        return (
+          <span style={{ width: "1em" }} className="display-inline-block mrm type-icon">{this.props.icon}</span>
+        );
+      }
+    },
+
     render: function() {
       return (
-        <div className="border border-radius bg-lightest plxxxl prl pvl position-relative">
+        <div className="border border-radius bg-lightest position-relative">
           <div className={this.isImporting() ? "pulse" : ""}>
-            {this.renderGroupSelectionCheckbox(this.props.localId)}
-            <div className="type-l display-ellipsis mbm">
-              {ifPresent(this.props.icon, (icon) => (
-                <span style={{ width: "1em" }} className="display-inline-block mrm">
-                  {icon}
-                </span>
-              ))}
-              {this.getName()}
+            <div className="phl pvm border-bottom border-light">
+              <button type="button" className="button-block width-full" onClick={this.toggleMoreInfo} disabled={this.isImporting()}>
+                <div className="type-l display-ellipsis mbm" style={{ height: "1.7778rem" }}>
+                  {this.renderIcon()}
+                  {this.getName()}
+                </div>
+                <div className="type-s" style={{ height: "5.3334rem", overflow: "hidden" }}>
+                  <div>{this.getDescription()}</div>
+                  <div>
+                    <span className={this.isImporting() ? "type-disabled" : "link"}>{this.getMoreInfoText()}</span>
+                  </div>
+                </div>
+              </button>
             </div>
-            <div className="type-s mvm" style={{ height: "5.3333rem", overflow: "hidden" }}>
-              {this.renderDescription()}
-            </div>
-            <div>
-              {this.getInstallButton()}
+            <div className="phl pvm width" style={{ height: "2.6667rem" }}>
+              {this.renderSecondaryAction()}
             </div>
           </div>
         </div>

@@ -48,13 +48,12 @@ define(function(require) {
               <div className="column column-page-sidebar">
                 <h3 className="mtn">
                   {ifPresent(this.props.groupData.icon, (icon) => (
-                    <span className="mrm">{icon}</span>
+                    <span className="mrm type-icon">{icon}</span>
                   ))}
                   <span>{this.getName()}</span>
                 </h3>
 
                 {this.renderMetaInfo()}
-                {this.renderLastModified()}
               </div>
               <div className="column column-page-main">
                 {ifPresent(this.props.groupData.description, (desc) => (
@@ -106,7 +105,7 @@ define(function(require) {
       }
     },
 
-    renderMetaInfo: function() {
+    renderInstallInfo: function() {
       if (this.props.groupData.githubUrl) {
         return (
           <div className="type-s mvm">
@@ -123,6 +122,26 @@ define(function(require) {
           </div>
         );
       }
+    },
+
+    renderEditLink: function() {
+      if (this.props.groupData.id) {
+        return (
+          <div className="type-s mvm">
+            <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.groupData.id).url}>Edit skill</a>
+          </div>
+        );
+      }
+    },
+
+    renderMetaInfo: function() {
+      return (
+        <div>
+          {this.renderEditLink()}
+          {this.renderLastModified()}
+          {this.renderInstallInfo()}
+        </div>
+      );
     },
 
     renderLastModified: function() {
