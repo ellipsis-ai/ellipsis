@@ -59,7 +59,7 @@ object InputData {
     BehaviorParameterTypeData.from(input.paramType, dataService).map { paramTypeData =>
       InputData(
         Some(input.id),
-        input.maybeInputId,
+        Some(input.inputId),
         input.maybeExportId,
         input.name,
         Some(paramTypeData),

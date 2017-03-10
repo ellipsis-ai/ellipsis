@@ -16,7 +16,7 @@ import scala.concurrent.Future
 
 case class RawInput(
                      id: String,
-                     maybeInputId: Option[String],
+                     inputId: String,
                      maybeExportId: Option[String],
                      name: String,
                      maybeQuestion: Option[String],
@@ -29,7 +29,7 @@ case class RawInput(
 class InputsTable(tag: Tag) extends Table[RawInput](tag, "inputs") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def maybeInputId = column[Option[String]]("input_id")
+  def inputId = column[String]("input_id")
   def maybeExportId = column[Option[String]]("export_id")
   def name = column[String]("name")
   def maybeQuestion = column[Option[String]]("question")
@@ -39,7 +39,7 @@ class InputsTable(tag: Tag) extends Table[RawInput](tag, "inputs") {
   def behaviorGroupVersionId = column[String]("group_version_id")
 
   def * =
-    (id, maybeInputId, maybeExportId, name, maybeQuestion, paramType, isSavedForTeam, isSavedForUser, behaviorGroupVersionId) <>
+    (id, inputId, maybeExportId, name, maybeQuestion, paramType, isSavedForTeam, isSavedForUser, behaviorGroupVersionId) <>
       ((RawInput.apply _).tupled, RawInput.unapply _)
 }
 
@@ -71,7 +71,7 @@ class InputServiceImpl @Inject() (
       maybeParamType <- DBIO.from(maybeParamTypeFor(data, behaviorGroupVersion))
       raw <- DBIO.successful(RawInput(
         data.id.getOrElse(IDs.next),
-        data.inputId.orElse(Some(IDs.next)),
+        data.inputId.getOrElse(IDs.next),
         Some(data.exportId.getOrElse(IDs.next)),
         data.name,
         data.maybeNonEmptyQuestion,
@@ -83,7 +83,7 @@ class InputServiceImpl @Inject() (
       input <- (all += raw).map { _ =>
         Input(
           raw.id,
-          raw.maybeInputId,
+          raw.inputId,
           raw.maybeExportId,
           raw.name,
           raw.maybeQuestion,

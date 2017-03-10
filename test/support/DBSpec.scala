@@ -80,7 +80,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
           input.question,
           Some(input.isSavedForTeam),
           Some(input.isSavedForUser),
-          input.maybeInputId,
+          Some(input.inputId),
           Some(input.id),
           input.maybeExportId
         )
