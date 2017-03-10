@@ -122,17 +122,24 @@ define(function(require) {
           <div>
             <div className="display-limit-width display-ellipsis">
               <span className={"mrs " + (this.props.disableLink ? "" : "link")}>{name}:</span>
-              {this.props.omitDescription ? this.getTriggersFromVersion(version, false) : this.getDescriptionFromVersion(this.props.version)}
+              {this.props.omitDescription ?
+                this.getTriggersFromVersion(version, false) :
+                this.getDescriptionFromVersion(this.props.version)
+              }
             </div>
-            {this.props.omitDescription ? null : (
+            {!this.props.omitDescription ? (
                 <div className="display-limit-width display-ellipsis">
                   {this.getTriggersFromVersion(version, false)}
                 </div>
-              )}
+              ) : null}
           </div>
         );
       } else {
-        return this.getTriggersFromVersion(version, !this.props.disableLink);
+        return (
+          <div className="display-limit-width display-ellipsis">
+            {this.getTriggersFromVersion(version, !this.props.disableLink)}
+          </div>
+        );
       }
     },
 
