@@ -69,8 +69,8 @@ define(function(require) {
 
     isShared: function(param) {
       const firstBehaviorWithSameInput = this.props.otherBehaviorsInGroup.find(behavior => {
-        const inputIds = behavior.params.map(ea => ea.inputId);
-        return inputIds.indexOf(param.inputId) !== -1;
+        const inputIds = behavior.params.map(ea => ea.inputVersionId);
+        return inputIds.indexOf(param.inputVersionId) !== -1;
       });
       return !!firstBehaviorWithSameInput;
     },

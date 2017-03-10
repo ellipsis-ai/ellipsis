@@ -3,12 +3,12 @@ package models.behaviors.behaviorparameter
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import json.{BehaviorParameterData, InputData}
+import drivers.SlickPostgresDriver.api._
+import json.BehaviorParameterData
 import models.IDs
 import models.behaviors.behaviorversion.BehaviorVersion
-import services.DataService
-import drivers.SlickPostgresDriver.api._
 import models.behaviors.input.Input
+import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -57,33 +57,19 @@ class BehaviorParameterServiceImpl @Inject() (
   }
 
   def ensureFor(behaviorVersion: BehaviorVersion, params: Seq[BehaviorParameterData]): Future[Seq[BehaviorParameter]] = {
-    val action = for {
-      _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
-      newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
-        DBIO.from(for {
-          maybeExistingInput <- data.inputId.map { inputId =>
+    for {
+      _ <- dataService.run(all.filter(_.behaviorVersionId === behaviorVersion.id).delete)
+      newParams <- Future.sequence(params.zipWithIndex.map { case(data, i) =>
+        for {
+          maybeExistingInput <- data.inputVersionId.map { inputId =>
             dataService.inputs.find(inputId)
           }.getOrElse(Future.successful(None))
-          input <- maybeExistingInput.map { existing =>
-            InputData.fromInput(existing, dataService).flatMap { inputData =>
-              val updatedInputData = inputData.copy(
-                name = data.name,
-                paramType = data.paramType,
-                question = data.question,
-                isSavedForTeam = data.isSavedForTeam.exists(identity),
-                isSavedForUser = data.isSavedForUser.exists(identity)
-              )
-              dataService.inputs.ensureFor(updatedInputData, behaviorVersion.group)
-            }
-          }.getOrElse {
-            dataService.inputs.createFor(data.newInputData, behaviorVersion.group)
-          }
-          param <- createFor(input, i + 1, behaviorVersion)
-          _ <- dataService.savedAnswers.updateForInputId(data.inputId, input.id)
-        } yield param)
-      })
+          maybeParam <- maybeExistingInput.map { input =>
+            createFor(input, i + 1, behaviorVersion).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield maybeParam
+      }).map(_.flatten)
     } yield newParams
-    dataService.run(action)
   }
 
   def isFirstForBehaviorVersion(parameter: BehaviorParameter): Future[Boolean] = {

@@ -29,7 +29,7 @@ case class ParamCollectionState(
 
   def allLeftToCollect(conversation: Conversation): Future[Seq[(BehaviorParameter, Option[String])]] = {
     val tuples = rankedParams.map { ea =>
-      (ea, collected.find(_.parameter == ea), savedAnswers.find(_.input == ea.input))
+      (ea, collected.find(_.parameter == ea), savedAnswers.find(_.inputId == ea.input.inputId))
     }
 
     val eventualWithHasValidValue = Future.sequence(tuples.map { case(param, maybeCollected, maybeSaved) =>
@@ -60,7 +60,7 @@ case class ParamCollectionState(
   def invocationMap: Map[String, String] = {
     rankedParams.zipWithIndex.map { case(ea, i) =>
       val maybeParamValue = collected.find(_.parameter.id == ea.id).map(_.valueString).orElse {
-        savedAnswers.find(_.input == ea.input).map(_.valueString)
+        savedAnswers.find(_.inputId == ea.input.inputId).map(_.valueString)
       }
       (AWSLambdaConstants.invocationParamFor(i), maybeParamValue.getOrElse(""))
     }.toMap

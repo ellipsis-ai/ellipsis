@@ -7,27 +7,24 @@ requirejs(['../common'], function() {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
         groupData: BehaviorEditorConfiguration.group,
         group: BehaviorGroup.fromJson(BehaviorEditorConfiguration.group),
-        onSave: onSaveBehavior,
+        onSave: onSave,
         onForgetSavedAnswerForInput: resetSavedAnswerForInput
       });
 
       var currentProps = config;
 
-      function onSaveBehavior(newGroupData, state) {
-
-        var props = Object.assign({}, currentProps, {
-          group: BehaviorGroup.fromJson(newGroupData),
-          justSaved: true
-        });
+      function onSave(newProps, state) {
+        const props = Object.assign({}, currentProps, newProps);
         if (state) {
-          props.selectedBehaviorId = state.selectedBehaviorId;
-          props.group.behaviorVersions = props.group.behaviorVersions.map(ea => {
-            const versionState = state.group.behaviorVersions.find(v => v.behaviorId === ea.behaviorId);
-            if (versionState) {
-              return ea.clone({ shouldRevealCodeEditor: versionState.shouldRevealCodeEditor });
-            } else {
-              return ea;
-            }
+          props.group = props.group.clone({
+            behaviorVersions: props.group.behaviorVersions.map(ea => {
+              const versionState = state.group.behaviorVersions.find(v => v.behaviorId === ea.behaviorId);
+              if (versionState) {
+                return ea.clone({ shouldRevealCodeEditor: versionState.shouldRevealCodeEditor });
+              } else {
+                return ea;
+              }
+            })
           });
         }
         reload(props);

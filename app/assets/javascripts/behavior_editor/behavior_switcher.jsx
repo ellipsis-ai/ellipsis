@@ -11,9 +11,7 @@ define(function(require) {
       selectedBehavior: React.PropTypes.instanceOf(BehaviorVersion),
       groupId: React.PropTypes.string,
       groupName: React.PropTypes.string.isRequired,
-      lastSavedGroupName: React.PropTypes.string.isRequired,
       groupDescription: React.PropTypes.string.isRequired,
-      lastSavedGroupDescription: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       onSelectBehavior: React.PropTypes.func.isRequired,
       addNewAction: React.PropTypes.func.isRequired,
@@ -22,7 +20,7 @@ define(function(require) {
     },
 
     hasSavedNameOrDescription: function() {
-      return !!(this.props.lastSavedGroupName || this.props.lastSavedGroupDescription);
+      return !!(this.props.groupName || this.props.groupDescription);
     },
 
     getEditButtonLabel: function() {
@@ -33,24 +31,11 @@ define(function(require) {
       }
     },
 
-    getSkillName: function() {
-      var optionalName = this.props.lastSavedGroupName;
-      if (optionalName) {
-        return (
-          <span className="type-black">{optionalName}</span>
-        );
-      } else if (this.props.groupId) {
-        return 'Untitled skill';
-      } else {
-        return 'New skill';
-      }
-    },
-
     getSkillTitle: function() {
       return (
         <div className="mbm">
-          <h4 className="mbn">{this.getSkillName()}</h4>
-          <div className="type-s type-weak">{this.props.lastSavedGroupDescription}</div>
+          <h4 className="mbn">{this.props.groupName}</h4>
+          <div className="type-s type-weak">{this.props.groupDescription}</div>
         </div>
       );
     },

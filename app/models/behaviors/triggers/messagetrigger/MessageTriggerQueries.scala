@@ -1,17 +1,17 @@
 package models.behaviors.triggers.messagetrigger
 
-import models.accounts.user.User
-import models.behaviors.behavior.BehaviorQueries
-import models.behaviors.behaviorversion.{BehaviorVersionQueries, RawBehaviorVersion}
-import models.behaviors.triggers.{RegexMessageTrigger, TemplateMessageTrigger}
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorversion.BehaviorVersionQueries
+import models.behaviors.triggers.{RegexMessageTrigger, TemplateMessageTrigger}
+import models.team.TeamsTable
 
 object MessageTriggerQueries {
 
   val all = TableQuery[MessageTriggersTable]
-  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
+  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithGroupVersion).on(_.behaviorVersionId === _._1._1._1.id)
 
-  type TupleType = (RawMessageTrigger, ((RawBehaviorVersion, Option[User]), BehaviorQueries.TupleType))
+  type TupleType = (RawMessageTrigger, BehaviorVersionQueries.TupleType)
+  type TableTupleType = (MessageTriggersTable, BehaviorVersionQueries.TableTupleType)
 
   def tuple2Trigger(tuple: TupleType): MessageTrigger = {
     val raw = tuple._1
@@ -20,21 +20,23 @@ object MessageTriggerQueries {
     triggerType(raw.id, behaviorVersion, raw.pattern, raw.requiresBotMention, raw.isCaseSensitive)
   }
 
+  def teamFor(tuple: TableTupleType): TeamsTable = tuple._2._1._2._1._2
+
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
-    allWithBehaviorVersion.filter { case(trigger, (behaviorVersion, ((behavior, team), _))) => team.id === teamId}
+    allWithBehaviorVersion.filter { case(trigger, (behaviorVersion, ((behavior, (_, team)), _))) => team.id === teamId}
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
   def uncompiledAllActiveForTeamQuery(teamId: Rep[String]) = {
     allWithBehaviorVersion.
-      filter { case(_, (_, ((behavior, team), _))) => team.id === teamId }.
-      filter { case(_, ((behaviorVersion, _), ((behavior, team), _))) => behaviorVersion.id === behavior.maybeCurrentVersionId }
+      filter { case(_, (_, ((_, (_, team)), _))) => team.id === teamId }.
+      filter { case(_, (_, ((groupVersion, (group, _)), _))) => group.maybeCurrentVersionId === groupVersion.id }
   }
   val allActiveForTeamQuery = Compiled(uncompiledAllActiveForTeamQuery _)
 
-  def uncompiledAllForBehaviorQuery(behaviorVersionId: Rep[String]) = {
-    allWithBehaviorVersion.filter { case(_, ((behaviorVersion, _), _)) => behaviorVersion.id === behaviorVersionId}
+  def uncompiledAllForBehaviorVersionQuery(behaviorVersionId: Rep[String]) = {
+    allWithBehaviorVersion.filter { case(_, (((behaviorVersion, _), _), _)) => behaviorVersion.id === behaviorVersionId}
   }
-  val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
+  val allForBehaviorVersionQuery = Compiled(uncompiledAllForBehaviorVersionQuery _)
 
 }

@@ -41,7 +41,7 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
   def dataService = dataServiceProvider.get
 
   val all = TableQuery[RequiredOAuth2ApiConfigsTable]
-  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
+  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithGroupVersion).on(_.behaviorVersionId === _._1._1._1.id)
   val allWithApi = allWithBehaviorVersion.join(OAuth2ApiQueries.all).on(_._1.apiId === _.id)
   val allWithApplication = allWithApi.joinLeft(OAuth2ApplicationQueries.allWithApi).on(_._1._1.maybeApplicationId === _._1.id)
 

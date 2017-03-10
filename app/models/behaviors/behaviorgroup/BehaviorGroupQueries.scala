@@ -1,6 +1,6 @@
 package models.behaviors.behaviorgroup
 
-import models.team.{Team, TeamQueries}
+import models.team.{Team, TeamQueries, TeamsTable}
 import drivers.SlickPostgresDriver.api._
 
 object BehaviorGroupQueries {
@@ -9,11 +9,12 @@ object BehaviorGroupQueries {
   val allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
 
   type TupleType = (RawBehaviorGroup, Team)
+  type TableTupleType = (BehaviorGroupsTable, TeamsTable)
 
   def tuple2Group(tupleType: TupleType): BehaviorGroup = {
     val raw = tupleType._1
     val team = tupleType._2
-    BehaviorGroup(raw.id, raw.name, raw.maybeIcon, raw.maybeDescription, raw.maybeExportId, team, raw.createdAt)
+    BehaviorGroup(raw.id, raw.maybeExportId, team, raw.maybeCurrentVersionId, raw.createdAt)
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {

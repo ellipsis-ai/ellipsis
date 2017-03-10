@@ -1,11 +1,13 @@
 import models.IDs
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorParameter, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
 import models.behaviors.triggers.messagetrigger.MessageTrigger
+import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 
-trait MessageTriggerSpec extends PlaySpec {
+trait MessageTriggerSpec extends PlaySpec with MockitoSugar {
 
   def matches(trigger: MessageTrigger, text: String, includesBotMention: Boolean = false): Boolean = {
     trigger.matches(text, includesBotMention)
@@ -16,7 +18,8 @@ trait MessageTriggerSpec extends PlaySpec {
                     rank: Int,
                     behaviorVersion: BehaviorVersion
                   ): BehaviorParameter = {
-    BehaviorParameter(IDs.next, rank, Input(IDs.next, None, name, None, TextType, false, false, None), behaviorVersion)
+    val groupVersion = mock[BehaviorGroupVersion]
+    BehaviorParameter(IDs.next, rank, Input(IDs.next, Some(IDs.next), None, name, None, TextType, false, false, groupVersion), behaviorVersion)
   }
 
 }

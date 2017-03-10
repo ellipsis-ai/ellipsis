@@ -37,7 +37,7 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
   def dataService = dataServiceProvider.get
 
   val all = TableQuery[RequiredSimpleTokenApisTable]
-  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithBehavior).on(_.behaviorVersionId === _._1._1.id)
+  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithGroupVersion).on(_.behaviorVersionId === _._1._1._1.id)
   val allWithApi = allWithBehaviorVersion.join(SimpleTokenApiQueries.all).on(_._1.apiId === _.id)
 
   type TupleType = ((RawRequiredSimpleTokenApi, BehaviorVersionQueries.TupleType), SimpleTokenApi)

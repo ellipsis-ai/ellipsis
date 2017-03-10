@@ -17,6 +17,7 @@ import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.behavior.BehaviorService
 import models.behaviors.behaviorgroup.BehaviorGroupService
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
@@ -58,6 +59,7 @@ class PostgresDataService @Inject() (
                                       val slackBotProfilesProvider: Provider[SlackBotProfileService],
                                       val oauth2TokensProvider: Provider[OAuth2TokenService],
                                       val behaviorGroupsProvider: Provider[BehaviorGroupService],
+                                      val behaviorGroupVersionsProvider: Provider[BehaviorGroupVersionService],
                                       val behaviorsProvider: Provider[BehaviorService],
                                       val behaviorVersionsProvider: Provider[BehaviorVersionService],
                                       val behaviorParametersProvider: Provider[BehaviorParameterService],
@@ -92,6 +94,7 @@ class PostgresDataService @Inject() (
   val slackBotProfiles = slackBotProfilesProvider.get
   val oauth2Tokens = oauth2TokensProvider.get
   val behaviorGroups = behaviorGroupsProvider.get
+  val behaviorGroupVersions = behaviorGroupVersionsProvider.get
   val behaviors = behaviorsProvider.get
   val behaviorVersions = behaviorVersionsProvider.get
   val behaviorParameters = behaviorParametersProvider.get

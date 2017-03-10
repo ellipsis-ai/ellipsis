@@ -14,15 +14,7 @@ import drivers.SlickPostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RawSavedAnswer(
-                          id: String,
-                          inputId: String,
-                          valueString: String,
-                          maybeUserId: Option[String],
-                          createdAt: OffsetDateTime
-                         )
-
-class SavedAnswersTable(tag: Tag) extends Table[RawSavedAnswer](tag, "saved_answers") {
+class SavedAnswersTable(tag: Tag) extends Table[SavedAnswer](tag, "saved_answers") {
 
   def id = column[String]("id")
   def inputId = column[String]("input_id")
@@ -30,7 +22,7 @@ class SavedAnswersTable(tag: Tag) extends Table[RawSavedAnswer](tag, "saved_answ
   def maybeUserId = column[Option[String]]("user_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, inputId, valueString, maybeUserId, createdAt) <> ((RawSavedAnswer.apply _).tupled, RawSavedAnswer.unapply _)
+  def * = (id, inputId, valueString, maybeUserId, createdAt) <> ((SavedAnswer.apply _).tupled, SavedAnswer.unapply _)
 }
 
 class SavedAnswerServiceImpl @Inject() (
@@ -46,34 +38,34 @@ class SavedAnswerServiceImpl @Inject() (
   }
 
   def find(input: Input, user: User): Future[Option[SavedAnswer]] = {
-    val action = findQueryFor(input.id, maybeUserIdFor(input, user)).result.map { r =>
-      r.headOption.map(tuple2SavedAnswer)
+    val action = findQueryFor(input.inputId, maybeUserIdFor(input, user)).result.map { r =>
+      r.headOption
     }
     dataService.run(action)
   }
 
   def ensureFor(input: Input, valueString: String, user: User): Future[SavedAnswer] = {
     val maybeUserId = maybeUserIdFor(input, user)
-    val query = rawFindQueryFor(input.id, maybeUserId)
+    val query = rawFindQueryFor(input.inputId, maybeUserId)
     val action = for {
       maybeExisting <- query.result.map { r =>
         r.headOption
       }
-      raw <- maybeExisting.map { existing =>
+      saved <- maybeExisting.map { existing =>
         val updated = existing.copy(valueString = valueString)
         query.update(updated).map(_ => updated)
       }.getOrElse {
-        val raw = RawSavedAnswer(IDs.next, input.id, valueString, maybeUserId, OffsetDateTime.now)
-        (all += raw).map(_ => raw)
+        val answer = SavedAnswer(IDs.next, input.inputId, valueString, maybeUserId, OffsetDateTime.now)
+        (all += answer).map(_ => answer)
       }
-    } yield SavedAnswer(raw.id, input, valueString, maybeUserId, raw.createdAt)
+    } yield saved
     dataService.run(action)
   }
 
   def maybeFor(user: User, param: BehaviorParameter): Future[Option[SavedAnswer]] = {
     if (param.input.isSaved) {
-      val action = maybeForQuery(maybeUserIdFor(param.input, user), param.input.id).result.map { r =>
-        r.headOption.map(tuple2SavedAnswer)
+      val action = maybeForQuery(maybeUserIdFor(param.input, user), param.input.inputId).result.map { r =>
+        r.headOption
       }
       dataService.run(action)
     } else {
@@ -88,9 +80,7 @@ class SavedAnswerServiceImpl @Inject() (
   }
 
   def allFor(input: Input): Future[Seq[SavedAnswer]] = {
-    val action = allForInputQuery(input.id).result.map { r =>
-      r.map(tuple2SavedAnswer)
-    }
+    val action = allForInputQuery(input.inputId).result
     dataService.run(action)
   }
 
@@ -106,12 +96,12 @@ class SavedAnswerServiceImpl @Inject() (
   }
 
   def deleteForUser(input: Input, user: User): Future[Int] = {
-    val action = uncompiledRawFindQueryFor(input.id, Some(user.id)).delete
+    val action = uncompiledRawFindQueryFor(input.inputId, Some(user.id)).delete
     dataService.run(action)
   }
 
   def deleteAllFor(input: Input): Future[Int] = {
-    val action = rawFindQueryIgnoringUserFor(input.id).delete
+    val action = rawFindQueryIgnoringUserFor(input.inputId).delete
     dataService.run(action)
   }
 

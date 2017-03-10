@@ -28,7 +28,7 @@ case class DisplayHelpBehavior(
     s"(?i)(\\s|\\A)(\\S*${Regex.quote(searchText)}\\S*)(\\s|\\Z)".r
   }
 
-  private def helpStringFor(behaviorVersion: BehaviorVersionData, maybeMatchingItems: Option[Seq[FuzzyMatchable]]): Option[String] = {
+  private def helpStringFor(group: BehaviorGroupData, behaviorVersion: BehaviorVersionData, maybeMatchingItems: Option[Seq[FuzzyMatchable]]): Option[String] = {
     val triggers = behaviorVersion.triggers
     if (triggers.isEmpty) {
       None
@@ -58,7 +58,7 @@ case class DisplayHelpBehavior(
         None
       } else {
         val linkText = (for {
-          groupId <- behaviorVersion.groupId
+          groupId <- group.id
           behaviorId <- behaviorVersion.behaviorId
         } yield {
           val url = dataService.behaviors.editLinkFor(groupId, behaviorId, lambdaService.configuration)
@@ -99,7 +99,7 @@ case class DisplayHelpBehavior(
       behaviorVersions = untitledGroups.flatMap(_.behaviorVersions),
       githubUrl = None,
       exportId = None,
-      OffsetDateTime.now
+      Some(OffsetDateTime.now)
     )
   }
 
@@ -186,7 +186,7 @@ case class DisplayHelpBehavior(
       .map(name => s"**$name**")
       .getOrElse("**Miscellaneous skills**")
 
-    val actionList = group.behaviorVersions.flatMap(version => helpStringFor(version, maybeMatchingItems)).mkString("")
+    val actionList = group.behaviorVersions.flatMap(version => helpStringFor(group, version, maybeMatchingItems)).mkString("")
 
     val resultText =
       s"""$intro
@@ -210,8 +210,7 @@ case class DisplayHelpBehavior(
       user <- event.ensureUser(dataService)
       maybeBehaviorGroups <- maybeTeam.map { team =>
         maybeSkillId match {
-          case Some("(untitled)") =>
-            dataService.behaviorGroups.allFor(team).map(_.filter(_.name.isEmpty)).map(Some(_))
+          case Some("(untitled)") => dataService.behaviorGroups.allWithNoNameFor(team).map(Some(_))
           case Some(skillId) => dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
           case None => dataService.behaviorGroups.allFor(team).map(Some(_))
         }

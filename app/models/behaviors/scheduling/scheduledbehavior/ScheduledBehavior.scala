@@ -29,14 +29,17 @@ case class ScheduledBehavior(
                            ) extends Scheduled {
 
   def displayText(dataService: DataService): Future[String] = {
-    dataService.behaviors.maybeCurrentVersionFor(behavior).map { maybeVersion =>
-      maybeVersion.map { version =>
-        val actionText = version.maybeName.map { name =>
+    for {
+      maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
+      maybeGroupVersion <- dataService.behaviorGroups.maybeCurrentVersionFor(behavior.group)
+    } yield {
+      maybeBehaviorVersion.map { behaviorVersion =>
+        val actionText = behaviorVersion.maybeName.map { name =>
           s"""an action named `${name}`"""
         }.getOrElse("an unnamed action")
         val groupText = (for {
-          group <- behavior.maybeGroup
-          groupName <- Option(group.name).filter(_.trim.nonEmpty)
+          groupVersion <- maybeGroupVersion
+          groupName <- Option(groupVersion.name).filter(_.trim.nonEmpty)
         } yield {
           s" in skill `$groupName`"
         }).getOrElse("")

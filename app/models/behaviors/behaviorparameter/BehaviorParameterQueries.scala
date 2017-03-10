@@ -8,7 +8,7 @@ object BehaviorParameterQueries {
 
   val all = TableQuery[BehaviorParametersTable]
   val allWithInput = all.join(InputQueries.joined).on(_.inputId === _._1._1.id)
-  val allWithBehaviorVersion = allWithInput.join(BehaviorVersionQueries.allWithBehavior).on(_._1.behaviorVersionId === _._1._1.id)
+  val allWithBehaviorVersion = allWithInput.join(BehaviorVersionQueries.allWithGroupVersion).on(_._1.behaviorVersionId === _._1._1._1.id)
 
   type TupleType = (((RawBehaviorParameter, InputQueries.TupleType), BehaviorVersionQueries.TupleType))
 
@@ -26,8 +26,8 @@ object BehaviorParameterQueries {
 
   def uncompiledAllForQuery(behaviorVersionId: Rep[String]) = {
     allWithBehaviorVersion.
-      filter { case((param, input), ((behaviorVersion, _), _)) => behaviorVersion.id === behaviorVersionId}.
-      sortBy { case((param, input), ((behaviorVersion, _), _)) => param.rank.asc }
+      filter { case((param, input), (((behaviorVersion, _), _), _)) => behaviorVersion.id === behaviorVersionId}.
+      sortBy { case((param, input), (((behaviorVersion, _), _), _)) => param.rank.asc }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 

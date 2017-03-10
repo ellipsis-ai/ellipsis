@@ -6,6 +6,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageEvent
 import models.team.Team
 import play.api.Configuration
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -21,6 +22,8 @@ trait BehaviorService {
   def find(id: String, user: User): Future[Option[Behavior]]
 
   def allForTeam(team: Team): Future[Seq[Behavior]]
+
+  def allForGroupAction(group: BehaviorGroup): DBIO[Seq[Behavior]]
 
   def allForGroup(group: BehaviorGroup): Future[Seq[Behavior]]
 
@@ -54,9 +57,9 @@ trait BehaviorService {
 
   def updateDataTypeNameFor(behavior: Behavior, maybeName: Option[String]): Future[Behavior]
 
-  def hasSearchParam(behavior: Behavior): Future[Boolean]
-
   def delete(behavior: Behavior): Future[Behavior]
+
+  def maybeCurrentVersionForAction(behavior: Behavior): DBIO[Option[BehaviorVersion]]
 
   def maybeCurrentVersionFor(behavior: Behavior): Future[Option[BehaviorVersion]]
 

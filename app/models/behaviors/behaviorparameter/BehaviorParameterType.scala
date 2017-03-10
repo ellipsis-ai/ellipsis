@@ -1,8 +1,8 @@
 package models.behaviors.behaviorparameter
 
 import com.fasterxml.jackson.core.JsonParseException
-import models.behaviors.behavior.Behavior
-import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
@@ -128,11 +128,11 @@ object NumberType extends BuiltInType {
 }
 
 
-case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterType {
+case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends BehaviorParameterType {
 
-  val id = behavior.id
-  override val exportId: String = behavior.maybeExportId.getOrElse(id)
-  val name = behavior.maybeDataTypeName.getOrElse("Unnamed data type")
+  val id = behaviorVersion.id
+  override val exportId: String = behaviorVersion.behavior.maybeExportId.getOrElse(id)
+  val name = behaviorVersion.behavior.maybeDataTypeName.getOrElse("Unnamed data type")
 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]
@@ -152,20 +152,18 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   }
 
   def editLinkFor(context: BehaviorParameterContext) = {
+    val behavior = behaviorVersion.behavior
     val link = context.dataService.behaviors.editLinkFor(behavior.group.id, behavior.id, context.configuration)
     s"[${context.parameter.paramType.name}]($link)"
   }
 
   def needsConfig(dataService: DataService) = {
     for {
-      maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
-      requiredOAuth2ApiConfigs <- maybeCurrentVersion.map { currentVersion =>
-        dataService.requiredOAuth2ApiConfigs.allFor(currentVersion)
-      }.getOrElse(Future.successful(Seq()))
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
     } yield !requiredOAuth2ApiConfigs.forall(_.isReady)
   }
 
-  val team = behavior.team
+  val team = behaviorVersion.team
 
   def maybeValidValueForSavedAnswer(value: ValidValue, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
     usesSearch(context).flatMap { usesSearch =>
@@ -258,10 +256,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
       Seq(ParameterWithValue(context.parameter, AWSLambdaConstants.invocationParamFor(0), Some(value)))
     }.getOrElse(Seq())
     for {
-      maybeBehaviorVersion <- context.dataService.behaviors.maybeCurrentVersionFor(behavior)
-      maybeResult <- maybeBehaviorVersion.map { behaviorVersion =>
-        context.dataService.behaviorVersions.resultFor(behaviorVersion, paramsWithValues, context.event).map(Some(_))
-      }.getOrElse(Future.successful(None))
+      maybeResult <- context.dataService.behaviorVersions.resultFor(behaviorVersion, paramsWithValues, context.event).map(Some(_))
     } yield maybeResult
   }
 
@@ -367,7 +362,7 @@ case class BehaviorBackedDataType(behavior: Behavior) extends BehaviorParameterT
   }
 
   private def usesSearch(context: BehaviorParameterContext): Future[Boolean] = {
-    context.dataService.behaviors.hasSearchParam(this.behavior)
+    context.dataService.behaviorVersions.hasSearchParam(behaviorVersion)
   }
 
   override def promptFor(
@@ -409,23 +404,23 @@ object BehaviorParameterType {
   def findBuiltIn(id: String): Option[BehaviorParameterType] = allBuiltin.find(_.id == id)
 
   def allFor(team: Team, dataService: DataService): Future[Seq[BehaviorParameterType]] = {
-    dataService.behaviors.dataTypesForTeam(team).map { behaviorBacked =>
+    dataService.behaviorVersions.dataTypesForTeam(team).map { behaviorBacked =>
       allBuiltin ++ behaviorBacked.map(BehaviorBackedDataType.apply)
     }
   }
 
-  def allFor(maybeBehaviorGroup: Option[BehaviorGroup], dataService: DataService): Future[Seq[BehaviorParameterType]] = {
-    maybeBehaviorGroup.map { group =>
-      dataService.behaviors.dataTypesForGroup(group)
+  def allFor(maybeBehaviorGroupVersion: Option[BehaviorGroupVersion], dataService: DataService): Future[Seq[BehaviorParameterType]] = {
+    maybeBehaviorGroupVersion.map { groupVersion =>
+      dataService.behaviorVersions.dataTypesForGroupVersion(groupVersion)
     }.getOrElse(Future.successful(Seq())).map { behaviorBacked =>
       allBuiltin ++ behaviorBacked.map(BehaviorBackedDataType.apply)
     }
   }
 
-  def find(id: String, behaviorGroup: BehaviorGroup, dataService: DataService): Future[Option[BehaviorParameterType]] = {
-    allFor(Some(behaviorGroup), dataService).map { all =>
+  def find(id: String, behaviorGroupVersion: BehaviorGroupVersion, dataService: DataService): Future[Option[BehaviorParameterType]] = {
+    allFor(Some(behaviorGroupVersion), dataService).map { all =>
       all.find {
-        case paramType: BehaviorBackedDataType => paramType.id == id || paramType.behavior.maybeExportId.contains(id)
+        case paramType: BehaviorBackedDataType => paramType.id == id || paramType.behaviorVersion.maybeExportId.contains(id)
         case paramType: BehaviorParameterType => paramType.id == id
       }
     }
