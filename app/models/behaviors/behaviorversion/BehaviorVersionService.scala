@@ -3,6 +3,7 @@ package models.behaviors.behaviorversion
 import json.BehaviorVersionData
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, ParameterWithValue}
@@ -39,6 +40,8 @@ trait BehaviorVersionService {
   def findForAction(behavior: Behavior, groupVersion: BehaviorGroupVersion): DBIO[Option[BehaviorVersion]]
 
   def findFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]]
+
+  def findCurrentByName(name: String, group: BehaviorGroup): Future[Option[BehaviorVersion]]
 
   def hasSearchParam(behaviorVersion: BehaviorVersion): Future[Boolean]
 
