@@ -274,7 +274,7 @@ object BehaviorVersionData {
               ea.question,
               Some(ea.input.isSavedForTeam),
               Some(ea.input.isSavedForUser),
-              ea.input.maybeInputId,
+              Some(ea.input.inputId),
               Some(ea.input.id),
               ea.input.maybeExportId
             )

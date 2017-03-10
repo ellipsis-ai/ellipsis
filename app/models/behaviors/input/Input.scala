@@ -5,7 +5,7 @@ import models.behaviors.behaviorparameter.BehaviorParameterType
 
 case class Input(
                   id: String,
-                  maybeInputId: Option[String],
+                  inputId: String,
                   maybeExportId: Option[String],
                   name: String,
                   maybeQuestion: Option[String],
@@ -15,13 +15,11 @@ case class Input(
                   behaviorGroupVersion: BehaviorGroupVersion
                 ) {
 
-  val inputId = maybeInputId.get
-
   val isSaved = isSavedForTeam || isSavedForUser
 
   def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
   def toRaw: RawInput = {
-    RawInput(id, maybeInputId, maybeExportId, name, maybeQuestion, paramType.id, isSavedForTeam, isSavedForUser, behaviorGroupVersion.id)
+    RawInput(id, inputId, maybeExportId, name, maybeQuestion, paramType.id, isSavedForTeam, isSavedForUser, behaviorGroupVersion.id)
   }
 }
