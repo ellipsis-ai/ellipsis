@@ -1,5 +1,6 @@
 define(function(require) {
-  var React = require('react');
+  var React = require('react'),
+    DeepEqual = require('../lib/deep_equal');
 
   function setStyles(element, styles) {
     if (element && element.style) {
@@ -19,12 +20,21 @@ define(function(require) {
       outerClassName: React.PropTypes.string
     },
 
+    scrollTopPosition: 0,
+
+    lastCoords: {},
+
     resetCoordinates: function() {
       if (!this.innerContainer) {
         return;
       }
 
       var coords = this.props.onGetCoordinates();
+      if (DeepEqual.isEqual(coords, this.lastCoords)) {
+        return;
+      }
+
+      this.lastCoords = coords;
 
       setStyles(this.placeholder, { width: "" });
       setStyles(this.outerContainer, { height: "" });
@@ -50,6 +60,8 @@ define(function(require) {
 
         setStyles(this.placeholder, { width: `${newWidth}px` });
       }
+
+      this.innerContainer.scrollTop = this.scrollTopPosition;
     },
 
     componentDidMount: function() {
@@ -59,6 +71,10 @@ define(function(require) {
 
       window.addEventListener('resize', this.resetCoordinates, false);
       this.resetCoordinates();
+    },
+
+    componentWillUpdate: function() {
+      this.scrollTopPosition = this.innerContainer ? this.innerContainer.scrollTop : 0;
     },
 
     componentDidUpdate: function(prevProps) {
