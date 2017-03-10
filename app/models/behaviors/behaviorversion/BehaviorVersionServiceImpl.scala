@@ -18,6 +18,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.{Event, MessageEvent}
 import models.team.Team
@@ -150,6 +151,13 @@ class BehaviorVersionServiceImpl @Inject() (
 
   def findFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]] = {
     dataService.run(findForAction(behavior, groupVersion))
+  }
+
+  def findCurrentByName(name: String, group: BehaviorGroup): Future[Option[BehaviorVersion]] = {
+    val action = findCurrentByNameQuery(name, group.id).result.map { r =>
+      r.headOption.map(tuple2BehaviorVersion)
+    }
+    dataService.run(action)
   }
 
   def hasSearchParam(behaviorVersion: BehaviorVersion): Future[Boolean] = {
