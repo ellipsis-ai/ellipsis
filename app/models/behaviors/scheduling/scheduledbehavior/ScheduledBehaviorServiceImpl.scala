@@ -22,7 +22,7 @@ case class RawScheduledBehavior(
                                  arguments: JsValue,
                                  maybeUserId: Option[String],
                                  teamId: String,
-                                 maybeChannelName: Option[String],
+                                 maybeChannel: Option[String],
                                  isForIndividualMembers: Boolean,
                                  recurrenceId: String,
                                  nextSentAt: OffsetDateTime,
@@ -36,7 +36,7 @@ class ScheduledBehaviorsTable(tag: Tag) extends Table[RawScheduledBehavior](tag,
   def arguments = column[JsValue]("arguments")
   def maybeUserId = column[Option[String]]("user_id")
   def teamId = column[String]("team_id")
-  def maybeChannelName = column[Option[String]]("channel_name")
+  def maybeChannel = column[Option[String]]("channel_name")
   def isForIndividualMembers = column[Boolean]("is_for_individual_members")
   def recurrenceId = column[String]("recurrence_id")
   def nextSentAt = column[OffsetDateTime]("next_sent_at")
@@ -48,7 +48,7 @@ class ScheduledBehaviorsTable(tag: Tag) extends Table[RawScheduledBehavior](tag,
     arguments,
     maybeUserId,
     teamId,
-    maybeChannelName,
+    maybeChannel,
     isForIndividualMembers,
     recurrenceId,
     nextSentAt,
@@ -87,7 +87,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
       arguments,
       maybeUser,
       team,
-      raw.maybeChannelName,
+      raw.maybeChannel,
       raw.isForIndividualMembers,
       recurrence,
       raw.nextSentAt,
@@ -166,7 +166,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
                       recurrenceText: String,
                       user: User,
                       team: Team,
-                      maybeChannelName: Option[String],
+                      maybeChannel: Option[String],
                       isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledBehavior]] = {
     dataService.recurrences.maybeCreateFromText(recurrenceText, team.timeZone).flatMap { maybeRecurrence =>
@@ -178,7 +178,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
           arguments,
           Some(user),
           team,
-          maybeChannelName,
+          maybeChannel,
           isForIndividualMembers,
           recurrence,
           recurrence.initialAfter(now),

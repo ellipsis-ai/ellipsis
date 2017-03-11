@@ -22,7 +22,7 @@ trait ScheduledMessageService {
                       recurrenceText: String,
                       user: User,
                       team: Team,
-                      maybeChannelName: Option[String],
+                      maybeChannel: Option[String],
                       isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledMessage]]
 

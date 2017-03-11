@@ -21,7 +21,7 @@ case class ScheduledBehavior(
                               arguments: Map[String, String],
                               maybeUser: Option[User],
                               team: Team,
-                              maybeChannelName: Option[String],
+                              maybeChannel: Option[String],
                               isForIndividualMembers: Boolean,
                               recurrence: Recurrence,
                               nextSentAt: OffsetDateTime,
@@ -48,8 +48,8 @@ case class ScheduledBehavior(
     }
   }
 
-  def eventFor(channelName: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
-    ScheduledEvent(RunEvent(profile, behavior, arguments, channelName, None, slackUserId, "ts"), this)
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
+    ScheduledEvent(RunEvent(profile, behavior, arguments, channel, None, slackUserId, "ts"), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledBehavior = {
@@ -67,7 +67,7 @@ case class ScheduledBehavior(
       Json.toJson(arguments),
       maybeUser.map(_.id),
       team.id,
-      maybeChannelName,
+      maybeChannel,
       isForIndividualMembers,
       recurrence.id,
       nextSentAt,

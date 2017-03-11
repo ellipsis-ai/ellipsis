@@ -24,7 +24,7 @@ trait Scheduled {
   val id: String
   val maybeUser: Option[User]
   val team: Team
-  val maybeChannelName: Option[String]
+  val maybeChannel: Option[String]
   val isForIndividualMembers: Boolean
   val recurrence: Recurrence
   val nextSentAt: OffsetDateTime
@@ -66,23 +66,23 @@ trait Scheduled {
   }
 
   def isScheduledForDirectMessage: Boolean = {
-    maybeChannelName.exists(_.startsWith("D"))
+    maybeChannel.exists(_.startsWith("D"))
   }
 
   def isScheduledForPrivateChannel: Boolean = {
-    maybeChannelName.exists(_.startsWith("G"))
+    maybeChannel.exists(_.startsWith("G"))
   }
 
   def recurrenceAndChannel: String = {
-    val channelInfo = maybeChannelName.map { channelName =>
+    val channelInfo = maybeChannel.map { channel =>
       if (isScheduledForDirectMessage) {
         "in a direct message"
       } else if (isScheduledForPrivateChannel) {
         "in a private channel"
       } else if (isForIndividualMembers) {
-        s"in a direct message to each member of <#$channelName>"
+        s"in a direct message to each member of <#$channel>"
       } else {
-        s"in <#$channelName>"
+        s"in <#$channel>"
       }
     }.getOrElse("")
     s"${recurrence.displayString.trim} $channelInfo"
@@ -170,7 +170,7 @@ trait Scheduled {
   }
 
   def sendForIndividualMembers(
-                                channelName: String,
+                                channel: String,
                                 eventHandler: EventHandler,
                                 client: SlackApiClient,
                                 profile: SlackBotProfile,
@@ -178,7 +178,7 @@ trait Scheduled {
                                 configuration: Configuration
                               )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
-      members <- SlackChannels(client).getMembersFor(channelName)
+      members <- SlackChannels(client).getMembersFor(channel)
       otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
       dmInfos <- Future.sequence(otherMembers.map { ea =>
         client.openIm(ea).map { dmChannel =>
@@ -194,11 +194,11 @@ trait Scheduled {
     } yield {}
   }
 
-  def eventFor(channelName: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent
 
   // TODO: don't be slack-specific
   def sendFor(
-               channelName: String,
+               channel: String,
                slackUserId: String,
                eventHandler: EventHandler,
                client: SlackApiClient,
@@ -206,7 +206,7 @@ trait Scheduled {
                dataService: DataService,
                configuration: Configuration
              )(implicit actorSystem: ActorSystem): Future[Unit] = {
-    val event = eventFor(channelName, slackUserId, profile)
+    val event = eventFor(channel, slackUserId, profile)
     for {
       didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
       results <- eventHandler.handle(event, None)
@@ -262,13 +262,13 @@ trait Scheduled {
             dataService: DataService,
             configuration: Configuration
           )(implicit actorSystem: ActorSystem): Future[Unit] = {
-    maybeChannelName.map { channelName =>
+    maybeChannel.map { channel =>
       if (isForIndividualMembers) {
-        sendForIndividualMembers(channelName, eventHandler, client, profile, dataService, configuration)
+        sendForIndividualMembers(channel, eventHandler, client, profile, dataService, configuration)
       } else {
         maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
           val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
-          sendFor(channelName, slackUserId, eventHandler, client, profile, dataService, configuration)
+          sendFor(channel, slackUserId, eventHandler, client, profile, dataService, configuration)
         }
       }
     }.getOrElse(Future.successful(Unit))
