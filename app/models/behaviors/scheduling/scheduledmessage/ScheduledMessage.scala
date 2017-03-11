@@ -17,7 +17,7 @@ case class ScheduledMessage(
                              text: String,
                              maybeUser: Option[User],
                              team: Team,
-                             maybeChannelName: Option[String],
+                             maybeChannel: Option[String],
                              isForIndividualMembers: Boolean,
                              recurrence: Recurrence,
                              nextSentAt: OffsetDateTime,
@@ -28,8 +28,8 @@ case class ScheduledMessage(
     Future.successful(s"`$text`")
   }
 
-  def eventFor(channelName: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
-    ScheduledEvent(SlackMessageEvent(profile, channelName, None, slackUserId, text, "ts"), this)
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
+    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, text, "ts"), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {
@@ -46,7 +46,7 @@ case class ScheduledMessage(
       text,
       maybeUser.map(_.id),
       team.id,
-      maybeChannelName,
+      maybeChannel,
       isForIndividualMembers,
       recurrence.id,
       nextSentAt,

@@ -26,7 +26,7 @@ trait ScheduledBehaviorService {
                       recurrenceText: String,
                       user: User,
                       team: Team,
-                      maybeChannelName: Option[String],
+                      maybeChannel: Option[String],
                       isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledBehavior]]
 

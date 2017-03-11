@@ -15,15 +15,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class RawScheduledMessage(
-                              id: String,
-                              text: String,
-                              maybeUserId: Option[String],
-                              teamId: String,
-                              maybeChannelName: Option[String],
-                              isForIndividualMembers: Boolean,
-                              recurrenceId: String,
-                              nextSentAt: OffsetDateTime,
-                              createdAt: OffsetDateTime
+                                id: String,
+                                text: String,
+                                maybeUserId: Option[String],
+                                teamId: String,
+                                maybeChannel: Option[String],
+                                isForIndividualMembers: Boolean,
+                                recurrenceId: String,
+                                nextSentAt: OffsetDateTime,
+                                createdAt: OffsetDateTime
                               )
 
 class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "scheduled_messages") {
@@ -32,7 +32,7 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
   def text = column[String]("text")
   def maybeUserId = column[Option[String]]("user_id")
   def teamId = column[String]("team_id")
-  def maybeChannelName = column[Option[String]]("channel_name")
+  def maybeChannel = column[Option[String]]("channel_name")
   def isForIndividualMembers = column[Boolean]("is_for_individual_members")
   def recurrenceId = column[String]("recurrence_id")
   def nextSentAt = column[OffsetDateTime]("next_sent_at")
@@ -43,7 +43,7 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "
     text,
     maybeUserId,
     teamId,
-    maybeChannelName,
+    maybeChannel,
     isForIndividualMembers,
     recurrenceId,
     nextSentAt,
@@ -75,7 +75,7 @@ class ScheduledMessageServiceImpl @Inject() (
       raw.text,
       maybeUser,
       team,
-      raw.maybeChannelName,
+      raw.maybeChannel,
       raw.isForIndividualMembers,
       recurrence,
       raw.nextSentAt,
@@ -141,7 +141,7 @@ class ScheduledMessageServiceImpl @Inject() (
                       recurrenceText: String,
                       user: User,
                       team: Team,
-                      maybeChannelName: Option[String],
+                      maybeChannel: Option[String],
                       isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledMessage]] = {
     dataService.recurrences.maybeCreateFromText(recurrenceText, team.timeZone).flatMap { maybeRecurrence =>
@@ -152,7 +152,7 @@ class ScheduledMessageServiceImpl @Inject() (
           text,
           Some(user),
           team,
-          maybeChannelName,
+          maybeChannel,
           isForIndividualMembers,
           recurrence,
           recurrence.initialAfter(now),
