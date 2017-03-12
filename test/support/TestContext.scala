@@ -13,6 +13,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
 import services.{AWSLambdaService, DataService}
+import models.small_storage.items.ItemService
 
 trait TestContext extends MockitoSugar{
 
@@ -35,5 +36,6 @@ trait TestContext extends MockitoSugar{
   lazy val cache = app.injector.instanceOf(classOf[CacheApi])
   lazy val ws = app.injector.instanceOf(classOf[WSClient])
   lazy val configuration = app.injector.instanceOf(classOf[Configuration])
+  lazy val itemService = app.injector.instanceOf(classOf[ItemService])
 
 }

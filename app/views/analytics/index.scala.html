@@ -1,0 +1,16 @@
+@(teams: Seq[models.team.Team])(implicit r: RequestHeader)
+
+
+<p>Teams count: @teams.length </p>
+<table border="1">
+  <tr>
+    <th>Name</th>
+    <th>Id</th>
+  </tr>
+  @teams.map { fn =>
+  <tr>
+    <td>@fn.name</td>
+    <td>@fn.id</td>
+  </tr>
+  }
+</table>

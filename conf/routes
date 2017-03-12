@@ -78,10 +78,12 @@ GET         /health_check                             @controllers.HealthControl
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp
 
+# Web Admin
+GET         /analytics                                @controllers.AnalyticsController.index
+
+# Default Storage
 GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorage.getItem(itemId: String, itemType: String, token: String)
-#NOCSRF
 POST        /put_item                                 @controllers.DefaultStorage.putItem
-#NOCSRF
 POST        /api/post_message                         @controllers.APIController.postMessage
 #NOCSRF
 POST        /api/run_action                           @controllers.APIController.runAction
@@ -93,6 +95,12 @@ POST        /api/unschedule_action                    @controllers.APIController
 POST        /api/say                                  @controllers.APIController.say
 #NOCSRF
 GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
+
+
+
+# API for developers
+GET         /api/dev/v1/small_storage/:token          @controllers.api.dev.v1.SmallStorageController.show(token: String)
+GET         /api/dev/v1/small_storage/items/:token    @controllers.api.dev.v1.small_storage.ItemsController.index(token: String)
 
 
 # Map static resources from the /public folder to the /assets URL path

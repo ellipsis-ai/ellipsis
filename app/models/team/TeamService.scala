@@ -10,6 +10,8 @@ trait TeamService {
 
   def allTeams: Future[Seq[Team]]
 
+  def allTeamsSorted: Future[Seq[Team]]
+
   def setInitialNameFor(team: Team, name: String): Future[Team]
 
   def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team]

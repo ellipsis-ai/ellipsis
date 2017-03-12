@@ -1,3 +1,7 @@
+-- noinspection SqlDialectInspectionForFile
+
+-- noinspection SqlNoDataSourceInspectionForFile
+
 # --- !Ups
 
 ALTER TABLE behavior_groups ADD COLUMN imported_id TEXT;

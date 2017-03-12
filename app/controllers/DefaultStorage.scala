@@ -37,6 +37,7 @@ class DefaultStorage @Inject() (
         Future.successful(BadRequest("oops"))
       },
       info => {
+//        Logger.debug("Attempting risky calculation.")
         for {
           maybeTeam <- dataService.teams.findForInvocationToken(info.token)
           result <- maybeTeam.map { team =>

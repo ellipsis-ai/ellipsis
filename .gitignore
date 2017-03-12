@@ -29,4 +29,6 @@ node_modules
 /conf/version.conf
 tags
 actw
+.byebug_history
+/.sbtserver
 **/npm-debug.log

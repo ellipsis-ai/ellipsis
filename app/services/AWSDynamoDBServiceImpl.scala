@@ -1,13 +1,14 @@
 package services
 
 import javax.inject.Inject
+
 import com.amazonaws.services.dynamodbv2.model._
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsValue
 import utils.JavaFutureConverter
-import collection.JavaConverters._
 
+import collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -51,4 +52,5 @@ class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extend
       }
     }
   }
+
 }

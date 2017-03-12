@@ -1,0 +1,20 @@
+{
+  "name": "ellipsis-resource-list",
+  "version": "0.0.0",
+  "description": "The package is a simple list for Resource objects.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jasmine"
+  },
+  "author": "Ellipsis Co. <a@ellipsis.ai> (http://ellipsis.ai)",
+  "license": "ISC",
+  "dependencies": {
+    "ellipsis-default-storage": "0.1.9",
+    "q": "1.4.1",
+    "underscore": "1.8.3"
+  },
+  "devDependencies": {
+    "aws-sdk": "*",
+    "jasmine": "2.5.2"
+  }
+}
