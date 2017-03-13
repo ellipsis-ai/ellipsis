@@ -1,10 +1,10 @@
 import export.{BehaviorGroupExporter, BehaviorGroupZipImporter}
-import json.BehaviorParameterTypeData
+import json.{BehaviorParameterTypeData, BehaviorVersionData}
 import models.accounts.user.User
-import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType}
+import models.behaviors.behaviorversion.BehaviorVersion
 import support.DBSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,10 +12,11 @@ import scala.concurrent.Future
 
 class BehaviorGroupImportExportSpec extends DBSpec {
 
-  def checkParamTypeMatches(paramType: BehaviorParameterType, dataType: Behavior): Unit = {
+  def checkParamTypeMatches(paramType: BehaviorParameterType, dataType: BehaviorVersion): Unit = {
     paramType.isInstanceOf[BehaviorBackedDataType] mustBe true
-    dataType.maybeExportId must contain(paramType.exportId)
-    dataType.maybeDataTypeName must contain(paramType.name)
+    dataType.behavior.maybeExportId must contain(paramType.exportId)
+    dataType.behavior.isDataType mustBe true
+    dataType.maybeName must contain(paramType.name)
   }
 
   def exportAndImport(group: BehaviorGroup, exportUser: User, importUser: User): Unit = {
@@ -68,13 +69,8 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val behavior1 = newSavedBehaviorFor(group)
-        val behavior2 = newSavedBehaviorFor(group)
-        val groupVersion = newSavedGroupVersionFor(group, user)
-        val version1 = behaviorVersionFor(behavior1, groupVersion)
-        val version2 = behaviorVersionFor(behavior2, groupVersion)
-        val param1 = newSavedParamFor(version1)
-        val param2 = newSavedParamFor(version2)
+
+        newSavedGroupVersionFor(group, user)
 
         val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
         groupsBefore must have length 1
@@ -111,13 +107,19 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val behavior1 = newSavedBehaviorFor(group)
-        val behavior2 = newSavedBehaviorFor(group)
-        val groupVersion = newSavedGroupVersionFor(group, user)
-        val version1 = behaviorVersionFor(behavior1, groupVersion)
-        val version2 = behaviorVersionFor(behavior2, groupVersion)
-        val param1 = newSavedParamFor(version1, isSavedForTeam = Some(true))
-        val param2 = newSavedParamFor(version2, maybeExistingInput = Some(param1.input))
+
+        val param1Data = newParamDataFor(isSavedForTeam = Some(true))
+        val param2Data = newParamDataFor(maybeExistingInputData = Some(param1Data.inputData))
+        val behaviorVersion1Data = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+          params = Seq(param1Data)
+        )
+        val behaviorVersion2Data = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+          params = Seq(param2Data)
+        )
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersion1Data, behaviorVersion2Data)
+        )
+        newSavedGroupVersionFor(group, user, Some(groupData))
 
         val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
         groupsBefore must have length 1
@@ -153,14 +155,24 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val dataType = newSavedDataTypeFor(group)
-        val behavior = newSavedBehaviorFor(group)
-        val groupVersion = newSavedGroupVersionFor(group, user)
-        val dataTypeVersion = behaviorVersionFor(dataType, groupVersion)
-        val version = behaviorVersionFor(behavior, groupVersion)
-        val paramType = BehaviorBackedDataType(dataTypeVersion)
-        val dataTypeParamTypeData = runNow(BehaviorParameterTypeData.from(paramType, dataService))
-        val param = newSavedParamFor(version, maybeType = Some(dataTypeParamTypeData))
+
+        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, dataService).copy(name = Some("A data type"))
+
+        val dataTypeParamData = BehaviorParameterTypeData(
+          dataTypeVersionData.id,
+          dataTypeVersionData.exportId,
+          dataTypeVersionData.name.get,
+          None
+        )
+
+        val paramData = newParamDataFor(Some(dataTypeParamData))
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+          params = Seq(paramData)
+        )
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(dataTypeVersionData, behaviorVersionData)
+        )
+        newSavedGroupVersionFor(group, user, Some(groupData))
 
         val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
         groupsBefore must have length 1
@@ -178,8 +190,6 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         val importedGroupVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(importedGroup)).get
         val importedInputs = runNow(dataService.inputs.allForGroupVersion(importedGroupVersion))
         importedInputs must have length 1
-        val importedDataTypes = runNow(dataService.behaviors.dataTypesForGroup(importedGroup))
-        importedDataTypes must have length 1
         val importedBehaviors = runNow(dataService.behaviors.regularForGroup(importedGroup))
         importedBehaviors must have length 1
         val importedVersions = runNow(Future.sequence(importedBehaviors.map { behavior =>
@@ -190,7 +200,12 @@ class BehaviorGroupImportExportSpec extends DBSpec {
           dataService.behaviorParameters.allFor(version)
         }).map(_.flatten))
         importedParams must have length 1
-        checkParamTypeMatches(importedParams.head.input.paramType, importedDataTypes.head)
+        val importedDataTypes = runNow(dataService.behaviors.dataTypesForGroup(importedGroup))
+        val importedDataTypeVersions = runNow(Future.sequence(importedDataTypes.map { behavior =>
+          dataService.behaviors.maybeCurrentVersionFor(behavior)
+        }).map(_.flatten))
+        importedDataTypeVersions must have length 1
+        checkParamTypeMatches(importedParams.head.input.paramType, importedDataTypeVersions.head)
       })
     }
 
