@@ -758,8 +758,10 @@ const BehaviorEditor = React.createClass({
       .then((json) => {
         if (json.id) {
           if (this.state.shouldRedirectToAddNewOAuth2App) {
-            const apiId = this.state.requiredOAuth2ApiConfigId;
-            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, null, null, this.getSelectedBehaviorId()).url;
+            const config = this.state.requiredOAuth2ApiConfig;
+            const apiId = config && config.apiId;
+            const recommendedScope = config && config.recommendedScope;
+            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, recommendedScope, null, this.getSelectedBehaviorId()).url;
           } else {
             const newProps = {
               group: BehaviorGroup.fromJson(json),
@@ -1445,10 +1447,10 @@ const BehaviorEditor = React.createClass({
     }));
   },
 
-  onNewOAuth2Application: function(requiredOAuth2ApiConfigId) {
+  onNewOAuth2Application: function(requiredOAuth2ApiConfig) {
     this.setState({
       shouldRedirectToAddNewOAuth2App: true,
-      requiredOAuth2ApiConfigId: requiredOAuth2ApiConfigId || ""
+      requiredOAuth2ApiConfig: requiredOAuth2ApiConfig
     }, () => { this.checkDataAndCallback(this.onSaveBehaviorGroup); });
   },
 
@@ -1526,7 +1528,7 @@ const BehaviorEditor = React.createClass({
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
       redirectValue: "",
-      requiredOAuth2ApiConfigId: "",
+      requiredOAuth2ApiConfig: null,
       shouldRedirectToAddNewOAuth2App: false,
       paramNameToSync: null,
       error: null,
