@@ -12,9 +12,12 @@ define(function(require) {
   var ANIMATION_DURATION = 0.25;
 
   const BehaviorImporter = React.createClass({
+    displayName: 'BehaviorImporter',
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       teamId: React.PropTypes.string.isRequired,
-      installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.shape({
+        groupId: React.PropTypes.string.isRequired
+      })).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string
