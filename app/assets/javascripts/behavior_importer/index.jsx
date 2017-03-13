@@ -21,8 +21,12 @@ define(function(require) {
     }),
 
     getLocalId: function(group) {
-      const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.exportId && ea.exportId === group.exportId);
-      return installed ? installed.groupId : null;
+      if (group) {
+        const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.exportId && ea.exportId === group.exportId);
+        return installed ? installed.groupId : null;
+      } else {
+        return null;
+      }
     },
 
     getAllInstalledBehaviorGroups: function() {
@@ -84,10 +88,6 @@ define(function(require) {
       return this.state.importingList.some((ea) => ea === group);
     },
 
-    isGroupImported: function(group) {
-      return !!(group && this.getLocalId(group));
-    },
-
     getSelectedBehaviorGroup: function() {
       return this.state.selectedBehaviorGroup;
     },
@@ -139,7 +139,7 @@ define(function(require) {
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onToggle={this.toggleInfoPanel}
                 isImportable={true}
-                isImported={this.isGroupImported(this.getSelectedBehaviorGroup())}
+                localId={this.getLocalId(this.getSelectedBehaviorGroup())}
               />
             </Collapsible>
 
@@ -174,7 +174,6 @@ define(function(require) {
               onBehaviorGroupImport={this.onBehaviorGroupImport}
               onMoreInfoClick={this.toggleInfoPanel}
               isImporting={this.isImporting(group)}
-              isImported={this.isGroupImported(group)}
               isImportable={true}
             />
           </div>
