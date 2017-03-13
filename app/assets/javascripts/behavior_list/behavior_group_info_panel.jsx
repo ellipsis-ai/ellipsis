@@ -14,7 +14,7 @@ define(function(require) {
       onBehaviorGroupImport: React.PropTypes.func,
       onToggle: React.PropTypes.func.isRequired,
       isImportable: React.PropTypes.bool.isRequired,
-      isImported: React.PropTypes.bool.isRequired
+      localId: React.PropTypes.string
     },
 
     getBehaviors: function() {
@@ -94,13 +94,13 @@ define(function(require) {
     },
 
     renderPrimaryAction: function() {
-      if (this.props.groupData.id) {
+      if (this.props.localId) {
         return (
-          <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.groupData.id).url} className="button mrs mbs">
+          <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.localId).url} className="button mrs mbs">
             Edit skill…
           </a>
         );
-      } else if (this.props.isImportable && !this.props.isImported) {
+      } else if (this.props.isImportable && !this.props.localId) {
         return (
           <button type="button" className="button-primary mrs mbs" onClick={this.onImport}>
             <span className="display-inline-block align-b mrm pbxs"
@@ -120,7 +120,7 @@ define(function(require) {
             </a>
           </div>
         );
-      } else if (this.props.isImported) {
+      } else if (this.props.localId) {
         return (
           <div className="type-s mvm">
             <span className="display-inline-block align-m mrs" style={{ width: 30, height: 18 }}><SVGInstalled /></span>

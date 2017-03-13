@@ -22,10 +22,6 @@ define(function(require) {
       return ANIMATION_DURATION;
     },
 
-    isGroupImported: function(group) {
-      return !!(group && group.exportId);
-    },
-
     getBehaviorGroups: function() {
       return this.props.behaviorGroups;
     },
@@ -155,6 +151,11 @@ define(function(require) {
       return this.state.selectedBehaviorGroup;
     },
 
+    getSelectedBehaviorGroupId: function() {
+      var group = this.getSelectedBehaviorGroup();
+      return group ? group.id : null;
+    },
+
     getActivePanelName: function() {
       return this.props.activePanelName;
     },
@@ -207,7 +208,6 @@ define(function(require) {
               localId={group.id}
               onMoreInfoClick={this.toggleInfoPanel}
               isImportable={false}
-              isImported={this.isGroupImported(group)}
               onSelectChange={this.onGroupSelectionCheckboxChange}
               isSelected={this.isGroupSelected(group.id)}
             />
@@ -289,7 +289,7 @@ define(function(require) {
                 groupData={this.getSelectedBehaviorGroup()}
                 onToggle={this.toggleInfoPanel}
                 isImportable={false}
-                isImported={this.isGroupImported(this.getSelectedBehaviorGroup())}
+                localId={this.getSelectedBehaviorGroupId()}
               />
             </Collapsible>
             <Collapsible

@@ -12,17 +12,24 @@ define(function(require) {
   var ANIMATION_DURATION = 0.25;
 
   const BehaviorImporter = React.createClass({
+    displayName: 'BehaviorImporter',
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       teamId: React.PropTypes.string.isRequired,
-      installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.shape({
+        groupId: React.PropTypes.string.isRequired
+      })).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string
     }),
 
     getLocalId: function(group) {
-      const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.exportId && ea.exportId === group.exportId);
-      return installed ? installed.groupId : null;
+      if (group) {
+        const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.exportId && ea.exportId === group.exportId);
+        return installed ? installed.groupId : null;
+      } else {
+        return null;
+      }
     },
 
     getAllInstalledBehaviorGroups: function() {
@@ -84,10 +91,6 @@ define(function(require) {
       return this.state.importingList.some((ea) => ea === group);
     },
 
-    isGroupImported: function(group) {
-      return !!(group && this.getLocalId(group));
-    },
-
     getSelectedBehaviorGroup: function() {
       return this.state.selectedBehaviorGroup;
     },
@@ -139,7 +142,7 @@ define(function(require) {
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onToggle={this.toggleInfoPanel}
                 isImportable={true}
-                isImported={this.isGroupImported(this.getSelectedBehaviorGroup())}
+                localId={this.getLocalId(this.getSelectedBehaviorGroup())}
               />
             </Collapsible>
 
@@ -174,7 +177,6 @@ define(function(require) {
               onBehaviorGroupImport={this.onBehaviorGroupImport}
               onMoreInfoClick={this.toggleInfoPanel}
               isImporting={this.isImporting(group)}
-              isImported={this.isGroupImported(group)}
               isImportable={true}
             />
           </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorList = require('../app/assets/javascripts/behavior_list/index');
 const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group');
+const BehaviorGroupCard = require('../app/assets/javascripts/behavior_list/behavior_group_card');
 
 describe('BehaviorList', () => {
   jsRoutes.controllers.BehaviorEditorController.edit = function() { return '/edit'; };
@@ -84,6 +85,13 @@ describe('BehaviorList', () => {
 
   beforeEach(() => {
     config = Object.assign(config, defaultConfig);
+  });
+
+  describe('render', () => {
+    it('renders a card for each group', () => {
+      const list = createBehaviorList(config);
+      expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorGroupCard).length).toEqual(config.behaviorGroups.length);
+    });
   });
 
   describe('toggleInfoPanel', () => {
