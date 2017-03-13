@@ -6,10 +6,8 @@ define(function(require) {
 
   class BehaviorVersion {
     constructor(props) {
-      var initialTriggerProps = (props.config && props.config.isDataType) ? [] : [{}];
       var initialProps = Object.assign({
         functionBody: '',
-        triggers: initialTriggerProps.map(ea => new Trigger(ea)),
         config: {},
         knownEnvVarsUsed: [],
         shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0),
