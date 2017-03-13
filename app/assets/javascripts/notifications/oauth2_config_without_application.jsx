@@ -61,7 +61,7 @@ define(function(require) {
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onNewOAuth2Application.bind(this, detail, detail.requiredApiConfig.id)}>
+              onClick={this.onNewOAuth2Application.bind(this, detail, detail.requiredApiConfig)}>
 
               Configure the {detail.name} API for this skill
 
@@ -75,8 +75,8 @@ define(function(require) {
       detail.onAddOAuth2Application(app);
     },
 
-    onNewOAuth2Application: function(detail, requiredOAuth2ApiConfigId) {
-      detail.onNewOAuth2Application(requiredOAuth2ApiConfigId);
+    onNewOAuth2Application: function(detail, requiredOAuth2ApiConfig) {
+      detail.onNewOAuth2Application(requiredOAuth2ApiConfig);
     },
 
     render: function() {
