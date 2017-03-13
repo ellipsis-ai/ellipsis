@@ -11,7 +11,7 @@ POST        /merge_skills                             @controllers.ApplicationCo
 POST        /delete_skills                            @controllers.ApplicationController.deleteBehaviorGroups
 
 GET         /new_skill                                @controllers.BehaviorEditorController.newGroup(teamId: Option[String] ?= None)
-GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, actionId: Option[String] ?= None, justSaved: Option[Boolean] ?= None)
+GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, actionId: Option[String] ?= None)
 GET         /export_skill/:id                         @controllers.BehaviorImportExportController.export(id: String)
 GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
 GET         /import_skill_zip                         @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)

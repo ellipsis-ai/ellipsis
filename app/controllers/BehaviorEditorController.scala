@@ -51,9 +51,9 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  def edit(groupId: String, maybeBehaviorId: Option[String], maybeJustSaved: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
+  def edit(groupId: String, maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, maybeJustSaved, dataService, ws).flatMap { maybeEditorData =>
+    BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
         Future.successful(Ok(views.html.editBehavior(viewConfig(Some(editorData.teamAccess)), editorData)))
       }.getOrElse {

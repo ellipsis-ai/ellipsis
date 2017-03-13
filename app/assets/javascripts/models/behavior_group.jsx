@@ -18,6 +18,10 @@ define(function(require) {
       });
     }
 
+    isRecentlySaved() {
+      return this.createdAt && new Date(this.createdAt) > (new Date() - 60000);
+    }
+
     getName() {
       return this.name || "Untitled skill";
     }

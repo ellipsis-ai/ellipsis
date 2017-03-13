@@ -21,8 +21,7 @@ case class BehaviorEditorData(
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
                                simpleTokenApis: Seq[SimpleTokenApiData],
-                               linkedOAuth2ApplicationIds: Seq[String],
-                               justSaved: Boolean
+                               linkedOAuth2ApplicationIds: Seq[String]
                               )
 
 object BehaviorEditorData {
@@ -31,7 +30,6 @@ object BehaviorEditorData {
                     user: User,
                     groupId: String,
                     maybeBehaviorId: Option[String],
-                    maybeJustSaved: Option[Boolean],
                     dataService: DataService,
                     ws: WSClient
                   ): Future[Option[BehaviorEditorData]] = {
@@ -50,7 +48,6 @@ object BehaviorEditorData {
           Some(data),
           maybeBehaviorId,
           team,
-          maybeJustSaved,
           dataService,
           ws
         ).map(Some(_))
@@ -74,7 +71,6 @@ object BehaviorEditorData {
           maybeGroupData = None,
           maybeBehaviorId = None,
           team,
-          maybeJustSaved = None,
           dataService,
           ws
         ).map(Some(_))
@@ -103,7 +99,6 @@ object BehaviorEditorData {
                 maybeGroupData: Option[BehaviorGroupData],
                 maybeBehaviorId: Option[String],
                 team: Team,
-                maybeJustSaved: Option[Boolean],
                 dataService: DataService,
                 ws: WSClient
               ): Future[BehaviorEditorData] = {
@@ -158,8 +153,7 @@ object BehaviorEditorData {
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
         simpleTokenApis.map(SimpleTokenApiData.from),
-        linkedOAuth2Tokens.map(_.application.id),
-        maybeJustSaved.exists(identity)
+        linkedOAuth2Tokens.map(_.application.id)
       )
     }
   }

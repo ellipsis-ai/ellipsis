@@ -76,7 +76,6 @@ const BehaviorEditor = React.createClass({
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
     selectedBehaviorId: React.PropTypes.string,
     csrfToken: React.PropTypes.string.isRequired,
-    justSaved: React.PropTypes.bool,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
@@ -765,8 +764,7 @@ const BehaviorEditor = React.createClass({
           } else {
             const newProps = {
               group: BehaviorGroup.fromJson(json),
-              onLoad: optionalCallback,
-              justSaved: true
+              onLoad: optionalCallback
             };
             this.props.onSave(newProps, this.state);
           }
@@ -777,6 +775,10 @@ const BehaviorEditor = React.createClass({
       .catch((error) => {
         this.onSaveError(error);
       });
+  },
+
+  isJustSaved: function() {
+    return this.getBehaviorGroup().isRecentlySaved() && !this.isModified();
   },
 
   checkDataAndCallback: function(callback) {
@@ -801,8 +803,7 @@ const BehaviorEditor = React.createClass({
   showVersionIndex: function(versionIndex, optionalCallback) {
     const version = this.getVersions()[versionIndex];
     const stateUpdates = {
-      group: version,
-      justSaved: false
+      group: version
     };
     if (!version.hasBehaviorVersionWithId(this.getSelectedBehaviorId())) {
       stateUpdates.selectedBehaviorId = null;
@@ -844,13 +845,9 @@ const BehaviorEditor = React.createClass({
 
     var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, newGroup, 0);
 
-    if (this.state.justSaved) {
-      BrowserUtils.removeQueryParam('justSaved');
-    }
     this.setState({
       group: newGroup,
-      versions: newVersions,
-      justSaved: false
+      versions: newVersions
     }, () => {
       if (callback) {
         callback();
@@ -1519,7 +1516,6 @@ const BehaviorEditor = React.createClass({
       selectedBehaviorId: this.props.selectedBehaviorId,
       activeDropdown: null,
       codeEditorUseLineWrapping: false,
-      justSaved: this.props.justSaved,
       envVariables: this.getInitialEnvVariables(),
       hasModifiedTemplate: hasModifiedTemplate,
       notifications: this.buildNotifications(),
@@ -1543,7 +1539,6 @@ const BehaviorEditor = React.createClass({
     if (nextProps.group !== this.props.group) {
       var newGroup = nextProps.group;
       var newState = {
-        justSaved: true,
         group: newGroup,
         versions: [this.getTimestampedGroup(newGroup)],
         versionsLoadStatus: null,
@@ -1831,10 +1826,10 @@ const BehaviorEditor = React.createClass({
                     labels={[{
                       text: 'Save changes',
                       mobileText: 'Save',
-                      displayWhen: !this.state.justSaved
+                      displayWhen: !this.isJustSaved()
                     }, {
                       text: 'Saved',
-                      displayWhen: this.state.justSaved
+                      displayWhen: this.isJustSaved()
                     }]}
                     className="button-primary mrs mbm"
                     disabledWhen={!this.isModified() || this.isSaving()}
@@ -1885,7 +1880,7 @@ const BehaviorEditor = React.createClass({
   },
 
   renderFooterStatus: function() {
-    if (this.state.justSaved && !this.isSaving()) {
+    if (this.isJustSaved() && !this.isSaving()) {
       return (
         <span className="fade-in type-green type-bold type-italic">All changes saved</span>
       );

@@ -37,7 +37,6 @@ describe('BehaviorEditor', () => {
     },
     selectedBehaviorId: "1",
     csrfToken: "2",
-    justSaved: false,
     envVariables: [ { name: "HOT_DOG" } ],
     builtinParamTypes: [{
       id: 'Text',

@@ -68,8 +68,7 @@ requirejs(['../common'], function() {
       }
       reload(Object.assign({}, config, {
         group: group,
-        selectedBehaviorId: selectedBehaviorId,
-        justSaved: false
+        selectedBehaviorId: selectedBehaviorId
       }));
     }
   );
