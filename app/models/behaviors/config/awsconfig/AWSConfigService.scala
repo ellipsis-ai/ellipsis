@@ -1,6 +1,7 @@
 package models.behaviors.config.awsconfig
 
 import models.behaviors.behaviorversion.BehaviorVersion
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -17,10 +18,10 @@ trait AWSConfigService {
     }
   }
 
-  def createFor(
+  def createForAction(
                  behaviorVersion: BehaviorVersion,
                  maybeAccessKeyName: Option[String],
                  maybeSecretKeyName: Option[String],
                  maybeRegionName: Option[String]
-               ): Future[AWSConfig]
+               ): DBIO[AWSConfig]
 }

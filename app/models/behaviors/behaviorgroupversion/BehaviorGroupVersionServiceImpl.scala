@@ -94,34 +94,36 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                  user: User,
                  data: BehaviorGroupData
                ): Future[BehaviorGroupVersion] = {
-    for {
-      groupVersion <- createFor(group, user, data.name, data.icon, data.description)
-      _ <- Future.sequence(data.dataTypeBehaviorVersions.map { ea =>
+    val action = (for {
+      groupVersion <- createForAction(group, user, data.name, data.icon, data.description)
+      _ <- DBIO.sequence(data.dataTypeBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
-            maybeExistingBehavior <- dataService.behaviors.find(behaviorId, user)
-            behavior <- maybeExistingBehavior.map(Future.successful).getOrElse {
-              dataService.behaviors.createFor(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
+            maybeExistingBehavior <- dataService.behaviors.findAction(behaviorId, user)
+            behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
+              dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createFor(behavior, groupVersion, Some(user), ea)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, Some(user), ea)
           } yield Some(behaviorVersion)
-        }.getOrElse(Future.successful(None))
+        }.getOrElse(DBIO.successful(None))
       })
-      _ <- Future.sequence(data.inputs.map { ea =>
-        dataService.inputs.ensureFor(ea, groupVersion)
+      _ <- DBIO.sequence(data.inputs.map { ea =>
+        dataService.inputs.ensureForAction(ea, groupVersion)
       })
-      _ <- Future.sequence(data.actionBehaviorVersions.map { ea =>
+      _ <- DBIO.sequence(data.actionBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
-            maybeExistingBehavior <- dataService.behaviors.find(behaviorId, user)
-            behavior <- maybeExistingBehavior.map(Future.successful).getOrElse {
-              dataService.behaviors.createFor(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
+            maybeExistingBehavior <- dataService.behaviors.findAction(behaviorId, user)
+            behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
+              dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createFor(behavior, groupVersion, Some(user), ea)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, Some(user), ea)
           } yield Some(behaviorVersion)
-        }.getOrElse(Future.successful(None))
+        }.getOrElse(DBIO.successful(None))
       })
-    } yield groupVersion
+    } yield groupVersion) transactionally
+
+    dataService.run(action)
   }
 
 }

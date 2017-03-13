@@ -113,15 +113,14 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
     dataService.run(action)
   }
 
-  def maybeCreateFor(data: RequiredSimpleTokenApiData, behaviorVersion: BehaviorVersion): Future[Option[RequiredSimpleTokenApi]] = {
-    val action = for {
+  def maybeCreateForAction(data: RequiredSimpleTokenApiData, behaviorVersion: BehaviorVersion): DBIO[Option[RequiredSimpleTokenApi]] = {
+    for {
       maybeApi <- DBIO.from(dataService.simpleTokenApis.find(data.apiId))
       maybeConfig <- maybeApi.map { api =>
         val newInstance = RequiredSimpleTokenApi(IDs.next, behaviorVersion, api)
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig
-
-    dataService.run(action)
   }
+
 }

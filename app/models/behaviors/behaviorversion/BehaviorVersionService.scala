@@ -19,12 +19,14 @@ trait BehaviorVersionService {
 
   def allFor(behavior: Behavior): Future[Seq[BehaviorVersion]]
 
+  def allForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[BehaviorVersion]]
+
   def allForGroupVersion(groupVersion: BehaviorGroupVersion): Future[Seq[BehaviorVersion]]
 
   def allCurrentForTeam(team: Team): Future[Seq[BehaviorVersion]]
 
-  def dataTypesForGroupVersion(groupVersion: BehaviorGroupVersion): Future[Seq[BehaviorVersion]] = {
-    allForGroupVersion(groupVersion).map { all =>
+  def dataTypesForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[BehaviorVersion]] = {
+    allForGroupVersionAction(groupVersion).map { all =>
       all.filter(_.isDataType)
     }
   }
@@ -45,16 +47,12 @@ trait BehaviorVersionService {
 
   def hasSearchParam(behaviorVersion: BehaviorVersion): Future[Boolean]
 
-  def createFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, maybeUser: Option[User], maybeId: Option[String]): Future[BehaviorVersion]
-
-  def createFor(
-                 behavior: Behavior,
-                 groupVersion: BehaviorGroupVersion,
-                 maybeUser: Option[User],
-                 data: BehaviorVersionData
-               ): Future[BehaviorVersion]
-
-  def save(behaviorVersion: BehaviorVersion): Future[BehaviorVersion]
+  def createForAction(
+                       behavior: Behavior,
+                       groupVersion: BehaviorGroupVersion,
+                       maybeUser: Option[User],
+                       data: BehaviorVersionData
+                     ): DBIO[BehaviorVersion]
 
   def delete(behaviorVersion: BehaviorVersion): Future[BehaviorVersion]
 

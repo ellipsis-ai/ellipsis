@@ -9,11 +9,13 @@ import scala.concurrent.Future
 
 trait InputService {
 
+  def findAction(id: String): DBIO[Option[Input]]
+
   def find(id: String): Future[Option[Input]]
 
-  def createFor(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): Future[Input]
+  def createForAction(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Input]
 
-  def ensureFor(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): Future[Input]
+  def ensureForAction(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Input]
 
   def allForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[Input]]
 

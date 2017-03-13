@@ -38,12 +38,12 @@ class AWSConfigServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def createFor(
-                 behaviorVersion: BehaviorVersion,
-                 maybeAccessKeyName: Option[String],
-                 maybeSecretKeyName: Option[String],
-                 maybeRegionName: Option[String]
-               ): Future[AWSConfig] = {
+  def createForAction(
+                       behaviorVersion: BehaviorVersion,
+                       maybeAccessKeyName: Option[String],
+                       maybeSecretKeyName: Option[String],
+                       maybeRegionName: Option[String]
+                     ): DBIO[AWSConfig] = {
 
     val newInstance = AWSConfig(
       IDs.next,
@@ -53,8 +53,7 @@ class AWSConfigServiceImpl @Inject() (
       maybeRegionName
     )
 
-    val action = (all += newInstance).map { _ => newInstance }
-    dataService.run(action)
+    (all += newInstance).map { _ => newInstance }
   }
 
 }

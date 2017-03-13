@@ -59,17 +59,24 @@ class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataServ
     dataService.run(action)
   }
 
-  def maybeForSlackFor(user: User): Future[Option[LinkedAccount]] = {
-    val action = forSlackForQuery(user.id).result.map { r =>
+  def maybeForSlackForAction(user: User): DBIO[Option[LinkedAccount]] = {
+    forSlackForQuery(user.id).result.map { r =>
       r.headOption.map(tuple2LinkedAccount)
     }
-    dataService.run(action)
+  }
+
+  def maybeForSlackFor(user: User): Future[Option[LinkedAccount]] = {
+    dataService.run(maybeForSlackForAction(user))
+  }
+
+  def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean] = {
+    dataService.slackProfiles.findAction(linkedAccount.loginInfo).map { maybeProfile =>
+      maybeProfile.map(_.teamId).contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
+    }
   }
 
   def isAdmin(linkedAccount: LinkedAccount): Future[Boolean] = {
-    dataService.slackProfiles.find(linkedAccount.loginInfo).map { maybeProfile =>
-      maybeProfile.map(_.teamId).contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
-    }
+    dataService.run(isAdminAction(linkedAccount))
   }
 
 }

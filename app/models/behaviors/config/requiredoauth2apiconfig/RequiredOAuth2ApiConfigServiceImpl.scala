@@ -119,8 +119,8 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def maybeCreateFor(data: RequiredOAuth2ApiConfigData, behaviorVersion: BehaviorVersion): Future[Option[RequiredOAuth2ApiConfig]] = {
-    val action = for {
+  def maybeCreateForAction(data: RequiredOAuth2ApiConfigData, behaviorVersion: BehaviorVersion): DBIO[Option[RequiredOAuth2ApiConfig]] = {
+    for {
       maybeApi <- DBIO.from(dataService.oauth2Apis.find(data.apiId))
       maybeApplication <- data.application.map { appData =>
         DBIO.from(dataService.oauth2Applications.find(appData.applicationId))
@@ -130,7 +130,6 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig
-
-    dataService.run(action)
   }
+
 }
