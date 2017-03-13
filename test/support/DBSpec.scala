@@ -1,32 +1,29 @@
 package support
 
 import com.typesafe.config.ConfigFactory
-import play.api.db.Databases
-import play.api.db.evolutions.Evolutions
-import services.{AWSLambdaService, PostgresDataService}
-import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase, _}
-import json.{BehaviorGroupData, BehaviorParameterData, BehaviorParameterTypeData, InputData}
+import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
+import json._
 import mocks.MockAWSLambdaService
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
 import models.behaviors.savedanswer.SavedAnswer
-import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
 import modules.ActorModule
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
-import play.api.{Application, Configuration}
 import play.api.cache.CacheApi
+import play.api.db.Databases
+import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.{Application, Configuration}
+import services.{AWSLambdaService, PostgresDataService}
 
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 
 trait DBSpec extends PlaySpec with OneAppPerSuite {
@@ -47,74 +44,83 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
 
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
 
-  def newSavedInputFor(groupVersion: BehaviorGroupVersion): Input = {
-    val data = InputData(Some(IDs.next), Some(IDs.next), None, IDs.next, None, "", false, false)
-    runNow(dataService.inputs.createFor(data, groupVersion))
-  }
-
   def newSavedAnswerFor(input: Input, user: User): SavedAnswer = {
     runNow(dataService.savedAnswers.ensureFor(input, "answer", user))
   }
 
-  def newSavedParamFor(
-                        version: BehaviorVersion,
-                        maybeType: Option[BehaviorParameterTypeData] = None,
-                        isSavedForTeam: Option[Boolean] = None,
-                        isSavedForUser: Option[Boolean] = None,
-                        maybeExistingInput: Option[Input] = None
-                      ): BehaviorParameter = {
-    val input = maybeExistingInput.map { input =>
-      runNow(InputData.fromInput(input, dataService).flatMap { inputData =>
-        dataService.inputs.ensureFor(inputData, version.groupVersion)
-      })
-    }.getOrElse {
-      val inputData = InputData(Some(IDs.next), Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity))
-      runNow(dataService.inputs.createFor(inputData, version.groupVersion))
+  def newParamDataFor(
+                       maybeType: Option[BehaviorParameterTypeData] = None,
+                       isSavedForTeam: Option[Boolean] = None,
+                       isSavedForUser: Option[Boolean] = None,
+                       maybeExistingInputData: Option[InputData] = None
+                     ): BehaviorParameterData = {
+    val inputData = maybeExistingInputData.getOrElse {
+      InputData(Some(IDs.next), Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity))
     }
-    val paramTypeData = runNow(BehaviorParameterTypeData.from(input.paramType, dataService))
-    val data =
-      Seq(
-        BehaviorParameterData(
-          input.name,
-          Some(paramTypeData),
-          input.question,
-          Some(input.isSavedForTeam),
-          Some(input.isSavedForUser),
-          Some(input.inputId),
-          Some(input.id),
-          input.maybeExportId
-        )
-      )
-    runNow(dataService.behaviorParameters.ensureFor(version, data)).head
+    BehaviorParameterData(
+      inputData.name,
+      inputData.paramType,
+      inputData.question,
+      Some(inputData.isSavedForTeam),
+      Some(inputData.isSavedForUser),
+      inputData.inputId,
+      inputData.id,
+      inputData.exportId
+    )
   }
 
-  def newSavedTriggerFor(version: BehaviorVersion): MessageTrigger = {
-    runNow(dataService.messageTriggers.createFor(version, "foo", false, false, false))
+  def newTriggerData: BehaviorTriggerData = {
+    BehaviorTriggerData("foo", false, false, false)
   }
 
-  def newSavedGroupVersionFor(group: BehaviorGroup, user: User): BehaviorGroupVersion = {
-    val groupVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user: User))
-    val behaviors = runNow(dataService.behaviors.allForGroup(group))
-    behaviors.map { ea =>
-      newSavedVersionFor(ea, groupVersion)
-    }
-    groupVersion
+  def newGroupVersionDataFor(group: BehaviorGroup, user: User): BehaviorGroupData = {
+    BehaviorGroupData(
+      Some(group.id),
+      group.team.id,
+      name = None,
+      description = None,
+      icon = None,
+      actionInputs = Seq(),
+      dataTypeInputs = Seq(),
+      behaviorVersions = Seq(),
+      githubUrl = None,
+      exportId = None,
+      createdAt = None
+    )
+  }
+
+  def newBehaviorVersionDataFor(behavior: Behavior): BehaviorVersionData = {
+    BehaviorVersionData.newUnsavedFor(behavior.team.id, behavior.isDataType, dataService).copy(
+      behaviorId = Some(behavior.id),
+      isNewBehavior = Some(false)
+    )
+  }
+
+  def newBehaviorVersionDataFor(group: BehaviorGroup, isDataType: Boolean): BehaviorVersionData = {
+    BehaviorVersionData.newUnsavedFor(group.team.id, isDataType, dataService)
+  }
+
+  def defaultGroupVersionDataFor(group: BehaviorGroup, user: User): BehaviorGroupData = {
+    val param1Data = newParamDataFor()
+    val param2Data = newParamDataFor()
+    val behaviorVersion1Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, dataService).copy(
+      params = Seq(param1Data)
+    )
+    val behaviorVersion2Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, dataService).copy(
+      params = Seq(param2Data)
+    )
+    newGroupVersionDataFor(group, user).copy(
+      behaviorVersions = Seq(behaviorVersion1Data, behaviorVersion2Data)
+    )
+  }
+
+  def newSavedGroupVersionFor(group: BehaviorGroup, user: User, maybeData: Option[BehaviorGroupData] = None): BehaviorGroupVersion = {
+    val data = maybeData.getOrElse(defaultGroupVersionDataFor(group, user))
+    runNow(dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)))
   }
 
   def behaviorVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {
     runNow(dataService.behaviorVersions.findFor(behavior, groupVersion)).get
-  }
-
-  def newSavedVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {
-    runNow(dataService.behaviorVersions.createFor(behavior, groupVersion, None, None))
-  }
-
-  def newSavedBehaviorFor(group: BehaviorGroup): Behavior = {
-    runNow(dataService.behaviors.createFor(group, None, None, None))
-  }
-
-  def newSavedDataTypeFor(group: BehaviorGroup): Behavior = {
-    runNow(dataService.behaviors.createFor(group, None, None, Some("Some type")))
   }
 
   def newSavedBehaviorGroupFor(team: Team): BehaviorGroup = {

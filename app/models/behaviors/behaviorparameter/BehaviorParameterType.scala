@@ -132,7 +132,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
 
   val id = behaviorVersion.id
   override val exportId: String = behaviorVersion.behavior.maybeExportId.getOrElse(id)
-  val name = behaviorVersion.behavior.maybeDataTypeName.getOrElse("Unnamed data type")
+  val name = behaviorVersion.maybeName.getOrElse("Unnamed data type")
 
   case class ValidValue(id: String, label: String)
   implicit val validValueReads = Json.reads[ValidValue]

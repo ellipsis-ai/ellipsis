@@ -61,14 +61,15 @@ class BehaviorParameterServiceImpl @Inject() (
       _ <- dataService.run(all.filter(_.behaviorVersionId === behaviorVersion.id).delete)
       newParams <- Future.sequence(params.zipWithIndex.map { case(data, i) =>
         for {
-          maybeExistingInput <- data.inputVersionId.map { inputId =>
-            dataService.inputs.find(inputId)
+          maybeExistingInput <- data.inputVersionId.map { inputVersionId =>
+            dataService.inputs.find(inputVersionId)
           }.getOrElse(Future.successful(None))
-          maybeParam <- maybeExistingInput.map { input =>
-            createFor(input, i + 1, behaviorVersion).map(Some(_))
-          }.getOrElse(Future.successful(None))
-        } yield maybeParam
-      }).map(_.flatten)
+          input <- maybeExistingInput.map(Future.successful).getOrElse {
+            dataService.inputs.createFor(data.inputData, behaviorVersion.groupVersion)
+          }
+          param <- createFor(input, i + 1, behaviorVersion)
+        } yield param
+      })
     } yield newParams
   }
 

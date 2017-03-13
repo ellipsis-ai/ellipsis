@@ -1,5 +1,6 @@
 package models
 
+import json.BehaviorVersionData
 import support.DBSpec
 
 class SavedAnswerServiceSpec extends DBSpec {
@@ -12,11 +13,20 @@ class SavedAnswerServiceSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val anotherUser = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val behavior = newSavedBehaviorFor(group)
-        val groupVersion = newSavedGroupVersionFor(group, user)
-        val version = behaviorVersionFor(behavior, groupVersion)
-        val param = newSavedParamFor(version, isSavedForUser = Some(true))
+
+        val paramData = newParamDataFor(isSavedForUser = Some(true))
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+          params = Seq(paramData)
+        )
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+        val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
+        val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
         val input = param.input
+
         val savedAnswer = newSavedAnswerFor(input, user)
         val anotherSavedAnswer = newSavedAnswerFor(input, anotherUser)
 
@@ -41,11 +51,20 @@ class SavedAnswerServiceSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val anotherUser = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val behavior = newSavedBehaviorFor(group)
-        val groupVersion = newSavedGroupVersionFor(group, user)
-        val version = behaviorVersionFor(behavior, groupVersion)
-        val param = newSavedParamFor(version, isSavedForUser = Some(true))
+
+        val paramData = newParamDataFor(isSavedForUser = Some(true))
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+          params = Seq(paramData)
+        )
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+        val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
+        val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
         val input = param.input
+
         val savedAnswer = newSavedAnswerFor(input, user)
         val anotherSavedAnswer = newSavedAnswerFor(input, anotherUser)
 
@@ -65,11 +84,20 @@ class SavedAnswerServiceSpec extends DBSpec {
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val behavior = newSavedBehaviorFor(group)
-        val groupVersion = newSavedGroupVersionFor(group, user)
-        val version = behaviorVersionFor(behavior, groupVersion)
-        val param = newSavedParamFor(version, isSavedForTeam = Some(true))
+
+        val paramData = newParamDataFor(isSavedForTeam = Some(true))
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+          params = Seq(paramData)
+        )
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+        val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
+        val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
         val input = param.input
+
         val savedAnswer = newSavedAnswerFor(input, user)
 
         runNow(dataService.savedAnswers.allFor(user, Seq(param))) mustBe Seq(savedAnswer)

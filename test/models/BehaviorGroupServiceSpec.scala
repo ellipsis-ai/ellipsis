@@ -1,5 +1,6 @@
 package models
 
+import json.BehaviorVersionData
 import support.DBSpec
 
 class BehaviorGroupServiceSpec extends DBSpec {
@@ -11,15 +12,20 @@ class BehaviorGroupServiceSpec extends DBSpec {
         val team = newSavedTeam
         val user = newSavedUserOn(team)
 
-        val groups = 1.to(3).map { _ => newSavedBehaviorGroupFor(team) }
-        val groupVersions = groups.map { ea => newSavedGroupVersionFor(ea, user) }
-
-        groupVersions.foreach { ea =>
-          1.to(3).map { _ =>
-            val behavior = newSavedBehaviorFor(ea.group)
-            val behaviorVersion = newSavedVersionFor(behavior, ea)
-            newSavedParamFor(behaviorVersion)
+        val groups = 1.to(3).map { _ =>
+          newSavedBehaviorGroupFor(team)
+        }
+        val groupVersions = groups.map { ea =>
+          val behaviorVersionsData = 1.to(3).map { _ =>
+            val paramData = newParamDataFor()
+            BehaviorVersionData.newUnsavedFor(ea.team.id, isDataType = false, dataService).copy(
+              params = Seq(paramData)
+            )
           }
+          val groupData = newGroupVersionDataFor(ea, user).copy(
+            behaviorVersions = behaviorVersionsData
+          )
+          newSavedGroupVersionFor(ea, user, Some(groupData))
         }
 
         val reloadedGroupVersions = groupVersions.flatMap { ea =>

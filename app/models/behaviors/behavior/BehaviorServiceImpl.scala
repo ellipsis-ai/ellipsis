@@ -22,7 +22,7 @@ case class RawBehavior(
                         teamId: String,
                         groupId: Option[String],
                         maybeExportId: Option[String],
-                        maybeDataTypeName: Option[String],
+                        isDataType: Boolean,
                         createdAt: OffsetDateTime
                       )
 
@@ -32,10 +32,10 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
   def teamId = column[String]("team_id")
   def groupId = column[Option[String]]("group_id")
   def maybeExportId = column[Option[String]]("export_id")
-  def maybeDataTypeName = column[Option[String]]("data_type_name")
+  def isDataType = column[Boolean]("is_data_type")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, teamId, groupId, maybeExportId, maybeDataTypeName, createdAt) <>
+  def * = (id, teamId, groupId, maybeExportId, isDataType, createdAt) <>
     ((RawBehavior.apply _).tupled, RawBehavior.unapply _)
 }
 
@@ -119,31 +119,21 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(allForGroupAction(group))
   }
 
-  def createFor(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
-    val raw = RawBehavior(maybeIdToUse.getOrElse(IDs.next), group.team.id, Some(group.id), maybeExportId, maybeDataTypeName, OffsetDateTime.now)
+  def createFor(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): Future[Behavior] = {
+    val raw = RawBehavior(maybeIdToUse.getOrElse(IDs.next), group.team.id, Some(group.id), maybeExportId, isDataType, OffsetDateTime.now)
 
     val action = (all += raw).map { _ =>
-      Behavior(raw.id, group.team, Some(group), raw.maybeExportId, raw.maybeDataTypeName, raw.createdAt)
+      Behavior(raw.id, group.team, Some(group), raw.maybeExportId, raw.isDataType, raw.createdAt)
     }
 
     dataService.run(action)
   }
 
-  def createFor(team: Team, maybeIdToUse: Option[String], maybeExportId: Option[String], maybeDataTypeName: Option[String]): Future[Behavior] = {
+  def createFor(team: Team, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): Future[Behavior] = {
     for {
       group <- dataService.behaviorGroups.createFor(maybeExportId, team)
-      behavior <- createFor(group, maybeIdToUse, maybeExportId, maybeDataTypeName)
+      behavior <- createFor(group, maybeIdToUse, maybeExportId, isDataType)
     } yield behavior
-  }
-
-  def updateDataTypeNameFor(behavior: Behavior, maybeName: Option[String]): Future[Behavior] = {
-    val action =
-      all.
-        filter(_.id === behavior.id).
-        map(_.maybeDataTypeName).
-        update(maybeName).
-        map(_ => behavior.copy(maybeDataTypeName = maybeName))
-    dataService.run(action)
   }
 
   def delete(behavior: Behavior): Future[Behavior] = {

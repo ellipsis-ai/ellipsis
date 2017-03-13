@@ -176,8 +176,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     "respond with a valid result" in new ControllerTestContext {
       running(app) {
         val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
-        val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
-        val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
+        val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+        val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService)
         val actionName = "foo"
         when(dataService.behaviors.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
@@ -271,8 +271,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     "respond with a valid result" in new ControllerTestContext {
       running(app) {
         val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
-        val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
-        val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
+        val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+        val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService)
         val actionName = "foo"
         val recurrenceString = "every day at noon"
@@ -341,8 +341,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     "respond with a valid result" in new ControllerTestContext {
       running(app) {
         val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
-        val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
-        val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), None, OffsetDateTime.now)
+        val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+        val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService)
         val actionName = "foo"
         when(dataService.behaviors.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))

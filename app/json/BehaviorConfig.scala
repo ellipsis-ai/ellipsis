@@ -7,7 +7,7 @@ case class BehaviorConfig(
                            requiredOAuth2ApiConfigs: Option[Seq[RequiredOAuth2ApiConfigData]],
                            requiredSimpleTokenApis: Option[Seq[RequiredSimpleTokenApiData]],
                            forcePrivateResponse: Option[Boolean],
-                           dataTypeName: Option[String]
+                           isDataType: Boolean
                            ) {
   val knownEnvVarsUsed: Seq[String] = {
     aws.map(_.knownEnvVarsUsed).getOrElse(Seq())

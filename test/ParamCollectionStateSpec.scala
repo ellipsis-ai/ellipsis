@@ -1,3 +1,4 @@
+import json.BehaviorVersionData
 import models.behaviors.conversations.{InvokeBehaviorConversation, ParamCollectionState}
 import models.behaviors.testing.TestEvent
 import support.DBSpec
@@ -12,12 +13,23 @@ class ParamCollectionStateSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val event = TestEvent(user, team, "foo", includesBotMention = false)
         val group = newSavedBehaviorGroupFor(team)
-        val behavior = newSavedBehaviorFor(group)
-        val groupVersion = newSavedGroupVersionFor(group, user)
-        val version = behaviorVersionFor(behavior, groupVersion)
-        val trigger = newSavedTriggerFor(version)
-        val conversation = runNow(InvokeBehaviorConversation.createFor(version, event, event.maybeChannel, Some(trigger), dataService))
-        val param = newSavedParamFor(version, isSavedForTeam = Some(true))
+
+        val paramData = newParamDataFor(isSavedForTeam = Some(true))
+        val triggerData = newTriggerData
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+          params = Seq(paramData),
+          triggers = Seq(triggerData)
+        )
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+        val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
+        val trigger = runNow(dataService.messageTriggers.allFor(behaviorVersion)).head
+        val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, Some(trigger), dataService))
+        val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
+
         val savedAnswer = newSavedAnswerFor(param.input, user)
         val state = runNow(ParamCollectionState.from(conversation, event, dataService, cache, configuration))
 
@@ -31,12 +43,23 @@ class ParamCollectionStateSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val event = TestEvent(user, team, "foo", includesBotMention = false)
         val group = newSavedBehaviorGroupFor(team)
-        val behavior = newSavedBehaviorFor(group)
-        val groupVersion = newSavedGroupVersionFor(group, user)
-        val version = behaviorVersionFor(behavior, groupVersion)
-        val trigger = newSavedTriggerFor(version)
-        val conversation = runNow(InvokeBehaviorConversation.createFor(version, event, event.maybeChannel, Some(trigger), dataService))
-        val param = newSavedParamFor(version, isSavedForUser = Some(true))
+
+        val paramData = newParamDataFor(isSavedForUser = Some(true))
+        val triggerData = newTriggerData
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+          params = Seq(paramData),
+          triggers = Seq(triggerData)
+        )
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+        val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
+        val trigger = runNow(dataService.messageTriggers.allFor(behaviorVersion)).head
+        val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, Some(trigger), dataService))
+        val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
+
         val savedAnswer = newSavedAnswerFor(param.input, user)
         val state = runNow(ParamCollectionState.from(conversation, event, dataService, cache, configuration))
 
@@ -50,12 +73,23 @@ class ParamCollectionStateSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val event = TestEvent(user, team, "foo", includesBotMention = false)
         val group = newSavedBehaviorGroupFor(team)
-        val behavior = newSavedBehaviorFor(group)
-        val groupVersion = newSavedGroupVersionFor(group, user)
-        val version = behaviorVersionFor(behavior, groupVersion)
-        val trigger = newSavedTriggerFor(version)
-        val conversation = runNow(InvokeBehaviorConversation.createFor(version, event, event.maybeChannel, Some(trigger), dataService))
-        val param = newSavedParamFor(version)
+
+        val paramData = newParamDataFor()
+        val triggerData = newTriggerData
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+          params = Seq(paramData),
+          triggers = Seq(triggerData)
+        )
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+        val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
+        val trigger = runNow(dataService.messageTriggers.allFor(behaviorVersion)).head
+        val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, Some(trigger), dataService))
+        val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
+
         val savedAnswer = newSavedAnswerFor(param.input, user)
         val state = runNow(ParamCollectionState.from(conversation, event, dataService, cache, configuration))
 

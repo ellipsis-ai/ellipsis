@@ -38,7 +38,7 @@ case class BehaviorVersion(
   val team: Team = behavior.team
 
   val exportName: String = {
-    behavior.maybeDataTypeName.orElse(maybeName).getOrElse(id)
+    maybeName.getOrElse(id)
   }
 
   def isSkill: Boolean = {

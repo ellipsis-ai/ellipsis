@@ -24,7 +24,7 @@ object BehaviorQueries {
       team,
       maybeGroup,
       raw.maybeExportId,
-      raw.maybeDataTypeName,
+      raw.isDataType,
       raw.createdAt
     )
   }

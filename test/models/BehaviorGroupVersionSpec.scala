@@ -1,7 +1,7 @@
 package models
 
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
-import json.BehaviorGroupData
+import json.{BehaviorGroupData, BehaviorVersionData}
 import models.behaviors.behaviorgroup.BehaviorGroup
 import support.DBSpec
 
@@ -30,13 +30,20 @@ class BehaviorGroupVersionSpec extends DBSpec {
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val behavior = newSavedBehaviorFor(group)
-        val firstGroupVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user))
-        val firstBehaviorVersion = newSavedVersionFor(behavior, firstGroupVersion)
-        val input = newSavedInputFor(firstGroupVersion)
-        val param = newSavedParamFor(firstBehaviorVersion, maybeExistingInput = Some(input))
-        val savedAnswer = newSavedAnswerFor(input, user)
-        runNow(dataService.savedAnswers.find(input, user)).map(_.valueString) mustBe Some(savedAnswer.valueString)
+
+        val paramData = newParamDataFor()
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, dataService).copy(
+          params = Seq(paramData)
+        )
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+        val firstGroupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        val maybeInput = runNow(dataService.inputs.allForGroupVersion(firstGroupVersion)).headOption
+        maybeInput.isDefined mustBe true
+
+        val savedAnswer = newSavedAnswerFor(maybeInput.get, user)
+        runNow(dataService.savedAnswers.find(maybeInput.get, user)).map(_.valueString) mustBe Some(savedAnswer.valueString)
 
         val groupVersionData = runNow(BehaviorGroupData.buildFor(firstGroupVersion, user, dataService)).copyForNewVersionOf(group)
         val secondGroupVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user, groupVersionData))

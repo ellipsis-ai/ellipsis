@@ -103,7 +103,7 @@ case class BehaviorVersionData(
     copy(params = paramsWithEnsuredInputIds)
   }
 
-  lazy val isDataType: Boolean = config.dataTypeName.isDefined
+  lazy val isDataType: Boolean = config.isDataType
 
   lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption
 }
@@ -169,7 +169,7 @@ object BehaviorVersionData {
       "",
       Seq(),
       Seq(),
-      BehaviorConfig(None, None, None, None, None, None, if (isDataType) { Some("") } else { None }),
+      BehaviorConfig(None, None, None, None, None, None, isDataType),
       None,
       None,
       None,
@@ -258,7 +258,7 @@ object BehaviorVersionData {
         }
         val requiredOAuth2ApiConfigData = requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
         val requiredSimpleTokenApiData = requiredSimpleTokenApis.map(ea => RequiredSimpleTokenApiData.from(ea))
-        val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.maybeDataTypeName)
+        val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.isDataType)
         BehaviorVersionData.buildFor(
           Some(behaviorVersion.id),
           behaviorVersion.team.id,
