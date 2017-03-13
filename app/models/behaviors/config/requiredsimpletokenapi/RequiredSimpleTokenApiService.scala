@@ -4,6 +4,7 @@ import json.RequiredSimpleTokenApiData
 import models.accounts.simpletokenapi.SimpleTokenApi
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -19,6 +20,6 @@ trait RequiredSimpleTokenApiService {
 
   def save(requiredOAuth2ApiConfig: RequiredSimpleTokenApi): Future[RequiredSimpleTokenApi]
 
-  def maybeCreateFor(data: RequiredSimpleTokenApiData, behaviorVersion: BehaviorVersion): Future[Option[RequiredSimpleTokenApi]]
+  def maybeCreateForAction(data: RequiredSimpleTokenApiData, behaviorVersion: BehaviorVersion): DBIO[Option[RequiredSimpleTokenApi]]
 
 }

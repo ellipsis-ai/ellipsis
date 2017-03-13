@@ -4,6 +4,7 @@ import json.RequiredOAuth2ApiConfigData
 import models.accounts.oauth2api.OAuth2Api
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -19,6 +20,6 @@ trait RequiredOAuth2ApiConfigService {
 
   def save(requiredOAuth2ApiConfig: RequiredOAuth2ApiConfig): Future[RequiredOAuth2ApiConfig]
 
-  def maybeCreateFor(data: RequiredOAuth2ApiConfigData, behaviorVersion: BehaviorVersion): Future[Option[RequiredOAuth2ApiConfig]]
+  def maybeCreateForAction(data: RequiredOAuth2ApiConfigData, behaviorVersion: BehaviorVersion): DBIO[Option[RequiredOAuth2ApiConfig]]
 
 }

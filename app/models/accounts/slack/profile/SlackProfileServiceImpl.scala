@@ -50,9 +50,12 @@ class SlackProfileServiceImpl @Inject() (
     dataService.run(allForQuery(teamId).result)
   }
 
+  def findAction(loginInfo: LoginInfo): DBIO[Option[SlackProfile]] = {
+    findSlackProfileQuery(loginInfo.providerID, loginInfo.providerKey).result.headOption
+  }
+
   def find(loginInfo: LoginInfo): Future[Option[SlackProfile]] = {
-    val action = findSlackProfileQuery(loginInfo.providerID, loginInfo.providerKey).result.headOption
-    dataService.run(action)
+    dataService.run(findAction(loginInfo))
   }
 
   def deleteAll(): Future[Unit] = {

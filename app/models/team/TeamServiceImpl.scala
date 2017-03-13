@@ -27,9 +27,12 @@ class TeamServiceImpl @Inject() (
     dataService.run(all.result)
   }
 
+  def findAction(id: String): DBIO[Option[Team]] = {
+    findQueryFor(id).result.map(_.headOption)
+  }
+
   def find(id: String): Future[Option[Team]] = {
-    val action = findQueryFor(id).result.map(_.headOption)
-    dataService.run(action)
+    dataService.run(findAction(id))
   }
 
   def findByName(name: String): Future[Option[Team]] = {

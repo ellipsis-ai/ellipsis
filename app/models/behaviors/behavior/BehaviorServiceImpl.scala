@@ -49,9 +49,12 @@ class BehaviorServiceImpl @Inject() (
 
   import BehaviorQueries._
 
+  def findWithoutAccessCheckAction(id: String): DBIO[Option[Behavior]] = {
+    findQuery(id).result.map(_.headOption.map(tuple2Behavior))
+  }
+
   def findWithoutAccessCheck(id: String): Future[Option[Behavior]] = {
-    val action = findQuery(id).result.map(_.headOption.map(tuple2Behavior))
-    dataService.run(action)
+    dataService.run(findWithoutAccessCheckAction(id))
   }
 
   def findByName(name: String, group: BehaviorGroup): Future[Option[Behavior]] = {
@@ -91,6 +94,21 @@ class BehaviorServiceImpl @Inject() (
     }
   }
 
+  def findAction(id: String, user: User): DBIO[Option[Behavior]] = {
+    for {
+      maybeBehavior <- findWithoutAccessCheckAction(id)
+      canAccess <- maybeBehavior.map { behavior =>
+        dataService.users.canAccessAction(user, behavior)
+      }.getOrElse(DBIO.successful(false))
+    } yield {
+      if (canAccess) {
+        maybeBehavior
+      } else {
+        None
+      }
+    }
+  }
+
   def find(id: String, user: User): Future[Option[Behavior]] = {
     for {
       maybeBehavior <- findWithoutAccessCheck(id)
@@ -119,21 +137,12 @@ class BehaviorServiceImpl @Inject() (
     dataService.run(allForGroupAction(group))
   }
 
-  def createFor(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): Future[Behavior] = {
+  def createForAction(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): DBIO[Behavior] = {
     val raw = RawBehavior(maybeIdToUse.getOrElse(IDs.next), group.team.id, Some(group.id), maybeExportId, isDataType, OffsetDateTime.now)
 
-    val action = (all += raw).map { _ =>
+    (all += raw).map { _ =>
       Behavior(raw.id, group.team, Some(group), raw.maybeExportId, raw.isDataType, raw.createdAt)
     }
-
-    dataService.run(action)
-  }
-
-  def createFor(team: Team, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): Future[Behavior] = {
-    for {
-      group <- dataService.behaviorGroups.createFor(maybeExportId, team)
-      behavior <- createFor(group, maybeIdToUse, maybeExportId, isDataType)
-    } yield behavior
   }
 
   def delete(behavior: Behavior): Future[Behavior] = {

@@ -10,6 +10,7 @@ import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessR
 import models.team.Team
 import play.api.libs.json._
 import services.{AWSLambdaConstants, DataService}
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -409,16 +410,16 @@ object BehaviorParameterType {
     }
   }
 
-  def allFor(maybeBehaviorGroupVersion: Option[BehaviorGroupVersion], dataService: DataService): Future[Seq[BehaviorParameterType]] = {
+  def allForAction(maybeBehaviorGroupVersion: Option[BehaviorGroupVersion], dataService: DataService): DBIO[Seq[BehaviorParameterType]] = {
     maybeBehaviorGroupVersion.map { groupVersion =>
-      dataService.behaviorVersions.dataTypesForGroupVersion(groupVersion)
-    }.getOrElse(Future.successful(Seq())).map { behaviorBacked =>
+      dataService.behaviorVersions.dataTypesForGroupVersionAction(groupVersion)
+    }.getOrElse(DBIO.successful(Seq())).map { behaviorBacked =>
       allBuiltin ++ behaviorBacked.map(BehaviorBackedDataType.apply)
     }
   }
 
-  def find(id: String, behaviorGroupVersion: BehaviorGroupVersion, dataService: DataService): Future[Option[BehaviorParameterType]] = {
-    allFor(Some(behaviorGroupVersion), dataService).map { all =>
+  def findAction(id: String, behaviorGroupVersion: BehaviorGroupVersion, dataService: DataService): DBIO[Option[BehaviorParameterType]] = {
+    allForAction(Some(behaviorGroupVersion), dataService).map { all =>
       all.find {
         case paramType: BehaviorBackedDataType => paramType.id == id || paramType.behaviorVersion.maybeExportId.contains(id)
         case paramType: BehaviorParameterType => paramType.id == id

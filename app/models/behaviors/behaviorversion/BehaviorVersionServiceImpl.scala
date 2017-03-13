@@ -109,11 +109,14 @@ class BehaviorVersionServiceImpl @Inject() (
   }
   val allForGroupVersionQuery = Compiled(uncompiledAllForGroupVersionQuery _)
 
-  def allForGroupVersion(groupVersion: BehaviorGroupVersion): Future[Seq[BehaviorVersion]] = {
-    val action = allForGroupVersionQuery(groupVersion.id).result.map { r =>
+  def allForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[BehaviorVersion]] = {
+    allForGroupVersionQuery(groupVersion.id).result.map { r =>
       r.map(tuple2BehaviorVersion)
     }
-    dataService.run(action)
+  }
+
+  def allForGroupVersion(groupVersion: BehaviorGroupVersion): Future[Seq[BehaviorVersion]] = {
+    dataService.run(allForGroupVersionAction(groupVersion))
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
@@ -168,12 +171,12 @@ class BehaviorVersionServiceImpl @Inject() (
     }
   }
 
-  def createFor(
-                 behavior: Behavior,
-                 groupVersion: BehaviorGroupVersion,
-                 maybeUser: Option[User],
-                 maybeId: Option[String]
-               ): Future[BehaviorVersion] = {
+  def createForAction(
+                       behavior: Behavior,
+                       groupVersion: BehaviorGroupVersion,
+                       maybeUser: Option[User],
+                       maybeId: Option[String]
+                     ): DBIO[BehaviorVersion] = {
     val raw = RawBehaviorVersion(
       maybeId.getOrElse(IDs.next),
       behavior.id,
@@ -187,23 +190,22 @@ class BehaviorVersionServiceImpl @Inject() (
       OffsetDateTime.now
     )
 
-    val action = (all += raw).map { _ =>
+    (all += raw).map { _ =>
       BehaviorVersion(raw.id, behavior, groupVersion, raw.maybeDescription, raw.maybeName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)
     }
-    dataService.run(action)
   }
 
-  def createFor(
-                 behavior: Behavior,
-                 groupVersion: BehaviorGroupVersion,
-                 maybeUser: Option[User],
-                 data: BehaviorVersionData
-               ): Future[BehaviorVersion] = {
+  def createForAction(
+                       behavior: Behavior,
+                       groupVersion: BehaviorGroupVersion,
+                       maybeUser: Option[User],
+                       data: BehaviorVersionData
+                     ): DBIO[BehaviorVersion] = {
     for {
-      behaviorVersion <- createFor(behavior, groupVersion, maybeUser, data.id)
+      behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id)
       _ <-
       for {
-        updated <- save(behaviorVersion.copy(
+        updated <- saveAction(behaviorVersion.copy(
           maybeName = data.name,
           maybeDescription = data.description,
           maybeFunctionBody = Some(data.functionBody),
@@ -211,34 +213,34 @@ class BehaviorVersionServiceImpl @Inject() (
           forcePrivateResponse = data.config.forcePrivateResponse.exists(identity)
         ))
         maybeAWSConfig <- data.awsConfig.map { c =>
-          dataService.awsConfigs.createFor(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
-        }.getOrElse(Future.successful(None))
-        requiredOAuth2ApiConfigs <- Future.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
-          dataService.requiredOAuth2ApiConfigs.maybeCreateFor(requiredData, updated)
+          dataService.awsConfigs.createForAction(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
+        }.getOrElse(DBIO.successful(None))
+        requiredOAuth2ApiConfigs <- DBIO.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
+          dataService.requiredOAuth2ApiConfigs.maybeCreateForAction(requiredData, updated)
         }).map(_.flatten)
-        requiredSimpleTokenApis <- Future.sequence(data.config.requiredSimpleTokenApis.getOrElse(Seq()).map { requiredData =>
-          dataService.requiredSimpleTokenApis.maybeCreateFor(requiredData, updated)
+        requiredSimpleTokenApis <- DBIO.sequence(data.config.requiredSimpleTokenApis.getOrElse(Seq()).map { requiredData =>
+          dataService.requiredSimpleTokenApis.maybeCreateForAction(requiredData, updated)
         }).map(_.flatten)
-        _ <- lambdaService.deployFunctionFor(
+        _ <- DBIO.from(lambdaService.deployFunctionFor(
           updated,
           data.functionBody,
           withoutBuiltin(data.params.map(_.name).toArray),
           maybeAWSConfig,
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis
-        )
-        _ <- dataService.behaviorParameters.ensureFor(updated, data.params)
-        _ <- Future.sequence(
+        ))
+        _ <- dataService.behaviorParameters.ensureForAction(updated, data.params)
+        _ <- DBIO.sequence(
           data.triggers.
             filterNot(_.text.trim.isEmpty)
             map { trigger =>
-              dataService.messageTriggers.createFor(
-                updated,
-                trigger.text,
-                trigger.requiresMention,
-                trigger.isRegex,
-                trigger.caseSensitive
-              )
+            dataService.messageTriggers.createForAction(
+              updated,
+              trigger.text,
+              trigger.requiresMention,
+              trigger.isRegex,
+              trigger.caseSensitive
+            )
           }
         )
       } yield Unit
@@ -248,15 +250,14 @@ class BehaviorVersionServiceImpl @Inject() (
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
-  def save(behaviorVersion: BehaviorVersion): Future[BehaviorVersion] = {
+  def saveAction(behaviorVersion: BehaviorVersion): DBIO[BehaviorVersion] = {
     val raw = behaviorVersion.toRaw
     val query = findQueryFor(raw.id)
-    val action = query.result.flatMap { r =>
+    query.result.flatMap { r =>
       r.headOption.map { existing =>
         query.update(raw)
       }.getOrElse(all += raw)
     }.map(_ => behaviorVersion)
-    dataService.run(action)
   }
 
   def delete(behaviorVersion: BehaviorVersion): Future[BehaviorVersion] = {

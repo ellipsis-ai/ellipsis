@@ -19,6 +19,8 @@ trait BehaviorService {
 
   def findByIdOrNameOrTrigger(idOrNameOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]]
 
+  def findAction(id: String, user: User): DBIO[Option[Behavior]]
+
   def find(id: String, user: User): Future[Option[Behavior]]
 
   def allForTeam(team: Team): Future[Seq[Behavior]]
@@ -51,9 +53,7 @@ trait BehaviorService {
     }
   }
 
-  def createFor(team: Team, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): Future[Behavior]
-
-  def createFor(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): Future[Behavior]
+  def createForAction(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): DBIO[Behavior]
 
   def delete(behavior: Behavior): Future[Behavior]
 

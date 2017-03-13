@@ -3,6 +3,7 @@ package models.behaviors.triggers.messagetrigger
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -18,13 +19,13 @@ trait MessageTriggerService {
 
   def allActiveFor(behaviorGroup: BehaviorGroup): Future[Seq[MessageTrigger]]
 
-  def createFor(
-                 behaviorVersion: BehaviorVersion,
-                 pattern: String,
-                 requiresBotMention: Boolean,
-                 shouldTreatAsRegex: Boolean,
-                 isCaseSensitive: Boolean
-               ): Future[MessageTrigger]
+  def createForAction(
+                       behaviorVersion: BehaviorVersion,
+                       pattern: String,
+                       requiresBotMention: Boolean,
+                       shouldTreatAsRegex: Boolean,
+                       isCaseSensitive: Boolean
+                     ): DBIO[MessageTrigger]
 
   def allMatching(pattern: String, team: Team): Future[Seq[MessageTrigger]]
 

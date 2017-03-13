@@ -51,24 +51,27 @@ class InputServiceImpl @Inject() (
 
   import InputQueries._
 
-  def find(id: String): Future[Option[Input]] = {
-    val action = findQuery(id).result.map { r =>
+  def findAction(id: String): DBIO[Option[Input]] = {
+    findQuery(id).result.map { r =>
       r.headOption.map(tuple2Input)
     }
-    dataService.run(action)
   }
 
-  private def maybeParamTypeFor(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): Future[Option[BehaviorParameterType]] = {
+  def find(id: String): Future[Option[Input]] = {
+    dataService.run(findAction(id))
+  }
+
+  private def maybeParamTypeForAction(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Option[BehaviorParameterType]] = {
     (data.paramType.flatMap { paramTypeData =>
       paramTypeData.id.orElse(paramTypeData.exportId).map { id =>
-        BehaviorParameterType.find(id, behaviorGroupVersion, dataService)
+        BehaviorParameterType.findAction(id, behaviorGroupVersion, dataService)
       }
-    }.getOrElse(Future.successful(None)))
+    }.getOrElse(DBIO.successful(None)))
   }
 
-  def createFor(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): Future[Input] = {
-    val action = for {
-      maybeParamType <- DBIO.from(maybeParamTypeFor(data, behaviorGroupVersion))
+  def createForAction(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Input] = {
+    for {
+      maybeParamType <- maybeParamTypeForAction(data, behaviorGroupVersion)
       raw <- DBIO.successful(RawInput(
         data.id.getOrElse(IDs.next),
         data.inputId.getOrElse(IDs.next),
@@ -94,13 +97,12 @@ class InputServiceImpl @Inject() (
         )
       }
     } yield input
-    dataService.run(action)
   }
 
-  def ensureFor(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): Future[Input] = {
+  def ensureForAction(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Input] = {
     for {
-      maybeExisting <- data.id.map(find).getOrElse(Future.successful(None))
-      maybeParamType <- maybeParamTypeFor(data, behaviorGroupVersion)
+      maybeExisting <- data.id.map(findAction).getOrElse(DBIO.successful(None))
+      maybeParamType <- maybeParamTypeForAction(data, behaviorGroupVersion)
       input <- maybeExisting.map { existing =>
         val updated = existing.copy(
           maybeExportId = Some(data.exportId.getOrElse(IDs.next)),
@@ -111,9 +113,8 @@ class InputServiceImpl @Inject() (
           isSavedForUser = data.isSavedForUser,
           behaviorGroupVersion = behaviorGroupVersion
         )
-        val action = uncompiledFindRawQuery(existing.id).update(updated.toRaw).map { _ => updated }
-        dataService.run(action)
-      }.getOrElse(createFor(data, behaviorGroupVersion))
+        uncompiledFindRawQuery(existing.id).update(updated.toRaw).map { _ => updated }
+      }.getOrElse(createForAction(data, behaviorGroupVersion))
     } yield input
   }
 

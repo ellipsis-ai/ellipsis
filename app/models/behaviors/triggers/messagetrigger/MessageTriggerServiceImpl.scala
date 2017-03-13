@@ -93,21 +93,20 @@ class MessageTriggerServiceImpl @Inject() (
     }
   }
 
-  def createFor(
-                 behaviorVersion: BehaviorVersion,
-                 pattern: String,
-                 requiresBotMention: Boolean,
-                 shouldTreatAsRegex: Boolean,
-                 isCaseSensitive: Boolean
-               ): Future[MessageTrigger] = {
+  def createForAction(
+                       behaviorVersion: BehaviorVersion,
+                       pattern: String,
+                       requiresBotMention: Boolean,
+                       shouldTreatAsRegex: Boolean,
+                       isCaseSensitive: Boolean
+                     ): DBIO[MessageTrigger] = {
     val processedPattern = patternWithoutCaseInsensitiveFlag(pattern, shouldTreatAsRegex)
     val isCaseSensitiveIntended = isCaseSensitive && (!shouldTreatAsRegex || caseInsensitiveRegex.findFirstMatchIn(pattern).isEmpty)
     val newRaw = RawMessageTrigger(IDs.next, behaviorVersion.id, processedPattern, requiresBotMention, shouldTreatAsRegex, isCaseSensitiveIntended)
-    val action = (all += newRaw).map(_ => newRaw).map { _ =>
+    (all += newRaw).map(_ => newRaw).map { _ =>
       val triggerType = if (newRaw.shouldTreatAsRegex) RegexMessageTrigger else TemplateMessageTrigger
       triggerType(newRaw.id, behaviorVersion, newRaw.pattern, newRaw.requiresBotMention, newRaw.isCaseSensitive)
     }
-    dataService.run(action)
   }
 
   def allMatching(pattern: String, team: Team): Future[Seq[MessageTrigger]] = {

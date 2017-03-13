@@ -44,8 +44,8 @@ class BehaviorParameterServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  private def createFor(input: Input, rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
-    val action = for {
+  private def createForAction(input: Input, rank: Int, behaviorVersion: BehaviorVersion): DBIO[BehaviorParameter] = {
+    for {
       raw <- DBIO.successful {
         RawBehaviorParameter(IDs.next, rank, Some(input.id), behaviorVersion.id)
       }
@@ -53,21 +53,24 @@ class BehaviorParameterServiceImpl @Inject() (
         BehaviorParameter(raw.id, raw.rank, input, behaviorVersion)
       }
     } yield param
-    dataService.run(action)
   }
 
-  def ensureFor(behaviorVersion: BehaviorVersion, params: Seq[BehaviorParameterData]): Future[Seq[BehaviorParameter]] = {
+  private def createFor(input: Input, rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
+    dataService.run(createForAction(input, rank, behaviorVersion))
+  }
+
+  def ensureForAction(behaviorVersion: BehaviorVersion, params: Seq[BehaviorParameterData]): DBIO[Seq[BehaviorParameter]] = {
     for {
-      _ <- dataService.run(all.filter(_.behaviorVersionId === behaviorVersion.id).delete)
-      newParams <- Future.sequence(params.zipWithIndex.map { case(data, i) =>
+      _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
+      newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
         for {
           maybeExistingInput <- data.inputVersionId.map { inputVersionId =>
-            dataService.inputs.find(inputVersionId)
-          }.getOrElse(Future.successful(None))
-          input <- maybeExistingInput.map(Future.successful).getOrElse {
-            dataService.inputs.createFor(data.inputData, behaviorVersion.groupVersion)
+            dataService.inputs.findAction(inputVersionId)
+          }.getOrElse(DBIO.successful(None))
+          input <- maybeExistingInput.map(DBIO.successful).getOrElse {
+            dataService.inputs.createForAction(data.inputData, behaviorVersion.groupVersion)
           }
-          param <- createFor(input, i + 1, behaviorVersion)
+          param <- createForAction(input, i + 1, behaviorVersion)
         } yield param
       })
     } yield newParams
