@@ -257,11 +257,6 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorProp('config');
   },
 
-  getDataTypeName: function() {
-    var config = this.getBehaviorConfig();
-    return config && config.dataTypeName;
-  },
-
   shouldForcePrivateResponse: function() {
     return !!this.getBehaviorConfig().forcePrivateResponse;
   },
@@ -1031,10 +1026,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  updateDataTypeName: function(newName) {
-    this.setBehaviorProp('config', Object.assign({}, this.getBehaviorConfig(), { dataTypeName: newName }));
-  },
-
   updateDataTypeResultConfig: function(shouldUseSearch) {
     if (shouldUseSearch) {
       var searchQueryParam = this.createNewParam({ name: 'searchQuery' });
@@ -1249,8 +1240,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isDataTypeBehavior: function() {
-    const name = this.getDataTypeName();
-    return name !== null && name !== undefined;
+    return this.getSelectedBehavior() && this.getSelectedBehavior().isDataType();
   },
 
   isSearchDataTypeBehavior: function() {
@@ -2247,8 +2237,8 @@ const BehaviorEditor = React.createClass({
     return (
       <div>
               <BehaviorNameInput
-                name={this.getDataTypeName()}
-                onChange={this.updateDataTypeName}
+                name={this.getBehaviorName()}
+                onChange={this.updateName}
                 placeholder="Data type name"
               />
 

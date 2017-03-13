@@ -6,7 +6,7 @@ define(function(require) {
 
   class BehaviorVersion {
     constructor(props) {
-      var initialTriggerProps = (props.config && props.config.dataTypeName) ? [] : [{}];
+      var initialTriggerProps = (props.config && props.config.isDataType) ? [] : [{}];
       var initialProps = Object.assign({
         functionBody: '',
         triggers: initialTriggerProps.map(ea => new Trigger(ea)),
@@ -37,13 +37,8 @@ define(function(require) {
       });
     }
 
-    getDataTypeName() {
-      return this.config.dataTypeName;
-    }
-
     isDataType() {
-      // empty string means it is a data type
-      return !(this.getDataTypeName() === null || this.getDataTypeName() === undefined);
+      return this.config.isDataType;
     }
 
     getTriggers() {
@@ -93,7 +88,7 @@ define(function(require) {
       return {
         id: this.id,
         exportId: this.exportId,
-        name: this.config.dataTypeName,
+        name: this.name,
         needsConfig: this.needsConfig()
       };
     }
