@@ -38,7 +38,8 @@ return React.createClass({
       myValueString: React.PropTypes.string,
       userAnswerCount: React.PropTypes.number.isRequired
     }),
-    onToggleSavedAnswer: React.PropTypes.func.isRequired
+    onToggleSavedAnswer: React.PropTypes.func.isRequired,
+    onConfigureType: React.PropTypes.func.isRequired
   },
 
   onNameChange: function(newName) {
@@ -68,8 +69,8 @@ return React.createClass({
     this.props.onDelete();
   },
 
-  configureType: function() {
-    window.location.href = jsRoutes.controllers.BehaviorEditorController.edit(this.props.param.paramType.id).url;
+  onConfigureType: function() {
+    this.props.onConfigureType(this.props.param.paramType.id);
   },
 
   isConfigurable: function() {
@@ -240,7 +241,7 @@ return React.createClass({
               ))}
             </Select>
             {ifPresent(this.isConfigurable(), () => (
-              <button type="button" className="button-s button-shrink mbs" onClick={this.configureType}>Edit type…</button>
+              <button type="button" className="button-s button-shrink mbs" onClick={this.onConfigureType}>Edit type…</button>
             ))}
           </div>
           {this.renderSavedAnswerInfo()}

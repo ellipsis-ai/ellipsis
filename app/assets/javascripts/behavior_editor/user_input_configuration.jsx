@@ -38,7 +38,8 @@ define(function(require) {
         })
       ).isRequired,
       onToggleSavedAnswer: React.PropTypes.func.isRequired,
-      animationDisabled: React.PropTypes.bool
+      animationDisabled: React.PropTypes.bool,
+      onConfigureType: React.PropTypes.func.isRequired
     },
 
     onChange: function(index, data) {
@@ -177,6 +178,7 @@ define(function(require) {
                           id={paramIndex}
                           savedAnswers={this.getSavedAnswersFor(param.inputId)}
                           onToggleSavedAnswer={this.props.onToggleSavedAnswer}
+                          onConfigureType={this.props.onConfigureType}
                         />
                         {paramIndex + 1 < this.props.userParams.length ? (
                           <div className="pvxs type-label type-disabled align-c">and</div>

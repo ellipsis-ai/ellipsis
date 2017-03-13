@@ -1460,6 +1460,13 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  onConfigureType: function(paramTypeId) {
+    const typeBehaviorVersion = this.getBehaviorGroup().behaviorVersions.find(ea => ea.id === paramTypeId);
+    if (typeBehaviorVersion) {
+      this.onSelectBehavior(this.getBehaviorGroup().id, typeBehaviorVersion.behaviorId);
+    }
+  },
+
   onParamNameFocus: function(index) {
     this.setState({
       paramNameToSync: this.getBehaviorParams()[index].name
@@ -2152,6 +2159,7 @@ const BehaviorEditor = React.createClass({
                   onParamNameFocus={this.onParamNameFocus}
                   onParamNameBlur={this.onParamNameBlur}
                   onEnterKey={this.onParamEnterKey}
+                  onConfigureType={this.onConfigureType}
                   userParams={this.getBehaviorParams()}
                   paramTypes={this.getParamTypes()}
                   triggers={this.getBehaviorTriggers()}
