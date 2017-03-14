@@ -97,7 +97,7 @@ define(function(require) {
       return {
         id: this.id,
         exportId: this.exportId,
-        name: this.name,
+        name: this.name || "Unnamed data type",
         needsConfig: this.needsConfig()
       };
     }

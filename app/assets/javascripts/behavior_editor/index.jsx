@@ -527,7 +527,8 @@ const BehaviorEditor = React.createClass({
   },
 
   getParamTypes: function() {
-    return this.props.builtinParamTypes.concat(this.getBehaviorGroup().getCustomParamTypes());
+    var customTypes = Sort.arrayAlphabeticalBy(this.getBehaviorGroup().getCustomParamTypes(), (ea) => ea.name);
+    return this.props.builtinParamTypes.concat(customTypes);
   },
 
   /* Setters/togglers */
