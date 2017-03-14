@@ -15,7 +15,7 @@ case class InvocationLogEntry(
                                resultText: String,
                                context: String,
                                maybeUserIdForContext: Option[String],
-                               maybeUser: Option[User],
+                               user: User,
                                runtimeInMilliseconds: Long,
                                createdAt: OffsetDateTime
                              )
