@@ -55,7 +55,7 @@ case class BehaviorVersionData(
       id = Some(IDs.next),
       behaviorId = Some(IDs.next),
       exportId = None,
-      name = name.map(n => s"Copy of $n").orElse(Some("Copy of untitled skill")),
+      name = name.map(n => s"Copy of $n"),
       isNewBehavior = Some(true),
       params = params.map { p =>
         if (p.isSaved) {
