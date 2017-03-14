@@ -19,7 +19,7 @@ define(function(require) {
     }
 
     isRecentlySaved() {
-      return this.createdAt && new Date(this.createdAt) > (new Date() - 60000);
+      return !!this.createdAt && new Date(this.createdAt) > (new Date() - 60000);
     }
 
     getName() {

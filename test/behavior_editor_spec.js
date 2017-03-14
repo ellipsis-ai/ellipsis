@@ -282,6 +282,38 @@ describe('BehaviorEditor', () => {
     });
   });
 
+  describe('isJustSaved', () => {
+    it("false if recent save but isModified() is true", () => {
+      let config = Object.assign({}, editorConfig, {
+        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - 30000 })
+      });
+      let editor = createEditor(config);
+      editor.isModified = jest.fn(() => true);
+      let justSaved = editor.isJustSaved();
+      expect(justSaved).toEqual(false);
+    });
+
+    it("false if not a recent save", () => {
+      let config = Object.assign({}, editorConfig, {
+        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - 120000 })
+      });
+      let editor = createEditor(config);
+      editor.isModified = jest.fn(() => false);
+      let justSaved = editor.isJustSaved();
+      expect(justSaved).toEqual(false);
+    });
+
+    it("true if a recent save and isModified() is false", () => {
+      let config = Object.assign({}, editorConfig, {
+        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - 30000 })
+      });
+      let editor = createEditor(config);
+      editor.isModified = jest.fn(() => false);
+      let justSaved = editor.isJustSaved();
+      expect(justSaved).toEqual(true);
+    });
+  });
+
   describe('getOtherSavedParametersInGroup', () => {
     it("returns the (unique by inputId) saved params", () => {
       const groupId = editorConfig.group.id;
