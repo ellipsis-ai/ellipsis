@@ -1185,7 +1185,9 @@ const BehaviorEditor = React.createClass({
     const selectedBehaviorIdAfter = hasValidSelectedBehaviorId ? this.getSelectedBehaviorId() : this.props.group.behaviorVersions[0].behaviorId;
     this.setState({
       group: this.props.group,
-      selectedBehaviorId: selectedBehaviorIdAfter
+      selectedBehaviorId: selectedBehaviorIdAfter,
+      versions: this.getInitialVersions(),
+      versionsLoadStatus: null
     }, () => {
       this.onSelectBehavior(this.getBehaviorGroup().id, selectedBehaviorIdAfter);
       this.props.onClearActivePanel();
@@ -1504,6 +1506,10 @@ const BehaviorEditor = React.createClass({
     return Sort.arrayAlphabeticalBy(this.props.envVariables || [], (variable) => variable.name);
   },
 
+  getInitialVersions: function() {
+    return [this.getTimestampedGroup(this.props.group)];
+  },
+
   getInitialState: function() {
     const selectedBehavior = this.getSelectedBehavior();
     const hasModifiedTemplate = !!(selectedBehavior && selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text);
@@ -1515,7 +1521,7 @@ const BehaviorEditor = React.createClass({
       envVariables: this.getInitialEnvVariables(),
       hasModifiedTemplate: hasModifiedTemplate,
       notifications: this.buildNotifications(),
-      versions: [this.getTimestampedGroup(this.props.group)],
+      versions: this.getInitialVersions(),
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
