@@ -3,7 +3,6 @@ var React = require('react'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
-  BehaviorNameInput = require('./behavior_name_input'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
   BehaviorVersion = require('../models/behavior_version'),
@@ -317,15 +316,6 @@ const BehaviorEditor = React.createClass({
 
   getFirstLineNumberForCode: function() {
     return 2;
-  },
-
-  getManageDropdownLabel: function() {
-    return (
-      <span>
-        <span className="mobile-display-none">{this.isDataTypeBehavior() ? "Manage data type" : "Manage action"}</span>
-        <span className="mobile-display-only">Manage</span>
-      </span>
-    );
   },
 
   getParamWithSavedAnswers: function() {
@@ -973,10 +963,6 @@ const BehaviorEditor = React.createClass({
 
   toggleEditorSettingsMenu: function() {
     this.toggleActiveDropdown('codeEditorSettings');
-  },
-
-  toggleManageBehaviorMenu: function() {
-    this.toggleActiveDropdown('manageBehavior');
   },
 
   toggleResponseTemplateHelp: function() {
@@ -1814,8 +1800,8 @@ const BehaviorEditor = React.createClass({
               <Notification key={"notification" + index} notification={notification} />
             ))}
             <div className="container container-wide ptm border-top">
-              <div className="columns columns-elastic mobile-columns-float">
-                <div className="column column-expand mobile-column-full">
+              <div>
+                <div>
                   <DynamicLabelButton
                     ref="saveButton"
                     onClick={this.onSaveClick}
@@ -1843,26 +1829,18 @@ const BehaviorEditor = React.createClass({
                       displayWhen: this.isModified()
                     }]}
                     disabledWhen={!this.isExistingBehavior() && !this.isModified()}
-                    className="mrl mbm" onClick={this.checkIfModifiedAndTest}
+                    className={`mbm ${this.isExistingGroup() ? "mrs" : "mrl"}`} onClick={this.checkIfModifiedAndTest}
                   />
+                  {this.isExistingGroup() ? (
+                    <button type="button"
+                      className="mrl mbm"
+                      onClick={this.showVersions}>
+                      Version history…
+                    </button>
+                  ) : null}
                   <div className="display-inline-block align-button mbm">
                     {this.renderFooterStatus()}
                   </div>
-                </div>
-                <div className="column column-shrink align-r pbm">
-                  {this.isExistingBehavior() ? (
-                    <DropdownMenu
-                      openWhen={this.getActiveDropdown() === 'manageBehavior'}
-                      label={this.getManageDropdownLabel()}
-                      labelClassName="button-dropdown-trigger-menu-above"
-                      menuClassName="popup-dropdown-menu-right popup-dropdown-menu-above mobile-popup-dropdown-menu-left"
-                      toggle={this.toggleManageBehaviorMenu}
-                    >
-                      <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
-                      <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this action" />
-                      <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete this action" />
-                    </DropdownMenu>
-                  ) : null}
                 </div>
               </div>
             </div>
@@ -2107,16 +2085,44 @@ const BehaviorEditor = React.createClass({
     );
   },
 
+  renderNameAndManagementActions: function() {
+    return (
+      <div className="container container-wide">
+        <div className="columns columns-elastic mobile-columns-float">
+          <div className="column column-shrink">
+            <Input
+              className="form-input-borderless form-input-l type-bold width-15 mobile-width-full"
+              ref="input"
+              value={this.getBehaviorName()}
+              placeholder={this.isDataTypeBehavior() ? "Data type name" : "Action name (optional)"}
+              onChange={this.updateName}
+            />
+          </div>
+          <div className="column column-expand align-r align-b mobile-align-l mobile-mtl">
+            {this.isExistingBehavior() ? (
+              <span>
+                <button type="button"
+                  className="button-s mrs mbs"
+                  onClick={this.cloneBehavior}>
+                  {this.isDataTypeBehavior() ? "Clone data type…" : "Clone action…" }
+                </button>
+                <button type="button"
+                  className="button-s mrs mbs"
+                  onClick={this.confirmDeleteBehavior}>
+                  {this.isDataTypeBehavior() ? "Delete data type…" : "Delete action…" }
+                </button>
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  },
+
   renderNormalBehavior: function() {
     return (
 
       <div>
-                <BehaviorNameInput
-                  name={this.getBehaviorName()}
-                  onChange={this.updateName}
-                  placeholder="Action name (optional)"
-                />
-
                 <div className="columns container container-wide">
                   <div className="column column-full mobile-column-full">
                     <Input
@@ -2235,12 +2241,6 @@ const BehaviorEditor = React.createClass({
   renderDataTypeBehavior: function() {
     return (
       <div>
-              <BehaviorNameInput
-                name={this.getBehaviorName()}
-                onChange={this.updateName}
-                placeholder="Data type name"
-              />
-
               <hr className="mtl mbn thin bg-gray-light" />
 
               <DataTypeResultConfig
@@ -2281,6 +2281,8 @@ const BehaviorEditor = React.createClass({
           <div className="container container-wide mtl">
             {this.getBehaviorHeading()}
           </div>
+
+          {this.renderNameAndManagementActions()}
 
           {this.renderForBehaviorType()}
         </div>
