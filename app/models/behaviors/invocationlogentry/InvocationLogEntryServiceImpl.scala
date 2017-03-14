@@ -27,7 +27,7 @@ case class RawInvocationLogEntry(
                                   resultText: String,
                                   context: String,
                                   maybeUserIdForContext: Option[String],
-                                  maybeUserId: Option[String],
+                                  userId: String,
                                   runtimeInMilliseconds: Long,
                                   createdAt: OffsetDateTime
                                 )
@@ -42,11 +42,11 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def resultText = column[String]("result_text")
   def context = column[String]("context")
   def maybeUserIdForContext = column[Option[String]]("user_id_for_context")
-  def maybeUserId = column[Option[String]]("user_id")
+  def userId = column[String]("user_id")
   def runtimeInMilliseconds = column[Long]("runtime_in_milliseconds")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, behaviorVersionId, resultType, messageText, paramValues, resultText, context, maybeUserIdForContext, maybeUserId, runtimeInMilliseconds, createdAt) <>
+  def * = (id, behaviorVersionId, resultType, messageText, paramValues, resultText, context, maybeUserIdForContext, userId, runtimeInMilliseconds, createdAt) <>
     ((RawInvocationLogEntry.apply _).tupled, RawInvocationLogEntry.unapply _)
 }
 
@@ -110,7 +110,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         result.fullText,
         event.name,
         maybeUserIdForContext,
-        Some(user.id),
+        user.id,
         runtimeInMilliseconds,
         OffsetDateTime.now
       )
@@ -125,7 +125,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         raw.resultText,
         raw.context,
         raw.maybeUserIdForContext,
-        Some(user),
+        user,
         raw.runtimeInMilliseconds,
         raw.createdAt
       )

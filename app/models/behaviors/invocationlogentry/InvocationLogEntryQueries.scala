@@ -9,14 +9,14 @@ import models.behaviors.behaviorversion.BehaviorVersionQueries
 object InvocationLogEntryQueries {
 
   val all = TableQuery[InvocationLogEntriesTable]
-  val allWithUser = all.joinLeft(UserQueries.all).on(_.maybeUserId === _.id)
+  val allWithUser = all.join(UserQueries.all).on(_.userId === _.id)
   val allWithVersion = allWithUser.join(BehaviorVersionQueries.allWithGroupVersion).on(_._1.behaviorVersionId === _._1._1._1.id)
 
-  type TupleType = ((RawInvocationLogEntry, Option[User]), BehaviorVersionQueries.TupleType)
+  type TupleType = ((RawInvocationLogEntry, User), BehaviorVersionQueries.TupleType)
 
   def tuple2Entry(tuple: TupleType): InvocationLogEntry = {
     val raw = tuple._1._1
-    val maybeUser = tuple._1._2
+    val user = tuple._1._2
     InvocationLogEntry(
       raw.id,
       BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
@@ -26,7 +26,7 @@ object InvocationLogEntryQueries {
       raw.resultText,
       raw.context,
       raw.maybeUserIdForContext,
-      maybeUser,
+      user,
       raw.runtimeInMilliseconds,
       raw.createdAt
     )
@@ -83,7 +83,7 @@ object InvocationLogEntryQueries {
     allWithVersion.
       filter { case(_, (((version, _), _), _)) => version.behaviorId === behaviorId }.
       filter { case((entry, _), _) => entry.createdAt >= from && entry.createdAt <= to }.
-      filter { case((entry, _), _) => maybeUserId.isEmpty || entry.maybeUserId === maybeUserId }
+      filter { case((entry, _), _) => maybeUserId.isEmpty || entry.userId === maybeUserId }
   }
   val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
 }
