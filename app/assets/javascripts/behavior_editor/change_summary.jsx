@@ -15,17 +15,17 @@ define(function(require) {
       let result = "";
       if (actionCount > 1) {
         if (dataTypeCount > 1) {
-          result = `${actionCount} actions, ${dataTypeCount} data types ${adjective}`;
+          result = `${actionCount} actions and ${dataTypeCount} data types ${adjective}`;
         } else if (dataTypeCount === 1) {
-          result = `${actionCount} actions, 1 data type ${adjective}`;
+          result = `${actionCount} actions and 1 data type ${adjective}`;
         } else {
           result = `${actionCount} actions ${adjective}`;
         }
       } else if (actionCount === 1) {
         if (dataTypeCount > 1) {
-          result = `1 action, ${dataTypeCount} data types ${adjective}`;
+          result = `1 action and ${dataTypeCount} data types ${adjective}`;
         } else if (dataTypeCount === 1) {
-          result = `1 action, 1 data type ${adjective}`;
+          result = `1 action and 1 data type ${adjective}`;
         } else {
           result = `1 action ${adjective}`;
         }
