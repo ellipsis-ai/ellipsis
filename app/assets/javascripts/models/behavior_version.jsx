@@ -11,7 +11,8 @@ define(function(require) {
         config: {},
         knownEnvVarsUsed: [],
         shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0),
-        editorScrollPosition: 0
+        editorScrollPosition: 0,
+        createdAt: Date.now()
       }, props);
 
       Object.defineProperties(this, {
@@ -78,8 +79,18 @@ define(function(require) {
       return DeepEqual.isEqual(this.forEqualityComparison(), behaviorVersion.forEqualityComparison());
     }
 
+    timestampForAlphabeticalSort() {
+      const timestampString = Number(new Date(this.createdAt)).toString();
+      const pad = new Array(16).join("0");
+      return pad.substring(0, pad.length - timestampString.length) + timestampString;
+    }
+
     get sortKey() {
-      return this.name || this.getFirstTriggerText();
+      if (this.isNewBehavior) {
+        return "Z" + this.timestampForAlphabeticalSort();
+      } else {
+        return "A" + (this.name || this.getFirstTriggerText() || this.timestampForAlphabeticalSort());
+      }
     }
 
     toParamType() {
