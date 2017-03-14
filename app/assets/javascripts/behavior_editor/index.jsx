@@ -1270,14 +1270,21 @@ const BehaviorEditor = React.createClass({
   },
 
   getChangeSummary: function() {
-    var actionCount = this.getActionBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
-    var dataTypeCount = this.getDataTypeBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
-    const actionsAdded = SetOps.difference(this.getActionBehaviors(), this.getOriginalActionBehaviors()).length;
-    const actionsRemoved = SetOps.difference(this.getOriginalActionBehaviors(), this.getActionBehaviors()).length;
-    const dataTypesAdded = SetOps.difference(this.getDataTypeBehaviors(), this.getOriginalDataTypeBehaviors()).length;
-    const dataTypesRemoved = SetOps.difference(this.getOriginalDataTypeBehaviors(), this.getDataTypeBehaviors()).length;
+    const actionModifiedCount = this.getActionBehaviors().filter((ea) => this.behaviorIsModified(ea) && !ea.isNewBehavior).length;
+    const dataTypeModifiedCount = this.getDataTypeBehaviors().filter((ea) => this.behaviorIsModified(ea) && !ea.isNewBehavior).length;
 
-    let result;
+    const currentActionIds = this.getActionBehaviors().map((ea) => ea.id);
+    const originalActionIds = this.getOriginalActionBehaviors().map((ea) => ea.id);
+    const actionsAdded = SetOps.difference(currentActionIds, originalActionIds).length;
+    const actionsRemoved = SetOps.difference(originalActionIds, currentActionIds).length;
+
+    const currentDataTypeIds = this.getDataTypeBehaviors().map((ea) => ea.id);
+    const originalDataTypeIds = this.getOriginalDataTypeBehaviors().map((ea) => ea.id);
+    const dataTypesAdded = SetOps.difference(currentDataTypeIds, originalDataTypeIds).length;
+    const dataTypesRemoved = SetOps.difference(originalDataTypeIds, currentDataTypeIds).length;
+
+    let addedOrRemovedResult;
+    let modifiedResult;
 
     if (actionsAdded || actionsRemoved || dataTypesAdded || dataTypesRemoved) {
       const actionsAddedText = this.actionsTextFor(actionsAdded);
@@ -1305,32 +1312,36 @@ const BehaviorEditor = React.createClass({
         removedPart = `${removedPart} removed`;
       }
 
-      result = [addedPart, removedPart].filter(ea => ea.length > 0).join(", ");
-    } else if (actionCount > 1) {
-      if (dataTypeCount > 1) {
-        result = `${actionCount} actions and ${dataTypeCount} data types modified`;
-      } else if (dataTypeCount === 1) {
-        result = `${actionCount} actions and 1 data type modified`;
+      addedOrRemovedResult = [addedPart, removedPart].filter(ea => ea.length > 0).join(", ");
+    }
+
+    if (actionModifiedCount > 1) {
+      if (dataTypeModifiedCount > 1) {
+        modifiedResult = `${actionModifiedCount} actions and ${dataTypeModifiedCount} data types modified`;
+      } else if (dataTypeModifiedCount === 1) {
+        modifiedResult = `${actionModifiedCount} actions and 1 data type modified`;
       } else {
-        result = `${actionCount} actions modified`;
+        modifiedResult = `${actionModifiedCount} actions modified`;
       }
-    } else if (actionCount === 1) {
-      if (dataTypeCount > 1) {
-        result = `1 action and ${dataTypeCount} data types modified`;
-      } else if (dataTypeCount === 1) {
-        result = "1 action and 1 data type modified";
+    } else if (actionModifiedCount === 1) {
+      if (dataTypeModifiedCount > 1) {
+        modifiedResult = `1 action and ${dataTypeModifiedCount} data types modified`;
+      } else if (dataTypeModifiedCount === 1) {
+        modifiedResult = "1 action and 1 data type modified";
       } else {
-        result = "1 action modified";
+        modifiedResult = "1 action modified";
       }
     } else {
-      if (dataTypeCount > 1) {
-        result = `${dataTypeCount} data types modified`;
-      } else if (dataTypeCount === 1) {
-        result = "1 data type modified";
+      if (dataTypeModifiedCount > 1) {
+        modifiedResult = `${dataTypeModifiedCount} data types modified`;
+      } else if (dataTypeModifiedCount === 1) {
+        modifiedResult = "1 data type modified";
       } else {
-        result = "skill title/description modified";
+        modifiedResult = "skill title/description modified";
       }
     }
+
+    const result = (addedOrRemovedResult ? addedOrRemovedResult + "; " : "") + modifiedResult;
 
     return (
       <span>
