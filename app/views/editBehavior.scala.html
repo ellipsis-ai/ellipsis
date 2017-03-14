@@ -35,7 +35,6 @@
           selectedBehaviorId: @Html(Json.toJson(data.maybeSelectedBehaviorId).toString()),
           containerId: 'editorContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
-          justSaved: @data.justSaved,
           envVariables: @Html(Json.toJson(data.environmentVariables).toString),
           savedAnswers: @Html(Json.toJson(data.savedAnswers).toString),
           oauth2Applications: @Html(Json.toJson(data.oauth2Applications).toString),

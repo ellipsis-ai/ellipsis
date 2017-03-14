@@ -37,7 +37,6 @@ describe('BehaviorEditor', () => {
     },
     selectedBehaviorId: "1",
     csrfToken: "2",
-    justSaved: false,
     envVariables: [ { name: "HOT_DOG" } ],
     builtinParamTypes: [{
       id: 'Text',
@@ -280,6 +279,40 @@ describe('BehaviorEditor', () => {
       let newParam = editor.createNewParam({ name: "clownCar", question: "how did twitter propel itself?" });
       expect(newParam.name).toEqual("clownCar");
       expect(newParam.question).toEqual("how did twitter propel itself?");
+    });
+  });
+
+  describe('isJustSaved', () => {
+    const HALF_MINUTE = 30000;
+    const TWO_MINUTES = 120000;
+    it("false if recent save but isModified() is true", () => {
+      let config = Object.assign({}, editorConfig, {
+        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - HALF_MINUTE })
+      });
+      let editor = createEditor(config);
+      editor.isModified = jest.fn(() => true);
+      let justSaved = editor.isJustSaved();
+      expect(justSaved).toEqual(false);
+    });
+
+    it("false if not a recent save", () => {
+      let config = Object.assign({}, editorConfig, {
+        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - TWO_MINUTES })
+      });
+      let editor = createEditor(config);
+      editor.isModified = jest.fn(() => false);
+      let justSaved = editor.isJustSaved();
+      expect(justSaved).toEqual(false);
+    });
+
+    it("true if a recent save and isModified() is false", () => {
+      let config = Object.assign({}, editorConfig, {
+        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - HALF_MINUTE })
+      });
+      let editor = createEditor(config);
+      editor.isModified = jest.fn(() => false);
+      let justSaved = editor.isJustSaved();
+      expect(justSaved).toEqual(true);
     });
   });
 

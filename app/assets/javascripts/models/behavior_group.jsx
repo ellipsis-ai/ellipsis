@@ -1,6 +1,7 @@
 define(function(require) {
   var BehaviorVersion = require('./behavior_version');
   var DeepEqual = require('../lib/deep_equal');
+  const ONE_MINUTE = 60000;
 
   class BehaviorGroup {
     constructor(props) {
@@ -16,6 +17,10 @@ define(function(require) {
         createdAt: { value: props.createdAt, enumerable: true },
         exportId: { value: props.exportId, enumerable: true }
       });
+    }
+
+    isRecentlySaved() {
+      return !!this.createdAt && new Date(this.createdAt) > (new Date() - ONE_MINUTE);
     }
 
     getName() {

@@ -1,5 +1,4 @@
 const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
-const Trigger = require('../app/assets/javascripts/models/trigger');
 
 const behaviorVersionTask1 = Object.freeze({
   "teamId": "abcdef",
@@ -101,13 +100,6 @@ describe('BehaviorVersion', () => {
       const version = BehaviorVersion.fromJson(data);
       expect(version.triggers.length).toEqual(2);
       expect(version.triggers.map(ea => ea.text)).toEqual(["B", "C"]);
-    });
-
-    it('includes a single blank trigger when no triggers are defined', () => {
-      const data = Object.assign({}, behaviorVersionTask1);
-      delete data.triggers;
-      const version = BehaviorVersion.fromJson(data);
-      expect(version.triggers).toEqual([new Trigger()]);
     });
   });
 

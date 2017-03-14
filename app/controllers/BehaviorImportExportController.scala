@@ -124,7 +124,7 @@ class BehaviorImportExportController @Inject() (
                   Ok(Json.toJson(InstalledBehaviorGroupData(behaviorGroup.id, behaviorGroup.maybeExportId)))
                 } else {
                   maybeBehavior.map{ behavior =>
-                    Redirect(routes.BehaviorEditorController.edit(behavior.group.id, Some(behavior.id), justSaved = Some(true)))
+                    Redirect(routes.BehaviorEditorController.edit(behavior.group.id, Some(behavior.id)))
                   }.getOrElse {
                     Redirect(routes.ApplicationController.index())
                   }
