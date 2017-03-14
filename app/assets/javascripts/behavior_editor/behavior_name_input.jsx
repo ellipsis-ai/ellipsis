@@ -12,10 +12,10 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="columns container container-wide">
-          <div className="column column-one-third mobile-column-full">
+        <div>
+          <div>
             <Input
-              className="form-input-borderless form-input-l type-bold"
+              className="form-input-borderless form-input-l type-bold width-15 mobile-width-full"
               ref="input"
               value={this.props.name}
               placeholder={this.props.placeholder}
