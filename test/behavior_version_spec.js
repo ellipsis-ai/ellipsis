@@ -169,7 +169,7 @@ describe('BehaviorVersion', () => {
     });
 
     it('sorts new by timestamp only, with a leading Z', () => {
-      const version1 = BehaviorVersion.fromJson(behaviorVersionTask1).clone({ name: "Z", isNewBehavior: true });
+      const version1 = BehaviorVersion.fromJson(behaviorVersionTask1).clone({ name: "Name", isNewBehavior: true });
       expect(version1.sortKey).toEqual("Z" + version1.timestampForAlphabeticalSort());
     });
   });
