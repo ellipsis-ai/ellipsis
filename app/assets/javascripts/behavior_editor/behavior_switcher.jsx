@@ -18,18 +18,6 @@ define(function(require) {
       isBehaviorModified: React.PropTypes.func.isRequired
     },
 
-    hasSavedNameOrDescription: function() {
-      return !!(this.props.groupName || this.props.groupDescription);
-    },
-
-    getEditButtonLabel: function() {
-      if (this.hasSavedNameOrDescription()) {
-        return "Edit title/description";
-      } else {
-        return "Add title/description";
-      }
-    },
-
     getSkillTitle: function() {
       return (
         <div className="mbm">
@@ -55,7 +43,7 @@ define(function(require) {
 
             <div className={`pvxs container container-wide ${this.props.selectedBehavior ? "" : "bg-blue border-blue-medium type-white"}`}>
               <button type="button" className="button-block" onClick={this.onEditSkillDetails} disabled={!this.props.selectedBehavior}>
-                <span className={`type-s ${this.props.selectedBehavior ? "link" : "type-white"}`}>{this.getEditButtonLabel()}</span>
+                <span className={`type-s ${this.props.selectedBehavior ? "link" : "type-white"}`}>Skill details</span>
               </button>
             </div>
           </div>

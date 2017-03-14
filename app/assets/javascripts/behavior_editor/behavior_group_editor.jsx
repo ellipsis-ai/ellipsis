@@ -31,7 +31,9 @@ define(function(require) {
       return (
         <div className="container container-narrow mtl">
 
-          <h5 className="type-blue-faded">Edit skill details</h5>
+          <h5 className="type-blue-faded">Skill details</h5>
+
+          <hr className="mvxl"/>
 
           <h4 className="mtl mbn">Icon and title</h4>
           <div className="columns columns-elastic">
@@ -66,19 +68,26 @@ define(function(require) {
             />
           </div>
 
-          <div className="mtxl mbs align-r">
-            <button type="button"
-                    onClick={this.export}
-                    disabled={this.props.isModified}
-                    className="button button-m button-shrink">
-              Export this skill
-            </button>
-            <button type="button"
-                    onClick={this.props.onDeleteClick}
-                    disabled={this.props.isModified}
-                    className="button button-m button-shrink mll">
-              Delete this entire skill
-            </button>
+          <hr className="mvxxl"/>
+
+          <div className="columns">
+            <div className="column column-one-half mobile-column-full">
+              <button type="button"
+                onClick={this.export}
+                disabled={this.props.isModified}
+              >
+                Export skill as ZIP file
+              </button>
+            </div>
+
+            <div className="column column-one-half align-r mobile-column-full mobile-align-l">
+              <button type="button"
+                onClick={this.props.onDeleteClick}
+                disabled={this.props.isModified}
+              >
+                Delete entire skill…
+              </button>
+            </div>
           </div>
         </div>
       );
