@@ -10,6 +10,7 @@ var React = require('react'),
   BehaviorTester = require('./behavior_tester'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
+  ChangeSummary = require('./change_summary'),
   CodeEditor = require('./code_editor'),
   CodeEditorHelp = require('./code_editor_help'),
   CodeFooter = require('./code_footer'),
@@ -35,7 +36,6 @@ var React = require('react'),
   ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
   SectionHeading = require('./section_heading'),
-  SetOps = require('../lib/set_operations'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
@@ -1197,16 +1197,8 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().getActions();
   },
 
-  getOriginalActionBehaviors: function() {
-    return this.props.group.getActions();
-  },
-
   getDataTypeBehaviors: function() {
     return this.getBehaviorGroup().getDataTypes();
-  },
-
-  getOriginalDataTypeBehaviors: function() {
-    return this.props.group.getDataTypes();
   },
 
   hasUserParameters: function() {
@@ -1249,106 +1241,6 @@ const BehaviorEditor = React.createClass({
     var originalBehavior = this.props.group.behaviorVersions.find((ea) => ea.behaviorId === currentBehavior.behaviorId);
     var previewingVersions = this.props.activePanelName === 'versionHistory';
     return !previewingVersions && !(originalBehavior && currentBehavior.isIdenticalToVersion(originalBehavior));
-  },
-
-  behaviorTextFor: function(baseWord, count) {
-    if (count === 0) {
-      return "";
-    } else if (count === 1) {
-      return `1 ${baseWord}`;
-    } else {
-      return `${count} ${baseWord}s`;
-    }
-  },
-
-  actionsTextFor: function(count) {
-    return this.behaviorTextFor("action", count);
-  },
-
-  dataTypesTextFor: function(count) {
-    return this.behaviorTextFor("data type", count);
-  },
-
-  getChangeSummary: function() {
-    const actionModifiedCount = this.getActionBehaviors().filter((ea) => this.behaviorIsModified(ea) && !ea.isNewBehavior).length;
-    const dataTypeModifiedCount = this.getDataTypeBehaviors().filter((ea) => this.behaviorIsModified(ea) && !ea.isNewBehavior).length;
-
-    const currentActionIds = this.getActionBehaviors().map((ea) => ea.id);
-    const originalActionIds = this.getOriginalActionBehaviors().map((ea) => ea.id);
-    const actionsAdded = SetOps.difference(currentActionIds, originalActionIds).length;
-    const actionsRemoved = SetOps.difference(originalActionIds, currentActionIds).length;
-
-    const currentDataTypeIds = this.getDataTypeBehaviors().map((ea) => ea.id);
-    const originalDataTypeIds = this.getOriginalDataTypeBehaviors().map((ea) => ea.id);
-    const dataTypesAdded = SetOps.difference(currentDataTypeIds, originalDataTypeIds).length;
-    const dataTypesRemoved = SetOps.difference(originalDataTypeIds, currentDataTypeIds).length;
-
-    let addedOrRemovedResult;
-    let modifiedResult;
-
-    if (actionsAdded || actionsRemoved || dataTypesAdded || dataTypesRemoved) {
-      const actionsAddedText = this.actionsTextFor(actionsAdded);
-      const actionsRemovedText = this.actionsTextFor(actionsRemoved);
-      const dataTypesAddedText = this.dataTypesTextFor(dataTypesAdded);
-      const dataTypesRemovedText = this.dataTypesTextFor(dataTypesRemoved);
-
-      let addedPart = "";
-      if (actionsAddedText.length && dataTypesAddedText.length) {
-        addedPart = `${actionsAddedText} and ${dataTypesAddedText}`;
-      } else {
-        addedPart = `${actionsAddedText}${dataTypesAddedText}`;
-      }
-      if (addedPart.length) {
-        addedPart = `${addedPart} added`;
-      }
-
-      let removedPart = "";
-      if (actionsRemovedText.length && dataTypesRemovedText.length) {
-        removedPart = `${actionsRemovedText} and ${dataTypesRemovedText}`;
-      } else {
-        removedPart = `${actionsRemovedText}${dataTypesRemovedText}`;
-      }
-      if (removedPart.length) {
-        removedPart = `${removedPart} removed`;
-      }
-
-      addedOrRemovedResult = [addedPart, removedPart].filter(ea => ea.length > 0).join(", ");
-    }
-
-    if (actionModifiedCount > 1) {
-      if (dataTypeModifiedCount > 1) {
-        modifiedResult = `${actionModifiedCount} actions and ${dataTypeModifiedCount} data types modified`;
-      } else if (dataTypeModifiedCount === 1) {
-        modifiedResult = `${actionModifiedCount} actions and 1 data type modified`;
-      } else {
-        modifiedResult = `${actionModifiedCount} actions modified`;
-      }
-    } else if (actionModifiedCount === 1) {
-      if (dataTypeModifiedCount > 1) {
-        modifiedResult = `1 action and ${dataTypeModifiedCount} data types modified`;
-      } else if (dataTypeModifiedCount === 1) {
-        modifiedResult = "1 action and 1 data type modified";
-      } else {
-        modifiedResult = "1 action modified";
-      }
-    } else {
-      if (dataTypeModifiedCount > 1) {
-        modifiedResult = `${dataTypeModifiedCount} data types modified`;
-      } else if (dataTypeModifiedCount === 1) {
-        modifiedResult = "1 data type modified";
-      } else {
-        modifiedResult = "skill title/description modified";
-      }
-    }
-
-    const result = (addedOrRemovedResult ? addedOrRemovedResult + "; " : "") + modifiedResult;
-
-    return (
-      <span>
-        <span className="type-bold">Unsaved changes </span>
-        <span>{result ? `(${result})` : ""}</span>
-      </span>
-    );
   },
 
   isSaving: function() {
@@ -1873,7 +1765,11 @@ const BehaviorEditor = React.createClass({
       );
     } else if (this.isModified()) {
       return (
-        <span className="fade-in type-pink type-italic">{this.getChangeSummary()}</span>
+        <ChangeSummary
+          currentGroupVersion={this.getBehaviorGroup()}
+          originalGroupVersion={this.props.group}
+          isBehaviorModified={this.behaviorIsModified}
+        />
       );
     } else {
       return "";
