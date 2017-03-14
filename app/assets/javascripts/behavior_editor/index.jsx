@@ -3,7 +3,6 @@ var React = require('react'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
-  BehaviorNameInput = require('./behavior_name_input'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
   BehaviorVersion = require('../models/behavior_version'),
@@ -2091,10 +2090,12 @@ const BehaviorEditor = React.createClass({
       <div className="container container-wide">
         <div className="columns columns-elastic mobile-columns-float">
           <div className="column column-shrink">
-            <BehaviorNameInput
-              name={this.getBehaviorName()}
-              onChange={this.updateName}
+            <Input
+              className="form-input-borderless form-input-l type-bold width-15 mobile-width-full"
+              ref="input"
+              value={this.getBehaviorName()}
               placeholder={this.isDataTypeBehavior() ? "Data type name" : "Action name (optional)"}
+              onChange={this.updateName}
             />
           </div>
           <div className="column column-expand align-r align-b mobile-align-l mobile-mtl">
