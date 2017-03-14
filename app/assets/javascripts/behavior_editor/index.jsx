@@ -326,10 +326,6 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getRedirectValue: function() {
-    return this.state.redirectValue;
-  },
-
   getFormAction: function() {
     return jsRoutes.controllers.BehaviorEditorController.save().url;
   },
@@ -1882,74 +1878,6 @@ const BehaviorEditor = React.createClass({
         </form>
       </div>
     );
-  },
-
-  getPageName: function(optionalName, actionCount) {
-    if (optionalName) {
-      return (
-        <span className="type-black">{optionalName}</span>
-      );
-    } else if (actionCount > 1) {
-      return 'Untitled skill';
-    } else if (actionCount === 1 && this.isExistingBehavior()) {
-      return 'Skill';
-    } else if (actionCount === 1 && !this.isExistingBehavior()) {
-      return 'New skill';
-    } else {
-      return 'Edit data type';
-    }
-  },
-
-  getPageSummary: function(actionCount, dataTypeCount) {
-    if (actionCount === 1 && dataTypeCount === 1) {
-      return `1 action, 1 data type`;
-    } else if (actionCount === 1 && dataTypeCount > 1) {
-      return `1 action, ${dataTypeCount} data types`;
-    } else if (actionCount > 1 && dataTypeCount === 0) {
-      return `${actionCount} actions`;
-    } else if (actionCount > 1 && dataTypeCount === 1) {
-      return `${actionCount} actions, 1 data type`;
-    } else if (actionCount > 1 && dataTypeCount > 1) {
-      return `${actionCount} actions, ${dataTypeCount} data types`;
-    } else if (actionCount === 0 && dataTypeCount > 1) {
-      return `${dataTypeCount} data types`;
-    } else if (actionCount === 1 && dataTypeCount === 0 && this.isExistingBehavior()) {
-      return `1 action`;
-    } else if (actionCount === 0 && dataTypeCount === 1 && this.isExistingBehavior()) {
-      return `1 data type`;
-    } else {
-      return null;
-    }
-  },
-
-  getPageDescription: function(optionalDescription, actionCount, dataTypeCount) {
-    var summary = this.getPageSummary(actionCount, dataTypeCount);
-    if (optionalDescription && summary) {
-      return (
-        <span>
-          <span className="mhs mobile-display-none">·</span>
-          <span className="type-black mobile-display-none">{optionalDescription}</span>
-          <span className="mhs">·</span>
-          <i>{summary}</i>
-        </span>
-      );
-    } else if (optionalDescription && !summary) {
-      return (
-        <span className="mobile-display-none">
-          <span className="mhs">·</span>
-          <span className="type-black">{optionalDescription}</span>
-        </span>
-      );
-    } else if (summary) {
-      return (
-        <span>
-          <span className="mhs">·</span>
-          <i>{summary}</i>
-        </span>
-      );
-    } else {
-      return null;
-    }
   },
 
   getBehaviorHeadingText: function() {
