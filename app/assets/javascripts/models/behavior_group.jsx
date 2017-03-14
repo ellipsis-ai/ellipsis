@@ -39,6 +39,10 @@ define(function(require) {
       return new BehaviorGroup(Object.assign({}, this, props));
     }
 
+    copyWithNewTimestamp() {
+      return this.clone({ createdAt: Date.now() });
+    }
+
     // Used by JSON.stringify for submitting data to the server
     toJSON() {
       return this.clone({

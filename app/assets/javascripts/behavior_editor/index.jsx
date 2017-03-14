@@ -502,10 +502,6 @@ const BehaviorEditor = React.createClass({
     return behavior.clone({ createdAt: Date.now() });
   },
 
-  getTimestampedGroup: function(group) {
-    return group.clone({ createdAt: Date.now() });
-  },
-
   getVersions: function() {
     return this.state.versions;
   },
@@ -588,12 +584,10 @@ const BehaviorEditor = React.createClass({
   deleteBehavior: function() {
     this.props.onClearActivePanel();
     const group = this.getBehaviorGroup();
-    this.setState({
-      group: group.clone({
-        behaviorVersions: group.behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedBehaviorId())
-      }),
-      selectedBehaviorId: null
+    const updatedGroup = group.clone({
+      behaviorVersions: group.behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedBehaviorId())
     });
+    this.updateGroupStateWith(updatedGroup);
   },
 
   deleteBehaviorGroup: function() {
@@ -828,13 +822,37 @@ const BehaviorEditor = React.createClass({
       existingGroup.behaviorVersions.
       filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
       concat([timestampedBehavior]);
-    var newGroup = this.getBehaviorGroup().clone({ behaviorVersions: newVersionsForGroup });
+    var updatedGroup = this.getBehaviorGroup().clone({ behaviorVersions: newVersionsForGroup });
 
-    var newVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, newGroup, 0);
+    this.updateGroupStateWith(updatedGroup, callback);
+  },
+
+  getNextBehaviorIdFor: function(group) {
+    if (group.behaviorVersions.length) {
+      return group.behaviorVersions[0].behaviorId;
+    } else {
+      return null;
+    }
+  },
+
+  updateGroupStateWith: function(updatedGroup, callback) {
+
+    const timestampedGroup = updatedGroup.copyWithNewTimestamp();
+    const selectedBehaviorIdBefore = this.getSelectedBehaviorId();
+    const selectedBehaviorIdNowInvalid = !timestampedGroup.behaviorVersions.find(ea => ea.behaviorId === selectedBehaviorIdBefore);
+    let selectedBehaviorIdAfter;
+    if (selectedBehaviorIdBefore && selectedBehaviorIdNowInvalid) {
+      selectedBehaviorIdAfter = this.getNextBehaviorIdFor(timestampedGroup);
+    } else {
+      selectedBehaviorIdAfter = selectedBehaviorIdBefore;
+    }
+
+    const updatedVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedGroup, 0);
 
     this.setState({
-      group: newGroup,
-      versions: newVersions
+      group: timestampedGroup,
+      versions: updatedVersions,
+      selectedBehaviorId: selectedBehaviorIdAfter
     }, () => {
       if (callback) {
         callback();
@@ -947,9 +965,8 @@ const BehaviorEditor = React.createClass({
         return ea;
       }
     });
-    this.setState({
-      group: this.getBehaviorGroup().clone({ behaviorVersions: updatedBehaviorVersions })
-    }, this.resetNotifications);
+    const updatedGroup = this.getBehaviorGroup().clone({ behaviorVersions: updatedBehaviorVersions });
+    this.updateGroupStateWith(updatedGroup, this.resetNotifications);
   },
 
   toggleCodeEditorLineWrapping: function() {
@@ -1073,21 +1090,15 @@ const BehaviorEditor = React.createClass({
   },
 
   onBehaviorGroupNameChange: function(name) {
-    this.setState({
-      group: this.getBehaviorGroup().clone({ name: name })
-    });
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ name: name }));
   },
 
   onBehaviorGroupDescriptionChange: function(desc) {
-    this.setState({
-      group: this.getBehaviorGroup().clone({ description: desc })
-    });
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ description: desc  }));
   },
 
   onBehaviorGroupIconChange: function(icon) {
-    this.setState({
-      group: this.getBehaviorGroup().clone({ icon: icon })
-    });
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ icon: icon  }));
   },
 
   jsonPostOptions: function(data) {
@@ -1164,13 +1175,7 @@ const BehaviorEditor = React.createClass({
   },
 
   undoChanges: function() {
-    const hasValidSelectedBehaviorId = !!this.props.group.behaviorVersions.find(ea => ea.behaviorId === this.getSelectedBehaviorId());
-    const selectedBehaviorIdAfter = hasValidSelectedBehaviorId ? this.getSelectedBehaviorId() : this.props.group.behaviorVersions[0].behaviorId;
-    this.setState({
-      group: this.props.group,
-      selectedBehaviorId: selectedBehaviorIdAfter
-    }, () => {
-      this.onSelectBehavior(this.getBehaviorGroup().id, selectedBehaviorIdAfter);
+    this.updateGroupStateWith(this.props.group, () => {
       this.props.onClearActivePanel();
       this.resetNotifications();
     });
@@ -1498,7 +1503,7 @@ const BehaviorEditor = React.createClass({
       envVariables: this.getInitialEnvVariables(),
       hasModifiedTemplate: hasModifiedTemplate,
       notifications: this.buildNotifications(),
-      versions: [this.getTimestampedGroup(this.props.group)],
+      versions: [this.props.group.copyWithNewTimestamp()],
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
@@ -1519,7 +1524,7 @@ const BehaviorEditor = React.createClass({
       var newGroup = nextProps.group;
       var newState = {
         group: newGroup,
-        versions: [this.getTimestampedGroup(newGroup)],
+        versions: [newGroup.copyWithNewTimestamp()],
         versionsLoadStatus: null,
         error: null
       };
@@ -1963,9 +1968,7 @@ const BehaviorEditor = React.createClass({
       .then((json) => {
         const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id }));
         const groupWithNewBehavior = group.withNewBehaviorVersion(newVersion);
-        this.setState({
-          group: groupWithNewBehavior
-        }, () => {
+        this.updateGroupStateWith(groupWithNewBehavior, () => {
           this.onSelectBehavior(groupWithNewBehavior.id, newVersion.behaviorId);
         });
       });
@@ -2204,7 +2207,7 @@ const BehaviorEditor = React.createClass({
   },
 
   renderEditor: function() {
-    if (this.getSelectedBehaviorId()) {
+    if (this.getSelectedBehavior()) {
       return (
         <div>
           <div className="container container-wide mtl">
