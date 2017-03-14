@@ -506,10 +506,6 @@ const BehaviorEditor = React.createClass({
     return behavior.clone({ createdAt: Date.now() });
   },
 
-  getTimestampedGroup: function(group) {
-    return group.clone({ createdAt: Date.now() });
-  },
-
   getVersions: function() {
     return this.state.versions;
   },
@@ -844,19 +840,20 @@ const BehaviorEditor = React.createClass({
 
   updateGroupStateWith: function(updatedGroup, callback) {
 
+    const timestampedGroup = updatedGroup.copyWithNewTimestamp();
     const selectedBehaviorIdBefore = this.getSelectedBehaviorId();
-    const selectedBehaviorIdNowInvalid = !updatedGroup.behaviorVersions.find(ea => ea.behaviorId === selectedBehaviorIdBefore);
+    const selectedBehaviorIdNowInvalid = !timestampedGroup.behaviorVersions.find(ea => ea.behaviorId === selectedBehaviorIdBefore);
     let selectedBehaviorIdAfter;
     if (selectedBehaviorIdBefore && selectedBehaviorIdNowInvalid) {
-      selectedBehaviorIdAfter = this.getNextBehaviorIdFor(updatedGroup);
+      selectedBehaviorIdAfter = this.getNextBehaviorIdFor(timestampedGroup);
     } else {
       selectedBehaviorIdAfter = selectedBehaviorIdBefore;
     }
 
-    const updatedVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, updatedGroup, 0);
+    const updatedVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedGroup, 0);
 
     this.setState({
-      group: updatedGroup,
+      group: timestampedGroup,
       versions: updatedVersions,
       selectedBehaviorId: selectedBehaviorIdAfter
     }, () => {
@@ -972,7 +969,7 @@ const BehaviorEditor = React.createClass({
       }
     });
     const updatedGroup = this.getBehaviorGroup().clone({ behaviorVersions: updatedBehaviorVersions });
-    this.updateGroupStateWith(updatedGroup, this.resetNotifications)
+    this.updateGroupStateWith(updatedGroup, this.resetNotifications);
   },
 
   toggleCodeEditorLineWrapping: function() {
@@ -1509,7 +1506,7 @@ const BehaviorEditor = React.createClass({
       envVariables: this.getInitialEnvVariables(),
       hasModifiedTemplate: hasModifiedTemplate,
       notifications: this.buildNotifications(),
-      versions: [this.getTimestampedGroup(this.props.group)],
+      versions: [this.props.group.copyWithNewTimestamp()],
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
@@ -1530,7 +1527,7 @@ const BehaviorEditor = React.createClass({
       var newGroup = nextProps.group;
       var newState = {
         group: newGroup,
-        versions: [this.getTimestampedGroup(newGroup)],
+        versions: [newGroup.copyWithNewTimestamp()],
         versionsLoadStatus: null,
         error: null
       };
