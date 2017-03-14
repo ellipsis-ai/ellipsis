@@ -283,9 +283,11 @@ describe('BehaviorEditor', () => {
   });
 
   describe('isJustSaved', () => {
+    const HALF_MINUTE = 30000;
+    const TWO_MINUTES = 120000;
     it("false if recent save but isModified() is true", () => {
       let config = Object.assign({}, editorConfig, {
-        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - 30000 })
+        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - HALF_MINUTE })
       });
       let editor = createEditor(config);
       editor.isModified = jest.fn(() => true);
@@ -295,7 +297,7 @@ describe('BehaviorEditor', () => {
 
     it("false if not a recent save", () => {
       let config = Object.assign({}, editorConfig, {
-        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - 120000 })
+        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - TWO_MINUTES })
       });
       let editor = createEditor(config);
       editor.isModified = jest.fn(() => false);
@@ -305,7 +307,7 @@ describe('BehaviorEditor', () => {
 
     it("true if a recent save and isModified() is false", () => {
       let config = Object.assign({}, editorConfig, {
-        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - 30000 })
+        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - HALF_MINUTE })
       });
       let editor = createEditor(config);
       editor.isModified = jest.fn(() => false);
