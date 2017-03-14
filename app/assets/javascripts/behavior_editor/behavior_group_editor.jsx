@@ -8,9 +8,11 @@ define(function(require) {
     displayName: 'BehaviorGroupEditor',
     propTypes: {
       group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
+      isModified: React.PropTypes.bool.isRequired,
       onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
       onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
-      onBehaviorGroupIconChange: React.PropTypes.func.isRequired
+      onBehaviorGroupIconChange: React.PropTypes.func.isRequired,
+      onDeleteClick: React.PropTypes.func.isRequired
     },
 
     focus: function() {
@@ -19,6 +21,10 @@ define(function(require) {
       } else {
         this.refs.skillName.focus();
       }
+    },
+
+    export: function() {
+      window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.group.id).url;
     },
 
     render: function() {
@@ -58,6 +64,21 @@ define(function(require) {
               value={this.props.group.description || ""}
               rows={"3"}
             />
+          </div>
+
+          <div className="mtxl mbs align-r">
+            <button type="button"
+                    onClick={this.export}
+                    disabled={this.props.isModified}
+                    className="button button-m button-shrink">
+              Export this skill
+            </button>
+            <button type="button"
+                    onClick={this.props.onDeleteClick}
+                    disabled={this.props.isModified}
+                    className="button button-m button-shrink mll">
+              Delete this entire skill
+            </button>
           </div>
         </div>
       );

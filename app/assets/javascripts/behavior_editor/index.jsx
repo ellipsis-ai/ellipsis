@@ -322,7 +322,7 @@ const BehaviorEditor = React.createClass({
   getManageDropdownLabel: function() {
     return (
       <span>
-        <span className="mobile-display-none">{this.isDataTypeBehavior() ? "Manage data type" : "Manage skill"}</span>
+        <span className="mobile-display-none">{this.isDataTypeBehavior() ? "Manage data type" : "Manage action"}</span>
         <span className="mobile-display-only">Manage</span>
       </span>
     );
@@ -886,10 +886,6 @@ const BehaviorEditor = React.createClass({
       this.loadVersions();
     }
     this.toggleActivePanel('versionHistory', true);
-  },
-
-  exportVersion: function() {
-    window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.getBehaviorGroup().id).url;
   },
 
   toggleActiveDropdown: function(name) {
@@ -1863,10 +1859,8 @@ const BehaviorEditor = React.createClass({
                       toggle={this.toggleManageBehaviorMenu}
                     >
                       <DropdownMenu.Item onClick={this.showVersions} label="View/restore previous versions" />
-                      <DropdownMenu.Item onClick={this.exportVersion} label="Export this skill" />
                       <DropdownMenu.Item onClick={this.cloneBehavior} label="Clone this action" />
                       <DropdownMenu.Item onClick={this.confirmDeleteBehavior} label="Delete this action" />
-                      <DropdownMenu.Item onClick={this.confirmDeleteBehaviorGroup} label="Delete the whole skill" />
                     </DropdownMenu>
                   ) : null}
                 </div>
@@ -2296,9 +2290,11 @@ const BehaviorEditor = React.createClass({
         <div>
           <BehaviorGroupEditor
             group={this.getBehaviorGroup()}
+            isModified={this.isModified()}
             onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
             onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
             onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
+            onDeleteClick={this.confirmDeleteBehaviorGroup}
           />
         </div>
       );
