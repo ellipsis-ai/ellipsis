@@ -22,7 +22,10 @@ define(function(require) {
       return (
         <div className="mbm">
           <h4 className="mbn">{this.props.groupName}</h4>
-          <div className="type-s type-weak">{this.props.groupDescription}</div>
+          <div className="type-s type-weak display-ellipsis display-limit-width"
+            title={this.props.groupDescription}>
+            {this.props.groupDescription}
+          </div>
         </div>
       );
     },
