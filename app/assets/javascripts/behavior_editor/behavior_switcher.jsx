@@ -20,9 +20,12 @@ define(function(require) {
 
     getSkillTitle: function() {
       return (
-        <div className="mbm">
+        <div className="mbxs">
           <h4 className="mbn">{this.props.groupName}</h4>
-          <div className="type-s type-weak">{this.props.groupDescription}</div>
+          <div className="type-s type-weak display-ellipsis display-limit-width"
+            title={this.props.groupDescription}>
+            {this.props.groupDescription}
+          </div>
         </div>
       );
     },
@@ -35,14 +38,21 @@ define(function(require) {
       return (
         <div>
 
-          <div className="border-bottom ptl pbxl mbl">
+          <div className="border-bottom ptxl pbl mbl">
 
             <div className="container container-wide">
               {this.getSkillTitle()}
             </div>
 
-            <div className={`pvxs container container-wide ${this.props.selectedBehavior ? "" : "bg-blue border-blue-medium type-white"}`}>
-              <button type="button" className="button-block" onClick={this.onEditSkillDetails} disabled={!this.props.selectedBehavior}>
+            <div>
+              <button type="button"
+                className={
+                  "button-block pvxs phxl mobile-phl width width-full " +
+                  (this.props.selectedBehavior ? "" : "bg-blue border-blue-medium type-white")
+                }
+                onClick={this.onEditSkillDetails}
+                disabled={!this.props.selectedBehavior}
+              >
                 <span className={`type-s ${this.props.selectedBehavior ? "link" : "type-white"}`}>Skill details</span>
               </button>
             </div>

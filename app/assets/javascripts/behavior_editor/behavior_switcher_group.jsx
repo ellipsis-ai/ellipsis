@@ -37,7 +37,7 @@ define(function(require) {
             {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version, index) => (
               <div
                 key={`behavior${index}`}
-                className={`border-top border-light pvs ${this.isSelectedVersion(version) ? "bg-blue border-blue-medium type-white" : ""}`}
+                className={`pvxs ${this.isSelectedVersion(version) ? "bg-blue border-blue-medium type-white" : ""}`}
               >
                 <div className={"position-absolute position-left pls type-bold type-m " + (this.isSelectedVersion(version) ? "" : "type-pink")}>
                   {this.props.isBehaviorModified(version) ? "•" : ""}
