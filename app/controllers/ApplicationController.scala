@@ -70,6 +70,25 @@ class ApplicationController @Inject() (
     }
   }
 
+  def fetchPublishedBehaviorInfo(maybeTeamId: Option[String],
+                                    maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      maybePublishedBehaviorInfo <- teamAccess.maybeTargetTeam.map { team =>
+        withPublishedBehaviorInfoFor(team, maybeBranch).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      result <- (for {
+        _ <- teamAccess.maybeTargetTeam
+        data <- maybePublishedBehaviorInfo
+      } yield {
+        Future.successful(Ok(Json.toJson(data.published)))
+      }).getOrElse {
+        reAuthFor(request, maybeTeamId)
+      }
+    } yield result
+  }
+
   def installBehaviorGroupsWithView(
                                      maybeTeamId: Option[String],
                                      maybeBranch: Option[String] = None,

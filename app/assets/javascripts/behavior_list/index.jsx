@@ -15,6 +15,8 @@ define(function(require) {
     displayName: "BehaviorList",
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
+      onLoadPublishedBehaviorGroups: React.PropTypes.func.isRequired,
+      publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       csrfToken: React.PropTypes.string.isRequired
     }),
 
@@ -194,8 +196,7 @@ define(function(require) {
       }
     },
 
-    renderBehaviorGroups: function() {
-      var groups = this.getBehaviorGroups();
+    renderInstalledBehaviorGroups: function(groups) {
       if (groups.length > 0) {
         return groups.map((group, index) => (
           <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn"
@@ -247,14 +248,48 @@ define(function(require) {
       );
     },
 
+    renderPublishedGroups: function() {
+      var groups = this.props.publishedBehaviorGroups;
+      if (groups && groups.length > 1) {
+        return (
+          <div className="columns">
+            {groups.map((group, index) => (
+              <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn"
+                key={"group" + index}>
+                <BehaviorGroupCard
+                  name={group.name}
+                  description={group.description}
+                  icon={group.icon}
+                  groupData={group}
+                  localId={null /*this.getLocalId(group)*/}
+                  onBehaviorGroupImport={() => true}
+                  onMoreInfoClick={this.toggleInfoPanel}
+                  isImporting={false /*this.isImporting(group)*/}
+                  isImportable={true}
+                />
+              </div>
+            ))}
+          </div>
+        );
+      } else {
+        return (
+          <div>
+            <button type="button" onClick={this.props.onLoadPublishedBehaviorGroups}>Load published groups</button>
+          </div>
+        );
+      }
+    },
+
     renderContent: function() {
       if (this.props.behaviorGroups.length > 0) {
         return (
           <div>
             <p className="mhl mbxl"><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>
 
+            {this.renderPublishedGroups()}
+
             <div className="columns">
-              {this.renderBehaviorGroups()}
+              {this.renderInstalledBehaviorGroups(this.getBehaviorGroups())}
             </div>
           </div>
         );

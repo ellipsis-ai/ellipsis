@@ -11,7 +11,8 @@
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.edit,
     routes.javascript.ApplicationController.mergeBehaviorGroups,
-    routes.javascript.ApplicationController.deleteBehaviorGroups
+    routes.javascript.ApplicationController.deleteBehaviorGroups,
+    routes.javascript.ApplicationController.fetchPublishedBehaviorInfo
   )
   <div id="content" class="content bg-white">
     @config.maybeTeamAccess.map(teamAccess => views.html.behaviorTabs("view", teamAccess))

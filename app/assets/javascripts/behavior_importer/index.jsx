@@ -162,7 +162,7 @@ define(function(require) {
       );
     },
 
-    renderBehaviorGroups: function() {
+    renderInstalledBehaviorGroups: function() {
       var groups = this.getBehaviorGroups();
       if (groups.length > 0) {
         return groups.map((group, index) => (
