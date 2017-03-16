@@ -84,12 +84,10 @@ object BehaviorEditorData {
                                      dataService: DataService
                                      ): Future[Seq[InputSavedAnswerData]] = {
     maybeBehaviorGroupData.map { data =>
-      Future.sequence(data.behaviorVersions.map { behaviorVersionData =>
-        Future.sequence(behaviorVersionData.params.flatMap { param =>
-          param.inputVersionId.map { inputId =>
-            InputSavedAnswerData.maybeFor(inputId, user, dataService)
-          }
-        }).map(_.flatten)
+      Future.sequence(data.inputs.map { inputData =>
+        inputData.inputId.map { inputId =>
+          InputSavedAnswerData.maybeFor(inputId, user, dataService)
+        }.getOrElse(Future.successful(None))
       }).map(_.flatten.distinct)
     }.getOrElse(Future.successful(Seq()))
   }

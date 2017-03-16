@@ -31,12 +31,13 @@ class BehaviorGroupVersionSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
 
-        val paramData = newParamDataFor()
+        val inputData = newInputDataFor()
         val behaviorVersionData = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, dataService).copy(
-          params = Seq(paramData)
+          inputIds = Seq(inputData.inputId.get)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
-          behaviorVersions = Seq(behaviorVersionData)
+          behaviorVersions = Seq(behaviorVersionData),
+          actionInputs = Seq(inputData)
         )
         val firstGroupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
         val maybeInput = runNow(dataService.inputs.allForGroupVersion(firstGroupVersion)).headOption

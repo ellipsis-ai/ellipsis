@@ -1,9 +1,9 @@
 define(function() {
 
   class BehaviorInvocationTestResult {
-    constructor(response, missingParamNames, missingSimpleTokens, missingUserEnvVars) {
+    constructor(response, missingInputNames, missingSimpleTokens, missingUserEnvVars) {
       this.response = response || '';
-      this.missingParamNames = missingParamNames || [];
+      this.missingInputNames = missingInputNames || [];
       this.missingSimpleTokens = missingSimpleTokens || [];
       this.missingUserEnvVars = missingUserEnvVars || [];
     }

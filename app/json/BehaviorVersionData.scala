@@ -24,7 +24,7 @@ case class BehaviorVersionData(
                                 description: Option[String],
                                 functionBody: String,
                                 responseTemplate: String,
-                                params: Seq[BehaviorParameterData],
+                                inputIds: Seq[String],
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
                                 exportId: Option[String],
@@ -42,11 +42,7 @@ case class BehaviorVersionData(
     copy(
       id = exportId,
       teamId = group.team.id,
-      behaviorId = behaviorId.orElse(Some(IDs.next)),
-      params = params.map { p =>
-        val maybeParamType = p.paramType.map(pt => pt.copy(id = pt.exportId))
-        p.copy(inputVersionId = p.inputExportId, paramType = maybeParamType)
-      }
+      behaviorId = behaviorId.orElse(Some(IDs.next))
     )
   }
 
@@ -56,14 +52,7 @@ case class BehaviorVersionData(
       behaviorId = Some(IDs.next),
       exportId = None,
       name = name.map(n => s"Copy of $n"),
-      isNewBehavior = Some(true),
-      params = params.map { p =>
-        if (p.isSaved) {
-          p
-        } else {
-          p.copy(inputVersionId = None, inputId = None, inputExportId = None)
-        }
-      }
+      isNewBehavior = Some(true)
     )
   }
 
@@ -72,35 +61,6 @@ case class BehaviorVersionData(
     val maybeOldID = id
     maybeOldID.foreach { oldId => oldToNewIdMapping.put(oldId, newId) }
     copy(id = Some(newId))
-  }
-
-  def copyWithInputIdsIn(
-                          inputs: Seq[InputData],
-                          oldToNewIdMapping: collection.mutable.Map[String, String]
-                        ): BehaviorVersionData = {
-    val newParams = params.map { param =>
-      val maybeNewId = param.inputVersionId.flatMap { inputId =>
-        oldToNewIdMapping.get(inputId)
-      }
-      (for {
-        newId <- maybeNewId
-        input <- inputs.find(_.id.contains(newId))
-      } yield {
-        param.copy(paramType = input.paramType, inputVersionId = input.id, inputExportId = input.exportId)
-      }).getOrElse(param)
-    }
-    copy(params = newParams)
-  }
-
-  def copyWithEnsuredInputIds: BehaviorVersionData = {
-    val paramsWithEnsuredInputIds = params.map { param =>
-      if (param.inputVersionId.isDefined) {
-        param
-      } else {
-        param.copy(inputVersionId = Some(IDs.next))
-      }
-    }
-    copy(params = paramsWithEnsuredInputIds)
   }
 
   lazy val isDataType: Boolean = config.isDataType
@@ -124,7 +84,7 @@ object BehaviorVersionData {
                 description: Option[String],
                 functionBody: String,
                 responseTemplate: String,
-                params: Seq[BehaviorParameterData],
+                inputIds: Seq[String],
                 triggers: Seq[BehaviorTriggerData],
                 config: BehaviorConfig,
                 exportId: Option[String],
@@ -148,7 +108,7 @@ object BehaviorVersionData {
       description,
       functionBody,
       responseTemplate,
-      params,
+      inputIds,
       triggers.sorted,
       config,
       exportId,
@@ -197,7 +157,7 @@ object BehaviorVersionData {
       maybeDescription,
       extractFunctionBodyFrom(function),
       response,
-      Json.parse(params).validate[Seq[BehaviorParameterData]].get,
+      Json.parse(params).validate[Seq[String]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
       config,
       config.exportId,
@@ -267,18 +227,7 @@ object BehaviorVersionData {
           behaviorVersion.maybeDescription,
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
-          params.map { ea =>
-            BehaviorParameterData(
-              ea.name,
-              paramTypeDataByParamTypes.get(ea.paramType),
-              ea.question,
-              Some(ea.input.isSavedForTeam),
-              Some(ea.input.isSavedForUser),
-              Some(ea.input.inputId),
-              Some(ea.input.id),
-              ea.input.maybeExportId
-            )
-          },
+          params.map(_.input.inputId),
           triggers.map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),

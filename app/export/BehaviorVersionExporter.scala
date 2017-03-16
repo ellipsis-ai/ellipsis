@@ -14,7 +14,7 @@ import scala.concurrent.Future
 case class BehaviorVersionExporter(
                                     behaviorVersion: BehaviorVersion,
                                     maybeFunction: Option[String],
-                                    paramsData: Seq[BehaviorParameterData],
+                                    inputIds: Seq[String],
                                     triggersData: Seq[BehaviorTriggerData],
                                     config: BehaviorConfig,
                                     responseTemplate: String,
@@ -28,7 +28,7 @@ case class BehaviorVersionExporter(
   }
 
   def functionString: String = maybeFunction.getOrElse("")
-  def paramsString: String = Json.prettyPrint(Json.toJson(paramsData))
+  def paramsString: String = Json.prettyPrint(Json.toJson(inputIds))
   def triggersString: String = Json.prettyPrint(Json.toJson(triggersData))
   def configString: String = Json.prettyPrint(Json.toJson(config))
 
@@ -41,10 +41,6 @@ case class BehaviorVersionExporter(
     writeFileFor("params.json", paramsString)
     writeFileFor("response.md", responseTemplate)
     writeFileFor("config.json", configString)
-  }
-
-  def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorVersionExporter = {
-    copy(paramsData = paramsData.map(_.copyForExport(groupExporter)))
   }
 
 }
@@ -74,7 +70,7 @@ object BehaviorVersionExporter {
         BehaviorVersionExporter(
           behaviorVersion,
           maybeFunction,
-          versionData.params,
+          versionData.inputIds,
           versionData.triggers,
           versionData.config.copyForExport,
           versionData.responseTemplate,

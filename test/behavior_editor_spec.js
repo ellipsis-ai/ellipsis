@@ -16,12 +16,13 @@ describe('BehaviorEditor', () => {
   const defaultConfig = {
     teamId: "A",
     group: {
+      actionInputs: [],
       behaviorVersions: [
         {
           behaviorId: "1",
           functionBody: "onSuccess('Woot')",
           responseTemplate: "{successResult}",
-          params: [],
+          inputIds: [],
           triggers: [{
             text: "Do the tests run?",
             requiresMention: false,
@@ -96,17 +97,27 @@ describe('BehaviorEditor', () => {
     });
   });
 
-  describe('getBehaviorParams', () => {
+  describe('getInputs', () => {
     it('returns the defined parameters', () => {
-      firstBehavior.params = [{ name: 'clown', question: 'what drives the car?', paramType: editorConfig.builtinParamTypes[0], isSavedForTeam: false, isSavedForUser: true, inputId: "abcd1234", inputVersionId: "xzy321", inputExportId: null }];
+      editorConfig.group.actionInputs = [{
+        name: 'clown',
+        question: 'what drives the car?',
+        paramType: editorConfig.builtinParamTypes[0],
+        isSavedForTeam: false,
+        isSavedForUser: true,
+        inputId: "abcd1234",
+        inputVersionId: "xzy321",
+        inputExportId: null
+      }];
+      firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorParams()).toEqual(firstBehavior.params);
+      expect(editor.getInputs()).toEqual(editorConfig.group.actionInputs);
     });
 
     it('returns an array even when no params are defined', () => {
-      delete firstBehavior.params;
+      delete firstBehavior.inputIds;
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorParams()).toEqual([]);
+      expect(editor.getInputs()).toEqual([]);
     });
   });
 
@@ -159,47 +170,50 @@ describe('BehaviorEditor', () => {
     });
   });
 
-  describe('onParamEnterKey', () => {
+  describe('onInputEnterKey', () => {
     it('focuses on the next param if there is one', () => {
-      firstBehavior.params = [{
-        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0]
+      editorConfig.group.actionInputs = [{
+        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
       }, {
-        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0]
+        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
       }];
+      firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
       const editor = createEditor(editorConfig);
-      editor.focusOnParamIndex = jest.fn();
-      editor.addNewParam = jest.fn();
-      editor.onParamEnterKey(0);
-      expect(editor.focusOnParamIndex.mock.calls[0][0]).toBe(1);
-      expect(editor.addNewParam.mock.calls.length).toBe(0);
+      editor.focusOnInputIndex = jest.fn();
+      editor.addNewInput = jest.fn();
+      editor.onInputEnterKey(0);
+      expect(editor.focusOnInputIndex.mock.calls[0][0]).toBe(1);
+      expect(editor.addNewInput.mock.calls.length).toBe(0);
     });
 
     it('adds a param if this is the last one and it has a question', () => {
-      firstBehavior.params = [{
-        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0]
+      editorConfig.group.actionInputs = [{
+        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
       }, {
-        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0]
+        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
       }];
+      firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
       const editor = createEditor(editorConfig);
-      editor.focusOnParamIndex = jest.fn();
-      editor.addNewParam = jest.fn();
-      editor.onParamEnterKey(1);
-      expect(editor.focusOnParamIndex.mock.calls.length).toBe(0);
-      expect(editor.addNewParam.mock.calls.length).toBe(1);
+      editor.focusOnInputIndex = jest.fn();
+      editor.addNewInput = jest.fn();
+      editor.onInputEnterKey(1);
+      expect(editor.focusOnInputIndex.mock.calls.length).toBe(0);
+      expect(editor.addNewInput.mock.calls.length).toBe(1);
     });
 
     it('does nothing if this is the last one and has no question', () => {
-      firstBehavior.params = [{
-        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0]
+      editorConfig.group.actionInputs = [{
+        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
       }, {
-        name: 'param2', question: '', paramType: editorConfig.builtinParamTypes[0]
+        name: 'param2', question: '', paramType: editorConfig.builtinParamTypes[0], inputId: "def456"
       }];
+      firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
       const editor = createEditor(editorConfig);
-      editor.focusOnParamIndex = jest.fn();
-      editor.addNewParam = jest.fn();
-      editor.onParamEnterKey(1);
-      expect(editor.focusOnParamIndex.mock.calls.length).toBe(0);
-      expect(editor.addNewParam.mock.calls.length).toBe(0);
+      editor.focusOnInputIndex = jest.fn();
+      editor.addNewInput = jest.fn();
+      editor.onInputEnterKey(1);
+      expect(editor.focusOnInputIndex.mock.calls.length).toBe(0);
+      expect(editor.addNewInput.mock.calls.length).toBe(0);
     });
   });
 
@@ -267,16 +281,16 @@ describe('BehaviorEditor', () => {
     });
   });
 
-  describe('createNewParam', () => {
+  describe('createNewInput', () => {
     it("creates a new parameter with the parameter type set to the first possible one", () => {
       let editor = createEditor(editorConfig);
-      let newParam = editor.createNewParam();
+      let newParam = editor.createNewInput();
       expect(newParam.paramType).toEqual(editorConfig.builtinParamTypes[0]);
     });
 
     it("creates a new parameter with other attributes as desired", () => {
       let editor = createEditor(editorConfig);
-      let newParam = editor.createNewParam({ name: "clownCar", question: "how did twitter propel itself?" });
+      let newParam = editor.createNewInput({ name: "clownCar", question: "how did twitter propel itself?" });
       expect(newParam.name).toEqual("clownCar");
       expect(newParam.question).toEqual("how did twitter propel itself?");
     });
@@ -316,11 +330,11 @@ describe('BehaviorEditor', () => {
     });
   });
 
-  describe('getOtherSavedParametersInGroup', () => {
+  describe('getOtherSavedInputsInGroup', () => {
     it("returns the (unique by inputId) saved params", () => {
       const groupId = editorConfig.group.id;
       const inputId = "abcd12345";
-      const savedAnswerParam = {
+      const savedAnswerInput = {
         name: 'foo',
         question: '',
         paramType: editorConfig.builtinParamTypes[0],
@@ -334,7 +348,7 @@ describe('BehaviorEditor', () => {
             behaviorId: "2",
             functionBody: "",
             responseTemplate: "",
-            params: [savedAnswerParam],
+            inputIds: [savedAnswerInput.inputId],
             triggers: [],
             config: {},
             knownEnvVarsUsed: [],
@@ -344,7 +358,7 @@ describe('BehaviorEditor', () => {
             behaviorId: "3",
             functionBody: "",
             responseTemplate: "",
-            params: [savedAnswerParam],
+            inputIds: [savedAnswerInput.inputId],
             triggers: [],
             config: {},
             knownEnvVarsUsed: [],
@@ -352,10 +366,10 @@ describe('BehaviorEditor', () => {
           }
         ].map(ea => BehaviorVersion.fromJson(ea));
       let allVersions = editorConfig.group.behaviorVersions.concat(otherBehaviorsInGroup);
-      let newGroup = Object.assign({}, editorConfig.group, { behaviorVersions: allVersions });
+      let newGroup = Object.assign({}, editorConfig.group, { actionInputs: [savedAnswerInput], behaviorVersions: allVersions });
       let config = Object.assign({}, editorConfig, { group: newGroup });
       let editor = createEditor(config);
-      expect(editor.getOtherSavedParametersInGroup()).toEqual([otherBehaviorsInGroup[0].params[0]]);
+      expect(editor.getOtherSavedInputsInGroup().map(ea => ea.inputId)).toEqual([otherBehaviorsInGroup[0].inputIds[0]]);
     });
   });
 });

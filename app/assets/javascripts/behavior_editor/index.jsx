@@ -25,11 +25,11 @@ var React = require('react'),
   FixedFooter = require('../shared_ui/fixed_footer'),
   HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
-  Input = require('../form/input'),
+  Input = require('../models/input'),
+  FormInput = require('../form/input'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notification = require('../notifications/notification'),
   PageWithPanels = require('../shared_ui/page_with_panels'),
-  Param = require('../models/param'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
@@ -110,14 +110,15 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedBehaviorId());
   },
 
-  getOtherSavedParametersInGroup: function() {
-    const currentInputIds = this.getBehaviorParams().map(ea => ea.inputId);
-    const all = this.otherBehaviorsInGroup().reduce((arr, ea) => {
-      return arr.concat(ea.params);
-    }, [])
-      .filter(ea => currentInputIds.indexOf(ea.inputId) === -1)
-      .filter(ea => ea.isSaved());
-    return UniqueBy.forArray(all, 'inputId');
+  getOtherSavedInputsInGroup: function() {
+    const currentInputIds = this.getInputs().map(ea => ea.inputId);
+    const allInputIds = this.otherBehaviorsInGroup().reduce((arr, ea) => {
+      return arr.concat(ea.inputIds);
+    }, []);
+    const otherInputIds = allInputIds.filter(ea => currentInputIds.indexOf(ea.inputId) === -1);
+    const otherInputs = otherInputIds.map(eaId => this.getBehaviorGroup().getInputs().find(ea => ea.inputId === eaId));
+    const otherSavedInputs = otherInputs.filter(ea => ea.isSaved());
+    return UniqueBy.forArray(otherSavedInputs, 'inputId');
   },
 
   getAllOAuth2Applications: function() {
@@ -186,14 +187,21 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorProp('functionBody') || "";
   },
 
-  getBehaviorParams: function() {
-    return this.getBehaviorProp('params') || [];
+  getInputIds: function() {
+    return this.getBehaviorProp('inputIds') || [];
   },
 
-  getFirstBehaviorParamName: function() {
-    var params = this.getBehaviorParams();
-    if (params[0] && params[0].name) {
-      return params[0].name;
+  getInputs: function() {
+    const allInputs = this.getBehaviorGroup().getInputs();
+    return this.getInputIds().
+      map(eaId => allInputs.find(ea => ea.inputId === eaId)).
+      filter(ea => !!ea);
+  },
+
+  getFirstBehaviorInputName: function() {
+    var inputs = this.getInputs();
+    if (inputs[0] && inputs[0].name) {
+      return inputs[0].name;
     } else {
       return "";
     }
@@ -280,7 +288,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getCodeFunctionParams: function() {
-    var userParams = this.getBehaviorParams().map(function(param) { return param.name; });
+    var userParams = this.getInputs().map(ea => ea.name);
     return userParams.concat(this.getSystemParams());
   },
 
@@ -318,9 +326,9 @@ const BehaviorEditor = React.createClass({
     return 2;
   },
 
-  getParamWithSavedAnswers: function() {
+  getInputWithSavedAnswers: function() {
     if (this.state.selectedSavedAnswerInputId) {
-      return this.getBehaviorParams().find((param) => param.inputId === this.state.selectedSavedAnswerInputId);
+      return this.getInputs().find(ea => ea.inputId === this.state.selectedSavedAnswerInputId);
     } else {
       return null;
     }
@@ -396,7 +404,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getParamTypesNeedingConfiguration: function() {
-    const paramTypes = Array.from(new Set(this.getBehaviorParams().map(ea => ea.paramType)));
+    const paramTypes = Array.from(new Set(this.getInputs().map(ea => ea.paramType)));
     return paramTypes.filter(ea => ea.needsConfig);
   },
 
@@ -421,16 +429,16 @@ const BehaviorEditor = React.createClass({
         triggerParamObj[paramName] = true;
       });
     });
-    this.getBehaviorParams().forEach((codeParam) => {
+    this.getInputs().forEach((codeParam) => {
       delete triggerParamObj[codeParam.name];
     });
     return Object.keys(triggerParamObj).map((name) => {
-      if (Param.isValidName(name)) {
+      if (Input.isValidName(name)) {
         return {
           kind: "param_not_in_function",
           name: name,
           onClick: () => {
-            this.addParams([name]);
+            this.addInputs([name]);
           }
         };
       } else {
@@ -443,7 +451,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getValidParamNamesForTemplate: function() {
-    return this.getBehaviorParams().map((param) => param.name)
+    return this.getInputs().map((param) => param.name)
       .concat(this.getSystemParams())
       .concat('successResult');
   },
@@ -498,20 +506,16 @@ const BehaviorEditor = React.createClass({
     return this.state.notifications;
   },
 
-  getTimestampedBehavior: function(behavior) {
-    return behavior.clone({ createdAt: Date.now() });
-  },
-
   getVersions: function() {
     return this.state.versions;
   },
 
   getResponseTemplateSectionNumber: function() {
-    var hasParams = this.hasUserParameters();
+    var hasInputs = this.hasInputs();
     var hasCode = this.getSelectedBehavior().shouldRevealCodeEditor;
-    if (hasParams && hasCode) {
+    if (hasInputs && hasCode) {
       return "4";
-    } else if (hasParams || hasCode) {
+    } else if (hasInputs || hasCode) {
       return "3";
     } else {
       return "2";
@@ -525,28 +529,33 @@ const BehaviorEditor = React.createClass({
 
   /* Setters/togglers */
 
-  createNewParam: function(optionalValues) {
-    return new Param(Object.assign({ paramType: this.getParamTypes()[0] }, optionalValues));
+  createNewInput: function(optionalValues) {
+    return new Input(Object.assign({ paramType: this.getParamTypes()[0] }, optionalValues));
   },
 
-  addParam: function(param) {
-    var newParams = this.getBehaviorParams().concat([param]);
-    this.setBehaviorProp('params', newParams, this.focusOnLastParam);
+  setBehaviorInputs: function(newBehaviorInputs, callback) {
+    const newGroup = this.getBehaviorGroup().copyWithInputsForBehaviorVersion(newBehaviorInputs, this.getSelectedBehavior());
+    this.updateGroupStateWith(newGroup, callback);
   },
 
-  addNewParam: function() {
-    var newParamIndex = this.getBehaviorParams().length + 1;
-    while (this.getBehaviorParams().some(function(param) {
-      return param.name === 'userInput' + newParamIndex;
+  addInput: function(input) {
+    const newInputs = this.getInputs().concat([input]);
+    this.setBehaviorInputs(newInputs, this.focusOnLastInput);
+  },
+
+  addNewInput: function() {
+    var newIndex = this.getInputs().length + 1;
+    while (this.getInputs().some(ea => {
+      return ea.name === 'userInput' + newIndex;
     })) {
-      newParamIndex++;
+      newIndex++;
     }
-    this.addParam(this.createNewParam({ name: 'userInput' + newParamIndex }));
+    this.addInput(this.createNewInput({ name: 'userInput' + newIndex }));
   },
 
-  addParams: function(newParamNames) {
-    var newParams = this.getBehaviorParams().concat(newParamNames.map((name) => this.createNewParam({ name: name })));
-    this.setBehaviorProp('params', newParams);
+  addInputs: function(newNames) {
+    var newInputs = this.getInputs().concat(newNames.map((name) => this.createNewInput({ name: name })));
+    this.setBehaviorProp('inputIds', newInputs.map(ea => ea.inputId));
   },
 
   addTrigger: function(callback) {
@@ -595,14 +604,14 @@ const BehaviorEditor = React.createClass({
   },
 
   deleteCode: function() {
-    this.setBehaviorProp('params', []);
+    this.setBehaviorProp('inputIds', []);
     this.setBehaviorProp('functionBody', '');
     this.toggleCodeEditor();
     this.props.onClearActivePanel();
   },
 
-  deleteParamAtIndex: function(index) {
-    this.setBehaviorProp('params', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getBehaviorParams(), index));
+  deleteInputAtIndex: function(index) {
+    this.setBehaviorProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputs(), index));
   },
 
   deleteTriggerAtIndex: function(index) {
@@ -810,19 +819,21 @@ const BehaviorEditor = React.createClass({
     this.setBehaviorProps(newProps, callback);
   },
 
+  buildNewVersionsWithBehaviorProps(group, behavior, props) {
+    const timestampedBehavior = behavior.clone(props).copyWithNewTimestamp();
+    return group.behaviorVersions.
+      filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
+      concat([timestampedBehavior]);
+  },
+
   setBehaviorProps: function(props, callback) {
-    var existingGroup = this.getBehaviorGroup();
-    var existingBehavior = this.getSelectedBehaviorFor(existingGroup, this.getSelectedBehaviorId());
+    const existingGroup = this.getBehaviorGroup();
+    const existingBehavior = this.getSelectedBehaviorFor(existingGroup, this.getSelectedBehaviorId());
     if (!existingBehavior) {
       return;
     }
-    var timestampedBehavior = this.getTimestampedBehavior(existingBehavior.clone(props));
-
-    var newVersionsForGroup =
-      existingGroup.behaviorVersions.
-      filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
-      concat([timestampedBehavior]);
-    var updatedGroup = this.getBehaviorGroup().clone({ behaviorVersions: newVersionsForGroup });
+    const newVersionsForGroup = this.buildNewVersionsWithBehaviorProps(existingGroup, existingBehavior, props);
+    const updatedGroup = existingGroup.clone({ behaviorVersions: newVersionsForGroup });
 
     this.updateGroupStateWith(updatedGroup, callback);
   },
@@ -1023,10 +1034,10 @@ const BehaviorEditor = React.createClass({
 
   updateDataTypeResultConfig: function(shouldUseSearch) {
     if (shouldUseSearch) {
-      var searchQueryParam = this.createNewParam({ name: 'searchQuery' });
-      this.setBehaviorProp('params', [searchQueryParam]);
+      var searchQueryInput = this.createNewInput({ name: 'searchQuery' });
+      this.setBehaviorProp('inputIds', [searchQueryInput.id]);
     } else {
-      this.setBehaviorProp('params', []);
+      this.setBehaviorProp('inputIds', []);
     }
   },
 
@@ -1114,17 +1125,18 @@ const BehaviorEditor = React.createClass({
     };
   },
 
-  updateParamAtIndexWithParam: function(index, newParam) {
-    var oldParams = this.getBehaviorParams();
-    var oldParamName = oldParams[index].name;
-    var newParamName = newParam.name;
-    var newParams = ImmutableObjectUtils.arrayWithNewElementAtIndex(oldParams, newParam, index);
-    this.setBehaviorProp('params', newParams, () => {
+  updateBehaviorInputAtIndexWith: function(index, newInput) {
+    var oldInputs = this.getInputs();
+    var oldInputName = oldInputs[index].name;
+    var newInputName = newInput.name;
+    var newInputs = ImmutableObjectUtils.arrayWithNewElementAtIndex(oldInputs, newInput, index);
+
+    this.setBehaviorInputs(newInputs, () => {
       var numTriggersReplaced = 0;
-      if (oldParamName === this.state.paramNameToSync) {
-        numTriggersReplaced = this.syncParamNamesAndCount(oldParamName, newParamName);
+      if (oldInputName === this.state.paramNameToSync) {
+        numTriggersReplaced = this.syncParamNamesAndCount(oldInputName, newInputName);
         if (numTriggersReplaced > 0) {
-          this.setState({ paramNameToSync: newParamName });
+          this.setState({ paramNameToSync: newInputName });
         }
       }
     });
@@ -1144,9 +1156,9 @@ const BehaviorEditor = React.createClass({
     var numTriggersModified = 0;
 
     var newTriggers = this.getBehaviorTriggers().map((oldTrigger) => {
-      if (oldTrigger.usesParamName(oldName)) {
+      if (oldTrigger.usesInputName(oldName)) {
         numTriggersModified++;
-        return oldTrigger.clone({ text: oldTrigger.getTextWithNewParamName(oldName, newName) });
+        return oldTrigger.clone({ text: oldTrigger.getTextWithNewInputName(oldName, newName) });
       } else {
         return oldTrigger;
       }
@@ -1214,12 +1226,12 @@ const BehaviorEditor = React.createClass({
     return this.props.group.getDataTypes();
   },
 
-  hasUserParameters: function() {
-    return this.getBehaviorParams() && this.getBehaviorParams().length > 0;
+  hasInputs: function() {
+    return this.getInputs() && this.getInputs().length > 0;
   },
 
-  hasUserParameterNamed: function(paramName) {
-    return this.getBehaviorParams().some((param) => param.name === paramName);
+  hasInputNamed: function(name) {
+    return this.getInputs().some(ea => ea.name === name);
   },
 
   isDataTypeBehavior: function() {
@@ -1227,7 +1239,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isSearchDataTypeBehavior: function() {
-    return this.isDataTypeBehavior() && this.hasUserParameterNamed('searchQuery');
+    return this.isDataTypeBehavior() && this.hasInputNamed('searchQuery');
   },
 
   isExistingBehavior: function() {
@@ -1369,12 +1381,12 @@ const BehaviorEditor = React.createClass({
     BrowserUtils.ensureYPosInView(cursorBottom, this.refs.footer.getHeight());
   },
 
-  focusOnParamIndex: function(index) {
+  focusOnInputIndex: function(index) {
     this.refs.userInputConfiguration.focusIndex(index);
   },
 
-  focusOnLastParam: function() {
-    this.focusOnParamIndex(this.getBehaviorParams().length - 1);
+  focusOnLastInput: function() {
+    this.focusOnInputIndex(this.getInputs().length - 1);
   },
 
   onAddNewEnvVariable: function() {
@@ -1435,11 +1447,11 @@ const BehaviorEditor = React.createClass({
     }, () => { this.checkDataAndCallback(this.onSaveBehaviorGroup); });
   },
 
-  onParamEnterKey: function(index) {
-    if (index + 1 < this.getBehaviorParams().length) {
-      this.focusOnParamIndex(index + 1);
-    } else if (this.getBehaviorParams()[index].question) {
-      this.addNewParam();
+  onInputEnterKey: function(index) {
+    if (index + 1 < this.getInputs().length) {
+      this.focusOnInputIndex(index + 1);
+    } else if (this.getInputs()[index].question) {
+      this.addNewInput();
     }
   },
 
@@ -1450,13 +1462,13 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  onParamNameFocus: function(index) {
+  onInputNameFocus: function(index) {
     this.setState({
-      paramNameToSync: this.getBehaviorParams()[index].name
+      paramNameToSync: this.getInputs()[index].name
     });
   },
 
-  onParamNameBlur: function() {
+  onInputNameBlur: function() {
     this.setState({
       paramNameToSync: null
     });
@@ -1592,7 +1604,7 @@ const BehaviorEditor = React.createClass({
 
           <CodeHeader
             ref="codeHeader"
-            userParams={this.getBehaviorParams()}
+            userInputs={this.getInputs()}
             systemParams={this.getSystemParams()}
           />
         </div>
@@ -1682,7 +1694,7 @@ const BehaviorEditor = React.createClass({
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForResponseTemplate'} onChange={this.layoutDidUpdate}>
             <ResponseTemplateHelp
-              firstParamName={this.getFirstBehaviorParamName()}
+              firstParamName={this.getFirstBehaviorInputName()}
               template={this.getBehaviorTemplate()}
               onCollapseClick={this.props.onClearActivePanel}
             />
@@ -1746,7 +1758,7 @@ const BehaviorEditor = React.createClass({
             <BehaviorTester
               ref="behaviorTester"
               triggers={this.getBehaviorTriggers()}
-              params={this.getBehaviorParams()}
+              inputs={this.getInputs()}
               behaviorId={this.getSelectedBehaviorId()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
@@ -1765,13 +1777,13 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          {this.getOtherSavedParametersInGroup().length > 0 ? (
+          {this.getOtherSavedInputsInGroup().length > 0 ? (
             <Collapsible revealWhen={this.props.activePanelName === 'sharedAnswerInputSelector'} onChange={this.layoutDidUpdate}>
               <SharedAnswerInputSelector
                 ref="sharedAnswerInputSelector"
                 onToggle={this.toggleSharedAnswerInputSelector}
-                onSelect={this.addParam}
-                params={this.getOtherSavedParametersInGroup()}
+                onSelect={this.addInput}
+                inputs={this.getOtherSavedInputsInGroup()}
               />
             </Collapsible>
           ) : null}
@@ -1781,7 +1793,7 @@ const BehaviorEditor = React.createClass({
               ref="savedAnswerEditor"
               onToggle={this.toggleSavedAnswerEditor}
               savedAnswers={this.props.savedAnswers}
-              selectedParam={this.getParamWithSavedAnswers()}
+              selectedInput={this.getInputWithSavedAnswers()}
               onForgetSavedAnswerForUser={this.forgetSavedAnswerForUser}
               onForgetSavedAnswersForTeam={this.forgetSavedAnswersForTeam}
             />
@@ -2022,7 +2034,7 @@ const BehaviorEditor = React.createClass({
       <div className="container container-wide">
         <div className="columns columns-elastic mobile-columns-float">
           <div className="column column-shrink">
-            <Input
+            <FormInput
               className="form-input-borderless form-input-l type-bold width-15 mobile-width-full"
               ref="input"
               value={this.getBehaviorName()}
@@ -2057,7 +2069,7 @@ const BehaviorEditor = React.createClass({
       <div>
                 <div className="columns container container-wide">
                   <div className="column column-full mobile-column-full">
-                    <Input
+                    <FormInput
                       className="form-input-borderless form-input-m mbneg1"
                       placeholder="Action description (optional)"
                       onChange={this.updateDescription}
@@ -2082,19 +2094,19 @@ const BehaviorEditor = React.createClass({
 
                 <UserInputConfiguration
                   ref="userInputConfiguration"
-                  onParamChange={this.updateParamAtIndexWithParam}
-                  onParamDelete={this.deleteParamAtIndex}
-                  onParamAdd={this.addNewParam}
-                  onParamNameFocus={this.onParamNameFocus}
-                  onParamNameBlur={this.onParamNameBlur}
-                  onEnterKey={this.onParamEnterKey}
+                  onInputChange={this.updateBehaviorInputAtIndexWith}
+                  onInputDelete={this.deleteInputAtIndex}
+                  onInputAdd={this.addNewInput}
+                  onInputNameFocus={this.onInputNameFocus}
+                  onInputNameBlur={this.onInputNameBlur}
+                  onEnterKey={this.onInputEnterKey}
                   onConfigureType={this.onConfigureType}
-                  userParams={this.getBehaviorParams()}
+                  userInputs={this.getInputs()}
                   paramTypes={this.getParamTypes()}
                   triggers={this.getBehaviorTriggers()}
                   isFinishedBehavior={this.isFinishedBehavior()}
                   behaviorHasCode={this.getSelectedBehavior().shouldRevealCodeEditor}
-                  hasSharedAnswers={this.getOtherSavedParametersInGroup().length > 0}
+                  hasSharedAnswers={this.getOtherSavedInputsInGroup().length > 0}
                   otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
                   onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
                   savedAnswers={this.props.savedAnswers}
@@ -2130,7 +2142,7 @@ const BehaviorEditor = React.createClass({
 
                   <div className="container container-wide">
                     <div className="ptxl">
-                      <SectionHeading number={this.hasUserParameters() ? "3" : "2"}>
+                      <SectionHeading number={this.hasInputs() ? "3" : "2"}>
                         <span className="mrm">Run code</span>
                         <span className="display-inline-block">
                           <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
@@ -2142,7 +2154,7 @@ const BehaviorEditor = React.createClass({
                         functionBody={this.getBehaviorFunctionBody()}
                         onToggleHelp={this.toggleBoilerplateHelp}
                         helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
-                        hasUserParameters={this.hasUserParameters()}
+                        hasInputs={this.hasInputs()}
                       />
 
                       {this.renderCodeEditor()}
@@ -2176,7 +2188,7 @@ const BehaviorEditor = React.createClass({
               <hr className="mtl mbn thin bg-gray-light" />
 
               <DataTypeResultConfig
-                usesSearch={this.hasUserParameterNamed('searchQuery')}
+                usesSearch={this.hasInputNamed('searchQuery')}
                 onChange={this.updateDataTypeResultConfig}
               />
 
@@ -2188,7 +2200,7 @@ const BehaviorEditor = React.createClass({
                 <div className="mbxl">
                   <DataTypeCodeEditorHelp
                   functionBody={this.getBehaviorFunctionBody()}
-                  usesSearch={this.hasUserParameterNamed('searchQuery')}
+                  usesSearch={this.hasInputNamed('searchQuery')}
                   />
                 </div>
 

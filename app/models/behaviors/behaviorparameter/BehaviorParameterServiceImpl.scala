@@ -4,7 +4,6 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
-import json.BehaviorParameterData
 import models.IDs
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
@@ -45,33 +44,21 @@ class BehaviorParameterServiceImpl @Inject() (
   }
 
   private def createForAction(input: Input, rank: Int, behaviorVersion: BehaviorVersion): DBIO[BehaviorParameter] = {
-    for {
-      raw <- DBIO.successful {
-        RawBehaviorParameter(IDs.next, rank, Some(input.id), behaviorVersion.id)
-      }
-      param <- (all += raw).map { _ =>
-        BehaviorParameter(raw.id, raw.rank, input, behaviorVersion)
-      }
-    } yield param
+    val raw = RawBehaviorParameter(IDs.next, rank, Some(input.id), behaviorVersion.id)
+    (all += raw).map { _ =>
+      BehaviorParameter(raw.id, raw.rank, input, behaviorVersion)
+    }
   }
 
   private def createFor(input: Input, rank: Int, behaviorVersion: BehaviorVersion): Future[BehaviorParameter] = {
     dataService.run(createForAction(input, rank, behaviorVersion))
   }
 
-  def ensureForAction(behaviorVersion: BehaviorVersion, params: Seq[BehaviorParameterData]): DBIO[Seq[BehaviorParameter]] = {
+  def ensureForAction(behaviorVersion: BehaviorVersion, inputs: Seq[Input]): DBIO[Seq[BehaviorParameter]] = {
     for {
       _ <- all.filter(_.behaviorVersionId === behaviorVersion.id).delete
-      newParams <- DBIO.sequence(params.zipWithIndex.map { case(data, i) =>
-        for {
-          maybeExistingInput <- data.inputVersionId.map { inputVersionId =>
-            dataService.inputs.findAction(inputVersionId)
-          }.getOrElse(DBIO.successful(None))
-          input <- maybeExistingInput.map(DBIO.successful).getOrElse {
-            dataService.inputs.createForAction(data.inputData, behaviorVersion.groupVersion)
-          }
-          param <- createForAction(input, i + 1, behaviorVersion)
-        } yield param
+      newParams <- DBIO.sequence(inputs.zipWithIndex.map { case(input, i) =>
+        createForAction(input, i + 1, behaviorVersion)
       })
     } yield newParams
   }

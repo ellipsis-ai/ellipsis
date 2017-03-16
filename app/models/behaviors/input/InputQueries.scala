@@ -29,6 +29,11 @@ object InputQueries {
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
+  def uncompiledFindByInputIdQuery(inputId: Rep[String]) = {
+    joined.filter { case((raw, _), _) => raw.inputId === inputId }
+  }
+  val findByInputIdQuery = Compiled(uncompiledFindByInputIdQuery _)
+
   def uncompiledFindRawQuery(id: Rep[String]) = all.filter(_.id === id)
 
   def uncompiledAllForGroupVersionQuery(groupVersionId: Rep[String]) = {

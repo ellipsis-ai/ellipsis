@@ -9,6 +9,8 @@ import scala.concurrent.Future
 
 trait InputService {
 
+  def findByInputIdAction(inputId: String): DBIO[Option[Input]]
+
   def findAction(id: String): DBIO[Option[Input]]
 
   def find(id: String): Future[Option[Input]]

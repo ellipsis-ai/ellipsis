@@ -40,7 +40,7 @@ case class BehaviorGroupExporter(
   def writeDataTypes(): Unit = {
     writeDataTypeInputs()
     dataTypeExporters.foreach { ea =>
-      ea.copyForExport(this).createDirectory()
+      ea.createDirectory()
     }
   }
 
@@ -60,7 +60,7 @@ case class BehaviorGroupExporter(
   def writeActions(): Unit = {
     writeActionInputs()
     actionExporters.foreach { ea =>
-      ea.copyForExport(this).createDirectory()
+      ea.createDirectory()
     }
   }
 
@@ -89,14 +89,6 @@ case class BehaviorGroupExporter(
 
 object BehaviorGroupExporter {
 
-  private def inputsDataForExporters(exporters: Seq[BehaviorVersionExporter], dataService: DataService): Seq[InputData] = {
-    exporters.flatMap { exporter =>
-      exporter.paramsData.map { paramData =>
-        paramData.newInputData
-      }
-    }.distinct
-  }
-
   def maybeFor(groupId: String, user: User, dataService: DataService): Future[Option[BehaviorGroupExporter]] = {
     val mainParentPath = "/tmp/exports/"
     for {
@@ -108,6 +100,12 @@ object BehaviorGroupExporter {
       maybeCurrentGroupVersion <- maybeGroup.map { group =>
         dataService.behaviorGroups.maybeCurrentVersionFor(group)
       }.getOrElse(Future.successful(None))
+      inputs <- maybeCurrentGroupVersion.map { groupVersion =>
+        dataService.inputs.allForGroupVersion(groupVersion)
+      }.getOrElse(Future.successful(Seq()))
+      inputsData <- Future.sequence(inputs.map { input =>
+        InputData.fromInput(input, dataService)
+      })
       maybeBehaviors <- maybeGroup.map { group =>
         dataService.behaviors.allForGroup(group).map(Some(_))
       }.getOrElse(Future.successful(None))
@@ -127,8 +125,9 @@ object BehaviorGroupExporter {
         exporters.partition(_.behaviorVersion.behavior.isDataType)
       }.getOrElse((Seq(), Seq())))
     } yield {
-      val actionInputsData = inputsDataForExporters(actionExporters, dataService)
-      val dataTypeInputsData = inputsDataForExporters(dataTypeExporters, dataService)
+      val (dataTypeInputsData, actionInputsData) = inputsData.partition { ea =>
+        dataTypeExporters.exists(exporter => ea.inputId.exists(exporter.inputIds.contains))
+      }
       maybeCurrentGroupVersion.map { groupVersion =>
         BehaviorGroupExporter(groupVersion, actionInputsData, actionExporters, dataTypeInputsData, dataTypeExporters, mainParentPath)
       }

@@ -54,22 +54,18 @@ case class BehaviorGroupData(
                                     group: BehaviorGroup,
                                     behaviorVersionsToUse: Seq[BehaviorVersionData]
                                   ): BehaviorGroupData = {
-    val behaviorVersionsWithEnsuredInputIds = behaviorVersionsToUse.map(ea => ea.copyWithEnsuredInputIds)
-    val constructedDataTypeInputs = behaviorVersionsWithEnsuredInputIds.filter(_.isDataType).flatMap(_.params.map(_.inputData)).distinct
-    val constructedActionInputs = behaviorVersionsWithEnsuredInputIds.filterNot(_.isDataType).flatMap(_.params.map(_.inputData)).distinct
     val oldToNewIdMapping = collection.mutable.Map[String, String]()
-    val actionInputsWithIds = constructedActionInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
-    val dataTypeInputsWithIds = constructedDataTypeInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
-    val behaviorVersionsWithIds = behaviorVersionsWithEnsuredInputIds.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
+    val actionInputsWithIds = actionInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
+    val dataTypeInputsWithIds = dataTypeInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
+    val behaviorVersionsWithIds = behaviorVersionsToUse.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
     val dataTypeVersionsWithIds = behaviorVersionsWithIds.filter(_.isDataType)
     val actionInputsForNewVersion = actionInputsWithIds.map(_.copyWithParamTypeIdsIn(dataTypeVersionsWithIds, oldToNewIdMapping))
     val dataTypeInputsForNewVersion = dataTypeInputsWithIds.map(_.copyWithParamTypeIdsIn(dataTypeVersionsWithIds, oldToNewIdMapping))
-    val behaviorVersionsForNewVersion = behaviorVersionsWithIds.map(_.copyWithInputIdsIn(actionInputsForNewVersion ++ dataTypeInputsForNewVersion, oldToNewIdMapping))
     copy(
       id = Some(group.id),
       actionInputs = actionInputsForNewVersion,
       dataTypeInputs = dataTypeInputsForNewVersion,
-      behaviorVersions = behaviorVersionsForNewVersion
+      behaviorVersions = behaviorVersionsWithIds
     )
   }
 
@@ -112,33 +108,20 @@ case class BehaviorGroupData(
 
 object BehaviorGroupData {
 
-  private def inputsFor(versionsData: Seq[BehaviorVersionData], dataService: DataService) = {
-    Future.sequence(versionsData.flatMap { version =>
-      version.params.map { param =>
-        param.inputVersionId.map(dataService.inputs.find).getOrElse(Future.successful(None))
-      }
-    }).map(_.flatten)
-  }
-
-  private def inputsDataFor(versionsData: Seq[BehaviorVersionData], dataService: DataService) = {
-    inputsFor(versionsData, dataService).flatMap { inputs =>
-      Future.sequence(inputs.map(InputData.fromInput(_, dataService)))
-    }
-  }
-
   def buildFor(version: BehaviorGroupVersion, user: User, dataService: DataService): Future[BehaviorGroupData] = {
     for {
-      teamAccess <- dataService.users.teamAccessFor(user, Some(version.team.id))
       behaviors <- dataService.behaviors.allForGroup(version.group)
       versionsData <- Future.sequence(behaviors.map { ea =>
         BehaviorVersionData.maybeFor(ea.id, user, dataService, Some(version))
       }).map(_.flatten.sortBy { ea =>
         (ea.isDataType, ea.maybeFirstTrigger)
       })
-      (dataTypeVersionsData, actionVersionsData) <- Future.successful(versionsData.partition(_.isDataType))
-      dataTypeInputsData <- inputsDataFor(dataTypeVersionsData, dataService)
-      actionInputsData <- inputsDataFor(actionVersionsData, dataService)
+      inputs <- dataService.inputs.allForGroupVersion(version)
+      inputsData <- Future.sequence(inputs.map(ea => InputData.fromInput(ea, dataService)))
     } yield {
+      val (dataTypeInputsData, actionInputsData) = inputsData.partition { ea =>
+        versionsData.find(v => v.inputIds.contains(ea.inputId)).exists(_.isDataType)
+      }
       BehaviorGroupData(
         Some(version.group.id),
         version.team.id,

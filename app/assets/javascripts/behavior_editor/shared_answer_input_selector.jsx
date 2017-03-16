@@ -1,17 +1,17 @@
 define(function(require) {
   var React = require('react'),
-    Param = require('../models/param');
+    Input = require('../models/input');
 
   return React.createClass({
     displayName: 'SharedAnswerInputSelector',
     propTypes: {
       onToggle: React.PropTypes.func.isRequired,
       onSelect: React.PropTypes.func.isRequired,
-      params: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param))
+      inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input))
     },
 
-    onSelectParam: function(param) {
-      this.props.onSelect(param);
+    onSelectInput: function(input) {
+      this.props.onSelect(input);
       this.props.onToggle();
     },
 
@@ -30,18 +30,18 @@ define(function(require) {
                 </div>
                 <div className="column column-page-main">
                   <div className="columns columns-elastic type-s border-top">
-                    {this.props.params.map((param, index) => (
-                      <div className="column-group" key={`sharedParam${index}`}>
+                    {this.props.inputs.map((ea, index) => (
+                      <div className="column-group" key={`sharedInput${index}`}>
                         <div className="column-row">
                           <div className="type-bold column column-shrink pvs border-bottom">
                             <button type="button"
                               className="button-raw type-monospace"
-                              onClick={this.onSelectParam.bind(this, param)}
+                              onClick={this.onSelectInput.bind(this, ea)}
                             >
-                              {param.name}
+                              {ea.name}
                             </button>
                           </div>
-                          <div className="column column-expand pvs border-bottom type-weak type-italic">{param.question}</div>
+                          <div className="column column-expand pvs border-bottom type-weak type-italic">{ea.question}</div>
                         </div>
                       </div>
                     ))}

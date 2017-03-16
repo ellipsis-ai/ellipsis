@@ -14,14 +14,15 @@ class ParamCollectionStateSpec extends DBSpec {
         val event = TestEvent(user, team, "foo", includesBotMention = false)
         val group = newSavedBehaviorGroupFor(team)
 
-        val paramData = newParamDataFor(isSavedForTeam = Some(true))
+        val inputData = newInputDataFor(isSavedForTeam = Some(true))
         val triggerData = newTriggerData
         val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
-          params = Seq(paramData),
+          inputIds = Seq(inputData.inputId.get),
           triggers = Seq(triggerData)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
-          behaviorVersions = Seq(behaviorVersionData)
+          behaviorVersions = Seq(behaviorVersionData),
+          actionInputs = Seq(inputData)
         )
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
 
@@ -44,14 +45,15 @@ class ParamCollectionStateSpec extends DBSpec {
         val event = TestEvent(user, team, "foo", includesBotMention = false)
         val group = newSavedBehaviorGroupFor(team)
 
-        val paramData = newParamDataFor(isSavedForUser = Some(true))
+        val inputData = newInputDataFor(isSavedForUser = Some(true))
         val triggerData = newTriggerData
         val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
-          params = Seq(paramData),
+          inputIds = Seq(inputData.inputId.get),
           triggers = Seq(triggerData)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
-          behaviorVersions = Seq(behaviorVersionData)
+          behaviorVersions = Seq(behaviorVersionData),
+          actionInputs = Seq(inputData)
         )
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
 
@@ -74,14 +76,15 @@ class ParamCollectionStateSpec extends DBSpec {
         val event = TestEvent(user, team, "foo", includesBotMention = false)
         val group = newSavedBehaviorGroupFor(team)
 
-        val paramData = newParamDataFor()
+        val inputData = newInputDataFor()
         val triggerData = newTriggerData
         val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
-          params = Seq(paramData),
+          inputIds = Seq(inputData.inputId.get),
           triggers = Seq(triggerData)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
-          behaviorVersions = Seq(behaviorVersionData)
+          behaviorVersions = Seq(behaviorVersionData),
+          actionInputs = Seq(inputData)
         )
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
 
