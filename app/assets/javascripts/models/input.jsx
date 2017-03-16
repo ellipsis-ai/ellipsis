@@ -17,7 +17,7 @@ define(function() {
         isSavedForUser: false,
         inputId: null,
         inputVersionId: null,
-        inputExportId: null
+        exportId: null
       }, props);
 
       // TODO: We can re-enable this once all published skills have params with param types
@@ -53,8 +53,8 @@ define(function() {
           value: initialProps.inputVersionId,
           enumerable: true
         },
-        inputExportId: {
-          value: initialProps.inputExportId,
+        exportId: {
+          value: initialProps.exportId,
           enumerable: true
         }
       });
