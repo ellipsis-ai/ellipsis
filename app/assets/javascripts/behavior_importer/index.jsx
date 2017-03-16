@@ -26,7 +26,7 @@ define(function(require) {
     getLocalId: function(group) {
       if (group) {
         const installed = this.getAllInstalledBehaviorGroups().find((ea) => ea.exportId && ea.exportId === group.exportId);
-        return installed ? installed.groupId : null;
+        return installed ? installed.id : null;
       } else {
         return null;
       }
@@ -162,7 +162,7 @@ define(function(require) {
       );
     },
 
-    renderInstalledBehaviorGroups: function() {
+    renderBehaviorGroups: function() {
       var groups = this.getBehaviorGroups();
       if (groups.length > 0) {
         return groups.map((group, index) => (

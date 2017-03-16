@@ -12,7 +12,8 @@
     routes.javascript.BehaviorEditorController.edit,
     routes.javascript.ApplicationController.mergeBehaviorGroups,
     routes.javascript.ApplicationController.deleteBehaviorGroups,
-    routes.javascript.ApplicationController.fetchPublishedBehaviorInfo
+    routes.javascript.ApplicationController.fetchPublishedBehaviorInfo,
+    routes.javascript.BehaviorImportExportController.doImport
   )
   <div id="content" class="content bg-white">
     @config.maybeTeamAccess.map(teamAccess => views.html.behaviorTabs("view", teamAccess))
@@ -22,7 +23,8 @@
       var BehaviorListConfig = {
         containerId: 'behaviorListContainer',
         behaviorGroups: @Html(Json.toJson(behaviorGroups).toString),
-        csrfToken: "@CSRF.getToken(r).map(_.value)"
+        csrfToken: "@CSRF.getToken(r).map(_.value)",
+        teamId: '@config.maybeTargetTeamId.getOrElse("")'
       };
     </script>
     <script data-main='@RemoteAssets.getUrl("javascripts/behavior_list/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
