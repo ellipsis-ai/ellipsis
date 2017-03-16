@@ -1218,10 +1218,6 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().getDataTypes();
   },
 
-  getOriginalDataTypeBehaviors: function() {
-    return this.props.group.getDataTypes();
-  },
-
   hasInputs: function() {
     return this.getInputs() && this.getInputs().length > 0;
   },
