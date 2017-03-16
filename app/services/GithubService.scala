@@ -1,10 +1,12 @@
 package services
 
+import java.nio.charset.Charset
 import java.time.OffsetDateTime
 
 import json._
 import json.Formatting._
 import models.team.Team
+import org.apache.commons.codec.binary.Base64
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
@@ -57,11 +59,12 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
   private def fetchTextFor(url: String): Future[String] = {
     ws.url(url).
       withQueryString(repoCredentials).
-      withHeaders(("Accept", "application/vnd.github.v3.raw")).
+      withHeaders(("Accept", "application/vnd.github.v3.json")).
       get().
       map { response =>
-      response.body
-    }
+        val base64Content = (Json.parse(response.body) \ "content").validate[String].get
+        new String(Base64.decodeBase64(base64Content), Charset.forName("UTF-8"))
+      }
   }
 
   case class BehaviorCode(
