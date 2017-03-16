@@ -34,15 +34,20 @@ case class BehaviorVersionData(
                                 ) {
   val awsConfig: Option[AWSConfigData] = config.aws
 
+  def maybeExportName: Option[String] = {
+    name.orElse(exportId)
+  }
+
   def copyForTeam(team: Team): BehaviorVersionData = {
     copy(teamId = team.id)
   }
 
-  def copyWithIdsEnsuredForImport(group: BehaviorGroup): BehaviorVersionData = {
+  def copyWithIdsEnsuredForImport(group: BehaviorGroup, inputsData: Seq[InputData]): BehaviorVersionData = {
     copy(
       id = exportId,
       teamId = group.team.id,
-      behaviorId = behaviorId.orElse(Some(IDs.next))
+      behaviorId = behaviorId.orElse(Some(IDs.next)),
+      inputIds = inputIds.flatMap { id => inputsData.find(_.exportId.contains(id)).flatMap(_.inputId) }
     )
   }
 
@@ -66,6 +71,16 @@ case class BehaviorVersionData(
   lazy val isDataType: Boolean = config.isDataType
 
   lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption
+
+  def maybeFunction(dataService: DataService): Future[Option[String]] = {
+    id.map { behaviorVersionId =>
+      dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId).flatMap { maybeBehaviorVersion =>
+        maybeBehaviorVersion.map { behaviorVersion =>
+          dataService.behaviorVersions.maybeFunctionFor(behaviorVersion)
+        }.getOrElse(Future.successful(None))
+      }
+    }.getOrElse(Future.successful(None))
+  }
 }
 
 object BehaviorVersionData {
@@ -172,7 +187,7 @@ object BehaviorVersionData {
                 user: User,
                 dataService: DataService,
                 maybeGroupVersion: Option[BehaviorGroupVersion],
-                maybeExportId: Option[String] = None
+                maybeExportId: Option[String]
               ): Future[Option[BehaviorVersionData]] = {
     for {
       maybeBehavior <- dataService.behaviors.find(behaviorId, user)

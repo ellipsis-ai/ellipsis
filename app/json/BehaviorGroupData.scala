@@ -38,25 +38,29 @@ case class BehaviorGroupData(
   }
 
   def copyForImportOf(group: BehaviorGroup): BehaviorGroupData = {
-    val behaviorVersionsWithIds = behaviorVersions.map(_.copyWithIdsEnsuredForImport(group))
-    copyForNewVersionFor(group, behaviorVersionsWithIds)
+    val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsuredFor(group))
+    val dataTypeInputsWithIds = dataTypeInputs.map(_.copyWithIdsEnsuredFor(group))
+    val behaviorVersionsWithIds = behaviorVersions.map(_.copyWithIdsEnsuredForImport(group, actionInputsWithIds ++ dataTypeInputsWithIds))
+    copyForNewVersionFor(group, actionInputsWithIds, dataTypeInputsWithIds, behaviorVersionsWithIds)
   }
 
   def copyForNewVersionOf(group: BehaviorGroup): BehaviorGroupData = {
-    copyForNewVersionFor(group, behaviorVersions)
+    copyForNewVersionFor(group, actionInputs, dataTypeInputs, behaviorVersions)
   }
 
   def copyForMergedGroup(group: BehaviorGroup): BehaviorGroupData = {
-    copyForNewVersionFor(group, behaviorVersions)
+    copyForNewVersionFor(group, actionInputs, dataTypeInputs, behaviorVersions)
   }
 
   private def copyForNewVersionFor(
                                     group: BehaviorGroup,
+                                    actionInputsToUse: Seq[InputData],
+                                    dataTypeInputsToUse: Seq[InputData],
                                     behaviorVersionsToUse: Seq[BehaviorVersionData]
                                   ): BehaviorGroupData = {
     val oldToNewIdMapping = collection.mutable.Map[String, String]()
-    val actionInputsWithIds = actionInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
-    val dataTypeInputsWithIds = dataTypeInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
+    val actionInputsWithIds = actionInputsToUse.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
+    val dataTypeInputsWithIds = dataTypeInputsToUse.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
     val behaviorVersionsWithIds = behaviorVersionsToUse.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
     val dataTypeVersionsWithIds = behaviorVersionsWithIds.filter(_.isDataType)
     val actionInputsForNewVersion = actionInputsWithIds.map(_.copyWithParamTypeIdsIn(dataTypeVersionsWithIds, oldToNewIdMapping))
@@ -112,7 +116,7 @@ object BehaviorGroupData {
     for {
       behaviors <- dataService.behaviors.allForGroup(version.group)
       versionsData <- Future.sequence(behaviors.map { ea =>
-        BehaviorVersionData.maybeFor(ea.id, user, dataService, Some(version))
+        BehaviorVersionData.maybeFor(ea.id, user, dataService, Some(version), ea.maybeExportId)
       }).map(_.flatten.sortBy { ea =>
         (ea.isDataType, ea.maybeFirstTrigger)
       })
