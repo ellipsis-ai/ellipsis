@@ -10,6 +10,7 @@ var React = require('react'),
   BehaviorTester = require('./behavior_tester'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
+  ChangeSummary = require('./change_summary'),
   CodeEditor = require('./code_editor'),
   CodeEditorHelp = require('./code_editor_help'),
   CodeFooter = require('./code_footer'),
@@ -35,7 +36,6 @@ var React = require('react'),
   ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
   SectionHeading = require('./section_heading'),
-  SetOps = require('../lib/set_operations'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
@@ -1214,10 +1214,6 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().getActions();
   },
 
-  getOriginalActionBehaviors: function() {
-    return this.props.group.getActions();
-  },
-
   getDataTypeBehaviors: function() {
     return this.getBehaviorGroup().getDataTypes();
   },
@@ -1266,95 +1262,6 @@ const BehaviorEditor = React.createClass({
     var originalBehavior = this.props.group.behaviorVersions.find((ea) => ea.behaviorId === currentBehavior.behaviorId);
     var previewingVersions = this.props.activePanelName === 'versionHistory';
     return !previewingVersions && !(originalBehavior && currentBehavior.isIdenticalToVersion(originalBehavior));
-  },
-
-  behaviorTextFor: function(baseWord, count) {
-    if (count === 0) {
-      return "";
-    } else if (count === 1) {
-      return `1 ${baseWord}`;
-    } else {
-      return `${count} ${baseWord}s`;
-    }
-  },
-
-  actionsTextFor: function(count) {
-    return this.behaviorTextFor("action", count);
-  },
-
-  dataTypesTextFor: function(count) {
-    return this.behaviorTextFor("data type", count);
-  },
-
-  getChangeSummary: function() {
-    var actionCount = this.getActionBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
-    var dataTypeCount = this.getDataTypeBehaviors().filter((ea) => this.behaviorIsModified(ea)).length;
-    const actionsAdded = SetOps.difference(this.getActionBehaviors(), this.getOriginalActionBehaviors()).length;
-    const actionsRemoved = SetOps.difference(this.getOriginalActionBehaviors(), this.getActionBehaviors()).length;
-    const dataTypesAdded = SetOps.difference(this.getDataTypeBehaviors(), this.getOriginalDataTypeBehaviors()).length;
-    const dataTypesRemoved = SetOps.difference(this.getOriginalDataTypeBehaviors(), this.getDataTypeBehaviors()).length;
-
-    let result;
-
-    if (actionsAdded || actionsRemoved || dataTypesAdded || dataTypesRemoved) {
-      const actionsAddedText = this.actionsTextFor(actionsAdded);
-      const actionsRemovedText = this.actionsTextFor(actionsRemoved);
-      const dataTypesAddedText = this.dataTypesTextFor(dataTypesAdded);
-      const dataTypesRemovedText = this.dataTypesTextFor(dataTypesRemoved);
-
-      let addedPart = "";
-      if (actionsAddedText.length && dataTypesAddedText.length) {
-        addedPart = `${actionsAddedText} and ${dataTypesAddedText}`;
-      } else {
-        addedPart = `${actionsAddedText}${dataTypesAddedText}`;
-      }
-      if (addedPart.length) {
-        addedPart = `${addedPart} added`;
-      }
-
-      let removedPart = "";
-      if (actionsRemovedText.length && dataTypesRemovedText.length) {
-        removedPart = `${actionsRemovedText} and ${dataTypesRemovedText}`;
-      } else {
-        removedPart = `${actionsRemovedText}${dataTypesRemovedText}`;
-      }
-      if (removedPart.length) {
-        removedPart = `${removedPart} removed`;
-      }
-
-      result = [addedPart, removedPart].filter(ea => ea.length > 0).join(", ");
-    } else if (actionCount > 1) {
-      if (dataTypeCount > 1) {
-        result = `${actionCount} actions and ${dataTypeCount} data types modified`;
-      } else if (dataTypeCount === 1) {
-        result = `${actionCount} actions and 1 data type modified`;
-      } else {
-        result = `${actionCount} actions modified`;
-      }
-    } else if (actionCount === 1) {
-      if (dataTypeCount > 1) {
-        result = `1 action and ${dataTypeCount} data types modified`;
-      } else if (dataTypeCount === 1) {
-        result = "1 action and 1 data type modified";
-      } else {
-        result = "1 action modified";
-      }
-    } else {
-      if (dataTypeCount > 1) {
-        result = `${dataTypeCount} data types modified`;
-      } else if (dataTypeCount === 1) {
-        result = "1 data type modified";
-      } else {
-        result = "skill title/description modified";
-      }
-    }
-
-    return (
-      <span>
-        <span className="type-bold">Unsaved changes </span>
-        <span>{result ? `(${result})` : ""}</span>
-      </span>
-    );
   },
 
   isSaving: function() {
@@ -1879,7 +1786,11 @@ const BehaviorEditor = React.createClass({
       );
     } else if (this.isModified()) {
       return (
-        <span className="fade-in type-pink type-italic">{this.getChangeSummary()}</span>
+        <ChangeSummary
+          currentGroupVersion={this.getBehaviorGroup()}
+          originalGroupVersion={this.props.group}
+          isBehaviorModified={this.behaviorIsModified}
+        />
       );
     } else {
       return "";
