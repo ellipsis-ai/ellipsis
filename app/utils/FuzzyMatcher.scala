@@ -2,7 +2,11 @@ package utils
 
 import com.rockymadden.stringmetric.similarity.RatcliffObershelpMetric
 
-case class FuzzyMatcher[T <: FuzzyMatchable](matchString: String, matchables: Seq[T]) {
+case class FuzzyMatcher[T <: FuzzyMatchable](
+                                              matchString: String,
+                                              matchables: Seq[T],
+                                              thresholdDelta: Double = 0.1
+                                            ) {
 
   val matchTokenCount: Int = matchString.split("\\s+").length
 
@@ -36,7 +40,7 @@ case class FuzzyMatcher[T <: FuzzyMatchable](matchString: String, matchables: Se
     allResults.sortBy(_.maxScore).reverse
     val sortedWithSimilarity = allResults.sortBy(_.maxScore).reverse
 
-    sortedWithSimilarity.headOption.map(_.maxScore - 0.1).map { threshold =>
+    sortedWithSimilarity.headOption.map(_.maxScore - thresholdDelta).map { threshold =>
       sortedWithSimilarity.
         filter { ea => ea.maxScore > threshold }.
         map(_.filteredForThreshold(threshold))

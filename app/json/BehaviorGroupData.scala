@@ -30,6 +30,14 @@ case class BehaviorGroupData(
     Seq(fuzzyMatchName, fuzzyMatchDescription) ++ behaviorVersions.flatMap(_.triggers)
   }
 
+  lazy val fuzzyMatchName: FuzzyMatchPattern = {
+    SimpleFuzzyMatchPattern(name)
+  }
+
+  lazy val fuzzyMatchDescription: FuzzyMatchPattern = {
+    SimpleFuzzyMatchPattern(description)
+  }
+
   lazy val inputs = dataTypeInputs ++ actionInputs
 
   lazy val dataTypeBehaviorVersions = behaviorVersions.filter(_.isDataType)
@@ -88,14 +96,6 @@ case class BehaviorGroupData(
     maybeNonEmptyName.map { nonEmptyName =>
       nonEmptyName.toLowerCase
     }.orElse(this.maybeFirstTrigger)
-  }
-
-  lazy val fuzzyMatchName: FuzzyMatchPattern = {
-    SimpleFuzzyMatchPattern(name)
-  }
-
-  lazy val fuzzyMatchDescription: FuzzyMatchPattern = {
-    SimpleFuzzyMatchPattern(description)
   }
 
   import scala.math.Ordered.orderingToOrdered

@@ -168,7 +168,7 @@ case class DisplayHelpBehavior(
       .filter(_.trim.nonEmpty)
       .map { rawDescription =>
         val description = if(result.descriptionMatches) {
-          maybeHelpSearch.map(helpSearch => searchPatternFor(helpSearch).replaceAllIn(result.group.description.getOrElse(""), "$1**$2**$3"))
+          maybeHelpSearch.map(helpSearch => searchPatternFor(helpSearch).replaceAllIn(rawDescription, "$1**$2**$3")).getOrElse("")
         } else {
           rawDescription
         }
