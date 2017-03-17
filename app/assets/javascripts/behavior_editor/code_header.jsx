@@ -3,7 +3,7 @@ var React = require('react');
 
 return React.createClass({
   propTypes: {
-    userParams: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+    userInputs: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
     systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
   },
   boilerplateLine: function() {
@@ -19,7 +19,7 @@ return React.createClass({
           <div className="column column-expand pls">
             <code className="type-s">
               <span className="type-s type-weak">{"function ("}</span>
-              {this.props.userParams.map((param, paramIndex) => (
+              {this.props.userInputs.map((param, paramIndex) => (
                 <span key={`param${paramIndex}`}>{param.name}<span className="type-weak">, </span></span>
               ))}
               <span className="type-weak">{this.boilerplateLine()}</span>

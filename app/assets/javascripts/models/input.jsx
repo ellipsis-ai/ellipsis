@@ -7,7 +7,7 @@ define(function() {
     'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield'
   ]);
 
-  class Param {
+  class Input {
     constructor(props) {
       var initialProps = Object.assign({
         name: '',
@@ -17,12 +17,12 @@ define(function() {
         isSavedForUser: false,
         inputId: null,
         inputVersionId: null,
-        inputExportId: null
+        exportId: null
       }, props);
 
       // TODO: We can re-enable this once all published skills have params with param types
       // if (!initialProps.paramType) {
-      //   throw(new Error("New Param object must have a param type set"));
+      //   throw(new Error("New Input object must have a param type set"));
       // }
       Object.defineProperties(this, {
         name: {
@@ -53,8 +53,8 @@ define(function() {
           value: initialProps.inputVersionId,
           enumerable: true
         },
-        inputExportId: {
-          value: initialProps.inputExportId,
+        exportId: {
+          value: initialProps.exportId,
           enumerable: true
         }
       });
@@ -64,31 +64,31 @@ define(function() {
       return this.isSavedForUser || this.isSavedForTeam;
     }
 
-    isSameNameAndTypeAs(otherParam) {
-      return this.name === otherParam.name &&
-        this.paramType.id === otherParam.paramType.id;
+    isSameNameAndTypeAs(other) {
+      return this.name === other.name &&
+        this.paramType.id === other.paramType.id;
     }
 
     clone(props) {
-      return new Param(Object.assign({}, this, props));
+      return new Input(Object.assign({}, this, props));
     }
 
-    static paramsFromJson(jsonArray) {
-      return jsonArray.map((triggerObj) => new Param(triggerObj));
+    static allFromJson(jsonArray) {
+      return jsonArray.map((triggerObj) => new Input(triggerObj));
     }
 
     static formatName(proposedName) {
       // This only allows a subset of valid JS identifiers, but it'll do for now
       // for our purposes
       var newName = proposedName.replace(/[^\w$]/g, '').replace(/^[^a-z$_]/i, '');
-      if (Param.matchesReservedWord(newName)) {
+      if (Input.matchesReservedWord(newName)) {
         newName = '_' + newName;
       }
       return newName;
     }
 
     static isValidName(proposedName) {
-      var formattedName = Param.formatName(proposedName);
+      var formattedName = Input.formatName(proposedName);
       return formattedName === proposedName;
     }
 
@@ -101,5 +101,5 @@ define(function() {
     }
   }
 
-  return Param;
+  return Input;
 });

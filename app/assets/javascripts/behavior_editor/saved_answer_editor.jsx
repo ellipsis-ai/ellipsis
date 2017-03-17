@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    Param = require('../models/param');
+    Input = require('../models/input');
 
   return React.createClass({
     displayName: 'SavedAnswerEditor',
@@ -13,13 +13,13 @@ define(function(require) {
           myValueString: React.PropTypes.string
         })
       ).isRequired,
-      selectedParam: React.PropTypes.instanceOf(Param),
+      selectedInput: React.PropTypes.instanceOf(Input),
       onForgetSavedAnswerForUser: React.PropTypes.func.isRequired,
       onForgetSavedAnswersForTeam: React.PropTypes.func.isRequired
     },
 
-    getSavedAnswerFor: function(param) {
-      return this.props.savedAnswers.find((ea) => ea.inputId === param.inputId);
+    getSavedAnswerFor: function(input) {
+      return this.props.savedAnswers.find((ea) => ea.inputId === input.inputId);
     },
 
     otherUsersAnswersSaved: function(answer) {
@@ -28,11 +28,11 @@ define(function(require) {
     },
 
     isSavedForTeam: function() {
-      return this.props.selectedParam && this.props.selectedParam.isSavedForTeam;
+      return this.props.selectedInput && this.props.selectedInput.isSavedForTeam;
     },
 
     isSavedForUser: function() {
-      return this.props.selectedParam && this.props.selectedParam.isSavedForUser;
+      return this.props.selectedInput && this.props.selectedInput.isSavedForUser;
     },
 
     forgetUserAnswer: function(answer) {
@@ -79,18 +79,18 @@ define(function(require) {
     },
 
     render: function() {
-      var selectedParam = this.props.selectedParam;
-      var answer = selectedParam && this.getSavedAnswerFor(selectedParam);
+      var selectedInput = this.props.selectedInput;
+      var answer = selectedInput && this.getSavedAnswerFor(selectedInput);
       return (
         <div>
           <div className="box-action phn">
             <div className="container">
               <div className="columns">
                 <div className="column column-page-sidebar">
-                  <h4 className="type-weak">{selectedParam ? (
+                  <h4 className="type-weak">{selectedInput ? (
                       <span>
                         <span>Saved answers for </span>
-                        <span className="type-monospace type-regular">{selectedParam.name}</span>
+                        <span className="type-monospace type-regular">{selectedInput.name}</span>
                       </span>
                     ) : (
                       <span>Saved answers</span>
@@ -98,12 +98,12 @@ define(function(require) {
                 </div>
                 <div className="column column-page-main">
 
-                  {selectedParam && answer ? (
+                  {selectedInput && answer ? (
                     <div className="type-s">
 
                       <div className="mbl">
                         <h6>Question:</h6>
-                        <div><i>{selectedParam.question}</i></div>
+                        <div><i>{selectedInput.question}</i></div>
                       </div>
 
                       {this.isSavedForUser() ? (

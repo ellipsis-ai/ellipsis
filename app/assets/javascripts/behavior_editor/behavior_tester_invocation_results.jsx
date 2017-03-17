@@ -10,17 +10,17 @@ define(function(require) {
       onRenderResult: React.PropTypes.func
     },
 
-    missingParametersResult: function(missingParamNames) {
+    missingInputsResult: function(missingInputNames) {
       return (
         <div className="display-overflow-scroll border border-pink bg-white pas">
-          {missingParamNames.length === 1 ? (
+          {missingInputNames.length === 1 ? (
             <span>
-              Ellipsis will ask the user for a value for the input <code className="type-bold mlxs">{missingParamNames[0]}</code>.
+              Ellipsis will ask the user for a value for the input <code className="type-bold mlxs">{missingInputNames[0]}</code>.
             </span>
           ) : (
             <span>
               <span>Ellipsis will ask the user for values for these inputs: </span>
-              <code className="type-bold mlxs">{missingParamNames.join(", ")}</code>
+              <code className="type-bold mlxs">{missingInputNames.join(", ")}</code>
             </span>
           )}
         </div>
@@ -120,7 +120,7 @@ define(function(require) {
           ))}
           {ifPresent(result.missingSimpleTokens, this.missingSimpleTokensResult)}
           {ifPresent(result.missingUserEnvVars, this.missingUserEnvVarsResult)}
-          {ifPresent(result.missingParamNames, this.missingParametersResult)}
+          {ifPresent(result.missingInputNames, this.missingInputsResult)}
         </div>
       );
     }

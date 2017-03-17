@@ -96,6 +96,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                ): Future[BehaviorGroupVersion] = {
     val action = (for {
       groupVersion <- createForAction(group, user, data.name, data.icon, data.description)
+      _ <- DBIO.sequence(data.dataTypeInputs.map { ea =>
+        dataService.inputs.ensureForAction(ea, groupVersion)
+      })
       _ <- DBIO.sequence(data.dataTypeBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
@@ -107,7 +110,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })
-      _ <- DBIO.sequence(data.inputs.map { ea =>
+      _ <- DBIO.sequence(data.actionInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)
       })
       _ <- DBIO.sequence(data.actionBehaviorVersions.map { ea =>

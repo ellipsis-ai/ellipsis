@@ -1,6 +1,5 @@
 define(function(require) {
   var DeepEqual = require('../lib/deep_equal'),
-    Param = require('./param'),
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
@@ -25,7 +24,7 @@ define(function(require) {
         description: { value: initialProps.description, enumerable: true },
         functionBody: { value: initialProps.functionBody, enumerable: true },
         responseTemplate: { value: initialProps.responseTemplate, enumerable: true },
-        params: { value: initialProps.params, enumerable: true },
+        inputIds: { value: initialProps.inputIds, enumerable: true },
         triggers: { value: initialProps.triggers, enumerable: true },
         config: { value: initialProps.config, enumerable: true },
         knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
@@ -34,6 +33,10 @@ define(function(require) {
         shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true },
         editorScrollPosition: { value: initialProps.editorScrollPosition, enumerable: true }
       });
+    }
+
+    copyWithNewTimestamp() {
+      return this.clone({ createdAt: Date.now() });
     }
 
     isDataType() {
@@ -116,7 +119,6 @@ define(function(require) {
 
     static fromJson(props) {
       const materializedProps = Object.assign({}, props, {
-        params: Param.paramsFromJson(props.params || []),
         responseTemplate: ResponseTemplate.fromString(props.responseTemplate || '')
       });
       if (props.triggers) {

@@ -16,14 +16,15 @@ class BehaviorGroupServiceSpec extends DBSpec {
           newSavedBehaviorGroupFor(team)
         }
         val groupVersions = groups.map { ea =>
-          val behaviorVersionsData = 1.to(3).map { _ =>
-            val paramData = newParamDataFor()
+          val inputsData = 1.to(3).map(_ => newInputDataFor())
+          val behaviorVersionsData = inputsData.map { inputData =>
             BehaviorVersionData.newUnsavedFor(ea.team.id, isDataType = false, dataService).copy(
-              params = Seq(paramData)
+              inputIds = Seq(inputData.inputId.get)
             )
           }
           val groupData = newGroupVersionDataFor(ea, user).copy(
-            behaviorVersions = behaviorVersionsData
+            behaviorVersions = behaviorVersionsData,
+            actionInputs = inputsData
           )
           newSavedGroupVersionFor(ea, user, Some(groupData))
         }

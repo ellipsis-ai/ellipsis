@@ -51,6 +51,12 @@ class InputServiceImpl @Inject() (
 
   import InputQueries._
 
+  def findByInputIdAction(inputId: String): DBIO[Option[Input]] = {
+    findByInputIdQuery(inputId).result.map { r =>
+      r.headOption.map(tuple2Input)
+    }
+  }
+
   def findAction(id: String): DBIO[Option[Input]] = {
     findQuery(id).result.map { r =>
       r.headOption.map(tuple2Input)

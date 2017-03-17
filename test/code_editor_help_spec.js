@@ -8,7 +8,7 @@ describe('CodeEditorHelp', () => {
     isFinishedBehavior: false,
     onToggleHelp: jest.fn(),
     helpIsActive: false,
-    hasUserParameters: false,
+    hasInputs: false,
     sectionNumber: "2"
   });
 

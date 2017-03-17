@@ -130,7 +130,7 @@ class BehaviorEditorController @Inject() (
                           maybeBehaviorIdToClone: Option[String]
                         ) = silhouette.SecuredAction.async { implicit request =>
     maybeBehaviorIdToClone.map { behaviorIdToClone =>
-      BehaviorVersionData.maybeFor(behaviorIdToClone, request.identity, dataService, None).map { maybeBehaviorVersionData =>
+      BehaviorVersionData.maybeFor(behaviorIdToClone, request.identity, dataService, None, None).map { maybeBehaviorVersionData =>
         maybeBehaviorVersionData.map(_.copyForClone)
       }
     }.getOrElse {

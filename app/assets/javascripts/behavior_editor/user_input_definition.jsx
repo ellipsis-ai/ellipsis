@@ -1,11 +1,11 @@
 define(function(require) {
 var React = require('react'),
   DeleteButton = require('./delete_button'),
-  Input = require('../form/input'),
+  FormInput = require('../form/input'),
   Select = require('../form/select'),
   SVGTip = require('../svg/tip'),
   SVGInfo = require('../svg/info'),
-  Param = require('../models/param'),
+  Input = require('../models/input'),
   ifPresent = require('../lib/if_present');
 
   var EACH_TIME = "each_time";
@@ -19,7 +19,7 @@ return React.createClass({
       React.PropTypes.number,
       React.PropTypes.string
     ]).isRequired,
-    param: React.PropTypes.instanceOf(Param).isRequired,
+    input: React.PropTypes.instanceOf(Input).isRequired,
     isShared: React.PropTypes.bool.isRequired,
     paramTypes: React.PropTypes.arrayOf(
       React.PropTypes.shape({
@@ -43,16 +43,16 @@ return React.createClass({
   },
 
   onNameChange: function(newName) {
-    this.props.onChange(this.props.param.clone({ name: Param.formatName(newName) }));
+    this.props.onChange(this.props.input.clone({ name: Input.formatName(newName) }));
   },
 
-  onParamTypeChange: function(newTypeId) {
+  onInputTypeChange: function(newTypeId) {
     var newType = this.props.paramTypes.find(ea => ea.id === newTypeId);
-    this.props.onChange(this.props.param.clone({ paramType: newType }));
+    this.props.onChange(this.props.input.clone({ paramType: newType }));
   },
 
   onQuestionChange: function(newQuestion) {
-    this.props.onChange(this.props.param.clone({ question: newQuestion }));
+    this.props.onChange(this.props.input.clone({ question: newQuestion }));
   },
 
   onSaveOptionChange: function(newOption) {
@@ -62,7 +62,7 @@ return React.createClass({
     } else if (newOption === PER_USER) {
       changedProps.isSavedForUser = true;
     }
-    this.props.onChange(this.props.param.clone(changedProps));
+    this.props.onChange(this.props.input.clone(changedProps));
   },
 
   onDeleteClick: function() {
@@ -70,11 +70,11 @@ return React.createClass({
   },
 
   onConfigureType: function() {
-    this.props.onConfigureType(this.props.param.paramType.id);
+    this.props.onConfigureType(this.props.input.paramType.id);
   },
 
   isConfigurable: function() {
-    const pt = this.props.param.paramType;
+    const pt = this.props.input.paramType;
     return pt.id !== pt.name;
   },
 
@@ -87,7 +87,7 @@ return React.createClass({
     return 'param-type-' + this.props.id + '-' + paramType.id;
   },
 
-  getParamSource: function() {
+  getInputSource: function() {
     var message;
     if (this.props.numLinkedTriggers === 1) {
       message = "from 1 trigger above, or by asking a question:";
@@ -102,9 +102,9 @@ return React.createClass({
   },
 
   getSaveOptionValue: function() {
-    if (this.props.param.isSavedForTeam) {
+    if (this.props.input.isSavedForTeam) {
       return PER_TEAM;
-    } else if (this.props.param.isSavedForUser) {
+    } else if (this.props.input.isSavedForUser) {
       return PER_USER;
     } else {
       return EACH_TIME;
@@ -116,16 +116,16 @@ return React.createClass({
       this.props.savedAnswers.userAnswerCount : 0;
   },
 
-  paramSavesAnswers: function() {
-    return this.props.param.isSavedForTeam ||
-        this.props.param.isSavedForUser;
+  inputSavesAnswers: function() {
+    return this.props.input.isSavedForTeam ||
+        this.props.input.isSavedForUser;
   },
 
   getSavedAnswerSummary: function() {
     var answer = this.props.savedAnswers;
     var count = this.getSavedAnswerCount();
     var userHasAnswered = answer && answer.myValueString;
-    if (this.props.param.isSavedForTeam) {
+    if (this.props.input.isSavedForTeam) {
       if (count > 0) {
         return "1 answer saved";
       } else {
@@ -149,11 +149,11 @@ return React.createClass({
   },
 
   onToggleSavedAnswer: function() {
-    this.props.onToggleSavedAnswer(this.props.param.inputId);
+    this.props.onToggleSavedAnswer(this.props.input.inputId);
   },
 
   renderSavedAnswerInfo: function() {
-    if (this.paramSavesAnswers()) {
+    if (this.inputSavesAnswers()) {
       return (
         <div className="type-s mtxs mrm mbs">
           <span className="display-inline-block align-b type-pink mrs" style={{ height: 24 }}>
@@ -190,31 +190,31 @@ return React.createClass({
           <div className="columns columns-elastic">
             <div className="column column-expand align-form-input">
               <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
-              <Input
+              <FormInput
                 ref="name"
                 className="form-input-borderless type-monospace type-s width-15 mrm"
                 placeholder="userInput"
-                value={this.props.param.name}
+                value={this.props.input.name}
                 onChange={this.onNameChange}
                 onFocus={this.props.onNameFocus}
                 onBlur={this.props.onNameBlur}
               />
-              {this.getParamSource()}
+              {this.getInputSource()}
             </div>
             <div className="column column-shrink">
               <DeleteButton
                 onClick={this.onDeleteClick}
-                title={this.props.param.name ? `Delete the “${this.props.param.name}” input` : "Delete this input"}
+                title={this.props.input.name ? `Delete the “${this.props.input.name}” input` : "Delete this input"}
               />
             </div>
           </div>
           <div className="prsymbol">
-            <Input
+            <FormInput
               id={"question" + this.props.id}
               ref="question"
               placeholder="Write a question to ask the user for this input"
               autoFocus={this.props.shouldGrabFocus}
-              value={this.props.param.question}
+              value={this.props.input.question}
               onChange={this.onQuestionChange}
               onEnterKey={this.props.onEnterKey}
               className="form-input-borderless"
@@ -233,7 +233,7 @@ return React.createClass({
               </option>
             </Select>
             <span className="display-inline-block align-m type-s type-weak mrm mbs">and allow data type</span>
-            <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={this.props.param.paramType.id} onChange={this.onParamTypeChange}>
+            <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={this.props.input.paramType.id} onChange={this.onInputTypeChange}>
               {this.props.paramTypes.map((paramType) => (
                 <option value={paramType.id} key={this.keyFor(paramType)}>
                   {paramType.name}
