@@ -107,7 +107,7 @@ describe('BehaviorEditor', () => {
         isSavedForUser: true,
         inputId: "abcd1234",
         inputVersionId: "xzy321",
-        inputExportId: null
+        exportId: null
       }];
       firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
       let editor = createEditor(editorConfig);
