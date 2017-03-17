@@ -210,6 +210,54 @@ class BehaviorGroupImportExportSpec extends DBSpec {
       })
     }
 
+    "export and import back in with a search data type" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val inputData = newInputDataFor()
+
+        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, dataService).copy(
+          name = Some("A data type"),
+          inputIds = Seq(inputData.inputId.get)
+        )
+
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(dataTypeVersionData),
+          dataTypeInputs = Seq(inputData)
+        )
+        newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
+        groupsBefore must have length 1
+
+        exportAndImport(group, user, user)
+
+        val groupsAfter = runNow(dataService.behaviorGroups.allFor(team))
+        groupsAfter must have length 2
+
+        val exportedGroup = groupsBefore.head
+        val importedGroup = groupsAfter.filterNot(_.id == exportedGroup.id).head
+
+        mustBeValidImport(exportedGroup, importedGroup)
+
+        val importedGroupVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(importedGroup)).get
+        val importedInputs = runNow(dataService.inputs.allForGroupVersion(importedGroupVersion))
+        importedInputs must have length 1
+        val importedDataTypes = runNow(dataService.behaviors.dataTypesForGroup(importedGroup))
+        importedDataTypes must have length 1
+        val importedDataTypeVersions = runNow(Future.sequence(importedDataTypes.map { behavior =>
+          dataService.behaviors.maybeCurrentVersionFor(behavior)
+        }).map(_.flatten))
+        importedDataTypeVersions must have length 1
+        val importedParams = runNow(Future.sequence(importedDataTypeVersions.map { version =>
+          dataService.behaviorParameters.allFor(version)
+        }).map(_.flatten))
+        importedParams must have length 1
+      })
+    }
+
 
   }
 

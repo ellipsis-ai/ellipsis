@@ -124,7 +124,7 @@ object BehaviorGroupData {
       inputsData <- Future.sequence(inputs.map(ea => InputData.fromInput(ea, dataService)))
     } yield {
       val (dataTypeInputsData, actionInputsData) = inputsData.partition { ea =>
-        versionsData.find(v => v.inputIds.contains(ea.inputId)).exists(_.isDataType)
+        versionsData.find(v => ea.inputId.exists(v.inputIds.contains)).exists(_.isDataType)
       }
       BehaviorGroupData(
         Some(version.group.id),
