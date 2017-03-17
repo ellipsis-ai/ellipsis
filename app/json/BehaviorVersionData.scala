@@ -68,6 +68,10 @@ case class BehaviorVersionData(
     copy(id = Some(newId))
   }
 
+  def copyForExport: BehaviorVersionData = {
+    copy(config = config.copyForExport)
+  }
+
   lazy val isDataType: Boolean = config.isDataType
 
   lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption

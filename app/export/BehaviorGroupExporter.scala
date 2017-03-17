@@ -17,7 +17,7 @@ import scala.sys.process.Process
 
 case class BehaviorGroupExporter(
                                   groupData: BehaviorGroupData,
-                                  functionMap: Map[BehaviorVersionData, Option[String]],
+                                  functionMap: Map[String, Option[String]],
                                   exportName: String,
                                   parentPath: String
                                 ) {
@@ -80,7 +80,7 @@ case class BehaviorGroupExporter(
   }
 
   def functionStringFor(behaviorVersionData: BehaviorVersionData): String = {
-    functionMap.get(behaviorVersionData).flatten.getOrElse("")
+    functionMap.get(behaviorVersionData.exportId.get).flatten.getOrElse("")
   }
 
   def paramsStringFor(behaviorVersionData: BehaviorVersionData): String = {
@@ -99,15 +99,16 @@ case class BehaviorGroupExporter(
   }
 
   protected def writeFilesFor(behaviorVersionData: BehaviorVersionData): Unit = {
-    val path = fullPathFor(behaviorVersionData)
-    behaviorVersionData.description.foreach { desc =>
+    val forExport = behaviorVersionData.copyForExport
+    val path = fullPathFor(forExport)
+    forExport.description.foreach { desc =>
       writeFileFor(path, "README", desc)
     }
-    writeFileFor(path, "function.js", functionStringFor(behaviorVersionData))
-    writeFileFor(path, "triggers.json", triggersStringFor(behaviorVersionData))
-    writeFileFor(path, "params.json", paramsStringFor(behaviorVersionData))
-    writeFileFor(path, "response.md", behaviorVersionData.responseTemplate)
-    writeFileFor(path, "config.json", configStringFor(behaviorVersionData))
+    writeFileFor(path, "function.js", functionStringFor(forExport))
+    writeFileFor(path, "triggers.json", triggersStringFor(forExport))
+    writeFileFor(path, "params.json", paramsStringFor(forExport))
+    writeFileFor(path, "response.md", forExport.responseTemplate)
+    writeFileFor(path, "config.json", configStringFor(forExport))
   }
 
   def writeActions(): Unit = {
@@ -177,10 +178,10 @@ object BehaviorGroupExporter {
       functionMap <- maybeGroupData.map { groupData =>
         Future.sequence(groupData.behaviorVersions.map { ea =>
           ea.maybeFunction(dataService).map { maybeFunction =>
-            (ea, maybeFunction)
+            (ea.exportId.get, maybeFunction)
           }
-        }).map(_.toMap[BehaviorVersionData, Option[String]])
-      }.getOrElse(Future.successful(Map[BehaviorVersionData, Option[String]]()))
+        }).map(_.toMap[String, Option[String]])
+      }.getOrElse(Future.successful(Map[String, Option[String]]()))
     } yield {
       for {
         groupVersion <- maybeGroupVersion
