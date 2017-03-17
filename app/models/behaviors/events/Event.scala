@@ -2,12 +2,14 @@ package models.behaviors.events
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
+import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
+import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -90,20 +92,26 @@ trait Event {
   def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(teamId)
-      triggers <- maybeTeam.map { team =>
-        dataService.messageTriggers.allActiveFor(team)
+      user <- ensureUser(dataService)
+      groups <- maybeTeam.map { team =>
+        dataService.behaviorGroups.allFor(team)
       }.getOrElse(Future.successful(Seq()))
+      groupsData <- Future.sequence(groups.map { ea =>
+        BehaviorGroupData.maybeFor(ea.id, user, None, dataService)
+      }).map(_.flatten)
     } yield {
-      val similarTriggers =
-        FuzzyMatcher(messageText, triggers).
-          run.
-          map { case(trigger, _) => s"`${trigger.pattern}`" }
-      val message = if (similarTriggers.isEmpty) {
+      val results = FuzzyMatcher(messageText, groupsData).run.filter { ea =>
+        ea.patterns.exists {
+          case p: MessageTrigger => true
+          case _ => false
+        }
+      }
+      val message = if (results.isEmpty) {
         iDontKnowHowToRespondMessageFor(lambdaService)
       } else {
         s"""Did you mean:
            |
-           |${similarTriggers.mkString("  \n")}
+           |${results.map(_.item.name).mkString("  \n")}
            |
            |Otherwise, try `${botPrefix}help` to see what else I can do or ${teachMeLinkFor(lambdaService)}
          """.stripMargin

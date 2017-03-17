@@ -13,20 +13,33 @@ case class FuzzyMatcher[T <: FuzzyMatchable](matchString: String, matchables: Se
   def basicScoreFor(text: String): Double = RatcliffObershelpMetric.compare(text.toLowerCase, matchString.toLowerCase).getOrElse(0)
 
   def scoreFor(matchable: T): Double = {
-    matchable.maybeFuzzyMatchPattern.map { pattern =>
+    val patterns = matchable.fuzzyMatchPatterns.flatMap(_.maybePattern)
+    val scores = patterns.map { pattern =>
       ngramsFor(pattern.toLowerCase).map(basicScoreFor).max
-    }.getOrElse(0)
+    }
+    scores.sorted.reverse.headOption.getOrElse(0)
   }
 
-  def run: Seq[(T, Double)] = {
-    val sortedWithSimilarity =
-      matchables.
-        map { ea => (ea, scoreFor(ea)) }.
-        sortBy { case(_, similarity) => similarity }.
-        reverse
+  def resultFor(matchable: T): FuzzyMatchResult[T] = {
+    FuzzyMatchResult(matchable, matchable.fuzzyMatchPatterns.flatMap { ea =>
+      ea.maybePattern.map { pattern =>
+        (ea, ngramsFor(pattern.toLowerCase).map(basicScoreFor).max)
+      }
+    })
+  }
 
-    sortedWithSimilarity.headOption.map(_._2 - 0.1).map { threshold =>
-      sortedWithSimilarity.filter { case(_, similarity) => similarity > threshold }
+  def allResults: Seq[FuzzyMatchResult[T]] = {
+    matchables.map(resultFor)
+  }
+
+  def run: Seq[FuzzyMatchResult[T]] = {
+    allResults.sortBy(_.maxScore).reverse
+    val sortedWithSimilarity = allResults.sortBy(_.maxScore).reverse
+
+    sortedWithSimilarity.headOption.map(_.maxScore - 0.1).map { threshold =>
+      sortedWithSimilarity.
+        filter { ea => ea.maxScore > threshold }.
+        map(_.filteredForThreshold(threshold))
     }.getOrElse(Seq())
   }
 
@@ -34,4 +47,14 @@ case class FuzzyMatcher[T <: FuzzyMatchable](matchString: String, matchables: Se
     run.nonEmpty
   }
 
+}
+
+case class FuzzyMatchResult[T <: FuzzyMatchable](item: T, patternsWithScores: Seq[(FuzzyMatchPattern, Double)]) {
+  val maxScore: Double = patternsWithScores.map(_._2).max
+  val patterns: Seq[FuzzyMatchPattern] = patternsWithScores.map(_._1)
+  def filteredForThreshold(threshold: Double): FuzzyMatchResult[T] = {
+    copy(patternsWithScores = patternsWithScores.filter { case(pattern, score) =>
+      score > threshold
+    })
+  }
 }

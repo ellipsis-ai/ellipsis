@@ -6,15 +6,14 @@ import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.events.{Event, MessageEvent}
 import models.behaviors.triggers.Trigger
 import services.AWSLambdaConstants
-import utils.FuzzyMatchable
+import utils.FuzzyMatchPattern
 
 import scala.util.matching.Regex
 
-trait MessageTrigger extends Trigger with FuzzyMatchable {
+trait MessageTrigger extends Trigger with FuzzyMatchPattern {
 
   val pattern: String
-  val maybeText: Option[String] = Some(pattern)
-  val maybeFuzzyMatchPattern: Option[String] = None
+  val maybePattern: Option[String] = None
   def regex: Regex
   val requiresBotMention: Boolean
   val shouldTreatAsRegex: Boolean

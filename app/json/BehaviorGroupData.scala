@@ -7,7 +7,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import services.DataService
-import utils.FuzzyMatchable
+import utils.{FuzzyMatchPattern, FuzzyMatchable, SimpleFuzzyMatchPattern}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -24,7 +24,11 @@ case class BehaviorGroupData(
                               githubUrl: Option[String],
                               exportId: Option[String],
                               createdAt: Option[OffsetDateTime]
-                            ) extends Ordered[BehaviorGroupData] {
+                            ) extends Ordered[BehaviorGroupData] with FuzzyMatchable {
+
+  val fuzzyMatchPatterns: Seq[FuzzyMatchPattern] = {
+    Seq(fuzzyMatchName, fuzzyMatchDescription) ++ behaviorVersions.flatMap(_.triggers)
+  }
 
   lazy val inputs = dataTypeInputs ++ actionInputs
 
@@ -86,12 +90,12 @@ case class BehaviorGroupData(
     }.orElse(this.maybeFirstTrigger)
   }
 
-  lazy val fuzzyMatchName: FuzzyMatchable = {
-    FuzzyBehaviorGroupDetail(name)
+  lazy val fuzzyMatchName: FuzzyMatchPattern = {
+    SimpleFuzzyMatchPattern(name)
   }
 
-  lazy val fuzzyMatchDescription: FuzzyMatchable = {
-    FuzzyBehaviorGroupDetail(description)
+  lazy val fuzzyMatchDescription: FuzzyMatchPattern = {
+    SimpleFuzzyMatchPattern(description)
   }
 
   import scala.math.Ordered.orderingToOrdered
@@ -156,8 +160,4 @@ object BehaviorGroupData {
     } yield data
   }
 
-}
-
-case class FuzzyBehaviorGroupDetail(maybeText: Option[String]) extends FuzzyMatchable {
-  val maybeFuzzyMatchPattern = maybeText.filter(_.trim.nonEmpty)
 }

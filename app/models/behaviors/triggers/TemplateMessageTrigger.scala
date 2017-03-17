@@ -20,7 +20,7 @@ case class TemplateMessageTrigger(
 
   val paramRegex: Regex = """\{.*?\}""".r
 
-  override val maybeFuzzyMatchPattern: Option[String] = Some(paramRegex.replaceAllIn(pattern, ""))
+  override val maybePattern: Option[String] = Some(paramRegex.replaceAllIn(pattern, ""))
 
   def regex: Regex = {
     var pattern = template

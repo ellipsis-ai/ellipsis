@@ -1,14 +1,14 @@
 package json
 
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import utils.FuzzyMatchable
+import utils.FuzzyMatchPattern
 
 case class BehaviorTriggerData(
                                 text: String,
                                 requiresMention: Boolean,
                                 isRegex: Boolean,
                                 caseSensitive: Boolean
-                                ) extends Ordered[BehaviorTriggerData] with FuzzyMatchable {
+                                ) extends Ordered[BehaviorTriggerData] with FuzzyMatchPattern {
 
   val maybeText: Option[String] = Some(text)
 
@@ -17,7 +17,7 @@ case class BehaviorTriggerData(
     MessageTrigger.sortKeyFor(this.text, this.isRegex) compare MessageTrigger.sortKeyFor(that.text, that.isRegex)
   }
 
-  val maybeFuzzyMatchPattern: Option[String] = {
+  val maybePattern: Option[String] = {
     if (isRegex) {
       None
     } else {
