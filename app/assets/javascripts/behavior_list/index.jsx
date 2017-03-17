@@ -242,15 +242,33 @@ define(function(require) {
       }
     },
 
+    renderTeachButton: function() {
+      return (
+        <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
+          className="button button-shrink">
+          Teach Ellipsis something new…
+        </a>
+      );
+    },
+
     renderInstalledBehaviorGroups: function(groups) {
       if (groups.length > 0) {
         return (
           <div>
-            <h3 className="type-blue-faded mbxl mhl">Your skills</h3>
+
+            <div className="columns columns-elastic mobile-columns-float">
+              <div className="column column-expand">
+                <h3 className="type-blue-faded mbxl mhl mobile-mbm">Your skills</h3>
+              </div>
+              <div className="column column-shrink align-m phl mobile-pbl">
+                {this.renderTeachButton()}
+              </div>
+            </div>
+
 
             <div className="columns">
               {groups.map((group, index) => (
-                <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn"
+                <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
                   key={"group" + index}>
                   <BehaviorGroupCard
                     name={group.name}
@@ -314,7 +332,7 @@ define(function(require) {
 
             <div className="columns">
               {groups.map((group, index) => (
-                <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn"
+                <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
                   key={"group" + index}>
                   <BehaviorGroupCard
                     name={group.name}
@@ -374,6 +392,8 @@ define(function(require) {
               published by Ellipsis, or create a new one yourself.
             </p>
 
+            {this.renderTeachButton()}
+
             {this.renderPublishedGroups()}
 
           </div>
@@ -385,7 +405,7 @@ define(function(require) {
       return (
         <div>
           <div style={{ paddingBottom: `${this.state.footerHeight}px` }}>
-            <div className="bg-white container container-c ptxxl mobile-ptm phn">
+            <div className="bg-white container container-c ptl mobile-ptm phn">
               {this.renderContent()}
             </div>
           </div>

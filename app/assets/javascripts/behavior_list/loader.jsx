@@ -16,7 +16,7 @@ requirejs(['../common'], function() {
       let recentlyInstalled = [];
 
       function loadPublishedBehaviorGroups() {
-        fetch(jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo().url, {
+        fetch(jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo(defaultProps.teamId, defaultProps.branchName).url, {
           credentials: 'same-origin'
         }).then((response) => response.json())
           .then((json) => {

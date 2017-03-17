@@ -33,7 +33,7 @@ class ApplicationController @Inject() (
 
   import json.Formatting._
 
-  def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def index(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
@@ -56,7 +56,7 @@ class ApplicationController @Inject() (
         Future.successful(if (groupData.isEmpty) {
           Redirect(routes.ApplicationController.intro(maybeTeamId))
         } else {
-          Ok(views.html.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId))
+          Ok(views.html.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, maybeBranch))
         })
       }.getOrElse {
         reAuthFor(request, maybeTeamId)
