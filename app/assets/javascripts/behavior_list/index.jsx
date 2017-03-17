@@ -38,7 +38,7 @@ define(function(require) {
 
     componentWillReceiveProps: function(nextProps) {
       var updatedImportingList = this.state.importingList.filter((importing) =>
-        !BehaviorGroup.groupsIncludeId(nextProps.behaviorGroups, importing.exportId)
+        !BehaviorGroup.groupsIncludeExportId(nextProps.recentlyInstalled, importing.exportId)
       );
       this.setState({
         importingList: updatedImportingList
@@ -55,7 +55,7 @@ define(function(require) {
     },
 
     getBehaviorGroups: function() {
-      return this.props.behaviorGroups;
+      return this.props.behaviorGroups.concat(this.props.recentlyInstalled);
     },
 
     getBehaviorGroupsJustInstalled: function() {
@@ -71,6 +71,11 @@ define(function(require) {
 
     getSelectedGroupIds: function() {
       return this.state.selectedGroupIds || [];
+    },
+
+    getLocalIdFor: function(exportId) {
+      var localGroup = this.getBehaviorGroups().find((ea) => ea.exportId === exportId);
+      return localGroup ? localGroup.id : null;
     },
 
     isGroupSelected: function(groupId) {
@@ -213,7 +218,7 @@ define(function(require) {
     },
 
     isImporting: function(group) {
-      return BehaviorGroup.groupsIncludeId(this.state.importingList, group.id);
+      return BehaviorGroup.groupsIncludeExportId(this.state.importingList, group.exportId);
     },
 
     toggleInfoPanel: function(group) {
@@ -252,41 +257,38 @@ define(function(require) {
     },
 
     renderInstalledBehaviorGroups: function(groups) {
-      if (groups.length > 0) {
-        return (
-          <div>
+      return (
+        <div>
 
-            <div className="columns columns-elastic mobile-columns-float">
-              <div className="column column-expand">
-                <h3 className="type-blue-faded mbxl mhl mobile-mbm">Your skills</h3>
-              </div>
-              <div className="column column-shrink align-m phl mobile-pbl">
-                {this.renderTeachButton()}
-              </div>
+          <div className="columns columns-elastic mobile-columns-float">
+            <div className="column column-expand">
+              <h3 className="type-blue-faded mbxl mhl mobile-mbm">Your skills</h3>
             </div>
-
-
-            <div className="columns">
-              {groups.map((group, index) => (
-                <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
-                  key={"group" + index}>
-                  <BehaviorGroupCard
-                    name={group.name}
-                    description={group.description}
-                    icon={group.icon}
-                    groupData={group}
-                    localId={group.id}
-                    onMoreInfoClick={this.toggleInfoPanel}
-                    isImportable={false}
-                    onSelectChange={this.onGroupSelectionCheckboxChange}
-                    isSelected={this.isGroupSelected(group.id)}
-                  />
-                </div>
-              ))}
+            <div className="column column-shrink align-m phl mobile-pbl">
+              {this.renderTeachButton()}
             </div>
           </div>
-        );
-      }
+
+          <div className="columns">
+            {groups.map((group, index) => (
+              <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
+                key={"group" + index}>
+                <BehaviorGroupCard
+                  name={group.name}
+                  description={group.description}
+                  icon={group.icon}
+                  groupData={group}
+                  localId={group.id}
+                  onMoreInfoClick={this.toggleInfoPanel}
+                  isImportable={false}
+                  onSelectChange={this.onGroupSelectionCheckboxChange}
+                  isSelected={this.isGroupSelected(group.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
     },
 
     renderActions: function() {
@@ -339,7 +341,7 @@ define(function(require) {
                     description={group.description}
                     icon={group.icon}
                     groupData={group}
-                    localId={null}
+                    localId={this.getLocalIdFor(group.exportId)}
                     onBehaviorGroupImport={this.onBehaviorGroupImport}
                     onMoreInfoClick={this.toggleInfoPanel}
                     isImporting={this.isImporting(group)}
@@ -374,11 +376,12 @@ define(function(require) {
     },
 
     renderContent: function() {
-      if (this.props.behaviorGroups.length > 0) {
+      var localGroups = this.getBehaviorGroups();
+      if (localGroups.length > 0) {
         return (
           <div>
 
-            {this.renderInstalledBehaviorGroups(this.getBehaviorGroups())}
+            {this.renderInstalledBehaviorGroups(localGroups)}
 
             {this.renderPublishedGroups()}
 

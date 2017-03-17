@@ -47,7 +47,6 @@ requirejs(['../common'], function() {
           .then((installedGroup) => {
             recentlyInstalled = recentlyInstalled.concat(installedGroup);
             reload({
-              behaviorGroups: BehaviorListConfig.behaviorGroups.concat(recentlyInstalled),
               recentlyInstalled: recentlyInstalled
             });
           });
