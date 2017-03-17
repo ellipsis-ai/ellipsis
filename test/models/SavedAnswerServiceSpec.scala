@@ -14,12 +14,13 @@ class SavedAnswerServiceSpec extends DBSpec {
         val anotherUser = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
 
-        val paramData = newParamDataFor(isSavedForUser = Some(true))
+        val inputData = newInputDataFor(isSavedForUser = Some(true))
         val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
-          params = Seq(paramData)
+          inputIds = Seq(inputData.inputId.get)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
-          behaviorVersions = Seq(behaviorVersionData)
+          behaviorVersions = Seq(behaviorVersionData),
+          actionInputs = Seq(inputData)
         )
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
 
@@ -52,12 +53,13 @@ class SavedAnswerServiceSpec extends DBSpec {
         val anotherUser = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
 
-        val paramData = newParamDataFor(isSavedForUser = Some(true))
+        val inputData = newInputDataFor(isSavedForUser = Some(true))
         val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
-          params = Seq(paramData)
+          inputIds = Seq(inputData.inputId.get)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
-          behaviorVersions = Seq(behaviorVersionData)
+          behaviorVersions = Seq(behaviorVersionData),
+          actionInputs = Seq(inputData)
         )
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
 
@@ -85,12 +87,13 @@ class SavedAnswerServiceSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
 
-        val paramData = newParamDataFor(isSavedForTeam = Some(true))
+        val inputData = newInputDataFor(isSavedForTeam = Some(true))
         val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
-          params = Seq(paramData)
+          inputIds = Seq(inputData.inputId.get)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
-          behaviorVersions = Seq(behaviorVersionData)
+          behaviorVersions = Seq(behaviorVersionData),
+          actionInputs = Seq(inputData)
         )
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
 

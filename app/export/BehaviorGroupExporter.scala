@@ -1,13 +1,14 @@
 package export
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
-import json.{BehaviorGroupConfig, InputData}
 import json.Formatting._
+import json.{BehaviorGroupConfig, BehaviorGroupData, BehaviorVersionData}
+import models.IDs
 import models.accounts.user.User
-import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import play.api.libs.json.Json
 import services.DataService
+import utils.SafeFileName
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,69 +16,130 @@ import scala.reflect.io.Path
 import scala.sys.process.Process
 
 case class BehaviorGroupExporter(
-                                  behaviorGroupVersion: BehaviorGroupVersion,
-                                  actionInputsData: Seq[InputData],
-                                  actionExporters: Seq[BehaviorVersionExporter],
-                                  dataTypeInputsData: Seq[InputData],
-                                  dataTypeExporters: Seq[BehaviorVersionExporter],
+                                  groupData: BehaviorGroupData,
+                                  functionMap: Map[String, Option[String]],
+                                  exportName: String,
                                   parentPath: String
-                                ) extends Exporter {
+                                ) {
 
-  val fullPath = s"$parentPath/${behaviorGroupVersion.exportName}"
-  def zipFileName = s"$fullPath.zip"
+  val groupPath = s"$parentPath/${exportName}"
+  def zipFileName = s"$groupPath.zip"
 
-  val config = {
-    BehaviorGroupConfig(behaviorGroupVersion.name, behaviorGroupVersion.group.maybeExportId, behaviorGroupVersion.maybeIcon)
-  }
+  val config = BehaviorGroupConfig(
+    groupData.name.getOrElse(""),
+    groupData.exportId,
+    groupData.icon
+  )
+
+  val actionInputs = groupData.actionInputs
 
   def configString: String = Json.prettyPrint(Json.toJson(config))
 
   def writeDataTypeInputs(): Unit = {
-    val forExport = dataTypeInputsData.map(_.copyForExport(this)).sortBy(_.exportId)
-    writeFileFor("data_type_inputs.json", Json.prettyPrint(Json.toJson(forExport)))
+    val forExport = groupData.dataTypeInputs.map(_.copyForExport(this)).sortBy(_.exportId)
+    writeFileFor(groupPath, "data_type_inputs.json", Json.prettyPrint(Json.toJson(forExport)))
+  }
+
+  def createDirectoryFor(fullPath: String): Unit = {
+    val path = Path(fullPath)
+    path.deleteRecursively()
+    path.createDirectory()
+  }
+
+  protected def writeFileFor(path: String, filename: String, content: String): Unit = {
+    val writer = new PrintWriter(new File(s"$path/$filename"))
+    writer.write(content)
+    writer.close()
   }
 
   def writeDataTypes(): Unit = {
     writeDataTypeInputs()
-    dataTypeExporters.foreach { ea =>
-      ea.copyForExport(this).createDirectory()
+    groupData.dataTypeBehaviorVersions.foreach { ea =>
+      createDirectoryFor(fullPathFor(ea))
+      writeFilesFor(ea)
     }
   }
 
   def exportIdForInputId(inputId: String): Option[String] = {
-    actionInputsData.find(_.id == inputId).flatMap(_.exportId)
+    actionInputs.find(_.id == inputId).flatMap(_.exportId)
   }
 
   def exportIdForDataTypeId(dataTypeId: String): Option[String] = {
-    dataTypeExporters.find(_.behaviorVersion.behavior.id == dataTypeId).flatMap(_.config.exportId)
+    groupData.dataTypeBehaviorVersions.find(_.behaviorId == dataTypeId).flatMap(_.exportId)
   }
 
   def writeActionInputs(): Unit = {
-    val forExport = actionInputsData.map(_.copyForExport(this)).sortBy(_.exportId)
-    writeFileFor("action_inputs.json", Json.prettyPrint(Json.toJson(forExport)))
+    val forExport = actionInputs.map(_.copyForExport(this)).sortBy(_.exportId)
+    writeFileFor(groupPath, "action_inputs.json", Json.prettyPrint(Json.toJson(forExport)))
+  }
+
+  def fullPathFor(behaviorVersionData: BehaviorVersionData): String = {
+    val behaviorType = if (behaviorVersionData.isDataType) { "data_types" } else { "actions" }
+    val safeDirName = SafeFileName.forName(behaviorVersionData.maybeExportName.getOrElse(IDs.next))
+    s"$groupPath/$behaviorType/$safeDirName"
+  }
+
+  def functionStringFor(behaviorVersionData: BehaviorVersionData): String = {
+    functionMap.get(behaviorVersionData.exportId.get).flatten.getOrElse("")
+  }
+
+  def paramsStringFor(behaviorVersionData: BehaviorVersionData): String = {
+    val inputExportIds = behaviorVersionData.inputIds.map { ea =>
+      groupData.inputs.find(_.inputId.contains(ea)).map(_.exportId).get
+    }
+    Json.prettyPrint(Json.toJson(inputExportIds))
+  }
+
+  def triggersStringFor(behaviorVersionData: BehaviorVersionData): String = {
+    Json.prettyPrint(Json.toJson(behaviorVersionData.triggers))
+  }
+
+  def configStringFor(behaviorVersionData: BehaviorVersionData): String = {
+    Json.prettyPrint(Json.toJson(behaviorVersionData.config))
+  }
+
+  protected def writeFilesFor(behaviorVersionData: BehaviorVersionData): Unit = {
+    val forExport = behaviorVersionData.copyForExport
+    val path = fullPathFor(forExport)
+    forExport.description.foreach { desc =>
+      writeFileFor(path, "README", desc)
+    }
+    writeFileFor(path, "function.js", functionStringFor(forExport))
+    writeFileFor(path, "triggers.json", triggersStringFor(forExport))
+    writeFileFor(path, "params.json", paramsStringFor(forExport))
+    writeFileFor(path, "response.md", forExport.responseTemplate)
+    writeFileFor(path, "config.json", configStringFor(forExport))
   }
 
   def writeActions(): Unit = {
     writeActionInputs()
-    actionExporters.foreach { ea =>
-      ea.copyForExport(this).createDirectory()
+    groupData.actionBehaviorVersions.foreach { ea =>
+      createDirectoryFor(fullPathFor(ea))
+      writeFilesFor(ea)
     }
   }
 
   protected def writeFiles(): Unit = {
-    writeFileFor("config.json", configString)
-    behaviorGroupVersion.maybeDescription.foreach { desc =>
-      writeFileFor("README", desc)
+    writeFileFor(groupPath, "config.json", configString)
+    groupData.description.foreach { desc =>
+      writeFileFor(groupPath, "README", desc)
     }
     writeDataTypes()
     writeActions()
   }
 
+  def createDirectory(fullPath: String): Unit = {
+    val path = Path(fullPath)
+    path.deleteRecursively()
+    path.createDirectory()
+    writeFiles()
+  }
+
   protected def createZip(): Unit = {
-    createDirectory()
+    createDirectory(groupPath)
     val path = Path(zipFileName)
     path.delete()
-    Process(Seq("bash","-c",s"cd $fullPath && zip -r $zipFileName *")).!
+    Process(Seq("bash","-c",s"cd $groupPath && zip -r $zipFileName *")).!
   }
 
   def getZipFile: File = {
@@ -89,14 +151,6 @@ case class BehaviorGroupExporter(
 
 object BehaviorGroupExporter {
 
-  private def inputsDataForExporters(exporters: Seq[BehaviorVersionExporter], dataService: DataService): Seq[InputData] = {
-    exporters.flatMap { exporter =>
-      exporter.paramsData.map { paramData =>
-        paramData.newInputData
-      }
-    }.distinct
-  }
-
   def maybeFor(groupId: String, user: User, dataService: DataService): Future[Option[BehaviorGroupExporter]] = {
     val mainParentPath = "/tmp/exports/"
     for {
@@ -105,32 +159,35 @@ object BehaviorGroupExporter {
           dataService.behaviorGroups.ensureExportIdFor(group).map(Some(_))
         }.getOrElse(Future.successful(None))
       }
-      maybeCurrentGroupVersion <- maybeGroup.map { group =>
-        dataService.behaviorGroups.maybeCurrentVersionFor(group)
-      }.getOrElse(Future.successful(None))
       maybeBehaviors <- maybeGroup.map { group =>
-        dataService.behaviors.allForGroup(group).map(Some(_))
+        dataService.behaviors.allForGroup(group).flatMap { behaviors =>
+          Future.sequence(behaviors.map { ea =>
+            dataService.behaviors.ensureExportIdFor(ea)
+          })
+        }.map(Some(_))
       }.getOrElse(Future.successful(None))
       _ <- maybeBehaviors.map { behaviors =>
         Future.sequence(behaviors.map { behavior =>
           dataService.inputs.ensureExportIdsFor(behavior)
-        }).map(_ => {})
+        })
       }.getOrElse(Future.successful({}))
-      maybeExporters <- maybeBehaviors.map { behaviors =>
-        val exportName = maybeCurrentGroupVersion.map(_.exportName).get
-        val parentPath = s"$mainParentPath/$exportName"
-        Future.sequence(behaviors.map { behavior =>
-          BehaviorVersionExporter.maybeFor(behavior.id, user, parentPath, dataService)
-        }).map(e => Some(e.flatten))
+      maybeGroupVersion <- maybeGroup.map { group =>
+        dataService.behaviorGroups.maybeCurrentVersionFor(group)
       }.getOrElse(Future.successful(None))
-      (dataTypeExporters, actionExporters) <- Future.successful(maybeExporters.map { exporters =>
-        exporters.partition(_.behaviorVersion.behavior.isDataType)
-      }.getOrElse((Seq(), Seq())))
+      maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, None, dataService)
+      functionMap <- maybeGroupData.map { groupData =>
+        Future.sequence(groupData.behaviorVersions.map { ea =>
+          ea.maybeFunction(dataService).map { maybeFunction =>
+            (ea.exportId.get, maybeFunction)
+          }
+        }).map(_.toMap[String, Option[String]])
+      }.getOrElse(Future.successful(Map[String, Option[String]]()))
     } yield {
-      val actionInputsData = inputsDataForExporters(actionExporters, dataService)
-      val dataTypeInputsData = inputsDataForExporters(dataTypeExporters, dataService)
-      maybeCurrentGroupVersion.map { groupVersion =>
-        BehaviorGroupExporter(groupVersion, actionInputsData, actionExporters, dataTypeInputsData, dataTypeExporters, mainParentPath)
+      for {
+        groupVersion <- maybeGroupVersion
+        groupData <- maybeGroupData
+      } yield {
+        BehaviorGroupExporter(groupData, functionMap, groupVersion.exportName, mainParentPath)
       }
     }
   }

@@ -48,24 +48,20 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
     runNow(dataService.savedAnswers.ensureFor(input, "answer", user))
   }
 
-  def newParamDataFor(
+  def newInputDataFor(
                        maybeType: Option[BehaviorParameterTypeData] = None,
                        isSavedForTeam: Option[Boolean] = None,
-                       isSavedForUser: Option[Boolean] = None,
-                       maybeExistingInputData: Option[InputData] = None
-                     ): BehaviorParameterData = {
-    val inputData = maybeExistingInputData.getOrElse {
-      InputData(Some(IDs.next), Some(IDs.next), None, "param", maybeType, "", isSavedForTeam.exists(identity), isSavedForUser.exists(identity))
-    }
-    BehaviorParameterData(
-      inputData.name,
-      inputData.paramType,
-      inputData.question,
-      Some(inputData.isSavedForTeam),
-      Some(inputData.isSavedForUser),
-      inputData.inputId,
-      inputData.id,
-      inputData.exportId
+                       isSavedForUser: Option[Boolean] = None
+                     ): InputData = {
+    InputData(
+      Some(IDs.next),
+      Some(IDs.next),
+      None,
+      "param",
+      maybeType,
+      "",
+      isSavedForTeam.exists(identity),
+      isSavedForUser.exists(identity)
     )
   }
 
@@ -101,16 +97,17 @@ trait DBSpec extends PlaySpec with OneAppPerSuite {
   }
 
   def defaultGroupVersionDataFor(group: BehaviorGroup, user: User): BehaviorGroupData = {
-    val param1Data = newParamDataFor()
-    val param2Data = newParamDataFor()
+    val input1Data = newInputDataFor()
+    val input2Data = newInputDataFor()
     val behaviorVersion1Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, dataService).copy(
-      params = Seq(param1Data)
+      inputIds = Seq(input1Data.inputId.get)
     )
     val behaviorVersion2Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, dataService).copy(
-      params = Seq(param2Data)
+      inputIds = Seq(input2Data.inputId.get)
     )
     newGroupVersionDataFor(group, user).copy(
-      behaviorVersions = Seq(behaviorVersion1Data, behaviorVersion2Data)
+      behaviorVersions = Seq(behaviorVersion1Data, behaviorVersion2Data),
+      actionInputs = Seq(input1Data, input2Data)
     )
   }
 

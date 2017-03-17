@@ -4,8 +4,8 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     ifPresent = require('../lib/if_present'),
-    Input = require('../form/input'),
-    Param = require('../models/param'),
+    FormInput = require('../form/input'),
+    Input = require('../models/input'),
     Trigger = require('../models/trigger'),
     debounce = require('javascript-debounce'),
     oauth2ApplicationShape = require('./oauth2_application_shape'),
@@ -17,7 +17,7 @@ define(function(require) {
     displayName: 'BehaviorTester',
     propTypes: {
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
-      params: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired,
+      inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       behaviorId: React.PropTypes.string,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired,
@@ -28,14 +28,14 @@ define(function(require) {
       return {
         testMessage: '',
         highlightedTriggerText: null,
-        paramValues: {},
+        inputValues: {},
         isTestingTriggers: false,
         isTestingResult: false,
         hasTestedTriggers: false,
         hasTestedResult: false,
         triggerErrorOccurred: false,
         resultErrorOccurred: false,
-        resultMissingParamNames: [],
+        resultMissingInputNames: [],
         results: []
       };
     },
@@ -51,12 +51,12 @@ define(function(require) {
           triggerErrorOccurred: false
         });
       }
-      if (this.props.params.some((param, index) => {
-        return !newProps.params[index] ||
-          !param.isSameNameAndTypeAs(newProps.params[index]);
+      if (this.props.inputs.some((input, index) => {
+        return !newProps.inputs[index] ||
+          !input.isSameNameAndTypeAs(newProps.inputs[index]);
       })) {
         this.setState({
-          paramValues: {}
+          inputValues: {}
         });
       }
     },
@@ -65,7 +65,7 @@ define(function(require) {
       this.setState({
         testMessage: value,
         highlightedTriggerText: null,
-        paramValues: {},
+        inputValues: {},
         hasTestedTriggers: false,
         triggerErrorOccurred: false,
         resultErrorOccurred: false
@@ -75,11 +75,11 @@ define(function(require) {
       }
     },
 
-    onChangeParamValue: function(name, value) {
-      var newParamValues = Object.assign({}, this.state.paramValues);
-      newParamValues[name] = value;
+    onChangeInputValue: function(name, value) {
+      var newInputValues = Object.assign({}, this.state.inputValues);
+      newInputValues[name] = value;
       this.setState({
-        paramValues: newParamValues
+        inputValues: newInputValues
       });
     },
 
@@ -101,7 +101,7 @@ define(function(require) {
         onSuccess: (json) => {
           this.setState({
             highlightedTriggerText: json.activatedTrigger,
-            paramValues: json.paramValues,
+            inputValues: json.inputValues,
             isTestingTriggers: false,
             hasTestedTriggers: true,
             triggerErrorOccurred: false
@@ -110,7 +110,7 @@ define(function(require) {
         onError: () => {
           this.setState({
             highlightedTriggerText: null,
-            paramValues: {},
+            inputValues: {},
             isTestingTriggers: false,
             hasTestedTriggers: false,
             triggerErrorOccurred: true
@@ -126,12 +126,12 @@ define(function(require) {
       });
       BehaviorTest.testInvocation({
         behaviorId: this.props.behaviorId,
-        paramValues: this.state.paramValues,
+        inputValues: this.state.inputValues,
         csrfToken: this.props.csrfToken,
         onSuccess: (json) => {
           var newResults = this.state.results.concat(new InvocationTestResult(
             json.result && json.result.fullText,
-            json.missingParamNames,
+            json.missingInputNames,
             json.missingSimpleTokens,
             json.missingUserEnvVars
           ));
@@ -168,12 +168,12 @@ define(function(require) {
       return this.getResults().length > 0;
     },
 
-    getValueForParamName: function(name) {
+    getValueForInputName: function(name) {
       return (
-        <Input
+        <FormInput
           className="form-input-borderless"
-          value={this.state.paramValues[name] || ''}
-          onChange={this.onChangeParamValue.bind(this, name)}
+          value={this.state.inputValues[name] || ''}
+          onChange={this.onChangeInputValue.bind(this, name)}
           placeholder="None"
         />
       );
@@ -199,23 +199,23 @@ define(function(require) {
       }
     },
 
-    countNonEmptyParamsProvided: function() {
-      return Object.keys(this.state.paramValues).filter((paramName) => {
-        return this.state.paramValues[paramName] != null;
+    countNonEmptyInputsProvided: function() {
+      return Object.keys(this.state.inputValues).filter((inputName) => {
+        return this.state.inputValues[inputName] != null;
       }).length;
     },
 
-    getParamTestingStatus: function() {
-      var numParamValues = this.countNonEmptyParamsProvided();
-      if (this.state.isTestingTriggers || numParamValues === 0 || this.props.params.length === 0) {
+    getInputTestingStatus: function() {
+      var numInputValues = this.countNonEmptyInputsProvided();
+      if (this.state.isTestingTriggers || numInputValues === 0 || this.props.inputs.length === 0) {
         return "";
-      } else if (numParamValues === 1) {
+      } else if (numInputValues === 1) {
         return (
           <span className="type-green">— 1 value collected</span>
         );
-      } else if (numParamValues > 1) {
+      } else if (numInputValues > 1) {
         return (
-          <span className="type-green">— {numParamValues} values collected</span>
+          <span className="type-green">— {numInputValues} values collected</span>
         );
       }
     },
@@ -265,7 +265,7 @@ define(function(require) {
           </p>
 
           <div className="mbxl">
-            <Input ref="testMessage"
+            <FormInput ref="testMessage"
               value={this.state.testMessage}
               onChange={this.onChangeTestMessage}
               placeholder="Enter message"
@@ -282,9 +282,9 @@ define(function(require) {
 
           <h4 className="mbxs">
             <span>User input </span>
-            <span>{this.getParamTestingStatus()}</span>
+            <span>{this.getInputTestingStatus()}</span>
           </h4>
-          {ifPresent(this.props.params, this.renderParams, this.renderNoParams)}
+          {ifPresent(this.props.inputs, this.renderInputs, this.renderNoInputs)}
 
           <div className="columns columns-elastic mvxl">
             <div className="column column-expand">
@@ -334,14 +334,14 @@ define(function(require) {
       );
     },
 
-    renderParams: function(params) {
+    renderInputs: function(inputs) {
       return (
         <div className="columns columns-elastic">
           <div className="column-group">
-            {params.map((param, index) => (
-              <div key={`param${index}`} className="column-row">
-                <div className="column column-shrink type-monospace type-weak type-s prs pts">{param.name}:</div>
-                <div className="column column-expand">{this.getValueForParamName(param.name)}</div>
+            {inputs.map((input, index) => (
+              <div key={`input${index}`} className="column-row">
+                <div className="column column-shrink type-monospace type-weak type-s prs pts">{input.name}:</div>
+                <div className="column column-expand">{this.getValueForInputName(input.name)}</div>
               </div>
             ))}
           </div>
@@ -349,7 +349,7 @@ define(function(require) {
       );
     },
 
-    renderNoParams: function() {
+    renderNoInputs: function() {
       return (
         <p>No user input has been defined.</p>
       );
@@ -364,7 +364,7 @@ define(function(require) {
         return (
           <span>
             {this.renderResultStatusTriggerText()}
-            {this.renderResultStatusParamText()}
+            {this.renderResultStatusInputText()}
           </span>
         );
       }
@@ -382,22 +382,22 @@ define(function(require) {
       }
     },
 
-    renderResultStatusParamText: function() {
-      var numParams = this.props.params.length;
-      var numParamValues = this.countNonEmptyParamsProvided();
-      if (numParams === 0) {
+    renderResultStatusInputText: function() {
+      var numInputs = this.props.inputs.length;
+      var numInputValues = this.countNonEmptyInputsProvided();
+      if (numInputs === 0) {
         return null;
-      } else if (numParamValues === 0) {
+      } else if (numInputValues === 0) {
         return (
           <span className="type-weak">(with no user input collected)</span>
         );
-      } else if (numParamValues === 1) {
+      } else if (numInputValues === 1) {
         return (
           <span className="type-weak">(with 1 user input collected)</span>
         );
       } else {
         return (
-          <span className="type-weak">(with {numParamValues} user inputs collected)</span>
+          <span className="type-weak">(with {numInputValues} user inputs collected)</span>
         );
       }
     }

@@ -48,11 +48,11 @@ define(function() {
       return !this.isRegex && /\{.+?\}/.test(this.getText());
     }
 
-    usesParamName(name) {
+    usesInputName(name) {
       return !this.isRegex && this.getText().includes(`{${name}}`);
     }
 
-    capturesParamIndex(index) {
+    capturesInputIndex(index) {
       if (!this.isRegex) {
         return false;
       }
@@ -68,7 +68,7 @@ define(function() {
       return this.isRegex && this.caseSensitive && /^\(\?i\)/.test(this.getText());
     }
 
-    getTextWithNewParamName(oldName, newName) {
+    getTextWithNewInputName(oldName, newName) {
       if (!this.isRegex) {
         return this.getText().split(`{${oldName}}`).join(`{${newName}}`);
       } else {

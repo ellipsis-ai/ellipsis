@@ -8,7 +8,7 @@ define(function(require) {
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       onToggleHelp: React.PropTypes.func.isRequired,
       helpIsActive: React.PropTypes.bool.isRequired,
-      hasUserParameters: React.PropTypes.bool.isRequired
+      hasInputs: React.PropTypes.bool.isRequired
     },
 
     hasCalledNoResponse: function() {
@@ -50,7 +50,7 @@ define(function(require) {
               <span>Finish by calling <code>ellipsis.success(…)</code>, <code>ellipsis.error(…)</code>, and/or <code>ellipsis.noResponse()</code>.</span>
             </Checklist.Item>
 
-            <Checklist.Item checkedWhen={this.props.hasUserParameters} hiddenWhen={this.props.isFinishedBehavior && this.props.hasUserParameters}>
+            <Checklist.Item checkedWhen={this.props.hasInputs} hiddenWhen={this.props.isFinishedBehavior && this.props.hasInputs}>
               <span>Add inputs above to collect data from the user. The function will receive each one as a parameter.</span>
             </Checklist.Item>
 

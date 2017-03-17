@@ -24,7 +24,7 @@ case class BehaviorVersionData(
                                 description: Option[String],
                                 functionBody: String,
                                 responseTemplate: String,
-                                params: Seq[BehaviorParameterData],
+                                inputIds: Seq[String],
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
                                 exportId: Option[String],
@@ -34,19 +34,20 @@ case class BehaviorVersionData(
                                 ) {
   val awsConfig: Option[AWSConfigData] = config.aws
 
+  def maybeExportName: Option[String] = {
+    name.orElse(exportId)
+  }
+
   def copyForTeam(team: Team): BehaviorVersionData = {
     copy(teamId = team.id)
   }
 
-  def copyWithIdsEnsuredForImport(group: BehaviorGroup): BehaviorVersionData = {
+  def copyWithIdsEnsuredForImport(group: BehaviorGroup, inputsData: Seq[InputData]): BehaviorVersionData = {
     copy(
       id = exportId,
       teamId = group.team.id,
       behaviorId = behaviorId.orElse(Some(IDs.next)),
-      params = params.map { p =>
-        val maybeParamType = p.paramType.map(pt => pt.copy(id = pt.exportId))
-        p.copy(inputVersionId = p.inputExportId, paramType = maybeParamType)
-      }
+      inputIds = inputIds.flatMap { id => inputsData.find(_.exportId.contains(id)).flatMap(_.inputId) }
     )
   }
 
@@ -56,14 +57,7 @@ case class BehaviorVersionData(
       behaviorId = Some(IDs.next),
       exportId = None,
       name = name.map(n => s"Copy of $n"),
-      isNewBehavior = Some(true),
-      params = params.map { p =>
-        if (p.isSaved) {
-          p
-        } else {
-          p.copy(inputVersionId = None, inputId = None, inputExportId = None)
-        }
-      }
+      isNewBehavior = Some(true)
     )
   }
 
@@ -74,38 +68,23 @@ case class BehaviorVersionData(
     copy(id = Some(newId))
   }
 
-  def copyWithInputIdsIn(
-                          inputs: Seq[InputData],
-                          oldToNewIdMapping: collection.mutable.Map[String, String]
-                        ): BehaviorVersionData = {
-    val newParams = params.map { param =>
-      val maybeNewId = param.inputVersionId.flatMap { inputId =>
-        oldToNewIdMapping.get(inputId)
-      }
-      (for {
-        newId <- maybeNewId
-        input <- inputs.find(_.id.contains(newId))
-      } yield {
-        param.copy(paramType = input.paramType, inputVersionId = input.id, inputExportId = input.exportId)
-      }).getOrElse(param)
-    }
-    copy(params = newParams)
-  }
-
-  def copyWithEnsuredInputIds: BehaviorVersionData = {
-    val paramsWithEnsuredInputIds = params.map { param =>
-      if (param.inputVersionId.isDefined) {
-        param
-      } else {
-        param.copy(inputVersionId = Some(IDs.next))
-      }
-    }
-    copy(params = paramsWithEnsuredInputIds)
+  def copyForExport: BehaviorVersionData = {
+    copy(config = config.copyForExport)
   }
 
   lazy val isDataType: Boolean = config.isDataType
 
   lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption
+
+  def maybeFunction(dataService: DataService): Future[Option[String]] = {
+    id.map { behaviorVersionId =>
+      dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId).flatMap { maybeBehaviorVersion =>
+        maybeBehaviorVersion.map { behaviorVersion =>
+          dataService.behaviorVersions.maybeFunctionFor(behaviorVersion)
+        }.getOrElse(Future.successful(None))
+      }
+    }.getOrElse(Future.successful(None))
+  }
 }
 
 object BehaviorVersionData {
@@ -124,7 +103,7 @@ object BehaviorVersionData {
                 description: Option[String],
                 functionBody: String,
                 responseTemplate: String,
-                params: Seq[BehaviorParameterData],
+                inputIds: Seq[String],
                 triggers: Seq[BehaviorTriggerData],
                 config: BehaviorConfig,
                 exportId: Option[String],
@@ -148,7 +127,7 @@ object BehaviorVersionData {
       description,
       functionBody,
       responseTemplate,
-      params,
+      inputIds,
       triggers.sorted,
       config,
       exportId,
@@ -197,7 +176,7 @@ object BehaviorVersionData {
       maybeDescription,
       extractFunctionBodyFrom(function),
       response,
-      Json.parse(params).validate[Seq[BehaviorParameterData]].get,
+      Json.parse(params).validate[Seq[String]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
       config,
       config.exportId,
@@ -212,7 +191,7 @@ object BehaviorVersionData {
                 user: User,
                 dataService: DataService,
                 maybeGroupVersion: Option[BehaviorGroupVersion],
-                maybeExportId: Option[String] = None
+                maybeExportId: Option[String]
               ): Future[Option[BehaviorVersionData]] = {
     for {
       maybeBehavior <- dataService.behaviors.find(behaviorId, user)
@@ -267,18 +246,7 @@ object BehaviorVersionData {
           behaviorVersion.maybeDescription,
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
-          params.map { ea =>
-            BehaviorParameterData(
-              ea.name,
-              paramTypeDataByParamTypes.get(ea.paramType),
-              ea.question,
-              Some(ea.input.isSavedForTeam),
-              Some(ea.input.isSavedForUser),
-              Some(ea.input.inputId),
-              Some(ea.input.id),
-              ea.input.maybeExportId
-            )
-          },
+          params.map(_.input.inputId),
           triggers.map(ea =>
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),

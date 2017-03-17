@@ -221,15 +221,18 @@ class BehaviorVersionServiceImpl @Inject() (
         requiredSimpleTokenApis <- DBIO.sequence(data.config.requiredSimpleTokenApis.getOrElse(Seq()).map { requiredData =>
           dataService.requiredSimpleTokenApis.maybeCreateForAction(requiredData, updated)
         }).map(_.flatten)
+        inputs <- DBIO.sequence(data.inputIds.map { inputId =>
+          dataService.inputs.findByInputIdAction(inputId)
+        }).map(_.flatten)
         _ <- DBIO.from(lambdaService.deployFunctionFor(
           updated,
           data.functionBody,
-          withoutBuiltin(data.params.map(_.name).toArray),
+          withoutBuiltin(inputs.map(_.name).toArray),
           maybeAWSConfig,
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis
         ))
-        _ <- dataService.behaviorParameters.ensureForAction(updated, data.params)
+        _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
         _ <- DBIO.sequence(
           data.triggers.
             filterNot(_.text.trim.isEmpty)

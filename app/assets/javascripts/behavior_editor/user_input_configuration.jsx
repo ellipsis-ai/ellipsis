@@ -5,19 +5,19 @@ define(function(require) {
     Checklist = require('./checklist'),
     Collapsible = require('../shared_ui/collapsible'),
     BehaviorVersion = require('../models/behavior_version'),
-    Param = require('../models/param'),
+    Input = require('../models/input'),
     Trigger = require('../models/trigger');
 
   return React.createClass({
     displayName: 'UserInputConfiguration',
     propTypes: {
-      onParamChange: React.PropTypes.func.isRequired,
-      onParamDelete: React.PropTypes.func.isRequired,
-      onParamAdd: React.PropTypes.func.isRequired,
-      onParamNameFocus: React.PropTypes.func.isRequired,
-      onParamNameBlur: React.PropTypes.func.isRequired,
+      onInputChange: React.PropTypes.func.isRequired,
+      onInputDelete: React.PropTypes.func.isRequired,
+      onInputAdd: React.PropTypes.func.isRequired,
+      onInputNameFocus: React.PropTypes.func.isRequired,
+      onInputNameBlur: React.PropTypes.func.isRequired,
       onEnterKey: React.PropTypes.func.isRequired,
-      userParams: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Param)).isRequired,
+      userInputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       paramTypes: React.PropTypes.arrayOf(
         React.PropTypes.shape({
           id: React.PropTypes.string.isRequired,
@@ -43,46 +43,45 @@ define(function(require) {
     },
 
     onChange: function(index, data) {
-      this.props.onParamChange(index, data);
+      this.props.onInputChange(index, data);
     },
     onDelete: function(index) {
-      this.props.onParamDelete(index);
+      this.props.onInputDelete(index);
     },
     onEnterKey: function(index) {
       this.props.onEnterKey(index);
     },
 
     onNameFocus: function(index) {
-      this.props.onParamNameFocus(index);
+      this.props.onInputNameFocus(index);
     },
 
     onNameBlur: function(index) {
-      this.props.onParamNameBlur(index);
+      this.props.onInputNameBlur(index);
     },
 
     focusIndex: function(index) {
-      this.refs['param' + index].focus();
+      this.refs['input' + index].focus();
     },
 
-    hasParams: function() {
-      return this.props.userParams.length > 0;
+    hasInputs: function() {
+      return this.props.userInputs.length > 0;
     },
 
-    isShared: function(param) {
+    isShared: function(input) {
       const firstBehaviorWithSameInput = this.props.otherBehaviorsInGroup.find(behavior => {
-        const inputIds = behavior.params.map(ea => ea.inputVersionId);
-        return inputIds.indexOf(param.inputVersionId) !== -1;
+        return behavior.inputIds.indexOf(input.inputId) !== -1;
       });
       return !!firstBehaviorWithSameInput;
     },
 
-    countLinkedTriggersForParam: function(paramName, paramIndex) {
-      return this.props.triggers.filter((trigger) => trigger.usesParamName(paramName) || trigger.capturesParamIndex(paramIndex)).length;
+    countLinkedTriggersForInput: function(inputName, inputIndex) {
+      return this.props.triggers.filter((trigger) => trigger.usesInputName(inputName) || trigger.capturesInputIndex(inputIndex)).length;
     },
 
     hasLinkedTriggers: function() {
-      return this.props.userParams.some((param) => {
-        return this.props.triggers.some((trigger) => trigger.usesParamName(param.name));
+      return this.props.userInputs.some(ea => {
+        return this.props.triggers.some(trigger => trigger.usesInputName(ea.name));
       });
     },
 
@@ -98,7 +97,7 @@ define(function(require) {
       return this.props.savedAnswers.find((answers) => answers.inputId === inputId);
     },
 
-    renderReuseParameter: function(optionalProperties) {
+    renderReuseInput: function(optionalProperties) {
       var props = Object.assign({}, optionalProperties);
       if (this.props.hasSharedAnswers) {
         return (
@@ -117,7 +116,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <Collapsible revealWhen={!this.hasParams()} animationDisabled={this.props.animationDisabled}>
+          <Collapsible revealWhen={!this.hasInputs()} animationDisabled={this.props.animationDisabled}>
             <div className="bg-blue-lighter border-top border-blue ptl pbs">
               <div className="container container-wide">
                 <div className="columns columns-elastic narrow-columns-float">
@@ -128,15 +127,15 @@ define(function(require) {
                     </p>
                   </div>
                   <div className="column column-shrink align-r align-m narrow-align-l display-ellipsis mobile-display-no-ellipsis">
-                    <button type="button" className="button-s mbs mobile-mrm" onClick={this.props.onParamAdd}>Add an input</button>
-                    {this.renderReuseParameter({ className: "mlm mobile-mln mbs" })}
+                    <button type="button" className="button-s mbs mobile-mrm" onClick={this.props.onInputAdd}>Add an input</button>
+                    {this.renderReuseInput({ className: "mlm mobile-mln mbs" })}
                   </div>
                 </div>
               </div>
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={this.hasParams()} animationDisabled={this.props.animationDisabled}>
+          <Collapsible revealWhen={this.hasInputs()} animationDisabled={this.props.animationDisabled}>
 
             <hr className="mtn thin bg-gray-light" />
 
@@ -161,36 +160,36 @@ define(function(require) {
                     </Checklist>
                   </div>
                   <div className="mbm">
-                    {this.props.userParams.map((param, paramIndex) => (
-                      <div key={`userParam${paramIndex}`}>
+                    {this.props.userInputs.map((input, inputIndex) => (
+                      <div key={`userInput${inputIndex}`}>
                         <UserInputDefinition
-                          key={'UserInputDefinition' + paramIndex}
-                          ref={'param' + paramIndex}
-                          param={param}
-                          isShared={this.isShared(param)}
+                          key={'UserInputDefinition' + inputIndex}
+                          ref={'input' + inputIndex}
+                          input={input}
+                          isShared={this.isShared(input)}
                           paramTypes={this.props.paramTypes}
-                          onChange={this.onChange.bind(this, paramIndex)}
-                          onDelete={this.onDelete.bind(this, paramIndex)}
-                          onEnterKey={this.onEnterKey.bind(this, paramIndex)}
-                          onNameFocus={this.onNameFocus.bind(this, paramIndex)}
-                          onNameBlur={this.onNameBlur.bind(this, paramIndex)}
-                          numLinkedTriggers={this.countLinkedTriggersForParam(param.name, paramIndex)}
-                          id={paramIndex}
-                          savedAnswers={this.getSavedAnswersFor(param.inputId)}
+                          onChange={this.onChange.bind(this, inputIndex)}
+                          onDelete={this.onDelete.bind(this, inputIndex)}
+                          onEnterKey={this.onEnterKey.bind(this, inputIndex)}
+                          onNameFocus={this.onNameFocus.bind(this, inputIndex)}
+                          onNameBlur={this.onNameBlur.bind(this, inputIndex)}
+                          numLinkedTriggers={this.countLinkedTriggersForInput(input.name, inputIndex)}
+                          id={inputIndex}
+                          savedAnswers={this.getSavedAnswersFor(input.inputId)}
                           onToggleSavedAnswer={this.props.onToggleSavedAnswer}
                           onConfigureType={this.props.onConfigureType}
                         />
-                        {paramIndex + 1 < this.props.userParams.length ? (
+                        {inputIndex + 1 < this.props.userInputs.length ? (
                           <div className="pvxs type-label type-disabled align-c">and</div>
                         ) : null}
                       </div>
                     ))}
                   </div>
                   <div>
-                    <button type="button" className="button-s mrm mbs" onClick={this.props.onParamAdd}>
+                    <button type="button" className="button-s mrm mbs" onClick={this.props.onInputAdd}>
                       Add another input
                     </button>
-                    {this.renderReuseParameter({ className: "mbs" })}
+                    {this.renderReuseInput({ className: "mbs" })}
                   </div>
                 </div>
               </div>
