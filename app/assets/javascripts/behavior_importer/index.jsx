@@ -5,7 +5,7 @@ define(function(require) {
     BehaviorGroupInfoPanel = require('../behavior_list/behavior_group_info_panel'),
     Collapsible = require('../shared_ui/collapsible'),
     FixedFooter = require('../shared_ui/fixed_footer'),
-    InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
+    InstalledBehaviorGroupsPanel = require('../behavior_list/installed_behavior_groups_panel'),
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels');
 

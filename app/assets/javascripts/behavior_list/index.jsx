@@ -6,6 +6,7 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     FixedFooter = require('../shared_ui/fixed_footer'),
+    InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels');
 
@@ -21,7 +22,8 @@ define(function(require) {
       publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       csrfToken: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired
+      teamId: React.PropTypes.string.isRequired,
+      slackTeamId: React.PropTypes.string.isRequired
     }),
 
     getInitialState: function() {
@@ -36,11 +38,16 @@ define(function(require) {
 
     componentWillReceiveProps: function(nextProps) {
       var updatedImportingList = this.state.importingList.filter((importing) =>
-        !nextProps.behaviorGroups.some((newGroup) => newGroup.exportId === importing.exportId)
+        !BehaviorGroup.groupsIncludeId(nextProps.behaviorGroups, importing.exportId)
       );
       this.setState({
         importingList: updatedImportingList
       });
+      var hasNewRecentlyInstalled = nextProps.recentlyInstalled.some((nextInstalled) =>
+        !BehaviorGroup.groupsIncludeId(this.props.recentlyInstalled, nextInstalled.id));
+      if (hasNewRecentlyInstalled && this.props.activePanelName !== 'afterInstall') {
+        this.props.onToggleActivePanel('afterInstall');
+      }
     },
 
     getAnimationDuration: function() {
@@ -49,6 +56,10 @@ define(function(require) {
 
     getBehaviorGroups: function() {
       return this.props.behaviorGroups;
+    },
+
+    getBehaviorGroupsJustInstalled: function() {
+      return this.props.recentlyInstalled;
     },
 
     resetFooterHeight: function() {
@@ -172,6 +183,10 @@ define(function(require) {
       return group ? group.id : null;
     },
 
+    hasRecentlyInstalledBehaviorGroups: function() {
+      return this.getBehaviorGroupsJustInstalled().length > 0;
+    },
+
     getActivePanelName: function() {
       return this.props.activePanelName;
     },
@@ -186,9 +201,7 @@ define(function(require) {
 
     getUninstalledBehaviorGroups: function() {
       return this.props.publishedBehaviorGroups.filter((published) =>
-        !this.props.behaviorGroups.some((local) =>
-          published.exportId === local.exportId
-        )
+        !BehaviorGroup.groupsIncludeExportId(this.props.behaviorGroups, published.exportId)
       );
     },
 
@@ -200,7 +213,7 @@ define(function(require) {
     },
 
     isImporting: function(group) {
-      return this.state.importingList.some((ea) => ea === group);
+      return BehaviorGroup.groupsIncludeId(this.state.importingList, group.id);
     },
 
     toggleInfoPanel: function(group) {
@@ -393,7 +406,19 @@ define(function(require) {
               />
             </Collapsible>
             <Collapsible
-              revealWhen={!this.getActivePanelName() && this.getSelectedGroupIds().length > 0}
+              ref="afterInstall"
+              revealWhen={this.hasRecentlyInstalledBehaviorGroups() && this.getActivePanelName() === 'afterInstall'}
+              animationDuration={this.getAnimationDuration()}
+              onChange={this.resetFooterHeight}
+            >
+              <InstalledBehaviorGroupsPanel
+                installedBehaviorGroups={this.getBehaviorGroupsJustInstalled()}
+                onToggle={this.props.onClearActivePanel}
+                slackTeamId={this.props.slackTeamId}
+              />
+            </Collapsible>
+            <Collapsible
+              revealWhen={!this.props.activePanelIsModal && this.getSelectedGroupIds().length > 0}
               onChange={this.resetFooterHeight}
             >
               <div className="border-top">

@@ -42,6 +42,11 @@ class ApplicationController @Inject() (
       }.getOrElse {
         Future.successful(None)
       }
+      maybeSlackTeamId <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.slackBotProfiles.allFor(team).map { botProfiles =>
+          botProfiles.headOption.map(_.slackTeamId)
+        }
+      }.getOrElse(Future.successful(None))
       groupData <- maybeBehaviorGroups.map { groups =>
         Future.sequence(groups.map { group =>
           BehaviorGroupData.maybeFor(group.id, user, None, dataService)
@@ -51,7 +56,7 @@ class ApplicationController @Inject() (
         Future.successful(if (groupData.isEmpty) {
           Redirect(routes.ApplicationController.intro(maybeTeamId))
         } else {
-          Ok(views.html.index(viewConfig(Some(teamAccess)), groupData))
+          Ok(views.html.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId))
         })
       }.getOrElse {
         reAuthFor(request, maybeTeamId)
