@@ -5,7 +5,8 @@ const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group')
 const BehaviorGroupCard = require('../app/assets/javascripts/behavior_list/behavior_group_card');
 
 describe('BehaviorList', () => {
-  jsRoutes.controllers.BehaviorEditorController.edit = function() { return '/edit'; };
+  jsRoutes.controllers.BehaviorEditorController.edit = () => '/edit';
+  jsRoutes.controllers.BehaviorEditorController.newGroup = () => '/newGroup';
 
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",
@@ -72,7 +73,14 @@ describe('BehaviorList', () => {
   const group3 = Object.freeze(BehaviorGroup.fromJson({id:"jfghjfg", name:"", description: "", behaviorVersions: [behaviorVersionKnowledge1], createdAt: 1466109904858}));
   const defaultConfig = Object.freeze({
     csrfToken: "2",
-    behaviorGroups: [group1, group2, group3]
+    behaviorGroups: [group1, group2, group3],
+    publishedBehaviorGroups: [],
+    recentlyInstalled: [],
+    onLoadPublishedBehaviorGroups: jest.fn(),
+    onBehaviorGroupImport: jest.fn(),
+    publishedBehaviorGroupLoadStatus: 'loaded',
+    teamId: "1",
+    slackTeamId: "1"
   });
 
   function createBehaviorList(config) {
