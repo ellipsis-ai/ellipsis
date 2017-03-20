@@ -54,7 +54,7 @@ case class FuzzyMatcher[T <: FuzzyMatchable](
 }
 
 case class FuzzyMatchResult[T <: FuzzyMatchable](item: T, patternsWithScores: Seq[(FuzzyMatchPattern, Double)]) {
-  val maxScore: Double = patternsWithScores.map(_._2).max
+  val maxScore: Double = if (patternsWithScores.isEmpty) { 0 } else { patternsWithScores.map(_._2).max }
   val patterns: Seq[FuzzyMatchPattern] = patternsWithScores.map(_._1)
   def filteredForThreshold(threshold: Double): FuzzyMatchResult[T] = {
     copy(patternsWithScores = patternsWithScores.filter { case(pattern, score) =>
