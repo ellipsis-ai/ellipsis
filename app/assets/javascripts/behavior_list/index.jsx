@@ -183,6 +183,11 @@ define(function(require) {
       return this.state.selectedBehaviorGroup;
     },
 
+    selectedBehaviorGroupIsImportable: function() {
+      var selectedGroup = this.getSelectedBehaviorGroup();
+      return !!(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup));
+    },
+
     getSelectedBehaviorGroupId: function() {
       var group = this.getSelectedBehaviorGroup();
       return group ? group.id : null;
@@ -213,8 +218,12 @@ define(function(require) {
     onBehaviorGroupImport: function(groupToInstall) {
       this.setState({
         importingList: this.state.importingList.concat([groupToInstall])
+      }, () => {
+        if (this.getActivePanelName() === 'moreInfo') {
+          this.clearActivePanel();
+        }
+        this.props.onBehaviorGroupImport(groupToInstall);
       });
-      this.props.onBehaviorGroupImport(groupToInstall);
     },
 
     isImporting: function(group) {
@@ -423,9 +432,10 @@ define(function(require) {
             >
               <BehaviorGroupInfoPanel
                 groupData={this.getSelectedBehaviorGroup()}
-                onToggle={this.toggleInfoPanel}
-                isImportable={false}
+                onToggle={this.clearActivePanel}
+                isImportable={this.selectedBehaviorGroupIsImportable()}
                 localId={this.getSelectedBehaviorGroupId()}
+                onBehaviorGroupImport={this.onBehaviorGroupImport}
               />
             </Collapsible>
             <Collapsible

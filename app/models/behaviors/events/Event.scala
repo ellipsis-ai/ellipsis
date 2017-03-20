@@ -71,7 +71,7 @@ trait Event {
 
   def installLinkFor(lambdaService: AWSLambdaService): String = {
     val installLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ApplicationController.installBehaviors(Some(teamId))
+      val path = controllers.routes.ApplicationController.index(Some(teamId))
       s"$baseUrl$path"
     }.get
     s"[install new skills]($installLink)"

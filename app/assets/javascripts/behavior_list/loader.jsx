@@ -49,6 +49,9 @@ requirejs(['../common'], function() {
             reload({
               recentlyInstalled: recentlyInstalled
             });
+          })
+          .catch(() => {
+            // TODO: Handle errors importing
           });
       }
 
