@@ -256,48 +256,52 @@ define(function(require) {
       }
     },
 
-    renderTeachButton: function() {
+    renderHeaderWithTeachButton: function(headerText) {
       return (
-        <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
-          className="button button-shrink">
-          Teach Ellipsis something new…
-        </a>
+        <div className="columns columns-elastic mobile-columns-float">
+          <div className="column column-expand">
+            <h3 className="type-blue-faded mbxl mhl mobile-mbm">{headerText}</h3>
+          </div>
+          <div className="column column-shrink align-m phl mobile-pbl">
+            <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
+              className="button button-shrink">
+              Teach Ellipsis something new…
+            </a>
+          </div>
+        </div>
       );
     },
 
     renderInstalledBehaviorGroups: function(groups) {
       return (
-        <div className="container container-c ptl pbxl mobile-ptm phn">
+        <Collapsible revealWhen={groups.length > 0} animationDuration={0.5}>
+          <div className="container container-c ptl mobile-ptm phn">
 
-          <div className="columns columns-elastic mobile-columns-float">
-            <div className="column column-expand">
-              <h3 className="type-blue-faded mbxl mhl mobile-mbm">Your skills</h3>
-            </div>
-            <div className="column column-shrink align-m phl mobile-pbl">
-              {this.renderTeachButton()}
-            </div>
-          </div>
+            {this.renderHeaderWithTeachButton("Your skills")}
 
-          <div className="columns">
-            {groups.map((group, index) => (
-              <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
-                key={"group" + index}>
-                <BehaviorGroupCard
-                  name={group.name}
-                  description={group.description}
-                  icon={group.icon}
-                  groupData={group}
-                  localId={group.id}
-                  onMoreInfoClick={this.toggleInfoPanel}
-                  isImportable={false}
-                  onSelectChange={this.onGroupSelectionCheckboxChange}
-                  isSelected={this.isGroupSelected(group.id)}
-                  cardClassName="bg-white"
-                />
-              </div>
-            ))}
+            <div className="columns">
+              {groups.map((group, index) => (
+                <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
+                  key={"group" + index}>
+                  <BehaviorGroupCard
+                    name={group.name}
+                    description={group.description}
+                    icon={group.icon}
+                    groupData={group}
+                    localId={group.id}
+                    onMoreInfoClick={this.toggleInfoPanel}
+                    isImportable={false}
+                    onSelectChange={this.onGroupSelectionCheckboxChange}
+                    isSelected={this.isGroupSelected(group.id)}
+                    cardClassName="bg-white"
+                  />
+                </div>
+              ))}
+            </div>
+
           </div>
-        </div>
+          <hr className="mtxl bg-dark-translucent mbn" />
+        </Collapsible>
       );
     },
 
@@ -334,13 +338,30 @@ define(function(require) {
 
     renderPublishedGroups: function() {
       return (
-        <div className="bg-blue-lighter pbxl">
-          <hr className="mtn bg-dark-translucent" />
+        <div className="bg-blue-lighter ptxl pbxl">
           <div className="container container-c phn">
             {this.renderPublishedGroupsContent()}
           </div>
         </div>
       );
+    },
+
+    renderPublishedIntro: function() {
+      if (this.getBehaviorGroups().length > 0) {
+        return (
+          <h3 className="mbxl mhl type-blue-faded">Skills published by Ellipsis.ai (available to install)</h3>
+        );
+      } else {
+        return (
+          <div>
+            {this.renderHeaderWithTeachButton("To get started, install one of the skills published by Ellipsis.ai")}
+
+            <p className="type-blue-faded mhl mbxl">
+              Each skill instructs your bot how to perform a set of related tasks, and when to respond to people in chat.
+            </p>
+          </div>
+        );
+      }
     },
 
     renderPublishedGroupsContent: function() {
@@ -349,7 +370,7 @@ define(function(require) {
         return (
           <div>
 
-            <h3 className="mtxxxl mbxl mhl type-blue-faded">Skills published by Ellipsis.ai (available to install)</h3>
+            {this.renderPublishedIntro()}
 
             <div className="columns">
               {groups.map((group, index) => (
@@ -394,33 +415,36 @@ define(function(require) {
       }
     },
 
-    renderContent: function() {
-      var localGroups = this.getBehaviorGroups();
-      if (localGroups.length > 0) {
+    renderIntro: function() {
+      if (this.props.behaviorGroups.length === 0) {
         return (
-          <div>
-
-            {this.renderInstalledBehaviorGroups(localGroups)}
-
-            {this.renderPublishedGroups()}
-
-          </div>
-        );
-      } else {
-        return (
-          <div>
-            <p className="type-l pvxl">
-              Ellipsis doesn’t know any skills yet. Try installing some of the ones
-              published by Ellipsis, or create a new one yourself.
-            </p>
-
-            {this.renderTeachButton()}
-
-            {this.renderPublishedGroups()}
-
+          <div className="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
+            <div className="container container-c">
+              <div className="phl">
+                <p className="type-l type-white">
+                  Ellipsis is a customizable chat bot that helps your team be more productive.
+                  Teach your bot to perform tasks and provide answers to your team.
+                </p>
+              </div>
+            </div>
           </div>
         );
       }
+    },
+
+    renderContent: function() {
+      var localGroups = this.getBehaviorGroups();
+      return (
+        <div>
+
+          {this.renderIntro()}
+
+          {this.renderInstalledBehaviorGroups(localGroups)}
+
+          {this.renderPublishedGroups()}
+
+        </div>
+      );
     },
 
     render: function() {
