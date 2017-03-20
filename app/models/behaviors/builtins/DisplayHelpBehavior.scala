@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.events._
-import utils.{Color, FuzzyMatchable, FuzzyMatcher, SlackMessageSender}
+import utils._
 import models.behaviors.{BotResult, TextWithActionsResult}
 import services.{AWSLambdaService, DataService}
 
@@ -23,59 +23,6 @@ case class DisplayHelpBehavior(
                          lambdaService: AWSLambdaService,
                          dataService: DataService
                        ) extends BuiltinBehavior {
-
-  private def searchPatternFor(searchText: String): Regex = {
-    s"(?i)(\\s|\\A)(\\S*${Regex.quote(searchText)}\\S*)(\\s|\\Z)".r
-  }
-
-  private def helpStringFor(group: BehaviorGroupData, behaviorVersion: BehaviorVersionData, maybeMatchingItems: Option[Seq[FuzzyMatchable]]): Option[String] = {
-    val triggers = behaviorVersion.triggers
-    if (triggers.isEmpty) {
-      None
-    } else {
-      val nonRegexTriggers = triggers.filterNot(_.isRegex)
-      val namedTriggers =
-        if (nonRegexTriggers.isEmpty)
-          triggerStringFor(triggers.head, maybeMatchingItems)
-        else
-          nonRegexTriggers.map(trigger => triggerStringFor(trigger, maybeMatchingItems)).mkString(" ")
-      val regexTriggerCount =
-        if (nonRegexTriggers.isEmpty)
-          triggers.tail.count({ ea => ea.isRegex })
-        else
-          triggers.count({ ea => ea.isRegex })
-
-      val regexTriggerString =
-        if (regexTriggerCount == 1)
-          s" _(also matches another pattern)_"
-        else if (regexTriggerCount > 1)
-          s" _(also matches $regexTriggerCount other patterns)_"
-        else
-          s""
-
-      val triggersString = namedTriggers ++ regexTriggerString
-      if (triggersString.isEmpty) {
-        None
-      } else {
-        val linkText = (for {
-          groupId <- group.id
-          behaviorId <- behaviorVersion.behaviorId
-        } yield {
-          val url = dataService.behaviors.editLinkFor(groupId, behaviorId, lambdaService.configuration)
-          s" [✎]($url)"
-        }).getOrElse("")
-        Some(s"$triggersString$linkText\n\n")
-      }
-    }
-  }
-
-  private def triggerStringFor(trigger: BehaviorTriggerData, maybeMatchingItems: Option[Seq[FuzzyMatchable]]): String = {
-    if (maybeMatchingItems.exists(_.contains(trigger))) {
-      s"**`${trigger.text}`**"
-    } else {
-      s"`${trigger.text}`"
-    }
-  }
 
   private def maybeHelpSearch: Option[String] = {
     maybeHelpString.filter(_.trim.nonEmpty)
@@ -103,10 +50,10 @@ case class DisplayHelpBehavior(
     )
   }
 
-  private def introResultFor(groupData: Seq[BehaviorGroupData], startAt: Int): BotResult = {
+  private def introResultFor(results: Seq[HelpResult], startAt: Int): BotResult = {
     val endAt = startAt + SlackMessageSender.MAX_ACTIONS_PER_ATTACHMENT - 1
-    val groupsToShow = groupData.slice(startAt, endAt)
-    val groupsRemaining = groupData.slice(endAt, groupData.length)
+    val resultsToShow = results.slice(startAt, endAt)
+    val resultsRemaining = results.slice(endAt, results.length)
 
     val intro = if (startAt == 0 && maybeHelpString.isEmpty) {
       s"OK, let’s start from the top. Here are some things I know about. ${event.skillListLinkFor(lambdaService)}"
@@ -122,7 +69,8 @@ case class DisplayHelpBehavior(
     } else {
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
-    val skillActions = groupsToShow.map(group => {
+    val skillActions = resultsToShow.map(result => {
+      val group = result.group
       val label = group.name.getOrElse("")
       val helpActionValue = group.id.getOrElse("(untitled)")
       maybeHelpSearch.map { helpSearch =>
@@ -131,7 +79,7 @@ case class DisplayHelpBehavior(
         SlackMessageAction("help_for_skill", label, helpActionValue)
       }
     })
-    val remainingGroupCount = groupsRemaining.length
+    val remainingGroupCount = resultsRemaining.length
     val actions = if (remainingGroupCount > 0) {
       val label = if (remainingGroupCount == 1) { "1 more skill…" } else { s"$remainingGroupCount more skills…" }
       skillActions :+ SlackMessageAction("help_index", label, endAt.toString, maybeStyle = Some("primary"))
@@ -153,27 +101,7 @@ case class DisplayHelpBehavior(
     }
   }
 
-  private def filterBehaviorVersionsIfMiscGroup(group: BehaviorGroupData, matchingItems: Seq[FuzzyMatchable]): BehaviorGroupData = {
-    if (group.id.isEmpty || group.name.isEmpty) {
-      val matchingBehaviorVersions = group.behaviorVersions.filter(_.triggers.exists(matchingItems.contains))
-      group.copy(behaviorVersions = matchingBehaviorVersions)
-    } else {
-      group
-    }
-  }
-
-  private def descriptionFor(groupData: BehaviorGroupData, maybeMatchingItems: Option[Seq[FuzzyMatchable]]): String = {
-    groupData.description
-      .filter(_.trim.nonEmpty)
-      .map { rawDescription =>
-        val description = maybeMatchingItems.filter(_.contains(groupData.fuzzyMatchDescription)).flatMap { _ =>
-          maybeHelpSearch.map(helpSearch => searchPatternFor(helpSearch).replaceAllIn(groupData.description.getOrElse(""), "$1**$2**$3"))
-        }.getOrElse(rawDescription)
-        description + "\n\n"
-      }.getOrElse("")
-  }
-
-  def skillResultFor(group: BehaviorGroupData, maybeMatchingItems: Option[Seq[FuzzyMatchable]]): BotResult = {
+  def skillResultFor(result: HelpResult): BotResult = {
 
     val intro = if (isFirstTrigger) {
       s"Here’s what I know$matchString. ${event.skillListLinkFor(lambdaService)}"
@@ -181,17 +109,18 @@ case class DisplayHelpBehavior(
       "OK, here’s the help you asked for:"
     }
 
+    val group = result.group
     val name = group.name
       .filterNot(name => group.id.isEmpty || name.trim.isEmpty)
       .map(name => s"**$name**")
       .getOrElse("**Miscellaneous skills**")
 
-    val actionList = group.behaviorVersions.flatMap(version => helpStringFor(group, version, maybeMatchingItems)).mkString("")
+    val actionList = group.behaviorVersions.flatMap(version => result.helpStringFor(version)).mkString("")
 
     val resultText =
       s"""$intro
          |
-         |$name  \n${descriptionFor(group, maybeMatchingItems)}${actionHeadingFor(group)}
+         |$name  \n${result.description}${actionHeadingFor(group)}
          |$actionList
          |""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
@@ -229,27 +158,114 @@ case class DisplayHelpBehavior(
       if (unnamed.nonEmpty) {
         flattenedGroupData += flattenUnnamedBehaviorGroupData(unnamed)
       }
-      val maybeMatchingItems = maybeHelpSearch.map { helpSearch =>
-        val matchingItems = flattenedGroupData.flatMap { groupData =>
-          Seq(groupData.fuzzyMatchName, groupData.fuzzyMatchDescription) ++ groupData.behaviorVersions.flatMap(_.triggers)
-        }
-        FuzzyMatcher(helpSearch, matchingItems).run.map(_._1)
-      }
-      val matchingGroupData = maybeMatchingItems.map { matchingItems =>
-        flattenedGroupData.
-          filter { group =>
-            matchingItems.contains(group.fuzzyMatchName) || matchingItems.contains(group.fuzzyMatchDescription) ||
-              group.behaviorVersions.exists(_.triggers.exists(matchingItems.contains))
-          }.
-          map(group => filterBehaviorVersionsIfMiscGroup(group, matchingItems))
-      }.getOrElse(flattenedGroupData)
+      val matchingGroupData = maybeHelpSearch.map { helpSearch =>
+        FuzzyMatcher[BehaviorGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, dataService, lambdaService))
+      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, dataService, lambdaService)))
       if (matchingGroupData.isEmpty) {
         emptyResult
       } else if (matchingGroupData.length == 1) {
-        skillResultFor(matchingGroupData.head, maybeMatchingItems)
+        skillResultFor(matchingGroupData.head)
       } else {
         introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0))
       }
     }
   }
+}
+
+trait HelpResult {
+  val group: BehaviorGroupData
+  val matchingTriggers: Seq[BehaviorTriggerData]
+
+  val dataService: DataService
+  val lambdaService: AWSLambdaService
+
+  def description: String
+
+  lazy val trimmedGroupDescription: String = group.description.filter(_.trim.nonEmpty).getOrElse("")
+
+  private def triggerStringFor(trigger: BehaviorTriggerData): String = {
+    if (matchingTriggers.contains(trigger)) {
+      s"**`${trigger.text}`**"
+    } else {
+      s"`${trigger.text}`"
+    }
+  }
+
+  def helpStringFor(behaviorVersion: BehaviorVersionData): Option[String] = {
+    val triggers = behaviorVersion.triggers
+    if (triggers.isEmpty) {
+      None
+    } else {
+      val nonRegexTriggers = triggers.filterNot(_.isRegex)
+      val namedTriggers =
+        if (nonRegexTriggers.isEmpty)
+          triggerStringFor(triggers.head)
+        else
+          nonRegexTriggers.map(trigger => triggerStringFor(trigger)).mkString(" ")
+      val regexTriggerCount =
+        if (nonRegexTriggers.isEmpty)
+          triggers.tail.count({ ea => ea.isRegex })
+        else
+          triggers.count({ ea => ea.isRegex })
+
+      val regexTriggerString =
+        if (regexTriggerCount == 1)
+          s" _(also matches another pattern)_"
+        else if (regexTriggerCount > 1)
+          s" _(also matches $regexTriggerCount other patterns)_"
+        else
+          s""
+
+      val triggersString = namedTriggers ++ regexTriggerString
+      if (triggersString.isEmpty) {
+        None
+      } else {
+        val linkText = (for {
+          groupId <- group.id
+          behaviorId <- behaviorVersion.behaviorId
+        } yield {
+          val url = dataService.behaviors.editLinkFor(groupId, behaviorId, lambdaService.configuration)
+          s" [✎]($url)"
+        }).getOrElse("")
+        Some(s"$triggersString$linkText\n\n")
+      }
+    }
+  }
+}
+
+case class HelpSearchResult(
+                            searchQuery: String,
+                            underlying: FuzzyMatchResult[BehaviorGroupData],
+                            dataService: DataService,
+                            lambdaService: AWSLambdaService
+                           ) extends HelpResult {
+  val group = underlying.item
+  val descriptionMatches: Boolean = underlying.patterns.contains(group.fuzzyMatchDescription)
+  val matchingTriggers = underlying.patterns.flatMap {
+    case trigger: BehaviorTriggerData => Some(trigger)
+    case _ => None
+  }
+
+  private def searchPattern: Regex = {
+    s"(?i)(\\s|\\A)(\\S*${Regex.quote(searchQuery)}\\S*)(\\s|\\Z)".r
+  }
+
+  def description: String = {
+    val descriptionText = if (descriptionMatches) {
+      searchPattern.replaceAllIn(trimmedGroupDescription, "$1**$2**$3")
+    } else {
+      trimmedGroupDescription
+    }
+    descriptionText ++ "\n\n"
+  }
+
+}
+case class SimpleHelpResult(
+                             group: BehaviorGroupData,
+                             dataService: DataService,
+                             lambdaService: AWSLambdaService
+                           ) extends HelpResult {
+  val matchingTriggers = Seq()
+
+  def description: String = trimmedGroupDescription
 }
