@@ -3,7 +3,6 @@
 # ~~~~
 
 GET         /                                         @controllers.ApplicationController.index(teamId: Option[String] ?= None, branch: Option[String] ?= None)
-GET         /intro                                    @controllers.ApplicationController.intro(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 
 # TODO: Remove these two obsolete routes if we're sure nobody uses them
 GET         /install_skills                           @controllers.ApplicationController.index(teamId: Option[String] ?= None, branch: Option[String] ?= None)
