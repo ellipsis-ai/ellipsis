@@ -2,11 +2,13 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# An example controller showing a sample home page
 GET         /                                         @controllers.ApplicationController.index(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 GET         /intro                                    @controllers.ApplicationController.intro(teamId: Option[String] ?= None, branch: Option[String] ?= None)
-GET         /install_skills                           @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
-GET         /install_behaviors                        @controllers.ApplicationController.installBehaviors(teamId: Option[String] ?= None, branch: Option[String] ?= None)
+
+# TODO: Remove these two obsolete routes if we're sure nobody uses them
+GET         /install_skills                           @controllers.ApplicationController.index(teamId: Option[String] ?= None, branch: Option[String] ?= None)
+GET         /install_behaviors                        @controllers.ApplicationController.index(teamId: Option[String] ?= None, branch: Option[String] ?= None)
+
 GET         /fetch_published_skills                   @controllers.ApplicationController.fetchPublishedBehaviorInfo(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 POST        /merge_skills                             @controllers.ApplicationController.mergeBehaviorGroups
 POST        /delete_skills                            @controllers.ApplicationController.deleteBehaviorGroups
