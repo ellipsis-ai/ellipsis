@@ -611,7 +611,7 @@ const BehaviorEditor = React.createClass({
   },
 
   deleteInputAtIndex: function(index) {
-    this.setBehaviorProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputs(), index));
+    this.setBehaviorProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputIds(), index));
   },
 
   deleteTriggerAtIndex: function(index) {
