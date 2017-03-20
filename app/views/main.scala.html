@@ -2,7 +2,8 @@
   title: String,
   config: ViewConfig,
   pageId: String = "",
-  selectedNav: String = ""
+  selectedNav: String = "",
+  bgClass: String = "bg-lightest"
 )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
 @navBgColorForPage = @{if (config.maybeTeamAccess.exists(_.isAdminAccess)) " bg-pink " else " bg-black "}
@@ -30,7 +31,7 @@
     <link rel="icon" href="/assets/images/favicon-32x32.png" sizes="32x32">
     <link rel="icon" href="/assets/images/favicon-16x16.png" sizes="16x16">
   </head>
-  <body class="bg-lightest flex-rows flex-rows-viewport">
+  <body class="flex-rows flex-rows-viewport @bgClass">
     <header id="main-header" class='@("position-fixed-top position-z-behind-scrim border-emphasis-bottom type-white border-pink " + navBgColorForPage)'>
       <div class="container container-wide prm mobile-prs">
         @views.html.mainNav(config, selectedNav)

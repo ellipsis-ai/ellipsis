@@ -54,11 +54,11 @@ class ApplicationController @Inject() (
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
       result <- teamAccess.maybeTargetTeam.map { team =>
-        Future.successful(if (groupData.isEmpty) {
-          Redirect(routes.ApplicationController.intro(maybeTeamId))
-        } else {
-          Ok(views.html.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, maybeBranch))
-        })
+//        Future.successful(if (groupData.isEmpty) {
+//          Redirect(routes.ApplicationController.intro(maybeTeamId))
+//        } else {
+          Future.successful(Ok(views.html.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, maybeBranch)))
+//        })
       }.getOrElse {
         reAuthFor(request, maybeTeamId)
       }
