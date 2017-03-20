@@ -55,12 +55,17 @@ trait Event {
 
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
 
-  def skillListLinkFor(lambdaService: AWSLambdaService): String = {
+  def skillListLinkFor(isListEmpty: Boolean, lambdaService: AWSLambdaService): String = {
     val skillListLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ApplicationController.index(Some(teamId))
       s"$baseUrl$path"
     }.get
-    s"[View all skills]($skillListLink)"
+    val linkText = if (isListEmpty) {
+      "Get started by teaching me something"
+    } else {
+      "View all skills"
+    }
+    s"[$linkText]($skillListLink)"
   }
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
