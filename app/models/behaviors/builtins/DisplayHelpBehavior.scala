@@ -56,9 +56,9 @@ case class DisplayHelpBehavior(
     val resultsRemaining = results.slice(endAt, results.length)
 
     val intro = if (startAt == 0 && maybeHelpString.isEmpty) {
-      s"OK, let’s start from the top. Here are some things I know about. ${event.skillListLinkFor(lambdaService)}"
+      s"OK, let’s start from the top. Here are some things I know about. ${event.skillListLinkFor(isListEmpty = false, lambdaService)}"
     } else if (startAt == 0 && maybeHelpString.isDefined) {
-      s"OK, here’s what I know$matchString. ${event.skillListLinkFor(lambdaService)}"
+      s"OK, here’s what I know$matchString. ${event.skillListLinkFor(isListEmpty = false, lambdaService)}"
     } else {
       s"OK, here are some more things I know$matchString."
     }
@@ -104,7 +104,7 @@ case class DisplayHelpBehavior(
   def skillResultFor(result: HelpResult): BotResult = {
 
     val intro = if (isFirstTrigger) {
-      s"Here’s what I know$matchString. ${event.skillListLinkFor(lambdaService)}"
+      s"Here’s what I know$matchString. ${event.skillListLinkFor(isListEmpty = false, lambdaService)}"
     } else {
       "OK, here’s the help you asked for:"
     }
@@ -129,7 +129,7 @@ case class DisplayHelpBehavior(
 
   def emptyResult: BotResult = {
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
-    val resultText = s"I don’t know anything$matchString. ${event.skillListLinkFor(lambdaService)}"
+    val resultText = s"I don’t know anything$matchString. ${event.skillListLinkFor(isListEmpty = true, lambdaService)}"
     TextWithActionsResult(event, resultText, forcePrivateResponse = false, SlackMessageActions("help_no_result", actions, None, Some(Color.PINK)))
   }
 
