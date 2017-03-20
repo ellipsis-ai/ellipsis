@@ -17,6 +17,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result}
 import services.{AWSLambdaService, DataService, GithubService}
+import utils.FuzzyMatcher
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -199,6 +200,26 @@ class ApplicationController @Inject() (
         }
       }
     )
+  }
+
+  def findBehaviorGroupsMatching(queryString: String) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeTeam <- dataService.teams.find(user.teamId)
+      maybeBehaviorGroups <- maybeTeam.map { team =>
+        dataService.behaviorGroups.allFor(team).map(Some(_))
+      }.getOrElse {
+        Future.successful(None)
+      }
+      groupData <- maybeBehaviorGroups.map { groups =>
+        Future.sequence(groups.map { group =>
+          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+        }).map(_.flatten.sorted)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, groupData).run
+      Ok(Json.toJson(matchResults.map(_.item)).toString)
+    }
   }
 
 }
