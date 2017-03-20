@@ -61,8 +61,6 @@ class ApplicationController @Inject() (
     } yield result
   }
 
-  case class PublishedBehaviorInfo(published: Seq[BehaviorGroupData], installedBehaviors: Seq[InstalledBehaviorGroupData])
-
   def fetchPublishedBehaviorInfo(maybeTeamId: Option[String],
                                     maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
