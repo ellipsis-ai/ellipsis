@@ -6,6 +6,7 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     FixedFooter = require('../shared_ui/fixed_footer'),
+    InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels');
 
@@ -15,24 +16,50 @@ define(function(require) {
     displayName: "BehaviorList",
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
-      csrfToken: React.PropTypes.string.isRequired
+      onLoadPublishedBehaviorGroups: React.PropTypes.func.isRequired,
+      onBehaviorGroupImport: React.PropTypes.func.isRequired,
+      publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
+      publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
+      recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
+      csrfToken: React.PropTypes.string.isRequired,
+      teamId: React.PropTypes.string.isRequired,
+      slackTeamId: React.PropTypes.string.isRequired
     }),
-
-    getAnimationDuration: function() {
-      return ANIMATION_DURATION;
-    },
-
-    getBehaviorGroups: function() {
-      return this.props.behaviorGroups;
-    },
 
     getInitialState: function() {
       return {
         selectedBehaviorGroup: null,
         selectedGroupIds: [],
         isSubmitting: false,
-        footerHeight: 0
+        footerHeight: 0,
+        importingList: []
       };
+    },
+
+    componentWillReceiveProps: function(nextProps) {
+      var updatedImportingList = this.state.importingList.filter((importing) =>
+        !BehaviorGroup.groupsIncludeExportId(nextProps.recentlyInstalled, importing.exportId)
+      );
+      this.setState({
+        importingList: updatedImportingList
+      });
+      var hasNewRecentlyInstalled = nextProps.recentlyInstalled.some((nextInstalled) =>
+        !BehaviorGroup.groupsIncludeId(this.props.recentlyInstalled, nextInstalled.id));
+      if (hasNewRecentlyInstalled && this.props.activePanelName !== 'afterInstall') {
+        this.props.onToggleActivePanel('afterInstall');
+      }
+    },
+
+    getAnimationDuration: function() {
+      return ANIMATION_DURATION;
+    },
+
+    getBehaviorGroups: function() {
+      return this.props.behaviorGroups.concat(this.props.recentlyInstalled);
+    },
+
+    getBehaviorGroupsJustInstalled: function() {
+      return this.props.recentlyInstalled;
     },
 
     resetFooterHeight: function() {
@@ -44,6 +71,11 @@ define(function(require) {
 
     getSelectedGroupIds: function() {
       return this.state.selectedGroupIds || [];
+    },
+
+    getLocalIdFor: function(exportId) {
+      var localGroup = this.getBehaviorGroups().find((ea) => ea.exportId === exportId);
+      return localGroup ? localGroup.id : null;
     },
 
     isGroupSelected: function(groupId) {
@@ -151,9 +183,18 @@ define(function(require) {
       return this.state.selectedBehaviorGroup;
     },
 
+    selectedBehaviorGroupIsImportable: function() {
+      var selectedGroup = this.getSelectedBehaviorGroup();
+      return !!(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup));
+    },
+
     getSelectedBehaviorGroupId: function() {
       var group = this.getSelectedBehaviorGroup();
       return group ? group.id : null;
+    },
+
+    hasRecentlyInstalledBehaviorGroups: function() {
+      return this.getBehaviorGroupsJustInstalled().length > 0;
     },
 
     getActivePanelName: function() {
@@ -166,6 +207,27 @@ define(function(require) {
 
     toggleActivePanel: function(panelName, beModal) {
       this.props.onToggleActivePanel(panelName, beModal);
+    },
+
+    getUninstalledBehaviorGroups: function() {
+      return this.props.publishedBehaviorGroups.filter((published) =>
+        !BehaviorGroup.groupsIncludeExportId(this.props.behaviorGroups, published.exportId)
+      );
+    },
+
+    onBehaviorGroupImport: function(groupToInstall) {
+      this.setState({
+        importingList: this.state.importingList.concat([groupToInstall])
+      }, () => {
+        if (this.getActivePanelName() === 'moreInfo') {
+          this.clearActivePanel();
+        }
+        this.props.onBehaviorGroupImport(groupToInstall);
+      });
+    },
+
+    isImporting: function(group) {
+      return BehaviorGroup.groupsIncludeExportId(this.state.importingList, group.exportId);
     },
 
     toggleInfoPanel: function(group) {
@@ -194,26 +256,48 @@ define(function(require) {
       }
     },
 
-    renderBehaviorGroups: function() {
-      var groups = this.getBehaviorGroups();
-      if (groups.length > 0) {
-        return groups.map((group, index) => (
-          <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-phn"
-            key={"group" + index}>
-            <BehaviorGroupCard
-              name={group.name}
-              description={group.description}
-              icon={group.icon}
-              groupData={group}
-              localId={group.id}
-              onMoreInfoClick={this.toggleInfoPanel}
-              isImportable={false}
-              onSelectChange={this.onGroupSelectionCheckboxChange}
-              isSelected={this.isGroupSelected(group.id)}
-            />
+    renderTeachButton: function() {
+      return (
+        <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
+          className="button button-shrink">
+          Teach Ellipsis something new…
+        </a>
+      );
+    },
+
+    renderInstalledBehaviorGroups: function(groups) {
+      return (
+        <div>
+
+          <div className="columns columns-elastic mobile-columns-float">
+            <div className="column column-expand">
+              <h3 className="type-blue-faded mbxl mhl mobile-mbm">Your skills</h3>
+            </div>
+            <div className="column column-shrink align-m phl mobile-pbl">
+              {this.renderTeachButton()}
+            </div>
           </div>
-        ));
-      }
+
+          <div className="columns">
+            {groups.map((group, index) => (
+              <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
+                key={"group" + index}>
+                <BehaviorGroupCard
+                  name={group.name}
+                  description={group.description}
+                  icon={group.icon}
+                  groupData={group}
+                  localId={group.id}
+                  onMoreInfoClick={this.toggleInfoPanel}
+                  isImportable={false}
+                  onSelectChange={this.onGroupSelectionCheckboxChange}
+                  isSelected={this.isGroupSelected(group.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
     },
 
     renderActions: function() {
@@ -247,23 +331,84 @@ define(function(require) {
       );
     },
 
-    renderContent: function() {
-      if (this.props.behaviorGroups.length > 0) {
+    renderPublishedGroups: function() {
+      var groups = this.getUninstalledBehaviorGroups();
+      if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length > 1) {
         return (
           <div>
-            <p className="mhl mbxl"><i><b>Tip:</b> mention Ellipsis in chat by starting a message with “…”</i></p>
+            <div className="mtxl mhl">
+              <hr />
+              <h3 className="mbxl type-blue-faded">Skills published by Ellipsis.ai (available to install)</h3>
+            </div>
 
             <div className="columns">
-              {this.renderBehaviorGroups()}
+              {groups.map((group, index) => (
+                <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
+                  key={"group" + index}>
+                  <BehaviorGroupCard
+                    name={group.name}
+                    description={group.description}
+                    icon={group.icon}
+                    groupData={group}
+                    localId={this.getLocalIdFor(group.exportId)}
+                    onBehaviorGroupImport={this.onBehaviorGroupImport}
+                    onMoreInfoClick={this.toggleInfoPanel}
+                    isImporting={this.isImporting(group)}
+                    isImportable={true}
+                  />
+                </div>
+              ))}
             </div>
+          </div>
+        );
+      } else if (this.props.publishedBehaviorGroupLoadStatus === 'loading') {
+        return (
+          <div className="mtxl mhl pulse">
+            <hr />
+            <p>
+              <i>Loading skills published by Ellipsis.ai…</i>
+            </p>
+          </div>
+        );
+      } else if (this.props.publishedBehaviorGroupLoadStatus === 'error') {
+        return (
+          <div className="mtxl mhl">
+            <hr />
+            <p>
+              An error occurred loading the list of published skills.
+            </p>
+
+            <button type="button" onClick={this.props.onLoadPublishedBehaviorGroups}>Try again…</button>
+          </div>
+        );
+      }
+    },
+
+    renderContent: function() {
+      var localGroups = this.getBehaviorGroups();
+      if (localGroups.length > 0) {
+        return (
+          <div>
+
+            {this.renderInstalledBehaviorGroups(localGroups)}
+
+            {this.renderPublishedGroups()}
+
           </div>
         );
       } else {
         return (
-          <p className="type-l pvxl">
-          Ellipsis doesn’t know any skills yet. Try installing some of the ones
-          published by Ellipsis, or create a new one yourself.
-          </p>
+          <div>
+            <p className="type-l pvxl">
+              Ellipsis doesn’t know any skills yet. Try installing some of the ones
+              published by Ellipsis, or create a new one yourself.
+            </p>
+
+            {this.renderTeachButton()}
+
+            {this.renderPublishedGroups()}
+
+          </div>
         );
       }
     },
@@ -272,12 +417,12 @@ define(function(require) {
       return (
         <div>
           <div style={{ paddingBottom: `${this.state.footerHeight}px` }}>
-            <div className="bg-white container container-c ptxxl mobile-ptm phn">
+            <div className="bg-white container container-c ptl mobile-ptm phn">
               {this.renderContent()}
             </div>
           </div>
 
-          <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.clearActivePanel} />
+          <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.clearActivePanel}/>
           <FixedFooter ref="footer" className="bg-white">
             <Collapsible
               ref="moreInfo"
@@ -287,13 +432,26 @@ define(function(require) {
             >
               <BehaviorGroupInfoPanel
                 groupData={this.getSelectedBehaviorGroup()}
-                onToggle={this.toggleInfoPanel}
-                isImportable={false}
+                onToggle={this.clearActivePanel}
+                isImportable={this.selectedBehaviorGroupIsImportable()}
                 localId={this.getSelectedBehaviorGroupId()}
+                onBehaviorGroupImport={this.onBehaviorGroupImport}
               />
             </Collapsible>
             <Collapsible
-              revealWhen={!this.getActivePanelName() && this.getSelectedGroupIds().length > 0}
+              ref="afterInstall"
+              revealWhen={this.hasRecentlyInstalledBehaviorGroups() && this.getActivePanelName() === 'afterInstall'}
+              animationDuration={this.getAnimationDuration()}
+              onChange={this.resetFooterHeight}
+            >
+              <InstalledBehaviorGroupsPanel
+                installedBehaviorGroups={this.getBehaviorGroupsJustInstalled()}
+                onToggle={this.props.onClearActivePanel}
+                slackTeamId={this.props.slackTeamId}
+              />
+            </Collapsible>
+            <Collapsible
+              revealWhen={!this.props.activePanelIsModal && this.getSelectedGroupIds().length > 0}
               onChange={this.resetFooterHeight}
             >
               <div className="border-top">

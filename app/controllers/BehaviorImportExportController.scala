@@ -118,12 +118,15 @@ class BehaviorImportExportController @Inject() (
               maybeBehavior <- maybeBehaviorGroup.map { group =>
                 dataService.behaviors.allForGroup(group).map(_.headOption)
               }.getOrElse(Future.successful(None))
+              maybeBehaviorGroupData <- maybeBehaviorGroup.map { group =>
+                BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+              }.getOrElse(Future.successful(None))
             } yield {
-              maybeBehaviorGroup.map { behaviorGroup =>
+              maybeBehaviorGroupData.map { groupData =>
                 if (request.headers.get("x-requested-with").contains("XMLHttpRequest")) {
-                  Ok(Json.toJson(InstalledBehaviorGroupData(behaviorGroup.id, behaviorGroup.maybeExportId)))
+                  Ok(Json.toJson(groupData))
                 } else {
-                  maybeBehavior.map{ behavior =>
+                  maybeBehavior.map { behavior =>
                     Redirect(routes.BehaviorEditorController.edit(behavior.group.id, Some(behavior.id)))
                   }.getOrElse {
                     Redirect(routes.ApplicationController.index())

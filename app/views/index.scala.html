@@ -1,6 +1,8 @@
 @(
   config: ViewConfig,
-  behaviorGroups: Seq[json.BehaviorGroupData]
+  behaviorGroups: Seq[json.BehaviorGroupData],
+  maybeSlackTeamId: Option[String],
+  maybeBranch: Option[String]
 )(implicit messages: Messages, r: RequestHeader)
 
 @import play.api.libs.json._
@@ -10,18 +12,22 @@
 @main("View your skills", config, selectedNav = "skills") {
   @helper.javascriptRouter("jsRoutes")(
     routes.javascript.BehaviorEditorController.edit,
+    routes.javascript.BehaviorEditorController.newGroup,
     routes.javascript.ApplicationController.mergeBehaviorGroups,
-    routes.javascript.ApplicationController.deleteBehaviorGroups
+    routes.javascript.ApplicationController.deleteBehaviorGroups,
+    routes.javascript.ApplicationController.fetchPublishedBehaviorInfo,
+    routes.javascript.BehaviorImportExportController.doImport
   )
   <div id="content" class="content bg-white">
-    @config.maybeTeamAccess.map(teamAccess => views.html.behaviorTabs("view", teamAccess))
-
     <div id="behaviorListContainer"></div>
     <script>
       var BehaviorListConfig = {
-        containerId: 'behaviorListContainer',
+        containerId: "behaviorListContainer",
         behaviorGroups: @Html(Json.toJson(behaviorGroups).toString),
-        csrfToken: "@CSRF.getToken(r).map(_.value)"
+        csrfToken: "@CSRF.getToken(r).map(_.value)",
+        teamId: "@config.maybeTargetTeamId.getOrElse("")",
+        slackTeamId: "@maybeSlackTeamId.getOrElse("")",
+        branchName: @Html(Json.toJson(maybeBranch).toString)
       };
     </script>
     <script data-main='@RemoteAssets.getUrl("javascripts/behavior_list/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>

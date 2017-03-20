@@ -30,7 +30,6 @@ define(function(require) {
 
     onImport: function() {
       this.props.onBehaviorGroupImport(this.props.groupData);
-      this.props.onToggle();
     },
 
     toggle: function() {

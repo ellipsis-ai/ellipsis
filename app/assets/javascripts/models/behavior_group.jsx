@@ -134,6 +134,14 @@ define(function(require) {
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || [])
       }));
     }
+
+    static groupsIncludeId(groups, groupId) {
+      return groups.some((ea) => ea.id === groupId);
+    }
+
+    static groupsIncludeExportId(groups, exportId) {
+      return groups.some((ea) => ea.exportId === exportId);
+    }
   }
 
   return BehaviorGroup;
