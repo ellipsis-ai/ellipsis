@@ -267,7 +267,7 @@ define(function(require) {
 
     renderInstalledBehaviorGroups: function(groups) {
       return (
-        <div>
+        <div className="container container-c ptl pbxl mobile-ptm phn">
 
           <div className="columns columns-elastic mobile-columns-float">
             <div className="column column-expand">
@@ -292,6 +292,7 @@ define(function(require) {
                   isImportable={false}
                   onSelectChange={this.onGroupSelectionCheckboxChange}
                   isSelected={this.isGroupSelected(group.id)}
+                  cardClassName="bg-white"
                 />
               </div>
             ))}
@@ -332,18 +333,28 @@ define(function(require) {
     },
 
     renderPublishedGroups: function() {
+      return (
+        <div className="bg-blue-lighter pbxl">
+          <hr className="mtn bg-dark-translucent" />
+          <div className="container container-c phn">
+            {this.renderPublishedGroupsContent()}
+          </div>
+        </div>
+      );
+    },
+
+    renderPublishedGroupsContent: function() {
       var groups = this.getUninstalledBehaviorGroups();
       if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length > 1) {
         return (
           <div>
-            <div className="mtxl mhl">
-              <hr />
-              <h3 className="mbxl type-blue-faded">Skills published by Ellipsis.ai (available to install)</h3>
-            </div>
+
+            <h3 className="mtxxxl mbxl mhl type-blue-faded">Skills published by Ellipsis.ai (available to install)</h3>
 
             <div className="columns">
               {groups.map((group, index) => (
-                <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
+                <div
+                  className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
                   key={"group" + index}>
                   <BehaviorGroupCard
                     name={group.name}
@@ -355,6 +366,7 @@ define(function(require) {
                     onMoreInfoClick={this.toggleInfoPanel}
                     isImporting={this.isImporting(group)}
                     isImportable={true}
+                    cardClassName="bg-blue-lightest"
                   />
                 </div>
               ))}
@@ -363,8 +375,7 @@ define(function(require) {
         );
       } else if (this.props.publishedBehaviorGroupLoadStatus === 'loading') {
         return (
-          <div className="mtxl mhl pulse">
-            <hr />
+          <div className="pulse phl">
             <p>
               <i>Loading skills published by Ellipsis.ai…</i>
             </p>
@@ -372,8 +383,7 @@ define(function(require) {
         );
       } else if (this.props.publishedBehaviorGroupLoadStatus === 'error') {
         return (
-          <div className="mtxl mhl">
-            <hr />
+          <div className="phl">
             <p>
               An error occurred loading the list of published skills.
             </p>
@@ -417,7 +427,7 @@ define(function(require) {
       return (
         <div>
           <div style={{ paddingBottom: `${this.state.footerHeight}px` }}>
-            <div className="bg-white container container-c ptl mobile-ptm phn">
+            <div>
               {this.renderContent()}
             </div>
           </div>

@@ -20,7 +20,8 @@ define(function(require) {
       isImportable: React.PropTypes.bool.isRequired,
       isImporting: React.PropTypes.bool,
       onSelectChange: React.PropTypes.func,
-      isSelected: React.PropTypes.bool
+      isSelected: React.PropTypes.bool,
+      cardClassName: React.PropTypes.string
     },
 
     isImportable: function() {
@@ -120,7 +121,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="border border-radius bg-lightest position-relative">
+        <div className={"border border-radius position-relative " + (this.props.cardClassName || "")}>
           <div className={this.isImporting() ? "pulse" : ""}>
             <div className="phl pvm border-bottom border-light">
               <button type="button" className="button-block width-full" onClick={this.toggleMoreInfo} disabled={this.isImporting()}>
