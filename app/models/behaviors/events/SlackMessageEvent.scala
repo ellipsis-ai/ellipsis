@@ -5,10 +5,11 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
-import play.api.libs.json.{JsBoolean, JsObject, JsString}
+import play.api.libs.json.{JsArray, JsBoolean, JsObject, JsString}
 import play.api.libs.ws.WSClient
 import services.DataService
-import slack.api.SlackApiClient
+import slack.api.{ApiError, SlackApiClient}
+import slack.models.Channel
 import utils.SlackMessageSender
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -124,14 +125,27 @@ case class SlackMessageEvent(
     }
   }
 
+  private def maybeChannelInfoFor(client: SlackApiClient)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
+    client.getChannelInfo(channel).map(Some(_)).recover {
+      case e: ApiError => None
+    }
+  }
+
   override def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
-    clientFor(dataService).getUserInfo(userIdForContext).map { user =>
+    val client = clientFor(dataService)
+    for {
+      user <- client.getUserInfo(userIdForContext)
+      maybeChannel <- maybeChannelInfoFor(client)
+    } yield {
       val profileData = user.profile.map { profile =>
         Seq(
           profile.first_name.map(v => "firstName" -> JsString(v)),
           profile.last_name.map(v => "lastName" -> JsString(v)),
           profile.real_name.map(v => "realName" -> JsString(v))
         ).flatten
+      }.getOrElse(Seq())
+      val channelMembers = maybeChannel.flatMap { channel =>
+        channel.members.map(_.filterNot(_ == profile.userId))
       }.getOrElse(Seq())
       JsObject(
         Seq(
@@ -140,7 +154,8 @@ case class SlackMessageEvent(
           "isPrimaryOwner" -> JsBoolean(user.is_primary_owner.getOrElse(false)),
           "isOwner" -> JsBoolean(user.is_owner.getOrElse(false)),
           "isRestricted" -> JsBoolean(user.is_restricted.getOrElse(false)),
-          "isUltraRestricted" -> JsBoolean(user.is_ultra_restricted.getOrElse(false))
+          "isUltraRestricted" -> JsBoolean(user.is_ultra_restricted.getOrElse(false)),
+          "channelMembers" -> JsArray(channelMembers.map(JsString.apply))
         )
       )
     }
