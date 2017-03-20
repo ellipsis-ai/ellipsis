@@ -138,19 +138,6 @@ class ApplicationController @Inject() (
     })
   }
 
-  def installBehaviors(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
-    installBehaviorGroupsWithView(maybeTeamId, maybeBranch, (teamAccess, data, maybeSlackTeamId) => {
-      Ok(
-        views.html.publishedBehaviors(
-          viewConfig(Some(teamAccess)),
-          data.published,
-          data.installedBehaviors,
-          maybeSlackTeamId
-        )
-      )
-    })
-  }
-
   case class SelectedBehaviorGroupsInfo(behaviorGroupIds: Seq[String])
 
   private val selectedBehaviorGroupsForm = Form(
