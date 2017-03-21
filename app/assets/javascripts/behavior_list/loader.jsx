@@ -5,73 +5,108 @@ requirejs(['../common'], function() {
     ['core-js', 'whatwg-fetch', 'react', 'react-dom', './behavior_list/index', './models/behavior_group'],
     function(Core, Fetch, React, ReactDOM, BehaviorList, BehaviorGroup) {
 
-      const defaultProps = Object.assign({
-        onLoadPublishedBehaviorGroups: loadPublishedBehaviorGroups,
-        onBehaviorGroupImport: importBehaviorGroup,
-        publishedBehaviorGroupLoadStatus: 'loading',
-        publishedBehaviorGroups: [],
-        recentlyInstalled: []
-      }, BehaviorListConfig);
-      let recentProps = {};
-      let recentlyInstalled = [];
+      class BehaviorListLoader {
+        constructor(defaultProps) {
+          this.defaultProps = Object.assign({
+            onLoadPublishedBehaviorGroups: this.loadPublishedBehaviorGroups.bind(this),
+            onBehaviorGroupImport: this.importBehaviorGroup.bind(this),
+            publishedBehaviorGroupLoadStatus: 'loading',
+            publishedBehaviorGroups: [],
+            recentlyInstalled: []
+          }, defaultProps);
+          this.recentProps = {};
+          this.recentlyInstalled = [];
+        }
 
-      function loadPublishedBehaviorGroups() {
-        fetch(jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo(defaultProps.teamId, defaultProps.branchName).url, {
-          credentials: 'same-origin'
-        }).then((response) => response.json())
-          .then((json) => {
-            reload({
-              publishedBehaviorGroups: json,
-              publishedBehaviorGroupLoadStatus: 'loaded'
-            });
-          }).catch(() => {
-            reload({
+        loadPublishedBehaviorGroups() {
+          var url = jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo(
+            this.defaultProps.teamId, this.defaultProps.branchName
+          ).url;
+          fetch(url, {
+            credentials: 'same-origin'
+          }).then((response) => response.json())
+            .then((json) => {
+              this.reload({
+                publishedBehaviorGroups: json,
+                publishedBehaviorGroupLoadStatus: 'loaded'
+              });
+            }).catch(() => {
+            this.reload({
               publishedBehaviorGroupLoadStatus: 'error'
             });
           });
-      }
+        }
 
-      function importBehaviorGroup(groupToInstall) {
-        var headers = new Headers();
-        headers.append('x-requested-with', 'XMLHttpRequest');
-        var body = new FormData();
-        body.append('csrfToken', recentProps.csrfToken);
-        body.append('teamId', recentProps.teamId);
-        body.append('dataJson', JSON.stringify(groupToInstall));
-        fetch(jsRoutes.controllers.BehaviorImportExportController.doImport().url, {
-          credentials: 'same-origin',
-          headers: headers,
-          method: 'POST',
-          body: body
-        }).then((response) => response.json())
-          .then((installedGroup) => {
-            recentlyInstalled = recentlyInstalled.concat(installedGroup);
-            reload({
-              recentlyInstalled: recentlyInstalled
+        importBehaviorGroup(groupToInstall) {
+          var headers = new Headers();
+          headers.append('x-requested-with', 'XMLHttpRequest');
+          var body = new FormData();
+          body.append('csrfToken', this.recentProps.csrfToken);
+          body.append('teamId', this.recentProps.teamId);
+          body.append('dataJson', JSON.stringify(groupToInstall));
+          fetch(jsRoutes.controllers.BehaviorImportExportController.doImport().url, {
+            credentials: 'same-origin',
+            headers: headers,
+            method: 'POST',
+            body: body
+          }).then((response) => response.json())
+            .then((installedGroup) => {
+              this.recentlyInstalled = this.recentlyInstalled.concat(installedGroup);
+              this.reload({
+                recentlyInstalled: this.recentlyInstalled
+              });
+            })
+            .catch(() => {
+              // TODO: Handle errors importing
             });
-          })
-          .catch(() => {
-            // TODO: Handle errors importing
+        }
+
+        behaviorGroupAction(url, behaviorGroupIds) {
+          fetch(url, {
+            credentials: 'same-origin',
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Csrf-Token': this.defaultProps.csrfToken
+            },
+            body: JSON.stringify({
+              behaviorGroupIds: behaviorGroupIds
+            })
+          }).then(() => {
+            window.location.reload();
           });
+        }
+
+        mergeBehaviorGroups(behaviorGroupIds) {
+          var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
+          this.behaviorGroupAction(url, behaviorGroupIds);
+        }
+
+        deleteBehaviorGroups(behaviorGroupIds) {
+          var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
+          this.behaviorGroupAction(url, behaviorGroupIds);
+        }
+
+        reload(newProps) {
+          const behaviorListProps = Object.assign({}, this.defaultProps, this.recentProps, newProps);
+          this.recentProps = Object.assign({}, behaviorListProps);
+
+          behaviorListProps.behaviorGroups = behaviorListProps.behaviorGroups.map(BehaviorGroup.fromJson);
+          behaviorListProps.publishedBehaviorGroups = behaviorListProps.publishedBehaviorGroups.map(BehaviorGroup.fromJson);
+          behaviorListProps.recentlyInstalled = behaviorListProps.recentlyInstalled.map(BehaviorGroup.fromJson);
+
+          ReactDOM.render(
+            React.createElement(BehaviorList, behaviorListProps),
+            document.getElementById(behaviorListProps.containerId)
+          );
+        }
       }
 
-      function reload(newProps) {
-        const behaviorListProps = Object.assign({}, defaultProps, recentProps, newProps);
-        recentProps = Object.assign({}, behaviorListProps);
+      const loader = new BehaviorListLoader(BehaviorListConfig);
 
-        behaviorListProps.behaviorGroups = behaviorListProps.behaviorGroups.map(BehaviorGroup.fromJson);
-        behaviorListProps.publishedBehaviorGroups = behaviorListProps.publishedBehaviorGroups.map(BehaviorGroup.fromJson);
-        behaviorListProps.recentlyInstalled = behaviorListProps.recentlyInstalled.map(BehaviorGroup.fromJson);
-
-        ReactDOM.render(
-          React.createElement(BehaviorList, behaviorListProps),
-          document.getElementById(behaviorListProps.containerId)
-        );
-      }
-
-      reload();
-      loadPublishedBehaviorGroups();
-
+      loader.reload();
+      loader.loadPublishedBehaviorGroups();
     }
   );
 });
