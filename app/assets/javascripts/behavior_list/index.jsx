@@ -9,7 +9,8 @@ define(function(require) {
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
     ListHeading = require('./list_heading'),
     ModalScrim = require('../shared_ui/modal_scrim'),
-    PageWithPanels = require('../shared_ui/page_with_panels');
+    PageWithPanels = require('../shared_ui/page_with_panels'),
+    ResponsiveColumn = require('../shared_ui/responsive_column');
 
   const ANIMATION_DURATION = 0.25;
 
@@ -261,14 +262,13 @@ define(function(require) {
       var groups = this.getBehaviorGroups();
       return (
         <Collapsible revealWhen={groups.length > 0} animationDuration={0.5}>
-          <div className="container container-c ptl mobile-ptm phn">
+          <div className="container container-c ptl mobile-ptm">
 
             <ListHeading teamId={this.props.teamId} includeTeachButton={true}>Your skills</ListHeading>
 
             <div className="columns">
-              {groups.map((group, index) => (
-                <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
-                  key={"group" + index}>
+              {groups.map((group) => (
+                <ResponsiveColumn key={group.id}>
                   <BehaviorGroupCard
                     name={group.name}
                     description={group.description}
@@ -281,7 +281,7 @@ define(function(require) {
                     isSelected={this.isGroupSelected(group.id)}
                     cardClassName="bg-white"
                   />
-                </div>
+                </ResponsiveColumn>
               ))}
             </div>
 
@@ -351,10 +351,8 @@ define(function(require) {
             {this.renderPublishedIntro()}
 
             <div className="columns">
-              {groups.map((group, index) => (
-                <div
-                  className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
-                  key={"group" + index}>
+              {groups.map((group) => (
+                <ResponsiveColumn key={group.exportId}>
                   <BehaviorGroupCard
                     name={group.name}
                     description={group.description}
@@ -367,7 +365,7 @@ define(function(require) {
                     isImportable={true}
                     cardClassName="bg-blue-lightest"
                   />
-                </div>
+                </ResponsiveColumn>
               ))}
             </div>
           </div>
@@ -398,12 +396,10 @@ define(function(require) {
         return (
           <div className="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
             <div className="container container-c">
-              <div className="phl">
-                <p className="type-l type-white">
-                  Ellipsis is a customizable chat bot that helps your team be more productive.
-                  Teach your bot to perform tasks and provide answers to your team.
-                </p>
-              </div>
+              <p className="type-l type-white phl">
+                Ellipsis is a customizable chat bot that helps your team be more productive.
+                Teach your bot to perform tasks and provide answers to your team.
+              </p>
             </div>
           </div>
         );
@@ -419,7 +415,7 @@ define(function(require) {
             {this.renderInstalledBehaviorGroups()}
 
             <div className="bg-blue-lighter ptxl pbxl">
-              <div className="container container-c phn">
+              <div className="container container-c">
                 {this.renderPublishedGroups()}
               </div>
             </div>
