@@ -17,13 +17,14 @@ define(function(require) {
   const BehaviorList = React.createClass({
     displayName: "BehaviorList",
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
-      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       onLoadPublishedBehaviorGroups: React.PropTypes.func.isRequired,
       onBehaviorGroupImport: React.PropTypes.func.isRequired,
+      onMergeBehaviorGroups: React.PropTypes.func.isRequired,
+      onDeleteBehaviorGroups: React.PropTypes.func.isRequired,
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
-      publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
-      csrfToken: React.PropTypes.string.isRequired,
+      publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string.isRequired
     }),
@@ -115,30 +116,11 @@ define(function(require) {
       });
     },
 
-    runSelectedBehaviorGroupsAction: function(url) {
-      var data = {
-        behaviorGroupIds: this.getSelectedGroupIds()
-      };
-      fetch(url, {
-        credentials: 'same-origin',
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Csrf-Token': this.props.csrfToken
-        },
-        body: JSON.stringify(data)
-      }).then(() => {
-        window.location.reload();
-      });
-    },
-
     mergeBehaviorGroups: function() {
       this.setState({
         isSubmitting: true
       }, () => {
-        var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
-        this.runSelectedBehaviorGroupsAction(url);
+        this.props.onMergeBehaviorGroups(this.getSelectedGroupIds());
       });
     },
 
@@ -146,8 +128,7 @@ define(function(require) {
       this.setState({
         isSubmitting: true
       }, () => {
-        var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
-        this.runSelectedBehaviorGroupsAction(url);
+        this.props.onDeleteBehaviorGroups(this.getSelectedGroupIds());
       });
     },
 

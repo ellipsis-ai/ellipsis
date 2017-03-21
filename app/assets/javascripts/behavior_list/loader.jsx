@@ -10,6 +10,8 @@ requirejs(['../common'], function() {
           this.defaultProps = Object.assign({
             onLoadPublishedBehaviorGroups: this.loadPublishedBehaviorGroups.bind(this),
             onBehaviorGroupImport: this.importBehaviorGroup.bind(this),
+            onMergeBehaviorGroups: this.mergeBehaviorGroups.bind(this),
+            onDeleteBehaviorGroups: this.deleteBehaviorGroups.bind(this),
             publishedBehaviorGroupLoadStatus: 'loading',
             publishedBehaviorGroups: [],
             recentlyInstalled: []
@@ -19,7 +21,7 @@ requirejs(['../common'], function() {
         }
 
         loadPublishedBehaviorGroups() {
-          var url = jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo(
+          const url = jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo(
             this.defaultProps.teamId, this.defaultProps.branchName
           ).url;
           fetch(url, {
@@ -30,20 +32,23 @@ requirejs(['../common'], function() {
                 publishedBehaviorGroups: json,
                 publishedBehaviorGroupLoadStatus: 'loaded'
               });
-            }).catch(() => {
-            this.reload({
-              publishedBehaviorGroupLoadStatus: 'error'
+            })
+            .catch(() => {
+              this.reload({
+                publishedBehaviorGroupLoadStatus: 'error'
+              });
             });
-          });
         }
 
         importBehaviorGroup(groupToInstall) {
-          var headers = new Headers();
+          const headers = new Headers();
           headers.append('x-requested-with', 'XMLHttpRequest');
-          var body = new FormData();
+
+          const body = new FormData();
           body.append('csrfToken', this.recentProps.csrfToken);
           body.append('teamId', this.recentProps.teamId);
           body.append('dataJson', JSON.stringify(groupToInstall));
+
           fetch(jsRoutes.controllers.BehaviorImportExportController.doImport().url, {
             credentials: 'same-origin',
             headers: headers,
@@ -79,12 +84,12 @@ requirejs(['../common'], function() {
         }
 
         mergeBehaviorGroups(behaviorGroupIds) {
-          var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
+          const url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
           this.behaviorGroupAction(url, behaviorGroupIds);
         }
 
         deleteBehaviorGroups(behaviorGroupIds) {
-          var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
+          const url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
           this.behaviorGroupAction(url, behaviorGroupIds);
         }
 
