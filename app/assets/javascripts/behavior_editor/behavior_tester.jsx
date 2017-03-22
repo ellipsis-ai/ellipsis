@@ -101,7 +101,7 @@ define(function(require) {
         onSuccess: (json) => {
           this.setState({
             highlightedTriggerText: json.activatedTrigger,
-            inputValues: json.inputValues,
+            paramValues: json.paramValues,
             isTestingTriggers: false,
             hasTestedTriggers: true,
             triggerErrorOccurred: false
@@ -126,12 +126,12 @@ define(function(require) {
       });
       BehaviorTest.testInvocation({
         behaviorId: this.props.behaviorId,
-        inputValues: this.state.inputValues,
+        paramValues: this.state.inputValues,
         csrfToken: this.props.csrfToken,
         onSuccess: (json) => {
           var newResults = this.state.results.concat(new InvocationTestResult(
             json.result && json.result.fullText,
-            json.missingInputNames,
+            json.missingParamNames,
             json.missingSimpleTokens,
             json.missingUserEnvVars
           ));
@@ -251,34 +251,15 @@ define(function(require) {
           <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
         );
       } else {
-        return ifPresent(this.getTriggers(), this.renderTriggerTester, this.renderNoTriggers);
+        return this.renderTester();
       }
     },
 
-    renderTriggerTester: function(triggers) {
+    renderTester: function() {
       return (
         <div>
 
-          <p>
-            Type a message to see whether it matches any of the triggers and, if so, what
-            user input is collected.
-          </p>
-
-          <div className="mbxl">
-            <FormInput ref="testMessage"
-              value={this.state.testMessage}
-              onChange={this.onChangeTestMessage}
-              placeholder="Enter message"
-            />
-          </div>
-
-          <h4 className="mbxs">
-            <span>Triggers </span>
-            <span>{this.getTriggerTestingStatus()}</span>
-          </h4>
-          <div className="mbxl type-s">
-            {triggers.map(this.renderTrigger)}
-          </div>
+          {ifPresent(this.getTriggers(), this.renderTriggers, this.renderNoTriggers)}
 
           <h4 className="mbxs">
             <span>User input </span>
@@ -310,6 +291,42 @@ define(function(require) {
       );
     },
 
+    renderTriggers: function(triggers) {
+      return (
+        <div>
+          <p>
+            Type a message to see whether it matches any of the triggers and, if so, what
+            user input is collected.
+          </p>
+
+          <div className="mbxl">
+            <FormInput ref="testMessage"
+              value={this.state.testMessage}
+              onChange={this.onChangeTestMessage}
+              placeholder="Enter message"
+            />
+          </div>
+
+          <h4 className="mbxs">
+            <span>Triggers </span>
+            <span>{this.getTriggerTestingStatus()}</span>
+          </h4>
+          <div className="mbxl type-s">
+            {triggers.map(this.renderTrigger)}
+          </div>
+        </div>
+      );
+    },
+
+    renderNoTriggers: function() {
+      return (
+        <div className="mbxl">
+          <h4 className="mbxs">Triggers</h4>
+          <p className="type-weak">No triggers have been defined.</p>
+        </div>
+      );
+    },
+
     renderTrigger: function(trigger, index) {
       var highlighted = this.state.highlightedTriggerText === trigger.text;
       var className = "pvxs " +
@@ -318,18 +335,6 @@ define(function(require) {
       return (
         <div ref={`trigger${index}`} key={`trigger${index}`} className={className}>
           {trigger.text} {highlighted ? "✓" : ""}
-        </div>
-      );
-    },
-
-    renderNoTriggers: function() {
-      return (
-        <div>
-          <p>This skill does not have any triggers. Add at least one trigger before testing.</p>
-
-          <div className="mvxl">
-            <button type="button" onClick={this.props.onDone}>OK</button>
-          </div>
         </div>
       );
     },
@@ -351,7 +356,7 @@ define(function(require) {
 
     renderNoInputs: function() {
       return (
-        <p>No user input has been defined.</p>
+        <p className="type-weak">No user input has been defined.</p>
       );
     },
 
@@ -375,7 +380,7 @@ define(function(require) {
         return (
           <span>— Use <b>{this.state.testMessage}</b> </span>
         );
-      } else {
+      } else if (this.getTriggers().length) {
         return (
           <span>— Simulate any trigger </span>
         );
