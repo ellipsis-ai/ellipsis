@@ -325,7 +325,16 @@ define(function(require) {
 
     renderPublishedGroups: function() {
       var groups = this.getUninstalledBehaviorGroups();
-      if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length > 1) {
+      if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length === 0) {
+        return (
+          <div>
+            <p className="phl">
+              <span className="mrs">🏆💯⭐️🌈{/* <- thar be emoji invisible in intellij */}</span>
+              <span>Congratulations! You’ve installed all of the skills published by Ellipsis.ai.</span>
+            </p>
+          </div>
+        );
+      } else if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length > 0) {
         return (
           <div>
 
