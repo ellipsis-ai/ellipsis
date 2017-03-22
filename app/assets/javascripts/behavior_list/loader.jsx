@@ -2,8 +2,8 @@
 
 requirejs(['../common'], function() {
   requirejs(
-    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './behavior_list/index', './models/behavior_group'],
-    function(Core, Fetch, React, ReactDOM, BehaviorList, BehaviorGroup) {
+    ['core-js', './lib/data_request', 'react', 'react-dom', './behavior_list/index', './models/behavior_group'],
+    function(Core, DataRequest, React, ReactDOM, BehaviorList, BehaviorGroup) {
 
       class BehaviorListLoader {
         constructor(defaultProps) {
@@ -20,31 +20,11 @@ requirejs(['../common'], function() {
           this.recentlyInstalled = [];
         }
 
-        jsonGet(url) {
-          return fetch(url, {
-            credentials: 'same-origin'
-          }).then((response) => response.json());
-        }
-
-        jsonPost(url, body) {
-          return fetch(url, {
-            credentials: 'same-origin',
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              'Csrf-Token': this.defaultProps.csrfToken,
-              'x-requested-with': 'XMLHttpRequest'
-            },
-            body: body
-          }).then((response) => response.json());
-        }
-
         loadPublishedBehaviorGroups() {
           const url = jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo(
             this.defaultProps.teamId, this.defaultProps.branchName
           ).url;
-          this.jsonGet(url)
+          DataRequest.jsonGet(url)
             .then((json) => {
               this.reload({
                 publishedBehaviorGroups: json,
@@ -66,7 +46,7 @@ requirejs(['../common'], function() {
             dataJson: JSON.stringify(groupToInstall)
           });
 
-          this.jsonPost(url, body)
+          DataRequest.jsonPost(url, body)
             .then((installedGroup) => {
               this.recentlyInstalled = this.recentlyInstalled.concat(installedGroup);
               this.reload({
@@ -83,7 +63,7 @@ requirejs(['../common'], function() {
             behaviorGroupIds: behaviorGroupIds
           });
 
-          this.jsonPost(url, body)
+          DataRequest.jsonPost(url, body)
             .then(() => {
               window.location.reload();
             });
