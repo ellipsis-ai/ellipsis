@@ -251,40 +251,15 @@ define(function(require) {
           <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
         );
       } else {
-        return this.renderTriggerTester();
+        return this.renderTester();
       }
     },
 
-    renderTriggerTester: function() {
-      var triggers = this.getTriggers();
-      var hasTriggers = triggers.length > 0;
+    renderTester: function() {
       return (
         <div>
 
-          {hasTriggers ? (
-            <div>
-              <p>
-                Type a message to see whether it matches any of the triggers and, if so, what
-                user input is collected.
-              </p>
-
-              <div className="mbxl">
-                <FormInput ref="testMessage"
-                  value={this.state.testMessage}
-                  onChange={this.onChangeTestMessage}
-                  placeholder="Enter message"
-                />
-              </div>
-
-              <h4 className="mbxs">
-                <span>Triggers </span>
-                <span>{this.getTriggerTestingStatus()}</span>
-              </h4>
-              <div className="mbxl type-s">
-                {triggers.map(this.renderTrigger)}
-              </div>
-            </div>
-          ) : null}
+          {ifPresent(this.getTriggers(), this.renderTriggers, this.renderNoTriggers)}
 
           <h4 className="mbxs">
             <span>User input </span>
@@ -312,6 +287,42 @@ define(function(require) {
               <button className="mrs" type="button" onClick={this.onDone}>Done</button>
             </div>
           </div>
+        </div>
+      );
+    },
+
+    renderTriggers: function(triggers) {
+      return (
+        <div>
+          <p>
+            Type a message to see whether it matches any of the triggers and, if so, what
+            user input is collected.
+          </p>
+
+          <div className="mbxl">
+            <FormInput ref="testMessage"
+              value={this.state.testMessage}
+              onChange={this.onChangeTestMessage}
+              placeholder="Enter message"
+            />
+          </div>
+
+          <h4 className="mbxs">
+            <span>Triggers </span>
+            <span>{this.getTriggerTestingStatus()}</span>
+          </h4>
+          <div className="mbxl type-s">
+            {triggers.map(this.renderTrigger)}
+          </div>
+        </div>
+      );
+    },
+
+    renderNoTriggers: function() {
+      return (
+        <div className="mbxl">
+          <h4 className="mbxs">Triggers</h4>
+          <p className="type-weak">No triggers have been defined.</p>
         </div>
       );
     },
@@ -345,7 +356,7 @@ define(function(require) {
 
     renderNoInputs: function() {
       return (
-        <p>No user input has been defined.</p>
+        <p className="type-weak">No user input has been defined.</p>
       );
     },
 
@@ -369,7 +380,7 @@ define(function(require) {
         return (
           <span>— Use <b>{this.state.testMessage}</b> </span>
         );
-      } else {
+      } else if (this.getTriggers().length) {
         return (
           <span>— Simulate any trigger </span>
         );
