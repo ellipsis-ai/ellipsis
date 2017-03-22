@@ -20,13 +20,31 @@ requirejs(['../common'], function() {
           this.recentlyInstalled = [];
         }
 
+        jsonGet(url) {
+          return fetch(url, {
+            credentials: 'same-origin'
+          }).then((response) => response.json());
+        }
+
+        jsonPost(url, body) {
+          return fetch(url, {
+            credentials: 'same-origin',
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Csrf-Token': this.defaultProps.csrfToken,
+              'x-requested-with': 'XMLHttpRequest'
+            },
+            body: body
+          }).then((response) => response.json());
+        }
+
         loadPublishedBehaviorGroups() {
           const url = jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo(
             this.defaultProps.teamId, this.defaultProps.branchName
           ).url;
-          fetch(url, {
-            credentials: 'same-origin'
-          }).then((response) => response.json())
+          this.jsonGet(url)
             .then((json) => {
               this.reload({
                 publishedBehaviorGroups: json,
@@ -41,20 +59,14 @@ requirejs(['../common'], function() {
         }
 
         importBehaviorGroup(groupToInstall) {
-          const headers = new Headers();
-          headers.append('x-requested-with', 'XMLHttpRequest');
+          const url = jsRoutes.controllers.BehaviorImportExportController.doImport().url;
 
-          const body = new FormData();
-          body.append('csrfToken', this.recentProps.csrfToken);
-          body.append('teamId', this.recentProps.teamId);
-          body.append('dataJson', JSON.stringify(groupToInstall));
+          const body = JSON.stringify({
+            teamId: this.recentProps.teamId,
+            dataJson: JSON.stringify(groupToInstall)
+          });
 
-          fetch(jsRoutes.controllers.BehaviorImportExportController.doImport().url, {
-            credentials: 'same-origin',
-            headers: headers,
-            method: 'POST',
-            body: body
-          }).then((response) => response.json())
+          this.jsonPost(url, body)
             .then((installedGroup) => {
               this.recentlyInstalled = this.recentlyInstalled.concat(installedGroup);
               this.reload({
@@ -67,20 +79,14 @@ requirejs(['../common'], function() {
         }
 
         behaviorGroupAction(url, behaviorGroupIds) {
-          fetch(url, {
-            credentials: 'same-origin',
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              'Csrf-Token': this.defaultProps.csrfToken
-            },
-            body: JSON.stringify({
-              behaviorGroupIds: behaviorGroupIds
-            })
-          }).then(() => {
-            window.location.reload();
+          const body = JSON.stringify({
+            behaviorGroupIds: behaviorGroupIds
           });
+
+          this.jsonPost(url, body)
+            .then(() => {
+              window.location.reload();
+            });
         }
 
         mergeBehaviorGroups(behaviorGroupIds) {
