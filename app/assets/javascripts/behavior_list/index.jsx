@@ -6,6 +6,7 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     FixedFooter = require('../shared_ui/fixed_footer'),
+    FormInput = require('../form/input'),
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
     ListHeading = require('./list_heading'),
     ModalScrim = require('../shared_ui/modal_scrim'),
@@ -21,6 +22,7 @@ define(function(require) {
       onBehaviorGroupImport: React.PropTypes.func.isRequired,
       onMergeBehaviorGroups: React.PropTypes.func.isRequired,
       onDeleteBehaviorGroups: React.PropTypes.func.isRequired,
+      onSearch: React.PropTypes.func.isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
@@ -35,7 +37,9 @@ define(function(require) {
         selectedGroupIds: [],
         isSubmitting: false,
         footerHeight: 0,
-        importingList: []
+        importingList: [],
+        searchText: "",
+        lastSearchText: ""
       };
     },
 
@@ -53,12 +57,42 @@ define(function(require) {
       }
     },
 
+    updateSearch: function(newValue) {
+      this.setState({
+        searchText: newValue
+      });
+    },
+
+    clearSearch: function() {
+      this.setState({
+        searchText: ""
+      }, this.submitSearch);
+    },
+
+    submitSearch: function() {
+      this.setState({
+        lastSearchText: this.state.searchText
+      }, () => {
+        this.props.onSearch(this.state.lastSearchText);
+      });
+    },
+
     getAnimationDuration: function() {
       return ANIMATION_DURATION;
     },
 
     getBehaviorGroups: function() {
       return this.props.behaviorGroups.concat(this.props.recentlyInstalled);
+    },
+
+    getMatchingBehaviorGroups: function() {
+      if (this.props.matchingResults.length > 0) {
+        return this.getBehaviorGroups().filter((ea) =>
+          BehaviorGroup.groupsIncludeExportId(this.props.matchingResults, ea.exportId)
+        );
+      } else {
+        return this.getBehaviorGroups();
+      }
     },
 
     getBehaviorGroupsJustInstalled: function() {
@@ -240,12 +274,15 @@ define(function(require) {
     },
 
     renderInstalledBehaviorGroups: function() {
-      var groups = this.getBehaviorGroups();
+      var groups = this.getMatchingBehaviorGroups();
+
       return (
         <Collapsible revealWhen={groups.length > 0} animationDuration={0.5}>
-          <div className="container container-c ptl mobile-ptm">
+          <div className="container container-c mtl mobile-mtm">
 
-            <ListHeading teamId={this.props.teamId} includeTeachButton={true}>Your skills</ListHeading>
+            <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
+              {this.props.matchingResults.length ? `Skills matching “${this.state.lastSearchText}”` : "Your skills"}
+            </ListHeading>
 
             <div className="columns">
               {groups.map((group) => (
@@ -396,11 +433,29 @@ define(function(require) {
       }
     },
 
+    renderSearch: function() {
+      return (
+        <div className="container container-c mvxl">
+          <div className="mhl">
+            <FormInput
+              placeholder="Search skills…"
+              value={this.state.searchText}
+              onChange={this.updateSearch}
+              onEnterKey={this.submitSearch}
+              onEscKey={this.clearSearch}
+            />
+          </div>
+        </div>
+      );
+    },
+
     render: function() {
       return (
         <div>
           <div style={{ paddingBottom: `${this.state.footerHeight}px` }}>
             {this.renderIntro()}
+
+            {this.renderSearch()}
 
             {this.renderInstalledBehaviorGroups()}
 

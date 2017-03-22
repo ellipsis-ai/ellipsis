@@ -22,7 +22,8 @@ define(function(require) {
       return {
         publishedBehaviorGroupLoadStatus: 'loading',
         publishedBehaviorGroups: [],
-        recentlyInstalled: []
+        recentlyInstalled: [],
+        matchingResults: []
       };
     },
 
@@ -91,6 +92,27 @@ define(function(require) {
         });
     },
 
+    getSearchResults: function(queryString) {
+      const trimmed = queryString.trim();
+      if (trimmed) {
+        const url = jsRoutes.controllers.ApplicationController.findBehaviorGroupsMatching(queryString).url;
+        DataRequest
+          .jsonGet(url)
+          .then((results) => {
+            this.setState({
+              matchingResults: results
+            });
+          })
+          .catch(() => {
+            // TODO: no really, error handling
+          });
+      } else {
+        this.setState({
+          matchingResults: []
+        });
+      }
+    },
+
     render: function() {
       return (
         <BehaviorList
@@ -98,9 +120,11 @@ define(function(require) {
           onBehaviorGroupImport={this.importBehaviorGroup}
           onMergeBehaviorGroups={this.mergeBehaviorGroups}
           onDeleteBehaviorGroups={this.deleteBehaviorGroups}
+          onSearch={this.getSearchResults}
           behaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
           publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
           recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
+          matchingResults={this.state.matchingResults}
           publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
           teamId={this.props.teamId}
           slackTeamId={this.props.slackTeamId}
