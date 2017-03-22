@@ -2,21 +2,19 @@ package models.behaviors.events
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
-import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
-import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
-import utils.FuzzyMatcher
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -94,37 +92,9 @@ trait Event {
     """.stripMargin
   }
 
-  def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService): Future[BotResult] = {
-    for {
-      maybeTeam <- dataService.teams.find(teamId)
-      user <- ensureUser(dataService)
-      groups <- maybeTeam.map { team =>
-        dataService.behaviorGroups.allFor(team)
-      }.getOrElse(Future.successful(Seq()))
-      groupsData <- Future.sequence(groups.map { ea =>
-        BehaviorGroupData.maybeFor(ea.id, user, None, dataService)
-      }).map(_.flatten)
-    } yield {
-      val results = FuzzyMatcher(messageText, groupsData).run.filter { ea =>
-        ea.patterns.exists {
-          case p: MessageTrigger => true
-          case _ => false
-        }
-      }
-      val message = if (results.isEmpty) {
-        iDontKnowHowToRespondMessageFor(lambdaService)
-      } else {
-        s"""Did you mean:
-           |
-           |${results.map(_.item.name).mkString("  \n")}
-           |
-           |Otherwise, try `${botPrefix}help` to see what else I can do or ${teachMeLinkFor(lambdaService)}
-         """.stripMargin
-      }
-      SimpleTextResult(this, message, forcePrivateResponse = false)
-    }
+  def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService)(implicit actorSystem: ActorSystem): Future[BotResult] = {
+    DisplayHelpBehavior(Some(messageText), None, Some(0), isFirstTrigger = true, this, lambdaService, dataService).result
   }
-
 
   def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]]
 
