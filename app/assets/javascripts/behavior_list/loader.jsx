@@ -41,12 +41,13 @@ requirejs(['../common'], function() {
         importBehaviorGroup(groupToInstall) {
           const url = jsRoutes.controllers.BehaviorImportExportController.doImport().url;
 
-          const body = JSON.stringify({
+          const body = {
             teamId: this.recentProps.teamId,
             dataJson: JSON.stringify(groupToInstall)
-          });
+          };
 
-          DataRequest.jsonPost(url, body)
+          DataRequest
+            .jsonPost(url, body, this.defaultProps.csrfToken)
             .then((installedGroup) => {
               this.recentlyInstalled = this.recentlyInstalled.concat(installedGroup);
               this.reload({
@@ -58,25 +59,26 @@ requirejs(['../common'], function() {
             });
         }
 
-        behaviorGroupAction(url, behaviorGroupIds) {
-          const body = JSON.stringify({
-            behaviorGroupIds: behaviorGroupIds
-          });
-
-          DataRequest.jsonPost(url, body)
-            .then(() => {
-              window.location.reload();
-            });
-        }
-
         mergeBehaviorGroups(behaviorGroupIds) {
           const url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
-          this.behaviorGroupAction(url, behaviorGroupIds);
+          const body = { behaviorGroupIds: behaviorGroupIds };
+          DataRequest
+            .jsonPost(url, body, this.defaultProps.csrfToken)
+            .then(() => { window.location.reload(); })
+            .catch(() => {
+              // TODO: Error handling
+            });
         }
 
         deleteBehaviorGroups(behaviorGroupIds) {
           const url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
-          this.behaviorGroupAction(url, behaviorGroupIds);
+          const body = { behaviorGroupIds: behaviorGroupIds };
+          DataRequest
+            .jsonPost(url, body, this.defaultProps.csrfToken)
+            .then(() => { window.location.reload(); })
+            .catch(() => {
+              // TODO: Error handling
+            });
         }
 
         reload(newProps) {

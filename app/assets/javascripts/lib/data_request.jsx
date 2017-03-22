@@ -18,7 +18,7 @@ define(function(require) {
           'Csrf-Token': csrfToken,
           'x-requested-with': 'XMLHttpRequest'
         },
-        body: body
+        body: JSON.stringify(body)
       }).then((response) => response.json());
     }
   };
