@@ -1,6 +1,7 @@
 package models.help
 
 import json.{BehaviorGroupData, BehaviorTriggerData}
+import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
 import utils.FuzzyMatchResult
 
@@ -9,6 +10,7 @@ import scala.util.matching.Regex
 case class HelpSearchResult(
                              searchQuery: String,
                              underlying: FuzzyMatchResult[BehaviorGroupData],
+                             event: Event,
                              dataService: DataService,
                              lambdaService: AWSLambdaService
                            ) extends HelpResult {

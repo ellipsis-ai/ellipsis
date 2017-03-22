@@ -1,9 +1,11 @@
 package models.help
 
 import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
+import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
 
 trait HelpResult {
+  val event: Event
   val group: BehaviorGroupData
   val matchingTriggers: Seq[BehaviorTriggerData]
 
@@ -16,9 +18,9 @@ trait HelpResult {
 
   private def triggerStringFor(trigger: BehaviorTriggerData): String = {
     if (matchingTriggers.contains(trigger)) {
-      s"**`${trigger.text}`**"
+      s"**`${event.botPrefix}${trigger.text}`**"
     } else {
-      s"`${trigger.text}`"
+      s"`${event.botPrefix}${trigger.text}`"
     }
   }
 

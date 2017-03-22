@@ -27,6 +27,8 @@ case class SlackMessageEvent(
 
   lazy val isBotMessage: Boolean = profile.userId == user
 
+  override def botPrefix: String = if (isDirectMessage(channel)) { "" } else { s"<@${profile.userId}> " }
+
   val messageText: String = text
 
   override val relevantMessageText: String = {
