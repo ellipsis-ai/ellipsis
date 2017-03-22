@@ -7,21 +7,24 @@ define(function(require) {
     ConfirmActionPanel = require('../panels/confirm_action'),
     FixedFooter = require('../shared_ui/fixed_footer'),
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
+    ListHeading = require('./list_heading'),
     ModalScrim = require('../shared_ui/modal_scrim'),
-    PageWithPanels = require('../shared_ui/page_with_panels');
+    PageWithPanels = require('../shared_ui/page_with_panels'),
+    ResponsiveColumn = require('../shared_ui/responsive_column');
 
   const ANIMATION_DURATION = 0.25;
 
   const BehaviorList = React.createClass({
     displayName: "BehaviorList",
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
-      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       onLoadPublishedBehaviorGroups: React.PropTypes.func.isRequired,
       onBehaviorGroupImport: React.PropTypes.func.isRequired,
+      onMergeBehaviorGroups: React.PropTypes.func.isRequired,
+      onDeleteBehaviorGroups: React.PropTypes.func.isRequired,
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
-      publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
-      csrfToken: React.PropTypes.string.isRequired,
+      publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string.isRequired
     }),
@@ -113,30 +116,11 @@ define(function(require) {
       });
     },
 
-    runSelectedBehaviorGroupsAction: function(url) {
-      var data = {
-        behaviorGroupIds: this.getSelectedGroupIds()
-      };
-      fetch(url, {
-        credentials: 'same-origin',
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Csrf-Token': this.props.csrfToken
-        },
-        body: JSON.stringify(data)
-      }).then(() => {
-        window.location.reload();
-      });
-    },
-
     mergeBehaviorGroups: function() {
       this.setState({
         isSubmitting: true
       }, () => {
-        var url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
-        this.runSelectedBehaviorGroupsAction(url);
+        this.props.onMergeBehaviorGroups(this.getSelectedGroupIds());
       });
     },
 
@@ -144,8 +128,7 @@ define(function(require) {
       this.setState({
         isSubmitting: true
       }, () => {
-        var url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
-        this.runSelectedBehaviorGroupsAction(url);
+        this.props.onDeleteBehaviorGroups(this.getSelectedGroupIds());
       });
     },
 
@@ -256,33 +239,17 @@ define(function(require) {
       }
     },
 
-    renderHeaderWithTeachButton: function(headerText) {
-      return (
-        <div className="columns columns-elastic mobile-columns-float">
-          <div className="column column-expand">
-            <h3 className="type-blue-faded mbxl mhl mobile-mbm">{headerText}</h3>
-          </div>
-          <div className="column column-shrink align-m phl mobile-pbl">
-            <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
-              className="button button-shrink">
-              Teach Ellipsis something new…
-            </a>
-          </div>
-        </div>
-      );
-    },
-
-    renderInstalledBehaviorGroups: function(groups) {
+    renderInstalledBehaviorGroups: function() {
+      var groups = this.getBehaviorGroups();
       return (
         <Collapsible revealWhen={groups.length > 0} animationDuration={0.5}>
-          <div className="container container-c ptl mobile-ptm phn">
+          <div className="container container-c ptl mobile-ptm">
 
-            {this.renderHeaderWithTeachButton("Your skills")}
+            <ListHeading teamId={this.props.teamId} includeTeachButton={true}>Your skills</ListHeading>
 
             <div className="columns">
-              {groups.map((group, index) => (
-                <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
-                  key={"group" + index}>
+              {groups.map((group) => (
+                <ResponsiveColumn key={group.id}>
                   <BehaviorGroupCard
                     name={group.name}
                     description={group.description}
@@ -295,7 +262,7 @@ define(function(require) {
                     isSelected={this.isGroupSelected(group.id)}
                     cardClassName="bg-white"
                   />
-                </div>
+                </ResponsiveColumn>
               ))}
             </div>
 
@@ -336,25 +303,17 @@ define(function(require) {
       );
     },
 
-    renderPublishedGroups: function() {
-      return (
-        <div className="bg-blue-lighter ptxl pbxl">
-          <div className="container container-c phn">
-            {this.renderPublishedGroupsContent()}
-          </div>
-        </div>
-      );
-    },
-
     renderPublishedIntro: function() {
       if (this.getBehaviorGroups().length > 0) {
         return (
-          <h3 className="mbxl mhl type-blue-faded">Skills published by Ellipsis.ai (available to install)</h3>
+          <ListHeading teamId={this.props.teamId}>Skills published by Ellipsis.ai (available to install)</ListHeading>
         );
       } else {
         return (
           <div>
-            {this.renderHeaderWithTeachButton("To get started, install one of the skills published by Ellipsis.ai")}
+            <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
+              To get started, install one of the skills published by Ellipsis.ai
+            </ListHeading>
 
             <p className="type-blue-faded mhl mbxl">
               Each skill instructs your bot how to perform a set of related tasks, and when to respond to people in chat.
@@ -364,7 +323,7 @@ define(function(require) {
       }
     },
 
-    renderPublishedGroupsContent: function() {
+    renderPublishedGroups: function() {
       var groups = this.getUninstalledBehaviorGroups();
       if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length > 1) {
         return (
@@ -373,10 +332,8 @@ define(function(require) {
             {this.renderPublishedIntro()}
 
             <div className="columns">
-              {groups.map((group, index) => (
-                <div
-                  className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl"
-                  key={"group" + index}>
+              {groups.map((group) => (
+                <ResponsiveColumn key={group.exportId}>
                   <BehaviorGroupCard
                     name={group.name}
                     description={group.description}
@@ -389,7 +346,7 @@ define(function(require) {
                     isImportable={true}
                     cardClassName="bg-blue-lightest"
                   />
-                </div>
+                </ResponsiveColumn>
               ))}
             </div>
           </div>
@@ -420,39 +377,28 @@ define(function(require) {
         return (
           <div className="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
             <div className="container container-c">
-              <div className="phl">
-                <p className="type-l type-white">
-                  Ellipsis is a customizable chat bot that helps your team be more productive.
-                  Teach your bot to perform tasks and provide answers to your team.
-                </p>
-              </div>
+              <p className="type-l type-white phl">
+                Ellipsis is a customizable chat bot that helps your team be more productive.
+                Teach your bot to perform tasks and provide answers to your team.
+              </p>
             </div>
           </div>
         );
       }
     },
 
-    renderContent: function() {
-      var localGroups = this.getBehaviorGroups();
-      return (
-        <div>
-
-          {this.renderIntro()}
-
-          {this.renderInstalledBehaviorGroups(localGroups)}
-
-          {this.renderPublishedGroups()}
-
-        </div>
-      );
-    },
-
     render: function() {
       return (
         <div>
           <div style={{ paddingBottom: `${this.state.footerHeight}px` }}>
-            <div>
-              {this.renderContent()}
+            {this.renderIntro()}
+
+            {this.renderInstalledBehaviorGroups()}
+
+            <div className="bg-blue-lighter ptxl pbxl">
+              <div className="container container-c">
+                {this.renderPublishedGroups()}
+              </div>
             </div>
           </div>
 

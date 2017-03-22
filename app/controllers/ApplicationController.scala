@@ -119,7 +119,7 @@ class ApplicationController @Inject() (
         } yield {
           render {
             case Accepts.Html() => Redirect(routes.ApplicationController.index())
-            case Accepts.Json() => Ok("deleted")
+            case Accepts.Json() => Ok(Json.toJson("deleted"))
           }
         }
       }
