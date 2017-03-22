@@ -161,8 +161,8 @@ case class DisplayHelpBehavior(
         flattenedGroupData += flattenUnnamedBehaviorGroupData(unnamed)
       }
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        FuzzyMatcher[BehaviorGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, dataService, lambdaService))
-      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, dataService, lambdaService)))
+        FuzzyMatcher[BehaviorGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService))
+      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService)))
       if (matchingGroupData.isEmpty) {
         emptyResult
       } else if (matchingGroupData.length == 1) {
