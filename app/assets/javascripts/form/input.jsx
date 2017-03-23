@@ -1,10 +1,13 @@
 define(function(require) {
-var React = require('react');
+var React = require('react'),
+  Event = require('../lib/event');
 
 return React.createClass({
+  displayName: 'FormInput',
   propTypes: {
     autoFocus: React.PropTypes.bool,
     className: React.PropTypes.string,
+    style: React.PropTypes.object,
     id: React.PropTypes.oneOfType([
       React.PropTypes.number,
       React.PropTypes.string
@@ -13,6 +16,7 @@ return React.createClass({
     onBlur: React.PropTypes.func,
     onChange: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func,
+    onEscKey: React.PropTypes.func,
     onFocus: React.PropTypes.func,
     placeholder: React.PropTypes.string,
     type: React.PropTypes.string,
@@ -25,23 +29,30 @@ return React.createClass({
   },
 
   onBlur: function() {
-    if (typeof(this.props.onBlur) == 'function') {
+    if (typeof(this.props.onBlur) === 'function') {
       this.props.onBlur(this.refs.input.value);
     }
   },
 
   onFocus: function() {
-    if (typeof(this.props.onFocus) == 'function') {
+    if (typeof(this.props.onFocus) === 'function') {
       this.props.onFocus(this.refs.input.value);
     }
   },
 
   handleEnterKey: function(event) {
-    if (event.which === 13) {
+    if (Event.keyPressWasEnter(event)) {
       event.preventDefault();
-      if (typeof this.props.onEnterKey == 'function') {
+      if (typeof this.props.onEnterKey === 'function') {
         this.props.onEnterKey();
       }
+    }
+  },
+
+  handleEscKey: function(event) {
+    if (Event.keyPressWasEsc(event) && this.props.onEscKey) {
+      event.stopPropagation();
+      this.props.onEscKey();
     }
   },
 
@@ -66,6 +77,7 @@ return React.createClass({
       <input
         type={this.props.type || "text"}
         className={"form-input " + (this.props.className || "")}
+        style={this.props.style}
         ref="input"
         id={this.props.id}
         name={this.props.name}
@@ -76,6 +88,7 @@ return React.createClass({
         onBlur={this.onBlur}
         onFocus={this.onFocus}
         onKeyPress={this.handleEnterKey}
+        onKeyDown={this.handleEscKey}
         autoCapitalize={this.props.disableAuto ? "off" : null}
         autoComplete={this.props.disableAuto ? "off" : null}
         autoCorrect={this.props.disableAuto ? "off" : null}

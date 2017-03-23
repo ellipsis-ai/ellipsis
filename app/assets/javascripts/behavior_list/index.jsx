@@ -6,11 +6,13 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     FixedFooter = require('../shared_ui/fixed_footer'),
+    SearchInput = require('../form/search'),
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
     ListHeading = require('./list_heading'),
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels'),
-    ResponsiveColumn = require('../shared_ui/responsive_column');
+    ResponsiveColumn = require('../shared_ui/responsive_column'),
+    debounce = require('javascript-debounce');
 
   const ANIMATION_DURATION = 0.25;
 
@@ -21,9 +23,12 @@ define(function(require) {
       onBehaviorGroupImport: React.PropTypes.func.isRequired,
       onMergeBehaviorGroups: React.PropTypes.func.isRequired,
       onDeleteBehaviorGroups: React.PropTypes.func.isRequired,
+      onSearch: React.PropTypes.func.isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
+      matchingResults: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
+      isLoadingMatchingResults: React.PropTypes.bool.isRequired,
       publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string.isRequired
@@ -35,7 +40,9 @@ define(function(require) {
         selectedGroupIds: [],
         isSubmitting: false,
         footerHeight: 0,
-        importingList: []
+        importingList: [],
+        searchText: "",
+        lastSearchText: ""
       };
     },
 
@@ -53,12 +60,48 @@ define(function(require) {
       }
     },
 
+    updateSearch: function(newValue) {
+      this.setState({
+        searchText: newValue
+      }, () => {
+        if (newValue) {
+          this.delaySubmitSearch();
+        } else {
+          this.submitSearch();
+        }
+      });
+    },
+
+    submitSearch: function() {
+      this.setState({
+        lastSearchText: this.state.searchText
+      }, () => {
+        this.props.onSearch(this.state.lastSearchText);
+      });
+    },
+
+    delaySubmitSearch: debounce(function() { this.submitSearch(); }, 500),
+
     getAnimationDuration: function() {
       return ANIMATION_DURATION;
     },
 
     getBehaviorGroups: function() {
       return this.props.behaviorGroups.concat(this.props.recentlyInstalled);
+    },
+
+    hasLocalBehaviorGroups: function() {
+      return this.getBehaviorGroups().length > 0;
+    },
+
+    getMatchingBehaviorGroups: function() {
+      if (this.props.matchingResults.length > 0) {
+        return this.getBehaviorGroups().filter((ea) =>
+          BehaviorGroup.groupsIncludeExportId(this.props.matchingResults, ea.exportId)
+        );
+      } else {
+        return this.getBehaviorGroups();
+      }
     },
 
     getBehaviorGroupsJustInstalled: function() {
@@ -249,14 +292,20 @@ define(function(require) {
     },
 
     renderInstalledBehaviorGroups: function() {
-      var groups = this.getBehaviorGroups();
+      var groups = this.getMatchingBehaviorGroups();
+
       return (
         <Collapsible revealWhen={groups.length > 0} animationDuration={0.5}>
-          <div className="container container-c ptl mobile-ptm">
+          <div className="container container-c mvxl">
 
-            <ListHeading teamId={this.props.teamId} includeTeachButton={true}>Your skills</ListHeading>
+            <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
+              {this.props.matchingResults.length ?
+                `Your skills matching “${this.state.lastSearchText}”` :
+                "Your skills"
+              }
+            </ListHeading>
 
-            <div className="columns">
+            <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
               {groups.map((group) => (
                 <ResponsiveColumn key={group.id}>
                   <BehaviorGroupCard
@@ -276,7 +325,7 @@ define(function(require) {
             </div>
 
           </div>
-          <hr className="mtxl bg-dark-translucent mbn" />
+          <hr className="mtn bg-dark-translucent mbxxxl" />
         </Collapsible>
       );
     },
@@ -349,7 +398,7 @@ define(function(require) {
 
             {this.renderPublishedIntro()}
 
-            <div className="columns">
+            <div className="columns mvxl">
               {groups.map((group) => (
                 <ResponsiveColumn key={group.exportId}>
                   <BehaviorGroupCard
@@ -405,18 +454,39 @@ define(function(require) {
       }
     },
 
+    renderSearch: function() {
+      if (this.hasLocalBehaviorGroups()) {
+        return (
+          <div className="ptxl mbxl">
+            <div className="container container-c">
+              <div className="mhl">
+                <SearchInput
+                  placeholder="Search skills…"
+                  value={this.state.searchText}
+                  onChange={this.updateSearch}
+                  isSearching={this.props.isLoadingMatchingResults}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      }
+    },
+
     render: function() {
       return (
         <div>
           <div style={{ paddingBottom: `${this.state.footerHeight}px` }}>
             {this.renderIntro()}
 
-            {this.renderInstalledBehaviorGroups()}
+            <div className={(this.hasLocalBehaviorGroups() ? "bg-lightest" : "")}>
+              {this.renderSearch()}
 
-            <div className="bg-blue-lighter ptxl pbxl">
-              <div className="container container-c">
-                {this.renderPublishedGroups()}
-              </div>
+              {this.renderInstalledBehaviorGroups()}
+            </div>
+
+            <div className="container container-c mvxl">
+              {this.renderPublishedGroups()}
             </div>
           </div>
 

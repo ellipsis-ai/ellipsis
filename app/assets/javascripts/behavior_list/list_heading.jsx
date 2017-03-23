@@ -12,8 +12,8 @@ define(function(require) {
     render: function() {
       return (
         <div className="columns columns-elastic mobile-columns-float">
-          <div className="column column-expand">
-            <h3 className="type-blue-faded mbxl mhl mobile-mbm">{this.props.children}</h3>
+          <div className="column column-expand align-m">
+            <h3 className="type-blue-faded mvn mhl mobile-mbm">{this.props.children}</h3>
           </div>
           {this.props.includeTeachButton ? (
               <div className="column column-shrink align-m phl mobile-pbl">

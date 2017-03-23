@@ -15,6 +15,11 @@
   animation: pulse 2s ease 0s infinite;
 }
 
+.pulse-faded {
+  -webkit-animation: pulse-faded 2s ease 0s infinite;
+  animation: pulse-faded 2s ease 0s infinite;
+}
+
 @keyframes fadein {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -103,4 +108,22 @@
   0% { opacity: 1; }
   50% { opacity: 0.5; }
   100% { opacity: 1; }
+}
+
+@keyframes pulse-faded {
+  0% { opacity: 0.66; }
+  50% { opacity: 0.33; }
+  100% { opacity: 0.66; }
+}
+
+@-webkit-keyframes pulse-faded {
+  0% { opacity: 0.66; }
+  50% { opacity: 0.33; }
+  100% { opacity: 0.66; }
+}
+
+@-ms-keyframes pulse-faded {
+  0% { opacity: 0.66; }
+  50% { opacity: 0.33; }
+  100% { opacity: 0.66; }
 }
