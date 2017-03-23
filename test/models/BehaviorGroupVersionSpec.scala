@@ -1,7 +1,7 @@
 package models
 
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
-import json.{BehaviorGroupData, BehaviorVersionData}
+import json.{BehaviorGroupData, BehaviorParameterTypeData, BehaviorVersionData}
 import models.behaviors.behaviorgroup.BehaviorGroup
 import support.DBSpec
 
@@ -13,7 +13,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
 
   "createFor" should {
 
-    "should set the current version on the group" in {
+    "set the current version on the group" in {
       withEmptyDB(dataService, { db =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
@@ -25,7 +25,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
       })
     }
 
-    "should maintain saved answers" in {
+    "maintain saved answers" in {
       withEmptyDB(dataService, { db =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
@@ -53,6 +53,51 @@ class BehaviorGroupVersionSpec extends DBSpec {
         maybeSecondInputVersion.isDefined mustBe true
         val maybeSecondSavedAnswerVersion = runNow(dataService.savedAnswers.find(maybeSecondInputVersion.get, user))
         maybeSecondSavedAnswerVersion.map(_.valueString) mustBe Some(savedAnswer.valueString)
+      })
+    }
+
+    "keep data type behavior version id in sync with latest group version" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, dataService).copy(name = Some("A data type"))
+
+        val dataTypeParamData = BehaviorParameterTypeData(
+          dataTypeVersionData.id,
+          dataTypeVersionData.exportId,
+          dataTypeVersionData.name.get,
+          None
+        )
+
+        val inputData = newInputDataFor(Some(dataTypeParamData))
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+          inputIds = Seq(inputData.inputId.get)
+        )
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(dataTypeVersionData, behaviorVersionData),
+          actionInputs = Seq(inputData)
+        )
+        newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val groupVersionsBefore = runNow(dataService.behaviorGroupVersions.allFor(group))
+        groupVersionsBefore must have length 1
+        val firstDataTypeBehaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersionsBefore.head)).filter(_.isDataType).head
+
+        val newGroupData = runNow(BehaviorGroupData.maybeFor(group.id, user, None, dataService))
+
+        newSavedGroupVersionFor(group, user, newGroupData)
+
+        val groupVersionsAfter = runNow(dataService.behaviorGroupVersions.allFor(group))
+        groupVersionsAfter must have length 2
+
+        val secondGroupVersion = groupVersionsAfter.sortBy(_.createdAt).reverse.head
+        val secondDataTypeBehaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(secondGroupVersion)).filter(_.isDataType).head
+        secondDataTypeBehaviorVersion.id mustNot be(firstDataTypeBehaviorVersion.id)
+
+        val secondInput = runNow(dataService.inputs.allForGroupVersion(secondGroupVersion)).head
+        secondInput.paramType.id mustBe secondDataTypeBehaviorVersion.id
       })
     }
 
