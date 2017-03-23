@@ -14,6 +14,7 @@ define(function(require) {
       onBehaviorGroupImport: React.PropTypes.func,
       onToggle: React.PropTypes.func.isRequired,
       isImportable: React.PropTypes.bool.isRequired,
+      wasImported: React.PropTypes.bool,
       localId: React.PropTypes.string
     },
 
@@ -119,7 +120,7 @@ define(function(require) {
             </a>
           </div>
         );
-      } else if (this.props.localId) {
+      } else if (this.props.wasImported) {
         return (
           <div className="type-s mvm">
             <span className="display-inline-block align-m mrs" style={{ width: 30, height: 18 }}><SVGInstalled /></span>
@@ -139,7 +140,7 @@ define(function(require) {
     },
 
     renderLastModified: function() {
-      if (this.props.groupData.createdAt) {
+      if (this.props.localId && this.props.groupData.createdAt) {
         return (
           <div className="type-weak type-s mvm">
             Last modified {Formatter.formatTimestampRelativeIfRecent(this.props.groupData.createdAt)}

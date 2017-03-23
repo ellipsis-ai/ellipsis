@@ -210,6 +210,15 @@ define(function(require) {
       return !!(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup));
     },
 
+    selectedBehaviorWasImported: function() {
+      var selectedGroup = this.getSelectedBehaviorGroup();
+      return !!(
+        selectedGroup &&
+        selectedGroup.id &&
+        BehaviorGroup.groupsIncludeExportId(this.props.publishedBehaviorGroups, selectedGroup.exportId)
+      );
+    },
+
     getSelectedBehaviorGroupId: function() {
       var group = this.getSelectedBehaviorGroup();
       return group ? group.id : null;
@@ -487,6 +496,7 @@ define(function(require) {
                 groupData={this.getSelectedBehaviorGroup()}
                 onToggle={this.clearActivePanel}
                 isImportable={this.selectedBehaviorGroupIsImportable()}
+                wasImported={this.selectedBehaviorWasImported()}
                 localId={this.getSelectedBehaviorGroupId()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
               />
