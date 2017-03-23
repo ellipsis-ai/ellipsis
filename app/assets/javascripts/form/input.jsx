@@ -7,6 +7,7 @@ return React.createClass({
   propTypes: {
     autoFocus: React.PropTypes.bool,
     className: React.PropTypes.string,
+    style: React.PropTypes.string,
     id: React.PropTypes.oneOfType([
       React.PropTypes.number,
       React.PropTypes.string
@@ -28,13 +29,13 @@ return React.createClass({
   },
 
   onBlur: function() {
-    if (typeof(this.props.onBlur) == 'function') {
+    if (typeof(this.props.onBlur) === 'function') {
       this.props.onBlur(this.refs.input.value);
     }
   },
 
   onFocus: function() {
-    if (typeof(this.props.onFocus) == 'function') {
+    if (typeof(this.props.onFocus) === 'function') {
       this.props.onFocus(this.refs.input.value);
     }
   },
@@ -42,7 +43,7 @@ return React.createClass({
   handleEnterKey: function(event) {
     if (Event.keyPressWasEnter(event)) {
       event.preventDefault();
-      if (typeof this.props.onEnterKey == 'function') {
+      if (typeof this.props.onEnterKey === 'function') {
         this.props.onEnterKey();
       }
     }
@@ -76,6 +77,7 @@ return React.createClass({
       <input
         type={this.props.type || "text"}
         className={"form-input " + (this.props.className || "")}
+        style={this.props.style}
         ref="input"
         id={this.props.id}
         name={this.props.name}

@@ -1,33 +1,32 @@
 define(function(require) {
   var React = require('react'),
-    FormInput = require('./input');
+    FormInput = require('./input'),
+    SVGSearch = require('../svg/search');
 
   return React.createClass({
     displayName: 'FormSearch',
     propTypes: {
-      className: React.PropTypes.string,
       isSearching: React.PropTypes.bool
     },
 
     getRemainingProps: function() {
       var props = Object.assign({}, this.props);
-      delete props.className;
+      delete props.isSearching;
       return props;
     },
 
     render: function() {
       return (
         <div className="position-relative">
-          <div><FormInput
-            className={"plxxl " + (this.props.className || "")}
-            {...this.getRemainingProps()}
-          /></div>
-          <div className="position-absolute position-top-left position-z-above align-button mls">
-            {this.props.isSearching ? (
-              <span className="pulse opacity-75">⏳</span>
-            ) : (
-              <span>🔎</span>
-            )}
+          <div><FormInput {...this.getRemainingProps()} style={{ paddingLeft: "32px" }} /></div>
+          <div
+            className={
+              "position-absolute position-top-left position-z-above align-button mls " +
+              (this.props.isSearching ? "pulse type-disabled" : "type-weak")
+            }
+            style={{ height: "24px" }}
+          >
+            <SVGSearch />
           </div>
         </div>
       );
