@@ -95,11 +95,11 @@ case class DisplayHelpBehavior(
     if (numActions == 0) {
       "This skill has no actions."
     } else {
-      if (numActions == 1) {
-        "_**1 action:**_"
+      (if (numActions == 1) {
+        "_**1 action**_"
       } else {
-        s"_**$numActions actions:**_"
-      } ++ " (you can type an action to trigger it)  "
+        s"_**$numActions actions**_"
+      }) ++ " (type any action to trigger it):  "
     }
   }
 
