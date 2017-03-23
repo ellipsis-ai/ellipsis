@@ -455,20 +455,22 @@ define(function(require) {
     },
 
     renderSearch: function() {
-      return (
-        <div className="ptxl mbxl">
-          <div className="container container-c">
-            <div className="mhl">
-              <SearchInput
-                placeholder="Search skills…"
-                value={this.state.searchText}
-                onChange={this.updateSearch}
-                isSearching={this.props.isLoadingMatchingResults}
-              />
+      if (this.hasLocalBehaviorGroups()) {
+        return (
+          <div className="ptxl mbxl">
+            <div className="container container-c">
+              <div className="mhl">
+                <SearchInput
+                  placeholder="Search skills…"
+                  value={this.state.searchText}
+                  onChange={this.updateSearch}
+                  isSearching={this.props.isLoadingMatchingResults}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      );
+        );
+      }
     },
 
     render: function() {
