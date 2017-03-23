@@ -63,13 +63,13 @@ define(function(require) {
     updateSearch: function(newValue) {
       this.setState({
         searchText: newValue
-      }, this.delaySubmitSearch);
-    },
-
-    clearSearch: function() {
-      this.setState({
-        searchText: ""
-      }, this.submitSearch);
+      }, () => {
+        if (newValue) {
+          this.delaySubmitSearch();
+        } else {
+          this.submitSearch();
+        }
+      });
     },
 
     submitSearch: function() {
@@ -463,8 +463,6 @@ define(function(require) {
                 placeholder="Search skills…"
                 value={this.state.searchText}
                 onChange={this.updateSearch}
-                onEnterKey={this.submitSearch}
-                onEscKey={this.clearSearch}
                 isSearching={this.props.isLoadingMatchingResults}
               />
             </div>
