@@ -17,12 +17,11 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="position-relative">
+        <div className={"position-relative " + (this.props.isSearching ? "pulse-faded" : "")}>
           <div><FormInput {...this.getRemainingProps()} style={{ paddingLeft: "32px" }} /></div>
           <div
             className={
-              "position-absolute position-top-left position-z-above align-button mls " +
-              (this.props.isSearching ? "pulse type-disabled" : "type-weak")
+              "position-absolute position-top-left position-z-above align-button mls type-weak"
             }
             style={{ height: "24px" }}
           >

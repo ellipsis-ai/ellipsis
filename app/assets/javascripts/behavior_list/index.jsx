@@ -301,7 +301,7 @@ define(function(require) {
               }
             </ListHeading>
 
-            <div className="columns">
+            <div className={"columns " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
               {groups.map((group) => (
                 <ResponsiveColumn key={group.id}>
                   <BehaviorGroupCard
