@@ -12,6 +12,7 @@ define(function(require) {
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels'),
     ResponsiveColumn = require('../shared_ui/responsive_column'),
+    SubstringHighlighter = require('../shared_ui/substring_highlighter'),
     debounce = require('javascript-debounce');
 
   const ANIMATION_DURATION = 0.25;
@@ -291,6 +292,16 @@ define(function(require) {
       }
     },
 
+    highlight: function(text) {
+      if (text) {
+        return (
+          <SubstringHighlighter text={text} substring={this.state.lastSearchText}/>
+        );
+      } else {
+        return null;
+      }
+    },
+
     renderInstalledBehaviorGroups: function() {
       var groups = this.getMatchingBehaviorGroups();
 
@@ -309,8 +320,8 @@ define(function(require) {
               {groups.map((group) => (
                 <ResponsiveColumn key={group.id}>
                   <BehaviorGroupCard
-                    name={group.name}
-                    description={group.description}
+                    name={this.highlight(group.name)}
+                    description={this.highlight(group.description)}
                     icon={group.icon}
                     groupData={group}
                     localId={group.id}
