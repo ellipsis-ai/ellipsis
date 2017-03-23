@@ -23,7 +23,8 @@ define(function(require) {
         publishedBehaviorGroupLoadStatus: 'loading',
         publishedBehaviorGroups: [],
         recentlyInstalled: [],
-        matchingResults: []
+        matchingResults: [],
+        isLoadingMatchingResults: false
       };
     },
 
@@ -95,11 +96,15 @@ define(function(require) {
     getSearchResults: function(queryString) {
       const trimmed = queryString.trim();
       if (trimmed) {
+        this.setState({
+          isLoadingMatchingResults: true
+        });
         const url = jsRoutes.controllers.ApplicationController.findBehaviorGroupsMatching(queryString).url;
         DataRequest
           .jsonGet(url)
           .then((results) => {
             this.setState({
+              isLoadingMatchingResults: false,
               matchingResults: results
             });
           })
@@ -124,7 +129,8 @@ define(function(require) {
           behaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
           publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
           recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
-          matchingResults={this.state.matchingResults}
+          matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
+          isLoadingMatchingResults={this.state.isLoadingMatchingResults}
           publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
           teamId={this.props.teamId}
           slackTeamId={this.props.slackTeamId}

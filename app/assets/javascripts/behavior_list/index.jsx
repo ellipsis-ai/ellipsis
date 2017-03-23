@@ -6,12 +6,13 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     FixedFooter = require('../shared_ui/fixed_footer'),
-    FormInput = require('../form/input'),
+    SearchInput = require('../form/search'),
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
     ListHeading = require('./list_heading'),
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels'),
-    ResponsiveColumn = require('../shared_ui/responsive_column');
+    ResponsiveColumn = require('../shared_ui/responsive_column'),
+    debounce = require('javascript-debounce');
 
   const ANIMATION_DURATION = 0.25;
 
@@ -26,6 +27,8 @@ define(function(require) {
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
+      matchingResults: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
+      isLoadingMatchingResults: React.PropTypes.bool.isRequired,
       publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string.isRequired
@@ -60,7 +63,7 @@ define(function(require) {
     updateSearch: function(newValue) {
       this.setState({
         searchText: newValue
-      });
+      }, this.delaySubmitSearch);
     },
 
     clearSearch: function() {
@@ -76,6 +79,8 @@ define(function(require) {
         this.props.onSearch(this.state.lastSearchText);
       });
     },
+
+    delaySubmitSearch: debounce(function() { this.submitSearch(); }, 500),
 
     getAnimationDuration: function() {
       return ANIMATION_DURATION;
@@ -281,7 +286,10 @@ define(function(require) {
           <div className="container container-c mtl mobile-mtm">
 
             <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
-              {this.props.matchingResults.length ? `Skills matching “${this.state.lastSearchText}”` : "Your skills"}
+              {this.props.matchingResults.length ?
+                `Your skills matching “${this.state.lastSearchText}”` :
+                "Your skills"
+              }
             </ListHeading>
 
             <div className="columns">
@@ -437,12 +445,13 @@ define(function(require) {
       return (
         <div className="container container-c mvxl">
           <div className="mhl">
-            <FormInput
+            <SearchInput
               placeholder="Search skills…"
               value={this.state.searchText}
               onChange={this.updateSearch}
               onEnterKey={this.submitSearch}
               onEscKey={this.clearSearch}
+              isSearching={this.props.isLoadingMatchingResults}
             />
           </div>
         </div>

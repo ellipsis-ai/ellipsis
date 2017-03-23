@@ -3,6 +3,7 @@ var React = require('react'),
   Event = require('../lib/event');
 
 return React.createClass({
+  displayName: 'FormInput',
   propTypes: {
     autoFocus: React.PropTypes.bool,
     className: React.PropTypes.string,
