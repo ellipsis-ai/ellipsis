@@ -90,6 +90,10 @@ define(function(require) {
       return this.props.behaviorGroups.concat(this.props.recentlyInstalled);
     },
 
+    hasLocalBehaviorGroups: function() {
+      return this.getBehaviorGroups().length > 0;
+    },
+
     getMatchingBehaviorGroups: function() {
       if (this.props.matchingResults.length > 0) {
         return this.getBehaviorGroups().filter((ea) =>
@@ -292,7 +296,7 @@ define(function(require) {
 
       return (
         <Collapsible revealWhen={groups.length > 0} animationDuration={0.5}>
-          <div className="container container-c mtl mobile-mtm">
+          <div className="container container-c mvxl">
 
             <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
               {this.props.matchingResults.length ?
@@ -301,7 +305,7 @@ define(function(require) {
               }
             </ListHeading>
 
-            <div className={"columns " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
+            <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
               {groups.map((group) => (
                 <ResponsiveColumn key={group.id}>
                   <BehaviorGroupCard
@@ -321,7 +325,7 @@ define(function(require) {
             </div>
 
           </div>
-          <hr className="mtxl bg-dark-translucent mbn" />
+          <hr className="mtn bg-dark-translucent mbxxxl" />
         </Collapsible>
       );
     },
@@ -394,7 +398,7 @@ define(function(require) {
 
             {this.renderPublishedIntro()}
 
-            <div className="columns">
+            <div className="columns mvxl">
               {groups.map((group) => (
                 <ResponsiveColumn key={group.exportId}>
                   <BehaviorGroupCard
@@ -452,16 +456,18 @@ define(function(require) {
 
     renderSearch: function() {
       return (
-        <div className="container container-c mvxl">
-          <div className="mhl">
-            <SearchInput
-              placeholder="Search skills…"
-              value={this.state.searchText}
-              onChange={this.updateSearch}
-              onEnterKey={this.submitSearch}
-              onEscKey={this.clearSearch}
-              isSearching={this.props.isLoadingMatchingResults}
-            />
+        <div className="ptxl mbxl">
+          <div className="container container-c">
+            <div className="mhl">
+              <SearchInput
+                placeholder="Search skills…"
+                value={this.state.searchText}
+                onChange={this.updateSearch}
+                onEnterKey={this.submitSearch}
+                onEscKey={this.clearSearch}
+                isSearching={this.props.isLoadingMatchingResults}
+              />
+            </div>
           </div>
         </div>
       );
@@ -473,14 +479,14 @@ define(function(require) {
           <div style={{ paddingBottom: `${this.state.footerHeight}px` }}>
             {this.renderIntro()}
 
-            {this.renderSearch()}
+            <div className={(this.hasLocalBehaviorGroups() ? "bg-lightest" : "")}>
+              {this.renderSearch()}
 
-            {this.renderInstalledBehaviorGroups()}
+              {this.renderInstalledBehaviorGroups()}
+            </div>
 
-            <div className="bg-blue-lighter ptxl pbxl">
-              <div className="container container-c">
-                {this.renderPublishedGroups()}
-              </div>
+            <div className="container container-c mvxl">
+              {this.renderPublishedGroups()}
             </div>
           </div>
 
