@@ -7,7 +7,7 @@ return React.createClass({
   propTypes: {
     autoFocus: React.PropTypes.bool,
     className: React.PropTypes.string,
-    style: React.PropTypes.string,
+    style: React.PropTypes.object,
     id: React.PropTypes.oneOfType([
       React.PropTypes.number,
       React.PropTypes.string

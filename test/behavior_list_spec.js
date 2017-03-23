@@ -72,13 +72,16 @@ describe('BehaviorList', () => {
   const group2 = Object.freeze(BehaviorGroup.fromJson({id:"gsdfgsg", name:"", description: "", behaviorVersions: [behaviorVersionTask2], createdAt: 1466109904858}));
   const group3 = Object.freeze(BehaviorGroup.fromJson({id:"jfghjfg", name:"", description: "", behaviorVersions: [behaviorVersionKnowledge1], createdAt: 1466109904858}));
   const defaultConfig = Object.freeze({
-    behaviorGroups: [group1, group2, group3],
-    publishedBehaviorGroups: [],
-    recentlyInstalled: [],
     onLoadPublishedBehaviorGroups: jest.fn(),
     onBehaviorGroupImport: jest.fn(),
     onMergeBehaviorGroups: jest.fn(),
     onDeleteBehaviorGroups: jest.fn(),
+    onSearch: jest.fn(),
+    behaviorGroups: [group1, group2, group3],
+    publishedBehaviorGroups: [],
+    recentlyInstalled: [],
+    matchingResults: [],
+    isLoadingMatchingResults: false,
     publishedBehaviorGroupLoadStatus: 'loaded',
     teamId: "1",
     slackTeamId: "1"
