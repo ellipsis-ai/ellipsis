@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     BehaviorVersion = require('../models/behavior_version'),
+    SubstringHighlighter = require('../shared_ui/substring_highlighter'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils');
 
   return React.createClass({
@@ -13,7 +14,8 @@ define(function(require) {
       onClick: React.PropTypes.func,
       isImportable: React.PropTypes.bool,
       className: React.PropTypes.string,
-      triggerClassName: React.PropTypes.string
+      triggerClassName: React.PropTypes.string,
+      highlightText: React.PropTypes.string
     },
 
     getTriggerClass: function() {
@@ -24,13 +26,15 @@ define(function(require) {
       var className = showLink ? "link" : "";
       if (trigger && trigger.text) {
         return (
-          <span className={`${className} ${this.getTriggerClass()} mrs`}>{trigger.displayText}</span>
+          <span className={`${className} ${this.getTriggerClass()} mrs`}>
+            <SubstringHighlighter text={trigger.displayText} substring={this.props.highlightText} />
+          </span>
         );
       } else if (this.props.version.isNewBehavior && !this.props.isImportable) {
         return (
           <span className={`${className} type-italic mrs`}>New action</span>
         );
-      } else {
+      } else if (!this.props.version.name && !this.props.version.description) {
         return (
           <span className={`${className} type-italic mrs`}>(No triggers)</span>
         );
@@ -41,7 +45,9 @@ define(function(require) {
       return triggers.filter((trigger) => !trigger.isRegex).map((trigger, index) => {
         if (trigger.text) {
           return (
-            <span className={`${this.getTriggerClass()} mrs`} key={"regularTrigger" + index}>{trigger.displayText}</span>
+            <span className={`${this.getTriggerClass()} mrs`} key={"regularTrigger" + index}>
+              <SubstringHighlighter text={trigger.displayText} substring={this.props.highlightText} />
+            </span>
           );
         } else {
           return null;
@@ -117,19 +123,19 @@ define(function(require) {
 
     getActionLabelFromVersion: function(version) {
       const name = version.name;
+      const includeDescription = version.description && !this.props.omitDescription;
       if (name && name.trim().length > 0) {
         return (
           <div>
             <div className="display-limit-width display-ellipsis">
-              <span className={"mrs " + (this.props.disableLink ? "" : "link")}>{name}:</span>
-              {this.props.omitDescription ?
-                this.getTriggersFromVersion(version, false) :
-                this.getDescriptionFromVersion(this.props.version)
-              }
+              <span className={"mrs " + (this.props.disableLink ? "" : "link")}>
+                <SubstringHighlighter text={name} substring={this.props.highlightText} />
+              </span>
+              {this.getTriggersFromVersion(version, false)}
             </div>
-            {!this.props.omitDescription ? (
+            {includeDescription ? (
                 <div className="display-limit-width display-ellipsis">
-                  {this.getTriggersFromVersion(version, false)}
+                  {this.getDescriptionFromVersion(this.props.version)}
                 </div>
               ) : null}
           </div>
@@ -154,7 +160,9 @@ define(function(require) {
     getDescriptionFromVersion: function(version) {
       if (!this.props.omitDescription && version.description) {
         return (
-          <span className="type-italic type-weak pbxs">{version.description}</span>
+          <span className="type-italic type-weak pbxs">
+            <SubstringHighlighter text={version.description} substring={this.props.highlightText} />
+          </span>
         );
       }
     },

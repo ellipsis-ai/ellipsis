@@ -28,6 +28,10 @@ define(function(require) {
       return this.name || "Untitled skill";
     }
 
+    getDescription() {
+      return this.description || "";
+    }
+
     getActions() {
       return this.behaviorVersions.filter(ea => !ea.isDataType());
     }

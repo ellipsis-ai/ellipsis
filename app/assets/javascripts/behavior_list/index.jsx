@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    BehaviorName = require('./behavior_name'),
     BehaviorGroup = require('../models/behavior_group'),
     BehaviorGroupCard = require('./behavior_group_card'),
     BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
@@ -302,6 +303,32 @@ define(function(require) {
       }
     },
 
+    getDescriptionOrMatchingTriggers: function(group) {
+      var lowercaseDescription = group.getDescription().toLowerCase();
+      var lowercaseSearch = this.state.lastSearchText.toLowerCase();
+      var matchingBehaviorVersions = [];
+      if (lowercaseSearch) {
+        matchingBehaviorVersions = group.behaviorVersions.filter((version) => version.includesText(lowercaseSearch));
+      }
+      if (!lowercaseSearch || lowercaseDescription.includes(lowercaseSearch) || matchingBehaviorVersions.length === 0) {
+        return this.highlight(group.description);
+      } else {
+        return (
+          <div>
+            {matchingBehaviorVersions.map((version) => (
+              <BehaviorName
+                className="mbxs"
+                version={version}
+                disableLink={true}
+                key={`matchingBehaviorVersion${version.behaviorId || version.exportId}`}
+                highlightText={this.state.lastSearchText}
+              />
+            ))}
+          </div>
+        );
+      }
+    },
+
     renderInstalledBehaviorGroups: function() {
       var groups = this.getMatchingBehaviorGroups();
 
@@ -321,7 +348,7 @@ define(function(require) {
                 <ResponsiveColumn key={group.id}>
                   <BehaviorGroupCard
                     name={this.highlight(group.name)}
-                    description={this.highlight(group.description)}
+                    description={this.getDescriptionOrMatchingTriggers(group)}
                     icon={group.icon}
                     groupData={group}
                     localId={group.id}
