@@ -17,10 +17,14 @@ trait HelpResult {
   lazy val trimmedGroupDescription: String = group.description.filter(_.trim.nonEmpty).getOrElse("")
 
   private def triggerStringFor(trigger: BehaviorTriggerData): String = {
+    val prefix = if (trigger.requiresMention)
+      event.botPrefix
+    else
+      ""
     if (matchingTriggers.contains(trigger)) {
-      s"**`${event.botPrefix}${trigger.text}`**"
+      s"**`$prefix${trigger.text}`**"
     } else {
-      s"`${event.botPrefix}${trigger.text}`"
+      s"`$prefix${trigger.text}`"
     }
   }
 
