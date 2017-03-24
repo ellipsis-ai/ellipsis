@@ -11,7 +11,7 @@ object BehaviorParameterQueries {
   val allWithBehaviorVersion =
     allWithInput.
       join(BehaviorVersionQueries.allWithGroupVersion).on(_._1.behaviorVersionId === _._1._1._1.id).
-      filter(ea => ea._1._2._1._2._1._1.id === ea._2._1._1._1.groupVersionId)
+      filter { case((_, ((_, ((groupVersion, _), _)), _)), (((behaviorVersion, _), _), _)) => groupVersion.id === behaviorVersion.groupVersionId }
 
   type TupleType = (((RawBehaviorParameter, InputQueries.TupleType), BehaviorVersionQueries.TupleType))
 
