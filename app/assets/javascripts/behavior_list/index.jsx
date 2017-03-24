@@ -30,6 +30,7 @@ define(function(require) {
       publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       matchingResults: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
+      currentSearchText: React.PropTypes.string,
       isLoadingMatchingResults: React.PropTypes.bool.isRequired,
       publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
@@ -43,8 +44,7 @@ define(function(require) {
         isSubmitting: false,
         footerHeight: 0,
         importingList: [],
-        searchText: "",
-        lastSearchText: ""
+        searchText: ""
       };
     },
 
@@ -75,11 +75,7 @@ define(function(require) {
     },
 
     submitSearch: function() {
-      this.setState({
-        lastSearchText: this.state.searchText
-      }, () => {
-        this.props.onSearch(this.state.lastSearchText);
-      });
+      this.props.onSearch(this.state.searchText);
     },
 
     delaySubmitSearch: debounce(function() { this.submitSearch(); }, 500),
@@ -296,7 +292,7 @@ define(function(require) {
     highlight: function(text) {
       if (text) {
         return (
-          <SubstringHighlighter text={text} substring={this.state.lastSearchText}/>
+          <SubstringHighlighter text={text} substring={this.props.currentSearchText}/>
         );
       } else {
         return null;
@@ -305,7 +301,7 @@ define(function(require) {
 
     getDescriptionOrMatchingTriggers: function(group) {
       var lowercaseDescription = group.getDescription().toLowerCase();
-      var lowercaseSearch = this.state.lastSearchText.toLowerCase();
+      var lowercaseSearch = this.props.currentSearchText.toLowerCase();
       var matchingBehaviorVersions = [];
       if (lowercaseSearch) {
         matchingBehaviorVersions = group.behaviorVersions.filter((version) => version.includesText(lowercaseSearch));
@@ -321,7 +317,7 @@ define(function(require) {
                 version={version}
                 disableLink={true}
                 key={`matchingBehaviorVersion${version.behaviorId || version.exportId}`}
-                highlightText={this.state.lastSearchText}
+                highlightText={this.props.currentSearchText}
               />
             ))}
           </div>
@@ -338,7 +334,7 @@ define(function(require) {
 
             <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
               {this.props.matchingResults.length ?
-                `Your skills matching “${this.state.lastSearchText}”` :
+                `Your skills matching “${this.props.currentSearchText}”` :
                 "Your skills"
               }
             </ListHeading>
