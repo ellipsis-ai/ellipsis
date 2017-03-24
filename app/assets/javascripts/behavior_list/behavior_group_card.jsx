@@ -12,8 +12,8 @@ define(function(require) {
     propTypes: {
       groupData: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
       localId: React.PropTypes.string,
-      description: React.PropTypes.string,
-      name: React.PropTypes.string,
+      description: React.PropTypes.node,
+      name: React.PropTypes.node,
       icon: React.PropTypes.string,
       onBehaviorGroupImport: React.PropTypes.func,
       onMoreInfoClick: React.PropTypes.func.isRequired,

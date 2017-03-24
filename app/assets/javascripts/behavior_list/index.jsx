@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    BehaviorName = require('./behavior_name'),
     BehaviorGroup = require('../models/behavior_group'),
     BehaviorGroupCard = require('./behavior_group_card'),
     BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
@@ -12,6 +13,7 @@ define(function(require) {
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels'),
     ResponsiveColumn = require('../shared_ui/responsive_column'),
+    SubstringHighlighter = require('../shared_ui/substring_highlighter'),
     debounce = require('javascript-debounce');
 
   const ANIMATION_DURATION = 0.25;
@@ -28,6 +30,7 @@ define(function(require) {
       publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       matchingResults: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
+      currentSearchText: React.PropTypes.string.isRequired,
       isLoadingMatchingResults: React.PropTypes.bool.isRequired,
       publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
@@ -41,8 +44,7 @@ define(function(require) {
         isSubmitting: false,
         footerHeight: 0,
         importingList: [],
-        searchText: "",
-        lastSearchText: ""
+        searchText: ""
       };
     },
 
@@ -73,11 +75,7 @@ define(function(require) {
     },
 
     submitSearch: function() {
-      this.setState({
-        lastSearchText: this.state.searchText
-      }, () => {
-        this.props.onSearch(this.state.lastSearchText);
-      });
+      this.props.onSearch(this.state.searchText);
     },
 
     delaySubmitSearch: debounce(function() { this.submitSearch(); }, 500),
@@ -291,6 +289,42 @@ define(function(require) {
       }
     },
 
+    highlight: function(text) {
+      if (text) {
+        return (
+          <SubstringHighlighter text={text} substring={this.props.currentSearchText}/>
+        );
+      } else {
+        return null;
+      }
+    },
+
+    getDescriptionOrMatchingTriggers: function(group) {
+      var lowercaseDescription = group.getDescription().toLowerCase();
+      var lowercaseSearch = this.props.currentSearchText.toLowerCase();
+      var matchingBehaviorVersions = [];
+      if (lowercaseSearch) {
+        matchingBehaviorVersions = group.behaviorVersions.filter((version) => version.includesText(lowercaseSearch));
+      }
+      if (!lowercaseSearch || lowercaseDescription.includes(lowercaseSearch) || matchingBehaviorVersions.length === 0) {
+        return this.highlight(group.description);
+      } else {
+        return (
+          <div>
+            {matchingBehaviorVersions.map((version) => (
+              <BehaviorName
+                className="mbxs"
+                version={version}
+                disableLink={true}
+                key={`matchingBehaviorVersion${version.behaviorId || version.exportId}`}
+                highlightText={this.props.currentSearchText}
+              />
+            ))}
+          </div>
+        );
+      }
+    },
+
     renderInstalledBehaviorGroups: function() {
       var groups = this.getMatchingBehaviorGroups();
 
@@ -300,7 +334,7 @@ define(function(require) {
 
             <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
               {this.props.matchingResults.length ?
-                `Your skills matching “${this.state.lastSearchText}”` :
+                `Your skills matching “${this.props.currentSearchText}”` :
                 "Your skills"
               }
             </ListHeading>
@@ -309,8 +343,8 @@ define(function(require) {
               {groups.map((group) => (
                 <ResponsiveColumn key={group.id}>
                   <BehaviorGroupCard
-                    name={group.name}
-                    description={group.description}
+                    name={this.highlight(group.name)}
+                    description={this.getDescriptionOrMatchingTriggers(group)}
                     icon={group.icon}
                     groupData={group}
                     localId={group.id}

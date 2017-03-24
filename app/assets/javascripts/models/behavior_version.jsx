@@ -43,6 +43,14 @@ define(function(require) {
       return this.config.isDataType;
     }
 
+    getName() {
+      return this.name || "";
+    }
+
+    getDescription() {
+      return this.description || "";
+    }
+
     getTriggers() {
       return this.triggers || [];
     }
@@ -64,6 +72,15 @@ define(function(require) {
       } else {
         return "";
       }
+    }
+
+    includesText(queryString) {
+      var lowercase = queryString.toLowerCase().trim();
+      return this.getName().toLowerCase().includes(lowercase) ||
+          this.getDescription().toLowerCase().includes(lowercase) ||
+          this.getTriggers().some((trigger) => (
+            trigger.getText().toLowerCase().includes(lowercase)
+          ));
     }
 
     // Used by JSON.stringify for submitting data to the server

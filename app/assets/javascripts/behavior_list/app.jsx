@@ -24,6 +24,7 @@ define(function(require) {
         publishedBehaviorGroups: [],
         recentlyInstalled: [],
         matchingResults: [],
+        currentSearchText: "",
         isLoadingMatchingResults: false
       };
     },
@@ -105,7 +106,8 @@ define(function(require) {
           .then((results) => {
             this.setState({
               isLoadingMatchingResults: false,
-              matchingResults: results
+              matchingResults: results,
+              currentSearchText: trimmed
             });
           })
           .catch(() => {
@@ -113,7 +115,8 @@ define(function(require) {
           });
       } else {
         this.setState({
-          matchingResults: []
+          matchingResults: [],
+          currentSearchText: ""
         });
       }
     },
@@ -130,6 +133,7 @@ define(function(require) {
           publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
           recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
           matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
+          currentSearchText={this.state.currentSearchText}
           isLoadingMatchingResults={this.state.isLoadingMatchingResults}
           publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
           teamId={this.props.teamId}
