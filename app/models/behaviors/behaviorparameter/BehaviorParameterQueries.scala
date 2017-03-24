@@ -7,8 +7,11 @@ import drivers.SlickPostgresDriver.api._
 object BehaviorParameterQueries {
 
   val all = TableQuery[BehaviorParametersTable]
-  val allWithInput = all.join(InputQueries.joined).on(_.inputId === _._1._1.id)
-  val allWithBehaviorVersion = allWithInput.join(BehaviorVersionQueries.allWithGroupVersion).on(_._1.behaviorVersionId === _._1._1._1.id)
+  val allWithInput = all.join(InputQueries.joined).on(_.inputId === _._1._1.inputId)
+  val allWithBehaviorVersion =
+    allWithInput.
+      join(BehaviorVersionQueries.allWithGroupVersion).on(_._1.behaviorVersionId === _._1._1._1.id).
+      filter(ea => ea._1._2._1._2._1._1.id === ea._2._1._1._1.groupVersionId)
 
   type TupleType = (((RawBehaviorParameter, InputQueries.TupleType), BehaviorVersionQueries.TupleType))
 
@@ -26,8 +29,8 @@ object BehaviorParameterQueries {
 
   def uncompiledAllForQuery(behaviorVersionId: Rep[String]) = {
     allWithBehaviorVersion.
-      filter { case((param, input), (((behaviorVersion, _), _), _)) => behaviorVersion.id === behaviorVersionId}.
-      sortBy { case((param, input), (((behaviorVersion, _), _), _)) => param.rank.asc }
+      filter { case(_, (((behaviorVersion, _), _), _)) => behaviorVersion.id === behaviorVersionId}.
+      sortBy { case((param, _), _) => param.rank.asc }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 

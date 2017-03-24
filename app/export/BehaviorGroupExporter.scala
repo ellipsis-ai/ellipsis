@@ -60,14 +60,6 @@ case class BehaviorGroupExporter(
     }
   }
 
-  def exportIdForInputId(inputId: String): Option[String] = {
-    actionInputs.find(_.id == inputId).flatMap(_.exportId)
-  }
-
-  def exportIdForDataTypeId(dataTypeId: String): Option[String] = {
-    groupData.dataTypeBehaviorVersions.find(_.behaviorId == dataTypeId).flatMap(_.exportId)
-  }
-
   def writeActionInputs(): Unit = {
     val forExport = actionInputs.map(_.copyForExport(this)).sortBy(_.exportId)
     writeFileFor(groupPath, "action_inputs.json", Json.prettyPrint(Json.toJson(forExport)))

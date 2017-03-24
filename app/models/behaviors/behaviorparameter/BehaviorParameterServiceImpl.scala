@@ -44,7 +44,7 @@ class BehaviorParameterServiceImpl @Inject() (
   }
 
   private def createForAction(input: Input, rank: Int, behaviorVersion: BehaviorVersion): DBIO[BehaviorParameter] = {
-    val raw = RawBehaviorParameter(IDs.next, rank, Some(input.id), behaviorVersion.id)
+    val raw = RawBehaviorParameter(IDs.next, rank, Some(input.inputId), behaviorVersion.id)
     (all += raw).map { _ =>
       BehaviorParameter(raw.id, raw.rank, input, behaviorVersion)
     }
