@@ -41,6 +41,18 @@ PLAIN=`tput sgr0`
 
 pushd `git rev-parse --show-toplevel` > /dev/null
 
+git diff-index --quiet HEAD --
+if [ $? -eq 1 ];
+then
+
+  printf "
+${GREEN}You have uncommitted changes in your working directory. Deal with them first.${PLAIN}
+
+"
+  exit 1
+
+fi
+
 if [ ! -f node_modules/.bin/eslint ];
 then
 
