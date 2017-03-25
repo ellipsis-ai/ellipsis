@@ -313,7 +313,7 @@ define(function(require) {
           <div>
             {matchingBehaviorVersions.map((version) => (
               <BehaviorName
-                className="mbxs"
+                className="mbs"
                 version={version}
                 disableLink={true}
                 key={`matchingBehaviorVersion${version.behaviorId || version.exportId}`}

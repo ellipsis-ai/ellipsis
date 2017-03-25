@@ -86,7 +86,9 @@ define(function(require) {
 
     getDescription: function() {
       return (
-        <div style={{ maxHeight: "4rem", overflow: "hidden" }}>{this.props.description}</div>
+        <div className="display-overflow-fade-bottom" style={{ maxHeight: "4rem" }}>
+          {this.props.description}
+        </div>
       );
     },
 
@@ -129,7 +131,7 @@ define(function(require) {
                   {this.renderIcon()}
                   {this.getName()}
                 </div>
-                <div className="type-s" style={{ height: "5.3334rem", overflow: "hidden" }}>
+                <div className="type-s display-overflow-hidden" style={{ height: "5.3334rem" }}>
                   <div>{this.getDescription()}</div>
                   <div>
                     <span className={this.isImporting() ? "type-disabled" : "link"}>{this.getMoreInfoText()}</span>

@@ -52,6 +52,7 @@ return React.createClass({
   handleEscKey: function(event) {
     if (Event.keyPressWasEsc(event) && this.props.onEscKey) {
       event.stopPropagation();
+      event.preventDefault();
       this.props.onEscKey();
     }
   },
