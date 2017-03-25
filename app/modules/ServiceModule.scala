@@ -83,6 +83,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[Models].asEagerSingleton()
     bind[SlackEventService].asEagerSingleton()
     bind[EventHandler].asEagerSingleton()
+    bind[GithubService].asEagerSingleton()
   }
 
 }

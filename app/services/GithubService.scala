@@ -2,6 +2,7 @@ package services
 
 import java.nio.charset.Charset
 import java.time.OffsetDateTime
+import javax.inject.{Inject, Singleton}
 
 import json._
 import json.Formatting._
@@ -16,15 +17,25 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class GithubService(team: Team, ws: WSClient, config: Configuration, cache: CacheApi, dataService: DataService, maybeBranch: Option[String]) {
+@Singleton
+class GithubService @Inject() (
+                                ws: WSClient,
+                                config: Configuration,
+                                cache: CacheApi,
+                                dataService: DataService
+                              ) {
 
-  import GithubService._
+  val API_URL = "https://api.github.com"
+  val WEB_URL = "https://github.com"
+  val USER_NAME = "ellipsis-ai"
+  val REPO_NAME = "behaviors"
+
+  val PUBLISHED_BEHAVIORS_KEY = "github_published_behaviors"
 
   val repoCredentials: (String, String) = ("access_token", config.getString("github.repoAccessToken").get)
   val cacheTimeout: Duration = config.getInt("github.cacheTimeoutSeconds").get.seconds
 
-  val shouldTryCache: Boolean = maybeBranch.isEmpty
-  val branch = maybeBranch.getOrElse("master")
+  def branchFor(maybeBranch: Option[String]) = maybeBranch.getOrElse("master")
 
   private def withTreeFor(url: String): Future[Option[Seq[JsValue]]] = {
     ws.url(url).withQueryString(repoCredentials).get().map { response =>
@@ -33,8 +44,8 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     }
   }
 
-  private def fetchPublishedUrl: Future[Option[String]] = {
-    withTreeFor(s"${API_URL}/repos/ellipsis-ai/behaviors/git/trees/$branch").map { maybeTree =>
+  private def fetchPublishedUrl(maybeBranch: Option[String]): Future[Option[String]] = {
+    withTreeFor(s"${API_URL}/repos/ellipsis-ai/behaviors/git/trees/${branchFor(maybeBranch)}").map { maybeTree =>
       for {
         tree <- maybeTree
         published <- tree.find { ea => (ea \ "path").asOpt[String].contains("published") }
@@ -68,6 +79,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
   }
 
   case class BehaviorCode(
+                           team: Team,
                            githubUrl: String,
                            configUrl: String,
                            maybeDescriptionUrl: Option[String],
@@ -108,15 +120,15 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     }
   }
 
-  private def githubUrlForGroupPath(groupPath: String): String = {
-    s"${WEB_URL}/${USER_NAME}/${REPO_NAME}/tree/$branch/published/$groupPath"
+  private def githubUrlForGroupPath(groupPath: String, maybeBranch: Option[String]): String = {
+    s"${WEB_URL}/${USER_NAME}/${REPO_NAME}/tree/${branchFor(maybeBranch)}/published/$groupPath"
   }
 
-  private def githubUrlForBehaviorPath(categoryPath: String, behaviorType: String, behaviorPath: String): String = {
-    s"${githubUrlForGroupPath(categoryPath)}/$behaviorType/$behaviorPath"
+  private def githubUrlForBehaviorPath(categoryPath: String, behaviorType: String, behaviorPath: String, maybeBranch: Option[String]): String = {
+    s"${githubUrlForGroupPath(categoryPath, maybeBranch)}/$behaviorType/$behaviorPath"
   }
 
-  private def fetchBehaviorDataFor(behaviorUrl: String, behaviorPath: String, behaviorType: String, categoryPath: String): Future[Option[BehaviorVersionData]] = {
+  private def fetchBehaviorDataFor(behaviorUrl: String, behaviorPath: String, behaviorType: String, categoryPath: String, team: Team, maybeBranch: Option[String]): Future[Option[BehaviorVersionData]] = {
     withTreeFor(behaviorUrl).flatMap { maybeTree =>
       (for {
         tree <- maybeTree
@@ -126,9 +138,9 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
         triggersUrl <- urlForTreeFileNamed("triggers.json", tree)
         paramsUrl <- urlForTreeFileNamed("params.json", tree)
       } yield {
-        val githubUrl = githubUrlForBehaviorPath(categoryPath, behaviorType, behaviorPath)
+        val githubUrl = githubUrlForBehaviorPath(categoryPath, behaviorType, behaviorPath, maybeBranch)
         val maybeDescriptionUrl = urlForTreeFileNamed("README", tree)
-        BehaviorCode(githubUrl, configUrl, maybeDescriptionUrl, functionUrl, responseUrl, triggersUrl, paramsUrl).fetchData.map(Some(_))
+        BehaviorCode(team, githubUrl, configUrl, maybeDescriptionUrl, functionUrl, responseUrl, triggersUrl, paramsUrl).fetchData.map(Some(_))
       }).getOrElse(Future.successful(None))
     }
   }
@@ -151,7 +163,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     }
   }
 
-  private def fetchGroupDataFor(groupUrl: String, groupPath: String): Future[Option[BehaviorGroupData]] = {
+  private def fetchGroupDataFor(groupUrl: String, groupPath: String, team: Team, maybeBranch: Option[String]): Future[Option[BehaviorGroupData]] = {
     withTreeFor(groupUrl).flatMap { maybeTree =>
       (for {
         tree <- maybeTree
@@ -165,9 +177,9 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
             maybeConfig <- fetchGroupConfigFor(configUrl)
             actionInputs <- fetchInputsFor(actionInputsUrl)
             dataTypeInputs <- fetchInputsFor(dataTypeInputsUrl)
-            behaviors <- fetchBehaviorsFor(groupUrl, groupPath)
+            behaviors <- fetchBehaviorsFor(groupUrl, groupPath, team, maybeBranch)
           } yield {
-            val githubUrl = githubUrlForGroupPath(groupPath)
+            val githubUrl = githubUrlForGroupPath(groupPath, maybeBranch)
             val maybeExportId = maybeConfig.flatMap(_.exportId)
             val name = maybeConfig.map(_.name).getOrElse(groupPath)
             val icon = maybeConfig.flatMap(_.icon)
@@ -177,7 +189,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     }
   }
 
-  def fetchBehaviorsFor(categoryUrl: String, categoryPath: String): Future[Seq[BehaviorVersionData]] = {
+  def fetchBehaviorsFor(categoryUrl: String, categoryPath: String, team: Team, maybeBranch: Option[String]): Future[Seq[BehaviorVersionData]] = {
     for {
       urls <- fetchTreeUrlsFor(categoryUrl)
       paths <- fetchPathsFor(categoryUrl)
@@ -189,7 +201,7 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
                 behaviorUrls <- fetchTreeUrlsFor(url)
                 behaviorPaths <- fetchPathsFor(url)
                 data <- Future.sequence(behaviorUrls.zip(behaviorPaths).map { case (behaviorUrl, behaviorPath) =>
-                  fetchBehaviorDataFor(behaviorUrl, behaviorPath, path, categoryPath)
+                  fetchBehaviorDataFor(behaviorUrl, behaviorPath, path, categoryPath, team, maybeBranch)
                 }).map(_.flatten)
               } yield data
             }
@@ -201,9 +213,9 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
     } yield behaviorData
   }
 
-  def fetchPublishedBehaviorGroups: Future[Seq[BehaviorGroupData]] = {
+  def fetchPublishedBehaviorGroups(team: Team, maybeBranch: Option[String]): Future[Seq[BehaviorGroupData]] = {
     for {
-      maybePublishedUrl <- fetchPublishedUrl
+      maybePublishedUrl <- fetchPublishedUrl(maybeBranch)
       groupUrls <- maybePublishedUrl.map { publishedUrl =>
         fetchTreeUrlsFor(publishedUrl)
       }.getOrElse(Future.successful(Seq()))
@@ -211,35 +223,28 @@ case class GithubService(team: Team, ws: WSClient, config: Configuration, cache:
         fetchPathsFor(publishedUrl)
       }.getOrElse(Future.successful(Seq()))
       groupData <- {
-        val eventualGroupData = groupUrls.zip(groupPaths).map((fetchGroupDataFor _).tupled)
+        val eventualGroupData = groupUrls.zip(groupPaths).map { case(url, path) =>
+          fetchGroupDataFor(url, path, team, maybeBranch)
+        }
         Future.sequence(eventualGroupData).map(_.flatten)
       }
     } yield groupData
   }
 
-  def blockingFetchPublishedBehaviorGroups: Seq[BehaviorGroupData] = {
-    Await.result(fetchPublishedBehaviorGroups, 20.seconds)
+  def blockingFetchPublishedBehaviorGroups(team: Team, maybeBranch: Option[String]): Seq[BehaviorGroupData] = {
+    Await.result(fetchPublishedBehaviorGroups(team, maybeBranch), 20.seconds)
   }
 
-  def publishedBehaviorGroups: Seq[BehaviorGroupData] = {
+  def publishedBehaviorGroupsFor(team: Team, maybeBranch: Option[String]): Seq[BehaviorGroupData] = {
+    val shouldTryCache = maybeBranch.isEmpty
     val behaviorGroups = if (shouldTryCache) {
       cache.getOrElse[Seq[BehaviorGroupData]](PUBLISHED_BEHAVIORS_KEY, cacheTimeout) {
-        blockingFetchPublishedBehaviorGroups
+        blockingFetchPublishedBehaviorGroups(team, maybeBranch)
       }
     } else {
-      blockingFetchPublishedBehaviorGroups
+      blockingFetchPublishedBehaviorGroups(team, maybeBranch)
     }
     behaviorGroups.map(_.copyForTeam(team)).sorted
   }
 
-}
-
-object GithubService {
-
-  val API_URL = "https://api.github.com"
-  val WEB_URL = "https://github.com"
-  val USER_NAME = "ellipsis-ai"
-  val REPO_NAME = "behaviors"
-
-  val PUBLISHED_BEHAVIORS_KEY = "github_published_behaviors"
 }
