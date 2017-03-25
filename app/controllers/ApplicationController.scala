@@ -126,22 +126,23 @@ class ApplicationController @Inject() (
     )
   }
 
-  def findBehaviorGroupsMatching(queryString: String) = silhouette.SecuredAction.async { implicit request =>
+  def findBehaviorGroupsMatching(queryString: String, maybeBranch: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       maybeTeam <- dataService.teams.find(user.teamId)
-      maybeBehaviorGroups <- maybeTeam.map { team =>
-        dataService.behaviorGroups.allFor(team).map(Some(_))
+      installedBehaviorGroups <- maybeTeam.map { team =>
+        dataService.behaviorGroups.allFor(team)
       }.getOrElse {
-        Future.successful(None)
+        Future.successful(Seq())
       }
-      groupData <- maybeBehaviorGroups.map { groups =>
-        Future.sequence(groups.map { group =>
-          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
-        }).map(_.flatten.sorted)
-      }.getOrElse(Future.successful(Seq()))
+      installedGroupData <- Future.sequence(installedBehaviorGroups.map { group =>
+        BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+      }).map(_.flatten.sorted)
     } yield {
-      val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, groupData).run
+      val publishedGroupData = maybeTeam.map { team =>
+        GithubService(team, ws, configuration, cache, dataService, maybeBranch).publishedBehaviorGroups
+      }.getOrElse(Seq())
+      val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
       Ok(Json.toJson(matchResults.map(_.item)).toString)
     }
   }
