@@ -99,7 +99,7 @@ define(function(require) {
         this.setState({
           isLoadingMatchingResults: true
         });
-        const url = jsRoutes.controllers.ApplicationController.findBehaviorGroupsMatching(queryString).url;
+        const url = jsRoutes.controllers.ApplicationController.findBehaviorGroupsMatching(queryString, this.props.branchName).url;
         DataRequest
           .jsonGet(url)
           .then((results) => {

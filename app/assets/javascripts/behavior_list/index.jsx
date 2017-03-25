@@ -245,9 +245,17 @@ define(function(require) {
     },
 
     getUninstalledBehaviorGroups: function() {
-      return this.props.publishedBehaviorGroups.filter((published) =>
+      const candidates = this.props.publishedBehaviorGroups.filter((published) =>
         !BehaviorGroup.groupsIncludeExportId(this.props.behaviorGroups, published.exportId)
       );
+
+      if (this.props.matchingResults.length > 0) {
+        return candidates.filter((ea) =>
+          BehaviorGroup.groupsIncludeExportId(this.props.matchingResults, ea.exportId)
+        );
+      } else {
+        return candidates;
+      }
     },
 
     onBehaviorGroupImport: function(groupToInstall) {
@@ -364,7 +372,11 @@ define(function(require) {
     renderPublishedIntro: function() {
       if (this.getBehaviorGroups().length > 0) {
         return (
-          <ListHeading teamId={this.props.teamId}>Skills published by Ellipsis.ai (available to install)</ListHeading>
+          <ListHeading teamId={this.props.teamId}>
+            {this.props.matchingResults.length === 0 ?
+              "Installable Skills published by Ellipsis.ai" :
+              `Installable skills matching “${this.state.lastSearchText}” published by Ellipsis.ai`}
+          </ListHeading>
         );
       } else {
         return (
@@ -383,7 +395,7 @@ define(function(require) {
 
     renderPublishedGroups: function() {
       var groups = this.getUninstalledBehaviorGroups();
-      if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length === 0) {
+      if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length === 0 && this.props.matchingResults.length === 0) {
         return (
           <div>
             <p className="phl">
