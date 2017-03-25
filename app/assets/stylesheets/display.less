@@ -54,3 +54,13 @@
   max-width: 100%;
   overflow-x: auto;
 }
+
+.display-overflow-hidden {
+  display: block;
+  overflow: hidden;
+}
+
+.display-overflow-fade-bottom {
+  .display-overflow-hidden();
+  -webkit-mask-image: -webkit-gradient(linear, left 85%, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0)));
+}
