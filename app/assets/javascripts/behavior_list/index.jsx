@@ -448,8 +448,8 @@ define(function(require) {
               {groups.map((group) => (
                 <ResponsiveColumn key={group.exportId}>
                   <BehaviorGroupCard
-                    name={group.name}
-                    description={group.description}
+                    name={this.highlight(group.name)}
+                    description={this.getDescriptionOrMatchingTriggers(group)}
                     icon={group.icon}
                     groupData={group}
                     localId={this.getLocalIdFor(group.exportId)}
