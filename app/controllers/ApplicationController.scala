@@ -3,11 +3,8 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json._
-import models.accounts.user.UserTeamAccess
 import models.silhouette.EllipsisEnv
-import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.data.Form
@@ -15,7 +12,6 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
-import play.api.mvc.{AnyContent, Result}
 import services.{AWSLambdaService, DataService, GithubService}
 import utils.FuzzyMatcher
 
@@ -29,7 +25,8 @@ class ApplicationController @Inject() (
                                         val dataService: DataService,
                                         val lambdaService: AWSLambdaService,
                                         val ws: WSClient,
-                                        val cache: CacheApi
+                                        val cache: CacheApi,
+                                        val githubService: GithubService
                                       ) extends ReAuthable {
 
   import json.Formatting._
@@ -67,8 +64,7 @@ class ApplicationController @Inject() (
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       result <- teamAccess.maybeTargetTeam.map { team =>
-        val githubService = GithubService(team, ws, configuration, cache, dataService, maybeBranch)
-        Future.successful(Ok(Json.toJson(githubService.publishedBehaviorGroups)))
+        Future.successful(Ok(Json.toJson(githubService.publishedBehaviorGroupsFor(team, maybeBranch))))
       }.getOrElse {
         reAuthFor(request, maybeTeamId)
       }
@@ -140,7 +136,7 @@ class ApplicationController @Inject() (
       }).map(_.flatten.sorted)
     } yield {
       val publishedGroupData = maybeTeam.map { team =>
-        GithubService(team, ws, configuration, cache, dataService, maybeBranch).publishedBehaviorGroups
+        githubService.publishedBehaviorGroupsFor(team, maybeBranch)
       }.getOrElse(Seq())
       val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
       Ok(Json.toJson(matchResults.map(_.item)).toString)
