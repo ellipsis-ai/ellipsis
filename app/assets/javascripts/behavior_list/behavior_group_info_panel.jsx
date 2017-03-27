@@ -121,11 +121,7 @@ define(function(require) {
     renderUpdate: function() {
       if (this.props.updatedData) {
         return (
-          <button type="button" className="button-primary mrs mbs" onClick={this.onUpdate}>
-            <span className="display-inline-block align-b mrm pbxs"
-              style={{ width: 25, height: 18 }}><SVGInstall /></span>
-            <span className="display-inline-block align-b">Update</span>
-          </button>
+          <button type="button" className="mrs mbs" onClick={this.onUpdate}>Re-install</button>
         );
       } else {
         return null;
