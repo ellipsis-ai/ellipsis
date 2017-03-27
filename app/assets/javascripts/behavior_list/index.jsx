@@ -335,9 +335,8 @@ define(function(require) {
 
     renderInstalledBehaviorGroups: function() {
       var groups = this.getMatchingBehaviorGroups();
-
       return (
-        <Collapsible revealWhen={groups.length > 0} animationDuration={0.5}>
+        <Collapsible revealWhen={this.hasLocalBehaviorGroups()} animationDuration={0.5}>
           <div className="container container-c mvxl">
 
             <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
@@ -348,7 +347,7 @@ define(function(require) {
             </ListHeading>
 
             <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
-              {groups.map((group) => (
+              {groups.length > 0 ? groups.map((group) => (
                 <ResponsiveColumn key={group.id}>
                   <BehaviorGroupCard
                     name={this.highlight(group.name)}
@@ -363,7 +362,11 @@ define(function(require) {
                     cardClassName="bg-white"
                   />
                 </ResponsiveColumn>
-              ))}
+              )) : (
+                <div className="mhl">
+                  <p>No matches.</p>
+                </div>
+              )}
             </div>
 
           </div>
@@ -408,8 +411,8 @@ define(function(require) {
         return (
           <ListHeading teamId={this.props.teamId}>
             {this.props.matchingResults.length === 0 ?
-              "Installable Skills published by Ellipsis.ai" :
-              `Installable skills matching “${this.props.currentSearchText}” published by Ellipsis.ai`}
+              "Install skills published by Ellipsis.ai" :
+              `Skills published by Ellipsis.ai matching “${this.props.currentSearchText}”`}
           </ListHeading>
         );
       } else {
@@ -444,7 +447,7 @@ define(function(require) {
 
             {this.renderPublishedIntro()}
 
-            <div className="columns mvxl">
+            <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
               {groups.map((group) => (
                 <ResponsiveColumn key={group.exportId}>
                   <BehaviorGroupCard
