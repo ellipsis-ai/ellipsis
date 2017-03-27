@@ -51,6 +51,14 @@ case class BehaviorVersionData(
     )
   }
 
+  def copyWithIdsEnsuredForUpdateOf(groupData: BehaviorGroupData, inputsData: Seq[InputData]): BehaviorVersionData = {
+    val maybeExisting = groupData.behaviorVersions.find(_.exportId == exportId)
+    copy(
+      behaviorId = maybeExisting.flatMap(_.behaviorId).orElse(Some(IDs.next)),
+      inputIds = inputIds.flatMap { id => inputsData.find(_.exportId.contains(id)).flatMap(_.inputId) }
+    )
+  }
+
   def copyForClone: BehaviorVersionData = {
     copy(
       id = Some(IDs.next),

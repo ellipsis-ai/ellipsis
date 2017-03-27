@@ -23,6 +23,7 @@ define(function(require) {
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       onLoadPublishedBehaviorGroups: React.PropTypes.func.isRequired,
       onBehaviorGroupImport: React.PropTypes.func.isRequired,
+      onBehaviorGroupUpdate: React.PropTypes.func.isRequired,
       onMergeBehaviorGroups: React.PropTypes.func.isRequired,
       onDeleteBehaviorGroups: React.PropTypes.func.isRequired,
       onSearch: React.PropTypes.func.isRequired,
@@ -257,6 +258,26 @@ define(function(require) {
         }
         this.props.onBehaviorGroupImport(groupToInstall);
       });
+    },
+
+    onBehaviorGroupUpdate: function(existingGroup, updatedData) {
+      this.setState({
+        importingList: this.state.importingList.concat([updatedData])
+      }, () => {
+        if (this.getActivePanelName() === 'moreInfo') {
+          this.clearActivePanel();
+        }
+        this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
+      });
+    },
+
+    getUpdatedBehaviorGroupData: function() {
+      const selected = this.getSelectedBehaviorGroup();
+      if (this.selectedBehaviorGroupIsImportable()) {
+        return this.props.publishedBehaviorGroups.find(ea => ea && selected && ea.exportId === selected.exportId);
+      } else {
+        return null;
+      }
     },
 
     isImporting: function(group) {
@@ -550,6 +571,8 @@ define(function(require) {
                 wasImported={this.selectedBehaviorWasImported()}
                 localId={this.getSelectedBehaviorGroupId()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
+                onBehaviorGroupUpdate={this.onBehaviorGroupUpdate}
+                updatedData={this.getUpdatedBehaviorGroupData()}
               />
             </Collapsible>
             <Collapsible
