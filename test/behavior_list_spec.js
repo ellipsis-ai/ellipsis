@@ -74,6 +74,7 @@ describe('BehaviorList', () => {
   const defaultConfig = Object.freeze({
     onLoadPublishedBehaviorGroups: jest.fn(),
     onBehaviorGroupImport: jest.fn(),
+    onBehaviorGroupUpdate: jest.fn(),
     onMergeBehaviorGroups: jest.fn(),
     onDeleteBehaviorGroups: jest.fn(),
     onSearch: jest.fn(),
