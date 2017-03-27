@@ -2,7 +2,8 @@ define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
     BehaviorList = require('./index'),
-    DataRequest = require('../lib/data_request');
+    DataRequest = require('../lib/data_request'),
+    ImmutableObjectUtils = require('../lib/immutable_object_utils');
 
   return React.createClass({
     displayName: 'App',
@@ -20,6 +21,7 @@ define(function(require) {
 
     getInitialState: function() {
       return {
+        behaviorGroups: this.props.behaviorGroups,
         publishedBehaviorGroupLoadStatus: 'loading',
         publishedBehaviorGroups: [],
         recentlyInstalled: [],
@@ -61,6 +63,27 @@ define(function(require) {
         .then((installedGroup) => {
           this.setState({
             recentlyInstalled: this.state.recentlyInstalled.concat(installedGroup)
+          });
+        })
+        .catch(() => {
+          // TODO: Handle errors importing
+        });
+    },
+
+    updateBehaviorGroup: function(existingGroup, updatedData) {
+      const url = jsRoutes.controllers.ApplicationController.updateBehaviorGroup().url;
+
+      const body = {
+        dataJson: JSON.stringify(updatedData.clone({ id: existingGroup.id }))
+      };
+
+      DataRequest
+        .jsonPost(url, body, this.props.csrfToken)
+        .then((installedGroup) => {
+          const index = this.state.behaviorGroups.findIndex(ea => ea.id === installedGroup.id);
+          const newGroups = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.behaviorGroups, installedGroup, index);
+          this.setState({
+            behaviorGroups: newGroups
           });
         })
         .catch(() => {
@@ -126,10 +149,11 @@ define(function(require) {
         <BehaviorList
           onLoadPublishedBehaviorGroups={this.loadPublishedBehaviorGroups}
           onBehaviorGroupImport={this.importBehaviorGroup}
+          onBehaviorGroupUpdate={this.updateBehaviorGroup}
           onMergeBehaviorGroups={this.mergeBehaviorGroups}
           onDeleteBehaviorGroups={this.deleteBehaviorGroups}
           onSearch={this.getSearchResults}
-          localBehaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
+          localBehaviorGroups={this.state.behaviorGroups.map(BehaviorGroup.fromJson)}
           publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
           recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
           matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}

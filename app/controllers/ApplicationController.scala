@@ -10,7 +10,7 @@ import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
-import play.api.libs.json.Json
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService, GithubService}
 import utils.FuzzyMatcher
@@ -141,6 +141,62 @@ class ApplicationController @Inject() (
       val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
       Ok(Json.toJson(matchResults.map(_.item)).toString)
     }
+  }
+
+  case class UpdateBehaviorGroupInfo(dataJson: String)
+
+  private val updateForm = Form(
+    mapping(
+      "dataJson" -> nonEmptyText
+    )(UpdateBehaviorGroupInfo.apply)(UpdateBehaviorGroupInfo.unapply)
+  )
+
+  def updateBehaviorGroup = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    updateForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val json = Json.parse(info.dataJson)
+        json.validate[BehaviorGroupData] match {
+          case JsSuccess(data, jsPath) => {
+            for {
+              teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
+              maybeExistingGroup <- data.id.map { groupId =>
+                dataService.behaviorGroups.find(groupId)
+              }.getOrElse(Future.successful(None))
+              maybeGroup <- maybeExistingGroup.map(g => Future.successful(Some(g))).getOrElse {
+                teamAccess.maybeTargetTeam.map { team =>
+                  dataService.behaviorGroups.createFor(data.exportId, team).map(Some(_))
+                }.getOrElse(Future.successful(None))
+              }
+              maybeGroupData <- maybeGroup.map { group =>
+                BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
+              }.getOrElse(Future.successful(None))
+              _ <- (for {
+                group <- maybeGroup
+                groupData <- maybeGroupData
+              } yield {
+                dataService.behaviorGroupVersions.createFor(group, user, data.copyForUpdateOf(groupData)).map(Some(_))
+              }).getOrElse(Future.successful(None))
+              maybeGroupData <- maybeGroup.map { group =>
+                BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
+              }.getOrElse(Future.successful(None))
+            } yield {
+              maybeGroupData.map { groupData =>
+                Ok(Json.toJson(groupData))
+              }.getOrElse {
+                NotFound("")
+              }
+            }
+          }
+          case e: JsError => {
+            Future.successful(BadRequest(s"Malformatted data: ${e.errors.mkString("\n")}"))
+          }
+        }
+      }
+    )
   }
 
 }

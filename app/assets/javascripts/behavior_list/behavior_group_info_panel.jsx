@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    BehaviorGroup = require('../models/behavior_group'),
     BehaviorName = require('../behavior_list/behavior_name'),
     Formatter = require('../lib/formatter'),
     SVGInstall = require('../svg/install'),
@@ -10,8 +11,10 @@ define(function(require) {
   return React.createClass({
     displayName: 'BehaviorGroupInfoPanel',
     propTypes: {
-      groupData: React.PropTypes.object,
+      groupData: React.PropTypes.instanceOf(BehaviorGroup),
       onBehaviorGroupImport: React.PropTypes.func,
+      onBehaviorGroupUpdate: React.PropTypes.func,
+      updatedData: React.PropTypes.instanceOf(BehaviorGroup),
       onToggle: React.PropTypes.func.isRequired,
       isImportable: React.PropTypes.bool.isRequired,
       wasImported: React.PropTypes.bool,
@@ -31,6 +34,10 @@ define(function(require) {
 
     onImport: function() {
       this.props.onBehaviorGroupImport(this.props.groupData);
+    },
+
+    onUpdate: function() {
+      this.props.onBehaviorGroupUpdate(this.props.groupData, this.props.updatedData);
     },
 
     toggle: function() {
@@ -111,6 +118,20 @@ define(function(require) {
       }
     },
 
+    renderUpdate: function() {
+      if (this.props.updatedData) {
+        return (
+          <button type="button" className="button-primary mrs mbs" onClick={this.onUpdate}>
+            <span className="display-inline-block align-b mrm pbxs"
+              style={{ width: 25, height: 18 }}><SVGInstall /></span>
+            <span className="display-inline-block align-b">Update</span>
+          </button>
+        );
+      } else {
+        return null;
+      }
+    },
+
     renderInstallInfo: function() {
       if (this.props.groupData.githubUrl) {
         return (
@@ -135,6 +156,7 @@ define(function(require) {
         <div>
           {this.renderLastModified()}
           {this.renderInstallInfo()}
+          {this.renderUpdate()}
         </div>
       );
     },
