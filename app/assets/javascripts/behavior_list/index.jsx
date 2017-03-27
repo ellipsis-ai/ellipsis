@@ -273,7 +273,7 @@ define(function(require) {
 
     getUpdatedBehaviorGroupData: function() {
       const selected = this.getSelectedBehaviorGroup();
-      if (this.selectedBehaviorGroupIsImportable()) {
+      if (this.selectedBehaviorGroupIsImportable() && !!selected.id) {
         return this.props.publishedBehaviorGroups.find(ea => ea && selected && ea.exportId === selected.exportId);
       } else {
         return null;
