@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
+import models.behaviors.behaviorparameter.TextType
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
@@ -141,6 +142,12 @@ class BehaviorEditorController @Inject() (
       }.getOrElse {
         NotFound(s"""Action not found: ${maybeBehaviorIdToClone.getOrElse("")}""")
       }
+    }
+  }
+
+  def newUnsavedInput(name: String) = silhouette.SecuredAction.async { implicit request =>
+    BehaviorParameterTypeData.from(TextType, dataService).map { paramType =>
+      Ok(Json.toJson(InputData.newUnsavedNamed(name, paramType)))
     }
   }
 
