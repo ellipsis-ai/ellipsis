@@ -37,14 +37,16 @@ case class FuzzyMatcher[T <: FuzzyMatchable](
   }
 
   def run: Seq[FuzzyMatchResult[T]] = {
-    allResults.sortBy(_.maxScore).reverse
-    val sortedWithSimilarity = allResults.sortBy(_.maxScore).reverse
-
-    sortedWithSimilarity.headOption.map(_.maxScore - thresholdDelta).map { threshold =>
-      sortedWithSimilarity.
+    if (allResults.isEmpty) {
+      Seq()
+    } else {
+      val threshold = allResults.maxBy(_.maxScore).maxScore - thresholdDelta
+      allResults.
         filter { ea => ea.maxScore > threshold }.
-        map(_.filteredForThreshold(threshold))
-    }.getOrElse(Seq())
+        map(_.filteredForThreshold(threshold)).
+        sortBy(_.maxScore).
+        reverse
+    }
   }
 
   def hasAnyMatches: Boolean = {
