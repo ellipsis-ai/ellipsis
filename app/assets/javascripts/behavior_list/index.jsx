@@ -409,7 +409,7 @@ define(function(require) {
           <ListHeading teamId={this.props.teamId}>
             {this.props.matchingResults.length === 0 ?
               "Installable Skills published by Ellipsis.ai" :
-              `Installable skills matching “${this.state.lastSearchText}” published by Ellipsis.ai`}
+              `Installable skills matching “${this.props.currentSearchText}” published by Ellipsis.ai`}
           </ListHeading>
         );
       } else {
