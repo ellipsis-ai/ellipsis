@@ -364,7 +364,7 @@ define(function(require) {
                 </ResponsiveColumn>
               )) : (
                 <div className="mhl">
-                  <p>No matches.</p>
+                  <p>No matches</p>
                 </div>
               )}
             </div>
@@ -441,14 +441,14 @@ define(function(require) {
             </p>
           </div>
         );
-      } else if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length > 0) {
+      } else if (this.props.publishedBehaviorGroupLoadStatus === 'loaded') {
         return (
           <div>
 
             {this.renderPublishedIntro()}
 
             <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
-              {groups.map((group) => (
+              {groups.length > 0 ? groups.map((group) => (
                 <ResponsiveColumn key={group.exportId}>
                   <BehaviorGroupCard
                     name={this.highlight(group.name)}
@@ -463,7 +463,11 @@ define(function(require) {
                     cardClassName="bg-blue-lightest"
                   />
                 </ResponsiveColumn>
-              ))}
+              )) : (
+                <div className="mhl">
+                  <p>No matches</p>
+                </div>
+              )}
             </div>
           </div>
         );
