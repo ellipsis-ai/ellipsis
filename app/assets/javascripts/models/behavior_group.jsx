@@ -12,6 +12,7 @@ define(function(require) {
         name: { value: props.name, enumerable: true },
         icon: { value: props.icon, enumerable: true },
         description: { value: props.description, enumerable: true },
+        githubUrl: { value: props.githubUrl, enumerable: true },
         actionInputs: { value: props.actionInputs, enumerable: true },
         dataTypeInputs: { value: props.dataTypeInputs, enumerable: true },
         behaviorVersions: { value: props.behaviorVersions, enumerable: true },
