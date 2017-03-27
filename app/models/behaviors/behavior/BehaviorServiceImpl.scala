@@ -138,7 +138,7 @@ class BehaviorServiceImpl @Inject() (
   }
 
   def createForAction(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): DBIO[Behavior] = {
-    val raw = RawBehavior(maybeIdToUse.getOrElse(IDs.next), group.team.id, Some(group.id), maybeExportId, isDataType, OffsetDateTime.now)
+    val raw = RawBehavior(maybeIdToUse.getOrElse(IDs.next), group.team.id, Some(group.id), maybeExportId.orElse(Some(IDs.next)), isDataType, OffsetDateTime.now)
 
     (all += raw).map { _ =>
       Behavior(raw.id, group.team, Some(group), raw.maybeExportId, raw.isDataType, raw.createdAt)
@@ -180,16 +180,6 @@ class BehaviorServiceImpl @Inject() (
         dataService.users.maybeNameFor(ea, event)
       }).map(_.flatten)
     } yield authorNames
-  }
-
-  def ensureExportIdFor(behavior: Behavior): Future[Behavior] = {
-    if (behavior.maybeExportId.isDefined) {
-      Future.successful(behavior)
-    } else {
-      val newExportId = Some(IDs.next)
-      val action = uncompiledFindRawQuery(behavior.id).map(_.maybeExportId).update(newExportId)
-      dataService.run(action).map(_ => behavior.copy(maybeExportId = newExportId))
-    }
   }
 
 }

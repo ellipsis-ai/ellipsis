@@ -9,6 +9,7 @@ class DataPopulationModule extends AbstractModule with ScalaModule {
   override def configure() = {
     bind(classOf[OAuth2ApiPopulator]).asEagerSingleton()
     bind(classOf[SimpleTokenApiPopulator]).asEagerSingleton()
+    bind(classOf[EnsureExportIds]).asEagerSingleton()
   }
 
 }

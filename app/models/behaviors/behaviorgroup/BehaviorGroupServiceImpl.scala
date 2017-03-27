@@ -44,24 +44,9 @@ class BehaviorGroupServiceImpl @Inject() (
   import BehaviorGroupQueries._
 
   def createFor(maybeExportId: Option[String], team: Team): Future[BehaviorGroup] = {
-    val raw = RawBehaviorGroup(IDs.next, maybeExportId, team.id, None, OffsetDateTime.now)
+    val raw = RawBehaviorGroup(IDs.next, maybeExportId.orElse(Some(IDs.next)), team.id, None, OffsetDateTime.now)
     val action = (all += raw).map(_ => tuple2Group((raw, team)))
     dataService.run(action)
-  }
-
-  def save(behaviorGroup: BehaviorGroup): Future[BehaviorGroup] = {
-    val action = rawFindQuery(behaviorGroup.id).update(behaviorGroup.toRaw).map(_ => behaviorGroup)
-    dataService.run(action)
-  }
-
-  def ensureExportIdFor(behaviorGroup: BehaviorGroup): Future[BehaviorGroup] = {
-    if (behaviorGroup.maybeExportId.isDefined) {
-      Future.successful(behaviorGroup)
-    } else {
-      val newExportId = Some(IDs.next)
-      val action = uncompiledRawFindQuery(behaviorGroup.id).map(_.maybeExportId).update(newExportId)
-      dataService.run(action).map(_ => behaviorGroup.copy(maybeExportId = newExportId))
-    }
   }
 
   def allFor(team: Team): Future[Seq[BehaviorGroup]] = {
