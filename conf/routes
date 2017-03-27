@@ -33,6 +33,7 @@ POST        /test_behavior_triggers                   @controllers.BehaviorEdito
 POST        /test_skill_invocation                    @controllers.BehaviorEditorController.testInvocation
 POST        /test_behavior_invocation                 @controllers.BehaviorEditorController.testInvocation
 GET         /new_unsaved_behavior/:isDataType/:teamId   @controllers.BehaviorEditorController.newUnsavedBehavior(isDataType: Boolean, teamId: String, behaviorId: Option[String] ?= None)
+GET         /new_unsaved_input/:name                  @controllers.BehaviorEditorController.newUnsavedInput(name: String)
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam

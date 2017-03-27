@@ -544,13 +544,18 @@ const BehaviorEditor = React.createClass({
   },
 
   addNewInput: function() {
-    var newIndex = this.getInputs().length + 1;
+    let newIndex = this.getInputs().length + 1;
     while (this.getInputs().some(ea => {
       return ea.name === 'userInput' + newIndex;
     })) {
       newIndex++;
     }
-    this.addInput(this.createNewInput({ name: 'userInput' + newIndex }));
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedInput(`userInput${newIndex}`).url;
+    fetch(url, { credentials: 'same-origin' })
+      .then(response => response.json())
+      .then(json => {
+        this.addInput(new Input(json));
+      });
   },
 
   addInputs: function(newNames) {
