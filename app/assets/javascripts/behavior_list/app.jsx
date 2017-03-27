@@ -129,7 +129,7 @@ define(function(require) {
           onMergeBehaviorGroups={this.mergeBehaviorGroups}
           onDeleteBehaviorGroups={this.deleteBehaviorGroups}
           onSearch={this.getSearchResults}
-          behaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
+          localBehaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
           publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
           recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
           matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
