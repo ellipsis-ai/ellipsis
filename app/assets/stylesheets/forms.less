@@ -78,6 +78,21 @@ input.box-code-example {
   color: @form-color-disabled;
 }
 
+.form-input-icon {
+  padding-left: @xxl - @border-width;
+}
+
+.form-input-with-button {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right-color: transparent;
+}
+
+.button-with-form-input {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
 .label-checkbox {
   cursor: pointer;
 }
@@ -94,6 +109,10 @@ input.box-code-example {
   padding: (@form-padding-vertical - @border-width-thick) (@form-padding-horizontal - @border-width-thick);
   position: relative;
   z-index: 1;
+}
+
+.form-input-icon:focus {
+  padding-left: @xxl - @border-width-thick;
 }
 
 .form-input-borderless {
