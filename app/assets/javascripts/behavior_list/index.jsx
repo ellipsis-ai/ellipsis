@@ -26,7 +26,7 @@ define(function(require) {
       onMergeBehaviorGroups: React.PropTypes.func.isRequired,
       onDeleteBehaviorGroups: React.PropTypes.func.isRequired,
       onSearch: React.PropTypes.func.isRequired,
-      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
+      localBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
       matchingResults: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
@@ -84,25 +84,31 @@ define(function(require) {
       return ANIMATION_DURATION;
     },
 
-    getBehaviorGroups: function() {
-      return this.props.behaviorGroups.concat(this.props.recentlyInstalled);
+    getLocalBehaviorGroups: function() {
+      return this.props.localBehaviorGroups.concat(this.props.recentlyInstalled);
     },
 
     hasLocalBehaviorGroups: function() {
-      return this.getBehaviorGroups().length > 0;
+      return this.getLocalBehaviorGroups().length > 0;
     },
 
-    getMatchingBehaviorGroups: function() {
+    getMatchingBehaviorGroupsFrom: function(groups) {
       if (this.props.matchingResults.length > 0) {
-        return this.getBehaviorGroups().filter((ea) =>
+        return groups.filter((ea) =>
           BehaviorGroup.groupsIncludeExportId(this.props.matchingResults, ea.exportId)
         );
       } else {
-        return this.getBehaviorGroups();
+        return groups;
       }
     },
 
-    getBehaviorGroupsJustInstalled: function() {
+    getUninstalledBehaviorGroups: function() {
+      return this.props.publishedBehaviorGroups.filter((published) =>
+        !BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, published.exportId)
+      );
+    },
+
+    getLocalBehaviorGroupsJustInstalled: function() {
       return this.props.recentlyInstalled;
     },
 
@@ -118,7 +124,7 @@ define(function(require) {
     },
 
     getLocalIdFor: function(exportId) {
-      var localGroup = this.getBehaviorGroups().find((ea) => ea.exportId === exportId);
+      var localGroup = this.getLocalBehaviorGroups().find((ea) => ea.exportId === exportId);
       return localGroup ? localGroup.id : null;
     },
 
@@ -227,7 +233,7 @@ define(function(require) {
     },
 
     hasRecentlyInstalledBehaviorGroups: function() {
-      return this.getBehaviorGroupsJustInstalled().length > 0;
+      return this.getLocalBehaviorGroupsJustInstalled().length > 0;
     },
 
     getActivePanelName: function() {
@@ -240,20 +246,6 @@ define(function(require) {
 
     toggleActivePanel: function(panelName, beModal) {
       this.props.onToggleActivePanel(panelName, beModal);
-    },
-
-    getUninstalledBehaviorGroups: function() {
-      const candidates = this.props.publishedBehaviorGroups.filter((published) =>
-        !BehaviorGroup.groupsIncludeExportId(this.props.behaviorGroups, published.exportId)
-      );
-
-      if (this.props.matchingResults.length > 0) {
-        return candidates.filter((ea) =>
-          BehaviorGroup.groupsIncludeExportId(this.props.matchingResults, ea.exportId)
-        );
-      } else {
-        return candidates;
-      }
     },
 
     onBehaviorGroupImport: function(groupToInstall) {
@@ -334,9 +326,10 @@ define(function(require) {
     },
 
     renderInstalledBehaviorGroups: function() {
-      var groups = this.getMatchingBehaviorGroups();
+      var allLocal = this.getLocalBehaviorGroups();
+      var groups = this.getMatchingBehaviorGroupsFrom(allLocal);
       return (
-        <Collapsible revealWhen={this.hasLocalBehaviorGroups()} animationDuration={0.5}>
+        <Collapsible revealWhen={allLocal.length > 0} animationDuration={0.5}>
           <div className="container container-c mvxl">
 
             <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
@@ -364,7 +357,7 @@ define(function(require) {
                 </ResponsiveColumn>
               )) : (
                 <div className="mhl">
-                  <p>No matches.</p>
+                  <p>No matches</p>
                 </div>
               )}
             </div>
@@ -407,7 +400,7 @@ define(function(require) {
     },
 
     renderPublishedIntro: function() {
-      if (this.getBehaviorGroups().length > 0) {
+      if (this.getLocalBehaviorGroups().length > 0) {
         return (
           <ListHeading teamId={this.props.teamId}>
             {this.props.matchingResults.length === 0 ?
@@ -431,8 +424,9 @@ define(function(require) {
     },
 
     renderPublishedGroups: function() {
-      var groups = this.getUninstalledBehaviorGroups();
-      if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length === 0 && this.props.matchingResults.length === 0) {
+      var uninstalled = this.getUninstalledBehaviorGroups();
+      var groups = this.getMatchingBehaviorGroupsFrom(uninstalled);
+      if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && uninstalled.length === 0) {
         return (
           <div>
             <p className="phl">
@@ -441,14 +435,14 @@ define(function(require) {
             </p>
           </div>
         );
-      } else if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && groups.length > 0) {
+      } else if (this.props.publishedBehaviorGroupLoadStatus === 'loaded') {
         return (
           <div>
 
             {this.renderPublishedIntro()}
 
             <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
-              {groups.map((group) => (
+              {groups.length > 0 ? groups.map((group) => (
                 <ResponsiveColumn key={group.exportId}>
                   <BehaviorGroupCard
                     name={this.highlight(group.name)}
@@ -463,7 +457,11 @@ define(function(require) {
                     cardClassName="bg-blue-lightest"
                   />
                 </ResponsiveColumn>
-              ))}
+              )) : (
+                <div className="mhl">
+                  <p>No matches</p>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -489,7 +487,7 @@ define(function(require) {
     },
 
     renderIntro: function() {
-      if (this.props.behaviorGroups.length === 0) {
+      if (this.props.localBehaviorGroups.length === 0) {
         return (
           <div className="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
             <div className="container container-c">
@@ -561,7 +559,7 @@ define(function(require) {
               onChange={this.resetFooterHeight}
             >
               <InstalledBehaviorGroupsPanel
-                installedBehaviorGroups={this.getBehaviorGroupsJustInstalled()}
+                installedBehaviorGroups={this.getLocalBehaviorGroupsJustInstalled()}
                 onToggle={this.props.onClearActivePanel}
                 slackTeamId={this.props.slackTeamId}
               />

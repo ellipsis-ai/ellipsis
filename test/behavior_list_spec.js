@@ -77,7 +77,7 @@ describe('BehaviorList', () => {
     onMergeBehaviorGroups: jest.fn(),
     onDeleteBehaviorGroups: jest.fn(),
     onSearch: jest.fn(),
-    behaviorGroups: [group1, group2, group3],
+    localBehaviorGroups: [group1, group2, group3],
     publishedBehaviorGroups: [],
     recentlyInstalled: [],
     matchingResults: [],
@@ -103,7 +103,7 @@ describe('BehaviorList', () => {
   describe('render', () => {
     it('renders a card for each group', () => {
       const list = createBehaviorList(config);
-      expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorGroupCard).length).toEqual(config.behaviorGroups.length);
+      expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorGroupCard).length).toEqual(config.localBehaviorGroups.length);
     });
   });
 
