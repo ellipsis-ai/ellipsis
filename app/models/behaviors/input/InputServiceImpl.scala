@@ -134,26 +134,4 @@ class InputServiceImpl @Inject() (
     dataService.run(allForGroupVersionAction(groupVersion))
   }
 
-  def withEnsuredExportId(input: Input): Future[Input] = {
-    if (input.maybeExportId.isDefined) {
-      Future.successful(input)
-    } else {
-      val newExportId = Some(IDs.next)
-      val action = uncompiledFindRawQuery(input.id).map(_.maybeExportId).update(newExportId)
-      dataService.run(action).map { _ => input.copy(maybeExportId = newExportId) }
-    }
-  }
-
-  def ensureExportIdsFor(behavior: Behavior): Future[Unit] = {
-    for {
-      maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
-      params <- maybeCurrentVersion.map { version =>
-        dataService.behaviorParameters.allFor(version)
-      }.getOrElse(Future.successful(Seq()))
-      _ <- Future.sequence(params.map { param =>
-        withEnsuredExportId(param.input)
-      })
-    } yield {}
-  }
-
 }

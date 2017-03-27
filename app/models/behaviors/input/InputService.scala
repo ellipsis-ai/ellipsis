@@ -23,8 +23,4 @@ trait InputService {
 
   def allForGroupVersion(groupVersion: BehaviorGroupVersion): Future[Seq[Input]]
 
-  def withEnsuredExportId(input: Input): Future[Input]
-
-  def ensureExportIdsFor(behavior: Behavior): Future[Unit]
-
 }

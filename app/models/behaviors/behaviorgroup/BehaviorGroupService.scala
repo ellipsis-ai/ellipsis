@@ -11,10 +11,6 @@ trait BehaviorGroupService {
 
   def createFor(maybeExportId: Option[String], team: Team): Future[BehaviorGroup]
 
-  def save(behaviorGroup: BehaviorGroup): Future[BehaviorGroup]
-
-  def ensureExportIdFor(behaviorGroup: BehaviorGroup): Future[BehaviorGroup]
-
   def allFor(team: Team): Future[Seq[BehaviorGroup]]
 
   def allWithNoNameFor(team: Team): Future[Seq[BehaviorGroup]]

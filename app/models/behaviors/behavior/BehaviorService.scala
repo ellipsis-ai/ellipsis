@@ -71,6 +71,4 @@ trait BehaviorService {
     s"$baseUrl$path"
   }
 
-  def ensureExportIdFor(behavior: Behavior): Future[Behavior]
-
 }
