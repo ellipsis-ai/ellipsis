@@ -52,9 +52,9 @@ libraryDependencies ++= Seq(
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",
   "com.joestelmach" % "natty" % "0.11",
-  "com.rockymadden.stringmetric" %% "stringmetric-core" % "0.27.4"
-  //"com.github.mumoshu" %% "play2-memcached-play24" % "0.7.0",
+  "com.rockymadden.stringmetric" %% "stringmetric-core" % "0.27.4",
   "wabisabi" %% "wabisabi" % "2.1.0"
+  //"com.github.mumoshu" %% "play2-memcached-play24" % "0.7.0"
 )
 resolvers += "gphat" at "https://raw.github.com/gphat/mvn-repo/master/releases/"
 javaOptions in Test += "-Dconfig.file=conf/test.conf"

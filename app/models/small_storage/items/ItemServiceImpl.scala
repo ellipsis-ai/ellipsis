@@ -11,6 +11,7 @@ import models.team.Team
 import play.api.libs.json._
 import services.ElasticsearchService
 import play.api.libs.functional.syntax._
+import org.joda.time.DateTime
 
 class ItemServiceImpl @Inject()(
                                 elasticsearch: ElasticsearchService
@@ -21,18 +22,15 @@ class ItemServiceImpl @Inject()(
 
   def create_and_add(team: Team, kind: String, data: JsObject): Future[Item] = {
     val item: Item = Item(id = IDs.next, team = team, kind = kind, data = data)
-    save(item)
+    add(item)
   }
 
   def add(item: Item): Future[Item] = {
-    elasticsearch.indexDoc(indexName, itemType, Json.toJson(item)).flatMap { result =>
+    elasticsearch.indexDoc(indexName, itemType, Some(item.id), Json.toJson(item)).flatMap { result =>
       result.getStatusCode match {
         case 201 => {
           val returnedDocId: String = (Json.parse(result.getResponseBody()) \ "_id").as[String]
-          findById(returnedDocId).map {
-            case Some(Item) => Some(Item)
-            case None => throw new Exception("Item not found")
-          }
+          find(returnedDocId).map(_.getOrElse(throw new Exception("Item not found")))
         }
         case _ => throw new Exception(s"Cannot store item! Elasticsearch response: ${result.getStatusCode} | ${result.getResponseBody()}")
       }
@@ -50,31 +48,17 @@ class ItemServiceImpl @Inject()(
   }
 
   def remove(itemId: String): Future[Option[Item]] = {
-//    val maybeItem = findById(itemId)
-//    if maybeItem
-//      val deleteDocResult = elasticsearch.deleteDoc(`indexName` = indexName, docType = itemType, id = itemId)
-//      if deleteDocResult == 200
-//        Item
-//      else
-//        throw new Exection("Failed to delete item")
-//    else
-//      None
-
     for {
-      // Future[Option[Item]]
-      maybeItem <- findById(itemId)
-      // Future[Option[Item]]
-      maybeDeletedItem <- if (maybeItem.isDefined) {
-        deleteItem(itemId).map {
+      maybeItem <- find(itemId)
+      maybeDeletedItem <- maybeItem.map { _ =>
+        elasticsearch.deleteDoc(indexName, itemType, itemId).map { res =>
+          res.getStatusCode() match {
+            case 200 => maybeItem
+            case   _ => throw new Exception("Error deleting the doc")
+          }
         }
-      } else
-    } yield { maybeItem }
-
-    findById(itemId).flatMap {
-      case Some(Item) => deleteItem(itemId).map { Future(Item) }
-      case None => Future(None)
-    }
-
+      }.getOrElse(Future.successful(None))
+    } yield { maybeDeletedItem }
   }
 
   def allForTeam(team: Team): Future[Seq[Item]] = {
@@ -82,22 +66,49 @@ class ItemServiceImpl @Inject()(
   }
 
   def countForTeam(team: Team): Future[Int] = {
-    elasticsearch.count(indexName = indexName, docType = itemType)
+    elasticsearch.countDocs(indexName, itemType)
   }
 
 
   private def deleteDoc(itemId: String): Future[Unit] = {
     elasticsearch.deleteDoc(indexName, itemType, itemId).map { result =>
       result.getStatusCode match {
-        case 200 or 404 => Unit
+        case 200 => Unit
+        case 404 => Unit
         case   _ => throw new Execption("Failed to delete item")
       }
     }
   }
 
-  implicit val teamReads = Json.reads[Team]
-  implicit val teamWrites = Json.writes[Team]
-  implicit val itemWrites = Json.writes[Item]
+  implicit val teamWrites: Writes[Team] = (
+    (JsPath \ "id").write[String] and
+      (JsPath \ "name").write[String] and
+      (JsPath \ "timeZone").writeNullable[String]
+  )(unlift(Team.unapply))
+
+//  implicit val teamWrites: Writes[Team] = {
+//    def writes(team: Team) = Json.obj(
+//      "id" -> team.id,
+//      "name" -> team.name,
+//      "timeZone" -> team.getOrElse()
+//    )
+//  }
+
+  implicit val teamReads: Reads[Team] = (
+    (JsPath \ "id").read[String] and
+      (JsPath \ "name").read[String] and
+      (JsPath \ "timeZone").readNullable[String]
+    )(Team.apply _)
+
+  implicit val itemWrites: Writes[Item] = (
+    (JsPath \ "id").write[String] and
+      (JsPath \ "kind").write[String] and
+      (JsPath \ "createdAt").write[DateTime] and
+      (JsPath \ "updatedAt").write[DateTime] and
+      (JsPath \ "team").write[Team] and
+      (JsPath \ "data").write[JsValue]
+    )(unlift(Item.unapply))
+
   implicit val itemReads = Json.reads[Item]
 
 }

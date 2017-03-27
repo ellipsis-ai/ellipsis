@@ -25,7 +25,7 @@ class ItemsController @Inject() (
 
   def index(token: String) = Action.async { implicit request =>
     for {
-      maybeTeam <- dataService.teams.findForToken(token)
+      maybeTeam <- dataService.teams.findForInvocationToken(token)
       result <- maybeTeam.map { team =>
         val json = Json.obj(
           "object" -> "list",

@@ -23,7 +23,7 @@ class SmallStorageController @Inject() (
   // returns a bunch of info about the storage like: total number of items, space used, access patters, etc.
   def show(token: String) = Action.async { implicit request =>
     for {
-      maybeTeam <- dataService.teams.findForToken(token)
+      maybeTeam <- dataService.teams.findForInvocationToken(token)
       result <- maybeTeam.map { team =>
           Future.successful(Ok(Json.obj("status" ->"OK", "team" -> (team.name ))))
       }.getOrElse(Future.successful(Unauthorized("Invalid request token")))

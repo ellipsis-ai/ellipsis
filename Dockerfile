@@ -50,7 +50,7 @@ RUN apt-get update && apt-get install -y curl && apt-get install -y git
 
 # Change user, launch bash
 USER ellipsis
-WORKDIR /home/ellipsis
+# WORKDIR /home/ellipsis
 
 # Activator
 # RUN curl -O http://downloads.typesafe.com/typesafe-activator/1.3.10/typesafe-activator-1.3.10.zip

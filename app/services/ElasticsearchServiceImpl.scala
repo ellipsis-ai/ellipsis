@@ -45,7 +45,7 @@ class ElasticsearchServiceImpl @Inject()(
     indexFuture.flatMap { indexResponse =>
       if (indexResponse.getStatusCode() == 200) {
         val docId = (Json.parse(indexResponse.getResponseBody()) \ "_id").as[String]
-        client.get(indexName, docType, docId)
+        client.get(index, docType, docId)
       } else
         indexFuture
     }
@@ -59,8 +59,8 @@ class ElasticsearchServiceImpl @Inject()(
     client.delete(index, docType, id)
   }
 
-  def countDocs(index: String, docType: String): Future[Int] = {
-    client.count(index, docType).map { res =>
+  def countDocs(index: String, docType: String, query: String = "{\"query\": {\"match_all\": {}}}"): Future[Int] = {
+    client.count(indices = Seq(index), types= Seq(docType), `query`= query).map { res =>
        res.getStatusCode() match {
          case 200 => (Json.parse(res.getResponseBody()) \ "count").as[Int]
          case   _ => throw new Exception("Error retrieving docs count")
