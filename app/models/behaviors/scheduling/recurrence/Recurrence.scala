@@ -75,6 +75,43 @@ sealed trait Recurrence {
   )
 }
 
+case class Minutely(id: String, frequency: Int) extends Recurrence {
+
+  def copyWithEmptyId: Minutely = copy(id = "")
+
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "minute" } else { s"$frequency minutes" }
+    s"every $frequencyString"
+  }
+
+  val typeName = Minutely.recurrenceType
+
+  protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime = {
+    previous.plusMinutes(frequency)
+  }
+
+  protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime = {
+    start
+  }
+}
+
+object Minutely {
+  val recurrenceType = "minutely"
+
+  def maybeUnsavedFromText(text: String): Option[Minutely] = {
+    val singleRegex = """(?i).*every minute.*""".r
+    val nRegex = """(?i).*every\s+(\d+)\s*minutes?.*""".r
+    val maybeFrequency = text match {
+      case singleRegex() => Some(1)
+      case nRegex(frequency) => Some(frequency.toInt)
+      case _ => None
+    }
+    maybeFrequency.map { frequency =>
+      Minutely(IDs.next, frequency)
+    }
+  }
+}
+
 case class Hourly(id: String, frequency: Int, minuteOfHour: Int) extends Recurrence {
 
   def copyWithEmptyId: Hourly = copy(id = "")
@@ -712,6 +749,7 @@ object Recurrence {
                        maybeMonth: Option[Int]
                        ): Recurrence = {
     recurrenceType match {
+      case(Minutely.recurrenceType) => Minutely(id, frequency)
       case(Hourly.recurrenceType) => Hourly(id, frequency, maybeMinuteOfHour.get)
       case(Daily.recurrenceType) => Daily(id, frequency, maybeTimeOfDay.get, timeZone)
       case(Weekly.recurrenceType) => Weekly(id, frequency, daysOfWeek, maybeTimeOfDay.get, timeZone)
@@ -738,13 +776,15 @@ object Recurrence {
   }
 
   def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[Recurrence] = {
-    Hourly.maybeUnsavedFromText(text).orElse {
-      Daily.maybeUnsavedFromText(text, defaultTimeZone).orElse {
-        Weekly.maybeUnsavedFromText(text, defaultTimeZone).orElse {
-          MonthlyByDayOfMonth.maybeUnsavedFromText(text, defaultTimeZone).orElse {
-            MonthlyByNthDayOfWeek.maybeUnsavedFromText(text, defaultTimeZone).orElse {
-              Yearly.maybeUnsavedFromText(text, defaultTimeZone).orElse {
-                None
+    Minutely.maybeUnsavedFromText(text).orElse {
+      Hourly.maybeUnsavedFromText(text).orElse {
+        Daily.maybeUnsavedFromText(text, defaultTimeZone).orElse {
+          Weekly.maybeUnsavedFromText(text, defaultTimeZone).orElse {
+            MonthlyByDayOfMonth.maybeUnsavedFromText(text, defaultTimeZone).orElse {
+              MonthlyByNthDayOfWeek.maybeUnsavedFromText(text, defaultTimeZone).orElse {
+                Yearly.maybeUnsavedFromText(text, defaultTimeZone).orElse {
+                  None
+                }
               }
             }
           }
