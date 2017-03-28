@@ -37,7 +37,7 @@ class SavedAnswerController @Inject() (
       },
       inputId => {
         for {
-          maybeInput <- dataService.inputs.find(inputId)
+          maybeInput <- dataService.inputs.findByInputId(inputId)
           maybeNumDeleted <- maybeInput.map { input =>
             dataService.savedAnswers.deleteForUser(input, user).map(Some(_))
           }.getOrElse(Future.successful(None))
@@ -61,7 +61,7 @@ class SavedAnswerController @Inject() (
       inputId => {
         for {
           // TODO: ensure the user is allowed to do this
-          maybeInput <- dataService.inputs.find(inputId)
+          maybeInput <- dataService.inputs.findByInputId(inputId)
           maybeNumDeleted <- maybeInput.map { input =>
             dataService.savedAnswers.deleteAllFor(input).map(Some(_))
           }.getOrElse(Future.successful(None))

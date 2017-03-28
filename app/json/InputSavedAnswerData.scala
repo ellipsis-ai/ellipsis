@@ -16,7 +16,7 @@ object InputSavedAnswerData {
 
   def maybeFor(inputId: String, user: User, dataService: DataService): Future[Option[InputSavedAnswerData]] = {
     for {
-      maybeInput <- dataService.inputs.find(inputId)
+      maybeInput <- dataService.inputs.findByInputId(inputId)
       savedAnswers <- maybeInput.map { input =>
         dataService.savedAnswers.allFor(input)
       }.getOrElse(Future.successful(Seq()))

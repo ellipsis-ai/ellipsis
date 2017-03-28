@@ -1,7 +1,6 @@
 package models.behaviors.input
 
 import json.InputData
-import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import slick.dbio.DBIO
 
@@ -11,9 +10,9 @@ trait InputService {
 
   def findByInputIdAction(inputId: String): DBIO[Option[Input]]
 
-  def findAction(id: String): DBIO[Option[Input]]
+  def findByInputId(inputId: String): Future[Option[Input]]
 
-  def find(id: String): Future[Option[Input]]
+  def findAction(id: String): DBIO[Option[Input]]
 
   def createForAction(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Input]
 

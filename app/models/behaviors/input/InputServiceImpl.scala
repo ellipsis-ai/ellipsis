@@ -57,14 +57,14 @@ class InputServiceImpl @Inject() (
     }
   }
 
+  def findByInputId(inputId: String): Future[Option[Input]] = {
+    dataService.run(findByInputIdAction(inputId))
+  }
+
   def findAction(id: String): DBIO[Option[Input]] = {
     findQuery(id).result.map { r =>
       r.headOption.map(tuple2Input)
     }
-  }
-
-  def find(id: String): Future[Option[Input]] = {
-    dataService.run(findAction(id))
   }
 
   private def maybeParamTypeForAction(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Option[BehaviorParameterType]] = {
