@@ -46,6 +46,22 @@ describe("Formatter", () => {
         Formatter.verbiage.ALL_DAY_SUFFIX
       ].join(" "));
     });
+
+
+    it('says Today for all-day event that is the same day as specified date', () => {
+      const event1 = {
+        start: {
+          date: '2017-01-01'
+        },
+        end: {
+          date: '2017-01-02'
+        }
+      };
+      expect(Formatter.formatAllDayEvent(event1, '2017-01-01')).toBe([
+        Formatter.verbiage.TODAY,
+        Formatter.verbiage.ALL_DAY_SUFFIX
+      ].join(" "));
+    });
   });
 
   describe("formatRegularEvent", () => {
@@ -175,6 +191,25 @@ describe("Formatter", () => {
         formatTz(event.start.dateTime, 'TIME', 'America/Toronto'),
         Formatter.verbiage.DASH,
         formatTz(event.end.dateTime, 'DATE', 'America/Toronto'),
+        formatTz(event.end.dateTime, 'TIME', 'America/Toronto'),
+        formatTz(event.start.dateTime, 'TZ', 'America/Toronto')
+      ].join(" "));
+    });
+
+    it("excludes the date if start and end are same as specified date", () => {
+      const event = {
+        start: {
+          dateTime: '2017-01-01T12:00:00.00-05:00',
+          timeZone: 'America/Toronto'
+        },
+        end: {
+          dateTime: '2017-01-01T17:00:00.00-05:00',
+          timeZone: 'America/Toronto'
+        }
+      };
+      expect(Formatter.formatRegularEvent(event, 'America/Toronto', '2017-01-01')).toBe([
+        formatTz(event.start.dateTime, 'TIME', 'America/Toronto'),
+        Formatter.verbiage.DASH,
         formatTz(event.end.dateTime, 'TIME', 'America/Toronto'),
         formatTz(event.start.dateTime, 'TZ', 'America/Toronto')
       ].join(" "));
