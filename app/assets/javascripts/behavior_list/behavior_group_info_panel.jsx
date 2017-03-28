@@ -121,7 +121,9 @@ define(function(require) {
     renderUpdate: function() {
       if (this.props.updatedData) {
         return (
-          <button type="button" className="mrs mbs" onClick={this.onUpdate}>Re-install</button>
+          <div className="mvl">
+            <button type="button" className="button-s" onClick={this.onUpdate}>Re-install</button>
+          </div>
         );
       } else {
         return null;
