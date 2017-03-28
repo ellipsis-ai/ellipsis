@@ -113,7 +113,7 @@ case class SlackMessageSender(
           channelToUse,
           segment,
           asUser = Some(true),
-          unfurlLinks = maybeShouldUnfurl,
+          unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
           unfurlMedia = Some(true),
           attachments = maybeAttachmentsForSegment,
           threadTs = maybeThreadTsToUse,
