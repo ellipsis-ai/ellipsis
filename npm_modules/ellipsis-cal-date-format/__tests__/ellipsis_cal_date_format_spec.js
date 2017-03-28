@@ -179,5 +179,24 @@ describe("Formatter", () => {
         formatTz(event.start.dateTime, 'TZ', 'America/Toronto')
       ].join(" "));
     });
+
+    it("excludes the date if start and end are same as specified date", () => {
+      const event = {
+        start: {
+          dateTime: '2017-01-01T12:00:00.00-05:00',
+          timeZone: 'America/Toronto'
+        },
+        end: {
+          dateTime: '2017-01-01T17:00:00.00-05:00',
+          timeZone: 'America/Toronto'
+        }
+      };
+      expect(Formatter.formatRegularEvent(event, 'America/Toronto', '2017-01-01')).toBe([
+        formatTz(event.start.dateTime, 'TIME', 'America/Toronto'),
+        Formatter.verbiage.DASH,
+        formatTz(event.end.dateTime, 'TIME', 'America/Toronto'),
+        formatTz(event.start.dateTime, 'TZ', 'America/Toronto')
+      ].join(" "));
+    });
   });
 });
