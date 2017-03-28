@@ -46,6 +46,22 @@ describe("Formatter", () => {
         Formatter.verbiage.ALL_DAY_SUFFIX
       ].join(" "));
     });
+
+
+    it('says Today for all-day event that is the same day as specified date', () => {
+      const event1 = {
+        start: {
+          date: '2017-01-01'
+        },
+        end: {
+          date: '2017-01-02'
+        }
+      };
+      expect(Formatter.formatAllDayEvent(event1, '2017-01-01')).toBe([
+        Formatter.verbiage.TODAY,
+        Formatter.verbiage.ALL_DAY_SUFFIX
+      ].join(" "));
+    });
   });
 
   describe("formatRegularEvent", () => {

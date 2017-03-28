@@ -23,13 +23,13 @@ const EventFormatter = {
     if (!event) {
       return "";
     } else if (event.start.date) {
-      return this.formatAllDayEvent(event, tz, optionalTodayYMD);
+      return this.formatAllDayEvent(event, optionalTodayYMD);
     } else {
       return this.formatRegularEvent(event, tz, optionalTodayYMD);
     }
   },
 
-  formatAllDayEvent: function(event, tz, optionalTodayYMD) {
+  formatAllDayEvent: function(event, optionalTodayYMD) {
     const formattedStartDate = moment(event.start.date).format(this.formats.ALL_DAY);
     const sameAsToday = optionalTodayYMD && moment(event.start.date).format(this.formats.YMD) === optionalTodayYMD;
     let formattedEventTime = sameAsToday ? this.verbiage.TODAY : formattedStartDate;
@@ -39,7 +39,7 @@ const EventFormatter = {
         formattedEventTime += ` ${this.verbiage.DASH} ${formattedEndDate}`;
       }
     }
-    if (formattedEventTime === formattedStartDate) {
+    if (formattedEventTime === formattedStartDate || formattedEventTime === this.verbiage.TODAY) {
       formattedEventTime += ` ${this.verbiage.ALL_DAY_SUFFIX}`;
     }
     return formattedEventTime;
