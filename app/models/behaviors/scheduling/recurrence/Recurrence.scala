@@ -87,11 +87,11 @@ case class Minutely(id: String, frequency: Int) extends Recurrence {
   val typeName = Minutely.recurrenceType
 
   protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime = {
-    previous.plusMinutes(frequency)
+    withStandardAdjustments(previous.plusMinutes(frequency))
   }
 
   protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime = {
-    start
+    withStandardAdjustments(start)
   }
 }
 
