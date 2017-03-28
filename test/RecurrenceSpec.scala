@@ -28,6 +28,27 @@ class RecurrenceSpec extends PlaySpec {
   val justWednesday = Seq(DayOfWeek.WEDNESDAY)
   val mwf = Seq(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY)
 
+  "Minutely" should {
+
+    "recur every minute" in {
+      val recurrence = Minutely(IDs.next, 1)
+      recurrence.nextAfter(dateTimeOf(2010, 6, 7, 9, 0, timeZone)) mustBe dateTimeOf(2010, 6, 7, 9, 1, timeZone)
+    }
+
+    "recur every 42 minutes" in {
+      val recurrence = Minutely(IDs.next, 42)
+      recurrence.nextAfter(dateTimeOf(2010, 6, 7, 9, 0, timeZone)) mustBe dateTimeOf(2010, 6, 7, 9, 42, timeZone)
+    }
+
+    "be created with implied frequency of 1" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("every minute", timeZone), Some(Minutely(IDs.next, 1)))
+    }
+
+    "be created with frequency" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("every 5 minutes", timeZone), Some(Minutely(IDs.next, 5)))
+    }
+  }
+
   "Hourly" should {
 
     "recur every 2h on the 42nd minute" in  {
