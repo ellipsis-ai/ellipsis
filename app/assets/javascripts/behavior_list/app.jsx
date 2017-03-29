@@ -123,7 +123,7 @@ define(function(require) {
         this.setState({
           isLoadingMatchingResults: true
         });
-        const url = jsRoutes.controllers.ApplicationController.findBehaviorGroupsMatching(queryString, this.props.branchName).url;
+        const url = jsRoutes.controllers.ApplicationController.findBehaviorGroupsMatching(queryString, this.props.branchName, this.props.teamId).url;
         DataRequest
           .jsonGet(url)
           .then((results) => {

@@ -122,10 +122,10 @@ class ApplicationController @Inject() (
     )
   }
 
-  def findBehaviorGroupsMatching(queryString: String, maybeBranch: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def findBehaviorGroupsMatching(queryString: String, maybeBranch: Option[String], maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
-      maybeTeam <- dataService.teams.find(user.teamId)
+      maybeTeam <- dataService.teams.find(maybeTeamId.getOrElse(user.teamId))
       installedBehaviorGroups <- maybeTeam.map { team =>
         dataService.behaviorGroups.allFor(team)
       }.getOrElse {
