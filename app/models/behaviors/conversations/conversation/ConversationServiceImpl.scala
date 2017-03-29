@@ -139,25 +139,12 @@ class ConversationServiceImpl @Inject() (
     for {
       maybeEvent <- conversation.maybeEventForBackgrounding(dataService)
       maybeLastTs <- maybeEvent.map { event =>
-        val quoteText = conversation.maybeTriggerMessage.flatMap { triggerMessage =>
-          if (conversation.isScheduled) {
-            None
-          } else {
-            Some(
-              """\r\rYou said:
-                |> `$triggerMessage`
-                |
-                |""".stripMargin
-            )
-          }
-        }.getOrElse(" ")
         event.sendMessage(
-          s"""<@${event.userIdForContext}>: Looks like you weren't able to answer this right away.${quoteText}No problem! I've moved this conversation to a thread.""".stripMargin,
+          s"""<@${event.userIdForContext}>: You haven't answered my question yet, but I have something new to ask you. Continue the previous conversation in this thread:""".stripMargin,
           conversation.behaviorVersion.forcePrivateResponse,
           maybeShouldUnfurl = None,
           Some(conversation),
-          maybeActions = None
-          ,
+          maybeActions = None,
           dataService
         )
       }.getOrElse(Future.successful(None))
