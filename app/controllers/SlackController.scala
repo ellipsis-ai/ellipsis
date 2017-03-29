@@ -307,6 +307,10 @@ class SlackController @Inject() (
       actions.find(_.name == "confirm_continue_conversation").flatMap(_.value)
     }
 
+    def maybeDontContinueConversationId: Option[String] = {
+      actions.find(_.name == "dont_continue_conversation").flatMap(_.value)
+    }
+
     def maybeFutureEvent: Future[Option[SlackMessageEvent]] = {
       dataService.slackBotProfiles.allForSlackTeamId(this.team.id).map { botProfiles =>
         botProfiles.headOption.map { botProfile =>
@@ -407,7 +411,26 @@ class SlackController @Inject() (
                     }
                   }.getOrElse(Future.successful({}))
                 }
-                resultText = s"$user confirmed"
+                resultText = s"$user clicked 'Yes'"
+              }
+
+              info.maybeDontContinueConversationId.foreach { conversationId =>
+                dataService.conversations.find(conversationId).flatMap { maybeConversation =>
+                  maybeConversation.map { convo =>
+                    dataService.conversations.touch(convo).flatMap { _ =>
+                      cache.get[SlackMessageEvent](convo.pendingEventKey).map { event =>
+                        eventHandler.handle(event, None).flatMap { results =>
+                          Future.sequence(
+                            results.map(result => result.sendIn(None, None, dataService).map { _ =>
+                              Logger.info(s"Sending result [${result.fullText}] in response to slack message [${event.messageText}] in channel [${event.channel}]")
+                            })
+                          )
+                        }
+                      }.getOrElse(Future.successful({}))
+                    }
+                  }.getOrElse(Future.successful({}))
+                }
+                resultText = s"$user clicked 'No'"
               }
 
               // respond immediately by appending a new attachment

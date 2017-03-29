@@ -79,9 +79,10 @@ class EventHandler @Inject() (
         val key = conversation.pendingEventKey
         cache.set(key, event, 5.minutes)
         val actions = Seq(
-          SlackMessageAction("confirm_continue_conversation", "Yep, it's an answer", conversation.id)
+          SlackMessageAction("confirm_continue_conversation", "Yes", conversation.id),
+          SlackMessageAction("dont_continue_conversation", "No", conversation.id)
         )
-        val prompt = "It's been a while since I asked you a question. Is this an answer?"
+        val prompt = "It's been a while since I asked you the question above. Just so I'm sure, is this an answer to it?"
         val attachment = SlackMessageActions("should_continue_conversation", actions, None, Some(Color.PINK))
         Future.successful(TextWithActionsResult(event, prompt, forcePrivateResponse = false, attachment))
       } else {
