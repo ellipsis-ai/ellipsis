@@ -5,9 +5,13 @@ general:
       - circle-build
 jobs:
   build:
-    working_directory: ~/circulate
+    working_directory: ~/ellipsis
     docker:
       - image: java:8
+      - image: postgres:9.6.2
+        environment:
+          POSTGRES_USER: ubuntu
+          POSTGRES_DB: circle_test
+          POSTGRES_PASSWORD: ""
     steps:
       - checkout
-      - run: echo "hello world"

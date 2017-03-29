@@ -1,7 +1,7 @@
 version: '2'
 services:
   web:
-    build: ./docker_files/playapp/
+    build: ./docker_files/circleci/
     volumes:
       - .:/home/ellipsis/code
     command: /bin/bash
