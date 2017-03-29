@@ -3,9 +3,13 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.google.inject.Provider
-import services.DataService
 import drivers.SlickPostgresDriver.api._
+import play.api.Configuration
+import play.api.cache.CacheApi
+import play.api.libs.ws.WSClient
+import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -46,10 +50,18 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
 }
 
 class ConversationServiceImpl @Inject() (
-                                           dataServiceProvider: Provider[DataService]
+                                          dataServiceProvider: Provider[DataService],
+                                          lambdaServiceProvider: Provider[AWSLambdaService],
+                                          cacheProvider: Provider[CacheApi],
+                                          wsProvider: Provider[WSClient],
+                                          configurationProvider: Provider[Configuration]
                                          ) extends ConversationService {
 
-  def dataService = dataServiceProvider.get
+  def dataService: DataService = dataServiceProvider.get
+  def lambdaService: AWSLambdaService = lambdaServiceProvider.get
+  def cache: CacheApi = cacheProvider.get
+  def ws: WSClient = wsProvider.get
+  def configuration: Configuration = configurationProvider.get
 
   import ConversationQueries._
 
@@ -121,6 +133,43 @@ class ConversationServiceImpl @Inject() (
     find(id).map { maybeConversation =>
       maybeConversation.exists(_.state == Conversation.DONE_STATE)
     }
+  }
+
+  def background(conversation: Conversation)(implicit actorSystem: ActorSystem): Future[Unit] = {
+    for {
+      maybeEvent <- conversation.maybeEventForBackgrounding(dataService)
+      maybeLastTs <- maybeEvent.map { event =>
+        val quoteText = conversation.maybeTriggerMessage.flatMap { triggerMessage =>
+          if (conversation.isScheduled) {
+            None
+          } else {
+            Some(
+              """\r\rYou said:
+                |> `$triggerMessage`
+                |
+                |""".stripMargin
+            )
+          }
+        }.getOrElse(" ")
+        event.sendMessage(
+          s"""<@${event.userIdForContext}>: Looks like you weren't able to answer this right away.${quoteText}No problem! I've moved this conversation to a thread.""".stripMargin,
+          conversation.behaviorVersion.forcePrivateResponse,
+          maybeShouldUnfurl = None,
+          Some(conversation),
+          maybeActions = None
+          ,
+          dataService
+        )
+      }.getOrElse(Future.successful(None))
+      _ <- maybeEvent.map { event =>
+        val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
+        dataService.conversations.save(convoWithThreadId).flatMap { _ =>
+          convoWithThreadId.respond(event, lambdaService, dataService, cache, ws, configuration).map { result =>
+            result.sendIn(None, Some(convoWithThreadId), dataService)
+          }
+        }
+      }.getOrElse(Future.successful({}))
+    } yield {}
   }
 
 }
