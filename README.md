@@ -24,6 +24,7 @@ $ aws configure --profile ellipsis_dev
 And follow the instructions.
 For more info go to: http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-quick-configuration
 
+
 You can now running the aws cli using the --profile option.
 For example:
 
@@ -170,3 +171,16 @@ $ ./actw
 $ ./actw -jvm-debug 9999 run
 ```
 You can now use any Java debugger to attach to 9999.
+
+
+#### Drop a Bad Db
+```bash
+$ docker exec -it ellipsis_postgres_1 bash bash
+```
+Now that you have a shell in the container, become the postgres user and use
+the dropdb command to drop the db
+
+```bash
+$ su postgres
+$ dropdb ellipsis-test
+```
