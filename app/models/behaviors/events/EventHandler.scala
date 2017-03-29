@@ -45,19 +45,7 @@ class EventHandler @Inject() (
   def interruptOngoingConversationsFor(event: Event): Future[Boolean] = {
     event.allOngoingConversations(dataService).flatMap { ongoing =>
       Future.sequence(ongoing.map { ea =>
-        val triggerMessage = ea.maybeTriggerMessage.map { triggerMessage =>
-          s"You haven’t answered my question above yet. When you’re ready to answer, just say `$triggerMessage`"
-        }.getOrElse("")
-        val cancelMessage =
-          s"""_(skipping question for now)_
-             |
-             |:wave: Hey.
-             |
-             |$triggerMessage`.
-             |""".stripMargin
-        cancelConversationResult(event, ea, cancelMessage).flatMap { result =>
-          result.sendIn(None, None, dataService).map(_ => result)
-        }
+        dataService.conversations.background(ea)
       })
     }.map(interruptionResults => interruptionResults.nonEmpty)
   }
