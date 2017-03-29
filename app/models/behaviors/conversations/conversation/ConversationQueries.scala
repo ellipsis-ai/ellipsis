@@ -18,7 +18,20 @@ object ConversationQueries {
     val behaviorVersion = BehaviorVersionQueries.tuple2BehaviorVersion(tuple._1._2)
     val maybeTrigger = tuple._2.map(MessageTriggerQueries.tuple2Trigger)
     // When we have multiple kinds of conversations again, use conversationType to figure out which is which
-    InvokeBehaviorConversation(raw.id, behaviorVersion, maybeTrigger, raw.maybeTriggerMessage, raw.context, raw.maybeChannel, raw.maybeThreadId, raw.userIdForContext, raw.startedAt, raw.state, raw.maybeScheduledMessageId)
+    InvokeBehaviorConversation(
+      raw.id,
+      behaviorVersion,
+      maybeTrigger,
+      raw.maybeTriggerMessage,
+      raw.context,
+      raw.maybeChannel,
+      raw.maybeThreadId,
+      raw.userIdForContext,
+      raw.startedAt,
+      raw.maybeLastInteractionAt,
+      raw.state,
+      raw.maybeScheduledMessageId
+    )
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = {

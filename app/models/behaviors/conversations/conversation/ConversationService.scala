@@ -26,6 +26,8 @@ trait ConversationService {
 
   def isDone(id: String): Future[Boolean]
 
+  def touch(conversation: Conversation): Future[Unit]
+
   def background(conversation: Conversation)(implicit actorSystem: ActorSystem): Future[Unit]
 
 }

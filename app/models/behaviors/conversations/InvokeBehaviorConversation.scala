@@ -26,6 +26,7 @@ case class InvokeBehaviorConversation(
                                        maybeThreadId: Option[String],
                                        userIdForContext: String, // id for Slack, etc user
                                        startedAt: OffsetDateTime,
+                                       maybeLastInteractionAt: Option[OffsetDateTime],
                                        state: String = Conversation.NEW_STATE,
                                        maybeScheduledMessageId: Option[String]
                                       ) extends Conversation {
@@ -140,6 +141,7 @@ object InvokeBehaviorConversation {
         None,
         event.userIdForContext,
         OffsetDateTime.now,
+        None,
         Conversation.NEW_STATE,
         event.maybeScheduled.map(_.id)
       )

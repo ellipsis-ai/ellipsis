@@ -26,11 +26,18 @@ trait Conversation {
   val maybeThreadId: Option[String]
   val userIdForContext: String
   val startedAt: OffsetDateTime
+  val maybeLastInteractionAt: Option[OffsetDateTime]
   val state: String
   val maybeScheduledMessageId: Option[String]
   val isScheduled: Boolean = maybeScheduledMessageId.isDefined
 
   def isPending: Boolean = state == Conversation.PENDING_STATE
+
+  def staleCutoff: OffsetDateTime = OffsetDateTime.now.minusSeconds(2) //minusHours(1)
+
+  def pendingEventKey: String = s"pending-event-for-$id"
+
+  def isStale: Boolean = maybeLastInteractionAt.getOrElse(startedAt).isBefore(staleCutoff)
 
   def shouldBeBackgrounded: Boolean = {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
@@ -83,7 +90,21 @@ trait Conversation {
   }
 
   def toRaw: RawConversation = {
-    RawConversation(id, behaviorVersion.id, maybeTrigger.map(_.id), maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state, maybeScheduledMessageId)
+    RawConversation(
+      id,
+      behaviorVersion.id,
+      maybeTrigger.map(_.id),
+      maybeTriggerMessage,
+      conversationType,
+      context,
+      maybeChannel,
+      maybeThreadId,
+      userIdForContext,
+      startedAt,
+      maybeLastInteractionAt,
+      state,
+      maybeScheduledMessageId
+    )
   }
 }
 

@@ -3,17 +3,19 @@ package models.behaviors.events
 import javax.inject._
 
 import akka.actor.ActorSystem
-import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult}
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithActionsResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
+import utils.Color
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @Singleton
 class EventHandler @Inject() (
@@ -73,7 +75,18 @@ class EventHandler @Inject() (
     if (isCancelConversationMessage(event)) {
       cancelConversationResult(event, conversation, s"OK, I’ll stop asking about that.")
     } else {
-      conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+      if (conversation.isStale) {
+        val key = conversation.pendingEventKey
+        cache.set(key, event, 5.minutes)
+        val actions = Seq(
+          SlackMessageAction("confirm_continue_conversation", "Yep, it's an answer", conversation.id)
+        )
+        val prompt = "It's been a while since I asked you a question. Is this an answer?"
+        val attachment = SlackMessageActions("should_continue_conversation", actions, None, Some(Color.PINK))
+        Future.successful(TextWithActionsResult(event, prompt, forcePrivateResponse = false, attachment))
+      } else {
+        conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+      }
     }
   }
 
