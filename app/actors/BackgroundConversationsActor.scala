@@ -39,34 +39,7 @@ class BackgroundConversationsActor @Inject() (
       dataService.conversations.allForeground.flatMap { convos =>
         Future.sequence(convos.map { convo =>
           if (convo.shouldBeBackgrounded) {
-            convo.maybeEventForBackgrounding(dataService).flatMap { maybeEvent =>
-              maybeEvent.map { event =>
-                val quoteText = convo.maybeTriggerMessage.flatMap { triggerMessage =>
-                  if (convo.isScheduled) { None } else {
-                    Some(s"""\r\rYou said:
-                     |> `$triggerMessage
-`
-                     |
-                     |""".stripMargin)
-                  }
-                }.getOrElse(" ")
-                event.sendMessage(
-                  s"""<@${event.userIdForContext}>: Looks like you weren't able to answer this right away.${quoteText}No problem! I've moved this conversation to a thread.""".stripMargin,
-                  convo.behaviorVersion.forcePrivateResponse,
-                  maybeShouldUnfurl = None,
-                  Some(convo),
-                  maybeActions = None,
-                  dataService
-                ).flatMap { maybeLastTs =>
-                  val convoWithThreadId = convo.copyWithMaybeThreadId(maybeLastTs)
-                  dataService.conversations.save(convoWithThreadId).flatMap { _ =>
-                    convoWithThreadId.respond(event, lambdaService, dataService, cache, ws, configuration).map { result =>
-                      result.sendIn(None, Some(convoWithThreadId), dataService)
-                    }
-                  }
-                }
-              }.getOrElse(Future.successful({}))
-            }
+            dataService.conversations.background(convo)
           } else {
             Future.successful({})
           }.recover {

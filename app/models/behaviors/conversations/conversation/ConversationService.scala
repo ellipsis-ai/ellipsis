@@ -1,5 +1,7 @@
 package models.behaviors.conversations.conversation
 
+import akka.actor.ActorSystem
+
 import scala.concurrent.Future
 
 trait ConversationService {
@@ -23,5 +25,7 @@ trait ConversationService {
   def find(id: String): Future[Option[Conversation]]
 
   def isDone(id: String): Future[Boolean]
+
+  def background(conversation: Conversation)(implicit actorSystem: ActorSystem): Future[Unit]
 
 }
