@@ -7,6 +7,11 @@ services:
     command: /bin/bash
     tty: true
     stdin_open: true
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - MEMCACHED_HOST=memcached
+      - MEMCACHED_PORT=11211
     links:
       - memcached
       - postgres

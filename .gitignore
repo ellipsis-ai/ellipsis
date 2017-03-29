@@ -2,6 +2,10 @@
 .cache
 .DS_Store
 .eclipse
+.scala_history
+.ivy2/
+.oracle_jre_usage/
+.sbt/
 .sbtserver/
 bin/
 core/
