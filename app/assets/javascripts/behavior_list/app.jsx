@@ -12,6 +12,7 @@ define(function(require) {
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       teamId: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string.isRequired,
+      teamTimeZone: React.PropTypes.string,
       branchName: React.PropTypes.string
     },
 

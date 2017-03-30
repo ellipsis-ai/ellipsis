@@ -50,8 +50,8 @@ class ApplicationController @Inject() (
           BehaviorGroupData.maybeFor(group.id, user, None, dataService)
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
-      result <- teamAccess.maybeTargetTeam.map { _ =>
-        Future.successful(Ok(views.html.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, maybeBranch)))
+      result <- teamAccess.maybeTargetTeam.map { team =>
+        Future.successful(Ok(views.html.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, team.maybeTimeZone.map(_.toString), maybeBranch)))
       }.getOrElse {
         reAuthFor(request, maybeTeamId)
       }
