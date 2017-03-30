@@ -13,7 +13,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService, GithubService}
-import utils.FuzzyMatcher
+import utils.{FuzzyMatcher, TimeZoneParser}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -204,6 +204,44 @@ class ApplicationController @Inject() (
           }
           case e: JsError => {
             Future.successful(BadRequest(s"Malformatted data: ${e.errors.mkString("\n")}"))
+          }
+        }
+      }
+    )
+  }
+
+  case class SetTeamTimeZoneInfo(tzName: String, maybeTeamId: Option[String])
+
+  private val timeZoneForm = Form(
+    mapping(
+      "tzName" -> nonEmptyText,
+      "teamId" -> optional(nonEmptyText)
+    )(SetTeamTimeZoneInfo.apply)(SetTeamTimeZoneInfo.unapply)
+  )
+
+  def setTeamTimeZone = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    timeZoneForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, Some(info.maybeTeamId.getOrElse(user.teamId)))
+          maybeTeam <- teamAccess.maybeTargetTeam.map { team =>
+            TimeZoneParser.maybeZoneFor(info.tzName).map { tz =>
+              dataService.teams.setTimeZoneFor(team, tz).map(Some(_))
+            }.getOrElse(Future.successful(Some(team)))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeTeam.map { team =>
+            team.maybeTimeZone.map { tz =>
+              Ok(Json.toJson(tz.toString).toString)
+            }.getOrElse {
+              BadRequest("Invalid time zone")
+            }
+          }.getOrElse {
+            NotFound("")
           }
         }
       }

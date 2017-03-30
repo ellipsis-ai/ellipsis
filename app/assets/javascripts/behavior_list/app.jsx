@@ -148,11 +148,20 @@ define(function(require) {
     },
 
     setTimeZone: function(newTz) {
-      setTimeout(() => {
-        this.setState({
-          currentTeamTimeZone: newTz
+      const url = jsRoutes.controllers.ApplicationController.setTeamTimeZone().url;
+      DataRequest
+        .jsonPost(url, {
+          tzName: newTz,
+          teamId: this.props.teamId
+        }, this.props.csrfToken)
+        .then((tzName) => {
+          this.setState({
+            currentTeamTimeZone: tzName
+          });
+        })
+        .catch((e) => {
+          console.log(e);
         });
-      }, 1000);
     },
 
     render: function() {
