@@ -8,7 +8,9 @@ define(function(require) {
   return React.createClass({
     displayName: 'TimeZoneSetter',
     propTypes: {
-      onSetTimeZone: React.PropTypes.func.isRequired
+      onSetTimeZone: React.PropTypes.func.isRequired,
+      isSaving: React.PropTypes.bool,
+      error: React.PropTypes.string
     },
 
     guessTimeZone: function() {
@@ -26,8 +28,7 @@ define(function(require) {
       return {
         guessedTimeZone: guessedTimeZone,
         searchText: "",
-        selectedTimeZone: guessedTimeZone,
-        isSaving: false
+        selectedTimeZone: guessedTimeZone
       };
     },
 
@@ -66,12 +67,17 @@ define(function(require) {
       });
     },
 
+    getCurrentDisplayName: function() {
+      var targetTz = tzInfo.find((ea) => ea.timeZones.includes(this.state.selectedTimeZone));
+      if (targetTz) {
+        return targetTz.name;
+      } else {
+        return this.state.selectedTimeZone.replace(/_/g, ' ');
+      }
+    },
+
     setTimeZone: function() {
-      this.setState({
-        isSaving: true
-      }, () => {
-        this.props.onSetTimeZone(this.state.selectedTimeZone);
-      });
+      this.props.onSetTimeZone(this.state.selectedTimeZone, this.getCurrentDisplayName());
     },
 
     render: function() {
@@ -111,17 +117,20 @@ define(function(require) {
             </div>
             <div className="mvl">
               <DynamicLabelButton
-                className="button-primary"
+                className="button-primary mrm"
                 onClick={this.setTimeZone}
-                disabledWhen={this.state.isSaving}
+                disabledWhen={this.props.isSaving}
                 labels={[{
                   text: "Set team time zone",
-                  displayWhen: !this.state.isSaving
+                  displayWhen: !this.props.isSaving
                 }, {
                   text: "Saving…",
-                  displayWhen: this.state.isSaving
+                  displayWhen: this.props.isSaving
                 }]}
               />
+              {this.props.error ? (
+                <span className="align-button type-italic type-pink fade-in">— {this.props.error}</span>
+              ) : null}
             </div>
           </div>
         </div>

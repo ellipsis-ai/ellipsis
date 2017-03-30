@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
     BehaviorList = require('./index'),
+    Collapsible = require('../shared_ui/collapsible'),
     DataRequest = require('../lib/data_request'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
     TimeZoneSetter = require('../time_zone_setter/index');
@@ -30,7 +31,9 @@ define(function(require) {
         matchingResults: [],
         currentSearchText: "",
         isLoadingMatchingResults: false,
-        currentTeamTimeZone: this.props.teamTimeZone
+        currentTeamTimeZone: this.props.teamTimeZone,
+        isSavingTeamTimeZone: false,
+        errorSavingTeamTimeZone: null
       };
     },
 
@@ -147,48 +150,74 @@ define(function(require) {
       }
     },
 
-    setTimeZone: function(newTz) {
-      const url = jsRoutes.controllers.ApplicationController.setTeamTimeZone().url;
-      DataRequest
-        .jsonPost(url, {
-          tzName: newTz,
-          teamId: this.props.teamId
-        }, this.props.csrfToken)
-        .then((tzName) => {
-          this.setState({
-            currentTeamTimeZone: tzName
+    setTimeZone: function(newTz, displayName) {
+      this.setState({
+        isSavingTeamTimeZone: true,
+        errorSavingTeamTimeZone: null
+      }, () => {
+        const url = jsRoutes.controllers.ApplicationController.setTeamTimeZone().url;
+        DataRequest
+          .jsonPost(url, {
+            tzName: newTz,
+            teamId: this.props.teamId
+          }, this.props.csrfToken)
+          .then((json) => {
+            if (json.newTz) {
+              this.setState({
+                currentTeamTimeZone: displayName,
+                isSavingTeamTimeZone: false
+              });
+            } else {
+              throw new Error(json.message || "");
+            }
+          })
+          .catch((err) => {
+            this.setState({
+              isSavingTeamTimeZone: false,
+              errorSavingTeamTimeZone: `An error occurred while saving${err.message ? ` (${err.message})` : ""}. Please try again.`
+            });
           });
-        })
-        .catch((e) => {
-          console.log(e);
-        });
+      });
     },
 
     render: function() {
       if (this.state.currentTeamTimeZone) {
         return (
-          <BehaviorList
-            onLoadPublishedBehaviorGroups={this.loadPublishedBehaviorGroups}
-            onBehaviorGroupImport={this.importBehaviorGroup}
-            onBehaviorGroupUpdate={this.updateBehaviorGroup}
-            onMergeBehaviorGroups={this.mergeBehaviorGroups}
-            onDeleteBehaviorGroups={this.deleteBehaviorGroups}
-            onSearch={this.getSearchResults}
-            localBehaviorGroups={this.state.behaviorGroups.map(BehaviorGroup.fromJson)}
-            publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
-            recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
-            matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
-            currentSearchText={this.state.currentSearchText}
-            isLoadingMatchingResults={this.state.isLoadingMatchingResults}
-            publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
-            teamId={this.props.teamId}
-            slackTeamId={this.props.slackTeamId}
-          />
+          <div>
+            <Collapsible revealWhen={!this.props.teamTimeZone} animateInitialRender={true}>
+              <div className="bg-blue-light pvm border-bottom-thick border-blue">
+                <div className="container container-c">
+                  <div className="mhl">
+                    Your team’s time zone has been set to {this.state.currentTeamTimeZone}.
+                  </div>
+                </div>
+              </div>
+            </Collapsible>
+            <BehaviorList
+              onLoadPublishedBehaviorGroups={this.loadPublishedBehaviorGroups}
+              onBehaviorGroupImport={this.importBehaviorGroup}
+              onBehaviorGroupUpdate={this.updateBehaviorGroup}
+              onMergeBehaviorGroups={this.mergeBehaviorGroups}
+              onDeleteBehaviorGroups={this.deleteBehaviorGroups}
+              onSearch={this.getSearchResults}
+              localBehaviorGroups={this.state.behaviorGroups.map(BehaviorGroup.fromJson)}
+              publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
+              recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
+              matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
+              currentSearchText={this.state.currentSearchText}
+              isLoadingMatchingResults={this.state.isLoadingMatchingResults}
+              publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
+              teamId={this.props.teamId}
+              slackTeamId={this.props.slackTeamId}
+            />
+          </div>
         );
       } else {
         return (
           <TimeZoneSetter
             onSetTimeZone={this.setTimeZone}
+            isSaving={this.state.isSavingTeamTimeZone}
+            error={this.state.errorSavingTeamTimeZone}
           />
         );
       }

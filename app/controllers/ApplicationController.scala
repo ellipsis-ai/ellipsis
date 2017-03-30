@@ -236,9 +236,9 @@ class ApplicationController @Inject() (
         } yield {
           maybeTeam.map { team =>
             team.maybeTimeZone.map { tz =>
-              Ok(Json.toJson(tz.toString).toString)
+              Ok(Json.obj("newTz" -> tz.toString).toString)
             }.getOrElse {
-              BadRequest("Invalid time zone")
+              BadRequest(Json.obj("message" -> "Invalid time zone").toString)
             }
           }.getOrElse {
             NotFound("")
