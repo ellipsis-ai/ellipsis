@@ -47,7 +47,7 @@ class EventHandler @Inject() (
   def interruptOngoingConversationsFor(event: Event): Future[Boolean] = {
     event.allOngoingConversations(dataService).flatMap { ongoing =>
       Future.sequence(ongoing.map { ea =>
-        dataService.conversations.background(ea)
+        dataService.conversations.background("You haven't answered my question yet, but I have something new to ask you.", ea)
       })
     }.map(interruptionResults => interruptionResults.nonEmpty)
   }
