@@ -28,6 +28,6 @@ trait ConversationService {
 
   def touch(conversation: Conversation): Future[Unit]
 
-  def background(prompt: String, conversation: Conversation)(implicit actorSystem: ActorSystem): Future[Unit]
+  def background(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): Future[Unit]
 
 }

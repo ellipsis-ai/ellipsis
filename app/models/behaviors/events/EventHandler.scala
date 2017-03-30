@@ -47,7 +47,8 @@ class EventHandler @Inject() (
   def interruptOngoingConversationsFor(event: Event): Future[Boolean] = {
     event.allOngoingConversations(dataService).flatMap { ongoing =>
       Future.sequence(ongoing.map { ea =>
-        dataService.conversations.background("You haven't answered my question yet, but I have something new to ask you.", ea)
+        val prompt = "You haven't answered my question yet, but I have something new to ask you."
+        dataService.conversations.background(ea, prompt, includeUsername = true)
       })
     }.map(interruptionResults => interruptionResults.nonEmpty)
   }
@@ -94,7 +95,7 @@ class EventHandler @Inject() (
           }.getOrElse {
             s"It's been a while since I asked you the question above."
           }
-          val attachment = SlackMessageActions("should_continue_conversation", actions, Some(s"Just so I'm sure, is `${event.relevantMessageText}` an answer to it?"), Some(Color.PINK))
+          val attachment = SlackMessageActions("should_continue_conversation", actions, Some(s"Just so I'm sure, is `${event.relevantMessageText}` answering this?"), Some(Color.PINK))
           TextWithActionsResult(event, prompt, forcePrivateResponse = false, attachment)
         }
       } else {

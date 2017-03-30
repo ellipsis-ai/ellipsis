@@ -417,7 +417,7 @@ class SlackController @Inject() (
               info.maybeDontContinueConversationId.foreach { conversationId =>
                 dataService.conversations.find(conversationId).flatMap { maybeConversation =>
                   maybeConversation.map { convo =>
-                    dataService.conversations.background("OK, on to the next thing.", convo).flatMap { _ =>
+                    dataService.conversations.background(convo, "OK, on to the next thing.", includeUsername = false).flatMap { _ =>
                       cache.get[SlackMessageEvent](convo.pendingEventKey).map { event =>
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(

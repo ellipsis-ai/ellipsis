@@ -145,12 +145,13 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def background(prompt: String, conversation: Conversation)(implicit actorSystem: ActorSystem): Future[Unit] = {
+  def background(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
       maybeEvent <- conversation.maybeEventForBackgrounding(dataService)
       maybeLastTs <- maybeEvent.map { event =>
+        val usernameString = if (includeUsername) { s"<@${event.userIdForContext}>: " } else { "" }
         event.sendMessage(
-          s"""<@${event.userIdForContext}>: ${prompt} Continue the previous conversation in this thread:""".stripMargin,
+          s"""$usernameString$prompt You can continue the previous conversation in this thread:""".stripMargin,
           conversation.behaviorVersion.forcePrivateResponse,
           maybeShouldUnfurl = None,
           Some(conversation),
