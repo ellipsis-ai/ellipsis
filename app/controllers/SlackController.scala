@@ -362,6 +362,7 @@ class SlackController @Inject() (
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
               var resultText: String = "OK, let’s continue."
+              var shouldRemoveActions = false
               val user = s"<@${info.user.id}>"
 
               info.maybeHelpIndexAt.foreach { index =>
@@ -411,6 +412,7 @@ class SlackController @Inject() (
                     }
                   }.getOrElse(Future.successful({}))
                 }
+                shouldRemoveActions = true
                 resultText = s"$user clicked 'Yes'"
               }
 
@@ -430,13 +432,19 @@ class SlackController @Inject() (
                     }
                   }.getOrElse(Future.successful({}))
                 }
+                shouldRemoveActions = true
                 resultText = s"$user clicked 'No'"
               }
 
               // respond immediately by appending a new attachment
               val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
               val newAttachment = AttachmentInfo(Some(resultText), None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = Some(resultText))
-              val updated = info.original_message.copy(attachments = info.original_message.attachments :+ newAttachment)
+              val originalAttachmentsToUse = if (shouldRemoveActions) {
+                info.original_message.attachments.map(ea => ea.copy(actions = None))
+              } else {
+                info.original_message.attachments
+              }
+              val updated = info.original_message.copy(attachments = originalAttachmentsToUse :+ newAttachment)
               Ok(Json.toJson(updated))
             } else {
               Unauthorized("Bad token")
