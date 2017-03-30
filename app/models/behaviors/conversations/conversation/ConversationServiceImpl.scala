@@ -25,6 +25,7 @@ case class RawConversation(
                             maybeThreadId: Option[String],
                             userIdForContext: String,
                             startedAt: OffsetDateTime,
+                            maybeLastInteractionAt: Option[OffsetDateTime],
                             state: String,
                             maybeScheduledMessageId: Option[String]
                           )
@@ -41,11 +42,12 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
   def maybeThreadId = column[Option[String]]("thread_id")
   def userIdForContext = column[String]("user_id_for_context")
   def startedAt = column[OffsetDateTime]("started_at")
+  def maybeLastInteractionAt = column[Option[OffsetDateTime]]("last_interaction_at")
   def state = column[String]("state")
   def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
 
   def * =
-    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state, maybeScheduledMessageId) <>
+    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 
@@ -135,12 +137,21 @@ class ConversationServiceImpl @Inject() (
     }
   }
 
-  def background(conversation: Conversation)(implicit actorSystem: ActorSystem): Future[Unit] = {
+  def uncompiledTouchQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.maybeLastInteractionAt)
+  val touchQuery = Compiled(uncompiledTouchQuery _)
+
+  def touch(conversation: Conversation): Future[Unit] = {
+    val action = touchQuery(conversation.id).update(Some(OffsetDateTime.now)).map(_ => {})
+    dataService.run(action)
+  }
+
+  def background(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
       maybeEvent <- conversation.maybeEventForBackgrounding(dataService)
       maybeLastTs <- maybeEvent.map { event =>
+        val usernameString = if (includeUsername) { s"<@${event.userIdForContext}>: " } else { "" }
         event.sendMessage(
-          s"""<@${event.userIdForContext}>: You haven't answered my question yet, but I have something new to ask you. Continue the previous conversation in this thread:""".stripMargin,
+          s"""$usernameString$prompt You can continue the previous conversation in this thread:""".stripMargin,
           conversation.behaviorVersion.forcePrivateResponse,
           maybeShouldUnfurl = None,
           Some(conversation),

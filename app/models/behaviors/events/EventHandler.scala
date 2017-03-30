@@ -3,17 +3,19 @@ package models.behaviors.events
 import javax.inject._
 
 import akka.actor.ActorSystem
-import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult}
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithActionsResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
+import utils.Color
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @Singleton
 class EventHandler @Inject() (
@@ -45,7 +47,8 @@ class EventHandler @Inject() (
   def interruptOngoingConversationsFor(event: Event): Future[Boolean] = {
     event.allOngoingConversations(dataService).flatMap { ongoing =>
       Future.sequence(ongoing.map { ea =>
-        dataService.conversations.background(ea)
+        val prompt = "You haven't answered my question yet, but I have something new to ask you."
+        dataService.conversations.background(ea, prompt, includeUsername = true)
       })
     }.map(interruptionResults => interruptionResults.nonEmpty)
   }
@@ -73,7 +76,31 @@ class EventHandler @Inject() (
     if (isCancelConversationMessage(event)) {
       cancelConversationResult(event, conversation, s"OK, I’ll stop asking about that.")
     } else {
-      conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+      if (conversation.isStale) {
+        conversation.maybeNextParamToCollect(event, lambdaService, dataService, cache, ws, configuration).map { maybeNextParam =>
+          val maybeLastPrompt = maybeNextParam.map { nextParam =>
+            nextParam.input.question
+          }
+          val key = conversation.pendingEventKey
+          cache.set(key, event, 5.minutes)
+          val actions = Seq(
+            SlackMessageAction("confirm_continue_conversation", "Yes, it's an answer", conversation.id),
+            SlackMessageAction("dont_continue_conversation", "No, not an answer", conversation.id)
+          )
+          val prompt = maybeLastPrompt.map { lastPrompt =>
+            s"""It's been a while since I asked you:
+               |```
+               |$lastPrompt
+               |```""".stripMargin
+          }.getOrElse {
+            s"It's been a while since I asked you the question above."
+          }
+          val attachment = SlackMessageActions("should_continue_conversation", actions, Some(s"Just so I'm sure, is `${event.relevantMessageText}` answering this?"), Some(Color.PINK))
+          TextWithActionsResult(event, prompt, forcePrivateResponse = false, attachment)
+        }
+      } else {
+        conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+      }
     }
   }
 

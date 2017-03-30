@@ -3,6 +3,7 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 
 import models.behaviors._
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
@@ -26,11 +27,18 @@ trait Conversation {
   val maybeThreadId: Option[String]
   val userIdForContext: String
   val startedAt: OffsetDateTime
+  val maybeLastInteractionAt: Option[OffsetDateTime]
   val state: String
   val maybeScheduledMessageId: Option[String]
   val isScheduled: Boolean = maybeScheduledMessageId.isDefined
 
   def isPending: Boolean = state == Conversation.PENDING_STATE
+
+  def staleCutoff: OffsetDateTime = OffsetDateTime.now.minusHours(1)
+
+  def pendingEventKey: String = s"pending-event-for-$id"
+
+  def isStale: Boolean = maybeLastInteractionAt.getOrElse(startedAt).isBefore(staleCutoff)
 
   def shouldBeBackgrounded: Boolean = {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
@@ -82,8 +90,31 @@ trait Conversation {
     } yield result
   }
 
+  def maybeNextParamToCollect(
+                               event: Event,
+                               lambdaService: AWSLambdaService,
+                               dataService: DataService,
+                               cache: CacheApi,
+                               ws: WSClient,
+                               configuration: Configuration
+                             ): Future[Option[BehaviorParameter]]
+
   def toRaw: RawConversation = {
-    RawConversation(id, behaviorVersion.id, maybeTrigger.map(_.id), maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state, maybeScheduledMessageId)
+    RawConversation(
+      id,
+      behaviorVersion.id,
+      maybeTrigger.map(_.id),
+      maybeTriggerMessage,
+      conversationType,
+      context,
+      maybeChannel,
+      maybeThreadId,
+      userIdForContext,
+      startedAt,
+      maybeLastInteractionAt,
+      state,
+      maybeScheduledMessageId
+    )
   }
 }
 
