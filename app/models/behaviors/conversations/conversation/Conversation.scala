@@ -3,6 +3,7 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 
 import models.behaviors._
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
@@ -88,6 +89,15 @@ trait Conversation {
       result <- updatedConversation.respond(event, lambdaService, dataService, cache, ws, configuration)
     } yield result
   }
+
+  def maybeNextParamToCollect(
+                               event: Event,
+                               lambdaService: AWSLambdaService,
+                               dataService: DataService,
+                               cache: CacheApi,
+                               ws: WSClient,
+                               configuration: Configuration
+                             ): Future[Option[BehaviorParameter]]
 
   def toRaw: RawConversation = {
     RawConversation(

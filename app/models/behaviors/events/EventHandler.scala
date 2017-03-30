@@ -76,15 +76,27 @@ class EventHandler @Inject() (
       cancelConversationResult(event, conversation, s"OK, I’ll stop asking about that.")
     } else {
       if (conversation.isStale) {
-        val key = conversation.pendingEventKey
-        cache.set(key, event, 5.minutes)
-        val actions = Seq(
-          SlackMessageAction("confirm_continue_conversation", "Yes, it's an answer", conversation.id),
-          SlackMessageAction("dont_continue_conversation", "No, not an answer", conversation.id)
-        )
-        val prompt = "It's been a while since I asked you the question above. Just so I'm sure, is this an answer to it?"
-        val attachment = SlackMessageActions("should_continue_conversation", actions, None, Some(Color.PINK))
-        Future.successful(TextWithActionsResult(event, prompt, forcePrivateResponse = false, attachment))
+        conversation.maybeNextParamToCollect(event, lambdaService, dataService, cache, ws, configuration).map { maybeNextParam =>
+          val maybeLastPrompt = maybeNextParam.map { nextParam =>
+            nextParam.input.question
+          }
+          val key = conversation.pendingEventKey
+          cache.set(key, event, 5.minutes)
+          val actions = Seq(
+            SlackMessageAction("confirm_continue_conversation", "Yes, it's an answer", conversation.id),
+            SlackMessageAction("dont_continue_conversation", "No, not an answer", conversation.id)
+          )
+          val prompt = maybeLastPrompt.map { lastPrompt =>
+            s"""It's been a while since I asked you:
+               |```
+               |$lastPrompt
+               |```""".stripMargin
+          }.getOrElse {
+            s"It's been a while since I asked you the question above."
+          }
+          val attachment = SlackMessageActions("should_continue_conversation", actions, Some("Just so I'm sure, is this an answer to it?"), Some(Color.PINK))
+          TextWithActionsResult(event, prompt, forcePrivateResponse = false, attachment)
+        }
       } else {
         conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
       }

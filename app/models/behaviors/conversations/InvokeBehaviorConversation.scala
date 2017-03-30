@@ -3,6 +3,7 @@ package models.behaviors.conversations
 import java.time.OffsetDateTime
 
 import models.IDs
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.{BehaviorResponse, BotResult}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
@@ -108,6 +109,24 @@ case class InvokeBehaviorConversation(
         }
       }
     } yield result
+  }
+
+  def maybeNextParamToCollect(
+                       event: Event,
+                       lambdaService: AWSLambdaService,
+                       dataService: DataService,
+                       cache: CacheApi,
+                       ws: WSClient,
+                       configuration: Configuration
+                     ): Future[Option[BehaviorParameter]] = {
+    for {
+      collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
+      maybeCollectionState <- Future.successful(collectionStates.find(_.name == state))
+      maybeParam <- maybeCollectionState.map {
+        case s: ParamCollectionState => s.maybeNextToCollect(this)
+        case _ => Future.successful(None)
+      }.getOrElse(Future.successful(None))
+    } yield maybeParam.map(_._1)
   }
 
 }
