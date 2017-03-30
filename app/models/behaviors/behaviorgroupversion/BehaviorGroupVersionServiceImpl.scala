@@ -99,6 +99,12 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       _ <- DBIO.sequence(data.dataTypeInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)
       })
+      requiredOAuth2ApiConfigs <- DBIO.sequence(data.requiredOAuth2ApiConfigs.map { requiredData =>
+        dataService.requiredOAuth2ApiConfigs.maybeCreateForAction(requiredData, groupVersion)
+      }).map(_.flatten)
+      requiredSimpleTokenApis <- DBIO.sequence(data.requiredSimpleTokenApis.map { requiredData =>
+        dataService.requiredSimpleTokenApis.maybeCreateForAction(requiredData, groupVersion)
+      }).map(_.flatten)
       _ <- DBIO.sequence(data.dataTypeBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
@@ -106,7 +112,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
             behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, Some(user), ea)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea)
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })
@@ -120,7 +126,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
             behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, Some(user), ea)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea)
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })

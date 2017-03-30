@@ -61,7 +61,7 @@ case class BehaviorResponse(
   def hasAllSimpleTokens: Future[Boolean] = {
     for {
       user <- event.ensureUser(dataService)
-      missing <- dataService.requiredSimpleTokenApis.missingFor(user, behaviorVersion)
+      missing <- dataService.requiredSimpleTokenApis.missingFor(user, behaviorVersion.groupVersion)
     } yield missing.isEmpty
   }
 

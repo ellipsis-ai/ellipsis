@@ -183,7 +183,23 @@ class GithubService @Inject() (
             val maybeExportId = maybeConfig.flatMap(_.exportId)
             val name = maybeConfig.map(_.name).getOrElse(groupPath)
             val icon = maybeConfig.flatMap(_.icon)
-            BehaviorGroupData(None, team.id, Some(name), Some(readme), icon, actionInputs, dataTypeInputs, behaviors, Some(githubUrl), maybeExportId, Some(OffsetDateTime.now))
+            val requiredOAuth2ApiConfigData = maybeConfig.map(_.requiredOAuth2ApiConfigs).getOrElse(Seq())
+            val requiredSimpleTokenApiData = maybeConfig.map(_.requiredSimpleTokenApis).getOrElse(Seq())
+            BehaviorGroupData(
+              None,
+              team.id,
+              Some(name),
+              Some(readme),
+              icon,
+              actionInputs,
+              dataTypeInputs,
+              behaviors,
+              requiredOAuth2ApiConfigData,
+              requiredSimpleTokenApiData,
+              Some(githubUrl),
+              maybeExportId,
+              Some(OffsetDateTime.now)
+            )
           }).map(Some(_))
         }).getOrElse(Future.successful(None))
     }
