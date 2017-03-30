@@ -3,7 +3,8 @@ define(function(require) {
     BehaviorGroup = require('../models/behavior_group'),
     BehaviorList = require('./index'),
     DataRequest = require('../lib/data_request'),
-    ImmutableObjectUtils = require('../lib/immutable_object_utils');
+    ImmutableObjectUtils = require('../lib/immutable_object_utils'),
+    TimeZoneSetter = require('../time_zone_setter/index');
 
   return React.createClass({
     displayName: 'App',
@@ -146,25 +147,31 @@ define(function(require) {
     },
 
     render: function() {
-      return (
-        <BehaviorList
-          onLoadPublishedBehaviorGroups={this.loadPublishedBehaviorGroups}
-          onBehaviorGroupImport={this.importBehaviorGroup}
-          onBehaviorGroupUpdate={this.updateBehaviorGroup}
-          onMergeBehaviorGroups={this.mergeBehaviorGroups}
-          onDeleteBehaviorGroups={this.deleteBehaviorGroups}
-          onSearch={this.getSearchResults}
-          localBehaviorGroups={this.state.behaviorGroups.map(BehaviorGroup.fromJson)}
-          publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
-          recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
-          matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
-          currentSearchText={this.state.currentSearchText}
-          isLoadingMatchingResults={this.state.isLoadingMatchingResults}
-          publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
-          teamId={this.props.teamId}
-          slackTeamId={this.props.slackTeamId}
-        />
-      );
+      if (this.props.teamTimeZone) {
+        return (
+          <BehaviorList
+            onLoadPublishedBehaviorGroups={this.loadPublishedBehaviorGroups}
+            onBehaviorGroupImport={this.importBehaviorGroup}
+            onBehaviorGroupUpdate={this.updateBehaviorGroup}
+            onMergeBehaviorGroups={this.mergeBehaviorGroups}
+            onDeleteBehaviorGroups={this.deleteBehaviorGroups}
+            onSearch={this.getSearchResults}
+            localBehaviorGroups={this.state.behaviorGroups.map(BehaviorGroup.fromJson)}
+            publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
+            recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
+            matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
+            currentSearchText={this.state.currentSearchText}
+            isLoadingMatchingResults={this.state.isLoadingMatchingResults}
+            publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
+            teamId={this.props.teamId}
+            slackTeamId={this.props.slackTeamId}
+          />
+        );
+      } else {
+        return (
+          <TimeZoneSetter />
+        );
+      }
     }
   });
 });
