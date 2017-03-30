@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    DynamicLabelButton = require('../form/dynamic_label_button'),
     Select = require('../form/select'),
     SearchInput = require('../form/search'),
     tzInfo = require('./tz_info');
@@ -7,9 +8,7 @@ define(function(require) {
   return React.createClass({
     displayName: 'TimeZoneSetter',
     propTypes: {
-      // string: React.PropTypes.string.isRequired,
-      // callback: React.PropType.func.isRequired,
-      // children: React.PropTypes.node.isRequired
+      onSetTimeZone: React.PropTypes.func.isRequired
     },
 
     guessTimeZone: function() {
@@ -27,7 +26,8 @@ define(function(require) {
       return {
         guessedTimeZone: guessedTimeZone,
         searchText: "",
-        selectedTimeZone: guessedTimeZone
+        selectedTimeZone: guessedTimeZone,
+        isSaving: false
       };
     },
 
@@ -66,14 +66,29 @@ define(function(require) {
       });
     },
 
+    setTimeZone: function() {
+      this.setState({
+        isSaving: true
+      }, () => {
+        this.props.onSetTimeZone(this.state.selectedTimeZone);
+      });
+    },
+
     render: function() {
       return (
         <div className="bg-white border-bottom border-bottom-thick pvxl">
           <div className="container container-c container-narrow">
+            <h2>Welcome to Ellipsis!</h2>
+
             <h3>Set your team’s time zone</h3>
             <p>
-              This will be used as the default when Ellipsis displays dates and times, or when handling schedules.
+              Before you get started, pick a default time zone for your team.
             </p>
+
+            <p>
+              This will be used when Ellipsis displays dates and times to a group, or whenever a time of day mentioned isn’t otherwise obvious.
+            </p>
+
             <div className="mvl">
               <span className="align-button mrm">Selected time zone:</span>
               <Select className="width-15" value={this.state.selectedTimeZone} onChange={this.updateSelectedTimeZone}>
@@ -83,8 +98,9 @@ define(function(require) {
               </Select>
             </div>
             <div className="mtl mbs width-30 mobile-width-full">
-              <SearchInput placeholder="Search for a country or city" value={this.state.searchText}
-                onChange={this.updateSearchText}/>
+              <SearchInput placeholder="Search for a country or city"
+                value={this.state.searchText}
+                onChange={this.updateSearchText} />
             </div>
             <div className="mts mbl width-30 mobile-width-full">
               <Select value={this.state.selectedTimeZone} onChange={this.updateSelectedTimeZone} size="5">
@@ -94,7 +110,18 @@ define(function(require) {
               </Select>
             </div>
             <div className="mvl">
-              <button type="button" className="button-primary">Set team time zone</button>
+              <DynamicLabelButton
+                className="button-primary"
+                onClick={this.setTimeZone}
+                disabledWhen={this.state.isSaving}
+                labels={[{
+                  text: "Set team time zone",
+                  displayWhen: !this.state.isSaving
+                }, {
+                  text: "Saving…",
+                  displayWhen: this.state.isSaving
+                }]}
+              />
             </div>
           </div>
         </div>

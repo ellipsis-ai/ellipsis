@@ -29,7 +29,8 @@ define(function(require) {
         recentlyInstalled: [],
         matchingResults: [],
         currentSearchText: "",
-        isLoadingMatchingResults: false
+        isLoadingMatchingResults: false,
+        currentTeamTimeZone: this.props.teamTimeZone
       };
     },
 
@@ -146,8 +147,16 @@ define(function(require) {
       }
     },
 
+    setTimeZone: function(newTz) {
+      setTimeout(() => {
+        this.setState({
+          currentTeamTimeZone: newTz
+        });
+      }, 1000);
+    },
+
     render: function() {
-      if (this.props.teamTimeZone) {
+      if (this.state.currentTeamTimeZone) {
         return (
           <BehaviorList
             onLoadPublishedBehaviorGroups={this.loadPublishedBehaviorGroups}
@@ -169,7 +178,9 @@ define(function(require) {
         );
       } else {
         return (
-          <TimeZoneSetter />
+          <TimeZoneSetter
+            onSetTimeZone={this.setTimeZone}
+          />
         );
       }
     }
