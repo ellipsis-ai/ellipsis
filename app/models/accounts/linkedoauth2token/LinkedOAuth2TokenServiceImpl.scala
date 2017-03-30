@@ -74,7 +74,7 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   }
 
   private def refreshIfNecessary(linkedOAuth2Token: LinkedOAuth2Token): Future[LinkedOAuth2Token] = {
-    val eventualMaybeNewInstance = if (linkedOAuth2Token.isExpired) {
+    val eventualMaybeNewInstance = if (linkedOAuth2Token.isExpiredOrExpiresSoon) {
       linkedOAuth2Token.maybeRefreshToken.map { token =>
         val tokenResponse = linkedOAuth2Token.application.refreshTokenRequestFor(token, ws).
           withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
