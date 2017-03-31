@@ -28,9 +28,12 @@ jobs:
             done
             echo Failed waiting for Postgress && exit 1
       - run:
-          name: Run JavaScript Linter
+          name: Install npm dependencies
           command: |
             npm prune;npm install
+      - run:
+          name: Run JavaScript Linter
+          command: |
             npm run lint
       - run:
           name: Run JavaScript Tests
