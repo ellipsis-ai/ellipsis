@@ -1,17 +1,41 @@
 version: 2
-general:
-  branches:
-    only:
-      - circle-build
 jobs:
   build:
+    branches:
+      only:
+        - circle-build
     working_directory: ~/ellipsis
     docker:
-      - image: java:8
+      - image: ellipsis/circleci_primary:latest
+        environment:
+          DB_HOST: localhost
+          DB_PORT: 5432
       - image: postgres:9.6.2
         environment:
-          POSTGRES_USER: ubuntu
-          POSTGRES_DB: circle_test
-          POSTGRES_PASSWORD: ""
+          POSTGRES_USER: ellipsis
+          POSTGRES_DB: ellipsis-test
+          POSTGRES_PASSWORD: ellipsis
     steps:
       - checkout
+      - run:
+          name: Waiting for Postgres to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgress && exit 1
+      - run:
+          name: Run JavaScript Linter
+          command: |
+            npm run lint
+      - run:
+          name: Run JavaScript Tests
+          command: |
+            npm test
+      - run:
+          name: Run Activator Tests
+          command: |
+            activator test

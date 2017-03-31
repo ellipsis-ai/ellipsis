@@ -1,63 +1,38 @@
-FROM ubuntu:16.04
+FROM frolvlad/alpine-scala:2.12
 MAINTAINER Matteo Melani <m@ellipsis.ai>
 
-# Locales
-RUN locale-gen en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+# Install activator
+ENV ACTIVATOR_VERSION 1.3.10
+RUN apk add --update bash curl openssl ca-certificates && \
+  curl -L -o /tmp/activator.zip \
+    https://downloads.typesafe.com/typesafe-activator/${ACTIVATOR_VERSION}/typesafe-activator-${ACTIVATOR_VERSION}-minimal.zip && \
+  mkdir -p /opt/activator && \
+  unzip /tmp/activator.zip -d /opt/activator && \
+  rm /tmp/activator.zip && \
+  chmod +x /opt/activator/activator-${ACTIVATOR_VERSION}-minimal/bin/activator && \
+  ln -s /opt/activator/activator-${ACTIVATOR_VERSION}-minimal/bin/activator /usr/bin/activator && \
+  rm -rf /tmp/* /var/cache/apk/*
 
-# Fix sh
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-
-# Basic
-RUN apt-get update
-RUN apt-get install -y apt-utils
-RUN apt-get install -y curl && apt-get install -y git
-RUN apt-get install -y git
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y sudo
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common
+# Git
+ RUN apk add --no-cache git openssh
 
 # Node and Npm
-RUN apt-get install -y zip nodejs npm
-RUN ln -s /usr/bin/nodejs /usr/bin/node
-RUN npm install -g npm
-RUN npm install -g n
-
-# Java
-RUN \
-  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
-  add-apt-repository -y ppa:webupd8team/java && \
-  apt-get update && \
-  apt-get install -y oracle-java8-installer && \
-  rm -rf /var/lib/apt/lists/* && \
-  rm -rf /var/cache/oracle-jdk8-installer
+RUN apk add --update nodejs
 
 # Define commonly used JAVA_HOME variable
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
 # User
-RUN groupadd ellipsis
-RUN useradd ellipsis -m -g ellipsis -s /bin/bash
+RUN addgroup -S ellipsis && adduser -S -g ellipsis ellipsis
 RUN passwd -d -u ellipsis
-RUN echo "ellipsis ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ellipsis
-RUN chmod 0440 /etc/sudoers.d/ellipsis
+RUN echo "ellipsis ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers
 RUN mkdir /home/ellipsis/code
 RUN chown ellipsis:ellipsis /home/ellipsis/code
-# RUN echo "export PATH=$PATH:/opt/activator/bin" >> /home/ellipsis/.bashrc
-RUN echo "export _JAVA_OPTIONS='-Duser.home=/home/ellipsis/code'" >> /home/ellipsis/.bashrc
-
-
+# # RUN echo "export PATH=$PATH:/opt/activator/bin" >> /home/ellipsis/.bashrc
+# RUN echo "export _JAVA_OPTIONS='-Duser.home=/home/ellipsis/code'" >> /home/ellipsis/.bashrc
+#
+#
 # Change user, launch bash
 USER ellipsis
-WORKDIR /home/ellipsis
-
-# Activator
-ENV ACTIVATOR_VERSION 1.3.10
-RUN curl -O http://downloads.typesafe.com/typesafe-activator/$ACTIVATOR_VERSION/typesafe-activator-$ACTIVATOR_VERSION.zip
-RUN unzip typesafe-activator-1.3.10.zip
-RUN rm typesafe-activator-$ACTIVATOR_VERSION.zip
-RUN echo "export PATH=$PATH:/home/ellipsis/activator-dist-$ACTIVATOR_VERSION/bin" >> /home/ellipsis/.bashrc
-
 
 WORKDIR /home/ellipsis/code
