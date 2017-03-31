@@ -2,7 +2,7 @@ define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
     BehaviorList = require('./index'),
-    Collapsible = require('../shared_ui/collapsible'),
+    PageNotification = require('../shared_ui/page_notification'),
     DataRequest = require('../lib/data_request'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
     TimeZoneSetter = require('../time_zone_setter/index');
@@ -33,7 +33,8 @@ define(function(require) {
         isLoadingMatchingResults: false,
         currentTeamTimeZone: this.props.teamTimeZone,
         isSavingTeamTimeZone: false,
-        errorSavingTeamTimeZone: null
+        errorSavingTeamTimeZone: null,
+        dismissedNotifications: []
       };
     },
 
@@ -180,19 +181,32 @@ define(function(require) {
       });
     },
 
+    dismissNotification: function(notificationName) {
+      this.setState({
+        dismissedNotifications: this.state.dismissedNotifications.concat(notificationName)
+      });
+    },
+
+    hasDismissedNotification: function(notificationName) {
+      return this.state.dismissedNotifications.includes(notificationName);
+    },
+
+    shouldNotifyTimeZone: function() {
+      return !this.props.teamTimeZone && !!this.state.currentTeamTimeZone;
+    },
+
     render: function() {
       if (this.state.currentTeamTimeZone) {
         return (
           <div>
-            <Collapsible revealWhen={!this.props.teamTimeZone} animateInitialRender={true}>
-              <div className="bg-blue-light pvm border-bottom-thick border-blue">
-                <div className="container container-c">
-                  <div className="mhl">
-                    Your team’s time zone has been set to {this.state.currentTeamTimeZone}.
-                  </div>
-                </div>
-              </div>
-            </Collapsible>
+            {this.shouldNotifyTimeZone() ? (
+              <PageNotification
+              name="TIME_ZONE_SET"
+              content={`Your team’s time zone has been set to ${this.state.currentTeamTimeZone}.`}
+              onDismiss={this.dismissNotification}
+              isDismissed={this.hasDismissedNotification("TIME_ZONE_SET")}
+              />
+            ) : null}
             <BehaviorList
               onLoadPublishedBehaviorGroups={this.loadPublishedBehaviorGroups}
               onBehaviorGroupImport={this.importBehaviorGroup}
