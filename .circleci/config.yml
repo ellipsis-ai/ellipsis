@@ -30,11 +30,11 @@ jobs:
       - run:
           name: Run JavaScript Linter
           command: |
+            npm prune;npm install
             npm run lint
       - run:
           name: Run JavaScript Tests
           command: |
-            npm prune;npm install
             pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
       - run:
