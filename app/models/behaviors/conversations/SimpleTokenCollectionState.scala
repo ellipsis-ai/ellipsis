@@ -72,7 +72,7 @@ object SimpleTokenCollectionState {
           ): Future[SimpleTokenCollectionState] = {
     for {
       tokens <- dataService.linkedSimpleTokens.allForUser(user)
-      requiredTokenApis <- dataService.requiredSimpleTokenApis.allFor(conversation.behaviorVersion)
+      requiredTokenApis <- dataService.requiredSimpleTokenApis.allFor(conversation.behaviorVersion.groupVersion)
     } yield {
       val missing = requiredTokenApis.filterNot { required =>
         tokens.exists(linked => linked.api == required.api)

@@ -49,13 +49,15 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
                 qaExtractor.possibleAnswerContent,
                 Seq(),
                 triggerData,
-                BehaviorConfig(None, None, None, None, None, None, isDataType = false),
+                BehaviorConfig(None, None, None, None, isDataType = false),
                 None,
                 None,
                 None,
                 dataService
               )
             ),
+            Seq(),
+            Seq(),
             None,
             None,
             Some(OffsetDateTime.now)
@@ -76,7 +78,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
     } yield {
       maybeGroupVersion.map { groupVersion =>
         val link = maybeBehaviorVersion.map { behaviorVersion =>
-          dataService.behaviors.editLinkFor(groupVersion.group.id, behaviorVersion.behavior.id, lambdaService.configuration)
+          dataService.behaviors.editLinkFor(groupVersion.group.id, Some(behaviorVersion.behavior.id), lambdaService.configuration)
         }.getOrElse {
           dataService.behaviorGroups.editLinkFor(groupVersion.group.id, lambdaService.configuration)
         }

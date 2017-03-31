@@ -61,7 +61,7 @@ trait HelpResult {
           groupId <- group.id
           behaviorId <- behaviorVersion.behaviorId
         } yield {
-          val url = dataService.behaviors.editLinkFor(groupId, behaviorId, lambdaService.configuration)
+          val url = dataService.behaviors.editLinkFor(groupId, Some(behaviorId), lambdaService.configuration)
           s" [✎]($url)"
         }).getOrElse("")
         Some(s"$triggersString$linkText\n\n")
