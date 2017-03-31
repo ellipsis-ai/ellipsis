@@ -35,6 +35,8 @@ jobs:
             npm install eslint-plugin-react
             npm install eslint
             npm install jest
+            npm babel-preset-es2015
+            npm babel-preset-stage-2
       - run:
           name: Run JavaScript Linter
           working_directory: ~/ellipsis/ellipsis
