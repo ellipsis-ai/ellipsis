@@ -38,11 +38,11 @@ jobs:
           working_directory: ~/ellipsis/ellipsis
           command: |
             npm run lint
-      - run:
-          name: Run JavaScript Tests
-          working_directory: ~/ellipsis/ellipsis
-          command: |
-            npm test
+      # - run:
+      #     name: Run JavaScript Tests
+      #     working_directory: ~/ellipsis/ellipsis
+      #     command: |
+      #       npm test
       - run:
           name: Run Activator Tests
           working_directory: ~/ellipsis/ellipsis
