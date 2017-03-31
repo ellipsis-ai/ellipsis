@@ -256,18 +256,6 @@ const BehaviorEditor = React.createClass({
     return !!this.getBehaviorConfig().forcePrivateResponse;
   },
 
-  getCodeAutocompletions: function() {
-    var apiTokens = this.getApiApplications().map((application) => `ellipsis.accessTokens.${application.keyName}`);
-
-    var envVars = this.getEnvVariableNames().map(function(name) {
-      return `ellipsis.env.${name}`;
-    });
-
-    var aws = this.getAWSConfig() ? ['ellipsis.AWS'] : [];
-
-    return this.getCodeFunctionParams().concat(apiTokens, aws, envVars);
-  },
-
   getCodeEditorDropdownLabel: function() {
     return (<SVGSettingsIcon label="Editor settings" />);
   },
@@ -372,23 +360,6 @@ const BehaviorEditor = React.createClass({
         onNewOAuth2Application: this.onNewOAuth2Application
       });
     });
-    var unusedApplications =
-      this.getRequiredOAuth2ApiConfigs().
-        map(ea => ea.application).
-        filter(ea => ea && !this.hasUsedOAuth2Application(ea.keyName));
-    unusedApplications.forEach(ea => {
-      notifications.push({
-        kind: "oauth2_application_unused",
-        name: ea.displayName,
-        code: `ellipsis.accessTokens.${ea.keyName}`
-      });
-    });
-    if (this.getAWSConfig() && !this.hasUsedAWSObject()) {
-      notifications.push({
-        kind: "aws_unused",
-        code: "ellipsis.AWS"
-      });
-    }
     return notifications;
   },
 
@@ -1201,12 +1172,6 @@ const BehaviorEditor = React.createClass({
     return /\bellipsis\.AWS\b/.test(code);
   },
 
-  hasUsedOAuth2Application: function(keyName) {
-    var code = this.getBehaviorFunctionBody();
-    var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
-    return pattern.test(code);
-  },
-
   hasModifiedTemplate: function() {
     return this.state && this.state.hasModifiedTemplate;
   },
@@ -1524,8 +1489,10 @@ const BehaviorEditor = React.createClass({
             onCursorChange={this.ensureCursorVisible}
             firstLineNumber={this.getFirstLineNumberForCode()}
             lineWrapping={this.state.codeEditorUseLineWrapping}
-            autocompletions={this.getCodeAutocompletions()}
             functionParams={this.getCodeFunctionParams()}
+            apiAccessTokens={this.getApiApplications()}
+            envVariableNames={this.getEnvVariableNames()}
+            hasAwsConfig={!!this.getAWSConfig()}
           />
           <div className="position-absolute position-top-right position-z-popup-trigger">
             <DropdownMenu

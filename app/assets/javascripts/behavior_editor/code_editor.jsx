@@ -1,6 +1,7 @@
 define(function(require) {
 var React = require('react'),
-  Codemirror = require('../shared_ui/react-codemirror');
+  Codemirror = require('../shared_ui/react-codemirror'),
+  oauth2ApplicationShape = require('./oauth2_application_shape');
   require('codemirror');
   require('codemirror/mode/javascript/javascript');
   require('codemirror/addon/lint/lint');
@@ -8,8 +9,8 @@ var React = require('react'),
   require('codemirror/addon/hint/show-hint');
 
 return React.createClass({
+  displayName: "CodeEditor",
   propTypes: {
-    autocompletions: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     firstLineNumber: React.PropTypes.oneOfType([
       React.PropTypes.number,
       React.PropTypes.string
@@ -18,7 +19,10 @@ return React.createClass({
     lineWrapping: React.PropTypes.bool,
     onChange: React.PropTypes.func.isRequired,
     onCursorChange: React.PropTypes.func.isRequired,
-    value: React.PropTypes.string.isRequired
+    value: React.PropTypes.string.isRequired,
+    apiAccessTokens: React.PropTypes.arrayOf(oauth2ApplicationShape).isRequired,
+    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    hasAwsConfig: React.PropTypes.bool.isRequired
   },
   getJsHintOptions: function() {
     return {
@@ -86,9 +90,60 @@ return React.createClass({
     };
   },
 
+  hasUsedOAuth2Application: function(keyName) {
+    var code = this.props.value;
+    var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
+    return pattern.test(code);
+  },
+
+  getNotifications: function() {
+    var oAuth2Notifications = [];
+    var awsNotifications = [];
+    var unusedApplications = this.apiAccessTokens.filter(ea => ea && !this.hasUsedOAuth2Application(ea.keyName));
+    unusedApplications.forEach(ea => {
+      oAuth2Notifications.push({
+        kind: "oauth2_application_unused",
+        name: ea.displayName,
+        code: `ellipsis.accessTokens.${ea.keyName}`
+      });
+    });
+    if (this.getAWSConfig() && !this.hasUsedAWSObject()) {
+      awsNotifications.push({
+        kind: "aws_unused",
+        code: "ellipsis.AWS"
+      });
+    }
+    var notifications = [];
+    if (oAuth2Notifications.length > 0) {
+      notifications.push({
+        kind: "oauth2_application_unused",
+        details: oAuth2Notifications
+      });
+    }
+    if (awsNotifications.length > 0) {
+      notifications.push({
+        kind: "aws_unused",
+        details: awsNotifications
+      });
+    }
+    return notifications;
+  },
+
+  getCodeAutocompletions: function() {
+    var apiTokens = this.props.apiAccessTokens.map((application) => `ellipsis.accessTokens.${application.keyName}`);
+
+    var envVars = this.props.envVariableNames.map(function(name) {
+      return `ellipsis.env.${name}`;
+    });
+
+    var aws = this.props.hasAwsConfig ? ['ellipsis.AWS'] : [];
+
+    return this.props.functionParams.concat(apiTokens, aws, envVars);
+  },
+
   autocompleteParams: function(cm) {
     var matches = [];
-    var possibleWords = this.props.autocompletions;
+    var possibleWords = this.getCodeAutocompletions();
 
     var cursor = cm.getCursor();
     var line = cm.getLine(cursor.line);
