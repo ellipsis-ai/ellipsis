@@ -210,13 +210,11 @@ class ApplicationController @Inject() (
     )
   }
 
-  case class SetTeamTimeZoneInfo(tzName: String, maybeTeamId: Option[String])
-
   private val timeZoneForm = Form(
     mapping(
       "tzName" -> nonEmptyText,
       "teamId" -> optional(nonEmptyText)
-    )(SetTeamTimeZoneInfo.apply)(SetTeamTimeZoneInfo.unapply)
+    )(TeamTimeZoneData.apply)(TeamTimeZoneData.unapply)
   )
 
   def setTeamTimeZone = silhouette.SecuredAction.async { implicit request =>
@@ -236,7 +234,7 @@ class ApplicationController @Inject() (
         } yield {
           maybeTeam.map { team =>
             team.maybeTimeZone.map { tz =>
-              Ok(Json.obj("newTz" -> tz.toString).toString)
+              Ok(Json.toJson(TeamTimeZoneData(tz.toString, None)).toString)
             }.getOrElse {
               BadRequest(Json.obj("message" -> "Invalid time zone").toString)
             }

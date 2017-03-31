@@ -162,7 +162,7 @@ define(function(require) {
             teamId: this.props.teamId
           }, this.props.csrfToken)
           .then((json) => {
-            if (json.newTz) {
+            if (json.tzName) {
               this.setState({
                 currentTeamTimeZone: displayName,
                 isSavingTeamTimeZone: false
