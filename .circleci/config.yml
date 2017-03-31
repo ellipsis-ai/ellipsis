@@ -4,7 +4,6 @@ jobs:
     branches:
       only:
         - circle-build
-    working_directory: ~/ellipsis
     docker:
       - image: ellipsis/circleci_primary:latest
         environment:
@@ -15,6 +14,7 @@ jobs:
           POSTGRES_USER: ellipsis
           POSTGRES_DB: ellipsis-test
           POSTGRES_PASSWORD: ellipsis
+    working_directory: ~/ellipsis
     steps:
       - checkout
       - run:
@@ -29,13 +29,16 @@ jobs:
             echo Failed waiting for Postgress && exit 1
       - run:
           name: Run JavaScript Linter
+          working_directory: ~/ellipsis/ellipsis
           command: |
             npm run lint
       - run:
           name: Run JavaScript Tests
+          working_directory: ~/ellipsis/ellipsis
           command: |
             npm test
       - run:
           name: Run Activator Tests
+          working_directory: ~/ellipsis/ellipsis
           command: |
             activator test
