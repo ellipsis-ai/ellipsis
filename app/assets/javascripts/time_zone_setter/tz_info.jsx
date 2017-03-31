@@ -1,6 +1,7 @@
 define(function() {
   /*
    Time zone data pulled from CLDR <http://cldr.unicode.org/index/downloads>
+   TODO: Rather than a hastily copied version of this data, we should import it properly
 
    COPYRIGHT AND PERMISSION NOTICE
 
