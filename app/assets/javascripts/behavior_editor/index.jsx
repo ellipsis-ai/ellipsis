@@ -667,6 +667,10 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  refreshCodeEditor: function() {
+    this.refs.codeEditor.refresh();
+  },
+
   loadVersions: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.getBehaviorGroup().id).url;
     this.setState({
@@ -971,7 +975,10 @@ const BehaviorEditor = React.createClass({
       }
     });
     const updatedGroup = this.getBehaviorGroup().clone({ behaviorVersions: updatedBehaviorVersions });
-    this.updateGroupStateWith(updatedGroup, this.resetNotifications);
+    this.updateGroupStateWith(updatedGroup, () => {
+      this.resetNotifications();
+      this.refreshCodeEditor();
+    });
   },
 
   toggleCodeEditorLineWrapping: function() {
@@ -1511,6 +1518,7 @@ const BehaviorEditor = React.createClass({
 
         <div className="position-relative">
           <CodeEditor
+            ref="codeEditor"
             value={this.getBehaviorFunctionBody()}
             onChange={this.updateCode}
             onCursorChange={this.ensureCursorVisible}
@@ -2042,7 +2050,10 @@ const BehaviorEditor = React.createClass({
                   </div>
                 </Collapsible>
 
-                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0.5} animationDisabled={this.animationIsDisabled()}>
+                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor}
+                  animationDuration={0.5}
+                  animationDisabled={this.animationIsDisabled()}
+                >
 
                   <div className="container container-wide">
                     <div className="ptxl">
