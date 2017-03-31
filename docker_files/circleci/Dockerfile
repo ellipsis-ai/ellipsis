@@ -20,6 +20,7 @@ RUN apk add --update bash curl openssl ca-certificates && \
 RUN apk add --update nodejs
 RUN npm install -g eslint-plugin-react
 RUN npm install -g eslint
+RUN npm install -g jest
 
 
 # Define commonly used JAVA_HOME variable
