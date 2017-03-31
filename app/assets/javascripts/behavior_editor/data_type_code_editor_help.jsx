@@ -5,7 +5,8 @@ define(function(require) {
   return React.createClass({
     propTypes: {
       functionBody: React.PropTypes.string.isRequired,
-      usesSearch: React.PropTypes.bool.isRequired
+      usesSearch: React.PropTypes.bool.isRequired,
+      isFinishedBehavior: React.PropTypes.bool.isRequired
     },
 
     hasCalledOnSuccess: function() {
@@ -31,7 +32,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <Checklist disabledWhen={false}>
+          <Checklist disabledWhen={this.props.isFinishedBehavior}>
             <Checklist.Item hiddenWhen={this.hasCode()}>
               <span>Write a Node.js (<a href="https://nodejs.org/docs/latest-v4.x/api/" target="_blank">v4.3.2</a>) </span>
               <span>function. You can <code>require()</code> any </span>
