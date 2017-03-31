@@ -1,9 +1,9 @@
 package controllers
 
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZoneId}
 
 import com.mohiva.play.silhouette.test._
-import json.BehaviorGroupData
+import json.{BehaviorGroupData, TeamTimeZoneData}
 import models.IDs
 import models.accounts.user.UserTeamAccess
 import models.behaviors.behavior.Behavior
@@ -14,11 +14,11 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{JsError, JsSuccess}
+import play.api.libs.json._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import support.ControllerTestContextWithLoggedInUser
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
@@ -71,6 +71,34 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
       }
     }
 
+  }
+
+  "setTeamTimeZone" should {
+    "set the team time zone when passed a valid time zone name" in new ControllerTestContextWithLoggedInUser {
+      running(app) {
+        val teamAccess = mock[UserTeamAccess]
+        val tz = ZoneId.of("America/Toronto")
+        when(dataService.users.teamAccessFor(user, Some(team.id))).thenReturn(Future.successful(teamAccess))
+        when(teamAccess.maybeTargetTeam).thenReturn(Some(team))
+        when(dataService.teams.setTimeZoneFor(anyObject(), any[ZoneId])).thenReturn(Future(team.copy(maybeTimeZone = Some(tz))))
+
+        val csrfToken = csrfProvider.generateToken
+        val request = FakeRequest(controllers.routes.ApplicationController.setTeamTimeZone()).
+          withSession(csrfConfig.tokenName -> csrfToken).
+          withHeaders(csrfConfig.headerName -> csrfToken).
+          withJsonBody(Json.obj("tzName" -> "America/Toronto")).
+          withAuthenticator(user.loginInfo)
+        val result = route(app, request).get
+        status(result) mustBe OK
+        import json.Formatting._
+        contentAsJson(result).validate[TeamTimeZoneData] match {
+          case JsSuccess(data, jsPath) => {
+            data.tzName mustBe "America/Toronto"
+          }
+          case e: JsError => assert(false, "Not valid time zone data")
+        }
+      }
+    }
   }
 
 }
