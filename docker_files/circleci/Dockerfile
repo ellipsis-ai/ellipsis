@@ -18,6 +18,7 @@ RUN apk add --update bash curl openssl ca-certificates && \
 
 # Node and Npm
 RUN apk add --update nodejs
+RUN npm install eslint
 
 # Define commonly used JAVA_HOME variable
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
