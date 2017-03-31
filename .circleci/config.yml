@@ -14,7 +14,7 @@ jobs:
           POSTGRES_USER: ellipsis
           POSTGRES_DB: ellipsis-test
           POSTGRES_PASSWORD: ellipsis
-    working_directory: /home/circleci/ellipsis
+    working_directory: ~//ellipsis
     steps:
       - checkout
       - run:
@@ -34,6 +34,8 @@ jobs:
       - run:
           name: Run JavaScript Tests
           command: |
+            npm prune;npm install
+            pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
       - run:
           name: Run Activator Tests
