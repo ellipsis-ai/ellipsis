@@ -27,6 +27,14 @@ jobs:
               sleep 1
             done
             echo Failed waiting for Postgress && exit 1
+      # These should be in the Docker image
+      - run:
+          name: Insall dependencies
+          working_directory: ~/ellipsis/ellipsis
+          command: |
+            npm install -g eslint-plugin-react
+            npm install -g eslint
+            npm install -g jest
       - run:
           name: Run JavaScript Linter
           working_directory: ~/ellipsis/ellipsis
