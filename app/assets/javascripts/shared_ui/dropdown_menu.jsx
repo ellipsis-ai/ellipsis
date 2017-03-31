@@ -4,6 +4,7 @@ var React = require('react'),
   Event = require('../lib/event');
 
 var BehaviorEditorDropdownMenu = React.createClass({
+  displayName: "DropdownMenu",
   propTypes: {
     children: React.PropTypes.node.isRequired,
     labelClassName: React.PropTypes.string,
@@ -115,6 +116,7 @@ var BehaviorEditorDropdownMenu = React.createClass({
 });
 
 BehaviorEditorDropdownMenu.Item = React.createClass({
+  displayName: "DropdownMenuItem",
   propTypes: {
     checkedWhen: React.PropTypes.bool,
     label: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,

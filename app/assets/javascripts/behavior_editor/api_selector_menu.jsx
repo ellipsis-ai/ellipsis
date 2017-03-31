@@ -3,6 +3,7 @@ define(function(require) {
     DropdownMenu = require('../shared_ui/dropdown_menu');
 
   return React.createClass({
+    displayName: "APISelectorMenu",
     propTypes: {
       openWhen: React.PropTypes.bool.isRequired,
       onAWSClick: React.PropTypes.func.isRequired,

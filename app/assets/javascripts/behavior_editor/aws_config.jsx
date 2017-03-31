@@ -4,7 +4,7 @@ define(function(require) {
     HelpButton = require('../help/help_button');
 
   return React.createClass({
-
+    displayName: 'AWSConfig',
     propTypes: {
       envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
       accessKeyName: React.PropTypes.string,

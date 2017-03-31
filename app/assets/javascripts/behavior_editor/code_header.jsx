@@ -2,6 +2,7 @@ define(function(require) {
 var React = require('react');
 
 return React.createClass({
+  displayName: 'CodeHeader',
   propTypes: {
     userInputs: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
     systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
