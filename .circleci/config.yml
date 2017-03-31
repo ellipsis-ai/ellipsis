@@ -31,8 +31,6 @@ jobs:
           name: Run JavaScript Linter
           working_directory: ~/ellipsis/ellipsis
           command: |
-            npm install eslint-plugin-react
-            npm install eslint
             npm run lint
       - run:
           name: Run JavaScript Tests
