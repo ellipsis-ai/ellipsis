@@ -14,7 +14,7 @@ RUN apk add --update bash curl openssl ca-certificates && \
   rm -rf /tmp/* /var/cache/apk/*
 
 # Git
- RUN apk add --no-cache git openssh
+RUN apk add --no-cache git openssh
 
 # Node and Npm
 RUN apk add --update nodejs
@@ -22,21 +22,12 @@ RUN npm install -g eslint-plugin-react
 RUN npm install -g eslint
 RUN npm install -g jest
 
-
 # Define commonly used JAVA_HOME variable
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
-# User
-RUN addgroup -S ellipsis && adduser -S -g ellipsis ellipsis
-RUN passwd -d -u ellipsis
-RUN echo "ellipsis ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers
-RUN mkdir /home/ellipsis/code
-RUN chown ellipsis:ellipsis /home/ellipsis/code
-# # RUN echo "export PATH=$PATH:/opt/activator/bin" >> /home/ellipsis/.bashrc
-# RUN echo "export _JAVA_OPTIONS='-Duser.home=/home/ellipsis/code'" >> /home/ellipsis/.bashrc
-#
-#
-# Change user, launch bash
-USER ellipsis
 
-WORKDIR /home/ellipsis/code
+RUN addgroup -S circleci && adduser -S -g circleci circleci
+RUN passwd -d -u circleci
+RUN echo "circleci ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers
+
+USER circleci

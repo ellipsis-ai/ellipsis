@@ -14,7 +14,7 @@ jobs:
           POSTGRES_USER: ellipsis
           POSTGRES_DB: ellipsis-test
           POSTGRES_PASSWORD: ellipsis
-    working_directory: ~/ellipsis
+    working_directory: /home/circleci/ellipsis
     steps:
       - checkout
       - run:
@@ -27,24 +27,15 @@ jobs:
               sleep 1
             done
             echo Failed waiting for Postgress && exit 1
-      # These should be in the Docker image
-      - run:
-          name: Insall dependencies
-          working_directory: ~/ellipsis/ellipsis
-          command: |
-            npm install
       - run:
           name: Run JavaScript Linter
-          working_directory: ~/ellipsis/ellipsis
           command: |
             npm run lint
-      # - run:
-      #     name: Run JavaScript Tests
-      #     working_directory: ~/ellipsis/ellipsis
-      #     command: |
-      #       npm test
+      - run:
+          name: Run JavaScript Tests
+          command: |
+            npm test
       - run:
           name: Run Activator Tests
-          working_directory: ~/ellipsis/ellipsis
           command: |
             activator test
