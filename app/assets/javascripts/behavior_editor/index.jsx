@@ -2094,6 +2094,7 @@ const BehaviorEditor = React.createClass({
               <DataTypeResultConfig
                 usesSearch={this.hasInputNamed('searchQuery')}
                 onChange={this.updateDataTypeResultConfig}
+                isFinishedBehavior={this.isFinishedBehavior()}
               />
 
               <hr className="man thin bg-gray-light" />
@@ -2103,8 +2104,9 @@ const BehaviorEditor = React.createClass({
 
                 <div className="mbxl">
                   <DataTypeCodeEditorHelp
-                  functionBody={this.getBehaviorFunctionBody()}
-                  usesSearch={this.hasInputNamed('searchQuery')}
+                    functionBody={this.getBehaviorFunctionBody()}
+                    usesSearch={this.hasInputNamed('searchQuery')}
+                    isFinishedBehavior={this.isFinishedBehavior()}
                   />
                 </div>
 
