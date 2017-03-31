@@ -32,9 +32,9 @@ jobs:
           name: Insall dependencies
           working_directory: ~/ellipsis/ellipsis
           command: |
-            npm install -g eslint-plugin-react
-            npm install -g eslint
-            npm install -g jest
+            npm install eslint-plugin-react
+            npm install eslint
+            npm install jest
       - run:
           name: Run JavaScript Linter
           working_directory: ~/ellipsis/ellipsis
