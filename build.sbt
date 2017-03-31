@@ -73,5 +73,6 @@ BabelKeys.options := WebJs.JS.Object(
   "presets" -> List("react", "es2015")
 )
 
+scalacOptions in Compile ++= Seq("-Xmax-classfile-name", "128")
 
 fork in run := true
