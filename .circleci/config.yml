@@ -9,6 +9,8 @@ jobs:
         environment:
           DB_HOST: localhost
           DB_PORT: 5432
+          # JAVA_TOOL_OPTIONS: '-Dfile.encoding=UTF8 -Duser.timezone=UTC'
+          # _JAVA_OPTIONS: '-Xms512m -Xmx1024m -Xss2m'
       - image: postgres:9.6.2
         environment:
           POSTGRES_USER: ellipsis
