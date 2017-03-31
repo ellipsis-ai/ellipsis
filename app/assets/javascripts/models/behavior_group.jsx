@@ -16,9 +16,23 @@ define(function(require) {
         actionInputs: { value: props.actionInputs, enumerable: true },
         dataTypeInputs: { value: props.dataTypeInputs, enumerable: true },
         behaviorVersions: { value: props.behaviorVersions, enumerable: true },
+        requiredOAuth2ApiConfigs: { value: props.requiredOAuth2ApiConfigs, enumerable: true },
+        requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: true },
         exportId: { value: props.exportId, enumerable: true }
       });
+    }
+
+    getRequiredOAuth2ApiConfigs() {
+      return this.requiredOAuth2ApiConfigs || [];
+    }
+
+    getRequiredSimpleTokenApis() {
+      return this.requiredSimpleTokenApis || [];
+    }
+
+    needsConfig() {
+      return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application).length > 0;
     }
 
     isRecentlySaved() {
