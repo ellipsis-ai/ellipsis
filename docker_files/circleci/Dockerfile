@@ -14,13 +14,10 @@ RUN apk add --update bash curl openssl ca-certificates && \
   rm -rf /tmp/* /var/cache/apk/*
 
 # Git
-RUN apk add --no-cache git openssh
+RUN apk add --no-cache git openssh zip
 
 # Node and Npm
 RUN apk add --update nodejs
-RUN npm install -g eslint-plugin-react
-RUN npm install -g eslint
-RUN npm install -g jest
 
 # Define commonly used JAVA_HOME variable
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
