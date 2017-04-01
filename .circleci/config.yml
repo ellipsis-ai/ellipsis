@@ -16,7 +16,7 @@ jobs:
           POSTGRES_USER: ellipsis
           POSTGRES_DB: ellipsis-test
           POSTGRES_PASSWORD: ellipsis
-    working_directory: /home/ellipsis
+    working_directory: ~/ellipsis
     steps:
       - checkout
       - run:
