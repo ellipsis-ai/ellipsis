@@ -1,9 +1,9 @@
 version: 2
 jobs:
   build:
-    branches:
-      only:
-        - circle-build
+    # branches:
+    #   only:
+    #     - master
     docker:
       - image: ellipsis/circleci_primary:latest
         environment:
