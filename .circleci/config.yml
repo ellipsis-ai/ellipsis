@@ -42,16 +42,12 @@ jobs:
           command: |
             pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
-      # - run:
-      #     name: Run Activator Tests
-      #     command: |
-      #       activator test
-      # # create playapp image
-      # # store playapp image in Docker Hub
-      # # uploaded playapp image to s3 bucket
-      - setup_remote_docker
       - run:
-          name: Build Docker Image
+          name: Run Activator Tests
+          command: |
+            activator test
+      - run:
+          name: Prepare app to be dockerized
           command: |
             BOT_VERSION=`git rev-parse --short HEAD`
             echo application.version=\"${BOT_VERSION}\" > conf/version.conf
@@ -67,6 +63,23 @@ jobs:
             pushd target/docker
             zip -qq -r $BOT_BUNDLE_PATH .
             popd
+      - run:
+          name: Upload Elastic beanstalk bundle
+          command: |
+            AWS_ACCOUNT_ID=`aws ec2 describe-security-groups --group-names 'Default' --query 'SecurityGroups[0].OwnerId' --output text`
+            echo "aws account id: ${AWS_ACCOUNT_ID}"
+            BUCKET="greenbuilds-${AWS_ACCOUNT_ID}"
+            echo "build bucket: ${BUCKET}"
+            BUCKET_EXISTS=`aws s3api head-bucket --profile ellipsis_prod --bucket "$GREEN_BUILDS_BUCKET" 2>&1`
+            echo "Bucket test result: ${BUCKET_EXISTS}"
+            if [[ $BUCKET_EXISTS ]]; then
+              echo "bucket does not exists, creating...";
+              aws s3api create-bucket --bucket $BUCKET --region us-east-1
+            else
+              echo "bucket exists!";
+            fi
+            echo "uploading to builds bucket: s3://${BUCKET}/${BOT_BUNDLE}";
+            aws s3 cp $BOT_BUNDLE_PATH s3://$BUCKET/$BOT_BUNDLE
 
 
       # - deploy:
