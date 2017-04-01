@@ -19,6 +19,10 @@ RUN apk add --no-cache git openssh zip
 # Node and Npm
 RUN apk add --update nodejs
 
+# Docker and docker compose
+# RUN apk update && apk add docker make py-pip && pip install docker-compose
+RUN apk update && apk add docker
+
 # Define commonly used JAVA_HOME variable
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 

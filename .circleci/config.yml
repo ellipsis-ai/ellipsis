@@ -16,7 +16,7 @@ jobs:
           POSTGRES_USER: ellipsis
           POSTGRES_DB: ellipsis-test
           POSTGRES_PASSWORD: ellipsis
-    working_directory: ~//ellipsis
+    working_directory: /home/ellipsis
     steps:
       - checkout
       - run:
@@ -46,3 +46,32 @@ jobs:
           name: Run Activator Tests
           command: |
             activator test
+      # create playapp image
+      # store playapp image in Docker Hub
+      # uploaded playapp image to s3 bucket
+      - setup_remote_docker
+      - run:
+          name: Build Docker Image
+          command: |
+            BOT_VERSION=`git rev-parse --short HEAD`
+            echo application.version=\"${BOT_VERSION}\" > conf/version.conf
+            activator docker:stage
+      - run:
+          name: Prepare the Elasticbeanstalk bundle
+          command: |
+            BOT_BUNDLE=$BOT_VERSION.zip
+            BOT_BUNDLE_PATH=~/$BOT_BUNDLE
+            mkdir -p target/docker/.ebextensions
+            cp .ebextensions/* target/docker/.ebextensions/
+            cp deploy/Docker* target/docker/
+            pushd target/docker > /dev/null
+            zip -qq -r $BOT_BUNDLE_PATH .
+            popd > /dev/null
+            popd > /dev/null
+
+
+      - deploy:
+          command: |
+            - aws s3 cp $CIRCLE_ARTIFACTS/homebay-docker-$CIRCLE_SHA1.zip s3://homebay-deployments/homebay-docker-$CIRCLE_SHA1.zip
+            # - aws elasticbeanstalk create-application-version --application-name HomeBay --version-label $CIRCLE_SHA1 --source-bundle S3Bucket=homebay-deployments,S3Key=homebay-docker-$CIRCLE_SHA1.zip --region us-east-1
+            # - aws elasticbeanstalk update-environment --environment-name homebay-web --version-label $CIRCLE_SHA1 --region us-east-1
