@@ -66,6 +66,7 @@ jobs:
       - run:
           name: Upload Elastic beanstalk bundle
           command: |
+            AWS_REGION="us-east-1"
             AWS_ACCOUNT_ID=`aws ec2 describe-security-groups --group-names 'Default' --query 'SecurityGroups[0].OwnerId' --output text --region ${AWS_REGION}`
             echo "aws account id: ${AWS_ACCOUNT_ID}"
             BUCKET="greenbuilds-${AWS_ACCOUNT_ID}"
