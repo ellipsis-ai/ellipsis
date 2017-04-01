@@ -23,6 +23,12 @@ RUN apk add --update nodejs
 # RUN apk update && apk add docker make py-pip && pip install docker-compose
 RUN apk update && apk add docker
 
+# AWS CLI tools
+RUN apk --no-cache update && \
+    apk --no-cache add python py-pip py-setuptools ca-certificates && \
+    pip --no-cache-dir install awscli && \
+    rm -rf /var/cache/apk/*
+
 # Define commonly used JAVA_HOME variable
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 

@@ -66,11 +66,11 @@ jobs:
       - run:
           name: Upload Elastic beanstalk bundle
           command: |
-            AWS_ACCOUNT_ID=`aws ec2 describe-security-groups --group-names 'Default' --query 'SecurityGroups[0].OwnerId' --output text`
+            AWS_ACCOUNT_ID=`aws ec2 describe-security-groups --group-names 'Default' --query 'SecurityGroups[0].OwnerId' --output text --region ${AWS_REGION}`
             echo "aws account id: ${AWS_ACCOUNT_ID}"
             BUCKET="greenbuilds-${AWS_ACCOUNT_ID}"
             echo "build bucket: ${BUCKET}"
-            BUCKET_EXISTS=`aws s3api head-bucket --profile ellipsis_prod --bucket "$GREEN_BUILDS_BUCKET" 2>&1`
+            BUCKET_EXISTS=`aws s3api head-bucket --bucket "$BUCKET" 2>&1`
             echo "Bucket test result: ${BUCKET_EXISTS}"
             if [[ $BUCKET_EXISTS ]]; then
               echo "bucket does not exists, creating...";
@@ -78,7 +78,7 @@ jobs:
             else
               echo "bucket exists!";
             fi
-            echo "uploading to builds bucket: s3://${BUCKET}/${BOT_BUNDLE}";
+            echo "uploading to builds bucket: s3://${BUCKET}/${BOT_BUNDLE}"
             aws s3 cp $BOT_BUNDLE_PATH s3://$BUCKET/$BOT_BUNDLE
 
 
