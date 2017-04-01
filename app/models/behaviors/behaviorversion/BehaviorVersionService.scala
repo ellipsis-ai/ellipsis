@@ -5,6 +5,8 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
+import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.team.Team
@@ -50,6 +52,8 @@ trait BehaviorVersionService {
   def createForAction(
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
+                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                        maybeUser: Option[User],
                        data: BehaviorVersionData
                      ): DBIO[BehaviorVersion]

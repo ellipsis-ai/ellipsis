@@ -32,7 +32,7 @@ case class LinkedOAuth2Token(
     }
   }
 
-  def isExpired: Boolean = maybeExpirationTime.exists(_.isBefore(OffsetDateTime.now))
+  def isExpiredOrExpiresSoon: Boolean = maybeExpirationTime.exists(_.isBefore(OffsetDateTime.now.plusMinutes(1)))
 
   def toRaw: RawLinkedOAuth2Token = RawLinkedOAuth2Token(
     accessToken,

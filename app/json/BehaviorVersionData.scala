@@ -76,10 +76,6 @@ case class BehaviorVersionData(
     copy(id = Some(newId))
   }
 
-  def copyForExport: BehaviorVersionData = {
-    copy(config = config.copyForExport)
-  }
-
   lazy val isDataType: Boolean = config.isDataType
 
   lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption
@@ -156,7 +152,7 @@ object BehaviorVersionData {
       "",
       Seq(),
       Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
-      BehaviorConfig(None, None, None, None, None, None, isDataType),
+      BehaviorConfig(None, None, None, None, isDataType),
       None,
       None,
       None,
@@ -225,27 +221,17 @@ object BehaviorVersionData {
       maybeAWSConfig <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.awsConfigs.maybeFor(behaviorVersion)
       }.getOrElse(Future.successful(None))
-      maybeRequiredOAuth2ApiConfigs <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      maybeRequiredSimpleTokenApis <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.requiredSimpleTokenApis.allFor(behaviorVersion).map(Some(_))
-      }.getOrElse(Future.successful(None))
     } yield {
       for {
         behavior <- maybeBehavior
         behaviorVersion <- maybeBehaviorVersion
         params <- maybeParameters
         triggers <- maybeTriggers
-        requiredOAuth2ApiConfigs <- maybeRequiredOAuth2ApiConfigs
-        requiredSimpleTokenApis <- maybeRequiredSimpleTokenApis
       } yield {
         val maybeAWSConfigData = maybeAWSConfig.map { config =>
           AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
         }
-        val requiredOAuth2ApiConfigData = requiredOAuth2ApiConfigs.map(ea => RequiredOAuth2ApiConfigData.from(ea))
-        val requiredSimpleTokenApiData = requiredSimpleTokenApis.map(ea => RequiredSimpleTokenApiData.from(ea))
-        val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(requiredOAuth2ApiConfigData), Some(requiredSimpleTokenApiData), Some(behaviorVersion.forcePrivateResponse), behavior.isDataType)
+        val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(behaviorVersion.forcePrivateResponse), behavior.isDataType)
         BehaviorVersionData.buildFor(
           Some(behaviorVersion.id),
           behaviorVersion.team.id,

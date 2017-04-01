@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import com.mohiva.play.silhouette.test._
 import json.BehaviorGroupData
 import models.IDs
+import models.accounts.user.UserTeamAccess
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -35,8 +36,10 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         val behavior = Behavior(behaviorId, team, Some(behaviorGroup), None, false, OffsetDateTime.now)
         val behaviorGroupVersion = BehaviorGroupVersion(groupVersionId, behaviorGroup, groupName, None, None, None, OffsetDateTime.now)
         val behaviorVersion = BehaviorVersion(IDs.next, behavior, behaviorGroupVersion, None, None, None, None, false, None, OffsetDateTime.now)
+        val teamAccess = mock[UserTeamAccess]
 
-        when(dataService.teams.find(team.id)).thenReturn(Future.successful(Some(team)))
+        when(dataService.users.teamAccessFor(user, Some(team.id))).thenReturn(Future.successful(teamAccess))
+        when(teamAccess.maybeTargetTeam).thenReturn(Some(team))
         when(dataService.behaviorGroups.allFor(team)).thenReturn(Future.successful(Seq(behaviorGroup)))
         when(dataService.behaviorGroups.find(groupId)).thenReturn(Future.successful(Some(behaviorGroup)))
         when(dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
@@ -47,8 +50,8 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviorParameters.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.messageTriggers.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.awsConfigs.maybeFor(behaviorVersion)).thenReturn(Future.successful(None))
-        when(dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.requiredSimpleTokenApis.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
+        when(dataService.requiredOAuth2ApiConfigs.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
+        when(dataService.requiredSimpleTokenApis.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.teamEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())
         when(dataService.userEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())
         when(githubService.publishedBehaviorGroupsFor(team, None)).thenReturn(Seq())

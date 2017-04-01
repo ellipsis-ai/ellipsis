@@ -3,9 +3,13 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.google.inject.Provider
-import services.DataService
 import drivers.SlickPostgresDriver.api._
+import play.api.Configuration
+import play.api.cache.CacheApi
+import play.api.libs.ws.WSClient
+import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -21,6 +25,7 @@ case class RawConversation(
                             maybeThreadId: Option[String],
                             userIdForContext: String,
                             startedAt: OffsetDateTime,
+                            maybeLastInteractionAt: Option[OffsetDateTime],
                             state: String,
                             maybeScheduledMessageId: Option[String]
                           )
@@ -37,19 +42,28 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
   def maybeThreadId = column[Option[String]]("thread_id")
   def userIdForContext = column[String]("user_id_for_context")
   def startedAt = column[OffsetDateTime]("started_at")
+  def maybeLastInteractionAt = column[Option[OffsetDateTime]]("last_interaction_at")
   def state = column[String]("state")
   def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
 
   def * =
-    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, state, maybeScheduledMessageId) <>
+    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 
 class ConversationServiceImpl @Inject() (
-                                           dataServiceProvider: Provider[DataService]
+                                          dataServiceProvider: Provider[DataService],
+                                          lambdaServiceProvider: Provider[AWSLambdaService],
+                                          cacheProvider: Provider[CacheApi],
+                                          wsProvider: Provider[WSClient],
+                                          configurationProvider: Provider[Configuration]
                                          ) extends ConversationService {
 
-  def dataService = dataServiceProvider.get
+  def dataService: DataService = dataServiceProvider.get
+  def lambdaService: AWSLambdaService = lambdaServiceProvider.get
+  def cache: CacheApi = cacheProvider.get
+  def ws: WSClient = wsProvider.get
+  def configuration: Configuration = configurationProvider.get
 
   import ConversationQueries._
 
@@ -121,6 +135,39 @@ class ConversationServiceImpl @Inject() (
     find(id).map { maybeConversation =>
       maybeConversation.exists(_.state == Conversation.DONE_STATE)
     }
+  }
+
+  def uncompiledTouchQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.maybeLastInteractionAt)
+  val touchQuery = Compiled(uncompiledTouchQuery _)
+
+  def touch(conversation: Conversation): Future[Unit] = {
+    val action = touchQuery(conversation.id).update(Some(OffsetDateTime.now)).map(_ => {})
+    dataService.run(action)
+  }
+
+  def background(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): Future[Unit] = {
+    for {
+      maybeEvent <- conversation.maybeEventForBackgrounding(dataService)
+      maybeLastTs <- maybeEvent.map { event =>
+        val usernameString = if (includeUsername) { s"<@${event.userIdForContext}>: " } else { "" }
+        event.sendMessage(
+          s"""$usernameString$prompt You can continue the previous conversation in this thread:""".stripMargin,
+          conversation.behaviorVersion.forcePrivateResponse,
+          maybeShouldUnfurl = None,
+          Some(conversation),
+          maybeActions = None,
+          dataService
+        )
+      }.getOrElse(Future.successful(None))
+      _ <- maybeEvent.map { event =>
+        val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
+        dataService.conversations.save(convoWithThreadId).flatMap { _ =>
+          convoWithThreadId.respond(event, lambdaService, dataService, cache, ws, configuration).map { result =>
+            result.sendIn(None, Some(convoWithThreadId), dataService)
+          }
+        }
+      }.getOrElse(Future.successful({}))
+    } yield {}
   }
 
 }

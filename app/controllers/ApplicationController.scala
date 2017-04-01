@@ -122,24 +122,35 @@ class ApplicationController @Inject() (
     )
   }
 
-  def findBehaviorGroupsMatching(queryString: String, maybeBranch: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def findBehaviorGroupsMatching(queryString: String, maybeBranch: Option[String], maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
-      maybeTeam <- dataService.teams.find(user.teamId)
-      installedBehaviorGroups <- maybeTeam.map { team =>
-        dataService.behaviorGroups.allFor(team)
+      teamAccess <- dataService.users.teamAccessFor(user, Some(maybeTeamId.getOrElse(user.teamId)))
+      maybeInstalledBehaviorGroups <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.behaviorGroups.allFor(team).map(Some(_))
       }.getOrElse {
-        Future.successful(Seq())
+        Future.successful(None)
       }
-      installedGroupData <- Future.sequence(installedBehaviorGroups.map { group =>
-        BehaviorGroupData.maybeFor(group.id, user, None, dataService)
-      }).map(_.flatten.sorted)
+      maybeInstalledGroupData <- maybeInstalledBehaviorGroups.map { groups =>
+        val eventualMaybeGroupData = groups.map { group =>
+          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+        }
+        Future.sequence(eventualMaybeGroupData).map { maybeGroups =>
+          Some(maybeGroups.flatten.sorted)
+        }
+      }.getOrElse {
+        Future.successful(None)
+      }
     } yield {
-      val publishedGroupData = maybeTeam.map { team =>
-        githubService.publishedBehaviorGroupsFor(team, maybeBranch)
-      }.getOrElse(Seq())
-      val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
-      Ok(Json.toJson(matchResults.map(_.item)).toString)
+      maybeInstalledGroupData.map { installedGroupData =>
+        val publishedGroupData = teamAccess.maybeTargetTeam.map { team =>
+          githubService.publishedBehaviorGroupsFor(team, maybeBranch)
+        }.getOrElse(Seq())
+        val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
+        Ok(Json.toJson(matchResults.map(_.item)).toString)
+      }.getOrElse {
+        NotFound("")
+      }
     }
   }
 

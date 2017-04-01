@@ -152,7 +152,7 @@ class AWSLambdaServiceImpl @Inject() (
               event: Event
               ): Future[BotResult] = {
     for {
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion.groupVersion)
       result <- if (behaviorVersion.functionBody.isEmpty) {
         Future.successful(SuccessResult(event, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
       } else {

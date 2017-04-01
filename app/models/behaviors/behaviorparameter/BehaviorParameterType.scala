@@ -154,13 +154,13 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
 
   def editLinkFor(context: BehaviorParameterContext) = {
     val behavior = behaviorVersion.behavior
-    val link = context.dataService.behaviors.editLinkFor(behavior.group.id, behavior.id, context.configuration)
+    val link = context.dataService.behaviors.editLinkFor(behavior.group.id, Some(behavior.id), context.configuration)
     s"[${context.parameter.paramType.name}]($link)"
   }
 
   def needsConfig(dataService: DataService) = {
     for {
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion.groupVersion)
     } yield !requiredOAuth2ApiConfigs.forall(_.isReady)
   }
 

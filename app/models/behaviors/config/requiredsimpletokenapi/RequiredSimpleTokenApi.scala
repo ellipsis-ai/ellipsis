@@ -1,19 +1,19 @@
 package models.behaviors.config.requiredsimpletokenapi
 
 import models.accounts.simpletokenapi.SimpleTokenApi
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 
 case class RequiredSimpleTokenApi(
-                                    id: String,
-                                    behaviorVersion: BehaviorVersion,
-                                    api: SimpleTokenApi
+                                   id: String,
+                                   groupVersion: BehaviorGroupVersion,
+                                   api: SimpleTokenApi
                                   ) {
   def isReady: Boolean = true
 
   def toRaw: RawRequiredSimpleTokenApi = {
     RawRequiredSimpleTokenApi(
       id,
-      behaviorVersion.id,
+      groupVersion.id,
       api.id
     )
   }
