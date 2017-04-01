@@ -7,6 +7,7 @@ jobs:
     docker:
       - image: ellipsis/circleci_primary:latest
         environment:
+          AWS_REGION: us-east-1
           DB_HOST: localhost
           DB_PORT: 5432
           # JAVA_TOOL_OPTIONS: '-Dfile.encoding=UTF8 -Duser.timezone=UTC'
@@ -19,54 +20,57 @@ jobs:
     working_directory: ~/ellipsis
     steps:
       - checkout
-      - run:
-          name: Waiting for Postgres to be ready
-          command: |
-            for i in `seq 1 10`;
-            do
-              nc -z localhost 5432 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for Postgress && exit 1
-      - run:
-          name: Install npm dependencies
-          command: |
-            npm prune;npm install
-      - run:
-          name: Run JavaScript Linter
-          command: |
-            npm run lint
-      - run:
-          name: Run JavaScript Tests
-          command: |
-            pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
-            npm test
-      - run:
-          name: Run Activator Tests
-          command: |
-            activator test
+      # - run:
+      #     name: Waiting for Postgres to be ready
+      #     command: |
+      #       for i in `seq 1 10`;
+      #       do
+      #         nc -z localhost 5432 && echo Success && exit 0
+      #         echo -n .
+      #         sleep 1
+      #       done
+      #       echo Failed waiting for Postgress && exit 1
+      # - run:
+      #     name: Install npm dependencies
+      #     command: |
+      #       npm prune;npm install
+      # - run:
+      #     name: Run JavaScript Linter
+      #     command: |
+      #       npm run lint
+      # - run:
+      #     name: Run JavaScript Tests
+      #     command: |
+      #       pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
+      #       npm test
+      # - run:
+      #     name: Run Activator Tests
+      #     command: |
+      #       activator test
       - run:
           name: Prepare app to be dockerized
           command: |
             BOT_VERSION=`git rev-parse --short HEAD`
             echo application.version=\"${BOT_VERSION}\" > conf/version.conf
-            activator docker:stage
+            # activator docker:stage
       - run:
           name: Prepare the Elasticbeanstalk bundle
           command: |
             BOT_BUNDLE=$BOT_VERSION.zip
+            echo "Bot bundle: ${BOT_BUNDLE}"
             BOT_BUNDLE_PATH=~/$BOT_BUNDLE
+            echo "Bot bundle path: ${BOT_BUNDLE_PATH}"
             mkdir -p target/docker/.ebextensions
             cp .ebextensions/* target/docker/.ebextensions/
             cp deploy/Docker* target/docker/
             pushd target/docker
             zip -qq -r $BOT_BUNDLE_PATH .
             popd
+            echo "Verifing bundle existance at ${BOT_BUNDLE_PATH}"
+            test -e $BOT_BUNDLE_PATH
       - run:
           name: Upload Elastic beanstalk bundle
           command: |
-            AWS_REGION="us-east-1"
             AWS_ACCOUNT_ID=`aws ec2 describe-security-groups --group-names 'Default' --query 'SecurityGroups[0].OwnerId' --output text --region ${AWS_REGION}`
             echo "aws account id: ${AWS_ACCOUNT_ID}"
             BUCKET="greenbuilds-${AWS_ACCOUNT_ID}"
@@ -80,7 +84,9 @@ jobs:
               echo "bucket exists!";
             fi
             echo "uploading to builds bucket: s3://${BUCKET}/${BOT_BUNDLE}"
-            aws s3 cp $BOT_BUNDLE_PATH s3://$BUCKET/$BOT_BUNDLE
+            S3_KEY=`date +'%Y-%m-%d'`-$BOT_BUNDLE
+            echo "Uploading with command "aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}"
+            aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}
 
 
       # - deploy:
