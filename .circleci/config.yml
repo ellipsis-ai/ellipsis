@@ -20,33 +20,33 @@ jobs:
     working_directory: ~/ellipsis
     steps:
       - checkout
-      # - run:
-      #     name: Waiting for Postgres to be ready
-      #     command: |
-      #       for i in `seq 1 10`;
-      #       do
-      #         nc -z localhost 5432 && echo Success && exit 0
-      #         echo -n .
-      #         sleep 1
-      #       done
-      #       echo Failed waiting for Postgress && exit 1
-      # - run:
-      #     name: Install npm dependencies
-      #     command: |
-      #       npm prune;npm install
-      # - run:
-      #     name: Run JavaScript Linter
-      #     command: |
-      #       npm run lint
-      # - run:
-      #     name: Run JavaScript Tests
-      #     command: |
-      #       pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
-      #       npm test
-      # - run:
-      #     name: Run Activator Tests
-      #     command: |
-      #       activator test
+      - run:
+          name: Waiting for Postgres to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgress && exit 1
+      - run:
+          name: Install npm dependencies
+          command: |
+            npm prune;npm install
+      - run:
+          name: Run JavaScript Linter
+          command: |
+            npm run lint
+      - run:
+          name: Run JavaScript Tests
+          command: |
+            pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
+            npm test
+      - run:
+          name: Run Activator Tests
+          command: |
+            activator test
       - run:
           name: Prepare app to be dockerized
           command: |
