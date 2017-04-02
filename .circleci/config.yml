@@ -56,9 +56,9 @@ jobs:
       - run:
           name: Prepare the Elasticbeanstalk bundle
           command: |
-            BOT_BUNDLE=$BOT_VERSION.zip
+            export BOT_BUNDLE=$BOT_VERSION.zip
             echo "Bot bundle: ${BOT_BUNDLE}"
-            BOT_BUNDLE_PATH=~/$BOT_BUNDLE
+            export BOT_BUNDLE_PATH=~/$BOT_BUNDLE
             echo "Bot bundle path: ${BOT_BUNDLE_PATH}"
             mkdir -p target/docker/.ebextensions
             cp .ebextensions/* target/docker/.ebextensions/
