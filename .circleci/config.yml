@@ -52,7 +52,7 @@ jobs:
           command: |
             BOT_VERSION=`git rev-parse --short HEAD`
             echo application.version=\"${BOT_VERSION}\" > conf/version.conf
-            # activator docker:stage
+            activator docker:stage
       - run:
           name: Prepare the Elasticbeanstalk bundle
           command: |
