@@ -206,7 +206,7 @@ define(function(require) {
               <div className="column column-expand pls">
                 <div className="columns columns-elastic">
                   <div className="column column-expand">
-                    <code className="type-weak type-s">{"}"}</code>
+                    <code className="type-weak type-s">{"\u007D"}</code>
                   </div>
                   <div className="column column-shrink prs align-r">
                     {this.props.canDeleteFunctionBody ? (
