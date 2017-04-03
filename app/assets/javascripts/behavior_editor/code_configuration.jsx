@@ -56,6 +56,25 @@ define(function(require) {
       envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
     },
 
+    getInitialState: function() {
+      return {
+        notifications: this.rebuildNotificationsFrom(this.props)
+      };
+    },
+
+    componentWillReceiveProps: function(newProps) {
+      var newNotifications = this.rebuildNotificationsFrom(newProps);
+      var newKinds = newNotifications.map((ea) => ea.kind);
+      var notificationsToHide = this.state.notifications.filter((notification) => {
+        return !notification.hidden && !newKinds.some(kind => kind === notification.kind);
+      }).map((deadNotification) => {
+        return Object.assign(deadNotification, { hidden: true });
+      });
+      this.setState({
+        notifications: newNotifications.concat(notificationsToHide)
+      });
+    },
+
     toggleAPISelectorMenu: function() {
       this.props.onToggleActiveDropdown('apiSelectorDropdown');
     },
@@ -86,8 +105,8 @@ define(function(require) {
       return userParams.concat(this.props.systemParams);
     },
 
-    getApiApplications: function() {
-      return this.props.requiredOAuth2ApiConfigs
+    getApiApplicationsFrom: function(props) {
+      return props.requiredOAuth2ApiConfigs
         .filter((config) => !!config.application)
         .map((config) => config.application);
     },
@@ -105,29 +124,28 @@ define(function(require) {
       return this.getFirstLineNumberForCode() + numLines;
     },
 
-    hasUsedOAuth2Application: function(keyName) {
-      var code = this.props.functionBody;
+    hasUsedOAuth2Application: function(code, keyName) {
       var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
       return pattern.test(code);
     },
 
-    hasUsedAWSObject: function() {
-      var code = this.props.functionBody;
+    hasUsedAWSObject: function(code) {
       return /\bellipsis\.AWS\b/.test(code);
     },
 
-    getNotifications: function() {
+    rebuildNotificationsFrom: function(props) {
       var oAuth2Notifications = [];
       var awsNotifications = [];
-      var unusedApplications = this.getApiApplications().filter(ea => ea && !this.hasUsedOAuth2Application(ea.keyName));
-      unusedApplications.forEach(ea => {
-        oAuth2Notifications.push({
-          kind: "oauth2_application_unused",
-          name: ea.displayName,
-          code: `ellipsis.accessTokens.${ea.keyName}`
+      this.getApiApplicationsFrom(props)
+        .filter((ea) => ea && !this.hasUsedOAuth2Application(props.functionBody, ea.keyName))
+        .forEach((ea) => {
+          oAuth2Notifications.push({
+            kind: "oauth2_application_unused",
+            name: ea.displayName,
+            code: `ellipsis.accessTokens.${ea.keyName}`
+          });
         });
-      });
-      if (this.hasAwsConfig() && !this.hasUsedAWSObject()) {
+      if (props.awsConfig && !this.hasUsedAWSObject(props.functionBody)) {
         awsNotifications.push({
           kind: "aws_unused",
           code: "ellipsis.AWS"
@@ -150,7 +168,7 @@ define(function(require) {
     },
 
     getCodeAutocompletions: function() {
-      var apiTokens = this.getApiApplications().map((application) => `ellipsis.accessTokens.${application.keyName}`);
+      var apiTokens = this.getApiApplicationsFrom(this.props).map((application) => `ellipsis.accessTokens.${application.keyName}`);
 
       var envVars = this.props.envVariableNames.map(function(name) {
         return `ellipsis.env.${name}`;
@@ -166,7 +184,7 @@ define(function(require) {
     },
 
     renderNotifications: function() {
-      const notifications = this.getNotifications();
+      const notifications = this.state.notifications;
       if (notifications.length > 0) {
         return (
           <div className="border-left border-right border-blue mrneg1" style={{ marginLeft: "49px" }}>
