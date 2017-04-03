@@ -1122,11 +1122,6 @@ const BehaviorEditor = React.createClass({
 
   /* Booleans */
 
-  hasUsedAWSObject: function() {
-    var code = this.getBehaviorFunctionBody();
-    return /\bellipsis\.AWS\b/.test(code);
-  },
-
   hasModifiedTemplate: function() {
     return this.state && this.state.hasModifiedTemplate;
   },
@@ -1225,10 +1220,6 @@ const BehaviorEditor = React.createClass({
     }, function() {
       this.showEnvVariableAdder(this.getEnvVariableAdderPromptFor(property));
     });
-  },
-
-  onAWSConfigChange: function(property, envVarName) {
-    this.setAWSEnvVar(property, envVarName);
   },
 
   onAddOAuth2Application: function(appToAdd) {
@@ -1395,13 +1386,13 @@ const BehaviorEditor = React.createClass({
         activePanelName={this.props.activePanelName}
         activeDropdownName={this.getActiveDropdown()}
         onToggleActiveDropdown={this.toggleActiveDropdown}
-        onToggleActivePanel={this.props.onToggleActivePanel}
+        onToggleActivePanel={this.toggleActivePanel}
         animationIsDisabled={this.animationIsDisabled()}
 
         onToggleAWSConfig={this.toggleAWSConfig}
         awsConfig={this.getAWSConfig()}
         onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
-        onAWSConfigChange={this.onAWSConfigChange}
+        onAWSConfigChange={this.setAWSEnvVar}
 
         allOAuth2Applications={this.getAllOAuth2Applications()}
         requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}

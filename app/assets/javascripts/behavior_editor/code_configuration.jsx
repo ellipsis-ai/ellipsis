@@ -6,6 +6,7 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
     Input = require('../models/input'),
+    Notification = require('../notifications/notification'),
     SVGSettingsIcon = require('../svg/settings'),
     oauth2ApplicationShape = require('./oauth2_application_shape');
 
@@ -110,10 +111,15 @@ define(function(require) {
       return pattern.test(code);
     },
 
+    hasUsedAWSObject: function() {
+      var code = this.props.functionBody;
+      return /\bellipsis\.AWS\b/.test(code);
+    },
+
     getNotifications: function() {
       var oAuth2Notifications = [];
       var awsNotifications = [];
-      var unusedApplications = this.apiAccessTokens.filter(ea => ea && !this.hasUsedOAuth2Application(ea.keyName));
+      var unusedApplications = this.getApiApplications().filter(ea => ea && !this.hasUsedOAuth2Application(ea.keyName));
       unusedApplications.forEach(ea => {
         oAuth2Notifications.push({
           kind: "oauth2_application_unused",
@@ -121,7 +127,7 @@ define(function(require) {
           code: `ellipsis.accessTokens.${ea.keyName}`
         });
       });
-      if (this.getAWSConfig() && !this.hasUsedAWSObject()) {
+      if (this.hasAwsConfig() && !this.hasUsedAWSObject()) {
         awsNotifications.push({
           kind: "aws_unused",
           code: "ellipsis.AWS"
@@ -159,6 +165,19 @@ define(function(require) {
       this.refs.codeEditor.refresh();
     },
 
+    renderNotifications: function() {
+      const notifications = this.getNotifications();
+      if (notifications.length > 0) {
+        return (
+          <div className="border-left border-right border-blue mrneg1" style={{ marginLeft: "49px" }}>
+            {notifications.map((notification, index) => (
+              <Notification key={"notification" + index} notification={notification} inline={true} />
+            ))}
+          </div>
+        );
+      }
+    },
+
     render: function() {
       return (
         <div>
@@ -184,7 +203,7 @@ define(function(require) {
               </div>
 
               <Collapsible revealWhen={this.hasAwsConfig()} animationDisabled={this.props.animationIsDisabled}>
-                <div className="plxxxl prs pbs mbs border-bottom border-light">
+                <div className="plxxxl prs mbm">
                   <AWSConfig
                     envVariableNames={this.props.envVariableNames}
                     accessKeyName={this.getAWSConfigProperty('accessKeyName')}
@@ -217,6 +236,9 @@ define(function(require) {
                 </div>
               </div>
             </div>
+
+            {this.renderNotifications()}
+
           </div>
 
           <div className="position-relative">

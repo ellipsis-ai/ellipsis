@@ -19,7 +19,8 @@ define(function(require) {
         details: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
         kind: React.PropTypes.string.isRequired,
         hidden: React.PropTypes.bool
-      }).isRequired
+      }).isRequired,
+      inline: React.PropTypes.bool
     },
 
     getNotificationForKind: function(kind) {
@@ -49,16 +50,16 @@ define(function(require) {
         };
       } else if (kind === "oauth2_application_unused") {
         return {
-          containerClass: "box-tip",
-          icon: this.getTipIcon(),
+          containerClass: "box-help pvs type-blue-faded",
+          icon: this.getTipIcon(" "),
           message: (
             <NotificationForUnusedOAuth2Application details={this.props.notification.details} />
           )
         };
       } else if (kind === "aws_unused") {
         return {
-          containerClass: "box-tip",
-          icon: this.getTipIcon(),
+          containerClass: "box-help pvs type-blue-faded",
+          icon: this.getTipIcon(" "),
           message: (
             <NotificationForUnusedAWS details={this.props.notification.details} />
           )
@@ -98,9 +99,9 @@ define(function(require) {
       );
     },
 
-    getTipIcon: function() {
+    getTipIcon: function(color) {
       return (
-        <span className="display-inline-block mrs align-b type-pink" style={{ width: 22, height: 24 }}>
+        <span className={`display-inline-block mrs align-b ${color || "type-pink"}`} style={{ width: 22, height: 24 }}>
           <SVGTip />
         </span>
       );
@@ -111,7 +112,7 @@ define(function(require) {
       return (
         <Collapsible revealWhen={!this.props.notification.hidden} animateInitialRender={true}>
           <div className={"type-s phn position-z-above mbneg1 " + notification.containerClass}>
-            <div className="container">
+            <div className={this.props.inline ? "phs" : "container"}>
               {notification.icon}
               {notification.message}
             </div>
