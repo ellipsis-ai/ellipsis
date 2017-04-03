@@ -93,10 +93,9 @@ jobs:
             S3_KEY=`date +'%Y-%m-%d'`-$BOT_BUNDLE
             echo "Uploading with command aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}"
             aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}
-
-
-      # - deploy:
-      #     command: |
-      #       #- aws s3 cp $CIRCLE_ARTIFACTS/homebay-docker-$CIRCLE_SHA1.zip s3://homebay-deployments/homebay-docker-$CIRCLE_SHA1.zip
-      # - aws elasticbeanstalk create-application-version --application-name HomeBay --version-label $CIRCLE_SHA1 --source-bundle S3Bucket=homebay-deployments,S3Key=homebay-docker-$CIRCLE_SHA1.zip --region us-east-1
-      # - aws elasticbeanstalk update-environment --environment-name homebay-web --version-label $CIRCLE_SHA1 --region us-east-1
+      - run:
+          name: Notify the dev channel
+          command: |
+            BOT_VERSION=`git rev-parse --short HEAD`
+            ELLIPSIS_DEPLOY_TOKEN=1b5Xn1LmRIO4kYRRYJm22g
+            curl -f --data "message=Circleci%20says%20🚀%20Build%20**${BOT_VERSION}**%20is%20ready%20for%20deployment.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}Warning: the post-build announcement failed.${PLAIN}" && exit 1)
