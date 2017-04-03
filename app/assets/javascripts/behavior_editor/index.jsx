@@ -1,7 +1,5 @@
 define((require) => {
 var React = require('react'),
-  APISelectorMenu = require('./api_selector_menu'),
-  AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
@@ -11,16 +9,13 @@ var React = require('react'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   ChangeSummary = require('./change_summary'),
-  CodeEditor = require('./code_editor'),
+  CodeConfiguration = require('./code_configuration'),
   CodeEditorHelp = require('./code_editor_help'),
-  CodeFooter = require('./code_footer'),
-  CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
   DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
   DataTypeResultConfig = require('./data_type_result_config'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
-  DropdownMenu = require('../shared_ui/dropdown_menu'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
   FixedFooter = require('../shared_ui/fixed_footer'),
@@ -45,7 +40,6 @@ var React = require('react'),
   UniqueBy = require('../lib/unique_by'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
-  SVGSettingsIcon = require('../svg/settings'),
   SVGWarning = require('../svg/warning'),
   Collapsible = require('../shared_ui/collapsible'),
   CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
@@ -155,15 +149,6 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getAWSConfigProperty: function(property) {
-    var config = this.getAWSConfig();
-    if (config) {
-      return config[property];
-    } else {
-      return "";
-    }
-  },
-
   getBehaviorName: function() {
     return this.getBehaviorProp('name') || "";
   },
@@ -256,17 +241,8 @@ const BehaviorEditor = React.createClass({
     return !!this.getBehaviorConfig().forcePrivateResponse;
   },
 
-  getCodeEditorDropdownLabel: function() {
-    return (<SVGSettingsIcon label="Editor settings" />);
-  },
-
   getSystemParams: function() {
     return ["ellipsis"];
-  },
-
-  getCodeFunctionParams: function() {
-    var userParams = this.getInputs().map(ea => ea.name);
-    return userParams.concat(this.getSystemParams());
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -297,10 +273,6 @@ const BehaviorEditor = React.createClass({
       return null;
     }
 
-  },
-
-  getFirstLineNumberForCode: function() {
-    return 2;
   },
 
   getInputWithSavedAnswers: function() {
@@ -455,11 +427,6 @@ const BehaviorEditor = React.createClass({
         details: notifications[key]
       };
     });
-  },
-
-  getLastLineNumberForCode: function() {
-    var numLines = this.getBehaviorFunctionBody().split('\n').length;
-    return this.getFirstLineNumberForCode() + numLines;
   },
 
   getNotifications: function() {
@@ -892,16 +859,8 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('sharedAnswerInputSelector', true);
   },
 
-  toggleAPISelectorMenu: function() {
-    this.toggleActiveDropdown('apiSelectorDropdown');
-  },
-
   toggleAWSConfig: function() {
     this.setConfigProperty('aws', this.getAWSConfig() ? undefined : {});
-  },
-
-  toggleAWSHelp: function() {
-    this.toggleActivePanel('helpForAWS');
   },
 
   toggleBehaviorSwitcher: function() {
@@ -956,10 +915,6 @@ const BehaviorEditor = React.createClass({
     this.setState({
       codeEditorUseLineWrapping: !this.state.codeEditorUseLineWrapping
     });
-  },
-
-  toggleEditorSettingsMenu: function() {
-    this.toggleActiveDropdown('codeEditorSettings');
   },
 
   toggleResponseTemplateHelp: function() {
@@ -1435,87 +1390,44 @@ const BehaviorEditor = React.createClass({
 
   renderCodeEditor: function() {
     return (
-      <div>
-        <div className="border-top border-left border-right border-light ptm">
-          <div className="type-s">
-            <div className="plxxxl prs mbm">
-              <APISelectorMenu
-                openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
-                onAWSClick={this.toggleAWSConfig}
-                awsCheckedWhen={!!this.getAWSConfig()}
-                toggle={this.toggleAPISelectorMenu}
-                allOAuth2Applications={this.getAllOAuth2Applications()}
-                requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
-                allSimpleTokenApis={this.getAllSimpleTokenApis()}
-                requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
-                onAddOAuth2Application={this.onAddOAuth2Application}
-                onRemoveOAuth2Application={this.onRemoveOAuth2Application}
-                onAddSimpleTokenApi={this.onAddSimpleTokenApi}
-                onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
-                onNewOAuth2Application={this.onNewOAuth2Application}
-                getOAuth2ApiWithId={this.getOAuth2ApiWithId}
-              />
-            </div>
+      <CodeConfiguration
+        ref="codeEditor"
+        activePanelName={this.props.activePanelName}
+        activeDropdownName={this.getActiveDropdown()}
+        onToggleActiveDropdown={this.toggleActiveDropdown}
+        onToggleActivePanel={this.props.onToggleActivePanel}
+        animationIsDisabled={this.animationIsDisabled()}
 
-            <Collapsible revealWhen={!!this.getAWSConfig()} animationDisabled={this.animationIsDisabled()}>
-              <div className="plxxxl prs pbs mbs border-bottom border-light">
-                <AWSConfig
-                  envVariableNames={this.getEnvVariableNames()}
-                  accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                  secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                  regionName={this.getAWSConfigProperty('regionName')}
-                  onAddNew={this.onAWSAddNewEnvVariable}
-                  onChange={this.onAWSConfigChange}
-                  onRemoveAWSConfig={this.toggleAWSConfig}
-                  onToggleHelp={this.toggleAWSHelp}
-                  helpVisible={this.props.activePanelName === 'helpForAWS'}
-                />
-              </div>
-            </Collapsible>
-          </div>
+        onToggleAWSConfig={this.toggleAWSConfig}
+        awsConfig={this.getAWSConfig()}
+        onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
+        onAWSConfigChange={this.onAWSConfigChange}
 
-          <CodeHeader
-            ref="codeHeader"
-            userInputs={this.getInputs()}
-            systemParams={this.getSystemParams()}
-          />
-        </div>
+        allOAuth2Applications={this.getAllOAuth2Applications()}
+        requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
+        allSimpleTokenApis={this.getAllSimpleTokenApis()}
+        requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
+        onAddOAuth2Application={this.onAddOAuth2Application}
+        onRemoveOAuth2Application={this.onRemoveOAuth2Application}
+        onAddSimpleTokenApi={this.onAddSimpleTokenApi}
+        onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
+        onNewOAuth2Application={this.onNewOAuth2Application}
+        getOAuth2ApiWithId={this.getOAuth2ApiWithId}
 
-        <div className="position-relative">
-          <CodeEditor
-            ref="codeEditor"
-            value={this.getBehaviorFunctionBody()}
-            onChange={this.updateCode}
-            onCursorChange={this.ensureCursorVisible}
-            firstLineNumber={this.getFirstLineNumberForCode()}
-            lineWrapping={this.state.codeEditorUseLineWrapping}
-            functionParams={this.getCodeFunctionParams()}
-            apiAccessTokens={this.getApiApplications()}
-            envVariableNames={this.getEnvVariableNames()}
-            hasAwsConfig={!!this.getAWSConfig()}
-          />
-          <div className="position-absolute position-top-right position-z-popup-trigger">
-            <DropdownMenu
-              openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
-              label={this.getCodeEditorDropdownLabel()}
-              labelClassName="button-dropdown-trigger-symbol"
-              menuClassName="popup-dropdown-menu-right"
-              toggle={this.toggleEditorSettingsMenu}
-            >
-              <DropdownMenu.Item
-                onClick={this.toggleCodeEditorLineWrapping}
-                checkedWhen={this.state.codeEditorUseLineWrapping}
-                label="Enable line wrap"
-              />
-            </DropdownMenu>
-          </div>
-        </div>
+        inputs={this.getInputs()}
+        systemParams={this.getSystemParams()}
 
-        <CodeFooter
-          lineNumber={this.getLastLineNumberForCode()}
-          onCodeDelete={this.isDataTypeBehavior() ? null : this.confirmDeleteCode}
-        />
-      </div>
+        functionBody={this.getBehaviorFunctionBody()}
+        onChangeFunctionBody={this.updateCode}
+        onCursorChange={this.ensureCursorVisible}
+        useLineWrapping={this.state.codeEditorUseLineWrapping}
+        onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
+        canDeleteFunctionBody={!this.isDataTypeBehavior()}
+        onDeleteFunctionBody={this.confirmDeleteCode}
+
+        envVariableNames={this.getEnvVariableNames()}
+
+      />
     );
   },
 
