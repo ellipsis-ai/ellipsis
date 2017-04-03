@@ -104,6 +104,57 @@ define(function(require) {
       return this.getFirstLineNumberForCode() + numLines;
     },
 
+    hasUsedOAuth2Application: function(keyName) {
+      var code = this.props.functionBody;
+      var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
+      return pattern.test(code);
+    },
+
+    getNotifications: function() {
+      var oAuth2Notifications = [];
+      var awsNotifications = [];
+      var unusedApplications = this.apiAccessTokens.filter(ea => ea && !this.hasUsedOAuth2Application(ea.keyName));
+      unusedApplications.forEach(ea => {
+        oAuth2Notifications.push({
+          kind: "oauth2_application_unused",
+          name: ea.displayName,
+          code: `ellipsis.accessTokens.${ea.keyName}`
+        });
+      });
+      if (this.getAWSConfig() && !this.hasUsedAWSObject()) {
+        awsNotifications.push({
+          kind: "aws_unused",
+          code: "ellipsis.AWS"
+        });
+      }
+      var notifications = [];
+      if (oAuth2Notifications.length > 0) {
+        notifications.push({
+          kind: "oauth2_application_unused",
+          details: oAuth2Notifications
+        });
+      }
+      if (awsNotifications.length > 0) {
+        notifications.push({
+          kind: "aws_unused",
+          details: awsNotifications
+        });
+      }
+      return notifications;
+    },
+
+    getCodeAutocompletions: function() {
+      var apiTokens = this.getApiApplications().map((application) => `ellipsis.accessTokens.${application.keyName}`);
+
+      var envVars = this.props.envVariableNames.map(function(name) {
+        return `ellipsis.env.${name}`;
+      });
+
+      var aws = this.hasAwsConfig() ? ['ellipsis.AWS'] : [];
+
+      return this.getCodeFunctionParams().concat(apiTokens, aws, envVars);
+    },
+
     refresh: function() {
       this.refs.codeEditor.refresh();
     },
@@ -177,9 +228,7 @@ define(function(require) {
               firstLineNumber={this.getFirstLineNumberForCode()}
               lineWrapping={this.props.useLineWrapping}
               functionParams={this.getCodeFunctionParams()}
-              apiAccessTokens={this.getApiApplications()}
-              envVariableNames={this.props.envVariableNames}
-              hasAwsConfig={this.hasAwsConfig()}
+              autocompletions={this.getCodeAutocompletions()}
             />
             <div className="position-absolute position-top-right position-z-popup-trigger">
               <DropdownMenu
