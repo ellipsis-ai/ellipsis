@@ -43,18 +43,17 @@ define(function() {
     }
 
     static hideOldAndAppendNew(oldGroups, newGroups) {
-      const merged = [];
       let brandNew = newGroups;
-      oldGroups.forEach((oldGroup) => {
+      const merged = oldGroups.map((oldGroup) => {
         if (oldGroup.hidden) {
-          merged.push(oldGroup);
+          return oldGroup;
         } else {
           const replacement = newGroups.find((newGroup) => newGroup.kind === oldGroup.kind);
           if (replacement) {
-            merged.push(replacement);
             brandNew = brandNew.filter((ea) => ea.kind !== replacement.kind);
+            return replacement;
           } else {
-            merged.push(oldGroup.hide());
+            return oldGroup.hide();
           }
         }
       });
