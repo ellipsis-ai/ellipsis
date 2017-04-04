@@ -1938,32 +1938,30 @@ const BehaviorEditor = React.createClass({
 
   renderDataTypeBehavior: function() {
     return (
-      <div>
-              <hr className="mtl mbn thin bg-gray-light" />
+      <div className="pbxxxl">
+        <hr className="mtl mbn thin bg-gray-light" />
 
-              <DataTypeResultConfig
-                usesSearch={this.hasInputNamed('searchQuery')}
-                onChange={this.updateDataTypeResultConfig}
-                isFinishedBehavior={this.isFinishedBehavior()}
-              />
+        <DataTypeResultConfig
+          usesSearch={this.hasInputNamed('searchQuery')}
+          onChange={this.updateDataTypeResultConfig}
+          isFinishedBehavior={this.isFinishedBehavior()}
+        />
 
-              <hr className="man thin bg-gray-light" />
+        <hr className="man thin bg-gray-light" />
 
-              <div className="ptxl pbxxxl">
-                {this.renderCodeEditor({
-                  sectionNumber: 2,
-                  sectionHeading: "Run code to generate a list",
-                  codeEditorHelp: (
-                    <div className="mbxl">
-                      <DataTypeCodeEditorHelp
-                        functionBody={this.getBehaviorFunctionBody()}
-                        usesSearch={this.hasInputNamed('searchQuery')}
-                        isFinishedBehavior={this.isFinishedBehavior()}
-                      />
-                    </div>
-                  )
-                })}
+          {this.renderCodeEditor({
+            sectionNumber: "2",
+            sectionHeading: "Run code to generate a list",
+            codeEditorHelp: (
+              <div className="mbxl">
+                <DataTypeCodeEditorHelp
+                  functionBody={this.getBehaviorFunctionBody()}
+                  usesSearch={this.hasInputNamed('searchQuery')}
+                  isFinishedBehavior={this.isFinishedBehavior()}
+                />
               </div>
+            )
+          })}
       </div>
     );
   },

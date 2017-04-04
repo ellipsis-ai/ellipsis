@@ -22,7 +22,7 @@ define(function(require) {
   return React.createClass({
     displayName: 'CodeConfiguration',
     propTypes: {
-      sectionNumber: React.PropTypes.number.isRequired,
+      sectionNumber: React.PropTypes.string.isRequired,
       sectionHeading: React.PropTypes.string.isRequired,
       codeEditorHelp: React.PropTypes.node.isRequired,
 
@@ -191,21 +191,16 @@ define(function(require) {
         <div>
 
           <div className="container container-wide">
-            <div className="ptxl">
-              <SectionHeading number={this.props.sectionNumber}>
-                <span className="mrm">{this.props.sectionHeading}</span>
-                <span className="display-inline-block">
-                  <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
-                </span>
-              </SectionHeading>
-
-              {this.props.codeEditorHelp}
-            </div>
-          </div>
-
-          <div>
-            <div className="type-s">
-              <div className="plxxxl prs mbm">
+            <div className="ptxl columns columns-elastic mobile-columns-float">
+              <div className="column column-expand">
+                <SectionHeading number={this.props.sectionNumber}>
+                  <span className="mrm">{this.props.sectionHeading}</span>
+                  <span className="display-inline-block">
+                    <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
+                  </span>
+                </SectionHeading>
+              </div>
+              <div className="column column-shrink ptxs mobile-mbm">
                 <APISelectorMenu
                   openWhen={this.props.activeDropdownName === 'apiSelectorDropdown'}
                   onAWSClick={this.props.onToggleAWSConfig}
@@ -223,23 +218,27 @@ define(function(require) {
                   getOAuth2ApiWithId={this.props.getOAuth2ApiWithId}
                 />
               </div>
-
-              <Collapsible revealWhen={this.hasAwsConfig()} animationDisabled={this.props.animationIsDisabled} className="debugger">
-                <div className="plxxxl prs mbm">
-                  <AWSConfig
-                    envVariableNames={this.props.envVariableNames}
-                    accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                    secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                    regionName={this.getAWSConfigProperty('regionName')}
-                    onAddNew={this.props.onAWSAddNewEnvVariable}
-                    onChange={this.props.onAWSConfigChange}
-                    onRemoveAWSConfig={this.props.onToggleAWSConfig}
-                    onToggleHelp={this.toggleAWSHelp}
-                    helpVisible={this.props.activePanelName === 'helpForAWS'}
-                  />
-                </div>
-              </Collapsible>
             </div>
+
+            {this.props.codeEditorHelp}
+          </div>
+
+          <div>
+            <Collapsible revealWhen={this.hasAwsConfig()} animationDisabled={this.props.animationIsDisabled} className="debugger">
+              <div className="type-s plxxxl prs mbm">
+                <AWSConfig
+                  envVariableNames={this.props.envVariableNames}
+                  accessKeyName={this.getAWSConfigProperty('accessKeyName')}
+                  secretKeyName={this.getAWSConfigProperty('secretKeyName')}
+                  regionName={this.getAWSConfigProperty('regionName')}
+                  onAddNew={this.props.onAWSAddNewEnvVariable}
+                  onChange={this.props.onAWSConfigChange}
+                  onRemoveAWSConfig={this.props.onToggleAWSConfig}
+                  onToggleHelp={this.toggleAWSHelp}
+                  helpVisible={this.props.activePanelName === 'helpForAWS'}
+                />
+              </div>
+            </Collapsible>
 
             <div className="pbxs">
               <div className="columns columns-elastic">

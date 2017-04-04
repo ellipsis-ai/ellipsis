@@ -46,12 +46,12 @@ define(function(require) {
       if (activeAPICount > 0) {
         return (
           <span>
-          <span>Third-party APIs </span>
+          <span>Third-party APIs in skill </span>
           <span className="type-bold">({activeAPICount} active)</span>
         </span>
         );
       } else {
-        return "Add third-party APIs";
+        return "Add third-party APIs to this skill";
       }
     },
 
@@ -131,6 +131,7 @@ define(function(require) {
           openWhen={this.props.openWhen}
           label={this.getAPISelectorDropdownLabel()}
           labelClassName="button-s"
+          menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-right mobile-popup-dropdown-menu-left"
           toggle={this.props.toggle}
         >
           <DropdownMenu.Item
