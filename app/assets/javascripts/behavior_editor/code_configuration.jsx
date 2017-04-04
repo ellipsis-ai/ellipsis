@@ -176,23 +176,10 @@ define(function(require) {
       this.refs.codeEditor.refresh();
     },
 
-    renderNotifications: function() {
-      return (
-        <div style={{ marginLeft: "49px" }}>
-          <Notifications
-            ref="notifications"
-            notifications={this.state.notifications}
-            className="border-left border-right border-pink-light mrneg1"
-            inline={true}
-          />
-        </div>
-      );
-    },
-
     render: function() {
       return (
         <div>
-          <div className="border-top border-left border-right border-light ptm">
+          <div>
             <div className="type-s">
               <div className="plxxxl prs mbm">
                 <APISelectorMenu
@@ -233,9 +220,9 @@ define(function(require) {
             <div className="pbxs">
               <div className="columns columns-elastic">
                 <div className="column column-shrink plxxxl prn align-r position-relative">
-                  <code className="type-disabled type-s position-absolute position-top-right">1</code>
+                  <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>
                 </div>
-                <div className="column column-expand pls">
+                <div className="column column-expand plxs">
                   <code className="type-s">
                     <span className="type-s type-weak">{"function ("}</span>
                     {this.props.inputs.map((input, inputIndex) => (
@@ -248,7 +235,14 @@ define(function(require) {
               </div>
             </div>
 
-            {this.renderNotifications()}
+            <div style={{ marginLeft: "49px" }}>
+              <Notifications
+                ref="notifications"
+                notifications={this.state.notifications}
+                className="border-left border-right border-pink-light"
+                inline={true}
+              />
+            </div>
 
           </div>
 
@@ -280,12 +274,12 @@ define(function(require) {
             </div>
           </div>
 
-          <div className="border-left border-right border-bottom border-light pvs mbxxl">
+          <div className="pts mbxxl">
             <div className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">
-                <code className="type-disabled type-s position-absolute position-top-right">{this.getLastLineNumberForCode()}</code>
+                <code className="type-disabled type-s position-absolute position-top-right prxs">{this.getLastLineNumberForCode()}</code>
               </div>
-              <div className="column column-expand pls">
+              <div className="column column-expand plxs">
                 <div className="columns columns-elastic">
                   <div className="column column-expand">
                     <code className="type-weak type-s">{"\u007D"}</code>

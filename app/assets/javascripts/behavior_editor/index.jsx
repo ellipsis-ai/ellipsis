@@ -1915,10 +1915,10 @@ const BehaviorEditor = React.createClass({
                         helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
                         hasInputs={this.hasInputs()}
                       />
-
-                      {this.renderCodeEditor()}
                     </div>
                   </div>
+
+                  {this.renderCodeEditor()}
 
                   <hr className="man thin bg-gray-light" />
 
@@ -1954,7 +1954,7 @@ const BehaviorEditor = React.createClass({
 
               <hr className="man thin bg-gray-light" />
 
-              <div className="container container-wide ptxl pbxxxl">
+              <div className="container container-wide ptxl">
                 <SectionHeading number="2">Run code to generate a list</SectionHeading>
 
                 <div className="mbxl">
@@ -1964,7 +1964,9 @@ const BehaviorEditor = React.createClass({
                     isFinishedBehavior={this.isFinishedBehavior()}
                   />
                 </div>
+              </div>
 
+              <div className="pbxxxl">
                 {this.renderCodeEditor()}
               </div>
       </div>
