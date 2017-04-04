@@ -24,10 +24,9 @@ define(function() {
         throw new Error("New Input must have an inputId property");
       }
 
-      // TODO: We can re-enable this once all published skills have params with param types
-      // if (!initialProps.paramType) {
-      //   throw(new Error("New Input object must have a param type set"));
-      // }
+      if (!initialProps.paramType) {
+        throw(new Error("New Input object must have a param type set"));
+      }
       Object.defineProperties(this, {
         name: {
           value: initialProps.name,
