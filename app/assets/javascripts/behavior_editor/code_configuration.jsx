@@ -64,15 +64,19 @@ define(function(require) {
       };
     },
 
+    componentDidMount: function() {
+      this.updateNotifications = debounce(this.updateNotifications, 250);
+    },
+
     componentWillReceiveProps: function() {
       this.updateNotifications();
     },
 
-    updateNotifications: debounce(function() {
+    updateNotifications: function() {
       this.setState({
         notifications: this.buildNotifications()
       });
-    }, 250),
+    },
 
     toggleAPISelectorMenu: function() {
       this.props.onToggleActiveDropdown('apiSelectorDropdown');

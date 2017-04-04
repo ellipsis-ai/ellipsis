@@ -105,6 +105,13 @@ return React.createClass({
   refresh: function() {
     this.getCodeMirror().refresh();
   },
+
+  shouldComponentUpdate: function(newProps, newState) {
+    return (newProps.className !== this.props.className ||
+      newProps.path !== this.props.path ||
+      newState.isFocused !== this.state.isFocused);
+  },
+
   render: function render() {
     return (
       <div className={
