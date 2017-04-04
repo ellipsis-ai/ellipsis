@@ -3,6 +3,7 @@ var React = require('react'),
   ifPresent = require('../lib/if_present');
 
 return React.createClass({
+  displayName: "SectionHeading",
   propTypes: {
     number: React.PropTypes.string,
     children: React.PropTypes.node.isRequired

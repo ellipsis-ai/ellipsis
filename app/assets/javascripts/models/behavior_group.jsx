@@ -105,7 +105,7 @@ define(function(require) {
     // Used by JSON.stringify for submitting data to the server
     toJSON() {
       return this.clone({
-        behaviorVersions: this.sortedForComparison(this.behaviorVersions).map((ea) => ea.forEqualityComparison()),
+        behaviorVersions: this.sortedForComparison(this.behaviorVersions).map(BehaviorVersion.forEqualityComparison),
         createdAt: null
       });
     }

@@ -26,10 +26,18 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     onChange: React.PropTypes.func
   },
 
+  timers: [],
+
   getInitialState: function() {
     return {
       isAnimating: false
     };
+  },
+
+  setContainerStyle: function(name, value) {
+    if (this.refs.container) {
+      this.refs.container.style[name] = value;
+    }
   },
 
   isVertical: function() {
@@ -46,9 +54,9 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     if (this.props.animationDisabled) {
       callback();
     } else {
-      window.setTimeout(() => {
+      this.timers.push(setTimeout(() => {
         callback();
-      }, 1);
+      }, 1));
     }
   },
   afterAnimation: function(callback) {
@@ -61,32 +69,32 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     if (this.props.animationDisabled) {
       f();
     } else {
-      window.setTimeout(f, this.animationDurationMilliseconds());
+      this.timers.push(setTimeout(f, this.animationDurationMilliseconds()));
     }
   },
 
   addTransition: function() {
     var propName = this.isVertical() ? 'max-height' : 'max-width';
-    this.refs.container.style.transition = this.props.animationDisabled ?
-      null : `${propName} ${this.animationDurationSeconds()}s ease`;
+    this.setContainerStyle("transition", this.props.animationDisabled ?
+      null : `${propName} ${this.animationDurationSeconds()}s ease`);
   },
   removeTransition: function() {
-    this.refs.container.style.transition = null;
+    this.setContainerStyle("transition", null);
   },
 
   setMaxHeight: function(height) {
-    this.refs.container.style.maxHeight = height;
+    this.setContainerStyle("maxHeight", height);
   },
   setMaxWidth: function(width) {
-    this.refs.container.style.maxWidth = width;
+    this.setContainerStyle("maxWidth", width);
   },
   setOverflow: function(overflow) {
-    this.refs.container.style.overflow = overflow;
+    this.setContainerStyle("overflow", overflow);
   },
 
   setCurrentHeight: function() {
     var c = this.refs.container;
-    this.setMaxHeight(c.scrollHeight + 'px');
+    this.setMaxHeight((c ? c.scrollHeight : 0) + 'px');
   },
   setNoHeight: function() {
     this.setMaxHeight('0px');
@@ -97,7 +105,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
 
   setCurrentWidth: function() {
     var c = this.refs.container;
-    this.setMaxWidth(c.scrollWidth + 'px');
+    this.setMaxWidth((c ? c.scrollWidth : 0) + 'px');
   },
   setNoWidth: function() {
     this.setMaxWidth('0px');
@@ -107,10 +115,10 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
   },
 
   setHidden: function() {
-    this.refs.container.style.display = 'none';
+    this.setContainerStyle("display", 'none');
   },
   setVisible: function() {
-    this.refs.container.style.display = null;
+    this.setContainerStyle("display", null);
   },
 
   collapse: function() {
@@ -182,19 +190,22 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
   },
 
   componentDidUpdate: function(prevProps) {
-    /* We can't use shouldComponentUpdate because that prevents children from being re-rendered */
     if (prevProps.revealWhen === this.props.revealWhen) {
       return;
     }
     if (this.state.isAnimating) {
-      window.setTimeout(() => {
+      this.timers.push(setTimeout(() => {
         this.componentDidUpdate(prevProps);
-      }, this.animationDurationMilliseconds());
+      }, this.animationDurationMilliseconds()));
     } else if (this.props.revealWhen) {
       this.reveal();
     } else {
       this.collapse();
     }
+  },
+
+  componentWillUnmount: function() {
+    this.timers.forEach((timer) => clearTimeout(timer));
   },
 
   getDefaultStyle: function() {
@@ -206,7 +217,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
   render: function() {
     return (
       <div ref="container" style={this.getDefaultStyle()} className={this.props.className || ""}>
-        {React.Children.map(this.props.children, function(child) { return child; })}
+        {this.props.children}
       </div>
     );
   }

@@ -4,6 +4,7 @@ var React = require('react'),
   Event = require('../lib/event');
 
 var BehaviorEditorDropdownMenu = React.createClass({
+  displayName: "DropdownMenu",
   propTypes: {
     children: React.PropTypes.node.isRequired,
     labelClassName: React.PropTypes.string,
@@ -115,6 +116,7 @@ var BehaviorEditorDropdownMenu = React.createClass({
 });
 
 BehaviorEditorDropdownMenu.Item = React.createClass({
+  displayName: "DropdownMenuItem",
   propTypes: {
     checkedWhen: React.PropTypes.bool,
     label: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
@@ -126,10 +128,6 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
     return {
       hover: false
     };
-  },
-
-  hasHover: function() {
-    return this.state.hover;
   },
 
   onMouseEnter: function() {
@@ -156,12 +154,18 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
     }
   },
 
+  shouldComponentUpdate: function(nextProps, nextState) {
+    return this.props.checkedWhen !== nextProps.checkedWhen ||
+      this.props.label !== nextProps.label ||
+      this.state.hover !== nextState.hover;
+  },
+
   render: function() {
     return (
       <button
         ref="button"
         type="button"
-        className={"button-dropdown-item " + (this.hasHover() ? "button-dropdown-item-hover" : "")}
+        className={"button-dropdown-item " + (this.state.hover ? "button-dropdown-item-hover" : "")}
         onMouseUp={this.onMouseUp}
         onKeyPress={this.onKeyPress}
         onMouseEnter={this.onMouseEnter}
