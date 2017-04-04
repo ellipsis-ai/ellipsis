@@ -1403,6 +1403,7 @@ const BehaviorEditor = React.createClass({
 
         inputs={this.getInputs()}
         systemParams={this.getSystemParams()}
+        apiApplications={this.getApiApplications()}
 
         functionBody={this.getBehaviorFunctionBody()}
         onChangeFunctionBody={this.updateCode}

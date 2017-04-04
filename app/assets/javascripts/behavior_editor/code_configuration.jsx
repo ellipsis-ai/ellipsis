@@ -34,6 +34,14 @@ define(function(require) {
 
       inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+      apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
+        apiId: React.PropTypes.string.isRequired,
+        recommendedScope: React.PropTypes.string,
+        application: React.PropTypes.shape({
+          applicationId: React.PropTypes.string.isRequired,
+          displayName: React.PropTypes.string.isRequired
+        })
+      })).isRequired,
 
       functionBody: React.PropTypes.string.isRequired,
       onChangeFunctionBody: React.PropTypes.func.isRequired,
@@ -98,12 +106,6 @@ define(function(require) {
       return userParams.concat(this.props.systemParams);
     },
 
-    getApiApplicationsFrom: function(props) {
-      return props.requiredOAuth2ApiConfigs
-        .filter((config) => !!config.application)
-        .map((config) => config.application);
-    },
-
     getCodeEditorDropdownLabel: function() {
       return (<SVGSettingsIcon label="Editor settings" />);
     },
@@ -130,7 +132,7 @@ define(function(require) {
       var props = this.props;
       var oAuth2Notifications = [];
       var awsNotifications = [];
-      this.getApiApplicationsFrom(props)
+      this.props.apiApplications
         .filter((ea) => ea && !this.hasUsedOAuth2Application(props.functionBody, ea.keyName))
         .forEach((ea) => {
           oAuth2Notifications.push(new NotificationData({
@@ -149,8 +151,7 @@ define(function(require) {
     },
 
     getCodeAutocompletions: function() {
-      var apiTokens = this.getApiApplicationsFrom(this.props).map((application) => `ellipsis.accessTokens.${application.keyName}`);
-
+      var apiTokens = this.props.apiApplications.map((application) => `ellipsis.accessTokens.${application.keyName}`);
       var envVars = this.props.envVariableNames.map(function(name) {
         return `ellipsis.env.${name}`;
       });
