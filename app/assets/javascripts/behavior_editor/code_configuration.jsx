@@ -210,7 +210,7 @@ define(function(require) {
                 />
               </div>
 
-              <Collapsible revealWhen={this.hasAwsConfig()} animationDisabled={this.props.animationIsDisabled}>
+              <Collapsible revealWhen={this.hasAwsConfig()} animationDisabled={this.props.animationIsDisabled} className="debugger">
                 <div className="plxxxl prs mbm">
                   <AWSConfig
                     envVariableNames={this.props.envVariableNames}

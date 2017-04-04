@@ -30,17 +30,13 @@ define(function(require) {
     },
 
     render: function() {
-      if (this.state.notificationGroups.length > 0) {
-        return (
-          <div className={this.props.className}>
-            {this.state.notificationGroups.map((group, index) => (
-              <Notification key={"notification" + index} group={group} inline={this.props.inline} />
-            ))}
-          </div>
-        );
-      } else {
-        return null;
-      }
+      return (
+        <div className={this.props.className}>
+          {this.state.notificationGroups.map((group, index) => (
+            <Notification key={`notification-${group.kind}-${index}`} group={group} inline={this.props.inline} />
+          ))}
+        </div>
+      );
     }
   });
 });

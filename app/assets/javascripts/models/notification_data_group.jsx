@@ -19,9 +19,9 @@ define(function() {
         }
       });
     }
-    concat(member) {
+    concat(newMember) {
       return this.clone({
-        members: this.members.concat(member)
+        members: this.members.concat(newMember)
       });
     }
     hide() {
@@ -36,21 +36,29 @@ define(function() {
     static groupByKind(notifications) {
       var kinds = {};
       notifications.forEach((ea) => {
-        if (!kinds[ea.kind]) {
-          kinds[ea.kind] = new NotificationDataGroup({
-            kind: ea.kind,
-            members: [ea]
-          });
-        } else {
-          kinds[ea.kind].concat(ea);
-        }
+        const group = kinds[ea.kind] || new NotificationDataGroup({ kind: ea.kind });
+        kinds[ea.kind] = group.concat(ea);
       });
       return Object.keys(kinds).map((ea) => kinds[ea]);
     }
 
     static hideOldAndAppendNew(oldGroups, newGroups) {
-      const notificationsToHide = oldGroups.filter((oldGroup) => !oldGroup.hidden && !newGroups.some((newGroup) => newGroup.kind === oldGroup.kind));
-      return notificationsToHide.map((ea) => ea.hide()).concat(newGroups);
+      const merged = [];
+      let brandNew = newGroups;
+      oldGroups.forEach((oldGroup) => {
+        if (oldGroup.hidden) {
+          merged.push(oldGroup);
+        } else {
+          const replacement = newGroups.find((newGroup) => newGroup.kind === oldGroup.kind);
+          if (replacement) {
+            merged.push(replacement);
+            brandNew = brandNew.filter((ea) => ea.kind !== replacement.kind);
+          } else {
+            merged.push(oldGroup.hide());
+          }
+        }
+      });
+      return merged.concat(brandNew);
     }
   }
 
