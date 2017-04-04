@@ -161,10 +161,6 @@ define(function(require) {
     static groupsIncludeExportId(groups, exportId) {
       return groups.some((ea) => ea.exportId === exportId);
     }
-
-    static mapForEqualityComparison(ea) {
-      return ea.forEqualityComparison();
-    }
   }
 
   return BehaviorGroup;
