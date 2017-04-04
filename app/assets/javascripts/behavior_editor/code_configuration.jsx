@@ -73,9 +73,11 @@ define(function(require) {
     },
 
     updateNotifications: function() {
-      this.setState({
-        notifications: this.buildNotifications()
-      });
+      if (this.refs.notifications) {
+        this.setState({
+          notifications: this.buildNotifications()
+        });
+      }
     },
 
     toggleAPISelectorMenu: function() {
@@ -178,6 +180,7 @@ define(function(require) {
       return (
         <div style={{ marginLeft: "49px" }}>
           <Notifications
+            ref="notifications"
             notifications={this.state.notifications}
             className="border-left border-right border-blue mrneg1"
             inline={true}
@@ -236,7 +239,7 @@ define(function(require) {
                   <code className="type-s">
                     <span className="type-s type-weak">{"function ("}</span>
                     {this.props.inputs.map((input, inputIndex) => (
-                      <span key={`input${input.inputId || inputIndex}`}>{input.name}<span className="type-weak">, </span></span>
+                      <span key={`param${inputIndex}`}>{input.name}<span className="type-weak">, </span></span>
                     ))}
                     <span className="type-weak">{this.props.systemParams.join(", ")}</span>
                     <span className="type-weak">{") \u007B"}</span>
