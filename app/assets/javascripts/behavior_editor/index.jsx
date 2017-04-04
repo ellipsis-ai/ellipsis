@@ -1,5 +1,6 @@
 define((require) => {
 var React = require('react'),
+  APISelectorMenu = require('./api_selector_menu'),
   AWSHelp = require('./aws_help'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
@@ -1353,6 +1354,31 @@ const BehaviorEditor = React.createClass({
     );
   },
 
+  toggleAPISelectorMenu: function() {
+    this.toggleActiveDropdown('apiSelectorDropdown');
+  },
+
+  renderAPISelector: function() {
+    return (
+      <APISelectorMenu
+        openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
+        onAWSClick={this.toggleAWSConfig}
+        awsCheckedWhen={!!this.getAWSConfig()}
+        toggle={this.toggleAPISelectorMenu}
+        allOAuth2Applications={this.getAllOAuth2Applications()}
+        requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
+        allSimpleTokenApis={this.getAllSimpleTokenApis()}
+        requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
+        onAddOAuth2Application={this.onAddOAuth2Application}
+        onRemoveOAuth2Application={this.onRemoveOAuth2Application}
+        onAddSimpleTokenApi={this.onAddSimpleTokenApi}
+        onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
+        onNewOAuth2Application={this.onNewOAuth2Application}
+        getOAuth2ApiWithId={this.getOAuth2ApiWithId}
+      />
+    );
+  },
+
   renderCodeEditor: function(props) {
     return (
       <CodeConfiguration
@@ -1373,16 +1399,7 @@ const BehaviorEditor = React.createClass({
         onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
         onAWSConfigChange={this.setAWSEnvVar}
 
-        allOAuth2Applications={this.getAllOAuth2Applications()}
-        requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
-        allSimpleTokenApis={this.getAllSimpleTokenApis()}
-        requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
-        onAddOAuth2Application={this.onAddOAuth2Application}
-        onRemoveOAuth2Application={this.onRemoveOAuth2Application}
-        onAddSimpleTokenApi={this.onAddSimpleTokenApi}
-        onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
-        onNewOAuth2Application={this.onNewOAuth2Application}
-        getOAuth2ApiWithId={this.getOAuth2ApiWithId}
+        apiSelector={this.renderAPISelector()}
 
         inputs={this.getInputs()}
         systemParams={this.getSystemParams()}

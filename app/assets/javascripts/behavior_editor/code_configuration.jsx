@@ -1,6 +1,5 @@
 define(function(require) {
   const React = require('react'),
-    APISelectorMenu = require('./api_selector_menu'),
     AWSConfig = require('./aws_config'),
     CodeEditor = require('./code_editor'),
     Collapsible = require('../shared_ui/collapsible'),
@@ -11,13 +10,7 @@ define(function(require) {
     NotificationData = require('../models/notification_data'),
     SectionHeading = require('./section_heading'),
     SVGSettingsIcon = require('../svg/settings'),
-    oauth2ApplicationShape = require('./oauth2_application_shape'),
     debounce = require('javascript-debounce');
-
-  const apiShape = React.PropTypes.shape({
-    apiId: React.PropTypes.string.isRequired,
-    name: React.PropTypes.string.isRequired
-  });
 
   return React.createClass({
     displayName: 'CodeConfiguration',
@@ -37,18 +30,7 @@ define(function(require) {
       onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
       onAWSConfigChange: React.PropTypes.func.isRequired,
 
-      allOAuth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape).isRequired,
-      requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
-        apiId: React.PropTypes.string.isRequired
-      })).isRequired,
-      allSimpleTokenApis: React.PropTypes.arrayOf(apiShape).isRequired,
-      requiredSimpleTokenApis: React.PropTypes.arrayOf(apiShape).isRequired,
-      onAddOAuth2Application: React.PropTypes.func.isRequired,
-      onRemoveOAuth2Application: React.PropTypes.func.isRequired,
-      onAddSimpleTokenApi: React.PropTypes.func.isRequired,
-      onRemoveSimpleTokenApi: React.PropTypes.func.isRequired,
-      onNewOAuth2Application: React.PropTypes.func.isRequired,
-      getOAuth2ApiWithId: React.PropTypes.func.isRequired,
+      apiSelector: React.PropTypes.node.isRequired,
 
       inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
@@ -84,10 +66,6 @@ define(function(require) {
           notifications: this.buildNotifications()
         });
       }
-    },
-
-    toggleAPISelectorMenu: function() {
-      this.props.onToggleActiveDropdown('apiSelectorDropdown');
     },
 
     toggleAWSHelp: function() {
@@ -200,24 +178,7 @@ define(function(require) {
                   </span>
                 </SectionHeading>
               </div>
-              <div className="column column-shrink ptxs mobile-mbm">
-                <APISelectorMenu
-                  openWhen={this.props.activeDropdownName === 'apiSelectorDropdown'}
-                  onAWSClick={this.props.onToggleAWSConfig}
-                  awsCheckedWhen={this.hasAwsConfig()}
-                  toggle={this.toggleAPISelectorMenu}
-                  allOAuth2Applications={this.props.allOAuth2Applications}
-                  requiredOAuth2ApiConfigs={this.props.requiredOAuth2ApiConfigs}
-                  allSimpleTokenApis={this.props.allSimpleTokenApis}
-                  requiredSimpleTokenApis={this.props.requiredSimpleTokenApis}
-                  onAddOAuth2Application={this.props.onAddOAuth2Application}
-                  onRemoveOAuth2Application={this.props.onRemoveOAuth2Application}
-                  onAddSimpleTokenApi={this.props.onAddSimpleTokenApi}
-                  onRemoveSimpleTokenApi={this.props.onRemoveSimpleTokenApi}
-                  onNewOAuth2Application={this.props.onNewOAuth2Application}
-                  getOAuth2ApiWithId={this.props.getOAuth2ApiWithId}
-                />
-              </div>
+              <div className="column column-shrink ptxs mobile-mbm">{this.props.apiSelector}</div>
             </div>
 
             {this.props.codeEditorHelp}
