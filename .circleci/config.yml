@@ -98,4 +98,4 @@ jobs:
           command: |
             BOT_VERSION=`git rev-parse --short HEAD`
             ELLIPSIS_DEPLOY_TOKEN=1b5Xn1LmRIO4kYRRYJm22g
-            curl -f --data "message=Circleci%20says%20🚀%20Build%20**${BOT_VERSION}**%20is%20ready%20for%20deployment.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}Warning: the post-build announcement failed.${PLAIN}" && exit 1)
+            curl -f --data "message=CircleCI%20says%20✅%20Branch%20**${CIRCLE_BRANCH}**%20(${CIRCLE_PROJECT_REPONAME}%20${CIRCLE_SHA1}%20by%20${CIRCLE_USERNAME})%20built%20successfully.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}Warning: the post-build announcement failed.${PLAIN}" && exit 1)
