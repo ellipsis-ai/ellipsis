@@ -22,9 +22,10 @@ var React = require('react'),
   HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
+  NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
   ModalScrim = require('../shared_ui/modal_scrim'),
-  Notification = require('../notifications/notification'),
+  Notifications = require('../notifications/notifications'),
   PageWithPanels = require('../shared_ui/page_with_panels'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
@@ -80,7 +81,6 @@ const BehaviorEditor = React.createClass({
       name: React.PropTypes.string.isRequired
     })),
     linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-    notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     savedAnswers: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         inputId: React.PropTypes.string.isRequired,
@@ -290,13 +290,16 @@ const BehaviorEditor = React.createClass({
   buildEnvVarNotifications: function() {
     var selectedBehavior = this.getSelectedBehavior();
     if (selectedBehavior) {
-      return this.getEnvVariables().filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name)).filter((ea) => !ea.isAlreadySavedWithValue).map((ea) => ({
-        kind: "env_var_not_defined",
-        environmentVariableName: ea.name,
-        onClick: () => {
-          this.showEnvVariableSetter(ea.name);
-        }
-      }));
+      return this.getEnvVariables()
+        .filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name))
+        .filter((ea) => !ea.isAlreadySavedWithValue)
+        .map((ea) => new NotificationData({
+          kind: "env_var_not_defined",
+          environmentVariableName: ea.name,
+          onClick: () => {
+            this.showEnvVariableSetter(ea.name);
+          }
+        }));
     } else {
       return [];
     }
@@ -317,22 +320,18 @@ const BehaviorEditor = React.createClass({
   },
 
   buildOAuthApplicationNotifications: function() {
-    var notifications = [];
     const behavior = this.getSelectedBehavior();
     if (!behavior) {
       return [];
     }
-    this.getRequiredOAuth2ApiConfigsWithNoApplication().forEach(ea => {
-      notifications.push({
-        kind: "oauth2_config_without_application",
-        name: this.getOAuth2ApiWithId(ea.apiId).name,
-        requiredApiConfig: ea,
-        existingOAuth2Applications: this.getAllOAuth2Applications(),
-        onAddOAuth2Application: this.onAddOAuth2Application,
-        onNewOAuth2Application: this.onNewOAuth2Application
-      });
-    });
-    return notifications;
+    return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new NotificationData({
+      kind: "oauth2_config_without_application",
+      name: this.getOAuth2ApiWithId(ea.apiId).name,
+      requiredApiConfig: ea,
+      existingOAuth2Applications: this.getAllOAuth2Applications(),
+      onAddOAuth2Application: this.onAddOAuth2Application,
+      onNewOAuth2Application: this.onNewOAuth2Application
+    }));
   },
 
   getParamTypesNeedingConfiguration: function() {
@@ -341,17 +340,15 @@ const BehaviorEditor = React.createClass({
   },
 
   buildDataTypeNotifications: function() {
-    var notifications = [];
-    this.getParamTypesNeedingConfiguration().forEach(ea => {
+    return this.getParamTypesNeedingConfiguration().map(ea => {
       const behaviorVersion = this.getBehaviorGroup().behaviorVersions.find(bv => bv.id === ea.id);
       const behaviorId = behaviorVersion ? behaviorVersion.behaviorId : null;
-      notifications.push({
+      return new NotificationData({
         kind: "data_type_needs_config",
         name: ea.name,
         onClick: () => this.onSelectBehavior(this.getBehaviorGroup().id, behaviorId)
       });
     });
-    return notifications;
   },
 
   buildParamNotifications: function() {
@@ -366,18 +363,18 @@ const BehaviorEditor = React.createClass({
     });
     return Object.keys(triggerParamObj).map((name) => {
       if (Input.isValidName(name)) {
-        return {
+        return new NotificationData({
           kind: "param_not_in_function",
           name: name,
           onClick: () => {
             this.addInputs([name]);
           }
-        };
+        });
       } else {
-        return {
+        return new NotificationData({
           kind: "invalid_param_in_trigger",
           name: name
-        };
+        });
       }
     });
   },
@@ -394,7 +391,7 @@ const BehaviorEditor = React.createClass({
       var template = this.getBehaviorTemplate();
       var validParams = this.getValidParamNamesForTemplate();
       var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
-      return unknownTemplateParams.map((paramName) => ({
+      return unknownTemplateParams.map((paramName) => new NotificationData({
         kind: "unknown_param_in_template",
         name: paramName
       }));
@@ -404,29 +401,13 @@ const BehaviorEditor = React.createClass({
   },
 
   buildNotifications: function() {
-    var serverNotifications = this.props.notifications || [];
-    var allNotifications = serverNotifications.concat(
+    return [].concat(
       this.buildEnvVarNotifications(),
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
       this.buildParamNotifications(),
       this.buildTemplateNotifications()
     );
-
-    var notifications = {};
-    allNotifications.forEach(function(notification) {
-      if (notifications[notification.kind]) {
-        notifications[notification.kind].push(notification);
-      } else {
-        notifications[notification.kind] = [notification];
-      }
-    });
-    return Object.keys(notifications).map(function(key) {
-      return {
-        kind: key,
-        details: notifications[key]
-      };
-    });
   },
 
   getNotifications: function() {
@@ -1293,13 +1274,8 @@ const BehaviorEditor = React.createClass({
   },
 
   resetNotificationsImmediately: function() {
-    var newNotifications = this.buildNotifications();
-    var newKinds = newNotifications.map(ea => ea.kind);
-    var visibleAndUnneeded = (notification) => !notification.hidden && !newKinds.some(kind => kind === notification.kind);
-    var notificationsToHide = this.getNotifications().filter(visibleAndUnneeded)
-      .map(deadNotification => Object.assign(deadNotification, { hidden: true }));
     this.setState({
-      notifications: newNotifications.concat(notificationsToHide)
+      notifications: this.buildNotifications()
     });
   },
 
@@ -1588,9 +1564,7 @@ const BehaviorEditor = React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.layoutDidUpdate} animationDisabled={this.animationIsDisabled()}>
-            {this.getNotifications().map((notification, index) => (
-              <Notification key={"notification" + index} notification={notification} />
-            ))}
+            <Notifications notifications={this.getNotifications()} />
             <div className="container container-wide ptm border-top">
               <div>
                 <div>

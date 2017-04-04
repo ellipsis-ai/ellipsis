@@ -6,9 +6,11 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
     Input = require('../models/input'),
-    Notification = require('../notifications/notification'),
+    Notifications = require('../notifications/notifications'),
+    NotificationData = require('../models/notification_data'),
     SVGSettingsIcon = require('../svg/settings'),
-    oauth2ApplicationShape = require('./oauth2_application_shape');
+    oauth2ApplicationShape = require('./oauth2_application_shape'),
+    debounce = require('javascript-debounce');
 
   const apiShape = React.PropTypes.shape({
     apiId: React.PropTypes.string.isRequired,
@@ -58,22 +60,19 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        notifications: this.rebuildNotificationsFrom(this.props)
+        notifications: this.buildNotifications()
       };
     },
 
-    componentWillReceiveProps: function(newProps) {
-      var newNotifications = this.rebuildNotificationsFrom(newProps);
-      var newKinds = newNotifications.map((ea) => ea.kind);
-      var notificationsToHide = this.state.notifications.filter((notification) => {
-        return !notification.hidden && !newKinds.some(kind => kind === notification.kind);
-      }).map((deadNotification) => {
-        return Object.assign(deadNotification, { hidden: true });
-      });
-      this.setState({
-        notifications: newNotifications.concat(notificationsToHide)
-      });
+    componentWillReceiveProps: function() {
+      this.updateNotifications();
     },
+
+    updateNotifications: debounce(function() {
+      this.setState({
+        notifications: this.buildNotifications()
+      });
+    }, 250),
 
     toggleAPISelectorMenu: function() {
       this.props.onToggleActiveDropdown('apiSelectorDropdown');
@@ -133,38 +132,26 @@ define(function(require) {
       return /\bellipsis\.AWS\b/.test(code);
     },
 
-    rebuildNotificationsFrom: function(props) {
+    buildNotifications: function() {
+      var props = this.props;
       var oAuth2Notifications = [];
       var awsNotifications = [];
       this.getApiApplicationsFrom(props)
         .filter((ea) => ea && !this.hasUsedOAuth2Application(props.functionBody, ea.keyName))
         .forEach((ea) => {
-          oAuth2Notifications.push({
+          oAuth2Notifications.push(new NotificationData({
             kind: "oauth2_application_unused",
             name: ea.displayName,
             code: `ellipsis.accessTokens.${ea.keyName}`
-          });
+          }));
         });
       if (props.awsConfig && !this.hasUsedAWSObject(props.functionBody)) {
-        awsNotifications.push({
+        awsNotifications.push(new NotificationData({
           kind: "aws_unused",
           code: "ellipsis.AWS"
-        });
+        }));
       }
-      var notifications = [];
-      if (oAuth2Notifications.length > 0) {
-        notifications.push({
-          kind: "oauth2_application_unused",
-          details: oAuth2Notifications
-        });
-      }
-      if (awsNotifications.length > 0) {
-        notifications.push({
-          kind: "aws_unused",
-          details: awsNotifications
-        });
-      }
-      return notifications;
+      return oAuth2Notifications.concat(awsNotifications);
     },
 
     getCodeAutocompletions: function() {
@@ -184,16 +171,15 @@ define(function(require) {
     },
 
     renderNotifications: function() {
-      const notifications = this.state.notifications;
-      if (notifications.length > 0) {
-        return (
-          <div className="border-left border-right border-blue mrneg1" style={{ marginLeft: "49px" }}>
-            {notifications.map((notification, index) => (
-              <Notification key={"notification" + index} notification={notification} inline={true} />
-            ))}
-          </div>
-        );
-      }
+      return (
+        <div style={{ marginLeft: "49px" }}>
+          <Notifications
+            notifications={this.state.notifications}
+            className="border-left border-right border-blue mrneg1"
+            inline={true}
+          />
+        </div>
+      );
     },
 
     render: function() {

@@ -10,16 +10,13 @@ define(function(require) {
     NotificationForUnusedAWS = require('./aws_unused'),
     NotificationForParamNotInFunction = require('./param_not_in_function'),
     NotificationForInvalidParamInTrigger = require('./invalid_param_in_trigger'),
-    NotificationForUnknownParamInTemplate = require('./unknown_param_in_template');
+    NotificationForUnknownParamInTemplate = require('./unknown_param_in_template'),
+    NotificationDataGroup = require('../models/notification_data_group');
 
   return React.createClass({
     displayName: 'Notification',
     propTypes: {
-      notification: React.PropTypes.shape({
-        details: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-        kind: React.PropTypes.string.isRequired,
-        hidden: React.PropTypes.bool
-      }).isRequired,
+      group: React.PropTypes.instanceOf(NotificationDataGroup).isRequired,
       inline: React.PropTypes.bool
     },
 
@@ -29,7 +26,7 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForEnvVarMissing details={this.props.notification.details} />
+            <NotificationForEnvVarMissing details={this.props.group.members} />
           )
         };
       } else if (kind === "oauth2_config_without_application") {
@@ -37,7 +34,7 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForMissingOAuth2Application details={this.props.notification.details} />
+            <NotificationForMissingOAuth2Application details={this.props.group.members} />
           )
         };
       } else if (kind === 'data_type_needs_config') {
@@ -45,7 +42,7 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForDataTypeNeedsConfig details={this.props.notification.details} />
+            <NotificationForDataTypeNeedsConfig details={this.props.group.members} />
           )
         };
       } else if (kind === "oauth2_application_unused") {
@@ -53,7 +50,7 @@ define(function(require) {
           containerClass: "box-help pvs type-blue-faded",
           icon: this.getTipIcon(" "),
           message: (
-            <NotificationForUnusedOAuth2Application details={this.props.notification.details} />
+            <NotificationForUnusedOAuth2Application details={this.props.group.members} />
           )
         };
       } else if (kind === "aws_unused") {
@@ -61,7 +58,7 @@ define(function(require) {
           containerClass: "box-help pvs type-blue-faded",
           icon: this.getTipIcon(" "),
           message: (
-            <NotificationForUnusedAWS details={this.props.notification.details} />
+            <NotificationForUnusedAWS details={this.props.group.members} />
           )
         };
       } else if (kind === "param_not_in_function") {
@@ -69,7 +66,7 @@ define(function(require) {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
           message: (
-            <NotificationForParamNotInFunction details={this.props.notification.details} />
+            <NotificationForParamNotInFunction details={this.props.group.members} />
           )
         };
       } else if (kind === "unknown_param_in_template") {
@@ -77,7 +74,7 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForUnknownParamInTemplate details={this.props.notification.details} />
+            <NotificationForUnknownParamInTemplate details={this.props.group.members} />
           )
         };
       } else if (kind === "invalid_param_in_trigger") {
@@ -85,9 +82,11 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForInvalidParamInTrigger details={this.props.notification.details} />
+            <NotificationForInvalidParamInTrigger details={this.props.group.members} />
           )
         };
+      } else {
+        throw new Error(`Error: ${kind} is not a valid notification`);
       }
     },
 
@@ -108,9 +107,9 @@ define(function(require) {
     },
 
     render: function() {
-      var notification = this.getNotificationForKind(this.props.notification.kind);
+      var notification = this.getNotificationForKind(this.props.group.kind);
       return (
-        <Collapsible revealWhen={!this.props.notification.hidden} animateInitialRender={true}>
+        <Collapsible revealWhen={!this.props.group.hidden} animateInitialRender={true}>
           <div className={"type-s phn position-z-above mbneg1 " + notification.containerClass}>
             <div className={this.props.inline ? "phs" : "container"}>
               {notification.icon}
