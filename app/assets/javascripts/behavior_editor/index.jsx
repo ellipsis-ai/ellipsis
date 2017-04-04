@@ -366,7 +366,7 @@ const BehaviorEditor = React.createClass({
           kind: "param_not_in_function",
           name: name,
           onClick: () => {
-            this.addInputs([name]);
+            this.addNewInput(name);
           }
         });
       } else {
@@ -436,10 +436,6 @@ const BehaviorEditor = React.createClass({
 
   /* Setters/togglers */
 
-  createNewInput: function(optionalValues) {
-    return new Input(Object.assign({ paramType: this.getParamTypes()[0] }, optionalValues));
-  },
-
   setBehaviorInputs: function(newBehaviorInputs, callback) {
     const newGroup = this.getBehaviorGroup().copyWithInputsForBehaviorVersion(newBehaviorInputs, this.getSelectedBehavior());
     this.updateGroupStateWith(newGroup, callback);
@@ -450,24 +446,24 @@ const BehaviorEditor = React.createClass({
     this.setBehaviorInputs(newInputs, this.focusOnLastInput);
   },
 
-  addNewInput: function() {
+  getNewGenericInputName: function() {
     let newIndex = this.getInputs().length + 1;
     while (this.getInputs().some(ea => {
       return ea.name === 'userInput' + newIndex;
     })) {
       newIndex++;
     }
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedInput(`userInput${newIndex}`).url;
+    return `userInput${newIndex}`;
+  },
+
+  addNewInput: function(optionalNewName) {
+    const newName = optionalNewName || this.getNewGenericInputName();
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedInput(newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then(response => response.json())
       .then(json => {
         this.addInput(new Input(json));
       });
-  },
-
-  addInputs: function(newNames) {
-    var newInputs = this.getInputs().concat(newNames.map((name) => this.createNewInput({ name: name })));
-    this.setBehaviorProp('inputIds', newInputs.map(ea => ea.inputId));
   },
 
   addTrigger: function(callback) {
@@ -941,8 +937,7 @@ const BehaviorEditor = React.createClass({
 
   updateDataTypeResultConfig: function(shouldUseSearch) {
     if (shouldUseSearch) {
-      var searchQueryInput = this.createNewInput({ name: 'searchQuery' });
-      this.setBehaviorProp('inputIds', [searchQueryInput.id]);
+      this.addNewInput('searchQuery');
     } else {
       this.setBehaviorProp('inputIds', []);
     }
@@ -1181,7 +1176,9 @@ const BehaviorEditor = React.createClass({
   },
 
   focusOnInputIndex: function(index) {
-    this.refs.userInputConfiguration.focusIndex(index);
+    if (this.refs.userInputConfiguration) {
+      this.refs.userInputConfiguration.focusIndex(index);
+    }
   },
 
   focusOnLastInput: function() {
