@@ -130,10 +130,6 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
     };
   },
 
-  hasHover: function() {
-    return this.state.hover;
-  },
-
   onMouseEnter: function() {
     this.setState({
       hover: true
@@ -158,12 +154,18 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
     }
   },
 
+  shouldComponentUpdate: function(nextProps, nextState) {
+    return this.props.checkedWhen !== nextProps.checkedWhen ||
+      this.props.label !== nextProps.label ||
+      this.state.hover !== nextState.hover;
+  },
+
   render: function() {
     return (
       <button
         ref="button"
         type="button"
-        className={"button-dropdown-item " + (this.hasHover() ? "button-dropdown-item-hover" : "")}
+        className={"button-dropdown-item " + (this.state.hover ? "button-dropdown-item-hover" : "")}
         onMouseUp={this.onMouseUp}
         onKeyPress={this.onKeyPress}
         onMouseEnter={this.onMouseEnter}

@@ -1475,7 +1475,7 @@ const BehaviorEditor = React.createClass({
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
-                  <div className="column column-page-sidebar"></div>
+                  <div className="column column-page-sidebar" />
                   <div className="column column-page-main">
                     <EnvVariableSetter
                       ref="envVariableSetterPanel"
@@ -1493,7 +1493,7 @@ const BehaviorEditor = React.createClass({
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
-                  <div className="column column-page-sidebar"></div>
+                  <div className="column column-page-sidebar" />
                   <div className="column column-page-main">
                     <EnvVariableAdder
                       ref="envVariableAdderPanel"

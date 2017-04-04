@@ -190,11 +190,11 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
   },
 
   shouldComponentUpdate: function(newProps) {
+    // Avoid re-rendering costs when the component is staying collapsed
     return newProps.revealWhen || this.props.revealWhen;
   },
 
   componentDidUpdate: function(prevProps) {
-    /* We can't use shouldComponentUpdate because that prevents children from being re-rendered */
     if (prevProps.revealWhen === this.props.revealWhen) {
       return;
     }
@@ -222,7 +222,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
   render: function() {
     return (
       <div ref="container" style={this.getDefaultStyle()} className={this.props.className || ""}>
-        {React.Children.map(this.props.children, function(child) { return child; })}
+        {this.props.children}
       </div>
     );
   }

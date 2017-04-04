@@ -134,6 +134,10 @@ define(function(require) {
       }
       return new BehaviorVersion(materializedProps);
     }
+
+    static forEqualityComparison(version) {
+      return version.forEqualityComparison();
+    }
   }
 
   return BehaviorVersion;
