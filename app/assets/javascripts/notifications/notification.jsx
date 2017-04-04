@@ -47,16 +47,16 @@ define(function(require) {
         };
       } else if (kind === "oauth2_application_unused") {
         return {
-          containerClass: "box-help pvs type-blue-faded",
-          icon: this.getTipIcon(" "),
+          containerClass: "box-tip pvs",
+          icon: this.getTipIcon(),
           message: (
             <NotificationForUnusedOAuth2Application details={this.props.group.members} />
           )
         };
       } else if (kind === "aws_unused") {
         return {
-          containerClass: "box-help pvs type-blue-faded",
-          icon: this.getTipIcon(" "),
+          containerClass: "box-tip pvs",
+          icon: this.getTipIcon(),
           message: (
             <NotificationForUnusedAWS details={this.props.group.members} />
           )

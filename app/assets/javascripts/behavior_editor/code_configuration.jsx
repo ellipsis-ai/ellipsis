@@ -182,7 +182,7 @@ define(function(require) {
           <Notifications
             ref="notifications"
             notifications={this.state.notifications}
-            className="border-left border-right border-blue mrneg1"
+            className="border-left border-right border-pink-light mrneg1"
             inline={true}
           />
         </div>
