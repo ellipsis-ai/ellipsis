@@ -249,21 +249,6 @@ describe('BehaviorEditor', () => {
     });
   });
 
-  describe('createNewInput', () => {
-    it("creates a new parameter with the parameter type set to the first possible one", () => {
-      let editor = createEditor(editorConfig);
-      let newParam = editor.createNewInput();
-      expect(newParam.paramType).toEqual(editorConfig.builtinParamTypes[0]);
-    });
-
-    it("creates a new parameter with other attributes as desired", () => {
-      let editor = createEditor(editorConfig);
-      let newParam = editor.createNewInput({ name: "clownCar", question: "how did twitter propel itself?" });
-      expect(newParam.name).toEqual("clownCar");
-      expect(newParam.question).toEqual("how did twitter propel itself?");
-    });
-  });
-
   describe('isJustSaved', () => {
     const HALF_MINUTE = 30000;
     const TWO_MINUTES = 120000;
