@@ -189,11 +189,6 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     this.addTransition();
   },
 
-  shouldComponentUpdate: function(newProps) {
-    // Avoid re-rendering costs when the component is staying collapsed
-    return newProps.revealWhen || this.props.revealWhen;
-  },
-
   componentDidUpdate: function(prevProps) {
     if (prevProps.revealWhen === this.props.revealWhen) {
       return;
