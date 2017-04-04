@@ -20,6 +20,8 @@ import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
+import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.events.{Event, MessageEvent}
 import models.team.Team
 
@@ -198,6 +200,8 @@ class BehaviorVersionServiceImpl @Inject() (
   def createForAction(
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
+                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                        maybeUser: Option[User],
                        data: BehaviorVersionData
                      ): DBIO[BehaviorVersion] = {
@@ -215,12 +219,6 @@ class BehaviorVersionServiceImpl @Inject() (
         maybeAWSConfig <- data.awsConfig.map { c =>
           dataService.awsConfigs.createForAction(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
         }.getOrElse(DBIO.successful(None))
-        requiredOAuth2ApiConfigs <- DBIO.sequence(data.config.requiredOAuth2ApiConfigs.getOrElse(Seq()).map { requiredData =>
-          dataService.requiredOAuth2ApiConfigs.maybeCreateForAction(requiredData, updated)
-        }).map(_.flatten)
-        requiredSimpleTokenApis <- DBIO.sequence(data.config.requiredSimpleTokenApis.getOrElse(Seq()).map { requiredData =>
-          dataService.requiredSimpleTokenApis.maybeCreateForAction(requiredData, updated)
-        }).map(_.flatten)
         inputs <- DBIO.sequence(data.inputIds.map { inputId =>
           dataService.inputs.findByInputIdAction(inputId)
         }).map(_.flatten)
@@ -289,8 +287,6 @@ class BehaviorVersionServiceImpl @Inject() (
     behaviorVersion.maybeFunctionBody.map { functionBody =>
       (for {
         params <- dataService.behaviorParameters.allFor(behaviorVersion)
-        maybeAWSConfig <- dataService.awsConfigs.maybeFor(behaviorVersion)
-        requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
       } yield {
         lambdaService.functionWithParams(params.map(_.name).toArray, functionBody)
       }).map(Some(_))
@@ -311,7 +307,7 @@ class BehaviorVersionServiceImpl @Inject() (
   def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: Event): Future[Option[BotResult]] = {
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingIn(behaviorVersion, dataService)
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion.groupVersion)
       userInfo <- event.userInfo(ws, dataService)
       notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
@@ -354,11 +350,12 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def redeploy(behaviorVersion: BehaviorVersion): Future[Unit] = {
+    val groupVersion = behaviorVersion.groupVersion
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
       maybeAWSConfig <- dataService.awsConfigs.maybeFor(behaviorVersion)
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion)
-      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(behaviorVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(groupVersion)
+      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(groupVersion)
       _ <- lambdaService.deployFunctionFor(
               behaviorVersion,
               behaviorVersion.functionBody,

@@ -30,7 +30,7 @@
   },
   "scripts": {
     "lint": "scripts/run_eslint",
-    "test": "jest"
+    "test": "jest --runInBand"
   },
   "jest": {
     "globals": {

@@ -8,7 +8,8 @@ define(function(require) {
     displayName: 'DataTypeResultConfig',
     propTypes: {
       usesSearch: React.PropTypes.bool.isRequired,
-      onChange: React.PropTypes.func.isRequired
+      onChange: React.PropTypes.func.isRequired,
+      isFinishedBehavior: React.PropTypes.bool.isRequired
     },
 
     onUseSearch: function() {
@@ -24,7 +25,7 @@ define(function(require) {
         <div className="container ptxl pbxxxl">
           <div>
             <SectionHeading number="1">How to prompt the user</SectionHeading>
-            <Checklist disabledWhen={false}>
+            <Checklist disabledWhen={this.props.isFinishedBehavior}>
               <Checklist.Item checkedWhen={!this.props.usesSearch}>
                 <span>Use <span className="type-bold">Select from a list</span> when there are few choices.</span>
                 <span>The user will just pick from the whole list.</span>

@@ -126,12 +126,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getRequiredOAuth2ApiConfigs: function() {
-    const selectedBehavior = this.getSelectedBehavior();
-    if (selectedBehavior) {
-      return selectedBehavior.getRequiredOAuth2ApiConfigs();
-    } else {
-      return [];
-    }
+    return this.getBehaviorGroup().getRequiredOAuth2ApiConfigs();
   },
 
   getAllSimpleTokenApis: function() {
@@ -139,13 +134,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getRequiredSimpleTokenApis: function() {
-    if (this.state) {
-      return this.getBehaviorConfig()['requiredSimpleTokenApis'] || [];
-    } else if (this.getSelectedBehavior().config) {
-      return this.getSelectedBehavior().config.requiredSimpleTokenApis || [];
-    } else {
-      return [];
-    }
+    return this.getBehaviorGroup().getRequiredSimpleTokenApis();
   },
 
   getApiApplications: function() {
@@ -678,6 +667,10 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  refreshCodeEditor: function() {
+    this.refs.codeEditor.refresh();
+  },
+
   loadVersions: function() {
     var url = jsRoutes.controllers.BehaviorEditorController.versionInfoFor(this.getBehaviorGroup().id).url;
     this.setState({
@@ -982,7 +975,10 @@ const BehaviorEditor = React.createClass({
       }
     });
     const updatedGroup = this.getBehaviorGroup().clone({ behaviorVersions: updatedBehaviorVersions });
-    this.updateGroupStateWith(updatedGroup, this.resetNotifications);
+    this.updateGroupStateWith(updatedGroup, () => {
+      this.resetNotifications();
+      this.refreshCodeEditor();
+    });
   },
 
   toggleCodeEditorLineWrapping: function() {
@@ -1316,36 +1312,39 @@ const BehaviorEditor = React.createClass({
   },
 
   onAddOAuth2Application: function(appToAdd) {
-    var existing = this.getRequiredOAuth2ApiConfigs();
-    var indexToReplace = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
-    var toReplace = existing[indexToReplace];
-    var configs = existing.slice();
+    const existing = this.getRequiredOAuth2ApiConfigs();
+    const indexToReplace = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
+    const toReplace = existing[indexToReplace];
+    const configs = existing.slice();
     if (indexToReplace >= 0) {
       configs.splice(indexToReplace, 1);
     }
-    var toAdd = Object.assign({}, toReplace, {
+    const toAdd = Object.assign({}, toReplace, {
       apiId: appToAdd.apiId,
       application: appToAdd
     });
-    this.setConfigProperty('requiredOAuth2ApiConfigs', configs.concat([toAdd]));
+    const newConfigs =  configs.concat([toAdd]);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newConfigs }));
   },
 
   onRemoveOAuth2Application: function(appToRemove) {
-    var existing = this.getRequiredOAuth2ApiConfigs();
-    this.setConfigProperty('requiredOAuth2ApiConfigs', existing.filter(function(config) {
+    const existing = this.getRequiredOAuth2ApiConfigs();
+    const newConfigs = existing.filter(function(config) {
       return config.application && config.application.applicationId !== appToRemove.applicationId;
-    }));
+    });
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newConfigs }));
   },
 
   onAddSimpleTokenApi: function(toAdd) {
-    this.setConfigProperty('requiredSimpleTokenApis', this.getRequiredSimpleTokenApis().concat([toAdd]));
+    const newConfigs = this.getRequiredSimpleTokenApis().concat([toAdd]);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredSimpleTokenApis: newConfigs }));
   },
 
   onRemoveSimpleTokenApi: function(toRemove) {
-    var existing = this.getRequiredSimpleTokenApis();
-    this.setConfigProperty('requiredSimpleTokenApis', existing.filter(function(ea) {
+    const newConfigs = this.getRequiredSimpleTokenApis().filter(function(ea) {
       return ea.apiId !== toRemove.apiId;
-    }));
+    });
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredSimpleTokenApis: newConfigs }));
   },
 
   onNewOAuth2Application: function(requiredOAuth2ApiConfig) {
@@ -1519,6 +1518,7 @@ const BehaviorEditor = React.createClass({
 
         <div className="position-relative">
           <CodeEditor
+            ref="codeEditor"
             value={this.getBehaviorFunctionBody()}
             onChange={this.updateCode}
             onCursorChange={this.ensureCursorVisible}
@@ -2050,7 +2050,10 @@ const BehaviorEditor = React.createClass({
                   </div>
                 </Collapsible>
 
-                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0.5} animationDisabled={this.animationIsDisabled()}>
+                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor}
+                  animationDuration={0.5}
+                  animationDisabled={this.animationIsDisabled()}
+                >
 
                   <div className="container container-wide">
                     <div className="ptxl">
@@ -2102,6 +2105,7 @@ const BehaviorEditor = React.createClass({
               <DataTypeResultConfig
                 usesSearch={this.hasInputNamed('searchQuery')}
                 onChange={this.updateDataTypeResultConfig}
+                isFinishedBehavior={this.isFinishedBehavior()}
               />
 
               <hr className="man thin bg-gray-light" />
@@ -2111,8 +2115,9 @@ const BehaviorEditor = React.createClass({
 
                 <div className="mbxl">
                   <DataTypeCodeEditorHelp
-                  functionBody={this.getBehaviorFunctionBody()}
-                  usesSearch={this.hasInputNamed('searchQuery')}
+                    functionBody={this.getBehaviorFunctionBody()}
+                    usesSearch={this.hasInputNamed('searchQuery')}
+                    isFinishedBehavior={this.isFinishedBehavior()}
                   />
                 </div>
 

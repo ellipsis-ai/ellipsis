@@ -44,6 +44,8 @@ case class DisplayHelpBehavior(
       actionInputs = untitledGroups.flatMap(_.actionInputs),
       dataTypeInputs = untitledGroups.flatMap(_.dataTypeInputs),
       behaviorVersions = untitledGroups.flatMap(_.behaviorVersions),
+      Seq(),
+      Seq(),
       githubUrl = None,
       exportId = None,
       Some(OffsetDateTime.now)

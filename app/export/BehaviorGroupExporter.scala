@@ -28,7 +28,9 @@ case class BehaviorGroupExporter(
   val config = BehaviorGroupConfig(
     groupData.name.getOrElse(""),
     groupData.exportId,
-    groupData.icon
+    groupData.icon,
+    groupData.requiredOAuth2ApiConfigs,
+    groupData.requiredSimpleTokenApis
   )
 
   val actionInputs = groupData.actionInputs
@@ -91,16 +93,15 @@ case class BehaviorGroupExporter(
   }
 
   protected def writeFilesFor(behaviorVersionData: BehaviorVersionData): Unit = {
-    val forExport = behaviorVersionData.copyForExport
-    val path = fullPathFor(forExport)
-    forExport.description.foreach { desc =>
+    val path = fullPathFor(behaviorVersionData)
+    behaviorVersionData.description.foreach { desc =>
       writeFileFor(path, "README", desc)
     }
-    writeFileFor(path, "function.js", functionStringFor(forExport))
-    writeFileFor(path, "triggers.json", triggersStringFor(forExport))
-    writeFileFor(path, "params.json", paramsStringFor(forExport))
-    writeFileFor(path, "response.md", forExport.responseTemplate)
-    writeFileFor(path, "config.json", configStringFor(forExport))
+    writeFileFor(path, "function.js", functionStringFor(behaviorVersionData))
+    writeFileFor(path, "triggers.json", triggersStringFor(behaviorVersionData))
+    writeFileFor(path, "params.json", paramsStringFor(behaviorVersionData))
+    writeFileFor(path, "response.md", behaviorVersionData.responseTemplate)
+    writeFileFor(path, "config.json", configStringFor(behaviorVersionData))
   }
 
   def writeActions(): Unit = {

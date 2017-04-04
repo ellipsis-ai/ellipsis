@@ -123,9 +123,15 @@ return React.createClass({
     cm.replaceSelection(spaces);
   },
 
+  refresh: function() {
+    this.refs.codemirror.refresh();
+  },
+
   render: function() {
     return (
-      <Codemirror value={this.props.value}
+      <Codemirror
+        ref="codemirror"
+        value={this.props.value}
         onChange={this.props.onChange}
         onCursorChange={this.props.onCursorChange}
         options={{

@@ -1,12 +1,17 @@
 version: '2'
 services:
-  web:
-    build: .
+  circleci:
+    build: ./docker_files/circleci/
     volumes:
-      - .:/home/ellipsis/code
+      - .:/home/circleci/ellipsis
     command: /bin/bash
     tty: true
     stdin_open: true
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - MEMCACHED_HOST=memcached
+      - MEMCACHED_PORT=11211
     links:
       - memcached
       - postgres

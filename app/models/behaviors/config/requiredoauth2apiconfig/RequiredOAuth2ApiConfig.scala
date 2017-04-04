@@ -2,11 +2,11 @@ package models.behaviors.config.requiredoauth2apiconfig
 
 import models.accounts.oauth2api.OAuth2Api
 import models.accounts.oauth2application.OAuth2Application
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 
 case class RequiredOAuth2ApiConfig(
                                     id: String,
-                                    behaviorVersion: BehaviorVersion,
+                                    groupVersion: BehaviorGroupVersion,
                                     api: OAuth2Api,
                                     maybeRecommendedScope: Option[String],
                                     maybeApplication: Option[OAuth2Application]
@@ -17,7 +17,7 @@ case class RequiredOAuth2ApiConfig(
   def toRaw: RawRequiredOAuth2ApiConfig = {
     RawRequiredOAuth2ApiConfig(
       id,
-      behaviorVersion.id,
+      groupVersion.id,
       api.id,
       maybeRecommendedScope,
       maybeApplication.map(_.id)

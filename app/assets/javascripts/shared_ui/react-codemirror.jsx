@@ -102,6 +102,9 @@ return React.createClass({
       this.props.onChange(doc.getValue());
     }
   },
+  refresh: function() {
+    this.getCodeMirror().refresh();
+  },
   render: function render() {
     return (
       <div className={

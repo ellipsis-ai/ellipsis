@@ -117,17 +117,8 @@ define(function(require) {
       return {
         id: this.id,
         exportId: this.exportId,
-        name: this.name || "Unnamed data type",
-        needsConfig: this.needsConfig()
+        name: this.name || "Unnamed data type"
       };
-    }
-
-    getRequiredOAuth2ApiConfigs() {
-      return this.config.requiredOAuth2ApiConfigs || [];
-    }
-
-    needsConfig() {
-      return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application).length > 0;
     }
 
     clone(props) {

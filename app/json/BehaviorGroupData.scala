@@ -21,6 +21,8 @@ case class BehaviorGroupData(
                               actionInputs: Seq[InputData],
                               dataTypeInputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
+                              requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
+                              requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                               githubUrl: Option[String],
                               exportId: Option[String],
                               createdAt: Option[OffsetDateTime]
@@ -133,6 +135,8 @@ object BehaviorGroupData {
       })
       inputs <- dataService.inputs.allForGroupVersion(version)
       inputsData <- Future.sequence(inputs.map(ea => InputData.fromInput(ea, dataService)))
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(version)
+      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(version)
     } yield {
       val (dataTypeInputsData, actionInputsData) = inputsData.partition { ea =>
         versionsData.find(v => ea.inputId.exists(v.inputIds.contains)).exists(_.isDataType)
@@ -146,6 +150,8 @@ object BehaviorGroupData {
         actionInputsData,
         dataTypeInputsData,
         versionsData,
+        requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
+        requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
         None,
         version.group.maybeExportId,
         Some(version.createdAt)

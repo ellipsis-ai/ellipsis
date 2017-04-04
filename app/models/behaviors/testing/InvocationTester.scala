@@ -38,7 +38,7 @@ case class InvocationTester(
           map { case(param, v) => param }
       }
 
-      missingSimpleTokens <- dataService.requiredSimpleTokenApis.missingFor(user, behaviorVersion)
+      missingSimpleTokens <- dataService.requiredSimpleTokenApis.missingFor(user, behaviorVersion.groupVersion)
       missingUserEnvVars <- dataService.userEnvironmentVariables.missingFor(user, behaviorVersion, dataService)
 
       report <- if (missingParams.isEmpty && missingSimpleTokens.isEmpty && missingUserEnvVars.isEmpty) {

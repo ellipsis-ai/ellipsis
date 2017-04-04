@@ -136,6 +136,8 @@ object BehaviorEditorData {
           actionInputs = Seq(),
           dataTypeInputs = Seq(),
           Seq(BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService)),
+          Seq(),
+          Seq(),
           githubUrl = None,
           exportId = None,
           Some(OffsetDateTime.now)
