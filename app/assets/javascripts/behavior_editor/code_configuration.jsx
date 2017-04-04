@@ -5,9 +5,11 @@ define(function(require) {
     CodeEditor = require('./code_editor'),
     Collapsible = require('../shared_ui/collapsible'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
+    HelpButton = require('../help/help_button'),
     Input = require('../models/input'),
     Notifications = require('../notifications/notifications'),
     NotificationData = require('../models/notification_data'),
+    SectionHeading = require('./section_heading'),
     SVGSettingsIcon = require('../svg/settings'),
     oauth2ApplicationShape = require('./oauth2_application_shape'),
     debounce = require('javascript-debounce');
@@ -20,6 +22,10 @@ define(function(require) {
   return React.createClass({
     displayName: 'CodeConfiguration',
     propTypes: {
+      sectionNumber: React.PropTypes.number.isRequired,
+      sectionHeading: React.PropTypes.string.isRequired,
+      codeEditorHelp: React.PropTypes.node.isRequired,
+
       activePanelName: React.PropTypes.string.isRequired,
       activeDropdownName: React.PropTypes.string.isRequired,
       onToggleActiveDropdown: React.PropTypes.func.isRequired,
@@ -86,6 +92,10 @@ define(function(require) {
 
     toggleAWSHelp: function() {
       this.props.onToggleActivePanel('helpForAWS');
+    },
+
+    toggleBoilerplateHelp: function() {
+      this.props.onToggleActivePanel('helpForBoilerplateParameters');
     },
 
     toggleEditorSettingsMenu: function() {
@@ -179,6 +189,20 @@ define(function(require) {
     render: function() {
       return (
         <div>
+
+          <div className="container container-wide">
+            <div className="ptxl">
+              <SectionHeading number={this.props.sectionNumber}>
+                <span className="mrm">{this.props.sectionHeading}</span>
+                <span className="display-inline-block">
+                  <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
+                </span>
+              </SectionHeading>
+
+              {this.props.codeEditorHelp}
+            </div>
+          </div>
+
           <div>
             <div className="type-s">
               <div className="plxxxl prs mbm">

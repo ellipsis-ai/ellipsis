@@ -19,7 +19,6 @@ var React = require('react'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
   FixedFooter = require('../shared_ui/fixed_footer'),
-  HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
   NotificationData = require('../models/notification_data'),
@@ -31,7 +30,6 @@ var React = require('react'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
-  SectionHeading = require('./section_heading'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
@@ -1355,10 +1353,15 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  renderCodeEditor: function() {
+  renderCodeEditor: function(props) {
     return (
       <CodeConfiguration
         ref="codeEditor"
+
+        sectionNumber={props.sectionNumber}
+        sectionHeading={props.sectionHeading}
+        codeEditorHelp={props.codeEditorHelp}
+
         activePanelName={this.props.activePanelName}
         activeDropdownName={this.getActiveDropdown()}
         onToggleActiveDropdown={this.toggleActiveDropdown}
@@ -1898,16 +1901,10 @@ const BehaviorEditor = React.createClass({
                   animationDuration={0.5}
                   animationDisabled={this.animationIsDisabled()}
                 >
-
-                  <div className="container container-wide">
-                    <div className="ptxl">
-                      <SectionHeading number={this.hasInputs() ? "3" : "2"}>
-                        <span className="mrm">Run code</span>
-                        <span className="display-inline-block">
-                          <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
-                        </span>
-                      </SectionHeading>
-
+                  {this.renderCodeEditor({
+                    sectionNumber: this.hasInputs() ? "3" : "2",
+                    sectionHeading: "Run code",
+                    codeEditorHelp: (
                       <CodeEditorHelp
                         isFinishedBehavior={this.isFinishedBehavior()}
                         functionBody={this.getBehaviorFunctionBody()}
@@ -1915,10 +1912,8 @@ const BehaviorEditor = React.createClass({
                         helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
                         hasInputs={this.hasInputs()}
                       />
-                    </div>
-                  </div>
-
-                  {this.renderCodeEditor()}
+                    )
+                  })}
 
                   <hr className="man thin bg-gray-light" />
 
@@ -1954,20 +1949,20 @@ const BehaviorEditor = React.createClass({
 
               <hr className="man thin bg-gray-light" />
 
-              <div className="container container-wide ptxl">
-                <SectionHeading number="2">Run code to generate a list</SectionHeading>
-
-                <div className="mbxl">
-                  <DataTypeCodeEditorHelp
-                    functionBody={this.getBehaviorFunctionBody()}
-                    usesSearch={this.hasInputNamed('searchQuery')}
-                    isFinishedBehavior={this.isFinishedBehavior()}
-                  />
-                </div>
-              </div>
-
-              <div className="pbxxxl">
-                {this.renderCodeEditor()}
+              <div className="ptxl pbxxxl">
+                {this.renderCodeEditor({
+                  sectionNumber: 2,
+                  sectionHeading: "Run code to generate a list",
+                  codeEditorHelp: (
+                    <div className="mbxl">
+                      <DataTypeCodeEditorHelp
+                        functionBody={this.getBehaviorFunctionBody()}
+                        usesSearch={this.hasInputNamed('searchQuery')}
+                        isFinishedBehavior={this.isFinishedBehavior()}
+                      />
+                    </div>
+                  )
+                })}
               </div>
       </div>
     );
