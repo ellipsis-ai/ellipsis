@@ -43,7 +43,7 @@ define(function(require) {
           className={`position-fixed-bottom position-z-front ${this.props.className || ""}`}
           style={(this.state.exceedsWindowHeight ? { overflowY: 'auto' } : {})}
         >
-          {React.Children.map(this.props.children, (child) => child)}
+          {this.props.children}
         </footer>
       );
     }

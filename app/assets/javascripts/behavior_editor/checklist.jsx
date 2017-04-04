@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react');
 
   var Checklist = React.createClass({
+    displayName: "Checklist",
     propTypes: {
       children: React.PropTypes.node.isRequired,
       className: React.PropTypes.string,
@@ -23,6 +24,7 @@ define(function(require) {
   });
 
   Checklist.Item = React.createClass({
+    displayName: "ChecklistItem",
     propTypes: {
       children: React.PropTypes.node.isRequired,
       checkedWhen: React.PropTypes.bool,

@@ -3,6 +3,7 @@ define(function(require) {
     Checklist = require('./checklist');
 
   return React.createClass({
+    displayName: "CodeEditorHelp",
     propTypes: {
       functionBody: React.PropTypes.string.isRequired,
       isFinishedBehavior: React.PropTypes.bool.isRequired,

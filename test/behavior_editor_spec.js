@@ -58,7 +58,6 @@ describe('BehaviorEditor', () => {
       keyName: "myOtherAwesomeOauthApp"
     }],
     linkedOAuth2ApplicationIds: [],
-    notifications: [],
     shouldRevealCodeEditor: true,
     onSave: jest.fn(),
     savedAnswers: [],
@@ -175,7 +174,7 @@ describe('BehaviorEditor', () => {
       editorConfig.group.actionInputs = [{
         name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
       }, {
-        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
+        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc124"
       }];
       firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
       const editor = createEditor(editorConfig);
@@ -190,7 +189,7 @@ describe('BehaviorEditor', () => {
       editorConfig.group.actionInputs = [{
         name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
       }, {
-        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
+        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc124"
       }];
       firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
       const editor = createEditor(editorConfig);
@@ -214,37 +213,6 @@ describe('BehaviorEditor', () => {
       editor.onInputEnterKey(1);
       expect(editor.focusOnInputIndex.mock.calls.length).toBe(0);
       expect(editor.addNewInput.mock.calls.length).toBe(0);
-    });
-  });
-
-  describe('resetNotificationsImmediately', () => {
-    const newNotifications = [{
-      kind: "a", details: "new"
-    }, {
-      kind: "b", details: "new"
-    }];
-    const oldNotifications = [{
-      kind: "b", details: "old"
-    }, {
-      kind: "c", details: "old"
-    }, {
-      kind: "d", details: "old", hidden: true
-    }];
-    it('concatenates new notifications with old, unneeded, still-visible ones', () => {
-      let editor = createEditor(editorConfig);
-      editor.buildNotifications = jest.fn(() => newNotifications);
-      editor.getNotifications = jest.fn(() => oldNotifications);
-      editor.setState = jest.fn();
-      editor.resetNotificationsImmediately();
-      expect(editor.setState).toBeCalledWith({
-        notifications: [{
-          kind: "a", details: "new"
-        }, {
-          kind: "b", details: "new"
-        }, {
-          kind: "c", details: "old", hidden: true
-        }]
-      });
     });
   });
 

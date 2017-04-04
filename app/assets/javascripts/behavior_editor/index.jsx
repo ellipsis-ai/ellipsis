@@ -1,7 +1,6 @@
 define((require) => {
 var React = require('react'),
   APISelectorMenu = require('./api_selector_menu'),
-  AWSConfig = require('./aws_config'),
   AWSHelp = require('./aws_help'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
@@ -11,31 +10,27 @@ var React = require('react'),
   DataTypeTester = require('./data_type_tester'),
   BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
   ChangeSummary = require('./change_summary'),
-  CodeEditor = require('./code_editor'),
+  CodeConfiguration = require('./code_configuration'),
   CodeEditorHelp = require('./code_editor_help'),
-  CodeFooter = require('./code_footer'),
-  CodeHeader = require('./code_header'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
   DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
   DataTypeResultConfig = require('./data_type_result_config'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
-  DropdownMenu = require('../shared_ui/dropdown_menu'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
   FixedFooter = require('../shared_ui/fixed_footer'),
-  HelpButton = require('../help/help_button'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
+  NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
   ModalScrim = require('../shared_ui/modal_scrim'),
-  Notification = require('../notifications/notification'),
+  Notifications = require('../notifications/notifications'),
   PageWithPanels = require('../shared_ui/page_with_panels'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
-  SectionHeading = require('./section_heading'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
@@ -45,7 +40,6 @@ var React = require('react'),
   UniqueBy = require('../lib/unique_by'),
   UserInputConfiguration = require('./user_input_configuration'),
   VersionsPanel = require('./versions_panel'),
-  SVGSettingsIcon = require('../svg/settings'),
   SVGWarning = require('../svg/warning'),
   Collapsible = require('../shared_ui/collapsible'),
   CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
@@ -86,7 +80,6 @@ const BehaviorEditor = React.createClass({
       name: React.PropTypes.string.isRequired
     })),
     linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-    notifications: React.PropTypes.arrayOf(React.PropTypes.object),
     savedAnswers: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         inputId: React.PropTypes.string.isRequired,
@@ -152,15 +145,6 @@ const BehaviorEditor = React.createClass({
       return selectedBehavior.config.aws;
     } else {
       return undefined;
-    }
-  },
-
-  getAWSConfigProperty: function(property) {
-    var config = this.getAWSConfig();
-    if (config) {
-      return config[property];
-    } else {
-      return "";
     }
   },
 
@@ -256,29 +240,8 @@ const BehaviorEditor = React.createClass({
     return !!this.getBehaviorConfig().forcePrivateResponse;
   },
 
-  getCodeAutocompletions: function() {
-    var apiTokens = this.getApiApplications().map((application) => `ellipsis.accessTokens.${application.keyName}`);
-
-    var envVars = this.getEnvVariableNames().map(function(name) {
-      return `ellipsis.env.${name}`;
-    });
-
-    var aws = this.getAWSConfig() ? ['ellipsis.AWS'] : [];
-
-    return this.getCodeFunctionParams().concat(apiTokens, aws, envVars);
-  },
-
-  getCodeEditorDropdownLabel: function() {
-    return (<SVGSettingsIcon label="Editor settings" />);
-  },
-
   getSystemParams: function() {
     return ["ellipsis"];
-  },
-
-  getCodeFunctionParams: function() {
-    var userParams = this.getInputs().map(ea => ea.name);
-    return userParams.concat(this.getSystemParams());
   },
 
   getDefaultBehaviorTemplate: function() {
@@ -311,10 +274,6 @@ const BehaviorEditor = React.createClass({
 
   },
 
-  getFirstLineNumberForCode: function() {
-    return 2;
-  },
-
   getInputWithSavedAnswers: function() {
     if (this.state.selectedSavedAnswerInputId) {
       return this.getInputs().find(ea => ea.inputId === this.state.selectedSavedAnswerInputId);
@@ -330,13 +289,16 @@ const BehaviorEditor = React.createClass({
   buildEnvVarNotifications: function() {
     var selectedBehavior = this.getSelectedBehavior();
     if (selectedBehavior) {
-      return this.getEnvVariables().filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name)).filter((ea) => !ea.isAlreadySavedWithValue).map((ea) => ({
-        kind: "env_var_not_defined",
-        environmentVariableName: ea.name,
-        onClick: () => {
-          this.showEnvVariableSetter(ea.name);
-        }
-      }));
+      return this.getEnvVariables()
+        .filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name))
+        .filter((ea) => !ea.isAlreadySavedWithValue)
+        .map((ea) => new NotificationData({
+          kind: "env_var_not_defined",
+          environmentVariableName: ea.name,
+          onClick: () => {
+            this.showEnvVariableSetter(ea.name);
+          }
+        }));
     } else {
       return [];
     }
@@ -357,39 +319,18 @@ const BehaviorEditor = React.createClass({
   },
 
   buildOAuthApplicationNotifications: function() {
-    var notifications = [];
     const behavior = this.getSelectedBehavior();
     if (!behavior) {
       return [];
     }
-    this.getRequiredOAuth2ApiConfigsWithNoApplication().forEach(ea => {
-      notifications.push({
-        kind: "oauth2_config_without_application",
-        name: this.getOAuth2ApiWithId(ea.apiId).name,
-        requiredApiConfig: ea,
-        existingOAuth2Applications: this.getAllOAuth2Applications(),
-        onAddOAuth2Application: this.onAddOAuth2Application,
-        onNewOAuth2Application: this.onNewOAuth2Application
-      });
-    });
-    var unusedApplications =
-      this.getRequiredOAuth2ApiConfigs().
-        map(ea => ea.application).
-        filter(ea => ea && !this.hasUsedOAuth2Application(ea.keyName));
-    unusedApplications.forEach(ea => {
-      notifications.push({
-        kind: "oauth2_application_unused",
-        name: ea.displayName,
-        code: `ellipsis.accessTokens.${ea.keyName}`
-      });
-    });
-    if (this.getAWSConfig() && !this.hasUsedAWSObject()) {
-      notifications.push({
-        kind: "aws_unused",
-        code: "ellipsis.AWS"
-      });
-    }
-    return notifications;
+    return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new NotificationData({
+      kind: "oauth2_config_without_application",
+      name: this.getOAuth2ApiWithId(ea.apiId).name,
+      requiredApiConfig: ea,
+      existingOAuth2Applications: this.getAllOAuth2Applications(),
+      onAddOAuth2Application: this.onAddOAuth2Application,
+      onNewOAuth2Application: this.onNewOAuth2Application
+    }));
   },
 
   getParamTypesNeedingConfiguration: function() {
@@ -398,17 +339,15 @@ const BehaviorEditor = React.createClass({
   },
 
   buildDataTypeNotifications: function() {
-    var notifications = [];
-    this.getParamTypesNeedingConfiguration().forEach(ea => {
+    return this.getParamTypesNeedingConfiguration().map(ea => {
       const behaviorVersion = this.getBehaviorGroup().behaviorVersions.find(bv => bv.id === ea.id);
       const behaviorId = behaviorVersion ? behaviorVersion.behaviorId : null;
-      notifications.push({
+      return new NotificationData({
         kind: "data_type_needs_config",
         name: ea.name,
         onClick: () => this.onSelectBehavior(this.getBehaviorGroup().id, behaviorId)
       });
     });
-    return notifications;
   },
 
   buildParamNotifications: function() {
@@ -423,18 +362,18 @@ const BehaviorEditor = React.createClass({
     });
     return Object.keys(triggerParamObj).map((name) => {
       if (Input.isValidName(name)) {
-        return {
+        return new NotificationData({
           kind: "param_not_in_function",
           name: name,
           onClick: () => {
             this.addInputs([name]);
           }
-        };
+        });
       } else {
-        return {
+        return new NotificationData({
           kind: "invalid_param_in_trigger",
           name: name
-        };
+        });
       }
     });
   },
@@ -451,7 +390,7 @@ const BehaviorEditor = React.createClass({
       var template = this.getBehaviorTemplate();
       var validParams = this.getValidParamNamesForTemplate();
       var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
-      return unknownTemplateParams.map((paramName) => ({
+      return unknownTemplateParams.map((paramName) => new NotificationData({
         kind: "unknown_param_in_template",
         name: paramName
       }));
@@ -461,34 +400,13 @@ const BehaviorEditor = React.createClass({
   },
 
   buildNotifications: function() {
-    var serverNotifications = this.props.notifications || [];
-    var allNotifications = serverNotifications.concat(
+    return [].concat(
       this.buildEnvVarNotifications(),
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
       this.buildParamNotifications(),
       this.buildTemplateNotifications()
     );
-
-    var notifications = {};
-    allNotifications.forEach(function(notification) {
-      if (notifications[notification.kind]) {
-        notifications[notification.kind].push(notification);
-      } else {
-        notifications[notification.kind] = [notification];
-      }
-    });
-    return Object.keys(notifications).map(function(key) {
-      return {
-        kind: key,
-        details: notifications[key]
-      };
-    });
-  },
-
-  getLastLineNumberForCode: function() {
-    var numLines = this.getBehaviorFunctionBody().split('\n').length;
-    return this.getFirstLineNumberForCode() + numLines;
   },
 
   getNotifications: function() {
@@ -921,16 +839,8 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('sharedAnswerInputSelector', true);
   },
 
-  toggleAPISelectorMenu: function() {
-    this.toggleActiveDropdown('apiSelectorDropdown');
-  },
-
   toggleAWSConfig: function() {
     this.setConfigProperty('aws', this.getAWSConfig() ? undefined : {});
-  },
-
-  toggleAWSHelp: function() {
-    this.toggleActivePanel('helpForAWS');
   },
 
   toggleBehaviorSwitcher: function() {
@@ -985,10 +895,6 @@ const BehaviorEditor = React.createClass({
     this.setState({
       codeEditorUseLineWrapping: !this.state.codeEditorUseLineWrapping
     });
-  },
-
-  toggleEditorSettingsMenu: function() {
-    this.toggleActiveDropdown('codeEditorSettings');
   },
 
   toggleResponseTemplateHelp: function() {
@@ -1196,17 +1102,6 @@ const BehaviorEditor = React.createClass({
 
   /* Booleans */
 
-  hasUsedAWSObject: function() {
-    var code = this.getBehaviorFunctionBody();
-    return /\bellipsis\.AWS\b/.test(code);
-  },
-
-  hasUsedOAuth2Application: function(keyName) {
-    var code = this.getBehaviorFunctionBody();
-    var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
-    return pattern.test(code);
-  },
-
   hasModifiedTemplate: function() {
     return this.state && this.state.hasModifiedTemplate;
   },
@@ -1307,10 +1202,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  onAWSConfigChange: function(property, envVarName) {
-    this.setAWSEnvVar(property, envVarName);
-  },
-
   onAddOAuth2Application: function(appToAdd) {
     const existing = this.getRequiredOAuth2ApiConfigs();
     const indexToReplace = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
@@ -1382,13 +1273,8 @@ const BehaviorEditor = React.createClass({
   },
 
   resetNotificationsImmediately: function() {
-    var newNotifications = this.buildNotifications();
-    var newKinds = newNotifications.map(ea => ea.kind);
-    var visibleAndUnneeded = (notification) => !notification.hidden && !newKinds.some(kind => kind === notification.kind);
-    var notificationsToHide = this.getNotifications().filter(visibleAndUnneeded)
-      .map(deadNotification => Object.assign(deadNotification, { hidden: true }));
     this.setState({
-      notifications: newNotifications.concat(notificationsToHide)
+      notifications: this.buildNotifications()
     });
   },
 
@@ -1468,87 +1354,68 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  renderCodeEditor: function() {
+  toggleAPISelectorMenu: function() {
+    this.toggleActiveDropdown('apiSelectorDropdown');
+  },
+
+  renderAPISelector: function() {
     return (
-      <div>
-        <div className="border-top border-left border-right border-light ptm">
-          <div className="type-s">
-            <div className="plxxxl prs mbm">
-              <APISelectorMenu
-                openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
-                onAWSClick={this.toggleAWSConfig}
-                awsCheckedWhen={!!this.getAWSConfig()}
-                toggle={this.toggleAPISelectorMenu}
-                allOAuth2Applications={this.getAllOAuth2Applications()}
-                requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
-                allSimpleTokenApis={this.getAllSimpleTokenApis()}
-                requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
-                onAddOAuth2Application={this.onAddOAuth2Application}
-                onRemoveOAuth2Application={this.onRemoveOAuth2Application}
-                onAddSimpleTokenApi={this.onAddSimpleTokenApi}
-                onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
-                onNewOAuth2Application={this.onNewOAuth2Application}
-                getOAuth2ApiWithId={this.getOAuth2ApiWithId}
-              />
-            </div>
+      <APISelectorMenu
+        openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
+        onAWSClick={this.toggleAWSConfig}
+        awsCheckedWhen={!!this.getAWSConfig()}
+        toggle={this.toggleAPISelectorMenu}
+        allOAuth2Applications={this.getAllOAuth2Applications()}
+        requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
+        allSimpleTokenApis={this.getAllSimpleTokenApis()}
+        requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
+        onAddOAuth2Application={this.onAddOAuth2Application}
+        onRemoveOAuth2Application={this.onRemoveOAuth2Application}
+        onAddSimpleTokenApi={this.onAddSimpleTokenApi}
+        onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
+        onNewOAuth2Application={this.onNewOAuth2Application}
+        getOAuth2ApiWithId={this.getOAuth2ApiWithId}
+      />
+    );
+  },
 
-            <Collapsible revealWhen={!!this.getAWSConfig()} animationDisabled={this.animationIsDisabled()}>
-              <div className="plxxxl prs pbs mbs border-bottom border-light">
-                <AWSConfig
-                  envVariableNames={this.getEnvVariableNames()}
-                  accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                  secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                  regionName={this.getAWSConfigProperty('regionName')}
-                  onAddNew={this.onAWSAddNewEnvVariable}
-                  onChange={this.onAWSConfigChange}
-                  onRemoveAWSConfig={this.toggleAWSConfig}
-                  onToggleHelp={this.toggleAWSHelp}
-                  helpVisible={this.props.activePanelName === 'helpForAWS'}
-                />
-              </div>
-            </Collapsible>
-          </div>
+  renderCodeEditor: function(props) {
+    return (
+      <CodeConfiguration
+        ref="codeEditor"
 
-          <CodeHeader
-            ref="codeHeader"
-            userInputs={this.getInputs()}
-            systemParams={this.getSystemParams()}
-          />
-        </div>
+        sectionNumber={props.sectionNumber}
+        sectionHeading={props.sectionHeading}
+        codeEditorHelp={props.codeEditorHelp}
 
-        <div className="position-relative">
-          <CodeEditor
-            ref="codeEditor"
-            value={this.getBehaviorFunctionBody()}
-            onChange={this.updateCode}
-            onCursorChange={this.ensureCursorVisible}
-            firstLineNumber={this.getFirstLineNumberForCode()}
-            lineWrapping={this.state.codeEditorUseLineWrapping}
-            autocompletions={this.getCodeAutocompletions()}
-            functionParams={this.getCodeFunctionParams()}
-          />
-          <div className="position-absolute position-top-right position-z-popup-trigger">
-            <DropdownMenu
-              openWhen={this.getActiveDropdown() === 'codeEditorSettings'}
-              label={this.getCodeEditorDropdownLabel()}
-              labelClassName="button-dropdown-trigger-symbol"
-              menuClassName="popup-dropdown-menu-right"
-              toggle={this.toggleEditorSettingsMenu}
-            >
-              <DropdownMenu.Item
-                onClick={this.toggleCodeEditorLineWrapping}
-                checkedWhen={this.state.codeEditorUseLineWrapping}
-                label="Enable line wrap"
-              />
-            </DropdownMenu>
-          </div>
-        </div>
+        activePanelName={this.props.activePanelName}
+        activeDropdownName={this.getActiveDropdown()}
+        onToggleActiveDropdown={this.toggleActiveDropdown}
+        onToggleActivePanel={this.toggleActivePanel}
+        animationIsDisabled={this.animationIsDisabled()}
 
-        <CodeFooter
-          lineNumber={this.getLastLineNumberForCode()}
-          onCodeDelete={this.isDataTypeBehavior() ? null : this.confirmDeleteCode}
-        />
-      </div>
+        onToggleAWSConfig={this.toggleAWSConfig}
+        awsConfig={this.getAWSConfig()}
+        onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
+        onAWSConfigChange={this.setAWSEnvVar}
+
+        apiSelector={this.renderAPISelector()}
+
+        inputs={this.getInputs()}
+        systemParams={this.getSystemParams()}
+        apiApplications={this.getApiApplications()}
+
+        functionBody={this.getBehaviorFunctionBody()}
+        onChangeFunctionBody={this.updateCode}
+        onCursorChange={this.ensureCursorVisible}
+        useLineWrapping={this.state.codeEditorUseLineWrapping}
+        onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
+        canDeleteFunctionBody={!this.isDataTypeBehavior()}
+        onDeleteFunctionBody={this.confirmDeleteCode}
+
+        envVariableNames={this.getEnvVariableNames()}
+
+      />
     );
   },
 
@@ -1629,7 +1496,7 @@ const BehaviorEditor = React.createClass({
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
-                  <div className="column column-page-sidebar"></div>
+                  <div className="column column-page-sidebar" />
                   <div className="column column-page-main">
                     <EnvVariableSetter
                       ref="envVariableSetterPanel"
@@ -1647,7 +1514,7 @@ const BehaviorEditor = React.createClass({
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
-                  <div className="column column-page-sidebar"></div>
+                  <div className="column column-page-sidebar" />
                   <div className="column column-page-main">
                     <EnvVariableAdder
                       ref="envVariableAdderPanel"
@@ -1718,9 +1585,7 @@ const BehaviorEditor = React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.layoutDidUpdate} animationDisabled={this.animationIsDisabled()}>
-            {this.getNotifications().map((notification, index) => (
-              <Notification key={"notification" + index} notification={notification} />
-            ))}
+            <Notifications notifications={this.getNotifications()} />
             <div className="container container-wide ptm border-top">
               <div>
                 <div>
@@ -2054,16 +1919,10 @@ const BehaviorEditor = React.createClass({
                   animationDuration={0.5}
                   animationDisabled={this.animationIsDisabled()}
                 >
-
-                  <div className="container container-wide">
-                    <div className="ptxl">
-                      <SectionHeading number={this.hasInputs() ? "3" : "2"}>
-                        <span className="mrm">Run code</span>
-                        <span className="display-inline-block">
-                          <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
-                        </span>
-                      </SectionHeading>
-
+                  {this.renderCodeEditor({
+                    sectionNumber: this.hasInputs() ? "3" : "2",
+                    sectionHeading: "Run code",
+                    codeEditorHelp: (
                       <CodeEditorHelp
                         isFinishedBehavior={this.isFinishedBehavior()}
                         functionBody={this.getBehaviorFunctionBody()}
@@ -2071,10 +1930,8 @@ const BehaviorEditor = React.createClass({
                         helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
                         hasInputs={this.hasInputs()}
                       />
-
-                      {this.renderCodeEditor()}
-                    </div>
-                  </div>
+                    )
+                  })}
 
                   <hr className="man thin bg-gray-light" />
 
@@ -2099,30 +1956,30 @@ const BehaviorEditor = React.createClass({
 
   renderDataTypeBehavior: function() {
     return (
-      <div>
-              <hr className="mtl mbn thin bg-gray-light" />
+      <div className="pbxxxl">
+        <hr className="mtl mbn thin bg-gray-light" />
 
-              <DataTypeResultConfig
-                usesSearch={this.hasInputNamed('searchQuery')}
-                onChange={this.updateDataTypeResultConfig}
-                isFinishedBehavior={this.isFinishedBehavior()}
-              />
+        <DataTypeResultConfig
+          usesSearch={this.hasInputNamed('searchQuery')}
+          onChange={this.updateDataTypeResultConfig}
+          isFinishedBehavior={this.isFinishedBehavior()}
+        />
 
-              <hr className="man thin bg-gray-light" />
+        <hr className="man thin bg-gray-light" />
 
-              <div className="container container-wide ptxl pbxxxl">
-                <SectionHeading number="2">Run code to generate a list</SectionHeading>
-
-                <div className="mbxl">
-                  <DataTypeCodeEditorHelp
-                    functionBody={this.getBehaviorFunctionBody()}
-                    usesSearch={this.hasInputNamed('searchQuery')}
-                    isFinishedBehavior={this.isFinishedBehavior()}
-                  />
-                </div>
-
-                {this.renderCodeEditor()}
+          {this.renderCodeEditor({
+            sectionNumber: "2",
+            sectionHeading: "Run code to generate a list",
+            codeEditorHelp: (
+              <div className="mbxl">
+                <DataTypeCodeEditorHelp
+                  functionBody={this.getBehaviorFunctionBody()}
+                  usesSearch={this.hasInputNamed('searchQuery')}
+                  isFinishedBehavior={this.isFinishedBehavior()}
+                />
               </div>
+            )
+          })}
       </div>
     );
   },
