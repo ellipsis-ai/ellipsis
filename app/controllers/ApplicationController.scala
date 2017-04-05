@@ -63,8 +63,14 @@ class ApplicationController @Inject() (
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      alreadyInstalled <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.behaviorGroups.allFor(team)
+      }.getOrElse(Future.successful(Seq()))
+      alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
+        BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+      }).map(_.flatten)
       result <- teamAccess.maybeTargetTeam.map { team =>
-        Future.successful(Ok(Json.toJson(githubService.publishedBehaviorGroupsFor(team, maybeBranch))))
+        Future.successful(Ok(Json.toJson(githubService.publishedBehaviorGroupsFor(team, maybeBranch, alreadyInstalledData))))
       }.getOrElse {
         reAuthFor(request, maybeTeamId)
       }
@@ -144,7 +150,7 @@ class ApplicationController @Inject() (
     } yield {
       maybeInstalledGroupData.map { installedGroupData =>
         val publishedGroupData = teamAccess.maybeTargetTeam.map { team =>
-          githubService.publishedBehaviorGroupsFor(team, maybeBranch)
+          githubService.publishedBehaviorGroupsFor(team, maybeBranch, installedGroupData)
         }.getOrElse(Seq())
         val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
         Ok(Json.toJson(matchResults.map(_.item)).toString)
@@ -172,29 +178,7 @@ class ApplicationController @Inject() (
         val json = Json.parse(info.dataJson)
         json.validate[BehaviorGroupData] match {
           case JsSuccess(data, jsPath) => {
-            for {
-              teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
-              maybeExistingGroup <- data.id.map { groupId =>
-                dataService.behaviorGroups.find(groupId)
-              }.getOrElse(Future.successful(None))
-              maybeGroup <- maybeExistingGroup.map(g => Future.successful(Some(g))).getOrElse {
-                teamAccess.maybeTargetTeam.map { team =>
-                  dataService.behaviorGroups.createFor(data.exportId, team).map(Some(_))
-                }.getOrElse(Future.successful(None))
-              }
-              maybeGroupData <- maybeGroup.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
-              }.getOrElse(Future.successful(None))
-              _ <- (for {
-                group <- maybeGroup
-                groupData <- maybeGroupData
-              } yield {
-                dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)).map(Some(_))
-              }).getOrElse(Future.successful(None))
-              maybeGroupData <- maybeGroup.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
-              }.getOrElse(Future.successful(None))
-            } yield {
+            dataService.behaviorGroupVersions.updateWith(data, user).map { maybeGroupData =>
               maybeGroupData.map { groupData =>
                 Ok(Json.toJson(groupData))
               }.getOrElse {

@@ -12,6 +12,7 @@ import models.team.Team
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import services.DataService
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class BehaviorGroupZipImporter(
@@ -119,24 +120,31 @@ case class BehaviorGroupZipImporter(
       )
     }.toSeq
 
-    val data = BehaviorGroupData(
-      None,
-      team.id,
-      maybeGroupName,
-      maybeGroupDescription,
-      maybeIcon,
-      actionInputs,
-      dataTypeInputs,
-      versionsData,
-      requiredOAuth2ApiConfigData,
-      requiredSimpleTokenApiData,
-      githubUrl = None,
-      exportId = maybeExportId,
-      Some(OffsetDateTime.now)
-    ).copyForImportableForTeam(team)
-
-    BehaviorGroupImporter(team, user, data, dataService).run
-
+    for {
+      alreadyInstalled <- dataService.behaviorGroups.allFor(team)
+      alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
+        BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+      }).map(_.flatten)
+      maybeExistingGroupData <- Future.successful(alreadyInstalledData.find(_.exportId == maybeExportId))
+      data <- Future.successful(
+        BehaviorGroupData(
+          None,
+          team.id,
+          maybeGroupName,
+          maybeGroupDescription,
+          maybeIcon,
+          actionInputs,
+          dataTypeInputs,
+          versionsData,
+          requiredOAuth2ApiConfigData,
+          requiredSimpleTokenApiData,
+          githubUrl = None,
+          exportId = maybeExportId,
+          Some(OffsetDateTime.now)
+        ).copyForImportableForTeam(team, maybeExistingGroupData)
+      )
+      maybeImported <- BehaviorGroupImporter(team, user, data, dataService).run
+    } yield maybeImported
   }
 
 }

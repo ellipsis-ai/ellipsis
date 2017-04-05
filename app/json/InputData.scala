@@ -2,7 +2,6 @@ package json
 
 import export.BehaviorGroupExporter
 import models.IDs
-import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.input.Input
 import services.DataService
 
@@ -30,10 +29,13 @@ case class InputData(
     )
   }
 
-  def copyWithIdsEnsured: InputData = {
+  def copyWithIdsEnsuredFor(maybeExistingGroupData: Option[BehaviorGroupData]): InputData = {
+    val maybeExisting = maybeExistingGroupData.flatMap { data =>
+      data.inputs.find(_.exportId == exportId)
+    }
     copy(
       id = id.orElse(Some(IDs.next)),
-      inputId = inputId.orElse(Some(IDs.next))
+      inputId = maybeExisting.flatMap(_.inputId).orElse(inputId).orElse(Some(IDs.next))
     )
   }
 
