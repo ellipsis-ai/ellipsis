@@ -218,7 +218,7 @@ define(function(require) {
       return this.state.selectedBehaviorGroup;
     },
 
-    selectedBehaviorGroupIsImportable: function() {
+    selectedBehaviorGroupIsUninstalled: function() {
       var selectedGroup = this.getSelectedBehaviorGroup();
       return !!(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup.exportId));
     },
@@ -571,7 +571,7 @@ define(function(require) {
               <BehaviorGroupInfoPanel
                 groupData={this.getSelectedBehaviorGroup()}
                 onToggle={this.clearActivePanel}
-                isImportable={this.selectedBehaviorGroupIsImportable()}
+                isImportable={this.selectedBehaviorGroupIsUninstalled()}
                 wasImported={this.selectedBehaviorWasImported()}
                 localId={this.getSelectedBehaviorGroupId()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
