@@ -93,8 +93,12 @@ define(function(require) {
       return this.getLocalBehaviorGroups().length > 0;
     },
 
+    isSearching: function() {
+      return this.props.currentSearchText && this.props.currentSearchText.length;
+    },
+
     getMatchingBehaviorGroupsFrom: function(groups) {
-      if (this.props.matchingResults.length > 0) {
+      if (this.isSearching()) {
         return groups.filter((ea) =>
           BehaviorGroup.groupsIncludeExportId(this.props.matchingResults, ea.exportId)
         );
@@ -354,7 +358,7 @@ define(function(require) {
           <div className="container container-c mvxl">
 
             <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
-              {this.props.matchingResults.length ?
+              {this.isSearching() ?
                 `Your skills matching “${this.props.currentSearchText}”` :
                 "Your skills"
               }
@@ -424,9 +428,9 @@ define(function(require) {
       if (this.getLocalBehaviorGroups().length > 0) {
         return (
           <ListHeading teamId={this.props.teamId}>
-            {this.props.matchingResults.length === 0 ?
-              "Install skills published by Ellipsis.ai" :
-              `Skills published by Ellipsis.ai matching “${this.props.currentSearchText}”`}
+            {this.isSearching() ?
+              `Skills published by Ellipsis.ai matching “${this.props.currentSearchText}”` :
+              "Install skills published by Ellipsis.ai"}
           </ListHeading>
         );
       } else {

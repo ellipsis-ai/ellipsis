@@ -20,9 +20,6 @@ define(function() {
         exportId: null
       }, props);
 
-      if (!initialProps.inputId) {
-        throw new Error("New Input must have an inputId property");
-      }
       if (!initialProps.paramType) {
         throw new Error("New Input object must have a param type set");
       }
