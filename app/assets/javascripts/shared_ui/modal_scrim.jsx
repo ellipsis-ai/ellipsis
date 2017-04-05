@@ -18,6 +18,10 @@ define(function(require) {
       return this.refs.scrim;
     },
 
+    shouldComponentUpdate: function(newProps) {
+      return this.props.isActive !== newProps.isActive;
+    },
+
     render: function() {
       return (
         <div
@@ -27,7 +31,7 @@ define(function(require) {
             (this.props.isActive ? "fade-in" : "display-none")
           }
           onClick={this.onClick}
-        ></div>
+        />
       );
     }
   });

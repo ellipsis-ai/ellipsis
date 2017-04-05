@@ -5,7 +5,8 @@ import com.rockymadden.stringmetric.similarity.RatcliffObershelpMetric
 case class FuzzyMatcher[T <: FuzzyMatchable](
                                               matchString: String,
                                               matchables: Seq[T],
-                                              thresholdDelta: Double = 0.1
+                                              thresholdDelta: Double = 0.1,
+                                              absoluteThreshold: Double = 0.5
                                             ) {
 
   val matchTokenCount: Int = matchString.split("\\s+").length
@@ -14,7 +15,11 @@ case class FuzzyMatcher[T <: FuzzyMatchable](
     pattern.split("\\s+").sliding(matchTokenCount, 1).map(tokens => tokens.mkString(" ")).toSeq
   }
 
-  def basicScoreFor(text: String): Double = RatcliffObershelpMetric.compare(text.toLowerCase, matchString.toLowerCase).getOrElse(0)
+  def basicScoreFor(text: String): Double = {
+    text.sliding(matchString.length, 1).flatMap { ea =>
+      RatcliffObershelpMetric.compare(ea.toLowerCase, matchString.toLowerCase)
+    }.max
+  }
 
   def scoreFor(matchable: T): Double = {
     val patterns = matchable.fuzzyMatchPatterns.flatMap(_.maybePattern)
@@ -40,7 +45,8 @@ case class FuzzyMatcher[T <: FuzzyMatchable](
     if (allResults.isEmpty) {
       Seq()
     } else {
-      val threshold = allResults.maxBy(_.maxScore).maxScore - thresholdDelta
+      val relativeThreshold = allResults.maxBy(_.maxScore).maxScore - thresholdDelta
+      val threshold = Array(relativeThreshold, absoluteThreshold).max
       allResults.
         filter { ea => ea.maxScore > threshold }.
         map(_.filteredForThreshold(threshold)).

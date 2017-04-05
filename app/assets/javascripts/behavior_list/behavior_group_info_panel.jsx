@@ -90,7 +90,7 @@ define(function(require) {
               <div className="pvs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>
                 <BehaviorName
                   version={behavior}
-                  disableLink={!behavior.behaviorId}
+                  disableLink={!this.props.groupData.id || !behavior.behaviorId}
                   isImportable={true}
                 />
               </div>
@@ -121,7 +121,7 @@ define(function(require) {
     renderUpdate: function() {
       if (this.props.updatedData) {
         return (
-          <div className="mvl">
+          <div className="mvl fade-in">
             <button type="button" className="button-s" onClick={this.onUpdate}>Re-install</button>
           </div>
         );
@@ -141,7 +141,7 @@ define(function(require) {
         );
       } else if (this.props.wasImported) {
         return (
-          <div className="type-s mvm">
+          <div className="type-s mvm fade-in">
             <span className="display-inline-block align-m mrs" style={{ width: 30, height: 18 }}><SVGInstalled /></span>
             <span className="display-inline-block align-m type-green">Installed from Ellipsis.ai</span>
           </div>

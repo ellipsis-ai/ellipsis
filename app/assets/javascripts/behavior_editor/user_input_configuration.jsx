@@ -60,6 +60,10 @@ define(function(require) {
       this.props.onInputNameBlur(index);
     },
 
+    addInput: function() {
+      this.props.onInputAdd();
+    },
+
     focusIndex: function(index) {
       this.refs['input' + index].focus();
     },
@@ -186,7 +190,7 @@ define(function(require) {
                     ))}
                   </div>
                   <div>
-                    <button type="button" className="button-s mrm mbs" onClick={this.props.onInputAdd}>
+                    <button type="button" className="button-s mrm mbs" onClick={this.addInput}>
                       Add another input
                     </button>
                     {this.renderReuseInput({ className: "mbs" })}

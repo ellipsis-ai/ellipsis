@@ -8,8 +8,8 @@ var React = require('react'),
   require('codemirror/addon/hint/show-hint');
 
 return React.createClass({
+  displayName: "CodeEditor",
   propTypes: {
-    autocompletions: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     firstLineNumber: React.PropTypes.oneOfType([
       React.PropTypes.number,
       React.PropTypes.string
@@ -18,7 +18,8 @@ return React.createClass({
     lineWrapping: React.PropTypes.bool,
     onChange: React.PropTypes.func.isRequired,
     onCursorChange: React.PropTypes.func.isRequired,
-    value: React.PropTypes.string.isRequired
+    value: React.PropTypes.string.isRequired,
+    autocompletions: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
   },
   getJsHintOptions: function() {
     return {
