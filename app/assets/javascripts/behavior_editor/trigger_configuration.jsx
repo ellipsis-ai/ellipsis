@@ -2,6 +2,9 @@ define(function(require) {
   var React = require('react'),
     Checklist = require('./checklist'),
     HelpButton = require('../help/help_button'),
+    Input = require('../models/input'),
+    Notifications = require('../notifications/notifications'),
+    NotificationData = require('../models/notification_data'),
     SectionHeading = require('./section_heading'),
     TriggerInput = require('./trigger_input'),
     Trigger = require('../models/trigger');
@@ -10,12 +13,14 @@ define(function(require) {
     propTypes: {
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
+      inputNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
       onToggleHelp: React.PropTypes.func.isRequired,
       helpVisible: React.PropTypes.bool.isRequired,
       onTriggerAdd: React.PropTypes.func.isRequired,
       onTriggerChange: React.PropTypes.func.isRequired,
       onTriggerDelete: React.PropTypes.func.isRequired,
       onTriggerDropdownToggle: React.PropTypes.func.isRequired,
+      onAddNewInput: React.PropTypes.func.isRequired,
       openDropdownName: React.PropTypes.string.isRequired
     },
 
@@ -68,6 +73,26 @@ define(function(require) {
       this.props.onTriggerDropdownToggle(dropdownName);
     },
 
+    getNotificationsFor: function(trigger) {
+      const unknownParamNames = trigger.paramNames.filter((ea) => !this.props.inputNames.includes(ea));
+      return unknownParamNames.map((name) => {
+        if (Input.isValidName(name)) {
+          return new NotificationData({
+            kind: "param_not_in_function",
+            name: name,
+            onClick: () => {
+              this.props.onAddNewInput(name);
+            }
+          });
+        } else {
+          return new NotificationData({
+            kind: "invalid_param_in_trigger",
+            name: name
+          });
+        }
+      });
+    },
+
     render: function() {
       return (
         <div className="columns container container-narrow ptxl">
@@ -93,6 +118,7 @@ define(function(require) {
             </div>
             <div className="mbm">
               {this.props.triggers.map(function(trigger, index) {
+                const notifications = this.getNotificationsFor(trigger);
                 return (
                   <div key={`trigger${index}`}>
                     <TriggerInput
@@ -109,6 +135,9 @@ define(function(require) {
                       onToggleDropdown={this.toggleDropdown.bind(this, `BehaviorEditorTriggerDropdown${index}`)}
                       helpVisible={this.props.helpVisible}
                     />
+                    <div className={notifications.length > 0 ? "mtneg1 mbxs" : ""}>
+                      <Notifications notifications={notifications} inline={true}/>
+                    </div>
                     {index + 1 < this.props.triggers.length ? (
                       <div className="pvxs type-label type-disabled align-c">or</div>
                     ) : null}
