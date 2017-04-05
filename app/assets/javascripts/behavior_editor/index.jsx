@@ -350,34 +350,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  buildParamNotifications: function() {
-    var triggerParamObj = {};
-    this.getBehaviorTriggers().forEach((trigger) => {
-      trigger.paramNames.forEach((paramName) => {
-        triggerParamObj[paramName] = true;
-      });
-    });
-    this.getInputs().forEach((codeParam) => {
-      delete triggerParamObj[codeParam.name];
-    });
-    return Object.keys(triggerParamObj).map((name) => {
-      if (Input.isValidName(name)) {
-        return new NotificationData({
-          kind: "param_not_in_function",
-          name: name,
-          onClick: () => {
-            this.addNewInput(name);
-          }
-        });
-      } else {
-        return new NotificationData({
-          kind: "invalid_param_in_trigger",
-          name: name
-        });
-      }
-    });
-  },
-
   getValidParamNamesForTemplate: function() {
     return this.getInputs().map((param) => param.name)
       .concat(this.getSystemParams())
@@ -404,7 +376,6 @@ const BehaviorEditor = React.createClass({
       this.buildEnvVarNotifications(),
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
-      this.buildParamNotifications(),
       this.buildTemplateNotifications()
     );
   },
@@ -1857,12 +1828,14 @@ const BehaviorEditor = React.createClass({
                 <TriggerConfiguration
                   isFinishedBehavior={this.isFinishedBehavior()}
                   triggers={this.getBehaviorTriggers()}
+                  inputNames={this.getInputs().map((ea) => ea.name)}
                   onToggleHelp={this.toggleTriggerHelp}
                   helpVisible={this.props.activePanelName === 'helpForTriggerParameters'}
                   onTriggerAdd={this.addTrigger}
                   onTriggerChange={this.updateTriggerAtIndexWithTrigger}
                   onTriggerDelete={this.deleteTriggerAtIndex}
                   onTriggerDropdownToggle={this.toggleActiveDropdown}
+                  onAddNewInput={this.addNewInput}
                   openDropdownName={this.getActiveDropdown()}
                 />
 
