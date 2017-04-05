@@ -51,8 +51,10 @@ jobs:
             activator test
       - save_cache:
           paths:
-            - ~/.ivy2
-            - ~/.sbt
+            - ./.ivy2
+            - ./.sbt
+            - ./target/resolution-cache
+            - ./target/streams
           key: v1-{{ checksum "build.sbt" }}
       - run:
           name: Prepare app to be dockerized
