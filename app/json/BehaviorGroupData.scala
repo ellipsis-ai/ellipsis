@@ -47,14 +47,20 @@ case class BehaviorGroupData(
 
   val maybeNonEmptyName: Option[String] = name.map(_.trim).filter(_.nonEmpty)
 
-  def copyForTeam(team: Team): BehaviorGroupData = {
-    copy(behaviorVersions = behaviorVersions.map(_.copyForTeam(team)))
+  def copyForImportableForTeam(team: Team): BehaviorGroupData = {
+    val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsured)
+    val dataTypeInputsWithIds = dataTypeInputs.map(_.copyWithIdsEnsured)
+    copy(
+      actionInputs = actionInputsWithIds,
+      dataTypeInputs = dataTypeInputsWithIds,
+      behaviorVersions = behaviorVersions.map(_.copyForImportableForTeam(team, actionInputsWithIds ++ dataTypeInputsWithIds))
+    )
   }
 
   def copyForImportOf(group: BehaviorGroup): BehaviorGroupData = {
-    val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsuredFor(group))
-    val dataTypeInputsWithIds = dataTypeInputs.map(_.copyWithIdsEnsuredFor(group))
-    val behaviorVersionsWithIds = behaviorVersions.map(_.copyWithIdsEnsuredForImport(group, actionInputsWithIds ++ dataTypeInputsWithIds))
+    val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsured)
+    val dataTypeInputsWithIds = dataTypeInputs.map(_.copyWithIdsEnsured)
+    val behaviorVersionsWithIds = behaviorVersions.map(_.copyWithIdsEnsuredForImport(group))
     copyForNewVersionFor(group.id, actionInputsWithIds, dataTypeInputsWithIds, behaviorVersionsWithIds)
   }
 

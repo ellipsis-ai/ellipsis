@@ -30,7 +30,7 @@ case class InputData(
     )
   }
 
-  def copyWithIdsEnsuredFor(group: BehaviorGroup): InputData = {
+  def copyWithIdsEnsured: InputData = {
     copy(
       id = id.orElse(Some(IDs.next)),
       inputId = inputId.orElse(Some(IDs.next))

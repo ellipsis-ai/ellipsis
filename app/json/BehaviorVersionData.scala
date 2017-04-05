@@ -38,16 +38,18 @@ case class BehaviorVersionData(
     name.orElse(exportId)
   }
 
-  def copyForTeam(team: Team): BehaviorVersionData = {
-    copy(teamId = team.id)
+  def copyForImportableForTeam(team: Team, inputsData: Seq[InputData]): BehaviorVersionData = {
+    copy(
+      teamId = team.id,
+      inputIds = inputIds.flatMap { id => inputsData.find(_.exportId.contains(id)).flatMap(_.inputId) }
+    )
   }
 
-  def copyWithIdsEnsuredForImport(group: BehaviorGroup, inputsData: Seq[InputData]): BehaviorVersionData = {
+  def copyWithIdsEnsuredForImport(group: BehaviorGroup): BehaviorVersionData = {
     copy(
       id = exportId,
       teamId = group.team.id,
-      behaviorId = behaviorId.orElse(Some(IDs.next)),
-      inputIds = inputIds.flatMap { id => inputsData.find(_.exportId.contains(id)).flatMap(_.inputId) }
+      behaviorId = behaviorId.orElse(Some(IDs.next))
     )
   }
 
