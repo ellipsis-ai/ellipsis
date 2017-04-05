@@ -43,6 +43,10 @@ jobs:
           command: |
             pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
+      - run:
+          name: Let's see if this fixes the cache problem
+          command: |
+            mkdir target
       - restore_cache:
           key: v1-{{ checksum "build.sbt" }}
       - run:
