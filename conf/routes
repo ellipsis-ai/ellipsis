@@ -11,7 +11,6 @@ GET         /install_behaviors                        @controllers.ApplicationCo
 GET         /fetch_published_skills                   @controllers.ApplicationController.fetchPublishedBehaviorInfo(teamId: Option[String] ?= None, branch: Option[String] ?= None)
 POST        /merge_skills                             @controllers.ApplicationController.mergeBehaviorGroups
 POST        /delete_skills                            @controllers.ApplicationController.deleteBehaviorGroups
-POST        /update_skill                             @controllers.ApplicationController.updateBehaviorGroup
 GET         /search_skills                            @controllers.ApplicationController.findBehaviorGroupsMatching(queryString: String, branch: Option[String] ?= None, teamId: Option[String] ?= None)
 
 GET         /new_skill                                @controllers.BehaviorEditorController.newGroup(teamId: Option[String] ?= None)

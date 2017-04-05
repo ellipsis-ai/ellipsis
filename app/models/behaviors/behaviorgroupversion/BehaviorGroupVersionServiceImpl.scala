@@ -135,18 +135,4 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def updateWith(data: BehaviorGroupData, user: User): Future[Option[BehaviorGroupData]] = {
-    for {
-      maybeExistingGroup <- data.id.map { groupId =>
-        dataService.behaviorGroups.find(groupId)
-      }.getOrElse(Future.successful(None))
-      _ <- maybeExistingGroup.map { group =>
-        dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      maybeGroupData <- maybeExistingGroup.map { group =>
-        BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
-      }.getOrElse(Future.successful(None))
-    } yield maybeGroupData
-  }
-
 }

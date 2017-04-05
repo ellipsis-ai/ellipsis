@@ -71,7 +71,7 @@ define(function(require) {
     },
 
     updateBehaviorGroup: function(existingGroup, updatedData) {
-      const url = jsRoutes.controllers.ApplicationController.updateBehaviorGroup().url;
+      const url = jsRoutes.controllers.BehaviorEditorController.save().url;
 
       const body = {
         dataJson: JSON.stringify(updatedData.clone({ id: existingGroup.id }))

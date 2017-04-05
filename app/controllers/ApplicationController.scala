@@ -160,38 +160,4 @@ class ApplicationController @Inject() (
     }
   }
 
-  case class UpdateBehaviorGroupInfo(dataJson: String)
-
-  private val updateForm = Form(
-    mapping(
-      "dataJson" -> nonEmptyText
-    )(UpdateBehaviorGroupInfo.apply)(UpdateBehaviorGroupInfo.unapply)
-  )
-
-  def updateBehaviorGroup = silhouette.SecuredAction.async { implicit request =>
-    val user = request.identity
-    updateForm.bindFromRequest.fold(
-      formWithErrors => {
-        Future.successful(BadRequest(formWithErrors.errorsAsJson))
-      },
-      info => {
-        val json = Json.parse(info.dataJson)
-        json.validate[BehaviorGroupData] match {
-          case JsSuccess(data, jsPath) => {
-            dataService.behaviorGroupVersions.updateWith(data, user).map { maybeGroupData =>
-              maybeGroupData.map { groupData =>
-                Ok(Json.toJson(groupData))
-              }.getOrElse {
-                NotFound("")
-              }
-            }
-          }
-          case e: JsError => {
-            Future.successful(BadRequest(s"Malformatted data: ${e.errors.mkString("\n")}"))
-          }
-        }
-      }
-    )
-  }
-
 }

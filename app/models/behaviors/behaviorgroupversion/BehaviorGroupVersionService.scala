@@ -37,6 +37,4 @@ trait BehaviorGroupVersionService {
                  data: BehaviorGroupData
                ): Future[BehaviorGroupVersion]
 
-  def updateWith(data: BehaviorGroupData, user: User): Future[Option[BehaviorGroupData]]
-
 }
