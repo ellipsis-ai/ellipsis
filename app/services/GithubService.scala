@@ -260,7 +260,7 @@ class GithubService @Inject() (
     } else {
       blockingFetchPublishedBehaviorGroups(team, maybeBranch)
     }
-    behaviorGroups.map(_.copyForTeam(team)).sorted
+    behaviorGroups.map(_.copyForImportableForTeam(team)).sorted
   }
 
 }

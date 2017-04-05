@@ -133,7 +133,7 @@ case class BehaviorGroupZipImporter(
       githubUrl = None,
       exportId = maybeExportId,
       Some(OffsetDateTime.now)
-    )
+    ).copyForImportableForTeam(team)
 
     BehaviorGroupImporter(team, user, data, dataService).run
 
