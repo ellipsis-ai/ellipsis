@@ -50,18 +50,14 @@ case class BehaviorGroupData(
   def copyForImportableForTeam(team: Team): BehaviorGroupData = {
     val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsured)
     val dataTypeInputsWithIds = dataTypeInputs.map(_.copyWithIdsEnsured)
+    val behaviorVersionsWithIds = behaviorVersions.map(_.copyForImportableForTeam(team, actionInputsWithIds ++ dataTypeInputsWithIds))
+    val actionInputsWithParamTypeIds = actionInputsWithIds.map(_.copyWithParamTypeIdFromExportId(behaviorVersionsWithIds))
+    val dataTypeInputsWithParamTypeIds = dataTypeInputsWithIds.map(_.copyWithParamTypeIdFromExportId(behaviorVersionsWithIds))
     copy(
-      actionInputs = actionInputsWithIds,
-      dataTypeInputs = dataTypeInputsWithIds,
-      behaviorVersions = behaviorVersions.map(_.copyForImportableForTeam(team, actionInputsWithIds ++ dataTypeInputsWithIds))
+      actionInputs = actionInputsWithParamTypeIds,
+      dataTypeInputs = dataTypeInputsWithParamTypeIds,
+      behaviorVersions = behaviorVersionsWithIds
     )
-  }
-
-  def copyForImportOf(group: BehaviorGroup): BehaviorGroupData = {
-    val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsured)
-    val dataTypeInputsWithIds = dataTypeInputs.map(_.copyWithIdsEnsured)
-    val behaviorVersionsWithIds = behaviorVersions.map(_.copyWithIdsEnsuredForImport(group))
-    copyForNewVersionFor(group.id, actionInputsWithIds, dataTypeInputsWithIds, behaviorVersionsWithIds)
   }
 
   def copyForNewVersionOf(group: BehaviorGroup): BehaviorGroupData = {
@@ -89,9 +85,8 @@ case class BehaviorGroupData(
     val actionInputsWithIds = actionInputsToUse.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
     val dataTypeInputsWithIds = dataTypeInputsToUse.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
     val behaviorVersionsWithIds = behaviorVersionsToUse.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
-    val dataTypeVersionsWithIds = behaviorVersionsWithIds.filter(_.isDataType)
-    val actionInputsForNewVersion = actionInputsWithIds.map(_.copyWithParamTypeIdsIn(dataTypeVersionsWithIds, oldToNewIdMapping))
-    val dataTypeInputsForNewVersion = dataTypeInputsWithIds.map(_.copyWithParamTypeIdsIn(dataTypeVersionsWithIds, oldToNewIdMapping))
+    val actionInputsForNewVersion = actionInputsWithIds.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping))
+    val dataTypeInputsForNewVersion = dataTypeInputsWithIds.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping))
     copy(
       id = Some(groupId),
       actionInputs = actionInputsForNewVersion,

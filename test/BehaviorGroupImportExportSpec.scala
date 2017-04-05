@@ -15,6 +15,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
   def checkParamTypeMatches(paramType: BehaviorParameterType, dataType: BehaviorVersion): Unit = {
     paramType.isInstanceOf[BehaviorBackedDataType] mustBe true
     dataType.behavior.maybeExportId must contain(paramType.exportId)
+    dataType.id mustBe paramType.id
     dataType.behavior.isDataType mustBe true
     dataType.maybeName must contain(paramType.name)
   }
