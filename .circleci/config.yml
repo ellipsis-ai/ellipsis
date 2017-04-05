@@ -44,7 +44,7 @@ jobs:
             pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
       - restore_cache:
-          key: key: v1-{{ checksum "build.sbt" }}
+          key: v1-{{ checksum "build.sbt" }}
       - run:
           name: Run Activator Tests
           command: |
