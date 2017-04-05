@@ -37,13 +37,6 @@ case class InputData(
     )
   }
 
-  def copyWithIdsEnsuredForUpdateOf(groupData: BehaviorGroupData): InputData = {
-    val maybeExisting = groupData.inputs.find(_.exportId == exportId)
-    copy(
-      inputId = maybeExisting.flatMap(_.inputId).orElse(Some(IDs.next))
-    )
-  }
-
   def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): InputData = {
     val maybeOldDataTypeId = paramType.flatMap(_.id)
     val maybeNewDataTypeId = maybeOldDataTypeId.flatMap(oldId => oldToNewIdMapping.get(oldId))
