@@ -220,7 +220,7 @@ define(function(require) {
 
     selectedBehaviorGroupIsImportable: function() {
       var selectedGroup = this.getSelectedBehaviorGroup();
-      return !!(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup));
+      return !!(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup.exportId));
     },
 
     selectedBehaviorWasImported: function() {
@@ -277,7 +277,7 @@ define(function(require) {
 
     getUpdatedBehaviorGroupData: function() {
       const selected = this.getSelectedBehaviorGroup();
-      if (this.selectedBehaviorGroupIsImportable() && !!selected.id) {
+      if (selected && selected.exportId && !!selected.id) {
         return this.props.publishedBehaviorGroups.find(ea => ea && selected && ea.exportId === selected.exportId);
       } else {
         return null;
