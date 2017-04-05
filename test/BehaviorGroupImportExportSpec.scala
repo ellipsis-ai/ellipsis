@@ -1,7 +1,9 @@
+import drivers.SlickPostgresDriver.api._
 import export.{BehaviorGroupExporter, BehaviorGroupZipImporter}
 import json.{BehaviorParameterTypeData, BehaviorVersionData}
+import models.IDs
 import models.accounts.user.User
-import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType}
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -25,6 +27,10 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     val maybeExporter = runNow(BehaviorGroupExporter.maybeFor(group.id, exportUser, dataService))
     maybeExporter.isDefined mustBe(true)
     val file = maybeExporter.get.getZipFile
+
+    // change the existing export ID so it's not a re-install
+    runNow(dataService.run(BehaviorGroupQueries.all.filter(_.id === group.id).map(_.maybeExportId).update(Some(IDs.next))))
+
     val importer = BehaviorGroupZipImporter(maybeImportTeam.get, importUser, file, dataService)
     runNow(importer.run)
   }
@@ -53,7 +59,9 @@ class BehaviorGroupImportExportSpec extends DBSpec {
   def mustBeValidImport(exported: BehaviorGroup, imported: BehaviorGroup): Unit = {
     val reloadedExported = runNow(dataService.behaviorGroups.find(exported.id).map(_.get))
     reloadedExported.id must not be(imported.id)
-    imported.maybeExportId mustBe reloadedExported.maybeExportId
+
+    // since we changed the existing export ID
+    imported.maybeExportId must not be(reloadedExported.maybeExportId)
 
     val exportedVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(exported)).get
     val importedVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(imported)).get
