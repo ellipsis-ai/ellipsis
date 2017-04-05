@@ -189,7 +189,7 @@ class ApplicationController @Inject() (
                 group <- maybeGroup
                 groupData <- maybeGroupData
               } yield {
-                dataService.behaviorGroupVersions.createFor(group, user, data.copyForUpdateOf(groupData)).map(Some(_))
+                dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)).map(Some(_))
               }).getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
