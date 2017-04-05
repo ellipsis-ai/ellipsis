@@ -43,10 +43,6 @@ jobs:
           command: |
             pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
-      - run:
-          name: Let's see if this fixes the cache problem
-          command: |
-            mkdir target
       - restore_cache:
           key: v1-{{ checksum "build.sbt" }}
       - run:
@@ -55,10 +51,8 @@ jobs:
             activator test
       - save_cache:
           paths:
-            - ./.ivy2
-            - ./.sbt
-            - ./target/resolution-cache
-            - ./target/streams
+            - ".ivy2"
+            - ".sbt"
           key: v1-{{ checksum "build.sbt" }}
       - run:
           name: Prepare app to be dockerized
