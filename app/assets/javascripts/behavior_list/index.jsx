@@ -277,8 +277,8 @@ define(function(require) {
 
     getUpdatedBehaviorGroupData: function() {
       const selected = this.getSelectedBehaviorGroup();
-      if (selected && selected.exportId && !!selected.id) {
-        return this.props.publishedBehaviorGroups.find(ea => ea && selected && ea.exportId === selected.exportId);
+      if (selected && selected.exportId && selected.id) {
+        return this.props.publishedBehaviorGroups.find((ea) => ea.exportId === selected.exportId);
       } else {
         return null;
       }
