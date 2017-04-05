@@ -102,8 +102,3 @@ jobs:
             S3_KEY=`date +'%Y-%m-%d'`-$BOT_BUNDLE
             echo "Uploading with command aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}"
             aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}
-# Disabled since we have circleci's integration installed, which seems more intelligent
-#      - run:
-#          name: Notify the dev channel
-#          command: |
-#            curl -f --data "message=✅%20**${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH}**%20(commit%20${CIRCLE_SHA1:0:7}%20by%20${CIRCLE_USERNAME})%20built%20successfully.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}Warning: the post-build announcement failed.${PLAIN}" && exit 1)
