@@ -58,16 +58,14 @@ define(function(require) {
                 searchResults: matches
               }, () => {
                 if (!matches.includes(this.state.selectedTimeZone)) {
-                  this.setState({
-                    selectedTimeZone: this.state.noMatches ? this.state.guessedTimeZone : matches[0]
-                  });
+                  this.setSelectedTimeZoneMatching(matches[0]);
                 }
               });
             } else {
               throw new Error("Error loading search results");
             }
           })
-          .catch((err) => {
+          .catch(() => {
             this.setState({
               isSearching: false,
               noMatches: false,
@@ -77,14 +75,23 @@ define(function(require) {
       });
     },
 
+    setSelectedTimeZoneMatching: function(tzId) {
+      const matched = tzInfo.find((tz) => tz.timeZones.includes(tzId));
+      this.setState({
+        selectedTimeZone: this.state.noMatches ? this.state.guessedTimeZone : matched.timeZones[0]
+      });
+    },
+
     getFilteredTzInfo: function() {
-      var searchText = (this.state.searchText || "").trim();
+      var searchText = (this.state.searchText || "").trim().toLowerCase();
       if (searchText) {
         if (this.state.noMatches) {
           return [];
         } else {
           return tzInfo.filter((tz) => {
-            return this.state.searchResults.some((tzId) => tz.timeZones.includes(tzId));
+            return this.state.searchResults.some((tzId) => tz.timeZones.includes(tzId)) ||
+              tz.name.toLowerCase().includes(searchText) ||
+              tz.timeZones.some((tzId) => tzId.toLowerCase().includes(searchText));
           });
         }
       } else {
