@@ -6,12 +6,12 @@ const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group')
 jest.mock('../app/assets/javascripts/lib/data_request', () => ({
   jsonGet: jest.fn(() => {
     return new Promise((resolve, reject) => {
-      process.nextTick(() => resolve([]));
+      process.nextTick(() => resolve([]) || reject({ error: "oops" }));
     });
   }),
   jsonPost: jest.fn(() => {
     return new Promise((resolve, reject) => {
-      process.nextTick(() => resolve([]));
+      process.nextTick(() => resolve([]) || reject({ error: "oops" }));
     });
   })
 }));
