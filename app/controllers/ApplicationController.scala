@@ -13,7 +13,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService, GithubService}
-import utils.FuzzyMatcher
+import utils.{CitiesToTimeZones, FuzzyMatcher}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,7 +26,8 @@ class ApplicationController @Inject() (
                                         val lambdaService: AWSLambdaService,
                                         val ws: WSClient,
                                         val cache: CacheApi,
-                                        val githubService: GithubService
+                                        val githubService: GithubService,
+                                        val citiesToTimeZones: CitiesToTimeZones
                                       ) extends ReAuthable {
 
   import json.Formatting._

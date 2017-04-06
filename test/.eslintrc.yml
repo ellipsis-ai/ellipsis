@@ -1,4 +1,5 @@
 env:
+  node: true
   jest: true
 parserOptions:
   sourceType: module
