@@ -19,8 +19,8 @@ define(function(require) {
       onMoreInfoClick: React.PropTypes.func.isRequired,
       isImportable: React.PropTypes.bool.isRequired,
       isImporting: React.PropTypes.bool,
-      onSelectChange: React.PropTypes.func,
-      isSelected: React.PropTypes.bool,
+      onCheckedChange: React.PropTypes.func,
+      isChecked: React.PropTypes.bool,
       wasReimported: React.PropTypes.bool,
       cardClassName: React.PropTypes.string
     },
@@ -50,8 +50,8 @@ define(function(require) {
         return (
           <Checkbox
             className="display-block type-s"
-            onChange={this.onSelectChange}
-            checked={this.props.isSelected}
+            onChange={this.onCheckedChange}
+            checked={this.props.isChecked}
             label="Select"
           />
         );
@@ -115,8 +115,8 @@ define(function(require) {
       }
     },
 
-    onSelectChange: function(isChecked) {
-      this.props.onSelectChange(this.props.localId, isChecked);
+    onCheckedChange: function(isChecked) {
+      this.props.onCheckedChange(this.props.localId, isChecked);
     },
 
     getName: function() {

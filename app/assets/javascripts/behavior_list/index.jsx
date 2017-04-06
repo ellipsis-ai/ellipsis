@@ -42,7 +42,7 @@ define(function(require) {
     getInitialState: function() {
       return {
         selectedBehaviorGroup: null,
-        selectedGroupIds: [],
+        checkedGroupIds: [],
         isSubmitting: false,
         footerHeight: 0,
         searchText: ""
@@ -127,8 +127,8 @@ define(function(require) {
       }
     },
 
-    getSelectedGroupIds: function() {
-      return this.state.selectedGroupIds || [];
+    getCheckedGroupIds: function() {
+      return this.state.checkedGroupIds || [];
     },
 
     getLocalIdFor: function(exportId) {
@@ -136,8 +136,8 @@ define(function(require) {
       return localGroup ? localGroup.id : null;
     },
 
-    isGroupSelected: function(group) {
-      return group.id && this.getSelectedGroupIds().indexOf(group.id) >= 0;
+    isGroupChecked: function(group) {
+      return group.id && this.getCheckedGroupIds().indexOf(group.id) >= 0;
     },
 
     confirmDeleteBehaviorGroups: function() {
@@ -148,8 +148,8 @@ define(function(require) {
       this.toggleActivePanel('confirmMergeBehaviorGroups', true);
     },
 
-    onGroupSelectionCheckboxChange: function(groupId, isChecked, optionalCallback) {
-      var newGroupIds = this.getSelectedGroupIds().slice();
+    onGroupCheckboxChange: function(groupId, isChecked, optionalCallback) {
+      var newGroupIds = this.getCheckedGroupIds().slice();
       var index = newGroupIds.indexOf(groupId);
       if (isChecked) {
         if (index === -1) {
@@ -161,13 +161,13 @@ define(function(require) {
         }
       }
       this.setState({
-        selectedGroupIds: newGroupIds
+        checkedGroupIds: newGroupIds
       }, optionalCallback);
     },
 
-    clearSelectedGroups: function() {
+    clearCheckedGroups: function() {
       this.setState({
-        selectedGroupIds: []
+        checkedGroupIds: []
       });
     },
 
@@ -175,7 +175,7 @@ define(function(require) {
       this.setState({
         isSubmitting: true
       }, () => {
-        this.props.onMergeBehaviorGroups(this.getSelectedGroupIds());
+        this.props.onMergeBehaviorGroups(this.getCheckedGroupIds());
       });
     },
 
@@ -183,38 +183,38 @@ define(function(require) {
       this.setState({
         isSubmitting: true
       }, () => {
-        this.props.onDeleteBehaviorGroups(this.getSelectedGroupIds());
+        this.props.onDeleteBehaviorGroups(this.getCheckedGroupIds());
       });
     },
 
-    getActionsLabel: function(selectedCount) {
-      if (selectedCount === 0) {
+    getActionsLabel: function(checkedCount) {
+      if (checkedCount === 0) {
         return "No skills selected";
-      } else if (selectedCount === 1) {
+      } else if (checkedCount === 1) {
         return "1 skill selected";
       } else {
-        return `${selectedCount} skills selected`;
+        return `${checkedCount} skills selected`;
       }
     },
 
-    getLabelForDeleteAction: function(selectedCount) {
-      if (selectedCount < 2) {
+    getLabelForDeleteAction: function(checkedCount) {
+      if (checkedCount < 2) {
         return "Delete skill";
       } else {
         return `Delete skills`;
       }
     },
 
-    getTextForDeleteBehaviorGroups: function(selectedCount) {
-      if (selectedCount === 1) {
+    getTextForDeleteBehaviorGroups: function(checkedCount) {
+      if (checkedCount === 1) {
         return "Are you sure you want to delete this skill?";
       } else {
-        return `Are you sure you want to delete these ${selectedCount} skills?`;
+        return `Are you sure you want to delete these ${checkedCount} skills?`;
       }
     },
 
-    getTextForMergeBehaviorGroups: function(selectedCount) {
-      return `Are you sure you want to merge these ${selectedCount} skills?`;
+    getTextForMergeBehaviorGroups: function(checkedCount) {
+      return `Are you sure you want to merge these ${checkedCount} skills?`;
     },
 
     getSelectedBehaviorGroup: function() {
@@ -270,8 +270,8 @@ define(function(require) {
       const callback = () => {
         this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
       };
-      if (this.isGroupSelected(existingGroup)) {
-        this.onGroupSelectionCheckboxChange(existingGroup.id, false, callback);
+      if (this.isGroupChecked(existingGroup)) {
+        this.onGroupCheckboxChange(existingGroup.id, false, callback);
       } else {
         callback();
       }
@@ -383,8 +383,8 @@ define(function(require) {
                     onMoreInfoClick={this.toggleInfoPanel}
                     isImportable={false}
                     isImporting={this.isImporting(group)}
-                    onSelectChange={this.onGroupSelectionCheckboxChange}
-                    isSelected={this.isGroupSelected(group)}
+                    onCheckedChange={this.onGroupCheckboxChange}
+                    isChecked={this.isGroupChecked(group)}
                     wasReimported={this.wasReimported(group)}
                     cardClassName="bg-white"
                   />
@@ -403,12 +403,12 @@ define(function(require) {
     },
 
     renderActions: function() {
-      var selectedCount = this.getSelectedGroupIds().length;
+      var selectedCount = this.getCheckedGroupIds().length;
       return (
         <div>
           <button type="button"
             className="button-primary mrs mbs"
-            onClick={this.clearSelectedGroups}
+            onClick={this.clearCheckedGroups}
           >
             Cancel
           </button>
@@ -601,7 +601,7 @@ define(function(require) {
               />
             </Collapsible>
             <Collapsible
-              revealWhen={!this.props.activePanelIsModal && this.getSelectedGroupIds().length > 0}
+              revealWhen={!this.props.activePanelIsModal && this.getCheckedGroupIds().length > 0}
               onChange={this.resetFooterHeight}
             >
               <div className="border-top">
@@ -621,7 +621,7 @@ define(function(require) {
                 onCancelClick={this.clearActivePanel}
                 isConfirming={this.state.isSubmitting}
               >
-                <p>{this.getTextForDeleteBehaviorGroups(this.getSelectedGroupIds().length)}</p>
+                <p>{this.getTextForDeleteBehaviorGroups(this.getCheckedGroupIds().length)}</p>
               </ConfirmActionPanel>
             </Collapsible>
             <Collapsible ref="confirmMergeBehaviorGroups"
@@ -635,7 +635,7 @@ define(function(require) {
                 onCancelClick={this.clearActivePanel}
                 isConfirming={this.state.isSubmitting}
               >
-                <p>{this.getTextForMergeBehaviorGroups(this.getSelectedGroupIds().length)}</p>
+                <p>{this.getTextForMergeBehaviorGroups(this.getCheckedGroupIds().length)}</p>
               </ConfirmActionPanel>
             </Collapsible>
           </FixedFooter>
