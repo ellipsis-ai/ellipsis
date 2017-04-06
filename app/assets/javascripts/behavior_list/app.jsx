@@ -6,7 +6,7 @@ define(function(require) {
     ImmutableObjectUtils = require('../lib/immutable_object_utils');
 
   return React.createClass({
-    displayName: 'App',
+    displayName: 'BehaviorListApp',
     propTypes: {
       csrfToken: React.PropTypes.string.isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
@@ -21,10 +21,10 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        behaviorGroups: this.props.behaviorGroups,
         publishedBehaviorGroupLoadStatus: 'loading',
         publishedBehaviorGroups: [],
         recentlyInstalled: [],
+        currentlyInstalling: [],
         matchingResults: [],
         currentSearchText: "",
         isLoadingMatchingResults: false
@@ -58,16 +58,16 @@ define(function(require) {
         dataJson: JSON.stringify(groupToInstall)
       };
 
-      DataRequest
-        .jsonPost(url, body, this.props.csrfToken)
-        .then((installedGroup) => {
-          this.setState({
-            recentlyInstalled: this.state.recentlyInstalled.concat(installedGroup)
+      this.setState({
+        currentlyInstalling: this.state.currentlyInstalling.concat(groupToInstall)
+      }, () => {
+        DataRequest
+          .jsonPost(url, body, this.props.csrfToken)
+          .then((importedGroup) => this.didImportPublishedGroup(groupToInstall, importedGroup))
+          .catch(() => {
+            // TODO: Handle errors importing
           });
-        })
-        .catch(() => {
-          // TODO: Handle errors importing
-        });
+      });
     },
 
     updateBehaviorGroup: function(existingGroup, updatedData) {
@@ -77,18 +77,34 @@ define(function(require) {
         dataJson: JSON.stringify(updatedData.clone({ id: existingGroup.id }))
       };
 
-      DataRequest
-        .jsonPost(url, body, this.props.csrfToken)
-        .then((installedGroup) => {
-          const index = this.state.behaviorGroups.findIndex(ea => ea.id === installedGroup.id);
-          const newGroups = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.behaviorGroups, installedGroup, index);
-          this.setState({
-            behaviorGroups: newGroups
+      this.setState({
+        currentlyInstalling: this.state.currentlyInstalling.concat(existingGroup)
+      }, () => {
+        DataRequest
+          .jsonPost(url, body, this.props.csrfToken)
+          .then((newGroup) => this.didUpdateExistingGroup(existingGroup, newGroup))
+          .catch(() => {
+            // TODO: Handle errors importing
           });
-        })
-        .catch(() => {
-          // TODO: Handle errors importing
-        });
+      });
+    },
+
+    didImportPublishedGroup: function(publishedGroup, importedGroup) {
+      this.setState({
+        currentlyInstalling: this.state.currentlyInstalling.filter((ea) => ea !== publishedGroup),
+        recentlyInstalled: this.state.recentlyInstalled.concat(importedGroup)
+      });
+    },
+
+    didUpdateExistingGroup: function(existingGroup, updatedGroup) {
+      const index = this.state.recentlyInstalled.findIndex(ea => ea.id === updatedGroup.id);
+      const newGroups = index >= 0 ?
+        ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.recentlyInstalled, updatedGroup, index) :
+        this.state.recentlyInstalled.concat(updatedGroup);
+      this.setState({
+        currentlyInstalling: this.state.currentlyInstalling.filter((ea) => ea !== existingGroup),
+        recentlyInstalled: newGroups
+      });
     },
 
     mergeBehaviorGroups: function(behaviorGroupIds) {
@@ -153,9 +169,10 @@ define(function(require) {
           onMergeBehaviorGroups={this.mergeBehaviorGroups}
           onDeleteBehaviorGroups={this.deleteBehaviorGroups}
           onSearch={this.getSearchResults}
-          localBehaviorGroups={this.state.behaviorGroups.map(BehaviorGroup.fromJson)}
+          localBehaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
           publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
           recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
+          currentlyInstalling={this.state.currentlyInstalling}
           matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
           currentSearchText={this.state.currentSearchText}
           isLoadingMatchingResults={this.state.isLoadingMatchingResults}

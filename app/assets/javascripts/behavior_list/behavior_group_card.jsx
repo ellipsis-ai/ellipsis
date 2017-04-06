@@ -19,8 +19,9 @@ define(function(require) {
       onMoreInfoClick: React.PropTypes.func.isRequired,
       isImportable: React.PropTypes.bool.isRequired,
       isImporting: React.PropTypes.bool,
-      onSelectChange: React.PropTypes.func,
-      isSelected: React.PropTypes.bool,
+      onCheckedChange: React.PropTypes.func,
+      isChecked: React.PropTypes.bool,
+      wasReimported: React.PropTypes.bool,
       cardClassName: React.PropTypes.string
     },
 
@@ -45,12 +46,12 @@ define(function(require) {
     },
 
     renderSecondaryAction: function() {
-      if (!this.isImportable() && this.isLocallyEditable()) {
+      if (!this.isImportable() && !this.isImporting() && this.isLocallyEditable()) {
         return (
           <Checkbox
             className="display-block type-s"
-            onChange={this.onSelectChange}
-            checked={this.props.isSelected}
+            onChange={this.onCheckedChange}
+            checked={this.props.isChecked}
             label="Select"
           />
         );
@@ -84,6 +85,17 @@ define(function(require) {
       }
     },
 
+    renderWasReimported: function() {
+      if (this.props.wasReimported) {
+        return (
+          <div className="type-s align-r fade-in">
+            <span className="display-inline-block align-m mrs" style={{ width: 30, height: 18 }}><SVGInstalled /></span>
+            <span className="display-inline-block align-m type-green">Re-installed</span>
+          </div>
+        );
+      }
+    },
+
     getDescription: function() {
       return (
         <div className="display-overflow-fade-bottom" style={{ maxHeight: "4rem" }}>
@@ -103,8 +115,8 @@ define(function(require) {
       }
     },
 
-    onSelectChange: function(isChecked) {
-      this.props.onSelectChange(this.props.localId, isChecked);
+    onCheckedChange: function(isChecked) {
+      this.props.onCheckedChange(this.props.localId, isChecked);
     },
 
     getName: function() {
@@ -140,7 +152,10 @@ define(function(require) {
               </button>
             </div>
             <div className="phl pvm width" style={{ height: "2.6667rem" }}>
-              {this.renderSecondaryAction()}
+              <div className="columns">
+                <div className="column column-one-half">{this.renderSecondaryAction()}</div>
+                <div className="column column-one-half">{this.renderWasReimported()}</div>
+              </div>
             </div>
           </div>
         </div>
