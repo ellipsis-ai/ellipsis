@@ -6,7 +6,7 @@ define(function(require) {
     ImmutableObjectUtils = require('../lib/immutable_object_utils');
 
   return React.createClass({
-    displayName: 'App',
+    displayName: 'BehaviorListApp',
     propTypes: {
       csrfToken: React.PropTypes.string.isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
@@ -172,7 +172,7 @@ define(function(require) {
           localBehaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
           publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
           recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
-          currentlyInstalling={this.state.currentlyInstalling.map(BehaviorGroup.fromJson)}
+          currentlyInstalling={this.state.currentlyInstalling}
           matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
           currentSearchText={this.state.currentSearchText}
           isLoadingMatchingResults={this.state.isLoadingMatchingResults}

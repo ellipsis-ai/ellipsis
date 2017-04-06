@@ -117,7 +117,7 @@ describe('BehaviorList', () => {
   let config = {};
 
   beforeEach(() => {
-    config = Object.assign(config, defaultConfig);
+    config = Object.assign({}, defaultConfig);
   });
 
   describe('render', () => {
