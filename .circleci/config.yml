@@ -30,17 +30,12 @@ jobs:
               sleep 1
             done
             echo Failed waiting for Postgress && exit 1
-      - run:
-          name: DEbugging
-          command: |
-            tar --help
-            gzip --help
       - restore_cache:
           key: v3-node-{{ .Branch }}-{{ checksum "package.json" }}
       - run:
           name: Install npm dependencies
           command: |
-            npm install
+            npm prune;npm install
       - save_cache:
           paths:
             - node_modules
