@@ -350,34 +350,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  buildParamNotifications: function() {
-    var triggerParamObj = {};
-    this.getBehaviorTriggers().forEach((trigger) => {
-      trigger.paramNames.forEach((paramName) => {
-        triggerParamObj[paramName] = true;
-      });
-    });
-    this.getInputs().forEach((codeParam) => {
-      delete triggerParamObj[codeParam.name];
-    });
-    return Object.keys(triggerParamObj).map((name) => {
-      if (Input.isValidName(name)) {
-        return new NotificationData({
-          kind: "param_not_in_function",
-          name: name,
-          onClick: () => {
-            this.addInputs([name]);
-          }
-        });
-      } else {
-        return new NotificationData({
-          kind: "invalid_param_in_trigger",
-          name: name
-        });
-      }
-    });
-  },
-
   getValidParamNamesForTemplate: function() {
     return this.getInputs().map((param) => param.name)
       .concat(this.getSystemParams())
@@ -404,7 +376,6 @@ const BehaviorEditor = React.createClass({
       this.buildEnvVarNotifications(),
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
-      this.buildParamNotifications(),
       this.buildTemplateNotifications()
     );
   },
@@ -436,10 +407,6 @@ const BehaviorEditor = React.createClass({
 
   /* Setters/togglers */
 
-  createNewInput: function(optionalValues) {
-    return new Input(Object.assign({ paramType: this.getParamTypes()[0] }, optionalValues));
-  },
-
   setBehaviorInputs: function(newBehaviorInputs, callback) {
     const newGroup = this.getBehaviorGroup().copyWithInputsForBehaviorVersion(newBehaviorInputs, this.getSelectedBehavior());
     this.updateGroupStateWith(newGroup, callback);
@@ -450,24 +417,24 @@ const BehaviorEditor = React.createClass({
     this.setBehaviorInputs(newInputs, this.focusOnLastInput);
   },
 
-  addNewInput: function() {
+  getNewGenericInputName: function() {
     let newIndex = this.getInputs().length + 1;
     while (this.getInputs().some(ea => {
       return ea.name === 'userInput' + newIndex;
     })) {
       newIndex++;
     }
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedInput(`userInput${newIndex}`).url;
+    return `userInput${newIndex}`;
+  },
+
+  addNewInput: function(optionalNewName) {
+    const newName = optionalNewName || this.getNewGenericInputName();
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedInput(newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then(response => response.json())
       .then(json => {
         this.addInput(new Input(json));
       });
-  },
-
-  addInputs: function(newNames) {
-    var newInputs = this.getInputs().concat(newNames.map((name) => this.createNewInput({ name: name })));
-    this.setBehaviorProp('inputIds', newInputs.map(ea => ea.inputId));
   },
 
   addTrigger: function(callback) {
@@ -941,8 +908,7 @@ const BehaviorEditor = React.createClass({
 
   updateDataTypeResultConfig: function(shouldUseSearch) {
     if (shouldUseSearch) {
-      var searchQueryInput = this.createNewInput({ name: 'searchQuery' });
-      this.setBehaviorProp('inputIds', [searchQueryInput.id]);
+      this.addNewInput('searchQuery');
     } else {
       this.setBehaviorProp('inputIds', []);
     }
@@ -1181,7 +1147,9 @@ const BehaviorEditor = React.createClass({
   },
 
   focusOnInputIndex: function(index) {
-    this.refs.userInputConfiguration.focusIndex(index);
+    if (this.refs.userInputConfiguration) {
+      this.refs.userInputConfiguration.focusIndex(index);
+    }
   },
 
   focusOnLastInput: function() {
@@ -1860,12 +1828,14 @@ const BehaviorEditor = React.createClass({
                 <TriggerConfiguration
                   isFinishedBehavior={this.isFinishedBehavior()}
                   triggers={this.getBehaviorTriggers()}
+                  inputNames={this.getInputs().map((ea) => ea.name)}
                   onToggleHelp={this.toggleTriggerHelp}
                   helpVisible={this.props.activePanelName === 'helpForTriggerParameters'}
                   onTriggerAdd={this.addTrigger}
                   onTriggerChange={this.updateTriggerAtIndexWithTrigger}
                   onTriggerDelete={this.deleteTriggerAtIndex}
                   onTriggerDropdownToggle={this.toggleActiveDropdown}
+                  onAddNewInput={this.addNewInput}
                   openDropdownName={this.getActiveDropdown()}
                 />
 

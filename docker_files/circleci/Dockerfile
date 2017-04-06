@@ -1,10 +1,12 @@
 FROM frolvlad/alpine-scala:2.12
 MAINTAINER Matteo Melani <m@ellipsis.ai>
 
+# Install some basic tools
+RUN apk add --update bash curl openssl ca-certificates tar gzip openssh zip
+
 # Install activator
 ENV ACTIVATOR_VERSION 1.3.10
-RUN apk add --update bash curl openssl ca-certificates && \
-  curl -L -o /tmp/activator.zip \
+RUN curl -L -o /tmp/activator.zip \
     https://downloads.typesafe.com/typesafe-activator/${ACTIVATOR_VERSION}/typesafe-activator-${ACTIVATOR_VERSION}-minimal.zip && \
   mkdir -p /opt/activator && \
   unzip /tmp/activator.zip -d /opt/activator && \
@@ -14,14 +16,13 @@ RUN apk add --update bash curl openssl ca-certificates && \
   rm -rf /tmp/* /var/cache/apk/*
 
 # Git
-RUN apk add --no-cache git openssh zip
+RUN apk add --update git
 
 # Node and Npm
 RUN apk add --update nodejs
 
 # Docker and docker compose
-# RUN apk update && apk add docker make py-pip && pip install docker-compose
-RUN apk update && apk add docker
+RUN apk add --update docker
 
 # AWS CLI tools
 RUN apk --no-cache update && \

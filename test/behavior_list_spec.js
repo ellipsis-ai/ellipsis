@@ -68,9 +68,27 @@ describe('BehaviorList', () => {
     "config": {},
     "createdAt": 1466109904858
   });
-  const group1 = Object.freeze(BehaviorGroup.fromJson({id:"sfgsdf", name:"", description: "", behaviorVersions: [behaviorVersionTask1], createdAt: 1466109904858}));
-  const group2 = Object.freeze(BehaviorGroup.fromJson({id:"gsdfgsg", name:"", description: "", behaviorVersions: [behaviorVersionTask2], createdAt: 1466109904858}));
-  const group3 = Object.freeze(BehaviorGroup.fromJson({id:"jfghjfg", name:"", description: "", behaviorVersions: [behaviorVersionKnowledge1], createdAt: 1466109904858}));
+  const group1 = Object.freeze(BehaviorGroup.fromJson({
+    id: "a",
+    name: "A",
+    description: "",
+    behaviorVersions: [behaviorVersionTask1],
+    createdAt: 1466109904858
+  }));
+  const group2 = Object.freeze(BehaviorGroup.fromJson({
+    id: "b",
+    name: "B",
+    description: "",
+    behaviorVersions: [behaviorVersionTask2],
+    createdAt: 1466109904858
+  }));
+  const group3 = Object.freeze(BehaviorGroup.fromJson({
+    id: "c",
+    name: "",
+    description: "",
+    behaviorVersions: [behaviorVersionKnowledge1],
+    createdAt: 1466109904858
+  }));
   const defaultConfig = Object.freeze({
     onLoadPublishedBehaviorGroups: jest.fn(),
     onBehaviorGroupImport: jest.fn(),
@@ -81,6 +99,7 @@ describe('BehaviorList', () => {
     localBehaviorGroups: [group1, group2, group3],
     publishedBehaviorGroups: [],
     recentlyInstalled: [],
+    currentlyInstalling: [],
     matchingResults: [],
     currentSearchText: "",
     isLoadingMatchingResults: false,
@@ -98,13 +117,28 @@ describe('BehaviorList', () => {
   let config = {};
 
   beforeEach(() => {
-    config = Object.assign(config, defaultConfig);
+    config = Object.assign({}, defaultConfig);
   });
 
   describe('render', () => {
     it('renders a card for each group', () => {
       const list = createBehaviorList(config);
       expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorGroupCard).length).toEqual(config.localBehaviorGroups.length);
+    });
+  });
+
+  describe('getLocalBehaviorGroups', () => {
+    it('returns the intersection of original groups, updated and newly installed', () => {
+      const original1 = group1.clone({ id: "a", exportId: "1", name: "original" });
+      const original2 = group2.clone({ id: "b", exportId: null });
+      config.localBehaviorGroups = [original1, original2];
+
+      const updated1 = group1.clone({ id: "a", exportId: "1", name: "updated!" });
+      const brandNew = group3.clone({ name: "new!", exportId: "2" });
+      config.recentlyInstalled = [updated1, brandNew];
+
+      const list = createBehaviorList(config);
+      expect(list.getLocalBehaviorGroups()).toEqual([updated1, original2, brandNew]);
     });
   });
 

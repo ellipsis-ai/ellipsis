@@ -31,7 +31,7 @@ case class BehaviorGroupExporter(
     groupData.icon,
     groupData.requiredOAuth2ApiConfigs,
     groupData.requiredSimpleTokenApis
-  )
+  ).copyForExport
 
   val actionInputs = groupData.actionInputs
 

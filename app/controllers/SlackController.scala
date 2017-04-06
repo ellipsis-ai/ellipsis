@@ -424,7 +424,7 @@ class SlackController @Inject() (
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(
                             results.map(result => result.sendIn(None, None, dataService).map { _ =>
-                              Logger.info(s"Sending result [${result.fullText}] in response to slack message [${event.messageText}] in channel [${event.channel}]")
+                              Logger.info(event.logTextFor(result, None))
                             })
                           )
                         }

@@ -10,6 +10,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -54,7 +55,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.requiredSimpleTokenApis.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.teamEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())
         when(dataService.userEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())
-        when(githubService.publishedBehaviorGroupsFor(team, None)).thenReturn(Seq())
+        when(githubService.publishedBehaviorGroupsFor(any[Team], any[Option[String]], any[Seq[BehaviorGroupData]])).thenReturn(Seq())
 
         val query = "some"
         val request = FakeRequest(controllers.routes.ApplicationController.findBehaviorGroupsMatching(query)).withAuthenticator(user.loginInfo)

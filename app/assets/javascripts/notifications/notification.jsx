@@ -92,15 +92,15 @@ define(function(require) {
 
     getWarningIcon: function() {
       return (
-        <span className="display-inline-block mrs align-b type-yellow" style={{ width: 22, height: 24 }}>
+        <span className="display-inline-block align-b type-yellow" style={{ width: 22, height: 24 }}>
           <SVGWarning />
         </span>
       );
     },
 
-    getTipIcon: function(color) {
+    getTipIcon: function() {
       return (
-        <span className={`display-inline-block mrs align-b ${color || "type-pink"}`} style={{ width: 22, height: 24 }}>
+        <span className="display-inline-block align-b type-green" style={{ width: 22, height: 24 }}>
           <SVGTip />
         </span>
       );
@@ -110,10 +110,16 @@ define(function(require) {
       var notification = this.getNotificationForKind(this.props.group.kind);
       return (
         <Collapsible revealWhen={!this.props.group.hidden} animateInitialRender={true}>
-          <div className={"type-s phn position-z-above mbneg1 " + notification.containerClass}>
+          <div className={
+            "type-s phn position-z-above mbneg1 " +
+            (this.props.inline ? " border-left border-right " : "") +
+            notification.containerClass
+          }>
             <div className={this.props.inline ? "phs" : "container"}>
-              {notification.icon}
-              {notification.message}
+              <div className="columns columns-elastic">
+                <div className="column column-shrink prs">{notification.icon}</div>
+                <div className="column column-expand">{notification.message}</div>
+              </div>
             </div>
           </div>
         </Collapsible>

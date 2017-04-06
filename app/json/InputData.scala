@@ -2,7 +2,6 @@ package json
 
 import export.BehaviorGroupExporter
 import models.IDs
-import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.input.Input
 import services.DataService
 
@@ -30,26 +29,27 @@ case class InputData(
     )
   }
 
-  def copyWithIdsEnsuredFor(group: BehaviorGroup): InputData = {
+  def copyWithIdsEnsuredFor(maybeExistingGroupData: Option[BehaviorGroupData]): InputData = {
+    val maybeExisting = maybeExistingGroupData.flatMap { data =>
+      data.inputs.find(_.exportId == exportId)
+    }
     copy(
       id = id.orElse(Some(IDs.next)),
-      inputId = inputId.orElse(Some(IDs.next))
+      inputId = maybeExisting.flatMap(_.inputId).orElse(inputId).orElse(Some(IDs.next))
     )
   }
 
-  def copyWithIdsEnsuredForUpdateOf(groupData: BehaviorGroupData): InputData = {
-    val maybeExisting = groupData.inputs.find(_.exportId == exportId)
-    copy(
-      inputId = maybeExisting.flatMap(_.inputId).orElse(Some(IDs.next))
-    )
-  }
-
-  def copyWithParamTypeIdsIn(dataTypeVersions: Seq[BehaviorVersionData], oldToNewIdMapping: collection.mutable.Map[String, String]): InputData = {
+  def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): InputData = {
     val maybeOldDataTypeId = paramType.flatMap(_.id)
     val maybeNewDataTypeId = maybeOldDataTypeId.flatMap(oldId => oldToNewIdMapping.get(oldId))
     maybeNewDataTypeId.map { newId =>
       copy(paramType = paramType.map(_.copy(id = Some(newId))))
     }.getOrElse(this)
+  }
+
+  def copyWithParamTypeIdFromExportId(behaviorVersionsData: Seq[BehaviorVersionData]): InputData = {
+    val maybeMatchingBehaviorVersion = behaviorVersionsData.find(_.exportId == paramType.flatMap(_.exportId))
+    copy(paramType = paramType.map(_.copy(id = maybeMatchingBehaviorVersion.flatMap(_.id))))
   }
 
   def copyWithNewIdIn(oldToNewIdMapping: collection.mutable.Map[String, String]): InputData = {

@@ -28,9 +28,10 @@ define(function(require) {
       onDeleteBehaviorGroups: React.PropTypes.func.isRequired,
       onSearch: React.PropTypes.func.isRequired,
       localBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
-      publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
-      recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
-      matchingResults: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
+      publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
+      recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
+      currentlyInstalling: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
+      matchingResults: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       currentSearchText: React.PropTypes.string.isRequired,
       isLoadingMatchingResults: React.PropTypes.bool.isRequired,
       publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
@@ -41,24 +42,17 @@ define(function(require) {
     getInitialState: function() {
       return {
         selectedBehaviorGroup: null,
-        selectedGroupIds: [],
+        checkedGroupIds: [],
         isSubmitting: false,
         footerHeight: 0,
-        importingList: [],
         searchText: ""
       };
     },
 
     componentWillReceiveProps: function(nextProps) {
-      var updatedImportingList = this.state.importingList.filter((importing) =>
-        !BehaviorGroup.groupsIncludeExportId(nextProps.recentlyInstalled, importing.exportId)
-      );
-      this.setState({
-        importingList: updatedImportingList
-      });
-      var hasNewRecentlyInstalled = nextProps.recentlyInstalled.some((nextInstalled) =>
-        !BehaviorGroup.groupsIncludeId(this.props.recentlyInstalled, nextInstalled.id));
-      if (hasNewRecentlyInstalled && this.props.activePanelName !== 'afterInstall') {
+      const newestImported = nextProps.recentlyInstalled.filter((next) => !BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, next.exportId));
+      const newlyInstalled = newestImported.filter((newGroup) => !BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, newGroup.exportId));
+      if (newlyInstalled.length > 0 && this.props.activePanelName !== 'afterInstall') {
         this.props.onToggleActivePanel('afterInstall');
       }
     },
@@ -86,15 +80,28 @@ define(function(require) {
     },
 
     getLocalBehaviorGroups: function() {
-      return this.props.localBehaviorGroups.concat(this.props.recentlyInstalled);
+      const newGroups = this.props.recentlyInstalled.slice();
+      const localGroups = this.props.localBehaviorGroups.map((group) => {
+        const updatedIndex = newGroups.findIndex((newGroup) => newGroup.id === group.id);
+        if (updatedIndex >= 0) {
+          return newGroups.splice(updatedIndex, 1)[0];
+        } else {
+          return group;
+        }
+      });
+      return localGroups.concat(newGroups);
     },
 
     hasLocalBehaviorGroups: function() {
       return this.getLocalBehaviorGroups().length > 0;
     },
 
+    isSearching: function() {
+      return this.props.currentSearchText && this.props.currentSearchText.length;
+    },
+
     getMatchingBehaviorGroupsFrom: function(groups) {
-      if (this.props.matchingResults.length > 0) {
+      if (this.isSearching()) {
         return groups.filter((ea) =>
           BehaviorGroup.groupsIncludeExportId(this.props.matchingResults, ea.exportId)
         );
@@ -120,8 +127,8 @@ define(function(require) {
       }
     },
 
-    getSelectedGroupIds: function() {
-      return this.state.selectedGroupIds || [];
+    getCheckedGroupIds: function() {
+      return this.state.checkedGroupIds || [];
     },
 
     getLocalIdFor: function(exportId) {
@@ -129,8 +136,8 @@ define(function(require) {
       return localGroup ? localGroup.id : null;
     },
 
-    isGroupSelected: function(groupId) {
-      return this.getSelectedGroupIds().indexOf(groupId) >= 0;
+    isGroupChecked: function(group) {
+      return group.id && this.getCheckedGroupIds().indexOf(group.id) >= 0;
     },
 
     confirmDeleteBehaviorGroups: function() {
@@ -141,8 +148,8 @@ define(function(require) {
       this.toggleActivePanel('confirmMergeBehaviorGroups', true);
     },
 
-    onGroupSelectionCheckboxChange: function(groupId, isChecked) {
-      var newGroupIds = this.getSelectedGroupIds().slice();
+    onGroupCheckboxChange: function(groupId, isChecked, optionalCallback) {
+      var newGroupIds = this.getCheckedGroupIds().slice();
       var index = newGroupIds.indexOf(groupId);
       if (isChecked) {
         if (index === -1) {
@@ -154,13 +161,13 @@ define(function(require) {
         }
       }
       this.setState({
-        selectedGroupIds: newGroupIds
-      });
+        checkedGroupIds: newGroupIds
+      }, optionalCallback);
     },
 
-    clearSelectedGroups: function() {
+    clearCheckedGroups: function() {
       this.setState({
-        selectedGroupIds: []
+        checkedGroupIds: []
       });
     },
 
@@ -168,7 +175,7 @@ define(function(require) {
       this.setState({
         isSubmitting: true
       }, () => {
-        this.props.onMergeBehaviorGroups(this.getSelectedGroupIds());
+        this.props.onMergeBehaviorGroups(this.getCheckedGroupIds());
       });
     },
 
@@ -176,47 +183,47 @@ define(function(require) {
       this.setState({
         isSubmitting: true
       }, () => {
-        this.props.onDeleteBehaviorGroups(this.getSelectedGroupIds());
+        this.props.onDeleteBehaviorGroups(this.getCheckedGroupIds());
       });
     },
 
-    getActionsLabel: function(selectedCount) {
-      if (selectedCount === 0) {
+    getActionsLabel: function(checkedCount) {
+      if (checkedCount === 0) {
         return "No skills selected";
-      } else if (selectedCount === 1) {
+      } else if (checkedCount === 1) {
         return "1 skill selected";
       } else {
-        return `${selectedCount} skills selected`;
+        return `${checkedCount} skills selected`;
       }
     },
 
-    getLabelForDeleteAction: function(selectedCount) {
-      if (selectedCount < 2) {
+    getLabelForDeleteAction: function(checkedCount) {
+      if (checkedCount < 2) {
         return "Delete skill";
       } else {
         return `Delete skills`;
       }
     },
 
-    getTextForDeleteBehaviorGroups: function(selectedCount) {
-      if (selectedCount === 1) {
+    getTextForDeleteBehaviorGroups: function(checkedCount) {
+      if (checkedCount === 1) {
         return "Are you sure you want to delete this skill?";
       } else {
-        return `Are you sure you want to delete these ${selectedCount} skills?`;
+        return `Are you sure you want to delete these ${checkedCount} skills?`;
       }
     },
 
-    getTextForMergeBehaviorGroups: function(selectedCount) {
-      return `Are you sure you want to merge these ${selectedCount} skills?`;
+    getTextForMergeBehaviorGroups: function(checkedCount) {
+      return `Are you sure you want to merge these ${checkedCount} skills?`;
     },
 
     getSelectedBehaviorGroup: function() {
       return this.state.selectedBehaviorGroup;
     },
 
-    selectedBehaviorGroupIsImportable: function() {
+    selectedBehaviorGroupIsUninstalled: function() {
       var selectedGroup = this.getSelectedBehaviorGroup();
-      return !!(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup));
+      return !!(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup.exportId));
     },
 
     selectedBehaviorWasImported: function() {
@@ -250,38 +257,42 @@ define(function(require) {
     },
 
     onBehaviorGroupImport: function(groupToInstall) {
-      this.setState({
-        importingList: this.state.importingList.concat([groupToInstall])
-      }, () => {
-        if (this.getActivePanelName() === 'moreInfo') {
-          this.clearActivePanel();
-        }
-        this.props.onBehaviorGroupImport(groupToInstall);
-      });
+      if (this.getActivePanelName() === 'moreInfo') {
+        this.clearActivePanel();
+      }
+      this.props.onBehaviorGroupImport(groupToInstall);
     },
 
     onBehaviorGroupUpdate: function(existingGroup, updatedData) {
-      this.setState({
-        importingList: this.state.importingList.concat([updatedData])
-      }, () => {
-        if (this.getActivePanelName() === 'moreInfo') {
-          this.clearActivePanel();
-        }
+      if (this.getActivePanelName() === 'moreInfo') {
+        this.clearActivePanel();
+      }
+      const callback = () => {
         this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
-      });
+      };
+      if (this.isGroupChecked(existingGroup)) {
+        this.onGroupCheckboxChange(existingGroup.id, false, callback);
+      } else {
+        callback();
+      }
     },
 
     getUpdatedBehaviorGroupData: function() {
       const selected = this.getSelectedBehaviorGroup();
-      if (this.selectedBehaviorGroupIsImportable() && !!selected.id) {
-        return this.props.publishedBehaviorGroups.find(ea => ea && selected && ea.exportId === selected.exportId);
+      if (selected && selected.exportId && selected.id) {
+        return this.props.publishedBehaviorGroups.find((ea) => ea.exportId === selected.exportId);
       } else {
         return null;
       }
     },
 
     isImporting: function(group) {
-      return BehaviorGroup.groupsIncludeExportId(this.state.importingList, group.exportId);
+      return BehaviorGroup.groupsIncludeExportId(this.props.currentlyInstalling, group.exportId);
+    },
+
+    wasReimported: function(group) {
+      return BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, group.exportId) &&
+        BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, group.exportId);
     },
 
     toggleInfoPanel: function(group) {
@@ -354,7 +365,7 @@ define(function(require) {
           <div className="container container-c mvxl">
 
             <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
-              {this.props.matchingResults.length ?
+              {this.isSearching() ?
                 `Your skills matching “${this.props.currentSearchText}”` :
                 "Your skills"
               }
@@ -371,8 +382,10 @@ define(function(require) {
                     localId={group.id}
                     onMoreInfoClick={this.toggleInfoPanel}
                     isImportable={false}
-                    onSelectChange={this.onGroupSelectionCheckboxChange}
-                    isSelected={this.isGroupSelected(group.id)}
+                    isImporting={this.isImporting(group)}
+                    onCheckedChange={this.onGroupCheckboxChange}
+                    isChecked={this.isGroupChecked(group)}
+                    wasReimported={this.wasReimported(group)}
                     cardClassName="bg-white"
                   />
                 </ResponsiveColumn>
@@ -390,12 +403,12 @@ define(function(require) {
     },
 
     renderActions: function() {
-      var selectedCount = this.getSelectedGroupIds().length;
+      var selectedCount = this.getCheckedGroupIds().length;
       return (
         <div>
           <button type="button"
             className="button-primary mrs mbs"
-            onClick={this.clearSelectedGroups}
+            onClick={this.clearCheckedGroups}
           >
             Cancel
           </button>
@@ -424,9 +437,9 @@ define(function(require) {
       if (this.getLocalBehaviorGroups().length > 0) {
         return (
           <ListHeading teamId={this.props.teamId}>
-            {this.props.matchingResults.length === 0 ?
-              "Install skills published by Ellipsis.ai" :
-              `Skills published by Ellipsis.ai matching “${this.props.currentSearchText}”`}
+            {this.isSearching() ?
+              `Skills published by Ellipsis.ai matching “${this.props.currentSearchText}”` :
+              "Install skills published by Ellipsis.ai"}
           </ListHeading>
         );
       } else {
@@ -567,7 +580,7 @@ define(function(require) {
               <BehaviorGroupInfoPanel
                 groupData={this.getSelectedBehaviorGroup()}
                 onToggle={this.clearActivePanel}
-                isImportable={this.selectedBehaviorGroupIsImportable()}
+                isImportable={this.selectedBehaviorGroupIsUninstalled()}
                 wasImported={this.selectedBehaviorWasImported()}
                 localId={this.getSelectedBehaviorGroupId()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
@@ -588,7 +601,7 @@ define(function(require) {
               />
             </Collapsible>
             <Collapsible
-              revealWhen={!this.props.activePanelIsModal && this.getSelectedGroupIds().length > 0}
+              revealWhen={!this.props.activePanelIsModal && this.getCheckedGroupIds().length > 0}
               onChange={this.resetFooterHeight}
             >
               <div className="border-top">
@@ -608,7 +621,7 @@ define(function(require) {
                 onCancelClick={this.clearActivePanel}
                 isConfirming={this.state.isSubmitting}
               >
-                <p>{this.getTextForDeleteBehaviorGroups(this.getSelectedGroupIds().length)}</p>
+                <p>{this.getTextForDeleteBehaviorGroups(this.getCheckedGroupIds().length)}</p>
               </ConfirmActionPanel>
             </Collapsible>
             <Collapsible ref="confirmMergeBehaviorGroups"
@@ -622,7 +635,7 @@ define(function(require) {
                 onCancelClick={this.clearActivePanel}
                 isConfirming={this.state.isSubmitting}
               >
-                <p>{this.getTextForMergeBehaviorGroups(this.getSelectedGroupIds().length)}</p>
+                <p>{this.getTextForMergeBehaviorGroups(this.getCheckedGroupIds().length)}</p>
               </ConfirmActionPanel>
             </Collapsible>
           </FixedFooter>
