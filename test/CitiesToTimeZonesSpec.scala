@@ -5,7 +5,7 @@ class CitiesToTimeZonesSpec extends PlaySpec {
 
   val citiesToTimezones = new CitiesToTimeZones()
 
-  "possibleTimeZonesFor" should {
+  "possibleCitiesFor" should {
 
     "find TZs for 'toronto'" in {
       val cities = citiesToTimezones.possibleCitiesFor("toronto")
@@ -19,6 +19,11 @@ class CitiesToTimeZonesSpec extends PlaySpec {
 
     "find TZs for 'montreal', which needs to find ascii name" in {
       val cities = citiesToTimezones.possibleCitiesFor("montreal")
+      cities must contain(CityInfo("Montréal", "Montreal", "America/Toronto", 1600000))
+    }
+
+    "find TZs for 'montréal', which needs to match on accented name" in {
+      val cities = citiesToTimezones.possibleCitiesFor("montréal")
       cities must contain(CityInfo("Montréal", "Montreal", "America/Toronto", 1600000))
     }
 
