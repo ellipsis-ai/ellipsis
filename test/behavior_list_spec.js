@@ -81,6 +81,7 @@ describe('BehaviorList', () => {
     localBehaviorGroups: [group1, group2, group3],
     publishedBehaviorGroups: [],
     recentlyInstalled: [],
+    currentlyInstalling: [],
     matchingResults: [],
     currentSearchText: "",
     isLoadingMatchingResults: false,
