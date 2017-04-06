@@ -251,7 +251,7 @@ class GithubService @Inject() (
     Await.result(fetchPublishedBehaviorGroups(team, maybeBranch), 20.seconds)
   }
 
-  def publishedBehaviorGroupsFor(team: Team, maybeBranch: Option[String]): Seq[BehaviorGroupData] = {
+  def publishedBehaviorGroupsFor(team: Team, maybeBranch: Option[String], alreadyInstalled: Seq[BehaviorGroupData]): Seq[BehaviorGroupData] = {
     val shouldTryCache = maybeBranch.isEmpty
     val behaviorGroups = if (shouldTryCache) {
       cache.getOrElse[Seq[BehaviorGroupData]](PUBLISHED_BEHAVIORS_KEY, cacheTimeout) {
@@ -260,7 +260,10 @@ class GithubService @Inject() (
     } else {
       blockingFetchPublishedBehaviorGroups(team, maybeBranch)
     }
-    behaviorGroups.map(_.copyForImportableForTeam(team)).sorted
+    behaviorGroups.map { ea =>
+      val maybeExistingGroup = alreadyInstalled.find(_.exportId == ea.exportId)
+      ea.copyForImportableForTeam(team, maybeExistingGroup)
+    }.sorted
   }
 
 }

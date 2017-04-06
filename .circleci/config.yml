@@ -31,9 +31,20 @@ jobs:
             done
             echo Failed waiting for Postgress && exit 1
       - run:
+          name: Without this caching does not work!
+          command: |
+            tar --help
+            gzip --help
+      - restore_cache:
+          key: v3-node-{{ .Branch }}-{{ checksum "package.json" }}
+      - run:
           name: Install npm dependencies
           command: |
             npm prune;npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v3-node-{{ .Branch }}-{{ checksum "package.json" }}
       - run:
           name: Run JavaScript Linter
           command: |
@@ -43,10 +54,19 @@ jobs:
           command: |
             pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
+      - restore_cache:
+          key: v5-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
       - run:
           name: Run Activator Tests
           command: |
             activator test
+      - save_cache:
+          paths:
+            - .ivy2
+            - .sbt
+            - ~/.ivy2
+            - ~/.sbt
+          key: v5-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
       - run:
           name: Prepare app to be dockerized
           command: |
@@ -93,8 +113,3 @@ jobs:
             S3_KEY=`date +'%Y-%m-%d'`-$BOT_BUNDLE
             echo "Uploading with command aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}"
             aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}
-# Disabled since we have circleci's integration installed, which seems more intelligent
-#      - run:
-#          name: Notify the dev channel
-#          command: |
-#            curl -f --data "message=✅%20**${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH}**%20(commit%20${CIRCLE_SHA1:0:7}%20by%20${CIRCLE_USERNAME})%20built%20successfully.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}Warning: the post-build announcement failed.${PLAIN}" && exit 1)

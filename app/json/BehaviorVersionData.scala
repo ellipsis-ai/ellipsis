@@ -38,19 +38,14 @@ case class BehaviorVersionData(
     name.orElse(exportId)
   }
 
-  def copyForImportableForTeam(team: Team, inputsData: Seq[InputData]): BehaviorVersionData = {
+  def copyForImportableForTeam(team: Team, inputsData: Seq[InputData], maybeExistingGroupData: Option[BehaviorGroupData]): BehaviorVersionData = {
+    val maybeExisting = maybeExistingGroupData.flatMap { data =>
+      data.behaviorVersions.find(_.exportId == exportId)
+    }
     copy(
       id = Some(IDs.next),
-      behaviorId = Some(IDs.next),
-      teamId = team.id,
-      inputIds = inputIds.flatMap { id => inputsData.find(_.exportId.contains(id)).flatMap(_.inputId) }
-    )
-  }
-
-  def copyWithIdsEnsuredForUpdateOf(groupData: BehaviorGroupData, inputsData: Seq[InputData]): BehaviorVersionData = {
-    val maybeExisting = groupData.behaviorVersions.find(_.exportId == exportId)
-    copy(
       behaviorId = maybeExisting.flatMap(_.behaviorId).orElse(Some(IDs.next)),
+      teamId = team.id,
       inputIds = inputIds.flatMap { id => inputsData.find(_.exportId.contains(id)).flatMap(_.inputId) }
     )
   }
