@@ -2,6 +2,7 @@ package json
 
 import java.time.OffsetDateTime
 
+import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -73,6 +74,17 @@ case class BehaviorGroupData(
       dataTypeInputs = dataTypeInputsForNewVersion,
       behaviorVersions = behaviorVersionsWithIds
     )
+  }
+
+  def copyWithApiApplicationsIfAvailable(oauth2Applications: Seq[OAuth2Application]): BehaviorGroupData = {
+    val oauth2 = requiredOAuth2ApiConfigs.flatMap { eaRequired =>
+      oauth2Applications.find { eaAvailable =>
+        eaAvailable.api.id == eaRequired.apiId && eaRequired.recommendedScope == eaAvailable.maybeScope
+      }.map { app =>
+        eaRequired.copy(application = Some(OAuth2ApplicationData.from(app)))
+      }
+    }
+    copy(requiredOAuth2ApiConfigs = oauth2)
   }
 
   lazy val sortedActionBehaviorVersions = {
