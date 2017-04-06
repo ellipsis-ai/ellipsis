@@ -16,14 +16,13 @@ RUN curl -L -o /tmp/activator.zip \
   rm -rf /tmp/* /var/cache/apk/*
 
 # Git
-RUN apk add --no-cache git
+RUN apk add --update git
 
 # Node and Npm
 RUN apk add --update nodejs
 
 # Docker and docker compose
-# RUN apk update && apk add docker make py-pip && pip install docker-compose
-RUN apk update && apk add docker
+RUN apk add --update docker
 
 # AWS CLI tools
 RUN apk --no-cache update && \
