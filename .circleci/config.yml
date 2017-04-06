@@ -31,7 +31,7 @@ jobs:
             done
             echo Failed waiting for Postgress && exit 1
       - restore_cache:
-          key: v1-node-{{ .Branch }}-{{ checksum "package.json" }}
+          key: v2-node-{{ .Branch }}-{{ checksum "package.json" }}
       - run:
           name: Install npm dependencies
           command: |
@@ -39,7 +39,7 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-          key: v1-node-{{ .Branch }}-{{ checksum "package.json" }}
+          key: v2-node-{{ .Branch }}-{{ checksum "package.json" }}
       - run:
           name: Run JavaScript Linter
           command: |
