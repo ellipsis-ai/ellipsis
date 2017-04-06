@@ -7,12 +7,12 @@ class CitiesToTimeZones {
   val trie: Trie = Trie()
   val nameToTzMap: scala.collection.mutable.Map[String, Set[String]] = scala.collection.mutable.Map[String, Set[String]]()
 
-  val dataURI = getClass.getResource("data/cities15000.txt").toURI
+  val dataStream = getClass.getResourceAsStream("data/cities15000.txt")
   val cityNameColumnIndex = 1
   val timeZoneColumnIndex = 17
 
   def load(): Unit = {
-    val bufferedSource = Source.fromFile(dataURI)
+    val bufferedSource = Source.fromInputStream(dataStream)
     for (line <- bufferedSource.getLines) {
       val cols = line.split("\t").map(_.trim)
       val name = cols(cityNameColumnIndex)

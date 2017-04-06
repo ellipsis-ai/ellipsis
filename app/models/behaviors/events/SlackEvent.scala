@@ -13,4 +13,12 @@ trait SlackEvent {
   def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem) = {
     dataService.slackBotProfiles.clientFor(profile).listIms.map(_.find(_.user == user).map(_.id))
   }
+
+  def isDirectMessage(channelId: String): Boolean = {
+    channelId.startsWith("D")
+  }
+  def isPrivateChannel(channelId: String): Boolean = {
+    channelId.startsWith("G")
+  }
+
 }

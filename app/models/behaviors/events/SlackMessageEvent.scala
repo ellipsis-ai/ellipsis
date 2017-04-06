@@ -50,13 +50,6 @@ case class SlackMessageEvent(
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
 
-  def isDirectMessage(channelId: String): Boolean = {
-    channelId.startsWith("D")
-  }
-  def isPrivateChannel(channelId: String): Boolean = {
-    channel.startsWith("G")
-  }
-
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId, maybeChannel.exists(isDirectMessage))
   }
