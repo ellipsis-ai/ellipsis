@@ -63,12 +63,7 @@ define(function(require) {
       }, () => {
         DataRequest
           .jsonPost(url, body, this.props.csrfToken)
-          .then((installedGroup) => {
-            this.setState({
-              currentlyInstalling: this.state.currentlyInstalling.filter((ea) => ea !== groupToInstall),
-              recentlyInstalled: this.state.recentlyInstalled.concat(installedGroup)
-            });
-          })
+          .then((importedGroup) => this.didImportPublishedGroup(groupToInstall, importedGroup))
           .catch(() => {
             // TODO: Handle errors importing
           });
@@ -87,19 +82,28 @@ define(function(require) {
       }, () => {
         DataRequest
           .jsonPost(url, body, this.props.csrfToken)
-          .then((installedGroup) => {
-            const index = this.state.recentlyInstalled.findIndex(ea => ea.id === installedGroup.id);
-            const newGroups = index >= 0 ?
-              ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.recentlyInstalled, installedGroup, index) :
-              this.state.recentlyInstalled.concat(installedGroup);
-            this.setState({
-              currentlyInstalling: this.state.currentlyInstalling.filter((ea) => ea !== existingGroup),
-              recentlyInstalled: newGroups
-            });
-          })
+          .then((newGroup) => this.didUpdateExistingGroup(existingGroup, newGroup))
           .catch(() => {
             // TODO: Handle errors importing
           });
+      });
+    },
+
+    didImportPublishedGroup: function(publishedGroup, importedGroup) {
+      this.setState({
+        currentlyInstalling: this.state.currentlyInstalling.filter((ea) => ea !== publishedGroup),
+        recentlyInstalled: this.state.recentlyInstalled.concat(importedGroup)
+      });
+    },
+
+    didUpdateExistingGroup: function(existingGroup, updatedGroup) {
+      const index = this.state.recentlyInstalled.findIndex(ea => ea.id === updatedGroup.id);
+      const newGroups = index >= 0 ?
+        ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.recentlyInstalled, updatedGroup, index) :
+        this.state.recentlyInstalled.concat(updatedGroup);
+      this.setState({
+        currentlyInstalling: this.state.currentlyInstalling.filter((ea) => ea !== existingGroup),
+        recentlyInstalled: newGroups
       });
     },
 
