@@ -1,9 +1,12 @@
 FROM frolvlad/alpine-scala:2.12
 MAINTAINER Matteo Melani <m@ellipsis.ai>
 
-# Install activator
+
+
+# Install activator and a bunch of basic tools
+# tar and gzip are used by circlci for the restore_cache
 ENV ACTIVATOR_VERSION 1.3.10
-RUN apk add --update bash curl openssl ca-certificates && \
+RUN apk add --update bash curl tar gzip openssl ca-certificates && \
   curl -L -o /tmp/activator.zip \
     https://downloads.typesafe.com/typesafe-activator/${ACTIVATOR_VERSION}/typesafe-activator-${ACTIVATOR_VERSION}-minimal.zip && \
   mkdir -p /opt/activator && \

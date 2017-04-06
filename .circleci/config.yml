@@ -30,12 +30,6 @@ jobs:
               sleep 1
             done
             echo Failed waiting for Postgress && exit 1
-      - run:
-          name: Install npm dependencies
-          command: |
-            ls -lsta
-            mkdir node_modules
-            ls -lsta
       - restore_cache:
           key: v1-node-{{ .Branch }}-{{ checksum "package.json" }}
       - run:
