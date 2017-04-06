@@ -30,11 +30,6 @@ jobs:
               sleep 1
             done
             echo Failed waiting for Postgress && exit 1
-      - run:
-          name: Debugging
-          command: |
-            tar  --help
-            gzip --help
       - restore_cache:
           key: v2-node-{{ .Branch }}-{{ checksum "package.json" }}
       - run:
@@ -55,7 +50,7 @@ jobs:
             pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
       - restore_cache:
-          key: v1-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
+          key: v2-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
       - run:
           name: Run Activator Tests
           command: |
@@ -64,7 +59,9 @@ jobs:
           paths:
             - .ivy2
             - .sbt
-          key: v1-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
+            - ~/.ivy2
+            - ~/.sbt
+          key: v2-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
       - run:
           name: Prepare app to be dockerized
           command: |
