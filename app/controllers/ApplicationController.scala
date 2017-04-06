@@ -162,7 +162,8 @@ class ApplicationController @Inject() (
   }
 
   def possibleTimeZonesFor(searchQuery: String) = silhouette.SecuredAction { implicit request =>
-    Ok(Json.toJson(citiesToTimeZones.possibleTimeZonesFor(searchQuery)))
+    val results = citiesToTimeZones.possibleTimeZonesFor(searchQuery)
+    Ok(Json.obj("matches" -> results))
   }
 
   private val timeZoneForm = Form(

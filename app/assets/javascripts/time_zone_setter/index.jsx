@@ -1,9 +1,11 @@
 define(function(require) {
   var React = require('react'),
+    DataRequest = require('../lib/data_request'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     Select = require('../form/select'),
     SearchInput = require('../form/search'),
-    tzInfo = require('./tz_info');
+    tzInfo = require('./tz_info'),
+    debounce = require('javascript-debounce');
 
   return React.createClass({
     displayName: 'TimeZoneSetter',
@@ -13,11 +15,15 @@ define(function(require) {
       error: React.PropTypes.string
     },
 
+    componentDidMount: function() {
+      this.delayRequestMatchingTimezones = debounce(this.requestMatchingTimezones, 250);
+    },
+
     guessTimeZone: function() {
       let guessed;
       try {
         guessed = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      } catch(e) {
+      } catch (e) {
         guessed = 'America/New_York';
       }
       return guessed;
@@ -27,18 +33,60 @@ define(function(require) {
       var guessedTimeZone = this.guessTimeZone();
       return {
         guessedTimeZone: guessedTimeZone,
+        selectedTimeZone: guessedTimeZone,
         searchText: "",
-        selectedTimeZone: guessedTimeZone
+        isSearching: false,
+        noMatches: false,
+        searchResults: []
       };
     },
 
+    requestMatchingTimezones: function(searchQuery) {
+      const url = jsRoutes.controllers.ApplicationController.possibleTimeZonesFor(searchQuery).url;
+      this.setState({
+        isSearching: true,
+        noMatches: false
+      }, () => {
+        DataRequest
+          .jsonGet(url)
+          .then((json) => {
+            const matches = json.matches;
+            if (matches) {
+              this.setState({
+                isSearching: false,
+                noMatches: matches.length === 0,
+                searchResults: matches
+              }, () => {
+                if (!matches.includes(this.state.selectedTimeZone)) {
+                  this.setState({
+                    selectedTimeZone: this.state.noMatches ? this.state.guessedTimeZone : matches[0]
+                  });
+                }
+              });
+            } else {
+              throw new Error("Error loading search results");
+            }
+          })
+          .catch((err) => {
+            this.setState({
+              isSearching: false,
+              noMatches: false,
+              searchResults: []
+            });
+          });
+      });
+    },
+
     getFilteredTzInfo: function() {
-      var searchText = (this.state.searchText || "").trim().toLowerCase();
+      var searchText = (this.state.searchText || "").trim();
       if (searchText) {
-        return tzInfo.filter((tz) => {
-          return tz.name.toLowerCase().includes(searchText) ||
-            tz.timeZones.some((tzId) => tzId.toLowerCase().includes(searchText));
-        });
+        if (this.state.noMatches) {
+          return [];
+        } else {
+          return tzInfo.filter((tz) => {
+            return this.state.searchResults.some((tzId) => tz.timeZones.includes(tzId));
+          });
+        }
       } else {
         return tzInfo;
       }
@@ -51,20 +99,20 @@ define(function(require) {
     },
 
     updateSearchText: function(newValue) {
-      this.setState({
-        searchText: newValue
-      }, () => {
-        var names = this.getFilteredTzInfo();
-        if (!names.some((tz) => tz.timeZones.includes(this.state.selectedTimeZone)) && names.length > 0) {
-          this.setState({
-            selectedTimeZone: names[0].timeZones[0]
-          });
-        } else if (!names.length) {
-          this.setState({
-            selectedTimeZone: this.state.guessedTimeZone
-          });
-        }
-      });
+      const newQuery = newValue.trim();
+      if (newQuery) {
+        this.setState({
+          searchText: newValue
+        }, () => {
+          this.delayRequestMatchingTimezones(newValue);
+        });
+      } else {
+        this.setState({
+          searchText: newValue,
+          noMatches: false,
+          searchResults: []
+        });
+      }
     },
 
     getCurrentDisplayName: function() {
@@ -92,7 +140,8 @@ define(function(require) {
             </p>
 
             <p>
-              This will be used when Ellipsis displays dates and times to a group, or whenever a time of day mentioned isn’t otherwise obvious.
+              This will be used when Ellipsis displays dates and times to a group, or whenever a time of day mentioned
+              isn’t otherwise obvious.
             </p>
 
             <div className="mvl">
@@ -106,7 +155,7 @@ define(function(require) {
             <div className="mtl mbs width-30 mobile-width-full">
               <SearchInput placeholder="Search for a country or city"
                 value={this.state.searchText}
-                onChange={this.updateSearchText} />
+                onChange={this.updateSearchText}/>
             </div>
             <div className="mts mbl width-30 mobile-width-full">
               <Select value={this.state.selectedTimeZone} onChange={this.updateSelectedTimeZone} size="5">
