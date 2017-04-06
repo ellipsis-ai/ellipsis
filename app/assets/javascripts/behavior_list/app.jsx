@@ -74,7 +74,8 @@ define(function(require) {
       const url = jsRoutes.controllers.BehaviorEditorController.save().url;
 
       const body = {
-        dataJson: JSON.stringify(updatedData.clone({ id: existingGroup.id }))
+        dataJson: JSON.stringify(updatedData.clone({ id: existingGroup.id })),
+        isReinstall: true
       };
 
       this.setState({
