@@ -28,9 +28,10 @@ define(function(require) {
       onDeleteBehaviorGroups: React.PropTypes.func.isRequired,
       onSearch: React.PropTypes.func.isRequired,
       localBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
-      publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
-      recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
-      matchingResults: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)),
+      publishedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
+      recentlyInstalled: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
+      currentlyInstalling: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
+      matchingResults: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       currentSearchText: React.PropTypes.string.isRequired,
       isLoadingMatchingResults: React.PropTypes.bool.isRequired,
       publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
@@ -44,21 +45,14 @@ define(function(require) {
         selectedGroupIds: [],
         isSubmitting: false,
         footerHeight: 0,
-        importingList: [],
         searchText: ""
       };
     },
 
     componentWillReceiveProps: function(nextProps) {
-      var updatedImportingList = this.state.importingList.filter((importing) =>
-        !BehaviorGroup.groupsIncludeExportId(nextProps.recentlyInstalled, importing.exportId)
-      );
-      this.setState({
-        importingList: updatedImportingList
-      });
-      var hasNewRecentlyInstalled = nextProps.recentlyInstalled.some((nextInstalled) =>
-        !BehaviorGroup.groupsIncludeId(this.props.recentlyInstalled, nextInstalled.id));
-      if (hasNewRecentlyInstalled && this.props.activePanelName !== 'afterInstall') {
+      const newestImported = nextProps.recentlyInstalled.filter((next) => !BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, next.exportId));
+      const newlyInstalled = newestImported.filter((newGroup) => !BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, newGroup.exportId));
+      if (newlyInstalled.length > 0 && this.props.activePanelName !== 'afterInstall') {
         this.props.onToggleActivePanel('afterInstall');
       }
     },
@@ -86,7 +80,16 @@ define(function(require) {
     },
 
     getLocalBehaviorGroups: function() {
-      return this.props.localBehaviorGroups.concat(this.props.recentlyInstalled);
+      const newGroups = this.props.recentlyInstalled.slice();
+      const localGroups = this.props.localBehaviorGroups.map((group) => {
+        const updatedIndex = newGroups.findIndex((newGroup) => newGroup.id === group.id);
+        if (updatedIndex >= 0) {
+          return newGroups.splice(updatedIndex, 1)[0];
+        } else {
+          return group;
+        }
+      });
+      return localGroups.concat(newGroups);
     },
 
     hasLocalBehaviorGroups: function() {
@@ -254,25 +257,17 @@ define(function(require) {
     },
 
     onBehaviorGroupImport: function(groupToInstall) {
-      this.setState({
-        importingList: this.state.importingList.concat([groupToInstall])
-      }, () => {
-        if (this.getActivePanelName() === 'moreInfo') {
-          this.clearActivePanel();
-        }
-        this.props.onBehaviorGroupImport(groupToInstall);
-      });
+      if (this.getActivePanelName() === 'moreInfo') {
+        this.clearActivePanel();
+      }
+      this.props.onBehaviorGroupImport(groupToInstall);
     },
 
     onBehaviorGroupUpdate: function(existingGroup, updatedData) {
-      this.setState({
-        importingList: this.state.importingList.concat([updatedData])
-      }, () => {
-        if (this.getActivePanelName() === 'moreInfo') {
-          this.clearActivePanel();
-        }
-        this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
-      });
+      if (this.getActivePanelName() === 'moreInfo') {
+        this.clearActivePanel();
+      }
+      this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
     },
 
     getUpdatedBehaviorGroupData: function() {
@@ -285,7 +280,12 @@ define(function(require) {
     },
 
     isImporting: function(group) {
-      return BehaviorGroup.groupsIncludeExportId(this.state.importingList, group.exportId);
+      return BehaviorGroup.groupsIncludeExportId(this.props.currentlyInstalling, group.exportId);
+    },
+
+    wasReimported: function(group) {
+      return BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, group.exportId) &&
+        BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, group.exportId);
     },
 
     toggleInfoPanel: function(group) {
@@ -375,8 +375,10 @@ define(function(require) {
                     localId={group.id}
                     onMoreInfoClick={this.toggleInfoPanel}
                     isImportable={false}
+                    isImporting={this.isImporting(group)}
                     onSelectChange={this.onGroupSelectionCheckboxChange}
                     isSelected={this.isGroupSelected(group.id)}
+                    wasReimported={this.wasReimported(group)}
                     cardClassName="bg-white"
                   />
                 </ResponsiveColumn>
