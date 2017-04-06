@@ -4,7 +4,7 @@ define(function(require) {
     DynamicLabelButton = require('../form/dynamic_label_button'),
     Select = require('../form/select'),
     SearchInput = require('../form/search'),
-    tzInfo = require('./tz_info'),
+    timeZoneList = require('./tz_info'),
     debounce = require('javascript-debounce');
 
   return React.createClass({
@@ -37,12 +37,12 @@ define(function(require) {
         searchText: "",
         isSearching: false,
         noMatches: false,
-        searchResults: []
+        cityResults: []
       };
     },
 
     requestMatchingTimezones: function(searchQuery) {
-      const url = jsRoutes.controllers.ApplicationController.possibleTimeZonesFor(searchQuery).url;
+      const url = jsRoutes.controllers.ApplicationController.possibleCitiesFor(searchQuery).url;
       this.setState({
         isSearching: true,
         noMatches: false
@@ -55,10 +55,10 @@ define(function(require) {
               this.setState({
                 isSearching: false,
                 noMatches: matches.length === 0,
-                searchResults: matches
+                cityResults: matches
               }, () => {
-                if (!matches.includes(this.state.selectedTimeZone)) {
-                  this.setSelectedTimeZoneMatching(matches[0]);
+                if (!matches.some((city) => city.timeZoneId === this.state.selectedTimeZone)) {
+                  this.setSelectedTimeZoneMatching(matches[0].timeZoneId);
                 }
               });
             } else {
@@ -69,14 +69,14 @@ define(function(require) {
             this.setState({
               isSearching: false,
               noMatches: false,
-              searchResults: []
+              cityResults: []
             });
           });
       });
     },
 
     setSelectedTimeZoneMatching: function(tzId) {
-      const matched = tzInfo.find((tz) => tz.timeZones.includes(tzId));
+      const matched = timeZoneList.find((tz) => tz.timeZones.includes(tzId));
       this.setState({
         selectedTimeZone: this.state.noMatches ? this.state.guessedTimeZone : matched.timeZones[0]
       });
@@ -88,14 +88,21 @@ define(function(require) {
         if (this.state.noMatches) {
           return [];
         } else {
-          return tzInfo.filter((tz) => {
-            return this.state.searchResults.some((tzId) => tz.timeZones.includes(tzId)) ||
-              tz.name.toLowerCase().includes(searchText) ||
-              tz.timeZones.some((tzId) => tzId.toLowerCase().includes(searchText));
+          return timeZoneList.filter((tzInfo) => {
+            return this.state.cityResults.some((cityInfo) => tzInfo.timeZones.includes(cityInfo.timeZoneId)) ||
+              tzInfo.name.toLowerCase().includes(searchText) ||
+              tzInfo.timeZones.some((tzId) => tzId.toLowerCase().includes(searchText));
+          }).map((tzInfo) => {
+            const cityMatch = this.state.cityResults.find((city) => tzInfo.timeZones.some((tzId) => tzId === city.timeZoneId));
+            const includeMatchedCity = cityMatch && tzInfo.name.indexOf(cityMatch.name) !== 0;
+            return {
+              name: includeMatchedCity ? `${cityMatch.name} (${tzInfo.name})` : tzInfo.name,
+              timeZones: tzInfo.timeZones
+            };
           });
         }
       } else {
-        return tzInfo;
+        return timeZoneList;
       }
     },
 
@@ -117,13 +124,13 @@ define(function(require) {
         this.setState({
           searchText: newValue,
           noMatches: false,
-          searchResults: []
+          cityResults: []
         });
       }
     },
 
     getCurrentDisplayName: function() {
-      var targetTz = tzInfo.find((ea) => ea.timeZones.includes(this.state.selectedTimeZone));
+      var targetTz = timeZoneList.find((ea) => ea.timeZones.includes(this.state.selectedTimeZone));
       if (targetTz) {
         return targetTz.name;
       } else {
@@ -154,7 +161,7 @@ define(function(require) {
             <div className="mvl">
               <span className="align-button mrm">Selected time zone:</span>
               <Select className="width-15" value={this.state.selectedTimeZone} onChange={this.updateSelectedTimeZone}>
-                {tzInfo.map((tz) => (
+                {timeZoneList.map((tz) => (
                   <option key={tz.name} value={tz.timeZones[0]}>{tz.name}</option>
                 ))}
               </Select>
