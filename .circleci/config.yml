@@ -31,7 +31,7 @@ jobs:
             done
             echo Failed waiting for Postgress && exit 1
       - restore_cache:
-          key: v2-node-{{ .Branch }}-{{ checksum "package.json" }}
+          key: v3-node-{{ .Branch }}-{{ checksum "package.json" }}
       - run:
           name: Install npm dependencies
           command: |
@@ -39,7 +39,7 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-          key: v2-node-{{ .Branch }}-{{ checksum "package.json" }}
+          key: v3-node-{{ .Branch }}-{{ checksum "package.json" }}
       - run:
           name: Run JavaScript Linter
           command: |
@@ -50,7 +50,7 @@ jobs:
             pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
       - restore_cache:
-          key: v2-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
+          key: v5-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
       - run:
           name: Run Activator Tests
           command: |
@@ -61,7 +61,7 @@ jobs:
             - .sbt
             - ~/.ivy2
             - ~/.sbt
-          key: v2-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
+          key: v5-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
       - run:
           name: Prepare app to be dockerized
           command: |
