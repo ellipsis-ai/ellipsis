@@ -44,18 +44,16 @@ jobs:
             pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
       - restore_cache:
-          key: v4-{{ checksum "build.sbt" }}
+          key: v1-app-{{ checksum "build.sbt" }}
       - run:
           name: Run Activator Tests
           command: |
             activator test
       - save_cache:
           paths:
-            - "~/.ivy2"
-            - "~/.sbt"
-            - ".ivy2"
-            - ".sbt"
-          key: v4-{{ checksum "build.sbt" }}
+            - .ivy2
+            - .sbt
+          key: v1-app-{{ checksum "build.sbt" }}
       - run:
           name: Prepare app to be dockerized
           command: |
