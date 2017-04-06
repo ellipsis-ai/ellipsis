@@ -16,9 +16,10 @@ case class FuzzyMatcher[T <: FuzzyMatchable](
   }
 
   def basicScoreFor(text: String): Double = {
-    text.sliding(matchString.length, 1).flatMap { ea =>
+    val scores = text.sliding(matchString.length, 1).flatMap { ea =>
       RatcliffObershelpMetric.compare(ea.toLowerCase, matchString.toLowerCase)
-    }.max
+    }
+    if (scores.isEmpty) { 0 } else { scores.max }
   }
 
   def scoreFor(matchable: T): Double = {
