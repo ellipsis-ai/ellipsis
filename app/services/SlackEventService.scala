@@ -32,7 +32,7 @@ class SlackEventService @Inject()(
             maybeConversation.map(c => dataService.conversations.find(c.id)).getOrElse(Future.successful(None)).flatMap { maybeUpdatedConversation =>
               Future.sequence(
                 results.map(result => result.sendIn(None, maybeUpdatedConversation, dataService).map { _ =>
-                  Logger.info(s"Sending result [${result.fullText}] in response to slack message [${event.messageText}] in channel [${event.channel}]")
+                  Logger.info(event.logTextFor(result, maybeUpdatedConversation))
                 })
               )
             }

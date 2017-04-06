@@ -33,6 +33,16 @@ trait Event {
   val isResponseExpected: Boolean
   val includesBotMention: Boolean
 
+  def logTextFor(result: BotResult, maybeConversation: Option[Conversation]): String = {
+    val channelText = maybeChannel.map { channel =>
+      s" in channel [${channel}]"
+    }.getOrElse("")
+    val convoText = maybeConversation.map { convo =>
+      s" in conversation [${convo.id}]"
+    }.getOrElse("")
+    s"Sending result [${result.fullText}] in response to slack message [${messageText}]$channelText$convoText"
+  }
+
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
 
   def ensureUser(dataService: DataService): Future[User] = {
