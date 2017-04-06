@@ -46,7 +46,7 @@ define(function(require) {
     },
 
     renderSecondaryAction: function() {
-      if (!this.isImportable() && this.isLocallyEditable()) {
+      if (!this.isImportable() && !this.isImporting() && this.isLocallyEditable()) {
         return (
           <Checkbox
             className="display-block type-s"

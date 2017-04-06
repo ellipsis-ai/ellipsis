@@ -136,8 +136,8 @@ define(function(require) {
       return localGroup ? localGroup.id : null;
     },
 
-    isGroupSelected: function(groupId) {
-      return this.getSelectedGroupIds().indexOf(groupId) >= 0;
+    isGroupSelected: function(group) {
+      return group.id && this.getSelectedGroupIds().indexOf(group.id) >= 0;
     },
 
     confirmDeleteBehaviorGroups: function() {
@@ -148,7 +148,7 @@ define(function(require) {
       this.toggleActivePanel('confirmMergeBehaviorGroups', true);
     },
 
-    onGroupSelectionCheckboxChange: function(groupId, isChecked) {
+    onGroupSelectionCheckboxChange: function(groupId, isChecked, optionalCallback) {
       var newGroupIds = this.getSelectedGroupIds().slice();
       var index = newGroupIds.indexOf(groupId);
       if (isChecked) {
@@ -162,7 +162,7 @@ define(function(require) {
       }
       this.setState({
         selectedGroupIds: newGroupIds
-      });
+      }, optionalCallback);
     },
 
     clearSelectedGroups: function() {
@@ -267,7 +267,14 @@ define(function(require) {
       if (this.getActivePanelName() === 'moreInfo') {
         this.clearActivePanel();
       }
-      this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
+      const callback = () => {
+        this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
+      };
+      if (this.isGroupSelected(existingGroup)) {
+        this.onGroupSelectionCheckboxChange(existingGroup.id, false, callback);
+      } else {
+        callback();
+      }
     },
 
     getUpdatedBehaviorGroupData: function() {
@@ -377,7 +384,7 @@ define(function(require) {
                     isImportable={false}
                     isImporting={this.isImporting(group)}
                     onSelectChange={this.onGroupSelectionCheckboxChange}
-                    isSelected={this.isGroupSelected(group.id)}
+                    isSelected={this.isGroupSelected(group)}
                     wasReimported={this.wasReimported(group)}
                     cardClassName="bg-white"
                   />
