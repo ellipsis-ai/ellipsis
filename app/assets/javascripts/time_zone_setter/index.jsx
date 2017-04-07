@@ -4,7 +4,6 @@ define(function(require) {
     DynamicLabelButton = require('../form/dynamic_label_button'),
     Select = require('../form/select'),
     SearchInput = require('../form/search'),
-    timeZoneList = require('./tz_info'),
     debounce = require('javascript-debounce');
 
   return React.createClass({
@@ -35,8 +34,7 @@ define(function(require) {
       return {
         guessedTimeZone: guessedTimeZone,
         selectedCity: "",
-        selectedTimeZone: "",
-        selectedTimeZoneName: "",
+        selectedOption: null,
         searchText: "",
         isSearching: false,
         noMatches: false,
@@ -44,7 +42,7 @@ define(function(require) {
       };
     },
 
-    requestMatchingTimezones: function(searchQuery, optionalCallback) {
+    requestMatchingTimezones: function(searchQuery) {
       const url = jsRoutes.controllers.ApplicationController.possibleCitiesFor(searchQuery).url;
       this.setState({
         isSearching: true,
@@ -61,7 +59,7 @@ define(function(require) {
                 cityResults: matches
               }, () => {
                 if (matches.length > 0) {
-                  this.setSelectedTimeZoneFromCity(matches[0], optionalCallback);
+                  this.setSelectedTimeZoneFromCity(matches[0]);
                 }
               });
             } else {
@@ -78,13 +76,12 @@ define(function(require) {
       });
     },
 
-    setSelectedTimeZoneFromCity: function(cityInfo, optionalCallback) {
+    setSelectedTimeZoneFromCity: function(cityInfo) {
       const optionProps = this.getOptionPropsFromCityInfo(cityInfo);
       this.setState({
         selectedCity: optionProps.key,
-        selectedTimeZone: cityInfo.timeZoneId,
-        selectedTimeZoneName: optionProps.name
-      }, optionalCallback);
+        selectedOption: optionProps
+      });
     },
 
     getOptionPropsFromCityInfo: function(cityInfo) {
@@ -105,8 +102,7 @@ define(function(require) {
     updateSelectedTimeZone: function(newValue, newValueIndex) {
       this.setState({
         selectedCity: newValue,
-        selectedTimeZone: this.getFilteredTzInfo()[newValueIndex].timeZone,
-        selectedTimeZoneName: this.getFilteredTzInfo()[newValueIndex].name
+        selectedOption: this.getFilteredTzInfo()[newValueIndex]
       });
     },
 
@@ -127,21 +123,12 @@ define(function(require) {
       }
     },
 
-    getDisplayNameFor: function(tzId) {
-      var targetTz = timeZoneList.find((ea) => ea.timeZones.includes(tzId));
-      if (targetTz) {
-        return targetTz.name;
-      } else {
-        return this.state.selectedTimeZone.replace(/_/g, ' ');
-      }
-    },
-
     assembleName: function(city, region, country) {
       return `${city}${region && region !== city ? `, ${region}` : ""}, ${country}`;
     },
 
     setTimeZone: function() {
-      this.props.onSetTimeZone(this.state.selectedTimeZone, this.state.selectedTimeZoneName);
+      this.props.onSetTimeZone(this.state.selectedOption.timeZone, this.state.selectedOption.name);
     },
 
     render: function() {
@@ -176,13 +163,15 @@ define(function(require) {
             </div>
             <div className="mvl">
               <span className="mrm">Selected time zone:</span>
-              <b>{this.state.selectedTimeZoneName}</b>
+              <b>{this.state.selectedOption ? this.state.selectedOption.name : (
+                <i className="type-disabled">None</i>
+              )}</b>
             </div>
             <div className="mvl">
               <DynamicLabelButton
                 className="button-primary mrm"
                 onClick={this.setTimeZone}
-                disabledWhen={this.props.isSaving}
+                disabledWhen={this.props.isSaving || !this.state.selectedOption}
                 labels={[{
                   text: "Set team time zone",
                   displayWhen: !this.props.isSaving
