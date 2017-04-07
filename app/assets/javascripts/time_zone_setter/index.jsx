@@ -17,7 +17,7 @@ define(function(require) {
 
     componentDidMount: function() {
       this.delayRequestMatchingTimezones = debounce(this.requestMatchingTimezones, 250);
-      this.setDefaultTimeZone();
+      this.requestMatchingTimezones(this.state.guessedTimeZone);
     },
 
     guessTimeZone: function() {
@@ -37,8 +37,6 @@ define(function(require) {
         selectedCity: "",
         selectedTimeZone: "",
         selectedTimeZoneName: "",
-        defaultTimeZone: "",
-        defaultTimeZoneName: "",
         searchText: "",
         isSearching: false,
         noMatches: false,
@@ -64,8 +62,6 @@ define(function(require) {
               }, () => {
                 if (matches.length > 0) {
                   this.setSelectedTimeZoneFromCity(matches[0], optionalCallback);
-                } else {
-                  this.resetToDefaultTimeZone();
                 }
               });
             } else {
@@ -89,28 +85,6 @@ define(function(require) {
         selectedTimeZone: cityInfo.timeZoneId,
         selectedTimeZoneName: optionProps.name
       }, optionalCallback);
-    },
-
-    setDefaultTimeZone: function() {
-      this.requestMatchingTimezones(this.state.guessedTimeZone, () => {
-        if (this.state.selectedTimeZone) {
-          this.setState({
-            selectedCity: "",
-            defaultTimeZone: this.state.selectedTimeZone,
-            defaultTimeZoneName: this.state.selectedTimeZoneName
-          });
-        }
-      });
-    },
-
-    resetToDefaultTimeZone: function() {
-      if (this.state.defaultTimeZone) {
-        this.setState({
-          selectedCity: "",
-          selectedTimeZone: this.state.defaultTimeZone,
-          selectedTimeZoneName: this.state.defaultTimeZoneName
-        });
-      }
     },
 
     getOptionPropsFromCityInfo: function(cityInfo) {
