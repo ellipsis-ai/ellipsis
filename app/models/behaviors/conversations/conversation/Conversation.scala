@@ -38,7 +38,9 @@ trait Conversation {
 
   def pendingEventKey: String = s"pending-event-for-$id"
 
-  def isStale: Boolean = maybeLastInteractionAt.getOrElse(startedAt).isBefore(staleCutoff)
+  def isStale: Boolean = {
+    maybeThreadId.isEmpty && maybeLastInteractionAt.getOrElse(startedAt).isBefore(staleCutoff)
+  }
 
   def shouldBeBackgrounded: Boolean = {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
