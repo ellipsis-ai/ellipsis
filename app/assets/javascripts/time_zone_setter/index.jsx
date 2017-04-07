@@ -38,7 +38,8 @@ define(function(require) {
         searchText: "",
         isSearching: false,
         noMatches: false,
-        cityResults: []
+        cityResults: [],
+        error: null
       };
     },
 
@@ -46,7 +47,8 @@ define(function(require) {
       const url = jsRoutes.controllers.ApplicationController.possibleCitiesFor(searchQuery).url;
       this.setState({
         isSearching: true,
-        noMatches: false
+        noMatches: false,
+        error: null
       }, () => {
         DataRequest
           .jsonGet(url)
@@ -63,14 +65,15 @@ define(function(require) {
                 }
               });
             } else {
-              throw new Error("Error loading search results");
+              throw new Error();
             }
           })
           .catch(() => {
             this.setState({
               isSearching: false,
               noMatches: false,
-              cityResults: []
+              cityResults: [],
+              error: "An error occurred while loading search results."
             });
           });
       });
@@ -182,6 +185,13 @@ define(function(require) {
               />
               {this.props.error ? (
                 <span className="align-button type-italic type-pink fade-in">— {this.props.error}</span>
+              ) : null}
+            </div>
+            <div className="mvl">
+              {this.state.error ? (
+                <div className="fade-in type-pink type-bold type-italic">
+                  {this.state.error}
+                </div>
               ) : null}
             </div>
           </div>
