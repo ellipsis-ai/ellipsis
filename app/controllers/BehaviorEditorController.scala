@@ -74,12 +74,14 @@ class BehaviorEditorController @Inject() (
   }
 
   case class SaveBehaviorInfo(
-                               dataJson: String
+                               dataJson: String,
+                               isReinstall: Option[Boolean]
                              )
 
   private val saveForm = Form(
     mapping(
-      "dataJson" -> nonEmptyText
+      "dataJson" -> nonEmptyText,
+      "isReinstall" -> optional(boolean)
     )(SaveBehaviorInfo.apply)(SaveBehaviorInfo.unapply)
   )
 
@@ -103,8 +105,17 @@ class BehaviorEditorController @Inject() (
                   dataService.behaviorGroups.createFor(data.exportId, team).map(Some(_))
                 }.getOrElse(Future.successful(None))
               }
+              oauth2Appications <- teamAccess.maybeTargetTeam.map { team =>
+                dataService.oauth2Applications.allFor(team)
+              }.getOrElse(Future.successful(Seq()))
               _ <- maybeGroup.map { group =>
-                dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)).map(Some(_))
+                val dataForNewVersion = data.copyForNewVersionOf(group)
+                val dataToUse = if (info.isReinstall.exists(identity)) {
+                  dataForNewVersion.copyWithApiApplicationsIfAvailable(oauth2Appications)
+                } else {
+                  dataForNewVersion
+                }
+                dataService.behaviorGroupVersions.createFor(group, user, dataToUse).map(Some(_))
               }.getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
