@@ -165,7 +165,7 @@ define(function(require) {
               <div className="mts mbl width-30 mobile-width-full">
                 <Select value={this.state.selectedTimeZone} onChange={this.updateSelectedTimeZone} size="5">
                   {this.getFilteredTzInfo().map((tz) => (
-                    <option key={tz.name} value={tz.timeZone}>{tz.name}</option>
+                    <option key={`${tz.name}:${tz.timeZone}`} value={tz.timeZone}>{tz.name}</option>
                   ))}
                 </Select>
               </div>

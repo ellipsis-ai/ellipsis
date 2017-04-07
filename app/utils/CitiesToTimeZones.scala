@@ -90,7 +90,9 @@ class CitiesToTimeZones {
     val names = trie.findByPrefix(searchQuery)
     names.flatMap { ea =>
       infoMap.getOrElse(ea, Set())
-    }.distinct.sortBy(_.population).reverse
+    }.groupBy { ea =>
+      List[String](ea.name, ea.admin.getOrElse(""), ea.country, ea.timeZoneId).filter(_.nonEmpty).mkString("|")
+    }.map(_._2.head).toSeq.sortBy(_.population).reverse
   }
 
 }
