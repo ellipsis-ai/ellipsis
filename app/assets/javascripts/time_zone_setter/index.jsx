@@ -34,6 +34,7 @@ define(function(require) {
       return {
         guessedTimeZone: guessedTimeZone,
         selectedTimeZone: guessedTimeZone,
+        selectedTimeZoneName: this.getDisplayNameFor(guessedTimeZone),
         searchText: "",
         isSearching: false,
         noMatches: false,
@@ -57,8 +58,10 @@ define(function(require) {
                 noMatches: matches.length === 0,
                 cityResults: matches
               }, () => {
-                if (!matches.some((city) => city.timeZoneId === this.state.selectedTimeZone)) {
-                  this.setSelectedTimeZoneMatching(matches[0].timeZoneId);
+                if (matches.length > 0) {
+                  this.setSelectedTimeZoneFromCity(matches[0]);
+                } else {
+                  this.setDefaultTimeZone();
                 }
               });
             } else {
@@ -75,40 +78,31 @@ define(function(require) {
       });
     },
 
-    setSelectedTimeZoneMatching: function(tzId) {
-      const matched = timeZoneList.find((tz) => tz.timeZones.includes(tzId));
+    setSelectedTimeZoneFromCity: function(cityInfo) {
       this.setState({
-        selectedTimeZone: this.state.noMatches ? this.state.guessedTimeZone : matched.timeZones[0]
+        selectedTimeZone: cityInfo.timeZoneId,
+        selectedTimeZoneName: this.assembleName(cityInfo.name, cityInfo.admin, cityInfo.country)
+      });
+    },
+
+    setDefaultTimeZone: function() {
+      this.setState({
+        selectedTimeZone: this.state.guessedTimeZone,
+        selectedTimeZoneName: this.getDisplayNameFor(this.state.guessedTimeZone)
       });
     },
 
     getFilteredTzInfo: function() {
-      var searchText = (this.state.searchText || "").trim().toLowerCase();
-      if (searchText) {
-        if (this.state.noMatches) {
-          return [];
-        } else {
-          return timeZoneList.filter((tzInfo) => {
-            return this.state.cityResults.some((cityInfo) => tzInfo.timeZones.includes(cityInfo.timeZoneId)) ||
-              tzInfo.name.toLowerCase().includes(searchText) ||
-              tzInfo.timeZones.some((tzId) => tzId.toLowerCase().includes(searchText));
-          }).map((tzInfo) => {
-            const cityMatch = this.state.cityResults.find((city) => tzInfo.timeZones.some((tzId) => tzId === city.timeZoneId));
-            const includeMatchedCity = cityMatch && tzInfo.name.indexOf(cityMatch.name) !== 0;
-            return {
-              name: includeMatchedCity ? `${cityMatch.name} (${tzInfo.name})` : tzInfo.name,
-              timeZones: tzInfo.timeZones
-            };
-          });
-        }
-      } else {
-        return timeZoneList;
-      }
+      return this.state.cityResults.map((cityInfo) => ({
+        name: this.assembleName(cityInfo.name, cityInfo.admin, cityInfo.country),
+        timeZone: cityInfo.timeZoneId
+      }));
     },
 
-    updateSelectedTimeZone: function(newValue) {
+    updateSelectedTimeZone: function(newValue, newValueIndex) {
       this.setState({
-        selectedTimeZone: newValue
+        selectedTimeZone: newValue,
+        selectedTimeZoneName: this.getFilteredTzInfo()[newValueIndex].name
       });
     },
 
@@ -129,8 +123,8 @@ define(function(require) {
       }
     },
 
-    getCurrentDisplayName: function() {
-      var targetTz = timeZoneList.find((ea) => ea.timeZones.includes(this.state.selectedTimeZone));
+    getDisplayNameFor: function(tzId) {
+      var targetTz = timeZoneList.find((ea) => ea.timeZones.includes(tzId));
       if (targetTz) {
         return targetTz.name;
       } else {
@@ -138,8 +132,12 @@ define(function(require) {
       }
     },
 
+    assembleName: function(city, region, country) {
+      return `${city}${region && region !== city ? `, ${region}` : ""}, ${country}`;
+    },
+
     setTimeZone: function() {
-      this.props.onSetTimeZone(this.state.selectedTimeZone, this.getCurrentDisplayName());
+      this.props.onSetTimeZone(this.state.selectedTimeZone, this.state.selectedTimeZoneName);
     },
 
     render: function() {
@@ -158,25 +156,23 @@ define(function(require) {
               isn’t otherwise obvious.
             </p>
 
+            <div className={this.state.isSearching ? "pulse" : ""}>
+              <div className="mtl mbs width-30 mobile-width-full">
+                <SearchInput placeholder="Search for a city"
+                  value={this.state.searchText}
+                  onChange={this.updateSearchText}/>
+              </div>
+              <div className="mts mbl width-30 mobile-width-full">
+                <Select value={this.state.selectedTimeZone} onChange={this.updateSelectedTimeZone} size="5">
+                  {this.getFilteredTzInfo().map((tz) => (
+                    <option key={tz.name} value={tz.timeZone}>{tz.name}</option>
+                  ))}
+                </Select>
+              </div>
+            </div>
             <div className="mvl">
-              <span className="align-button mrm">Selected time zone:</span>
-              <Select className="width-15" value={this.state.selectedTimeZone} onChange={this.updateSelectedTimeZone}>
-                {timeZoneList.map((tz) => (
-                  <option key={tz.name} value={tz.timeZones[0]}>{tz.name}</option>
-                ))}
-              </Select>
-            </div>
-            <div className="mtl mbs width-30 mobile-width-full">
-              <SearchInput placeholder="Search for a country or city"
-                value={this.state.searchText}
-                onChange={this.updateSearchText}/>
-            </div>
-            <div className="mts mbl width-30 mobile-width-full">
-              <Select value={this.state.selectedTimeZone} onChange={this.updateSelectedTimeZone} size="5">
-                {this.getFilteredTzInfo().map((tz) => (
-                  <option key={tz.name} value={tz.timeZones[0]}>{tz.name}</option>
-                ))}
-              </Select>
+              <span className="mrm">Selected time zone:</span>
+              <b>{this.state.selectedTimeZoneName}</b>
             </div>
             <div className="mvl">
               <DynamicLabelButton
