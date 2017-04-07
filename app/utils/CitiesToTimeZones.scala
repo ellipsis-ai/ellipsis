@@ -80,6 +80,7 @@ class CitiesToTimeZones {
 
       addToInfoMap(name, info)
       addToInfoMap(asciiName, info)
+      addToInfoMap(tz, info)
     }
     bufferedSource.close
   }

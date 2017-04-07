@@ -17,6 +17,7 @@ define(function(require) {
 
     componentDidMount: function() {
       this.delayRequestMatchingTimezones = debounce(this.requestMatchingTimezones, 250);
+      this.setDefaultTimeZone();
     },
 
     guessTimeZone: function() {
@@ -33,8 +34,11 @@ define(function(require) {
       var guessedTimeZone = this.guessTimeZone();
       return {
         guessedTimeZone: guessedTimeZone,
-        selectedTimeZone: guessedTimeZone,
-        selectedTimeZoneName: this.getDisplayNameFor(guessedTimeZone),
+        selectedCity: "",
+        selectedTimeZone: "",
+        selectedTimeZoneName: "",
+        defaultTimeZone: "",
+        defaultTimeZoneName: "",
         searchText: "",
         isSearching: false,
         noMatches: false,
@@ -42,7 +46,7 @@ define(function(require) {
       };
     },
 
-    requestMatchingTimezones: function(searchQuery) {
+    requestMatchingTimezones: function(searchQuery, optionalCallback) {
       const url = jsRoutes.controllers.ApplicationController.possibleCitiesFor(searchQuery).url;
       this.setState({
         isSearching: true,
@@ -59,9 +63,9 @@ define(function(require) {
                 cityResults: matches
               }, () => {
                 if (matches.length > 0) {
-                  this.setSelectedTimeZoneFromCity(matches[0]);
+                  this.setSelectedTimeZoneFromCity(matches[0], optionalCallback);
                 } else {
-                  this.setDefaultTimeZone();
+                  this.resetToDefaultTimeZone();
                 }
               });
             } else {
@@ -78,30 +82,56 @@ define(function(require) {
       });
     },
 
-    setSelectedTimeZoneFromCity: function(cityInfo) {
+    setSelectedTimeZoneFromCity: function(cityInfo, optionalCallback) {
+      const optionProps = this.getOptionPropsFromCityInfo(cityInfo);
       this.setState({
+        selectedCity: optionProps.key,
         selectedTimeZone: cityInfo.timeZoneId,
-        selectedTimeZoneName: this.assembleName(cityInfo.name, cityInfo.admin, cityInfo.country)
-      });
+        selectedTimeZoneName: optionProps.name
+      }, optionalCallback);
     },
 
     setDefaultTimeZone: function() {
-      this.setState({
-        selectedTimeZone: this.state.guessedTimeZone,
-        selectedTimeZoneName: this.getDisplayNameFor(this.state.guessedTimeZone)
+      this.requestMatchingTimezones(this.state.guessedTimeZone, () => {
+        if (this.state.selectedTimeZone) {
+          this.setState({
+            selectedCity: "",
+            defaultTimeZone: this.state.selectedTimeZone,
+            defaultTimeZoneName: this.state.selectedTimeZoneName
+          });
+        }
       });
     },
 
+    resetToDefaultTimeZone: function() {
+      if (this.state.defaultTimeZone) {
+        this.setState({
+          selectedCity: "",
+          selectedTimeZone: this.state.defaultTimeZone,
+          selectedTimeZoneName: this.state.defaultTimeZoneName
+        });
+      }
+    },
+
+    getOptionPropsFromCityInfo: function(cityInfo) {
+      const name = this.assembleName(cityInfo.name, cityInfo.admin, cityInfo.country);
+      const timeZone = cityInfo.timeZoneId;
+      const key = [name, timeZone].join("|");
+      return {
+        name: name,
+        timeZone: timeZone,
+        key: key
+      };
+    },
+
     getFilteredTzInfo: function() {
-      return this.state.cityResults.map((cityInfo) => ({
-        name: this.assembleName(cityInfo.name, cityInfo.admin, cityInfo.country),
-        timeZone: cityInfo.timeZoneId
-      }));
+      return this.state.cityResults.map(this.getOptionPropsFromCityInfo);
     },
 
     updateSelectedTimeZone: function(newValue, newValueIndex) {
       this.setState({
-        selectedTimeZone: newValue,
+        selectedCity: newValue,
+        selectedTimeZone: this.getFilteredTzInfo()[newValueIndex].timeZone,
         selectedTimeZoneName: this.getFilteredTzInfo()[newValueIndex].name
       });
     },
@@ -163,9 +193,9 @@ define(function(require) {
                   onChange={this.updateSearchText}/>
               </div>
               <div className="mts mbl width-30 mobile-width-full">
-                <Select value={this.state.selectedTimeZone} onChange={this.updateSelectedTimeZone} size="5">
+                <Select value={this.state.selectedCity} onChange={this.updateSelectedTimeZone} size="5">
                   {this.getFilteredTzInfo().map((tz) => (
-                    <option key={`${tz.name}:${tz.timeZone}`} value={tz.timeZone}>{tz.name}</option>
+                    <option key={tz.key} value={tz.key}>{tz.name}</option>
                   ))}
                 </Select>
               </div>
