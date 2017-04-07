@@ -20,6 +20,7 @@ jest.mock('../app/assets/javascripts/lib/data_request', () => ({
 describe('BehaviorListApp', () => {
   jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo = () => '/fetch';
   jsRoutes.controllers.BehaviorEditorController.newGroup = () => '/newGroup';
+  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => '/possibleCitiesFor';
 
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",
