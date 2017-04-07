@@ -8,11 +8,12 @@ class CitiesToTimeZones {
 
   val trie: Trie = Trie()
   val infoMap = scala.collection.mutable.Map[String, Set[CityInfo]]()
+  val dataPath = "/data"
 
   def loadAdmins: Map[String, String] = {
     val adminCodeColumnIndex = 0
     val adminNameColumnIndex = 1
-    val dataStream = getClass.getResourceAsStream("data/admin1CodesASCII.txt")
+    val dataStream = getClass.getResourceAsStream(s"$dataPath/admin1CodesASCII.txt")
     val bufferedSource = Source.fromInputStream(dataStream)
     val map = scala.collection.mutable.Map[String, String]()
     for (line <- bufferedSource.getLines) {
@@ -28,7 +29,7 @@ class CitiesToTimeZones {
   def loadCountries: Map[String, String] = {
     val countryCodeColumnIndex = 0
     val countryNameColumnIndex = 4
-    val dataStream = getClass.getResourceAsStream("data/countryInfo.txt")
+    val dataStream = getClass.getResourceAsStream(s"$dataPath/countryInfo.txt")
     val bufferedSource = Source.fromInputStream(dataStream)
     val map = scala.collection.mutable.Map[String, String]()
     for (line <- bufferedSource.getLines) {
@@ -58,7 +59,7 @@ class CitiesToTimeZones {
     val admins = loadAdmins
     val countries = loadCountries
 
-    val dataStream = getClass.getResourceAsStream("data/cities15000.txt")
+    val dataStream = getClass.getResourceAsStream(s"$dataPath/cities15000.txt")
     val bufferedSource = Source.fromInputStream(dataStream)
     for (line <- bufferedSource.getLines) {
       val cols = line.split("\t").map(_.trim)
