@@ -47,6 +47,7 @@ define(function(require) {
       const url = jsRoutes.controllers.ApplicationController.possibleCitiesFor(searchQuery).url;
       this.setState({
         isSearching: true,
+        cityResults: [],
         noMatches: false,
         error: null
       }, () => {
@@ -134,6 +135,24 @@ define(function(require) {
       this.props.onSetTimeZone(this.state.selectedOption.timeZone, this.state.selectedOption.name);
     },
 
+    renderSearchMessage: function() {
+      if (this.state.error) {
+        return (
+          <div className="fade-in maxs pvxs phs type-pink type-bold type-italic">
+            {this.state.error}
+          </div>
+        );
+      } else if (this.state.isSearching) {
+        return (
+          <div className="fade-in maxs pvxs phs type-italic type-disabled">Searching…</div>
+        );
+      } else if (this.state.noMatches) {
+        return (
+          <div className="fade-in maxs pvxs phs type-italic type-disabled">No matches found</div>
+        );
+      }
+    },
+
     render: function() {
       return (
         <div className="bg-white border-bottom border-bottom-thick pvxl">
@@ -151,17 +170,27 @@ define(function(require) {
             </p>
 
             <div className={this.state.isSearching ? "pulse" : ""}>
-              <div className="mtl mbs width-30 mobile-width-full">
+              <div className="mvl width-30 mobile-width-full">
                 <SearchInput placeholder="Search for a city"
                   value={this.state.searchText}
-                  onChange={this.updateSearchText}/>
-              </div>
-              <div className="mts mbl width-30 mobile-width-full">
-                <Select value={this.state.selectedCity} onChange={this.updateSelectedTimeZone} size="5">
-                  {this.getFilteredTzInfo().map((tz) => (
-                    <option key={tz.key} value={tz.key}>{tz.name}</option>
-                  ))}
-                </Select>
+                  onChange={this.updateSearchText}
+                  withResults={true}
+                />
+                <div className="position-relative">
+                  <Select
+                    value={this.state.selectedCity}
+                    onChange={this.updateSelectedTimeZone}
+                    size="5"
+                    withSearch={true}
+                  >
+                    {this.getFilteredTzInfo().map((tz) => (
+                      <option key={tz.key} value={tz.key}>{tz.name}</option>
+                    ))}
+                  </Select>
+                  <div className="position-absolute position-z-popup position-top-left">
+                    {this.renderSearchMessage()}
+                  </div>
+                </div>
               </div>
             </div>
             <div className="mvl">
@@ -185,13 +214,6 @@ define(function(require) {
               />
               {this.props.error ? (
                 <span className="align-button type-italic type-pink fade-in">— {this.props.error}</span>
-              ) : null}
-            </div>
-            <div className="mvl">
-              {this.state.error ? (
-                <div className="fade-in type-pink type-bold type-italic">
-                  {this.state.error}
-                </div>
               ) : null}
             </div>
           </div>

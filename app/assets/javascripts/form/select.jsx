@@ -9,7 +9,8 @@ define(function(require) {
       value: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.number]),
       children: React.PropTypes.node.isRequired,
       onChange: React.PropTypes.func.isRequired,
-      size: React.PropTypes.string
+      size: React.PropTypes.string,
+      withSearch: React.PropTypes.bool
     },
 
     componentDidUpdate: function(prevProps) {
@@ -58,21 +59,23 @@ define(function(require) {
         <div
           className={
             "position-relative " + // enables
-            (this.props.size ? "form-multi-select " : "form-select ") +
+            (this.props.size ? "" : "form-select ") +
             (this.state.focused ? "form-select-focus " : "") +
             (this.props.className || "")
           }
         >
           <select ref="select"
-            className={this.props.size ?
-              "form-input form-input-height-auto position-relative" :
-              "form-select-element"}
+            className={
+              (this.props.size ? " form-multi-select " : " form-select-element ") +
+              (this.props.withSearch ? " border-radius-bottom " : "")
+            }
             name={this.props.name}
             value={this.props.value}
             onChange={this.onChange}
             onFocus={this.onFocus}
             onBlur={this.onBlur}
             size={this.props.size}
+            style={this.props.size ? { minHeight: `${Number(this.props.size) * 1.5}em` } : null}
           >
             {this.props.children}
           </select>
