@@ -103,11 +103,14 @@ define(function(require) {
       return this.state.cityResults.map(this.getOptionPropsFromCityInfo);
     },
 
-    updateSelectedTimeZone: function(newValue, newValueIndex) {
-      this.setState({
-        selectedCity: newValue,
-        selectedOption: this.getFilteredTzInfo()[newValueIndex]
-      });
+    updateSelectedTimeZone: function(valueOrNull, newValueIndex) {
+      var newResult = this.getFilteredTzInfo()[newValueIndex];
+      if (newResult) {
+        this.setState({
+          selectedCity: newResult.key,
+          selectedOption: newResult
+        });
+      }
     },
 
     updateSearchText: function(newValue) {
@@ -125,6 +128,14 @@ define(function(require) {
           cityResults: []
         });
       }
+    },
+
+    selectNextMatch: function() {
+      this.updateSelectedTimeZone(null, this.refs.results.selectNextItem());
+    },
+
+    selectPreviousMatch: function() {
+      this.updateSelectedTimeZone(null, this.refs.results.selectPreviousItem());
     },
 
     assembleName: function(city, region, country) {
@@ -174,10 +185,13 @@ define(function(require) {
                 <SearchInput placeholder="Search for a city"
                   value={this.state.searchText}
                   onChange={this.updateSearchText}
+                  onUpKey={this.selectPreviousMatch}
+                  onDownKey={this.selectNextMatch}
                   withResults={true}
                 />
                 <div className="position-relative">
                   <Select
+                    ref="results"
                     value={this.state.selectedCity}
                     onChange={this.updateSelectedTimeZone}
                     size="5"

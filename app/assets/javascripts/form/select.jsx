@@ -54,6 +54,20 @@ define(function(require) {
       };
     },
 
+    selectNextItem: function() {
+      if (this.refs.select.selectedIndex + 1 < this.refs.select.options.length) {
+        this.refs.select.selectedIndex++;
+      }
+      return this.refs.select.selectedIndex;
+    },
+
+    selectPreviousItem: function() {
+      if (this.refs.select.selectedIndex > 0) {
+        this.refs.select.selectedIndex--;
+      }
+      return this.refs.select.selectedIndex;
+    },
+
     render: function() {
       return (
         <div

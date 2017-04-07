@@ -18,6 +18,8 @@ return React.createClass({
     onEnterKey: React.PropTypes.func,
     onEscKey: React.PropTypes.func,
     onFocus: React.PropTypes.func,
+    onDownKey: React.PropTypes.func,
+    onUpKey: React.PropTypes.func,
     placeholder: React.PropTypes.string,
     type: React.PropTypes.string,
     value: React.PropTypes.string.isRequired,
@@ -40,7 +42,7 @@ return React.createClass({
     }
   },
 
-  handleEnterKey: function(event) {
+  handleKeyPress: function(event) {
     if (Event.keyPressWasEnter(event)) {
       event.preventDefault();
       if (typeof this.props.onEnterKey === 'function') {
@@ -49,11 +51,17 @@ return React.createClass({
     }
   },
 
-  handleEscKey: function(event) {
+  handleKeyDown: function(event) {
     if (Event.keyPressWasEsc(event) && this.props.onEscKey) {
       event.stopPropagation();
       event.preventDefault();
       this.props.onEscKey();
+    } else if (Event.keyPressWasDown(event) && typeof this.props.onDownKey === 'function') {
+      event.preventDefault();
+      this.props.onDownKey();
+    } else if (Event.keyPressWasUp(event) && typeof this.props.onUpKey === 'function') {
+      event.preventDefault();
+      this.props.onUpKey();
     }
   },
 
@@ -88,8 +96,8 @@ return React.createClass({
         onChange={this.onChange}
         onBlur={this.onBlur}
         onFocus={this.onFocus}
-        onKeyPress={this.handleEnterKey}
-        onKeyDown={this.handleEscKey}
+        onKeyPress={this.handleKeyPress}
+        onKeyDown={this.handleKeyDown}
         autoCapitalize={this.props.disableAuto ? "off" : null}
         autoComplete={this.props.disableAuto ? "off" : null}
         autoCorrect={this.props.disableAuto ? "off" : null}
