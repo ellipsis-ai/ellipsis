@@ -72,7 +72,6 @@ define(function(require) {
       return (
         <div
           className={
-            "position-relative " + // enables
             (this.props.size ? "" : "form-select ") +
             (this.state.focused ? "form-select-focus " : "") +
             (this.props.className || "")
