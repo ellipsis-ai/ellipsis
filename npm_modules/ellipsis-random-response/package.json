@@ -1,6 +1,6 @@
 {
   "name": "ellipsis-random-response",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Return a random thematic response and/or emoji",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,9 @@
   "author": "Ellipsis Co. <luke@ellipsis.ai> (http://ellipsis.ai)",
   "license": "ISC",
   "devDependencies": {
-    "jest": "^19.0.2",
+    "jest": "^19.0.2"
+  },
+  "dependencies": {
     "moment-timezone": "^0.5.13"
   }
 }
