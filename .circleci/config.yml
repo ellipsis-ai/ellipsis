@@ -52,7 +52,6 @@ jobs:
       - run:
           name: Run JavaScript Tests
           command: |
-            pushd npm_modules/ellipsis-cal-date-format/; npm install; popd
             npm test
       - restore_cache:
           key: v5-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}

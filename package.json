@@ -31,6 +31,7 @@
   "scripts": {
     "lint": "scripts/run_eslint",
     "test": "jest --runInBand"
+    "postinstall": "find ./npm_modules/* -maxdepth 2 -name package.json -execdir npm install \;"
   },
   "jest": {
     "globals": {
