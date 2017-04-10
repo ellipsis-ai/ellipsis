@@ -2,8 +2,10 @@ define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
     BehaviorList = require('./index'),
+    PageNotification = require('../shared_ui/page_notification'),
     DataRequest = require('../lib/data_request'),
-    ImmutableObjectUtils = require('../lib/immutable_object_utils');
+    ImmutableObjectUtils = require('../lib/immutable_object_utils'),
+    TimeZoneSetter = require('../time_zone_setter/index');
 
   return React.createClass({
     displayName: 'BehaviorListApp',
@@ -12,6 +14,7 @@ define(function(require) {
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       teamId: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string.isRequired,
+      teamTimeZone: React.PropTypes.string,
       branchName: React.PropTypes.string
     },
 
@@ -27,7 +30,11 @@ define(function(require) {
         currentlyInstalling: [],
         matchingResults: [],
         currentSearchText: "",
-        isLoadingMatchingResults: false
+        isLoadingMatchingResults: false,
+        currentTeamTimeZone: this.props.teamTimeZone,
+        isSavingTeamTimeZone: false,
+        errorSavingTeamTimeZone: null,
+        dismissedNotifications: []
       };
     },
 
@@ -161,27 +168,91 @@ define(function(require) {
       }
     },
 
+    setTimeZone: function(newTz, displayName) {
+      this.setState({
+        isSavingTeamTimeZone: true,
+        errorSavingTeamTimeZone: null
+      }, () => {
+        const url = jsRoutes.controllers.ApplicationController.setTeamTimeZone().url;
+        DataRequest
+          .jsonPost(url, {
+            tzName: newTz,
+            teamId: this.props.teamId
+          }, this.props.csrfToken)
+          .then((json) => {
+            if (json.tzName) {
+              this.setState({
+                currentTeamTimeZone: displayName,
+                isSavingTeamTimeZone: false
+              });
+            } else {
+              throw new Error(json.message || "");
+            }
+          })
+          .catch((err) => {
+            this.setState({
+              isSavingTeamTimeZone: false,
+              errorSavingTeamTimeZone: `An error occurred while saving${err.message ? ` (${err.message})` : ""}. Please try again.`
+            });
+          });
+      });
+    },
+
+    dismissNotification: function(notificationName) {
+      this.setState({
+        dismissedNotifications: this.state.dismissedNotifications.concat(notificationName)
+      });
+    },
+
+    hasDismissedNotification: function(notificationName) {
+      return this.state.dismissedNotifications.includes(notificationName);
+    },
+
+    shouldNotifyTimeZone: function() {
+      return !this.props.teamTimeZone && !!this.state.currentTeamTimeZone;
+    },
+
     render: function() {
-      return (
-        <BehaviorList
-          onLoadPublishedBehaviorGroups={this.loadPublishedBehaviorGroups}
-          onBehaviorGroupImport={this.importBehaviorGroup}
-          onBehaviorGroupUpdate={this.updateBehaviorGroup}
-          onMergeBehaviorGroups={this.mergeBehaviorGroups}
-          onDeleteBehaviorGroups={this.deleteBehaviorGroups}
-          onSearch={this.getSearchResults}
-          localBehaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
-          publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
-          recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
+      if (this.state.currentTeamTimeZone) {
+        return (
+          <div>
+            {this.shouldNotifyTimeZone() ? (
+              <PageNotification
+              name="TIME_ZONE_SET"
+              content={`Your team’s time zone has been set to ${this.state.currentTeamTimeZone}.`}
+              onDismiss={this.dismissNotification}
+              isDismissed={this.hasDismissedNotification("TIME_ZONE_SET")}
+              />
+            ) : null}
+            <BehaviorList
+              onLoadPublishedBehaviorGroups={this.loadPublishedBehaviorGroups}
+              onBehaviorGroupImport={this.importBehaviorGroup}
+              onBehaviorGroupUpdate={this.updateBehaviorGroup}
+              onMergeBehaviorGroups={this.mergeBehaviorGroups}
+              onDeleteBehaviorGroups={this.deleteBehaviorGroups}
+              onSearch={this.getSearchResults}
+              localBehaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
+              publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
+              recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
           currentlyInstalling={this.state.currentlyInstalling}
-          matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
-          currentSearchText={this.state.currentSearchText}
-          isLoadingMatchingResults={this.state.isLoadingMatchingResults}
-          publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
-          teamId={this.props.teamId}
-          slackTeamId={this.props.slackTeamId}
-        />
-      );
+              matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
+              currentSearchText={this.state.currentSearchText}
+              isLoadingMatchingResults={this.state.isLoadingMatchingResults}
+              publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
+              teamId={this.props.teamId}
+              slackTeamId={this.props.slackTeamId}
+            />
+          </div>
+        );
+      } else {
+        return (
+          <TimeZoneSetter
+            onSetTimeZone={this.setTimeZone}
+            isSaving={this.state.isSavingTeamTimeZone}
+            error={this.state.errorSavingTeamTimeZone}
+          />
+        );
+      }
     }
   });
 });

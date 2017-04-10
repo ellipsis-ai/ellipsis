@@ -81,17 +81,25 @@ class CitiesToTimeZones {
 
       addToInfoMap(name, info)
       addToInfoMap(asciiName, info)
+      addToInfoMap(tz, info)
     }
     bufferedSource.close
   }
 
   load()
 
+  def distinctByPlaceAndTzId(cities: Seq[CityInfo]): Seq[CityInfo] = {
+    cities.groupBy { ea =>
+      List[String](ea.name, ea.admin.getOrElse(""), ea.country, ea.timeZoneId).filter(_.nonEmpty).mkString("|")
+    }.map(_._2.head).toSeq
+  }
+
   def possibleCitiesFor(searchQuery: String): Seq[CityInfo] = {
     val names = trie.findByPrefix(searchQuery)
-    names.flatMap { ea =>
+    val matchingCities = names.flatMap { ea =>
       infoMap.getOrElse(ea, Set())
-    }.distinct.sortBy(_.population).reverse
+    }
+    distinctByPlaceAndTzId(matchingCities).sortBy(_.population).reverse.slice(0, 100)
   }
 
 }
