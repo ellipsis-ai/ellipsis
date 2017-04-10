@@ -70,12 +70,12 @@ const responseList = {
     "Good evening!",
     "Good evening.",
     "Evening",
-    "Hi there. Pardon the interruption this evening."
+    "Hi there. I hope this evening treats you well."
   ],
   late_night: [
-    "Sorry to disturb you so late.",
-    "Hello. I hope you had a good day today.",
-    "Hello"
+    "Why hello there. It’s awfully late, isn’t it.",
+    "Greetings. I hope you had a good day today.",
+    "Greetings at this late hour."
   ],
   misc: []
 };
