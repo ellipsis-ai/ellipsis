@@ -197,7 +197,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getOriginalSelectedBehavior: function() {
-    return this.getSelectedBehaviorFor(this.props.group, this.props.selectedBehaviorId);
+    return this.getSelectedBehaviorFor(this.props.group, this.getSelectedBehaviorId());
   },
 
   getSelectedBehavior: function() {
@@ -1106,8 +1106,8 @@ const BehaviorEditor = React.createClass({
 
   isFinishedBehavior: function() {
     var originalSelectedBehavior = this.getOriginalSelectedBehavior();
-    var completedOriginal = !!(originalSelectedBehavior && (originalSelectedBehavior.functionBody || originalSelectedBehavior.responseTemplate.text));
-    return this.isExistingBehavior() && completedOriginal;
+    return !!(originalSelectedBehavior && !originalSelectedBehavior.isNewBehavior &&
+      (originalSelectedBehavior.functionBody || originalSelectedBehavior.responseTemplate.text));
   },
 
   isModified: function() {
