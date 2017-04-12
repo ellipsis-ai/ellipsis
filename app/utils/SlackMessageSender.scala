@@ -109,13 +109,21 @@ case class SlackMessageSender(
         }
         val maybeThreadTsToUse = maybeConversation.flatMap(_.maybeThreadId)
         val replyBroadcast = maybeThreadTsToUse.isDefined && maybeConversation.exists(_.state == Conversation.DONE_STATE)
+
         client.postChatMessage(
           channelToUse,
           segment,
+          username = None,
           asUser = Some(true),
+          parse = None,
+          linkNames = None,
+          attachments = maybeAttachmentsForSegment,
           unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
           unfurlMedia = Some(true),
-          attachments = maybeAttachmentsForSegment,
+          iconUrl = None,
+          iconEmoji = None,
+          replaceOriginal = None,
+          deleteOriginal = None,
           threadTs = maybeThreadTsToUse,
           replyBroadcast = Some(replyBroadcast)
         )
