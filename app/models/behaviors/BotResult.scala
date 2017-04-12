@@ -44,7 +44,10 @@ sealed trait BotResult {
     }
   }
 
-  val interruptionPrompt = "You haven't answered my question yet, but I have something new to ask you."
+  val interruptionPrompt = {
+    val action = if (maybeConversation.isDefined) { "ask" } else { "tell" }
+    s"You haven't answered my question yet, but I have something new to $action you."
+  }
 
   def interruptOngoingConversationsFor(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Boolean] = {
     if (maybeConversation.exists(_.maybeThreadId.isDefined)) {
