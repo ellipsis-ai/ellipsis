@@ -63,13 +63,25 @@ sealed trait BotResult {
   def sendIn(
               maybeShouldUnfurl: Option[Boolean],
               maybeConversation: Option[Conversation],
-              dataService: DataService
+              dataService: DataService,
+              maybeIntro: Option[String] = None,
+              maybeInterruptionIntro: Option[String] = None
             )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     for {
       didInterrupt <- if (shouldInterrupt) {
         interruptOngoingConversationsFor(dataService)
       } else {
         Future.successful(false)
+      }
+      _ <- maybeIntro.map { intro =>
+        val introToSend = if (didInterrupt) {
+          maybeInterruptionIntro.getOrElse(intro)
+        } else {
+          intro
+        }
+        SimpleTextResult(event, maybeConversation, introToSend, forcePrivateResponse).sendIn(None, maybeConversation, dataService)
+      }.getOrElse {
+        Future.successful({})
       }
       sendResult <- event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, maybeActions, dataService)
     } yield sendResult
@@ -133,7 +145,9 @@ case class NoResponseResult(event: Event, maybeConversation: Option[Conversation
   override def sendIn(
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation],
-                       dataService: DataService
+                       dataService: DataService,
+                       maybeIntro: Option[String] = None,
+                       maybeInterruptionIntro: Option[String] = None
                      )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     // do nothing
     Future.successful(None)
@@ -309,7 +323,9 @@ case class OAuth2TokenMissing(
   override def sendIn(
                        maybeShouldUnfurl: Option[Boolean],
                        maybeConversation: Option[Conversation],
-                       dataService: DataService
+                       dataService: DataService,
+                       maybeIntro: Option[String] = None,
+                       maybeInterruptionIntro: Option[String] = None
                      )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     cache.set(key, event, 5.minutes)
     super.sendIn(maybeShouldUnfurl, maybeConversation, dataService)

@@ -150,6 +150,24 @@ class APIController @Inject() (
 
   }
 
+  private def maybeIntroTextFor(isInvokedExternally: Boolean, event: Event, context: ApiMethodContext, isForInterruption: Boolean): Option[String] = {
+    val greeting = if (isForInterruption) {
+      s""":wave: Hi.
+       |
+       |""".stripMargin
+    } else {
+      "Meanwhile, "
+    }
+    if (isInvokedExternally) {
+      context.maybeSlackProfile.map { slackProfile =>
+        s"""$greeting<@${slackProfile.loginInfo.providerKey}> asked me to run `${event.messageText}`.
+         |
+         |───
+         |""".stripMargin
+      }
+    } else { None }
+  }
+
   private def runBehaviorFor(maybeEvent: Option[Event], context: ApiMethodContext) = {
     for {
       isInvokedExternally <- Future.successful(context.maybeUserForApiToken.isDefined)
@@ -157,25 +175,11 @@ class APIController @Inject() (
         for {
           result <- eventHandler.handle(event, None).map { results =>
             results.foreach { result =>
-              val eventualIntroSend = if (isInvokedExternally) {
-                context.maybeSlackProfile.map { slackProfile =>
-                  val resultText = s""":wave: Hi.
-                    |
-                    |<@${slackProfile.loginInfo.providerKey}> asked me to run `${event.messageText}`.
-                    |
-                    |───
-                    |""".stripMargin
-                  val introResult = SimpleTextResult(event, result.maybeConversation, resultText, result.forcePrivateResponse)
-                  introResult.sendIn(None, None, dataService)
-                }.getOrElse(Future.successful({}))
-              } else {
-                Future.successful({})
-              }
-              eventualIntroSend.flatMap { _ =>
-                result.sendIn(None, None, dataService).map { _ =>
-                  val channelText = event.maybeChannel.map(c => s" in channel [$c]").getOrElse("")
-                  Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.messageText}]$channelText")
-                }
+              val maybeIntro = maybeIntroTextFor(isInvokedExternally, event, context, isForInterruption = false)
+              val maybeInterruptionIntro = maybeIntroTextFor(isInvokedExternally, event, context, isForInterruption = true)
+              result.sendIn(None, None, dataService, maybeIntro, maybeInterruptionIntro).map { _ =>
+                val channelText = event.maybeChannel.map(c => s" in channel [$c]").getOrElse("")
+                Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.messageText}]$channelText")
               }
             }
             Ok(Json.toJson(results.map(_.fullText)))
