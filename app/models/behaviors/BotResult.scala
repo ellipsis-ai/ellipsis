@@ -63,7 +63,6 @@ sealed trait BotResult {
 
   def sendIn(
               maybeShouldUnfurl: Option[Boolean],
-              maybeConversation: Option[Conversation],
               dataService: DataService,
               maybeIntro: Option[String] = None,
               maybeInterruptionIntro: Option[String] = None
@@ -80,7 +79,7 @@ sealed trait BotResult {
         } else {
           intro
         }
-        SimpleTextResult(event, maybeConversation, introToSend, forcePrivateResponse).sendIn(None, maybeConversation, dataService)
+        SimpleTextResult(event, maybeConversation, introToSend, forcePrivateResponse).sendIn(None, dataService)
       }.getOrElse {
         Future.successful({})
       }
@@ -145,7 +144,6 @@ case class NoResponseResult(event: Event, maybeConversation: Option[Conversation
 
   override def sendIn(
                        maybeShouldUnfurl: Option[Boolean],
-                       maybeConversation: Option[Conversation],
                        dataService: DataService,
                        maybeIntro: Option[String] = None,
                        maybeInterruptionIntro: Option[String] = None
@@ -323,13 +321,12 @@ case class OAuth2TokenMissing(
 
   override def sendIn(
                        maybeShouldUnfurl: Option[Boolean],
-                       maybeConversation: Option[Conversation],
                        dataService: DataService,
                        maybeIntro: Option[String] = None,
                        maybeInterruptionIntro: Option[String] = None
                      )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(maybeShouldUnfurl, maybeConversation, dataService)
+    super.sendIn(maybeShouldUnfurl, dataService)
   }
 }
 

@@ -177,7 +177,7 @@ class APIController @Inject() (
             results.foreach { result =>
               val maybeIntro = maybeIntroTextFor(isInvokedExternally, event, context, isForInterruption = false)
               val maybeInterruptionIntro = maybeIntroTextFor(isInvokedExternally, event, context, isForInterruption = true)
-              result.sendIn(None, None, dataService, maybeIntro, maybeInterruptionIntro).map { _ =>
+              result.sendIn(None, dataService, maybeIntro, maybeInterruptionIntro).map { _ =>
                 val channelText = event.maybeChannel.map(c => s" in channel [$c]").getOrElse("")
                 Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.messageText}]$channelText")
               }
@@ -440,7 +440,7 @@ class APIController @Inject() (
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel)
           result <- maybeEvent.map { event =>
             val botResult = SimpleTextResult(event, None, info.message, forcePrivateResponse = false)
-            botResult.sendIn(None, None, dataService).map { _ =>
+            botResult.sendIn(None, dataService).map { _ =>
               Ok(Json.toJson(Seq(botResult.fullText)))
             }
           }.getOrElse(Future.successful(NotFound("")))

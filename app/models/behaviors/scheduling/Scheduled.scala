@@ -226,7 +226,7 @@ trait Scheduled {
       displayText <- displayText(dataService)
       maybeIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = false))
       maybeInterruptionIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = true))
-      _ <- result.sendIn(None, None, dataService, maybeIntroText, maybeInterruptionIntroText)
+      _ <- result.sendIn(None, dataService, maybeIntroText, maybeInterruptionIntroText)
     } yield {
       val channelInfo =
         event.maybeChannel.
