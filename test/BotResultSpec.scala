@@ -12,6 +12,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.JsString
+import play.api.test.Helpers.running
 import services.DataService
 import slack.api.SlackApiClient
 import support.TestContext
@@ -82,69 +83,77 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
   "sendIn" should {
 
     "send a response" in new TestContext {
-      val event: SlackMessageEvent = newEventFor(team)
-      val responseText = "response"
-      val result = SuccessResult(event, None, JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
-      val resultTs: String = SlackTimestamp.now
+      running(app) {
+        val event: SlackMessageEvent = newEventFor(team)
+        val responseText = "response"
+        val result = SuccessResult(event, None, JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val resultTs: String = SlackTimestamp.now
 
-      setUpMocks(event, responseText, resultTs, Seq(), dataService)
+        setUpMocks(event, responseText, resultTs, Seq(), dataService)
 
-      runNow(result.sendIn(None, None, dataService)) mustBe Some(resultTs)
+        runNow(result.sendIn(None, None, dataService)) mustBe Some(resultTs)
+      }
     }
 
     "interrupt ongoing conversations" in new TestContext {
-      val event: SlackMessageEvent = newEventFor(team)
-      val responseText = "response"
-      val result = SuccessResult(event, None, JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
-      val resultTs: String = SlackTimestamp.now
+      running(app) {
+        val event: SlackMessageEvent = newEventFor(team)
+        val responseText = "response"
+        val result = SuccessResult(event, None, JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val resultTs: String = SlackTimestamp.now
 
-      val conversation = newMockConversation
+        val conversation = newMockConversation
 
-      setUpMocks(event, responseText, resultTs, Seq(conversation), dataService)
+        setUpMocks(event, responseText, resultTs, Seq(conversation), dataService)
 
-      when(dataService.conversations.background(conversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
+        when(dataService.conversations.background(conversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
 
-      runNow(result.sendIn(None, None, dataService)) mustBe Some(resultTs)
+        runNow(result.sendIn(None, None, dataService)) mustBe Some(resultTs)
 
-      Mockito.verify(dataService.conversations, times(1)).background(conversation, result.interruptionPrompt, true)
+        Mockito.verify(dataService.conversations, times(1)).background(conversation, result.interruptionPrompt, true)
+      }
     }
 
     "not interrupt for noResponse()" in new TestContext {
-      val event: SlackMessageEvent = newEventFor(team)
-      val responseText = "response"
-      val result = NoResponseResult(event, None, None)
-      val resultTs: String = SlackTimestamp.now
+      running(app) {
+        val event: SlackMessageEvent = newEventFor(team)
+        val responseText = "response"
+        val result = NoResponseResult(event, None, None)
+        val resultTs: String = SlackTimestamp.now
 
-      val conversation = newMockConversation
+        val conversation = newMockConversation
 
-      setUpMocks(event, responseText, resultTs, Seq(conversation), dataService)
+        setUpMocks(event, responseText, resultTs, Seq(conversation), dataService)
 
-      when(dataService.conversations.background(conversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
+        when(dataService.conversations.background(conversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
 
-      runNow(result.sendIn(None, None, dataService)) mustBe None
+        runNow(result.sendIn(None, None, dataService)) mustBe None
 
-      Mockito.verify(dataService.conversations, times(0)).background(conversation, result.interruptionPrompt, true)
+        Mockito.verify(dataService.conversations, times(0)).background(conversation, result.interruptionPrompt, true)
+      }
     }
 
     "not interrupt self conversation" in new TestContext {
-      val event: SlackMessageEvent = newEventFor(team)
-      val responseText = "response"
-      val resultTs: String = SlackTimestamp.now
+      running(app) {
+        val event: SlackMessageEvent = newEventFor(team)
+        val responseText = "response"
+        val resultTs: String = SlackTimestamp.now
 
-      val selfConversation = newMockConversation
-      val otherConversation = newMockConversation
+        val selfConversation = newMockConversation
+        val otherConversation = newMockConversation
 
-      val result = SuccessResult(event, Some(selfConversation), JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val result = SuccessResult(event, Some(selfConversation), JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
 
-      setUpMocks(event, responseText, resultTs, Seq(selfConversation, otherConversation), dataService)
+        setUpMocks(event, responseText, resultTs, Seq(selfConversation, otherConversation), dataService)
 
-      when(dataService.conversations.background(selfConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
-      when(dataService.conversations.background(otherConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
+        when(dataService.conversations.background(selfConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
+        when(dataService.conversations.background(otherConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
 
-      runNow(result.sendIn(None, Some(selfConversation), dataService)) mustBe Some(resultTs)
+        runNow(result.sendIn(None, Some(selfConversation), dataService)) mustBe Some(resultTs)
 
-      Mockito.verify(dataService.conversations, times(0)).background(selfConversation, result.interruptionPrompt, true)
-      Mockito.verify(dataService.conversations, times(1)).background(otherConversation, result.interruptionPrompt, true)
+        Mockito.verify(dataService.conversations, times(0)).background(selfConversation, result.interruptionPrompt, true)
+        Mockito.verify(dataService.conversations, times(1)).background(otherConversation, result.interruptionPrompt, true)
+      }
     }
 
   }
