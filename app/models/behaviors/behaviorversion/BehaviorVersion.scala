@@ -9,6 +9,7 @@ import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.team.Team
 import play.api.Configuration
@@ -71,26 +72,27 @@ case class BehaviorVersion(
                  parametersWithValues: Seq[ParameterWithValue],
                  dataService: DataService,
                  configuration: Configuration,
-                 event: Event
+                 event: Event,
+                 maybeConversation: Option[Conversation]
                ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
     val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(event, successResult, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
+      SuccessResult(event, maybeConversation, successResult, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(event, logResultOption)
+        NoResponseResult(event, maybeConversation, logResultOption)
       } else {
         if (isUnhandledError(json)) {
-          UnhandledErrorResult(event, this, dataService, configuration, logResultOption)
+          UnhandledErrorResult(event, maybeConversation, this, dataService, configuration, logResultOption)
         } else if (json.toString == "null") {
-          NoCallbackTriggeredResult(event, this, dataService, configuration)
+          NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(event, this, dataService, configuration, json, logResultOption)
+          SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
         } else {
-          HandledErrorResult(event, this, dataService, configuration, json, logResultOption)
+          HandledErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
         }
       }
     }

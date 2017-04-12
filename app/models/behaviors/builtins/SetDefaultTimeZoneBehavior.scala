@@ -27,14 +27,14 @@ case class SetDefaultTimeZoneBehavior(
         }.getOrElse(Future.successful(None))
       } yield {
         maybeWithZone.map { team =>
-          SimpleTextResult(event, s"OK, the default time zone for this team is now `${team.timeZone.toString}`", forcePrivateResponse = false)
+          SimpleTextResult(event, None, s"OK, the default time zone for this team is now `${team.timeZone.toString}`", forcePrivateResponse = false)
         }.getOrElse {
-          SimpleTextResult(event, "There was a problem trying to set the time zone for this team", forcePrivateResponse = false)
+          SimpleTextResult(event, None, "There was a problem trying to set the time zone for this team", forcePrivateResponse = false)
         }
       }
     }.getOrElse {
       Future.successful(
-        SimpleTextResult(event, s"Sorry, I couldn't recognize the time zone `$tzString`", forcePrivateResponse = false)
+        SimpleTextResult(event, None, s"Sorry, I couldn't recognize the time zone `$tzString`", forcePrivateResponse = false)
       )
     }
   }

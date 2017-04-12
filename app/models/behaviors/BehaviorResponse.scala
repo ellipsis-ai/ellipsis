@@ -38,6 +38,7 @@ case class ParameterWithValue(
 case class BehaviorResponse(
                              event: Event,
                              behaviorVersion: BehaviorVersion,
+                             maybeConversation: Option[Conversation],
                              parametersWithValues: Seq[ParameterWithValue],
                              maybeActivatedTrigger: Option[MessageTrigger],
                              lambdaService: AWSLambdaService,
@@ -78,7 +79,7 @@ case class BehaviorResponse(
     val startTime = OffsetDateTime.now
     for {
       user <- event.ensureUser(dataService)
-      result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event)
+      result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event, maybeConversation)
       _ <- {
         val runtimeInMilliseconds = OffsetDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
         dataService.invocationLogEntries.createFor(
@@ -169,7 +170,7 @@ object BehaviorResponse {
                 configuration: Configuration
                 ): Future[BehaviorResponse] = {
     parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cache, configuration).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, cache, ws, configuration)
+      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, cache, ws, configuration)
     }
   }
 

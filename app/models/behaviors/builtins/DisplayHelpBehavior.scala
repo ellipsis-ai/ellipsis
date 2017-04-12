@@ -89,7 +89,7 @@ case class DisplayHelpBehavior(
       skillActions
     }
     val attachment = SlackMessageActions("help_index", actions, maybeInstructions, Some(Color.PINK))
-    TextWithActionsResult(event, intro, forcePrivateResponse = false, attachment)
+    TextWithActionsResult(event, None, intro, forcePrivateResponse = false, attachment)
   }
 
   private def actionHeadingFor(group: BehaviorGroupData): String = {
@@ -128,13 +128,13 @@ case class DisplayHelpBehavior(
          |$actionList
          |""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
-    TextWithActionsResult(event, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
+    TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
   }
 
   def emptyResult: BotResult = {
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
     val resultText = s"I don’t know anything$matchString. ${event.skillListLinkFor(isListEmpty = true, lambdaService)}"
-    TextWithActionsResult(event, resultText, forcePrivateResponse = false, SlackMessageActions("help_no_result", actions, None, Some(Color.PINK)))
+    TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_no_result", actions, None, Some(Color.PINK)))
   }
 
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {

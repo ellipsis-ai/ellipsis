@@ -257,7 +257,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
       Seq(ParameterWithValue(context.parameter, AWSLambdaConstants.invocationParamFor(0), Some(value)))
     }.getOrElse(Seq())
     for {
-      maybeResult <- context.dataService.behaviorVersions.resultFor(behaviorVersion, paramsWithValues, context.event).map(Some(_))
+      maybeResult <- context.dataService.behaviorVersions.resultFor(behaviorVersion, paramsWithValues, context.event, context.maybeConversation).map(Some(_))
     } yield maybeResult
   }
 

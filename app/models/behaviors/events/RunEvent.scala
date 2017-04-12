@@ -37,7 +37,7 @@ case class RunEvent(
   lazy val name: String = Conversation.SLACK_CONTEXT
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId, isPrivateMessage = maybeChannel.exists(isDirectMessage))
+    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId)
   }
 
   def sendMessage(

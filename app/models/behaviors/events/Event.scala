@@ -118,6 +118,14 @@ trait Event {
     }
   }
 
+  def maybeChannelForSend(
+                           forcePrivate: Boolean,
+                           maybeConversation: Option[Conversation],
+                           dataService: DataService
+                         )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    Future.successful(maybeChannel)
+  }
+
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]]
 
   def sendMessage(

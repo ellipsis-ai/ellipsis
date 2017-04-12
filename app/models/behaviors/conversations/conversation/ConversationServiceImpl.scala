@@ -80,7 +80,7 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], isPrivateMessage: Boolean): Future[Seq[Conversation]] = {
+  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Seq[Conversation]] = {
     val action = allOngoingQueryFor(userIdForContext, context).result.map { r =>
       r.map(tuple2Conversation)
     }.map { activeConvos =>
@@ -88,13 +88,7 @@ class ConversationServiceImpl @Inject() (
         activeConvos.filter(_.maybeThreadId.contains(threadId))
       }.getOrElse {
         val withoutThreadId = activeConvos.filter(_.maybeThreadId.isEmpty)
-        val withMatchingChannel = withoutThreadId.filter(_.maybeChannel == maybeChannel)
-        val matchingBecausePrivate = if (isPrivateMessage) {
-          withoutThreadId.filter(_.stateRequiresPrivateMessage)
-        } else {
-          Seq()
-        }
-        withMatchingChannel ++ matchingBecausePrivate
+        withoutThreadId.filter(_.maybeChannel == maybeChannel)
       }
 
     }
@@ -108,8 +102,8 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], isPrivateMessage: Boolean): Future[Option[Conversation]] = {
-    allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId, isPrivateMessage).map(_.headOption)
+  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Option[Conversation]] = {
+    allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId).map(_.headOption)
   }
 
   def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)
