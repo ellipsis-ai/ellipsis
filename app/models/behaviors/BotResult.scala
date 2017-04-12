@@ -44,6 +44,8 @@ sealed trait BotResult {
     }
   }
 
+  val interruptionPrompt = "You haven't answered my question yet, but I have something new to ask you."
+
   def interruptOngoingConversationsFor(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Boolean] = {
     if (maybeConversation.exists(_.maybeThreadId.isDefined)) {
       Future.successful(false)
@@ -52,8 +54,7 @@ sealed trait BotResult {
         dataService.conversations.allOngoingFor(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId).flatMap { ongoing =>
           val toInterrupt = ongoing.filterNot(ea => maybeConversation.map(_.id).contains(ea.id))
           Future.sequence(toInterrupt.map { ea =>
-            val prompt = "You haven't answered my question yet, but I have something new to ask you."
-            dataService.conversations.background(ea, prompt, includeUsername = true)
+            dataService.conversations.background(ea, interruptionPrompt, includeUsername = true)
           })
         }
       }.map(interruptionResults => interruptionResults.nonEmpty)
