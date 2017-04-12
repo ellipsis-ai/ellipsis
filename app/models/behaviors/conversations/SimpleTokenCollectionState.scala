@@ -54,7 +54,7 @@ case class SimpleTokenCollectionState(
       }.getOrElse {
         "All done!"
       }
-      SimpleTextResult(event, prompt, forcePrivateResponse = true)
+      SimpleTextResult(event, Some(conversation), prompt, forcePrivateResponse = true)
     }
   }
 

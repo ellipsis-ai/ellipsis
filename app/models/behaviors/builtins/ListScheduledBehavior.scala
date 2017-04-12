@@ -52,7 +52,7 @@ case class ListScheduledBehavior(
         responseFor(scheduled)
       }
     } yield {
-      SimpleTextResult(event, responseText, forcePrivateResponse = false)
+      SimpleTextResult(event, None, responseText, forcePrivateResponse = false)
     }
   }
 

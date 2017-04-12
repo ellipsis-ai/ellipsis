@@ -42,7 +42,7 @@ case class SlackMessageSender(
     }
   }
 
-  def sendPreamble(formattedText: String, channelToUse: String, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[Unit] = {
+  def sendPreamble(formattedText: String, channelToUse: String)(implicit actorSystem: ActorSystem): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
         _ <- if (maybeThreadId.isDefined && maybeConversation.flatMap(_.maybeThreadId).isEmpty) {
@@ -132,7 +132,7 @@ case class SlackMessageSender(
       }
     }
     for {
-      _ <- sendPreamble(formattedText, channelToUse, maybeConversation)
+      _ <- sendPreamble(formattedText, channelToUse)
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, None)
     } yield maybeLastTs
   }

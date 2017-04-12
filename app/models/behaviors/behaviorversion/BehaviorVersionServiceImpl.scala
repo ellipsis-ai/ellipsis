@@ -22,6 +22,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{Event, MessageEvent}
 import models.team.Team
 
@@ -314,16 +315,16 @@ class BehaviorVersionServiceImpl @Inject() (
         !userInfo.links.exists(_.externalSystem == app.name)
       })
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
-        Future.successful(Some(MissingTeamEnvVarsResult(event, behaviorVersion, dataService, configuration, missingTeamEnvVars)))
+        Future.successful(Some(MissingTeamEnvVarsResult(event, None, behaviorVersion, dataService, configuration, missingTeamEnvVars)))
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          Future.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, cache, dataService, configuration)))
+          Future.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None, cache, dataService, configuration)))
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
             event.ensureUser(dataService).flatMap { user =>
               dataService.loginTokens.createFor(user).map { loginToken =>
-                OAuth2TokenMissing(firstMissingOAuth2App, event, loginToken, cache, configuration)
+                OAuth2TokenMissing(firstMissingOAuth2App, event, None, loginToken, cache, configuration)
               }
             }.map(Some(_))
           }.getOrElse(Future.successful(None))
@@ -335,7 +336,8 @@ class BehaviorVersionServiceImpl @Inject() (
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
-                 event: Event
+                 event: Event,
+                 maybeConversation: Option[Conversation]
                ): Future[BotResult] = {
     for {
       teamEnvVars <- dataService.teamEnvironmentVariables.allFor(behaviorVersion.team)
@@ -343,7 +345,7 @@ class BehaviorVersionServiceImpl @Inject() (
       userEnvVars <- dataService.userEnvironmentVariables.allFor(user)
       result <- maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(Future.successful).getOrElse {
-          lambdaService.invoke(behaviorVersion, parametersWithValues, (teamEnvVars ++ userEnvVars), event)
+          lambdaService.invoke(behaviorVersion, parametersWithValues, (teamEnvVars ++ userEnvVars), event, maybeConversation)
         }
       }
     } yield result
@@ -379,34 +381,4 @@ class BehaviorVersionServiceImpl @Inject() (
     }.isDefined
   }
 
-  def resultFor(
-                 behaviorVersion: BehaviorVersion,
-                 payload: ByteBuffer,
-                 logResult: AWSLambdaLogResult,
-                 parametersWithValues: Seq[ParameterWithValue],
-                 configuration: Configuration,
-                 event: MessageEvent
-               ): BotResult = {
-    val bytes = payload.array
-    val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
-    val json = Json.parse(jsonString)
-    val logResultOption = Some(logResult)
-    (json \ "result").toOption.map { successResult =>
-      SuccessResult(event, successResult, parametersWithValues, behaviorVersion.maybeResponseTemplate, logResultOption, behaviorVersion.forcePrivateResponse)
-    }.getOrElse {
-      if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(event, logResultOption)
-      } else {
-        if (isUnhandledError(json)) {
-          UnhandledErrorResult(event, behaviorVersion, dataService, configuration, logResultOption)
-        } else if (json.toString == "null") {
-          NoCallbackTriggeredResult(event, behaviorVersion, dataService, configuration)
-        } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(event, behaviorVersion, dataService, configuration, json, logResultOption)
-        } else {
-          HandledErrorResult(event, behaviorVersion, dataService, configuration, json, logResultOption)
-        }
-      }
-    }
-  }
 }

@@ -155,25 +155,17 @@ class APIController @Inject() (
       isInvokedExternally <- Future.successful(context.maybeUserForApiToken.isDefined)
       result <- maybeEvent.map { event =>
         for {
-          didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
           result <- eventHandler.handle(event, None).map { results =>
             results.foreach { result =>
               val eventualIntroSend = if (isInvokedExternally) {
                 context.maybeSlackProfile.map { slackProfile =>
-                  val resultText = if (didInterrupt) {
-                    s"""Meanwhile, <@${slackProfile.loginInfo.providerKey}> asked me to run `${event.messageText}`.
-                       |
-                       |───
-                       |""".stripMargin
-                  } else {
-                    s""":wave: Hi.
-                       |
-                       |<@${slackProfile.loginInfo.providerKey}> asked me to run `${event.messageText}`.
-                       |
-                       |───
-                       |""".stripMargin
-                  }
-                  val introResult = SimpleTextResult(event, resultText, result.forcePrivateResponse)
+                  val resultText = s""":wave: Hi.
+                    |
+                    |<@${slackProfile.loginInfo.providerKey}> asked me to run `${event.messageText}`.
+                    |
+                    |───
+                    |""".stripMargin
+                  val introResult = SimpleTextResult(event, result.maybeConversation, resultText, result.forcePrivateResponse)
                   introResult.sendIn(None, None, dataService)
                 }.getOrElse(Future.successful({}))
               } else {
@@ -443,7 +435,7 @@ class APIController @Inject() (
           context <- ApiMethodContext.createFor(info.token)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel)
           result <- maybeEvent.map { event =>
-            val botResult = SimpleTextResult(event, info.message, forcePrivateResponse = false)
+            val botResult = SimpleTextResult(event, None, info.message, forcePrivateResponse = false)
             botResult.sendIn(None, None, dataService).map { _ =>
               Ok(Json.toJson(Seq(botResult.fullText)))
             }

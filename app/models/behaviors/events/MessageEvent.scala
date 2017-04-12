@@ -20,7 +20,7 @@ trait MessageEvent extends Event {
   def isDirectMessage(channel: String): Boolean
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId, maybeChannel.exists(isDirectMessage))
+    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId)
   }
 
   def allBehaviorResponsesFor(

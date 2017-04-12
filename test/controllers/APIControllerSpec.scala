@@ -78,7 +78,6 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     implicit val actorSystem = apiController.actorSystem
     when(mockSlackChannels.maybeIdFor(defaultChannel)).thenReturn(Future.successful(Some(defaultChannel)))
 
-    when(eventHandler.interruptOngoingConversationsFor(any[Event])).thenReturn(Future.successful(false))
     when(eventHandler.handle(any[Event], org.mockito.Matchers.eq(None))).thenReturn(Future.successful(Seq(SimpleTextResult(event, "result", forcePrivateResponse = false))))
 
     val mockSlackClient = mock[SlackApiClient]

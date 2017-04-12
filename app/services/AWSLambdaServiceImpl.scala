@@ -14,6 +14,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.behaviors.invocationtoken.InvocationToken
@@ -111,7 +112,8 @@ class AWSLambdaServiceImpl @Inject() (
                       event: Event,
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                       environmentVariables: Seq[EnvironmentVariable],
-                      successFn: InvokeResult => BotResult
+                      successFn: InvokeResult => BotResult,
+                      maybeConversation: Option[Conversation]
                     ): Future[BotResult] = {
     for {
       userInfo <- event.userInfo(ws, dataService)
@@ -135,7 +137,7 @@ class AWSLambdaServiceImpl @Inject() (
           JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recover {
             case e: java.util.concurrent.ExecutionException => {
               e.getMessage match {
-                case amazonServiceExceptionRegex() => AWSDownResult(event)
+                case amazonServiceExceptionRegex() => AWSDownResult(event, maybeConversation)
                 case _ => throw e
               }
             }
@@ -149,12 +151,13 @@ class AWSLambdaServiceImpl @Inject() (
               behaviorVersion: BehaviorVersion,
               parametersWithValues: Seq[ParameterWithValue],
               environmentVariables: Seq[EnvironmentVariable],
-              event: Event
+              event: Event,
+              maybeConversation: Option[Conversation]
               ): Future[BotResult] = {
     for {
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion.groupVersion)
       result <- if (behaviorVersion.functionBody.isEmpty) {
-        Future.successful(SuccessResult(event, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
+        Future.successful(SuccessResult(event, maybeConversation, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
       } else {
         for {
           user <- event.ensureUser(dataService)
@@ -170,8 +173,9 @@ class AWSLambdaServiceImpl @Inject() (
             result => {
               val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
               val logResult = AWSLambdaLogResult.fromText(logString)
-              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration, event)
-            }
+              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration, event, maybeConversation)
+            },
+            maybeConversation
           )
         } yield invocationResult
       }

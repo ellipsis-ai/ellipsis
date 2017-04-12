@@ -51,11 +51,13 @@ case class SlackMessageEvent(
   lazy val name: String = Conversation.SLACK_CONTEXT
 
   def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId, maybeChannel.exists(isDirectMessage))
+    dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId).flatMap { maybeConvo =>
+      maybeConvo.map(c => Future.successful(Some(c))).getOrElse(maybeConversationRootedHere(dataService))
+    }
   }
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), maybeChannel.exists(isDirectMessage))
+    dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts))
   }
 
   override def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
@@ -88,6 +90,14 @@ case class SlackMessageEvent(
         }
       }.getOrElse(channel)
     }
+  }
+
+  override def maybeChannelForSend(
+                           forcePrivate: Boolean,
+                           maybeConversation: Option[Conversation],
+                           dataService: DataService
+                         )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    channelForSend(forcePrivate, maybeConversation, dataService).map(Some(_))
   }
 
   def sendMessage(
