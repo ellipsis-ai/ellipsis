@@ -368,7 +368,7 @@ class SlackController @Inject() (
               info.maybeHelpIndexAt.foreach { index =>
                 info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
-                    DisplayHelpBehavior(None, None, Some(index), isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, None, dataService))
+                    DisplayHelpBehavior(None, None, Some(index), isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, dataService))
                   }.getOrElse(Future.successful({}))
                 }.recover {
                   case t: Throwable => {
@@ -382,7 +382,7 @@ class SlackController @Inject() (
                 info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
                     val result = DisplayHelpBehavior(maybeSearchText, Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
-                    result.flatMap(result => result.sendIn(None, None, dataService))
+                    result.flatMap(result => result.sendIn(None, dataService))
                   }.getOrElse(Future.successful({}))
                 }.recover {
                   case t: Throwable => {
@@ -423,8 +423,8 @@ class SlackController @Inject() (
                       cache.get[SlackMessageEvent](convo.pendingEventKey).map { event =>
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(
-                            results.map(result => result.sendIn(None, None, dataService).map { _ =>
-                              Logger.info(event.logTextFor(result, None))
+                            results.map(result => result.sendIn(None, dataService).map { _ =>
+                              Logger.info(event.logTextFor(result))
                             })
                           )
                         }

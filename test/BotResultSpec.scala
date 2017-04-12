@@ -35,15 +35,15 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
 
   def runNow[T](f: Future[T]) = Await.result(f, 30.seconds)
 
-  def newEventFor(team: Team): SlackMessageEvent = {
+  def newEventFor(team: Team, maybeThreadId: Option[String] = defaultThreadId): SlackMessageEvent = {
     val profile = SlackBotProfile(defaultSlackBotUserId, team.id, defaultSlackTeamId, defaultSlackToken, OffsetDateTime.now)
-    SlackMessageEvent(profile, defaultChannel, defaultThreadId, defaultSlackUserId, "", SlackTimestamp.now)
+    SlackMessageEvent(profile, defaultChannel, maybeThreadId, defaultSlackUserId, "", SlackTimestamp.now)
   }
 
-  def newMockConversation: Conversation = {
+  def newMockConversation(maybeThreadId: Option[String] = None): Conversation = {
     val convo = mock[Conversation]
     when(convo.id).thenReturn(IDs.next)
-    when(convo.maybeThreadId).thenReturn(None)
+    when(convo.maybeThreadId).thenReturn(maybeThreadId)
     when(convo.maybeChannel).thenReturn(Some(defaultChannel))
     convo
   }
@@ -53,6 +53,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
                   responseText: String,
                   resultTs: String,
                   ongoingConversations: Seq[Conversation],
+                  maybeThreadId: Option[String],
                   dataService: DataService
                 ): Unit = {
     val slackClient = mock[SlackApiClient]
@@ -74,7 +75,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
       None,
       None,
       None,
-      None,
+      maybeThreadId,
       Some(false)
     )).thenReturn(Future.successful(resultTs))
 
@@ -89,9 +90,9 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
         val result = SuccessResult(event, None, JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
         val resultTs: String = SlackTimestamp.now
 
-        setUpMocks(event, responseText, resultTs, Seq(), dataService)
+        setUpMocks(event, responseText, resultTs, Seq(), None, dataService)
 
-        runNow(result.sendIn(None, None, dataService)) mustBe Some(resultTs)
+        runNow(result.sendIn(None, dataService)) mustBe Some(resultTs)
       }
     }
 
@@ -102,13 +103,13 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
         val result = SuccessResult(event, None, JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
         val resultTs: String = SlackTimestamp.now
 
-        val conversation = newMockConversation
+        val conversation = newMockConversation()
 
-        setUpMocks(event, responseText, resultTs, Seq(conversation), dataService)
+        setUpMocks(event, responseText, resultTs, Seq(conversation), None, dataService)
 
         when(dataService.conversations.background(conversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
 
-        runNow(result.sendIn(None, None, dataService)) mustBe Some(resultTs)
+        runNow(result.sendIn(None, dataService)) mustBe Some(resultTs)
 
         Mockito.verify(dataService.conversations, times(1)).background(conversation, result.interruptionPrompt, true)
       }
@@ -121,13 +122,13 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
         val result = NoResponseResult(event, None, None)
         val resultTs: String = SlackTimestamp.now
 
-        val conversation = newMockConversation
+        val conversation = newMockConversation()
 
-        setUpMocks(event, responseText, resultTs, Seq(conversation), dataService)
+        setUpMocks(event, responseText, resultTs, Seq(conversation), None, dataService)
 
         when(dataService.conversations.background(conversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
 
-        runNow(result.sendIn(None, None, dataService)) mustBe None
+        runNow(result.sendIn(None, dataService)) mustBe None
 
         Mockito.verify(dataService.conversations, times(0)).background(conversation, result.interruptionPrompt, true)
       }
@@ -139,20 +140,44 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
         val responseText = "response"
         val resultTs: String = SlackTimestamp.now
 
-        val selfConversation = newMockConversation
-        val otherConversation = newMockConversation
+        val selfConversation = newMockConversation()
+        val otherConversation = newMockConversation()
 
         val result = SuccessResult(event, Some(selfConversation), JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
 
-        setUpMocks(event, responseText, resultTs, Seq(selfConversation, otherConversation), dataService)
+        setUpMocks(event, responseText, resultTs, Seq(selfConversation, otherConversation), None, dataService)
 
         when(dataService.conversations.background(selfConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
         when(dataService.conversations.background(otherConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
 
-        runNow(result.sendIn(None, Some(selfConversation), dataService)) mustBe Some(resultTs)
+        runNow(result.sendIn(None, dataService)) mustBe Some(resultTs)
 
         Mockito.verify(dataService.conversations, times(0)).background(selfConversation, result.interruptionPrompt, true)
         Mockito.verify(dataService.conversations, times(1)).background(otherConversation, result.interruptionPrompt, true)
+      }
+    }
+
+    "not interrupt for message in thread" in new TestContext {
+      running(app) {
+        val threadId = IDs.next
+        val event: SlackMessageEvent = newEventFor(team, Some(threadId))
+        val responseText = "response"
+        val resultTs: String = SlackTimestamp.now
+
+        val threadedConversation = newMockConversation(Some(threadId))
+        val otherConversation = newMockConversation()
+
+        val result = SuccessResult(event, Some(threadedConversation), JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
+
+        setUpMocks(event, responseText, resultTs, Seq(otherConversation), Some(threadId), dataService)
+
+        when(dataService.conversations.background(threadedConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
+        when(dataService.conversations.background(otherConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
+
+        runNow(result.sendIn(None, dataService)) mustBe Some(resultTs)
+
+        Mockito.verify(dataService.conversations, times(0)).background(threadedConversation, result.interruptionPrompt, true)
+        Mockito.verify(dataService.conversations, times(0)).background(otherConversation, result.interruptionPrompt, true)
       }
     }
 

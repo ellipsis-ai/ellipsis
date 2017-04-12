@@ -157,7 +157,7 @@ class ConversationServiceImpl @Inject() (
         val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
         dataService.conversations.save(convoWithThreadId).flatMap { _ =>
           convoWithThreadId.respond(event, lambdaService, dataService, cache, ws, configuration).map { result =>
-            result.sendIn(None, Some(convoWithThreadId), dataService)
+            result.sendIn(None, dataService)
           }
         }
       }.getOrElse(Future.successful({}))
