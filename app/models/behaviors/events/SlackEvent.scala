@@ -20,5 +20,12 @@ trait SlackEvent {
   def isPrivateChannel(channelId: String): Boolean = {
     channelId.startsWith("G")
   }
+  def messageRecipientPrefixFor(channelId: String): String = {
+    if (isDirectMessage(channelId)) {
+      ""
+    } else {
+      s"<@$user>: "
+    }
+  }
 
 }

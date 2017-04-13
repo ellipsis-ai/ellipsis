@@ -45,7 +45,7 @@ case class SlackMessageEvent(
   override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId
   val userIdForContext: String = user
-
+  val messageRecipientPrefix: String = messageRecipientPrefixFor(channel)
 
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
