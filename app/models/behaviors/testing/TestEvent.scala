@@ -30,6 +30,7 @@ case class TestEvent(
   lazy val maybeThreadId = None
   def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem) = Future.successful(None)
   val isResponseExpected = true
+  val messageRecipientPrefix: String = ""
 
   def isDirectMessage(channel: String): Boolean = false
 

@@ -49,7 +49,8 @@ sealed trait BehaviorParameterType {
       val preamble = if (!isFirst || paramCount == 0) {
         ""
       } else {
-        s"<@${context.event.userIdForContext}>: " ++ (if (paramCount == 1) {
+        val userMention = context.event.messageRecipientPrefix
+        userMention ++ (if (paramCount == 1) {
           s"I need to ask you a question."
         } else if (paramCount == 2) {
           s"I need to ask you a couple questions."

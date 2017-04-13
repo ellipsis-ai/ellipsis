@@ -32,6 +32,7 @@ case class RunEvent(
 
   val teamId: String = behavior.team.id
   val userIdForContext: String = user
+  val messageRecipientPrefix: String = messageRecipientPrefixFor(channel)
 
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
