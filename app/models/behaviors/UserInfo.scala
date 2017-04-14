@@ -37,7 +37,7 @@ object MessageInfo {
 }
 
 case class UserInfo(
-                     maybeUser: Option[User],
+                     user: User,
                      links: Seq[LinkedInfo],
                      maybeMessageInfo: Option[MessageInfo]
                    ) {
@@ -51,9 +51,7 @@ case class UserInfo(
     val messageInfoPart = maybeMessageInfo.map { info =>
       Seq("messageInfo" -> Json.toJson(info))
     }.getOrElse(Seq())
-    val userParts = maybeUser.map { user =>
-      Seq("ellipsisUserId" -> JsString(user.id))
-    }.getOrElse(Seq())
+    val userParts = Seq("ellipsisUserId" -> JsString(user.id))
     JsObject(userParts ++ linkParts ++ messageInfoPart)
   }
 }
@@ -76,8 +74,11 @@ object UserInfo {
         }
       }
       messageInfo <- event.messageInfo(ws, dataService)
+      user <- maybeUser.map(Future.successful).getOrElse {
+        event.ensureUser(dataService)
+      }
     } yield {
-      UserInfo(maybeUser, links, Some(messageInfo))
+      UserInfo(user, links, Some(messageInfo))
     }
   }
 
