@@ -92,10 +92,10 @@ case class DisplayHelpBehavior(
     TextWithActionsResult(event, None, intro, forcePrivateResponse = false, attachment)
   }
 
-  private def actionHeadingFor(group: BehaviorGroupData): String = {
-    val numActions = group.behaviorVersions.filterNot(version => version.isDataType).length
+  private def actionHeadingFor(actionList: Seq[String]): String = {
+    val numActions = actionList.length
     if (numActions == 0) {
-      "This skill has no actions."
+      "No actions to display."
     } else {
       (if (numActions == 1) {
         "_**1 action**_"
@@ -119,13 +119,13 @@ case class DisplayHelpBehavior(
       .map(name => s"**$name**")
       .getOrElse("**Miscellaneous skills**")
 
-    val actionList = result.sortedActionListFor(group.behaviorVersions)
+    val actionList = result.sortedActionListFor(group.behaviorVersions, trimNonMatching = group.id.isEmpty)
 
     val resultText =
       s"""$intro
          |
-         |$name  \n${result.description}\n\n${actionHeadingFor(group)}
-         |$actionList
+         |$name  \n${result.description}\n\n${actionHeadingFor(actionList)}
+         |${actionList.mkString("")}
          |""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
     TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
