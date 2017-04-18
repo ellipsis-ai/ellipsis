@@ -173,8 +173,8 @@ return React.createClass({
   renderSharingInfo: function() {
     if (this.props.isShared) {
       return (
-        <div className="box-tip mbneg1 plm">
-          <span className="display-inline-block align-b type-pink mrs" style={{ height: 24 }}>
+        <div className="box-tip mtneg1 mbneg1 phs border-left border-right">
+          <span className="display-inline-block align-b type-green mrs" style={{ height: 24 }}>
             <SVGTip />
           </span>
           <span className="type-s mrm">This input is shared with other actions.</span>
@@ -185,8 +185,8 @@ return React.createClass({
 
   render: function() {
     return (
-      <div className="border border-light">
-        <div className="bg-white plm pbxs">
+      <div>
+        <div className="border border-light bg-white plm pbxs">
           <div className="columns columns-elastic">
             <div className="column column-expand align-form-input">
               <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
