@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import json.BehaviorGroupData
 import models.behaviors.events._
 import models.behaviors.{BotResult, TextWithActionsResult}
-import models.help.{HelpResult, HelpSearchResult, SimpleHelpResult}
+import models.help._
 import services.{AWSLambdaService, DataService}
 import utils._
 
@@ -73,8 +73,8 @@ case class DisplayHelpBehavior(
     }
     val skillActions = resultsToShow.map(result => {
       val group = result.group
-      val label = group.name.getOrElse("")
-      val helpActionValue = group.id.getOrElse("(untitled)")
+      val label = group.name
+      val helpActionValue = group.maybeGroupId.getOrElse("(untitled)")
       maybeHelpSearch.map { helpSearch =>
         SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
       }.getOrElse {
@@ -114,12 +114,9 @@ case class DisplayHelpBehavior(
     }
 
     val group = result.group
-    val name = group.name
-      .filterNot(name => group.id.isEmpty || name.trim.isEmpty)
-      .map(name => s"**$name**")
-      .getOrElse("**Miscellaneous skills**")
+    val name = s"**${group.longName}**"
 
-    val actionList = result.sortedActionListFor(group.behaviorVersions, trimNonMatching = group.id.isEmpty)
+    val actionList = result.sortedActionListFor(group.behaviorVersions, trimNonMatching = group.isMiscellaneous)
 
     val resultText =
       s"""$intro
@@ -157,13 +154,13 @@ case class DisplayHelpBehavior(
       }.getOrElse(Future.successful(Seq()))
     } yield {
       val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
-      val flattenedGroupData = ArrayBuffer[BehaviorGroupData]()
-      flattenedGroupData ++= named
+      val flattenedGroupData = ArrayBuffer[HelpGroupData]()
+      flattenedGroupData ++= named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
       if (unnamed.nonEmpty) {
-        flattenedGroupData += flattenUnnamedBehaviorGroupData(unnamed)
+        flattenedGroupData += MiscHelpGroupData(unnamed)
       }
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        FuzzyMatcher[BehaviorGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService))
+        FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService))
       }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService)))
       if (matchingGroupData.isEmpty) {
         emptyResult

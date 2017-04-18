@@ -9,7 +9,7 @@ import scala.util.matching.Regex
 
 case class HelpSearchResult(
                              searchQuery: String,
-                             underlying: FuzzyMatchResult[BehaviorGroupData],
+                             underlying: FuzzyMatchResult[HelpGroupData],
                              event: Event,
                              dataService: DataService,
                              lambdaService: AWSLambdaService

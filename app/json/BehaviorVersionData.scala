@@ -9,7 +9,6 @@ import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import Formatting._
 import models.IDs
-import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import services.DataService
 
@@ -19,6 +18,7 @@ case class BehaviorVersionData(
                                 id: Option[String],
                                 teamId: String,
                                 behaviorId: Option[String],
+                                groupId: Option[String],
                                 isNewBehavior: Option[Boolean],
                                 name: Option[String],
                                 description: Option[String],
@@ -94,6 +94,7 @@ object BehaviorVersionData {
                 id: Option[String],
                 teamId: String,
                 behaviorId: Option[String],
+                groupId: Option[String],
                 isNewBehavior: Boolean,
                 description: Option[String],
                 functionBody: String,
@@ -117,6 +118,7 @@ object BehaviorVersionData {
       id,
       teamId,
       behaviorId,
+      groupId,
       Some(isNewBehavior),
       config.name,
       description,
@@ -137,6 +139,7 @@ object BehaviorVersionData {
       Some(IDs.next),
       teamId,
       Some(IDs.next),
+      None,
       isNewBehavior = true,
       None,
       "",
@@ -166,6 +169,7 @@ object BehaviorVersionData {
     BehaviorVersionData.buildFor(
       None,
       teamId,
+      None,
       None,
       isNewBehavior = false,
       maybeDescription,
@@ -227,6 +231,7 @@ object BehaviorVersionData {
           Some(behaviorVersion.id),
           behaviorVersion.team.id,
           Some(behavior.id),
+          maybeGroupVersion.map(_.group.id),
           isNewBehavior = false,
           behaviorVersion.maybeDescription,
           behaviorVersion.functionBody,

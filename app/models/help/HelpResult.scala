@@ -6,7 +6,7 @@ import services.{AWSLambdaService, DataService}
 
 trait HelpResult {
   val event: Event
-  val group: BehaviorGroupData
+  val group: HelpGroupData
   val matchingTriggers: Seq[BehaviorTriggerData]
 
   val dataService: DataService
@@ -14,7 +14,7 @@ trait HelpResult {
 
   def description: String
 
-  lazy val trimmedGroupDescription: String = group.description.filter(_.trim.nonEmpty).getOrElse("")
+  lazy val trimmedGroupDescription: String = group.description
 
   private def triggerStringFor(trigger: BehaviorTriggerData): String = {
     val prefix = if (trigger.requiresMention)
@@ -64,7 +64,7 @@ trait HelpResult {
         None
       } else {
         val linkText = (for {
-          groupId <- group.id
+          groupId <- behaviorVersion.groupId
           behaviorId <- behaviorVersion.behaviorId
         } yield {
           val url = dataService.behaviors.editLinkFor(groupId, Some(behaviorId), lambdaService.configuration)
