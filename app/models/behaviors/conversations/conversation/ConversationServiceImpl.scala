@@ -165,7 +165,7 @@ class ConversationServiceImpl @Inject() (
       _ <- maybeEvent.map { event =>
         val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
         dataService.conversations.save(convoWithThreadId).flatMap { _ =>
-          convoWithThreadId.respond(event, lambdaService, dataService, cache, ws, configuration).map { result =>
+          convoWithThreadId.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration).map { result =>
             result.sendIn(None, dataService)
           }
         }

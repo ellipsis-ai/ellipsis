@@ -71,6 +71,7 @@ trait Conversation {
   def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
   def respond(
                event: Event,
+               isReminding: Boolean,
                lambdaService: AWSLambdaService,
                dataService: DataService,
                cache: CacheApi,
@@ -88,7 +89,7 @@ trait Conversation {
                ): Future[BotResult] = {
     for {
       updatedConversation <- updateWith(event, lambdaService, dataService, cache, configuration)
-      result <- updatedConversation.respond(event, lambdaService, dataService, cache, ws, configuration)
+      result <- updatedConversation.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration)
     } yield result
   }
 
@@ -110,7 +111,7 @@ trait Conversation {
                       ): Future[Option[BotResult]] = {
     maybePlaceholderEvent(dataService).flatMap { maybeEvent =>
       maybeEvent.map { event =>
-        respond(event, lambdaService, dataService, cache, ws, configuration).map(Some(_))
+        respond(event, isReminding=true, lambdaService, dataService, cache, ws, configuration).map(Some(_))
       }.getOrElse(Future.successful(None))
     }
   }

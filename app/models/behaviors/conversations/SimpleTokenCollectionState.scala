@@ -41,7 +41,7 @@ case class SimpleTokenCollectionState(
     } yield updatedConversation
   }
 
-  def promptResultFor(conversation: Conversation): Future[BotResult] = {
+  def promptResultFor(conversation: Conversation, isReminding: Boolean): Future[BotResult] = {
     maybeNextToCollect.map { maybeNextToCollect =>
       val prompt = maybeNextToCollect.map { api =>
         s"""
