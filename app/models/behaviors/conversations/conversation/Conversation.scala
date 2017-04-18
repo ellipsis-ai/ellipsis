@@ -46,7 +46,7 @@ trait Conversation {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
 
-  private def maybeSlackEventForBackgrounding(dataService: DataService): Future[Option[Event]] = {
+  private def maybeSlackPlaceholderEvent(dataService: DataService): Future[Option[Event]] = {
     dataService.slackBotProfiles.allFor(behaviorVersion.team).map { botProfiles =>
       for {
         botProfile <- botProfiles.headOption
@@ -55,9 +55,9 @@ trait Conversation {
     }
   }
 
-  def maybeEventForBackgrounding(dataService: DataService): Future[Option[Event]] = {
+  def maybePlaceholderEvent(dataService: DataService): Future[Option[Event]] = {
     context match {
-      case Conversation.SLACK_CONTEXT => maybeSlackEventForBackgrounding(dataService)
+      case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEvent(dataService)
       case _ => Future.successful(None)
     }
   }
@@ -100,6 +100,20 @@ trait Conversation {
                                ws: WSClient,
                                configuration: Configuration
                              ): Future[Option[BehaviorParameter]]
+
+  def maybeRemindResult(
+                        lambdaService: AWSLambdaService,
+                        dataService: DataService,
+                        cache: CacheApi,
+                        ws: WSClient,
+                        configuration: Configuration
+                      ): Future[Option[BotResult]] = {
+    maybePlaceholderEvent(dataService).flatMap { maybeEvent =>
+      maybeEvent.map { event =>
+        respond(event, lambdaService, dataService, cache, ws, configuration).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    }
+  }
 
   def toRaw: RawConversation = {
     RawConversation(
