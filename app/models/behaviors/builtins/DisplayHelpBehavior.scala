@@ -119,7 +119,7 @@ case class DisplayHelpBehavior(
       .map(name => s"**$name**")
       .getOrElse("**Miscellaneous skills**")
 
-    val actionList = group.behaviorVersions.flatMap(version => result.helpStringFor(version)).mkString("")
+    val actionList = result.sortedActionListFor(group.behaviorVersions)
 
     val resultText =
       s"""$intro

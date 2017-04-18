@@ -28,6 +28,14 @@ trait HelpResult {
     }
   }
 
+  def sortedActionListFor(behaviorVersions: Seq[BehaviorVersionData]): String = {
+    behaviorVersions.sortWith((version1, version2) => {
+      val version1Matching = version1.triggers.exists(matchingTriggers.contains)
+      val version2Matching = version2.triggers.exists(matchingTriggers.contains)
+      version1Matching && !version2Matching
+    }).flatMap(version => helpStringFor(version)).mkString("")
+  }
+
   def helpStringFor(behaviorVersion: BehaviorVersionData): Option[String] = {
     val triggers = behaviorVersion.triggers
     if (triggers.isEmpty) {
