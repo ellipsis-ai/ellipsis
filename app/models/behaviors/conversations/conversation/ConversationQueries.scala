@@ -63,7 +63,7 @@ object ConversationQueries {
   def uncompiledAllNeedingReminderQuery(windowStart: Rep[OffsetDateTime], windowEnd: Rep[OffsetDateTime]) = {
     uncompiledAllPendingQuery.
       filter { case((convo, _), _) => convo.startedAt >= windowStart }.
-      filter { case((convo, _), _) => convo.maybeLastInteractionAt.map(dt => dt < windowEnd).getOrElse(true) }
+      filter { case((convo, _), _) => convo.maybeLastInteractionAt.map(dt => dt < windowEnd).getOrElse(convo.startedAt < windowEnd) }
   }
   val allNeedingReminderQuery = Compiled(uncompiledAllNeedingReminderQuery _)
 
