@@ -38,10 +38,7 @@ class ConversationReminderActor @Inject()(
         Future.sequence(pending.map { ea =>
           ea.maybeRemindResult(lambdaService, dataService, cache, ws, configuration).flatMap { maybeResult =>
             maybeResult.map { result =>
-              val intro = s"""───
-                            |
-                            |Hey <@${ea.userIdForContext}>, don’t forget, I’m still waiting for your answer to this:""".stripMargin
-              result.sendIn(None, dataService, Some(intro)).flatMap { maybeSendResult =>
+              result.sendIn(None, dataService, None).flatMap { maybeSendResult =>
                 dataService.conversations.touch(ea)
               }
             }.getOrElse(Future.successful(None))
