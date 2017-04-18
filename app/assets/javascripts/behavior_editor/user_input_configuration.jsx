@@ -131,7 +131,7 @@ define(function(require) {
                     </p>
                   </div>
                   <div className="column column-shrink align-r align-m narrow-align-l display-ellipsis mobile-display-no-ellipsis">
-                    <button type="button" className="button-s mbs mobile-mrm" onClick={this.props.onInputAdd}>Add an input</button>
+                    <button type="button" className="button-s mbs mobile-mrm" onClick={this.addInput}>Add an input</button>
                     {this.renderReuseInput({ className: "mlm mobile-mln mbs" })}
                   </div>
                 </div>
