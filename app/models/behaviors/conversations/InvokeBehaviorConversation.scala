@@ -94,6 +94,7 @@ case class InvokeBehaviorConversation(
 
   def respond(
                event: Event,
+               isReminding: Boolean,
                lambdaService: AWSLambdaService,
                dataService: DataService,
                cache: CacheApi,
@@ -102,7 +103,7 @@ case class InvokeBehaviorConversation(
              ): Future[BotResult] = {
     for {
       collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
-      result <- collectionStates.find(_.name == state).map(_.promptResultFor(this)).getOrElse {
+      result <- collectionStates.find(_.name == state).map(_.promptResultFor(this, isReminding)).getOrElse {
         val paramState = paramStateIn(collectionStates)
         BehaviorResponse.buildFor(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), lambdaService, dataService, cache, ws, configuration).flatMap { br =>
           br.resultForFilledOut

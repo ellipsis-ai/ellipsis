@@ -77,12 +77,12 @@ case class ParamCollectionState(
     } yield updatedConversation
   }
 
-  def promptResultFor(conversation: Conversation): Future[BotResult] = {
+  def promptResultFor(conversation: Conversation, isReminding: Boolean): Future[BotResult] = {
     for {
       maybeNextToCollect <- maybeNextToCollect(conversation)
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
         val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration)
-        param.prompt(maybeValue, context, this)
+        param.prompt(maybeValue, context, this, isReminding)
       }.getOrElse {
         Future.successful("All done!")
       }.map { prompt =>

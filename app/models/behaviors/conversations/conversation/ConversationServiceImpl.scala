@@ -102,6 +102,15 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def allNeedingReminder: Future[Seq[Conversation]] = {
+    val reminderWindowStart = OffsetDateTime.now.minusHours(1)
+    val reminderWindowEnd = OffsetDateTime.now.minusMinutes(30)
+    val action = allNeedingReminderQuery(reminderWindowStart, reminderWindowEnd).result.map { r =>
+      r.map(tuple2Conversation)
+    }
+    dataService.run(action)
+  }
+
   def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Option[Conversation]] = {
     allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId).map(_.headOption)
   }
@@ -141,7 +150,7 @@ class ConversationServiceImpl @Inject() (
 
   def background(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
-      maybeEvent <- conversation.maybeEventForBackgrounding(dataService)
+      maybeEvent <- conversation.maybePlaceholderEvent(dataService)
       maybeLastTs <- maybeEvent.map { event =>
         val usernameString = if (includeUsername) { s"<@${event.userIdForContext}>: " } else { "" }
         event.sendMessage(
@@ -156,7 +165,7 @@ class ConversationServiceImpl @Inject() (
       _ <- maybeEvent.map { event =>
         val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
         dataService.conversations.save(convoWithThreadId).flatMap { _ =>
-          convoWithThreadId.respond(event, lambdaService, dataService, cache, ws, configuration).map { result =>
+          convoWithThreadId.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration).map { result =>
             result.sendIn(None, dataService)
           }
         }

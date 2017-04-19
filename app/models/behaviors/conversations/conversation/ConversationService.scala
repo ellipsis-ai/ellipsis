@@ -12,6 +12,8 @@ trait ConversationService {
 
   def allForeground: Future[Seq[Conversation]]
 
+  def allNeedingReminder: Future[Seq[Conversation]]
+
   def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Option[Conversation]]
 
   def cancel(conversation: Conversation): Future[Unit]

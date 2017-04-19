@@ -311,6 +311,10 @@ class SlackController @Inject() (
       actions.find(_.name == "dont_continue_conversation").flatMap(_.value)
     }
 
+    def maybeStopConversationId: Option[String] = {
+      actions.find(_.name == "stop_conversation").flatMap(_.value)
+    }
+
     def maybeFutureEvent: Future[Option[SlackMessageEvent]] = {
       dataService.slackBotProfiles.allForSlackTeamId(this.team.id).map { botProfiles =>
         botProfiles.headOption.map { botProfile =>
@@ -434,6 +438,16 @@ class SlackController @Inject() (
                 }
                 shouldRemoveActions = true
                 resultText = s"$user clicked 'No'"
+              }
+
+              info.maybeStopConversationId.foreach { conversationId =>
+                dataService.conversations.find(conversationId).flatMap { maybeConversation =>
+                  maybeConversation.map { convo =>
+                    dataService.conversations.cancel(convo)
+                  }.getOrElse(Future.successful({}))
+                }
+                shouldRemoveActions = true
+                resultText = s"$user stopped the conversation"
               }
 
               // respond immediately by appending a new attachment

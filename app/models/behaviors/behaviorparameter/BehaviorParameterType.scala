@@ -40,13 +40,14 @@ sealed trait BehaviorParameterType {
   def promptFor(
                  maybePreviousCollectedValue: Option[String],
                  context: BehaviorParameterContext,
-                 paramState: ParamCollectionState
+                 paramState: ParamCollectionState,
+                 isReminding: Boolean
                ): Future[String] = {
     for {
       isFirst <- context.isFirstParam
       paramCount <- context.unfilledParamCount(paramState)
     } yield {
-      val preamble = if (!isFirst || paramCount == 0) {
+      val preamble = if (isReminding || !isFirst || paramCount == 0) {
         ""
       } else {
         context.event.messageRecipientPrefix ++ (if (paramCount == 1) {
@@ -313,10 +314,11 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
                                     maybeSearchQuery: Option[String],
                                     maybePreviousCollectedValue: Option[String],
                                     context: BehaviorParameterContext,
-                                    paramState: ParamCollectionState
+                                    paramState: ParamCollectionState,
+                                    isReminding: Boolean
                                   ): Future[String] = {
     for {
-      superPrompt <- super.promptFor(maybePreviousCollectedValue, context, paramState)
+      superPrompt <- super.promptFor(maybePreviousCollectedValue, context, paramState, isReminding)
       maybeValidValuesResult <- fetchValidValuesResult(maybeSearchQuery, context)
       output <- maybeValidValuesResult.map {
         case r: SuccessResult => {
@@ -350,13 +352,14 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   private def promptForSearchCase(
                                    maybePreviousCollectedValue: Option[String],
                                    context: BehaviorParameterContext,
-                                   paramState: ParamCollectionState
+                                   paramState: ParamCollectionState,
+                                   isReminding: Boolean
                                  ): Future[String] = {
 
     maybeCachedSearchQueryFor(context).map { searchQuery =>
-      promptForListAllCase(Some(searchQuery), maybePreviousCollectedValue, context, paramState)
+      promptForListAllCase(Some(searchQuery), maybePreviousCollectedValue, context, paramState, isReminding)
     }.getOrElse {
-      super.promptFor(maybePreviousCollectedValue, context, paramState).map { superPrompt =>
+      super.promptFor(maybePreviousCollectedValue, context, paramState, isReminding).map { superPrompt =>
         superPrompt ++ " Enter a search query:"
       }
     }
@@ -369,13 +372,14 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   override def promptFor(
                            maybePreviousCollectedValue: Option[String],
                            context: BehaviorParameterContext,
-                           paramState: ParamCollectionState
+                           paramState: ParamCollectionState,
+                           isReminding: Boolean
                          ): Future[String] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch) {
-        promptForSearchCase(maybePreviousCollectedValue, context, paramState)
+        promptForSearchCase(maybePreviousCollectedValue, context, paramState, isReminding)
       } else {
-        promptForListAllCase(None, maybePreviousCollectedValue, context, paramState)
+        promptForListAllCase(None, maybePreviousCollectedValue, context, paramState, isReminding)
       }
     }
   }
