@@ -122,7 +122,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
           node = node.getNext
         }
         stringBuilder.append(index.toString)
-        stringBuilder.append(") ")
+        stringBuilder.append(". ")
       }
       case _ => stringBuilder.append("• ")
     }

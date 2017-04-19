@@ -1,7 +1,5 @@
 package models.behaviors.builtins
 
-import java.time.OffsetDateTime
-
 import akka.actor.ActorSystem
 import json.BehaviorGroupData
 import models.behaviors.events._
@@ -73,16 +71,15 @@ case class DisplayHelpBehavior(
     TextWithActionsResult(event, None, intro, forcePrivateResponse = false, attachment)
   }
 
-  private def actionHeadingFor(actionList: Seq[String]): String = {
-    val numActions = actionList.length
+  private def actionHeadingFor(numActions: Int): String = {
     if (numActions == 0) {
       "No actions to display."
     } else {
-      (if (numActions == 1) {
-        "_**1 action**_"
+      if (numActions == 1) {
+        "_**1 action**_  "
       } else {
-        s"_**$numActions actions**_"
-      }) ++ " (type any action to trigger it):  "
+        s"_**$numActions actions**_  "
+      }
     }
   }
 
@@ -97,15 +94,17 @@ case class DisplayHelpBehavior(
     val group = result.group
     val name = s"**${group.name}**"
 
-    val actionList = result.sortedActionListFor(group.behaviorVersions, trimNonMatching = group.isMiscellaneous)
+    val sortedVersionsWithIndexes = result.sortedIndexedBehaviorVersions
+    val versionsText = result.helpTextFor(sortedVersionsWithIndexes)
+    val runnableActions = result.slackRunActionsFor(sortedVersionsWithIndexes)
 
     val resultText =
       s"""$intro
          |
-         |$name  \n${result.description}\n\n${actionHeadingFor(actionList)}
-         |${actionList.mkString("")}
+         |$name  \n${result.description}\n\n${actionHeadingFor(sortedVersionsWithIndexes.length)}
+         |$versionsText
          |""".stripMargin
-    val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
+    val actions = runnableActions :+ result.slackHelpIndexAction
     TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
   }
 

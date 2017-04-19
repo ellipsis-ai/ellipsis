@@ -1,8 +1,9 @@
 package models.help
 
 import json.{BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, SlackMessageAction}
 import services.{AWSLambdaService, DataService}
+import utils.SlackMessageSender
 
 trait HelpResult {
   val event: Event
@@ -11,6 +12,8 @@ trait HelpResult {
 
   val dataService: DataService
   val lambdaService: AWSLambdaService
+
+  val slackHelpIndexAction = SlackMessageAction("help_index", "More help…", "0")
 
   def description: String
 
@@ -26,14 +29,43 @@ trait HelpResult {
     }
   }
 
-  def sortedActionListFor(behaviorVersions: Seq[BehaviorVersionData], trimNonMatching: Boolean = false): Seq[String] = {
-    val (matching, nonMatching) = behaviorVersions.partition(version => version.triggers.exists(matchingTriggers.contains))
-    val versionsToInclude = if (trimNonMatching && matching.nonEmpty) { matching } else { matching ++ nonMatching }
-    versionsToInclude.flatMap(version => helpStringFor(version))
+  case class IndexedBehaviorVersionData(tuple: (BehaviorVersionData, Int)) {
+    def version = tuple._1
+    def index = tuple._2
+    def printableIndex = (index + 1).toString
   }
 
-  def helpStringFor(behaviorVersion: BehaviorVersionData): Option[String] = {
-    val triggers = behaviorVersion.triggers
+  def sortedIndexedBehaviorVersions: Seq[IndexedBehaviorVersionData] = {
+    val behaviorVersions = group.behaviorVersions
+    val trimNonMatching = group.isMiscellaneous
+    val (matching, nonMatching) = behaviorVersions.filter(_.triggers.nonEmpty).partition(version => version.triggers.exists(matchingTriggers.contains))
+    val list = if (trimNonMatching && matching.nonEmpty) {
+      matching
+    } else {
+      matching ++ nonMatching
+    }
+    list.zipWithIndex.map(IndexedBehaviorVersionData)
+  }
+
+  def slackRunActionsFor(indexedVersions: Seq[IndexedBehaviorVersionData]): Seq[SlackMessageAction] = {
+    val maxRunnableActions = SlackMessageSender.MAX_ACTIONS_PER_ATTACHMENT - 1
+    val actions = indexedVersions.slice(0, maxRunnableActions)
+    val includeIndexes = actions.length > 1
+    actions.flatMap { ea =>
+      val label = if (includeIndexes) { ea.printableIndex } else { "Run this" }
+      ea.version.id.map { versionId =>
+        SlackMessageAction("run_action", label, versionId)
+      }
+    }
+  }
+
+  def helpTextFor(indexedVersions: Seq[IndexedBehaviorVersionData]): String = {
+    val includeIndexes = indexedVersions.length > 1
+    indexedVersions.flatMap { ea => maybeHelpStringFor(ea.version, Option(ea.printableIndex).filter(_ => includeIndexes)) }.mkString("")
+  }
+
+  def maybeHelpStringFor(behaviorVersionData: BehaviorVersionData, maybePrintableIndex: Option[String]): Option[String] = {
+    val triggers = behaviorVersionData.triggers
     if (triggers.isEmpty) {
       None
     } else {
@@ -61,14 +93,15 @@ trait HelpResult {
       if (triggersString.isEmpty) {
         None
       } else {
+        val index = maybePrintableIndex.map(_.mkString("", "", ". ")).getOrElse("")
         val linkText = (for {
-          groupId <- behaviorVersion.groupId
-          behaviorId <- behaviorVersion.behaviorId
+          groupId <- behaviorVersionData.groupId
+          behaviorId <- behaviorVersionData.behaviorId
         } yield {
           val url = dataService.behaviors.editLinkFor(groupId, Some(behaviorId), lambdaService.configuration)
           s" [✎]($url)"
         }).getOrElse("")
-        Some(s"$triggersString$linkText\n\n")
+        Some(s"$index$triggersString$linkText\n\n")
       }
     }
   }
