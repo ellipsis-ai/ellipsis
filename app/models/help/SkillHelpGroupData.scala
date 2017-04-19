@@ -10,7 +10,6 @@ case class SkillHelpGroupData(group: BehaviorGroupData) extends HelpGroupData {
 
   val maybeName: Option[String] = group.name.map(_.trim).filter(_.nonEmpty)
   val name: String = maybeName.getOrElse("Untitled skill")
-  val longName: String = name
 
   val maybeDescription: Option[String] = group.description.map(_.trim).filter(_.nonEmpty)
   val description: String = maybeDescription.getOrElse("")

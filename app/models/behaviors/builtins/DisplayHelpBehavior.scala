@@ -73,7 +73,7 @@ case class DisplayHelpBehavior(
     }
     val skillActions = resultsToShow.map(result => {
       val group = result.group
-      val label = group.name
+      val label = group.shortName
       val helpActionValue = group.helpActionId
       maybeHelpSearch.map { helpSearch =>
         SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
@@ -114,7 +114,7 @@ case class DisplayHelpBehavior(
     }
 
     val group = result.group
-    val name = s"**${group.longName}**"
+    val name = s"**${group.name}**"
 
     val actionList = result.sortedActionListFor(group.behaviorVersions, trimNonMatching = group.isMiscellaneous)
 
