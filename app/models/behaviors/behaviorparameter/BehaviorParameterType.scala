@@ -136,10 +136,10 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   override val exportId: String = behaviorVersion.behavior.maybeExportId.getOrElse(id)
   val name = behaviorVersion.maybeName.getOrElse("Unnamed data type")
 
-  case class ValidValue(id: String, label: String)
+  case class ValidValue(id: String, label: String, data: Map[String, String])
   implicit val validValueReads = Json.reads[ValidValue]
   implicit val validValueWrites = Json.writes[ValidValue]
-  case class ValidValueWithNumericId(id: Long, label: String)
+  case class ValidValueWithNumericId(id: Long, label: String, data: Map[String, String])
   implicit val validValueWithNumericIdReads = Json.reads[ValidValueWithNumericId]
   implicit val validValueWithNumericIdWrites = Json.writes[ValidValueWithNumericId]
 
@@ -237,7 +237,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   def prepareForInvocation(text: String, context: BehaviorParameterContext) = {
     maybeValidValueFor(text, context).map { maybeValidValue =>
       maybeValidValue.map { vv =>
-        JsObject(Map("id" -> JsString(vv.id), "label" -> JsString(vv.label)))
+        JsObject(Map("id" -> JsString(vv.id), "label" -> JsString(vv.label)) ++ vv.data.map { case(k, v) => k -> JsString(v) })
       }.getOrElse(JsString(text))
     }
   }
@@ -263,14 +263,22 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   }
 
   private def extractValidValueFrom(json: JsValue): Option[ValidValue] = {
-    json.validate[ValidValue] match {
-      case JsSuccess(data, jsPath) => Some(data)
-      case e: JsError => {
-        json.validate[ValidValueWithNumericId] match {
-          case JsSuccess(data, jsPath) => Some(ValidValue(data.id.toString, data.label))
-          case e: JsError => None
+    json match {
+      case obj: JsObject => {
+        val (mainData, otherData) = obj.value.partition { case(k, _) => k == "id" || k == "label" }
+        val mainJson = JsObject(mainData ++ Map("data" -> JsObject(otherData)))
+
+        mainJson.validate[ValidValue] match {
+          case JsSuccess(data, _) => Some(data)
+          case e: JsError => {
+            json.validate[ValidValueWithNumericId] match {
+              case JsSuccess(data, _) => Some(ValidValue(data.id.toString, data.label, data.data))
+              case e: JsError => None
+            }
+          }
         }
       }
+      case _ => None
     }
   }
 
