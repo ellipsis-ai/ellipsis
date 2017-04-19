@@ -74,7 +74,7 @@ case class DisplayHelpBehavior(
     val skillActions = resultsToShow.map(result => {
       val group = result.group
       val label = group.name
-      val helpActionValue = group.maybeGroupId.getOrElse("(untitled)")
+      val helpActionValue = group.helpActionId
       maybeHelpSearch.map { helpSearch =>
         SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
       }.getOrElse {
@@ -140,7 +140,7 @@ case class DisplayHelpBehavior(
       user <- event.ensureUser(dataService)
       maybeBehaviorGroups <- maybeTeam.map { team =>
         maybeSkillId match {
-          case Some("(untitled)") => dataService.behaviorGroups.allWithNoNameFor(team).map(Some(_))
+          case Some(HelpGroupData.MISCELLANEOUS_ACTION_ID) => dataService.behaviorGroups.allWithNoNameFor(team).map(Some(_))
           case Some(skillId) => dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
           case None => dataService.behaviorGroups.allFor(team).map(Some(_))
         }

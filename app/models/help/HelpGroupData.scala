@@ -5,7 +5,7 @@ import utils.{FuzzyMatchPattern, FuzzyMatchable}
 
 trait HelpGroupData extends FuzzyMatchable {
   val isMiscellaneous: Boolean
-  val maybeGroupId: Option[String]
+  val helpActionId: String
   val behaviorVersions: Seq[BehaviorVersionData]
   val name: String
   val longName: String
@@ -14,4 +14,8 @@ trait HelpGroupData extends FuzzyMatchable {
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern]
   val fuzzyMatchName: FuzzyMatchPattern
   val fuzzyMatchDescription: FuzzyMatchPattern
+}
+
+object HelpGroupData {
+  val MISCELLANEOUS_ACTION_ID = "(untitled)"
 }

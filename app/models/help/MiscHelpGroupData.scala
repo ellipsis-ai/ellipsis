@@ -5,7 +5,7 @@ import utils.{FuzzyMatchPattern, SimpleFuzzyMatchPattern}
 
 case class MiscHelpGroupData(groups: Seq[BehaviorGroupData]) extends HelpGroupData {
   val isMiscellaneous: Boolean = true
-  val maybeGroupId: Option[String] = None
+  val helpActionId: String = HelpGroupData.MISCELLANEOUS_ACTION_ID
   val behaviorVersions: Seq[BehaviorVersionData] = groups.flatMap(_.behaviorVersions)
   val name: String = "Miscellaneous"
   val longName: String = "Miscellaneous skills"
