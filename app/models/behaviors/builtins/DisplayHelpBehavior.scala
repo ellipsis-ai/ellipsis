@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import json.BehaviorGroupData
 import models.behaviors.events._
 import models.behaviors.{BotResult, TextWithActionsResult}
-import models.help.{HelpResult, HelpSearchResult, SimpleHelpResult}
+import models.help._
 import services.{AWSLambdaService, DataService}
 import utils._
 
@@ -73,8 +73,8 @@ case class DisplayHelpBehavior(
     }
     val skillActions = resultsToShow.map(result => {
       val group = result.group
-      val label = group.name.getOrElse("")
-      val helpActionValue = group.id.getOrElse("(untitled)")
+      val label = group.shortName
+      val helpActionValue = group.helpActionId
       maybeHelpSearch.map { helpSearch =>
         SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
       }.getOrElse {
@@ -92,10 +92,10 @@ case class DisplayHelpBehavior(
     TextWithActionsResult(event, None, intro, forcePrivateResponse = false, attachment)
   }
 
-  private def actionHeadingFor(group: BehaviorGroupData): String = {
-    val numActions = group.behaviorVersions.filterNot(version => version.isDataType).length
+  private def actionHeadingFor(actionList: Seq[String]): String = {
+    val numActions = actionList.length
     if (numActions == 0) {
-      "This skill has no actions."
+      "No actions to display."
     } else {
       (if (numActions == 1) {
         "_**1 action**_"
@@ -114,18 +114,15 @@ case class DisplayHelpBehavior(
     }
 
     val group = result.group
-    val name = group.name
-      .filterNot(name => group.id.isEmpty || name.trim.isEmpty)
-      .map(name => s"**$name**")
-      .getOrElse("**Miscellaneous skills**")
+    val name = s"**${group.name}**"
 
-    val actionList = group.behaviorVersions.flatMap(version => result.helpStringFor(version)).mkString("")
+    val actionList = result.sortedActionListFor(group.behaviorVersions, trimNonMatching = group.isMiscellaneous)
 
     val resultText =
       s"""$intro
          |
-         |$name  \n${result.description}\n\n${actionHeadingFor(group)}
-         |$actionList
+         |$name  \n${result.description}\n\n${actionHeadingFor(actionList)}
+         |${actionList.mkString("")}
          |""".stripMargin
     val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
     TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
@@ -143,7 +140,7 @@ case class DisplayHelpBehavior(
       user <- event.ensureUser(dataService)
       maybeBehaviorGroups <- maybeTeam.map { team =>
         maybeSkillId match {
-          case Some("(untitled)") => dataService.behaviorGroups.allWithNoNameFor(team).map(Some(_))
+          case Some(HelpGroupData.MISCELLANEOUS_ACTION_ID) => dataService.behaviorGroups.allWithNoNameFor(team).map(Some(_))
           case Some(skillId) => dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
           case None => dataService.behaviorGroups.allFor(team).map(Some(_))
         }
@@ -157,13 +154,14 @@ case class DisplayHelpBehavior(
       }.getOrElse(Future.successful(Seq()))
     } yield {
       val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
-      val flattenedGroupData = ArrayBuffer[BehaviorGroupData]()
-      flattenedGroupData ++= named
-      if (unnamed.nonEmpty) {
-        flattenedGroupData += flattenUnnamedBehaviorGroupData(unnamed)
+      val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
+      val flattenedGroupData = if (unnamed.nonEmpty) {
+        namedGroupData :+ MiscHelpGroupData(unnamed)
+      } else {
+        namedGroupData
       }
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        FuzzyMatcher[BehaviorGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService))
+        FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService))
       }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService)))
       if (matchingGroupData.isEmpty) {
         emptyResult

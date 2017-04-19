@@ -6,15 +6,13 @@ import services.{AWSLambdaService, DataService}
 
 trait HelpResult {
   val event: Event
-  val group: BehaviorGroupData
+  val group: HelpGroupData
   val matchingTriggers: Seq[BehaviorTriggerData]
 
   val dataService: DataService
   val lambdaService: AWSLambdaService
 
   def description: String
-
-  lazy val trimmedGroupDescription: String = group.description.filter(_.trim.nonEmpty).getOrElse("")
 
   private def triggerStringFor(trigger: BehaviorTriggerData): String = {
     val prefix = if (trigger.requiresMention)
@@ -26,6 +24,12 @@ trait HelpResult {
     } else {
       s"`$prefix${trigger.text}`"
     }
+  }
+
+  def sortedActionListFor(behaviorVersions: Seq[BehaviorVersionData], trimNonMatching: Boolean = false): Seq[String] = {
+    val (matching, nonMatching) = behaviorVersions.partition(version => version.triggers.exists(matchingTriggers.contains))
+    val versionsToInclude = if (trimNonMatching && matching.nonEmpty) { matching } else { matching ++ nonMatching }
+    versionsToInclude.flatMap(version => helpStringFor(version))
   }
 
   def helpStringFor(behaviorVersion: BehaviorVersionData): Option[String] = {
@@ -58,7 +62,7 @@ trait HelpResult {
         None
       } else {
         val linkText = (for {
-          groupId <- group.id
+          groupId <- behaviorVersion.groupId
           behaviorId <- behaviorVersion.behaviorId
         } yield {
           val url = dataService.behaviors.editLinkFor(groupId, Some(behaviorId), lambdaService.configuration)
