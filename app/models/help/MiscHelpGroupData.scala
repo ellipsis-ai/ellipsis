@@ -8,7 +8,7 @@ case class MiscHelpGroupData(groups: Seq[BehaviorGroupData]) extends HelpGroupDa
   val helpActionId: String = HelpGroupData.MISCELLANEOUS_ACTION_ID
   val behaviorVersions: Seq[BehaviorVersionData] = groups.flatMap(_.behaviorVersions)
   val name: String = "Miscellaneous skills"
-  override val shortName: String = "Miscellaneous"
+  override def shortName: String = "Miscellaneous"
   val description: String = ""
 
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern] = {

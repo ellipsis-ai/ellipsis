@@ -8,7 +8,7 @@ trait HelpGroupData extends FuzzyMatchable {
   val helpActionId: String
   val behaviorVersions: Seq[BehaviorVersionData]
   val name: String
-  val shortName: String = name
+  def shortName: String = name
   val description: String
 
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern]
