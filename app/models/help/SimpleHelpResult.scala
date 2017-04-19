@@ -11,5 +11,5 @@ case class SimpleHelpResult(
                            ) extends HelpResult {
   val matchingTriggers = Seq()
 
-  def description: String = trimmedGroupDescription
+  def description: String = group.description
 }

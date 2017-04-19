@@ -154,10 +154,11 @@ case class DisplayHelpBehavior(
       }.getOrElse(Future.successful(Seq()))
     } yield {
       val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
-      val flattenedGroupData = ArrayBuffer[HelpGroupData]()
-      flattenedGroupData ++= named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
-      if (unnamed.nonEmpty) {
-        flattenedGroupData += MiscHelpGroupData(unnamed)
+      val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
+      val flattenedGroupData = if (unnamed.nonEmpty) {
+        namedGroupData :+ MiscHelpGroupData(unnamed)
+      } else {
+        namedGroupData
       }
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
         FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService))

@@ -27,9 +27,9 @@ case class HelpSearchResult(
 
   def description: String = {
     if (descriptionMatches) {
-      searchPattern.replaceAllIn(trimmedGroupDescription, "$1**$2**$3")
+      searchPattern.replaceAllIn(group.description, "$1**$2**$3")
     } else {
-      trimmedGroupDescription
+      group.description
     }
   }
 
