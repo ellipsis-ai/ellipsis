@@ -56,7 +56,7 @@ trait HelpResult {
         SlackMessageActionMenuItem(ea.version.maybeFirstTrigger.getOrElse("Run"), versionId)
       }
     }
-    Seq(SlackMessageActionMenu("run_action", "Run an action…", menuItems))
+    Seq(SlackMessageActionMenu("run_action", "Actions", menuItems))
   }
 
   def helpTextFor(indexedVersions: Seq[IndexedBehaviorVersionData]): String = {

@@ -105,7 +105,8 @@ case class DisplayHelpBehavior(
          |$versionsText
          |""".stripMargin
     val actions = runnableActions :+ result.slackHelpIndexAction
-    TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
+    val messageActions = SlackMessageActions("help_for_skill", actions, Some("You can select an action to run:"), Some(Color.BLUE_LIGHT), None)
+    TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, messageActions)
   }
 
   def emptyResult: BotResult = {
