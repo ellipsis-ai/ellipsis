@@ -1,6 +1,6 @@
 package models.help
 
-import json.{BehaviorGroupData, BehaviorTriggerData}
+import json.BehaviorTriggerData
 import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
 import utils.FuzzyMatchResult

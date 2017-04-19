@@ -10,7 +10,6 @@ import models.help._
 import services.{AWSLambdaService, DataService}
 import utils._
 
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -32,24 +31,6 @@ case class DisplayHelpBehavior(
     maybeHelpSearch.map { s =>
       s" related to `$s`"
     }.getOrElse("")
-  }
-
-  private def flattenUnnamedBehaviorGroupData(untitledGroups: Seq[BehaviorGroupData]): BehaviorGroupData = {
-    BehaviorGroupData(
-      id = None,
-      event.teamId,
-      name = Some("Miscellaneous"),
-      description = None,
-      icon = None,
-      actionInputs = untitledGroups.flatMap(_.actionInputs),
-      dataTypeInputs = untitledGroups.flatMap(_.dataTypeInputs),
-      behaviorVersions = untitledGroups.flatMap(_.behaviorVersions),
-      Seq(),
-      Seq(),
-      githubUrl = None,
-      exportId = None,
-      Some(OffsetDateTime.now)
-    )
   }
 
   private def introResultFor(results: Seq[HelpResult], startAt: Int): BotResult = {

@@ -1,6 +1,6 @@
 package models.help
 
-import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
+import json.{BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
 
