@@ -14,8 +14,6 @@ trait HelpResult {
 
   def description: String
 
-  lazy val groupDescription: String = group.description
-
   private def triggerStringFor(trigger: BehaviorTriggerData): String = {
     val prefix = if (trigger.requiresMention)
       event.botPrefix
