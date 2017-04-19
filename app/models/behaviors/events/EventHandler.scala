@@ -75,8 +75,8 @@ class EventHandler @Inject() (
           val key = conversation.pendingEventKey
           cache.set(key, event, 5.minutes)
           val actions = Seq(
-            SlackMessageAction("confirm_continue_conversation", "Yes, it's an answer", conversation.id),
-            SlackMessageAction("dont_continue_conversation", "No, not an answer", conversation.id)
+            SlackMessageActionButton("confirm_continue_conversation", "Yes, it's an answer", conversation.id),
+            SlackMessageActionButton("dont_continue_conversation", "No, not an answer", conversation.id)
           )
           val prompt = maybeLastPrompt.map { lastPrompt =>
             s"""It's been a while since I asked you:

@@ -55,15 +55,15 @@ case class DisplayHelpBehavior(
       val label = group.shortName
       val helpActionValue = group.helpActionId
       maybeHelpSearch.map { helpSearch =>
-        SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
+        SlackMessageActionButton("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
       }.getOrElse {
-        SlackMessageAction("help_for_skill", label, helpActionValue)
+        SlackMessageActionButton("help_for_skill", label, helpActionValue)
       }
     })
     val remainingGroupCount = resultsRemaining.length
     val actions = if (remainingGroupCount > 0) {
       val label = if (remainingGroupCount == 1) { "1 more skill…" } else { s"$remainingGroupCount more skills…" }
-      skillActions :+ SlackMessageAction("help_index", label, endAt.toString, maybeStyle = Some("primary"))
+      skillActions :+ SlackMessageActionButton("help_index", label, endAt.toString, maybeStyle = Some("primary"))
     } else {
       skillActions
     }
@@ -109,7 +109,7 @@ case class DisplayHelpBehavior(
   }
 
   def emptyResult: BotResult = {
-    val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
+    val actions = Seq(SlackMessageActionButton("help_index", "More help…", "0"))
     val resultText = s"I don’t know anything$matchString. ${event.skillListLinkFor(isListEmpty = true, lambdaService)}"
     TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_no_result", actions, None, Some(Color.PINK)))
   }

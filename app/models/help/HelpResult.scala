@@ -1,7 +1,7 @@
 package models.help
 
 import json.{BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.{Event, SlackMessageAction}
+import models.behaviors.events._
 import services.{AWSLambdaService, DataService}
 import utils.SlackMessageSender
 
@@ -13,7 +13,7 @@ trait HelpResult {
   val dataService: DataService
   val lambdaService: AWSLambdaService
 
-  val slackHelpIndexAction = SlackMessageAction("help_index", "More help…", "0")
+  val slackHelpIndexAction = SlackMessageActionButton("help_index", "More help…", "0")
 
   def description: String
 
@@ -51,16 +51,16 @@ trait HelpResult {
     val maxRunnableActions = SlackMessageSender.MAX_ACTIONS_PER_ATTACHMENT - 1
     val actions = indexedVersions.slice(0, maxRunnableActions)
     val includeIndexes = actions.length > 1
-    actions.flatMap { ea =>
-      val label = if (includeIndexes) { ea.printableIndex } else { "Run this" }
+    val menuItems = actions.flatMap { ea =>
       ea.version.id.map { versionId =>
-        SlackMessageAction("run_action", label, versionId)
+        SlackMessageActionMenuItem(ea.version.maybeFirstTrigger.getOrElse("Run"), versionId)
       }
     }
+    Seq(SlackMessageActionMenu("run_action", "Run an action…", menuItems))
   }
 
   def helpTextFor(indexedVersions: Seq[IndexedBehaviorVersionData]): String = {
-    val includeIndexes = indexedVersions.length > 1
+    val includeIndexes = false //indexedVersions.length > 1
     indexedVersions.flatMap { ea => maybeHelpStringFor(ea.version, Option(ea.printableIndex).filter(_ => includeIndexes)) }.mkString("")
   }
 
