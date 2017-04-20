@@ -34,7 +34,7 @@ class SavedAnswerServiceSpec extends DBSpec {
         runNow(dataService.savedAnswers.allFor(user, Seq(param))) mustBe Seq(savedAnswer)
         runNow(dataService.savedAnswers.allFor(anotherUser, Seq(param))) mustBe Seq(anotherSavedAnswer)
 
-        runNow(dataService.savedAnswers.deleteForUser(input, user))
+        runNow(dataService.savedAnswers.deleteForUser(input.inputId, user))
 
         runNow(dataService.savedAnswers.allFor(user, Seq(param))) mustBe Seq()
         runNow(dataService.savedAnswers.allFor(anotherUser, Seq(param))) mustBe Seq(anotherSavedAnswer)
@@ -73,7 +73,7 @@ class SavedAnswerServiceSpec extends DBSpec {
         runNow(dataService.savedAnswers.allFor(user, Seq(param))) mustBe Seq(savedAnswer)
         runNow(dataService.savedAnswers.allFor(anotherUser, Seq(param))) mustBe Seq(anotherSavedAnswer)
 
-        runNow(dataService.savedAnswers.deleteAllFor(input))
+        runNow(dataService.savedAnswers.deleteAllFor(input.inputId))
 
         runNow(dataService.savedAnswers.allFor(user, Seq(param))) mustBe Seq()
         runNow(dataService.savedAnswers.allFor(anotherUser, Seq(param))) mustBe Seq()
@@ -105,7 +105,7 @@ class SavedAnswerServiceSpec extends DBSpec {
 
         runNow(dataService.savedAnswers.allFor(user, Seq(param))) mustBe Seq(savedAnswer)
 
-        runNow(dataService.savedAnswers.deleteAllFor(input))
+        runNow(dataService.savedAnswers.deleteAllFor(input.inputId))
 
         runNow(dataService.savedAnswers.allFor(user, Seq(param))) mustBe Seq()
 
