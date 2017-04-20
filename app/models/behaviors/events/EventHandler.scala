@@ -63,34 +63,36 @@ class EventHandler @Inject() (
     shortcutPlusKeyword || mentionedPlusKeyword /* || isDMPlusKeyword */
   }
 
-  def handleInConversation(conversation: Conversation, event: Event): Future[BotResult] = {
-    if (isCancelConversationMessage(event)) {
-      cancelConversationResult(event, conversation, s"OK, I’ll stop asking about that.")
-    } else {
-      if (conversation.isStale) {
-        conversation.maybeNextParamToCollect(event, lambdaService, dataService, cache, ws, configuration).map { maybeNextParam =>
-          val maybeLastPrompt = maybeNextParam.map { nextParam =>
-            nextParam.input.question
-          }
-          val key = conversation.pendingEventKey
-          cache.set(key, event, 5.minutes)
-          val actions = Seq(
-            SlackMessageAction("confirm_continue_conversation", "Yes, it's an answer", conversation.id),
-            SlackMessageAction("dont_continue_conversation", "No, not an answer", conversation.id)
-          )
-          val prompt = maybeLastPrompt.map { lastPrompt =>
-            s"""It's been a while since I asked you:
-               |```
-               |$lastPrompt
-               |```""".stripMargin
-          }.getOrElse {
-            s"It's been a while since I asked you the question above."
-          }
-          val attachment = SlackMessageActions("should_continue_conversation", actions, Some(s"Just so I'm sure, is `${event.relevantMessageText}` answering this?"), Some(Color.PINK))
-          TextWithActionsResult(event, Some(conversation), prompt, forcePrivateResponse = false, attachment)
-        }
+  def handleInConversation(originalConvo: Conversation, event: Event): Future[BotResult] = {
+    dataService.conversations.touch(originalConvo).flatMap { updatedConvo =>
+      if (isCancelConversationMessage(event)) {
+        cancelConversationResult(event, updatedConvo, s"OK, I’ll stop asking about that.")
       } else {
-        conversation.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+        if (originalConvo.isStale) {
+          updatedConvo.maybeNextParamToCollect(event, lambdaService, dataService, cache, ws, configuration).map { maybeNextParam =>
+            val maybeLastPrompt = maybeNextParam.map { nextParam =>
+              nextParam.input.question
+            }
+            val key = updatedConvo.pendingEventKey
+            cache.set(key, event, 5.minutes)
+            val actions = Seq(
+              SlackMessageAction("confirm_continue_conversation", "Yes, it's an answer", updatedConvo.id),
+              SlackMessageAction("dont_continue_conversation", "No, not an answer", updatedConvo.id)
+            )
+            val prompt = maybeLastPrompt.map { lastPrompt =>
+              s"""It's been a while since I asked you:
+                 |```
+                 |$lastPrompt
+                 |```""".stripMargin
+            }.getOrElse {
+              s"It's been a while since I asked you the question above."
+            }
+            val attachment = SlackMessageActions("should_continue_conversation", actions, Some(s"Just so I'm sure, is `${event.relevantMessageText}` answering this?"), Some(Color.PINK))
+            TextWithActionsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, attachment)
+          }
+        } else {
+          updatedConvo.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+        }
       }
     }
   }
