@@ -14,6 +14,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
+import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import play.utils.UriEncoding
@@ -31,6 +32,7 @@ class SlackController @Inject() (
                                   val slackEventService: SlackEventService,
                                   val lambdaService: AWSLambdaService,
                                   val cache: CacheApi,
+                                  val ws: WSClient,
                                   val eventHandler: EventHandler,
                                   implicit val actorSystem: ActorSystem
                                 ) extends EllipsisController {
@@ -245,8 +247,17 @@ class SlackController @Inject() (
     )
   }
 
-  case class ActionTriggeredInfo(name: String, value: Option[String])
-  case class ActionInfo(name: String, text: String, value: Option[String], `type`: String, style: Option[String])
+  case class ActionSelectOptionInfo(text: Option[String], value: String)
+  case class ActionTriggeredInfo(name: String, value: Option[String], selected_options: Option[Seq[ActionSelectOptionInfo]])
+  case class ActionInfo(
+                         name: String,
+                         text: String,
+                         value: Option[String],
+                         `type`: String,
+                         style: Option[String],
+                         options: Option[Seq[ActionSelectOptionInfo]],
+                         selected_options: Option[Seq[ActionSelectOptionInfo]]
+                       )
   case class TeamInfo(id: String, domain: String)
   case class ChannelInfo(id: String, name: String)
   case class UserInfo(id: String, name: String)
@@ -319,7 +330,14 @@ class SlackController @Inject() (
     }
 
     def maybeRunBehaviorId: Option[String] = {
-      actions.find(_.name == "run_behavior").flatMap(_.value)
+      val action = actions.find(_.name == "run_behavior")
+      for {
+        selectedOptions <- action.map(_.selected_options)
+        firstOption <- selectedOptions.map(_.headOption)
+        behaviorId <- firstOption.map(_.value)
+      } yield {
+        behaviorId
+      }
     }
 
     def maybeFutureEvent: Future[Option[SlackMessageEvent]] = {
@@ -338,6 +356,9 @@ class SlackController @Inject() (
   implicit val channelReads = Json.reads[ChannelInfo]
   implicit val teamReads = Json.reads[TeamInfo]
   implicit val userReads = Json.reads[UserInfo]
+
+  implicit val actionSelectOptionReads = Json.reads[ActionSelectOptionInfo]
+  implicit val actionSelectOptionWrites = Json.writes[ActionSelectOptionInfo]
 
   implicit val actionReads = Json.reads[ActionInfo]
   implicit val actionWrites = Json.writes[ActionInfo]
@@ -458,26 +479,28 @@ class SlackController @Inject() (
               }
 
               info.maybeRunBehaviorId.foreach { behaviorId =>
-                for {
-                  maybeBehavior <- dataService.behaviors.findWithoutAccessCheck(behaviorId)
-                  maybeEvent <- info.maybeFutureEvent
-                } yield {
-                  for {
-                    behavior <- maybeBehavior
-                    event <- maybeEvent
-                  } yield {
-                    resultText = s"$user ran an action"
-                    RunEvent(
-                      event.profile,
-                      behavior,
-                      Map(),
-                      event.channel,
-                      None,
-                      event.userIdForContext,
-                      SlackTimestamp.now
-                    )
-                  }
-                }.getOrElse(Future.successful({}))
+                info.maybeFutureEvent.flatMap { maybeEvent =>
+                  maybeEvent.map { event =>
+                    dataService.behaviors.findWithoutAccessCheck(behaviorId).map { maybeBehavior =>
+                      maybeBehavior.map { behavior =>
+                        behavior.group.maybeCurrentVersionId.map { behaviorGroupVersionId =>
+                          dataService.behaviorGroupVersions.findWithoutAccessCheckAction(behaviorGroupVersionId).map { maybeGroupVersion =>
+                            maybeGroupVersion.map { groupVersion =>
+                              dataService.behaviorVersions.findFor(behavior, groupVersion).map { maybeBehaviorVersion =>
+                                maybeBehaviorVersion.map { behaviorVersion =>
+                                  BehaviorResponse.buildFor(event, behaviorVersion, Map(), None, None, lambdaService, dataService, cache, ws, configuration).map { response =>
+                                    response.result.map(_.text)
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }.getOrElse(Future.successful({}))
+                    }
+                  }.getOrElse(Future.successful({}))
+                }
+                resultText = s"$user ran an action"
               }
 
               // respond immediately by appending a new attachment
