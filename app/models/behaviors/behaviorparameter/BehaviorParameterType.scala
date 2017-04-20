@@ -137,11 +137,35 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   val name = behaviorVersion.maybeName.getOrElse("Unnamed data type")
 
   case class ValidValue(id: String, label: String, data: Map[String, String])
-  implicit val validValueReads = Json.reads[ValidValue]
-  implicit val validValueWrites = Json.writes[ValidValue]
-  case class ValidValueWithNumericId(id: Long, label: String, data: Map[String, String])
-  implicit val validValueWithNumericIdReads = Json.reads[ValidValueWithNumericId]
-  implicit val validValueWithNumericIdWrites = Json.writes[ValidValueWithNumericId]
+  implicit val validValueReads = new Reads[ValidValue] {
+    def reads(json: JsValue) = {
+      val idProperty = json \ BehaviorParameterType.ID_PROPERTY
+      for {
+        id <- idProperty.validate[String].orElse(idProperty.validate[Long].map(_.toString))
+        label <- (json \ BehaviorParameterType.LABEL_PROPERTY).validate[String]
+      } yield {
+        val otherData = json match {
+          case obj: JsObject => {
+            obj.value.
+              filterNot { case(k, _) => k == BehaviorParameterType.ID_PROPERTY || k == BehaviorParameterType.LABEL_PROPERTY }.
+              map { case(k, v) => (k, v.as[String]) }.
+              toMap
+          }
+          case _ => Map[String, String]()
+        }
+        ValidValue(id, label, otherData)
+      }
+    }
+
+  }
+  implicit val validValueWrites = new Writes[ValidValue] {
+    def writes(vv: ValidValue) = JsObject(
+      Map(
+        BehaviorParameterType.ID_PROPERTY -> JsString(vv.id),
+        BehaviorParameterType.LABEL_PROPERTY -> JsString(vv.label)
+      ) ++ vv.data.map { case(k, v) => (k, JsString(v)) }
+    )
+  }
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
     cachedValidValueFor(text, context).map { vv =>
@@ -263,22 +287,9 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   }
 
   private def extractValidValueFrom(json: JsValue): Option[ValidValue] = {
-    json match {
-      case obj: JsObject => {
-        val (mainData, otherData) = obj.value.partition { case(k, _) => k == BehaviorParameterType.ID_PROPERTY || k == BehaviorParameterType.LABEL_PROPERTY }
-        val mainJson = JsObject(mainData ++ Map(BehaviorParameterType.DATA_PROPERTY -> JsObject(otherData)))
-
-        mainJson.validate[ValidValue] match {
-          case JsSuccess(data, _) => Some(data)
-          case e: JsError => {
-            json.validate[ValidValueWithNumericId] match {
-              case JsSuccess(data, _) => Some(ValidValue(data.id.toString, data.label, data.data))
-              case e: JsError => None
-            }
-          }
-        }
-      }
-      case _ => None
+    json.validate[ValidValue] match {
+      case JsSuccess(data, _) => Some(data)
+      case e: JsError => None
     }
   }
 
