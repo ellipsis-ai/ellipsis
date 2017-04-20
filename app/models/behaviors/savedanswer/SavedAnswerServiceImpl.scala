@@ -79,8 +79,8 @@ class SavedAnswerServiceImpl @Inject() (
     }).map(_.flatten)
   }
 
-  def allFor(input: Input): Future[Seq[SavedAnswer]] = {
-    val action = allForInputQuery(input.inputId).result
+  def allFor(inputId: String): Future[Seq[SavedAnswer]] = {
+    val action = allForInputQuery(inputId).result
     dataService.run(action)
   }
 
@@ -95,13 +95,13 @@ class SavedAnswerServiceImpl @Inject() (
     }.getOrElse(Future.successful({}))
   }
 
-  def deleteForUser(input: Input, user: User): Future[Int] = {
-    val action = uncompiledRawFindQueryFor(input.inputId, Some(user.id)).delete
+  def deleteForUser(inputId: String, user: User): Future[Int] = {
+    val action = uncompiledRawFindQueryFor(inputId, Some(user.id)).delete
     dataService.run(action)
   }
 
-  def deleteAllFor(input: Input): Future[Int] = {
-    val action = rawFindQueryIgnoringUserFor(input.inputId).delete
+  def deleteAllFor(inputId: String): Future[Int] = {
+    val action = rawFindQueryIgnoringUserFor(inputId).delete
     dataService.run(action)
   }
 
