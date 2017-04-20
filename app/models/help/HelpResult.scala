@@ -52,8 +52,8 @@ trait HelpResult {
     val actions = indexedVersions.slice(0, maxRunnableActions)
     val includeIndexes = actions.length > 1
     val menuItems = actions.flatMap { ea =>
-      ea.version.id.map { versionId =>
-        SlackMessageActionMenuItem(ea.version.maybeFirstTrigger.getOrElse("Run"), versionId)
+      ea.version.behaviorId.map { behaviorId =>
+        SlackMessageActionMenuItem(ea.version.maybeFirstTrigger.getOrElse("Run"), behaviorId)
       }
     }
     Seq(SlackMessageActionMenu("run_behavior", "Actions", menuItems))
