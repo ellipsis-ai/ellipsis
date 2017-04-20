@@ -4,8 +4,10 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
+import models.behaviors.BehaviorResponse
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.builtins.DisplayHelpBehavior
-import models.behaviors.events.{EventHandler, SlackMessageEvent}
+import models.behaviors.events.{EventHandler, RunEvent, SlackMessageEvent}
 import models.silhouette.EllipsisEnv
 import play.api.cache.CacheApi
 import play.api.data.Form
@@ -16,6 +18,7 @@ import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
+import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -315,6 +318,10 @@ class SlackController @Inject() (
       actions.find(_.name == "stop_conversation").flatMap(_.value)
     }
 
+    def maybeRunBehaviorId: Option[String] = {
+      actions.find(_.name == "run_behavior").flatMap(_.value)
+    }
+
     def maybeFutureEvent: Future[Option[SlackMessageEvent]] = {
       dataService.slackBotProfiles.allForSlackTeamId(this.team.id).map { botProfiles =>
         botProfiles.headOption.map { botProfile =>
@@ -448,6 +455,29 @@ class SlackController @Inject() (
                 }
                 shouldRemoveActions = true
                 resultText = s"$user stopped the conversation"
+              }
+
+              info.maybeRunBehaviorId.foreach { behaviorId =>
+                for {
+                  maybeBehavior <- dataService.behaviors.findWithoutAccessCheck(behaviorId)
+                  maybeEvent <- info.maybeFutureEvent
+                } yield {
+                  for {
+                    behavior <- maybeBehavior
+                    event <- maybeEvent
+                  } yield {
+                    resultText = s"$user ran an action"
+                    RunEvent(
+                      event.profile,
+                      behavior,
+                      Map(),
+                      event.channel,
+                      None,
+                      event.userIdForContext,
+                      SlackTimestamp.now
+                    )
+                  }
+                }.getOrElse(Future.successful({}))
               }
 
               // respond immediately by appending a new attachment
