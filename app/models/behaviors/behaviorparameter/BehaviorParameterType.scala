@@ -237,7 +237,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   def prepareForInvocation(text: String, context: BehaviorParameterContext) = {
     maybeValidValueFor(text, context).map { maybeValidValue =>
       maybeValidValue.map { vv =>
-        JsObject(Map("id" -> JsString(vv.id), "label" -> JsString(vv.label)) ++ vv.data.map { case(k, v) => k -> JsString(v) })
+        JsObject(Map(BehaviorParameterType.ID_PROPERTY -> JsString(vv.id), BehaviorParameterType.LABEL_PROPERTY -> JsString(vv.label)) ++ vv.data.map { case(k, v) => k -> JsString(v) })
       }.getOrElse(JsString(text))
     }
   }
@@ -265,8 +265,8 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   private def extractValidValueFrom(json: JsValue): Option[ValidValue] = {
     json match {
       case obj: JsObject => {
-        val (mainData, otherData) = obj.value.partition { case(k, _) => k == "id" || k == "label" }
-        val mainJson = JsObject(mainData ++ Map("data" -> JsObject(otherData)))
+        val (mainData, otherData) = obj.value.partition { case(k, _) => k == BehaviorParameterType.ID_PROPERTY || k == BehaviorParameterType.LABEL_PROPERTY }
+        val mainJson = JsObject(mainData ++ Map(BehaviorParameterType.DATA_PROPERTY -> JsObject(otherData)))
 
         mainJson.validate[ValidValue] match {
           case JsSuccess(data, _) => Some(data)
@@ -408,6 +408,10 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
 }
 
 object BehaviorParameterType {
+
+  val ID_PROPERTY = "id"
+  val LABEL_PROPERTY = "label"
+  val DATA_PROPERTY = "data"
 
   val allBuiltin = Seq(
     TextType,
