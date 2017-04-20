@@ -38,6 +38,10 @@ case class InvokeBehaviorConversation(
     copy(maybeThreadId = maybeId)
   }
 
+  def copyWithLastInteractionAt(dt: OffsetDateTime): Conversation = {
+    copy(maybeLastInteractionAt = Some(dt))
+  }
+
   override val stateRequiresPrivateMessage: Boolean = {
     InvokeBehaviorConversation.statesRequiringPrivateMessage.contains(state)
   }
