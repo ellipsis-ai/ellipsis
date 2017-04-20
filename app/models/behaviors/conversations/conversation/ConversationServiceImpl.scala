@@ -143,9 +143,12 @@ class ConversationServiceImpl @Inject() (
   def uncompiledTouchQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.maybeLastInteractionAt)
   val touchQuery = Compiled(uncompiledTouchQuery _)
 
-  def touch(conversation: Conversation): Future[Unit] = {
-    val action = touchQuery(conversation.id).update(Some(OffsetDateTime.now)).map(_ => {})
-    dataService.run(action)
+  def touch(conversation: Conversation): Future[Conversation] = {
+    val lastInteractionAt = OffsetDateTime.now
+    val action = touchQuery(conversation.id).update(Some(lastInteractionAt)).map(_ => {})
+    dataService.run(action).map { _ =>
+      conversation.copyWithLastInteractionAt(lastInteractionAt)
+    }
   }
 
   def background(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): Future[Unit] = {

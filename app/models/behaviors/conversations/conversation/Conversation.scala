@@ -64,6 +64,8 @@ trait Conversation {
 
   def copyWithMaybeThreadId(maybeId: Option[String]): Conversation
 
+  def copyWithLastInteractionAt(dt: OffsetDateTime): Conversation
+
   val stateRequiresPrivateMessage: Boolean = false
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
