@@ -1,6 +1,7 @@
 package json
 
 import models.accounts.user.User
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,12 +15,10 @@ case class InputSavedAnswerData(
 
 object InputSavedAnswerData {
 
-  def maybeFor(inputId: String, user: User, dataService: DataService): Future[Option[InputSavedAnswerData]] = {
+  def maybeFor(inputId: String, behaviorGroupVersion: BehaviorGroupVersion, user: User, dataService: DataService): Future[Option[InputSavedAnswerData]] = {
     for {
-      maybeInput <- dataService.inputs.findByInputId(inputId)
-      savedAnswers <- maybeInput.map { input =>
-        dataService.savedAnswers.allFor(input)
-      }.getOrElse(Future.successful(Seq()))
+      maybeInput <- dataService.inputs.findByInputId(inputId, behaviorGroupVersion)
+      savedAnswers <- dataService.savedAnswers.allFor(inputId)
     } yield {
       maybeInput.map { input =>
         val maybeMySavedAnswer = if (input.isSavedForTeam) {

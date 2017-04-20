@@ -221,7 +221,7 @@ class BehaviorVersionServiceImpl @Inject() (
           dataService.awsConfigs.createForAction(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
         }.getOrElse(DBIO.successful(None))
         inputs <- DBIO.sequence(data.inputIds.map { inputId =>
-          dataService.inputs.findByInputIdAction(inputId)
+          dataService.inputs.findByInputIdAction(inputId, groupVersion)
         }).map(_.flatten)
         _ <- DBIO.from(lambdaService.deployFunctionFor(
           updated,
