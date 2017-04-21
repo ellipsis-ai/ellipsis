@@ -5,9 +5,8 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import models.behaviors.BehaviorResponse
-import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.builtins.DisplayHelpBehavior
-import models.behaviors.events.{EventHandler, RunEvent, SlackMessageEvent}
+import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import models.silhouette.EllipsisEnv
 import play.api.cache.CacheApi
 import play.api.data.Form
@@ -19,7 +18,6 @@ import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
-import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -347,6 +345,19 @@ class SlackController @Inject() (
         }
       }
     }
+
+    def findOptionLabelForValue(value: String): Option[String] = {
+      for {
+        attachment <- this.original_message.attachments.headOption
+        actions <- attachment.actions
+        select <- actions.find(_.`type` == "select")
+        options <- select.options
+        matchingOption <- options.find(_.value == value)
+        text <- matchingOption.text
+      } yield {
+        text
+      }
+    }
   }
 
   private val actionForm = Form(
@@ -478,10 +489,10 @@ class SlackController @Inject() (
                 resultText = s"$user stopped the conversation"
               }
 
-              info.maybeRunBehaviorVersionId.foreach { behaviorId =>
+              info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
                 info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
-                    dataService.behaviorVersions.findWithoutAccessCheck(behaviorId).flatMap { maybeBehaviorVersion =>
+                    dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId).flatMap { maybeBehaviorVersion =>
                       maybeBehaviorVersion.map { behaviorVersion =>
                         BehaviorResponse.buildFor(
                           event,
@@ -499,7 +510,9 @@ class SlackController @Inject() (
                     }
                   }.getOrElse(Future.successful({}))
                 }
-                resultText = s"$user ran an action"
+                val maybeOptionText = info.findOptionLabelForValue(behaviorVersionId)
+                val actionName = maybeOptionText.map(_.mkString("“", "", "”")).getOrElse("an action")
+                resultText = s"$user ran $actionName"
               }
 
               // respond immediately by appending a new attachment

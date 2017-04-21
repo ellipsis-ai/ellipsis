@@ -48,10 +48,7 @@ trait HelpResult {
   }
 
   def slackRunActionsFor(indexedVersions: Seq[IndexedBehaviorVersionData]): Seq[SlackMessageAction] = {
-    val maxRunnableActions = SlackMessageSender.MAX_ACTIONS_PER_ATTACHMENT - 1
-    val actions = indexedVersions.slice(0, maxRunnableActions)
-    val includeIndexes = actions.length > 1
-    val menuItems = actions.flatMap { ea =>
+    val menuItems = indexedVersions.flatMap { ea =>
       ea.version.id.map { behaviorVersionId =>
         SlackMessageActionMenuItem(ea.version.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
       }
