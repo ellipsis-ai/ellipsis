@@ -329,8 +329,8 @@ class SlackController @Inject() (
       actions.find(_.name == "stop_conversation").flatMap(_.value)
     }
 
-    def maybeRunBehaviorId: Option[String] = {
-      val action = actions.find(_.name == "run_behavior")
+    def maybeRunBehaviorVersionId: Option[String] = {
+      val action = actions.find(_.name == "run_behavior_version")
       for {
         selectedOptions <- action.map(_.selected_options)
         firstOption <- selectedOptions.map(_.headOption)
@@ -478,24 +478,23 @@ class SlackController @Inject() (
                 resultText = s"$user stopped the conversation"
               }
 
-              info.maybeRunBehaviorId.foreach { behaviorId =>
+              info.maybeRunBehaviorVersionId.foreach { behaviorId =>
                 info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
-                    dataService.behaviors.findWithoutAccessCheck(behaviorId).map { maybeBehavior =>
-                      maybeBehavior.map { behavior =>
-                        behavior.group.maybeCurrentVersionId.map { behaviorGroupVersionId =>
-                          dataService.behaviorGroupVersions.findWithoutAccessCheckAction(behaviorGroupVersionId).map { maybeGroupVersion =>
-                            maybeGroupVersion.map { groupVersion =>
-                              dataService.behaviorVersions.findFor(behavior, groupVersion).map { maybeBehaviorVersion =>
-                                maybeBehaviorVersion.map { behaviorVersion =>
-                                  BehaviorResponse.buildFor(event, behaviorVersion, Map(), None, None, lambdaService, dataService, cache, ws, configuration).map { response =>
-                                    response.result.map(_.text)
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
+                    dataService.behaviorVersions.findWithoutAccessCheck(behaviorId).flatMap { maybeBehaviorVersion =>
+                      maybeBehaviorVersion.map { behaviorVersion =>
+                        BehaviorResponse.buildFor(
+                          event,
+                          behaviorVersion,
+                          Map(),
+                          None,
+                          None,
+                          lambdaService,
+                          dataService,
+                          cache,
+                          ws,
+                          configuration
+                        ).flatMap(_.result.map(_.sendIn(None, dataService)))
                       }.getOrElse(Future.successful({}))
                     }
                   }.getOrElse(Future.successful({}))

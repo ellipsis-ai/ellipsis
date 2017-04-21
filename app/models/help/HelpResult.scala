@@ -52,11 +52,11 @@ trait HelpResult {
     val actions = indexedVersions.slice(0, maxRunnableActions)
     val includeIndexes = actions.length > 1
     val menuItems = actions.flatMap { ea =>
-      ea.version.behaviorId.map { behaviorId =>
-        SlackMessageActionMenuItem(ea.version.maybeFirstTrigger.getOrElse("Run"), behaviorId)
+      ea.version.id.map { behaviorVersionId =>
+        SlackMessageActionMenuItem(ea.version.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
       }
     }
-    Seq(SlackMessageActionMenu("run_behavior", "Actions", menuItems))
+    Seq(SlackMessageActionMenu("run_behavior_version", "Actions", menuItems))
   }
 
   def helpTextFor(indexedVersions: Seq[IndexedBehaviorVersionData]): String = {
