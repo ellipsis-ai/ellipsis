@@ -494,17 +494,17 @@ class SlackController @Inject() (
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
-                info.maybeFutureEvent.flatMap { maybeEvent =>
-                  maybeEvent.map { event =>
-                    val eventualResponse = dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId).flatMap { maybeBehaviorVersion =>
-                      maybeBehaviorVersion.map { behaviorVersion =>
-                        val eventualSentResponse = BehaviorResponse.buildFor(event, behaviorVersion, Map(), None, None, lambdaService, dataService, cache, ws, configuration)
-                        eventualSentResponse.flatMap(_.result.map(_.sendIn(None, dataService)))
-                      }.getOrElse(Future.successful({}))
-                    }
-                    SlackMessageReactionHandler.handle(event.clientFor(dataService), eventualResponse, info.channel.id, info.message_ts, delayMilliseconds = 500)
-                  }.getOrElse(Future.successful({}))
-                }
+                info.maybeFutureEvent.flatMap(_.map { event =>
+                  val eventualMaybeBehaviorVersion = dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
+                  val eventualResponse = eventualMaybeBehaviorVersion.flatMap(_.map { behaviorVersion =>
+                    val eventualSentResponse = BehaviorResponse.buildFor(event, behaviorVersion, Map(), None, None, lambdaService, dataService, cache, ws, configuration)
+                    eventualSentResponse.flatMap(_.result.map(_.sendIn(None, dataService)))
+                  }.getOrElse {
+                    Future.successful({})
+                  })
+                  SlackMessageReactionHandler.handle(event.clientFor(dataService), eventualResponse, info.channel.id, info.message_ts, delayMilliseconds = 500)
+                }.getOrElse(Future.successful({})))
+
                 val maybeOptionText = info.findOptionLabelForValue(behaviorVersionId)
                 val actionName = maybeOptionText.map(_.mkString("“", "", "”")).getOrElse("an action")
                 resultText = s"$user ran $actionName"
