@@ -1,7 +1,5 @@
 package models.behaviors.builtins
 
-import java.time.OffsetDateTime
-
 import akka.actor.ActorSystem
 import json.BehaviorGroupData
 import models.behaviors.events._
@@ -57,15 +55,15 @@ case class DisplayHelpBehavior(
       val label = group.shortName
       val helpActionValue = group.helpActionId
       maybeHelpSearch.map { helpSearch =>
-        SlackMessageAction("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
+        SlackMessageActionButton("help_for_skill", label, s"id=$helpActionValue&search=$helpSearch")
       }.getOrElse {
-        SlackMessageAction("help_for_skill", label, helpActionValue)
+        SlackMessageActionButton("help_for_skill", label, helpActionValue)
       }
     })
     val remainingGroupCount = resultsRemaining.length
     val actions = if (remainingGroupCount > 0) {
       val label = if (remainingGroupCount == 1) { "1 more skill…" } else { s"$remainingGroupCount more skills…" }
-      skillActions :+ SlackMessageAction("help_index", label, endAt.toString, maybeStyle = Some("primary"))
+      skillActions :+ SlackMessageActionButton("help_index", label, endAt.toString, maybeStyle = Some("primary"))
     } else {
       skillActions
     }
@@ -73,16 +71,15 @@ case class DisplayHelpBehavior(
     TextWithActionsResult(event, None, intro, forcePrivateResponse = false, attachment)
   }
 
-  private def actionHeadingFor(actionList: Seq[String]): String = {
-    val numActions = actionList.length
+  private def actionHeadingFor(numActions: Int): String = {
     if (numActions == 0) {
       "No actions to display."
     } else {
-      (if (numActions == 1) {
-        "_**1 action**_"
+      if (numActions == 1) {
+        "_**1 action**_  "
       } else {
-        s"_**$numActions actions**_"
-      }) ++ " (type any action to trigger it):  "
+        s"_**$numActions actions**_  "
+      }
     }
   }
 
@@ -97,20 +94,24 @@ case class DisplayHelpBehavior(
     val group = result.group
     val name = s"**${group.name}**"
 
-    val actionList = result.sortedActionListFor(group.behaviorVersions, trimNonMatching = group.isMiscellaneous)
+    val sortedBehaviorVersions = result.sortedBehaviorVersions
+    val versionsText = result.helpTextFor(sortedBehaviorVersions)
+    val runnableActions = result.slackRunActionsFor(sortedBehaviorVersions)
 
     val resultText =
       s"""$intro
          |
-         |$name  \n${result.description}\n\n${actionHeadingFor(actionList)}
-         |${actionList.mkString("")}
+         |$name  \n${result.description}\n\n${actionHeadingFor(sortedBehaviorVersions.length)}
+         |$versionsText
          |""".stripMargin
-    val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
-    TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_for_skill", actions, None, Some(Color.BLUE_LIGHT), None))
+    val actions = runnableActions :+ result.slackHelpIndexAction
+    val actionText = if (sortedBehaviorVersions.length == 1) { None } else { Some("Select or type an action to run it now:") }
+    val messageActions = SlackMessageActions("help_for_skill", actions, actionText, Some(Color.BLUE_LIGHT), None)
+    TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, messageActions)
   }
 
   def emptyResult: BotResult = {
-    val actions = Seq(SlackMessageAction("help_index", "More help…", "0"))
+    val actions = Seq(SlackMessageActionButton("help_index", "More help…", "0"))
     val resultText = s"I don’t know anything$matchString. ${event.skillListLinkFor(isListEmpty = true, lambdaService)}"
     TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_no_result", actions, None, Some(Color.PINK)))
   }

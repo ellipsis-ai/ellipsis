@@ -1,7 +1,7 @@
 package models.help
 
 import json.{BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.Event
+import models.behaviors.events._
 import services.{AWSLambdaService, DataService}
 
 trait HelpResult {
@@ -11,6 +11,8 @@ trait HelpResult {
 
   val dataService: DataService
   val lambdaService: AWSLambdaService
+
+  val slackHelpIndexAction = SlackMessageActionButton("help_index", "More help…", "0")
 
   def description: String
 
@@ -26,14 +28,40 @@ trait HelpResult {
     }
   }
 
-  def sortedActionListFor(behaviorVersions: Seq[BehaviorVersionData], trimNonMatching: Boolean = false): Seq[String] = {
-    val (matching, nonMatching) = behaviorVersions.partition(version => version.triggers.exists(matchingTriggers.contains))
-    val versionsToInclude = if (trimNonMatching && matching.nonEmpty) { matching } else { matching ++ nonMatching }
-    versionsToInclude.flatMap(version => helpStringFor(version))
+  def sortedBehaviorVersions: Seq[BehaviorVersionData] = {
+    val behaviorVersions = group.behaviorVersions
+    val trimNonMatching = group.isMiscellaneous
+    val (matching, nonMatching) = behaviorVersions.filter(_.triggers.nonEmpty).partition(version => version.triggers.exists(matchingTriggers.contains))
+    if (trimNonMatching && matching.nonEmpty) {
+      matching
+    } else {
+      matching ++ nonMatching
+    }
   }
 
-  def helpStringFor(behaviorVersion: BehaviorVersionData): Option[String] = {
-    val triggers = behaviorVersion.triggers
+  def slackRunActionsFor(behaviorVersions: Seq[BehaviorVersionData]): Seq[SlackMessageAction] = {
+    if (behaviorVersions.length == 1) {
+      behaviorVersions.headOption.flatMap { version =>
+        version.id.map { versionId =>
+          Seq(SlackMessageActionButton("run_behavior_version", "Run this action", versionId))
+        }
+      }.getOrElse(Seq())
+    } else {
+      val menuItems = behaviorVersions.flatMap { ea =>
+        ea.id.map { behaviorVersionId =>
+          SlackMessageActionMenuItem(ea.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
+        }
+      }
+      Seq(SlackMessageActionMenu("run_behavior_version", "Actions", menuItems))
+    }
+  }
+
+  def helpTextFor(behaviorVersions: Seq[BehaviorVersionData]): String = {
+    behaviorVersions.flatMap { ea => maybeHelpStringFor(ea) }.mkString("")
+  }
+
+  def maybeHelpStringFor(behaviorVersionData: BehaviorVersionData): Option[String] = {
+    val triggers = behaviorVersionData.triggers
     if (triggers.isEmpty) {
       None
     } else {
@@ -62,8 +90,8 @@ trait HelpResult {
         None
       } else {
         val linkText = (for {
-          groupId <- behaviorVersion.groupId
-          behaviorId <- behaviorVersion.behaviorId
+          groupId <- behaviorVersionData.groupId
+          behaviorId <- behaviorVersionData.behaviorId
         } yield {
           val url = dataService.behaviors.editLinkFor(groupId, Some(behaviorId), lambdaService.configuration)
           s" [✎]($url)"

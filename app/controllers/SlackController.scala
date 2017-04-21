@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
+import models.behaviors.BehaviorResponse
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import models.silhouette.EllipsisEnv
@@ -12,10 +13,12 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
+import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
+import utils.SlackMessageReactionHandler
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -28,6 +31,7 @@ class SlackController @Inject() (
                                   val slackEventService: SlackEventService,
                                   val lambdaService: AWSLambdaService,
                                   val cache: CacheApi,
+                                  val ws: WSClient,
                                   val eventHandler: EventHandler,
                                   implicit val actorSystem: ActorSystem
                                 ) extends EllipsisController {
@@ -242,8 +246,17 @@ class SlackController @Inject() (
     )
   }
 
-  case class ActionTriggeredInfo(name: String, value: Option[String])
-  case class ActionInfo(name: String, text: String, value: Option[String], `type`: String, style: Option[String])
+  case class ActionSelectOptionInfo(text: Option[String], value: String)
+  case class ActionTriggeredInfo(name: String, value: Option[String], selected_options: Option[Seq[ActionSelectOptionInfo]])
+  case class ActionInfo(
+                         name: String,
+                         text: String,
+                         value: Option[String],
+                         `type`: String,
+                         style: Option[String],
+                         options: Option[Seq[ActionSelectOptionInfo]],
+                         selected_options: Option[Seq[ActionSelectOptionInfo]]
+                       )
   case class TeamInfo(id: String, domain: String)
   case class ChannelInfo(id: String, name: String)
   case class UserInfo(id: String, name: String)
@@ -315,12 +328,45 @@ class SlackController @Inject() (
       actions.find(_.name == "stop_conversation").flatMap(_.value)
     }
 
+    def maybeRunBehaviorVersionId: Option[String] = {
+      val maybeAction = actions.find(_.name == "run_behavior_version")
+      val maybeValue = maybeAction.flatMap(_.value)
+      maybeValue.orElse {
+        for {
+          selectedOptions <- maybeAction.map(_.selected_options)
+          firstOption <- selectedOptions.map(_.headOption)
+          behaviorId <- firstOption.map(_.value)
+        } yield {
+          behaviorId
+        }
+      }
+    }
+
     def maybeFutureEvent: Future[Option[SlackMessageEvent]] = {
       dataService.slackBotProfiles.allForSlackTeamId(this.team.id).map { botProfiles =>
         botProfiles.headOption.map { botProfile =>
           SlackMessageEvent(botProfile, this.channel.id, None, this.user.id, "", this.message_ts)
         }
       }
+    }
+
+    def findOptionLabelForValue(value: String): Option[String] = {
+      for {
+        attachment <- this.original_message.attachments.headOption
+        actions <- attachment.actions
+        select <- actions.find(_.`type` == "select")
+        options <- select.options
+        matchingOption <- options.find(_.value == value)
+        text <- matchingOption.text
+      } yield {
+        text
+      }
+    }
+
+    def findButtonLabelForNameAndValue(name: String, value: String): Option[String] = {
+      val actions = this.original_message.attachments.flatMap(_.actions).flatten
+      val maybeAction = actions.find(action => action.`type` == "button" && action.name == name && action.value.contains(value))
+      maybeAction.map(_.text)
     }
   }
 
@@ -331,6 +377,9 @@ class SlackController @Inject() (
   implicit val channelReads = Json.reads[ChannelInfo]
   implicit val teamReads = Json.reads[TeamInfo]
   implicit val userReads = Json.reads[UserInfo]
+
+  implicit val actionSelectOptionReads = Json.reads[ActionSelectOptionInfo]
+  implicit val actionSelectOptionWrites = Json.writes[ActionSelectOptionInfo]
 
   implicit val actionReads = Json.reads[ActionInfo]
   implicit val actionWrites = Json.writes[ActionInfo]
@@ -393,17 +442,11 @@ class SlackController @Inject() (
                     Logger.error("Exception responding to a Slack action", t)
                   }
                 }
-                val maybeClickedAction =
-                  info.
-                    original_message.attachments.
-                    flatMap(_.actions).
-                    flatten.
-                    find { action =>
-                      action.name == "help_for_skill" && action.value.contains(skillId)
-                    }
-                resultText = maybeClickedAction.map {
-                  action => s"$user clicked ${action.text}."
-                }.getOrElse(s"$user clicked a button.")
+                resultText = info.findButtonLabelForNameAndValue("help_for_skill", skillId).map { text =>
+                  s"$user clicked $text."
+                } getOrElse {
+                  s"$user clicked a button."
+                }
               }
 
               info.maybeConfirmContinueConversationId.foreach { conversationId =>
@@ -448,6 +491,27 @@ class SlackController @Inject() (
                 }
                 shouldRemoveActions = true
                 resultText = s"$user stopped the conversation"
+              }
+
+              info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
+                info.maybeFutureEvent.flatMap(_.map { event =>
+                  val eventualMaybeBehaviorVersion = dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
+                  val eventualResponse = eventualMaybeBehaviorVersion.flatMap(_.map { behaviorVersion =>
+                    val eventualSentResponse = BehaviorResponse.buildFor(event, behaviorVersion, Map(), None, None, lambdaService, dataService, cache, ws, configuration)
+                    eventualSentResponse.flatMap(_.result.map(_.sendIn(None, dataService)))
+                  }.getOrElse {
+                    Future.successful({})
+                  })
+                  SlackMessageReactionHandler.handle(event.clientFor(dataService), eventualResponse, info.channel.id, info.message_ts, delayMilliseconds = 500)
+                }.getOrElse(Future.successful({})))
+
+                resultText = info.findButtonLabelForNameAndValue("run_behavior_version", behaviorVersionId).map { text =>
+                  s"$user clicked $text"
+                } orElse info.findOptionLabelForValue(behaviorVersionId).map { text =>
+                  s"$user ran ${text.mkString("“", "", "”")}"
+                } getOrElse {
+                  s"$user ran an action"
+                }
               }
 
               // respond immediately by appending a new attachment

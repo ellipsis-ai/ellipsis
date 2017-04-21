@@ -14,7 +14,7 @@ pipelineStages := Seq(rjs, digest, gzip)
 
 scalaVersion := "2.11.8"
 
-lazy val slackClientVersion = "3feb51c21462b9d677b6cf5ebce9ad8b2fc4c3aa"
+lazy val slackClientVersion = "d8e8debca2986d1553167c71dc772764717714f6"
 lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
 
 libraryDependencies ++= Seq(
