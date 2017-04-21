@@ -362,6 +362,12 @@ class SlackController @Inject() (
         text
       }
     }
+
+    def findButtonLabelForNameAndValue(name: String, value: String): Option[String] = {
+      val actions = this.original_message.attachments.flatMap(_.actions).flatten
+      val maybeAction = actions.find(action => action.`type` == "button" && action.name == name && action.value.contains(value))
+      maybeAction.map(_.text)
+    }
   }
 
   private val actionForm = Form(
@@ -436,17 +442,11 @@ class SlackController @Inject() (
                     Logger.error("Exception responding to a Slack action", t)
                   }
                 }
-                val maybeClickedAction =
-                  info.
-                    original_message.attachments.
-                    flatMap(_.actions).
-                    flatten.
-                    find { action =>
-                      action.name == "help_for_skill" && action.value.contains(skillId)
-                    }
-                resultText = maybeClickedAction.map {
-                  action => s"$user clicked ${action.text}."
-                }.getOrElse(s"$user clicked a button.")
+                resultText = info.findButtonLabelForNameAndValue("help_for_skill", skillId).map { text =>
+                  s"$user clicked $text."
+                } getOrElse {
+                  s"$user clicked a button."
+                }
               }
 
               info.maybeConfirmContinueConversationId.foreach { conversationId =>
@@ -505,9 +505,13 @@ class SlackController @Inject() (
                   SlackMessageReactionHandler.handle(event.clientFor(dataService), eventualResponse, info.channel.id, info.message_ts, delayMilliseconds = 500)
                 }.getOrElse(Future.successful({})))
 
-                val maybeOptionText = info.findOptionLabelForValue(behaviorVersionId)
-                val actionName = maybeOptionText.map(_.mkString("“", "", "”")).getOrElse("an action")
-                resultText = s"$user ran $actionName"
+                resultText = info.findButtonLabelForNameAndValue("run_behavior_version", behaviorVersionId).map { text =>
+                  s"$user clicked $text"
+                } orElse info.findOptionLabelForValue(behaviorVersionId).map { text =>
+                  s"$user ran ${text.mkString("“", "", "”")}"
+                } getOrElse {
+                  s"$user ran an action"
+                }
               }
 
               // respond immediately by appending a new attachment
