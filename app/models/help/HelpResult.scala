@@ -29,39 +29,31 @@ trait HelpResult {
     }
   }
 
-  case class IndexedBehaviorVersionData(tuple: (BehaviorVersionData, Int)) {
-    def version = tuple._1
-    def index = tuple._2
-    def printableIndex = (index + 1).toString
-  }
-
-  def sortedIndexedBehaviorVersions: Seq[IndexedBehaviorVersionData] = {
+  def sortedBehaviorVersions: Seq[BehaviorVersionData] = {
     val behaviorVersions = group.behaviorVersions
     val trimNonMatching = group.isMiscellaneous
     val (matching, nonMatching) = behaviorVersions.filter(_.triggers.nonEmpty).partition(version => version.triggers.exists(matchingTriggers.contains))
-    val list = if (trimNonMatching && matching.nonEmpty) {
+    if (trimNonMatching && matching.nonEmpty) {
       matching
     } else {
       matching ++ nonMatching
     }
-    list.zipWithIndex.map(IndexedBehaviorVersionData)
   }
 
-  def slackRunActionsFor(indexedVersions: Seq[IndexedBehaviorVersionData]): Seq[SlackMessageAction] = {
-    val menuItems = indexedVersions.flatMap { ea =>
-      ea.version.id.map { behaviorVersionId =>
-        SlackMessageActionMenuItem(ea.version.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
+  def slackRunActionsFor(behaviorVersions: Seq[BehaviorVersionData]): Seq[SlackMessageAction] = {
+    val menuItems = behaviorVersions.flatMap { ea =>
+      ea.id.map { behaviorVersionId =>
+        SlackMessageActionMenuItem(ea.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
       }
     }
     Seq(SlackMessageActionMenu("run_behavior_version", "Actions", menuItems))
   }
 
-  def helpTextFor(indexedVersions: Seq[IndexedBehaviorVersionData]): String = {
-    val includeIndexes = false //indexedVersions.length > 1
-    indexedVersions.flatMap { ea => maybeHelpStringFor(ea.version, Option(ea.printableIndex).filter(_ => includeIndexes)) }.mkString("")
+  def helpTextFor(behaviorVersions: Seq[BehaviorVersionData]): String = {
+    behaviorVersions.flatMap { ea => maybeHelpStringFor(ea) }.mkString("")
   }
 
-  def maybeHelpStringFor(behaviorVersionData: BehaviorVersionData, maybePrintableIndex: Option[String]): Option[String] = {
+  def maybeHelpStringFor(behaviorVersionData: BehaviorVersionData): Option[String] = {
     val triggers = behaviorVersionData.triggers
     if (triggers.isEmpty) {
       None
@@ -90,7 +82,6 @@ trait HelpResult {
       if (triggersString.isEmpty) {
         None
       } else {
-        val index = maybePrintableIndex.map(_.mkString("", "", ". ")).getOrElse("")
         val linkText = (for {
           groupId <- behaviorVersionData.groupId
           behaviorId <- behaviorVersionData.behaviorId
@@ -98,7 +89,7 @@ trait HelpResult {
           val url = dataService.behaviors.editLinkFor(groupId, Some(behaviorId), lambdaService.configuration)
           s" [✎]($url)"
         }).getOrElse("")
-        Some(s"$index$triggersString$linkText\n\n")
+        Some(s"$triggersString$linkText\n\n")
       }
     }
   }

@@ -94,14 +94,14 @@ case class DisplayHelpBehavior(
     val group = result.group
     val name = s"**${group.name}**"
 
-    val sortedVersionsWithIndexes = result.sortedIndexedBehaviorVersions
-    val versionsText = result.helpTextFor(sortedVersionsWithIndexes)
-    val runnableActions = result.slackRunActionsFor(sortedVersionsWithIndexes)
+    val sortedBehaviorVersions = result.sortedBehaviorVersions
+    val versionsText = result.helpTextFor(sortedBehaviorVersions)
+    val runnableActions = result.slackRunActionsFor(sortedBehaviorVersions)
 
     val resultText =
       s"""$intro
          |
-         |$name  \n${result.description}\n\n${actionHeadingFor(sortedVersionsWithIndexes.length)}
+         |$name  \n${result.description}\n\n${actionHeadingFor(sortedBehaviorVersions.length)}
          |$versionsText
          |""".stripMargin
     val actions = runnableActions :+ result.slackHelpIndexAction
