@@ -3,7 +3,6 @@ package models.help
 import json.{BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.events._
 import services.{AWSLambdaService, DataService}
-import utils.SlackMessageSender
 
 trait HelpResult {
   val event: Event
