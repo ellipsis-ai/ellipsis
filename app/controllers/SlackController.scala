@@ -329,13 +329,16 @@ class SlackController @Inject() (
     }
 
     def maybeRunBehaviorVersionId: Option[String] = {
-      val action = actions.find(_.name == "run_behavior_version")
-      for {
-        selectedOptions <- action.map(_.selected_options)
-        firstOption <- selectedOptions.map(_.headOption)
-        behaviorId <- firstOption.map(_.value)
-      } yield {
-        behaviorId
+      val maybeAction = actions.find(_.name == "run_behavior_version")
+      val maybeValue = maybeAction.flatMap(_.value)
+      maybeValue.orElse {
+        for {
+          selectedOptions <- maybeAction.map(_.selected_options)
+          firstOption <- selectedOptions.map(_.headOption)
+          behaviorId <- firstOption.map(_.value)
+        } yield {
+          behaviorId
+        }
       }
     }
 

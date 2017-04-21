@@ -105,7 +105,8 @@ case class DisplayHelpBehavior(
          |$versionsText
          |""".stripMargin
     val actions = runnableActions :+ result.slackHelpIndexAction
-    val messageActions = SlackMessageActions("help_for_skill", actions, Some("You can select an action to run:"), Some(Color.BLUE_LIGHT), None)
+    val actionText = if (sortedBehaviorVersions.length == 1) { None } else { Some("Select or type an action to run it now:") }
+    val messageActions = SlackMessageActions("help_for_skill", actions, actionText, Some(Color.BLUE_LIGHT), None)
     TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, messageActions)
   }
 

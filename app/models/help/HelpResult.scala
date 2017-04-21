@@ -41,12 +41,20 @@ trait HelpResult {
   }
 
   def slackRunActionsFor(behaviorVersions: Seq[BehaviorVersionData]): Seq[SlackMessageAction] = {
-    val menuItems = behaviorVersions.flatMap { ea =>
-      ea.id.map { behaviorVersionId =>
-        SlackMessageActionMenuItem(ea.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
+    if (behaviorVersions.length == 1) {
+      behaviorVersions.headOption.flatMap { version =>
+        version.id.map { versionId =>
+          Seq(SlackMessageActionButton("run_behavior_version", "Run this action", versionId))
+        }
+      }.getOrElse(Seq())
+    } else {
+      val menuItems = behaviorVersions.flatMap { ea =>
+        ea.id.map { behaviorVersionId =>
+          SlackMessageActionMenuItem(ea.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
+        }
       }
+      Seq(SlackMessageActionMenu("run_behavior_version", "Actions", menuItems))
     }
-    Seq(SlackMessageActionMenu("run_behavior_version", "Actions", menuItems))
   }
 
   def helpTextFor(behaviorVersions: Seq[BehaviorVersionData]): String = {
