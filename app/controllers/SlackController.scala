@@ -18,6 +18,7 @@ import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
+import utils.SlackMessageReactionHandler
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -492,22 +493,13 @@ class SlackController @Inject() (
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
                 info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
-                    dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId).flatMap { maybeBehaviorVersion =>
+                    val eventualResponse = dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId).flatMap { maybeBehaviorVersion =>
                       maybeBehaviorVersion.map { behaviorVersion =>
-                        BehaviorResponse.buildFor(
-                          event,
-                          behaviorVersion,
-                          Map(),
-                          None,
-                          None,
-                          lambdaService,
-                          dataService,
-                          cache,
-                          ws,
-                          configuration
-                        ).flatMap(_.result.map(_.sendIn(None, dataService)))
+                        val eventualSentResponse = BehaviorResponse.buildFor(event, behaviorVersion, Map(), None, None, lambdaService, dataService, cache, ws, configuration)
+                        eventualSentResponse.flatMap(_.result.map(_.sendIn(None, dataService)))
                       }.getOrElse(Future.successful({}))
                     }
+                    SlackMessageReactionHandler.handle(event.clientFor(dataService), eventualResponse, info.channel.id, info.message_ts)
                   }.getOrElse(Future.successful({}))
                 }
                 val maybeOptionText = info.findOptionLabelForValue(behaviorVersionId)
