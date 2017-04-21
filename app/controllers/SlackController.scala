@@ -499,7 +499,7 @@ class SlackController @Inject() (
                         eventualSentResponse.flatMap(_.result.map(_.sendIn(None, dataService)))
                       }.getOrElse(Future.successful({}))
                     }
-                    SlackMessageReactionHandler.handle(event.clientFor(dataService), eventualResponse, info.channel.id, info.message_ts)
+                    SlackMessageReactionHandler.handle(event.clientFor(dataService), eventualResponse, info.channel.id, info.message_ts, delayMilliseconds = 500)
                   }.getOrElse(Future.successful({}))
                 }
                 val maybeOptionText = info.findOptionLabelForValue(behaviorVersionId)

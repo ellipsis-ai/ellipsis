@@ -7,7 +7,7 @@ import slack.api.SlackApiClient
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object SlackMessageReactionHandler {
-  def handle[T](client: SlackApiClient, future: Future[T], channel: String, messageTs: String)
+  def handle[T](client: SlackApiClient, future: Future[T], channel: String, messageTs: String, delayMilliseconds: Int = 1500)
                (implicit system: ActorSystem): Future[Unit] = {
     implicit val ec: ExecutionContext = system.dispatcher
     val p = Promise[T]()
@@ -18,7 +18,7 @@ object SlackMessageReactionHandler {
     }
     p.completeWith(future)
     Future {
-      Thread.sleep(1500)
+      Thread.sleep(delayMilliseconds)
       if (!p.isCompleted) {
         client.addReactionToMessage("thinking_face", channel, messageTs).map { _ =>
           p.future.onComplete(_ => client.removeReactionFromMessage("thinking_face", channel, messageTs))
