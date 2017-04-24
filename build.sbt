@@ -38,7 +38,7 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc4",
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "net.ceedubs" %% "ficus" % "1.1.2",
-  "com.amazonaws" % "aws-java-sdk" % "1.10.72",
+  "com.amazonaws" % "aws-java-sdk" % "1.11.123",
   "org.webjars" % "requirejs" % "2.2.0",
   "org.webjars.bower" % "core.js" % "2.4.1",
   "org.webjars.bower" % "react" % "15.3.1",
