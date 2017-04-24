@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import models.behaviors.BehaviorResponse
 import models.behaviors.builtins.DisplayHelpBehavior
+import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import models.silhouette.EllipsisEnv
 import play.api.cache.CacheApi
@@ -298,7 +299,7 @@ class SlackController @Inject() (
 
     def maybeHelpForSkillIdWithMaybeSearch: Option[(String, Option[String])] = {
       val idAndSearchPattern = "id=(.+?)&search=(.+)".r
-      actions.find { info => info.name == "help_for_skill" }.flatMap { info =>
+      actions.find { info => info.name == SHOW_BEHAVIOR_GROUP_HELP }.flatMap { info =>
         info.value.map {
           case idAndSearchPattern(id, search) => (id, Some(search))
           case value => (value, None)
@@ -307,7 +308,7 @@ class SlackController @Inject() (
     }
 
     def maybeHelpIndexAt: Option[Int] = {
-      actions.find { info => info.name == "help_index" }.map { _.value.map { value =>
+      actions.find { info => info.name == SHOW_HELP_INDEX }.map { _.value.map { value =>
         try {
           value.toInt
         } catch {
@@ -317,19 +318,19 @@ class SlackController @Inject() (
     }
 
     def maybeConfirmContinueConversationId: Option[String] = {
-      actions.find(_.name == "confirm_continue_conversation").flatMap(_.value)
+      actions.find(_.name == CONFIRM_CONTINUE_CONVERSATION).flatMap(_.value)
     }
 
     def maybeDontContinueConversationId: Option[String] = {
-      actions.find(_.name == "dont_continue_conversation").flatMap(_.value)
+      actions.find(_.name == DONT_CONTINUE_CONVERSATION).flatMap(_.value)
     }
 
     def maybeStopConversationId: Option[String] = {
-      actions.find(_.name == "stop_conversation").flatMap(_.value)
+      actions.find(_.name == STOP_CONVERSATION).flatMap(_.value)
     }
 
     def maybeRunBehaviorVersionId: Option[String] = {
-      val maybeAction = actions.find(_.name == "run_behavior_version")
+      val maybeAction = actions.find(_.name == RUN_BEHAVIOR_VERSION)
       val maybeValue = maybeAction.flatMap(_.value)
       maybeValue.orElse {
         for {
@@ -442,7 +443,7 @@ class SlackController @Inject() (
                     Logger.error("Exception responding to a Slack action", t)
                   }
                 }
-                resultText = info.findButtonLabelForNameAndValue("help_for_skill", skillId).map { text =>
+                resultText = info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, skillId).map { text =>
                   s"$user clicked $text."
                 } getOrElse {
                   s"$user clicked a button."
@@ -505,7 +506,7 @@ class SlackController @Inject() (
                   SlackMessageReactionHandler.handle(event.clientFor(dataService), eventualResponse, info.channel.id, info.message_ts, delayMilliseconds = 500)
                 }.getOrElse(Future.successful({})))
 
-                resultText = info.findButtonLabelForNameAndValue("run_behavior_version", behaviorVersionId).map { text =>
+                resultText = info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
                   s"$user clicked $text"
                 } orElse info.findOptionLabelForValue(behaviorVersionId).map { text =>
                   s"$user ran ${text.mkString("“", "", "”")}"

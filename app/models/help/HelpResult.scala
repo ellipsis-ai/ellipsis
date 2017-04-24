@@ -1,6 +1,7 @@
 package models.help
 
 import json.{BehaviorTriggerData, BehaviorVersionData}
+import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import services.{AWSLambdaService, DataService}
 
@@ -12,7 +13,7 @@ trait HelpResult {
   val dataService: DataService
   val lambdaService: AWSLambdaService
 
-  val slackHelpIndexAction = SlackMessageActionButton("help_index", "More help…", "0")
+  val slackHelpIndexAction = SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0")
 
   def description: String
 
