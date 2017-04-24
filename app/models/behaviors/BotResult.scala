@@ -181,10 +181,11 @@ case class UnhandledErrorResult(
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.UnhandledError
+  val functionLines = behaviorVersion.functionBody.split("\n").length
 
   def text: String = {
     val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
-    Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated)).flatten.mkString(":\n\n")
+    Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated(functionLines))).flatten.mkString(":\n\n")
   }
 
 }
