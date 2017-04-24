@@ -22,32 +22,45 @@ trait HelpResult {
       event.botPrefix
     else
       ""
-    s"`$prefix${trigger.text}`"
+    val formattedTrigger = s"`$prefix${trigger.text}`"
+    if (matchingTriggers.contains(trigger)) {
+      s"**$formattedTrigger**"
+    } else {
+      formattedTrigger
+    }
   }
 
   private lazy val triggerableBehaviorVersions: Seq[BehaviorVersionData] = group.behaviorVersions.filter(_.triggers.nonEmpty)
   lazy val matchingBehaviorVersions: Seq[BehaviorVersionData] = triggerableBehaviorVersions.filter(_.triggers.exists(matchingTriggers.contains))
   lazy val nonMatchingBehaviorVersions: Seq[BehaviorVersionData] = triggerableBehaviorVersions.filterNot(_.triggers.exists(matchingTriggers.contains))
 
-  def behaviorVersionsToDisplay: Seq[BehaviorVersionData] = {
+  def behaviorVersionsToDisplay(includeNonMatching: Boolean = false): Seq[BehaviorVersionData] = {
     if (matchingBehaviorVersions.nonEmpty) {
-      matchingBehaviorVersions
+      if (includeNonMatching) {
+        matchingBehaviorVersions ++ nonMatchingBehaviorVersions
+      } else {
+        matchingBehaviorVersions
+      }
     } else {
       nonMatchingBehaviorVersions
     }
   }
 
-  def maybeShowAllBehaviorVersionsAction: Option[SlackMessageAction] = {
-    if (!group.isMiscellaneous && matchingBehaviorVersions.nonEmpty && nonMatchingBehaviorVersions.nonEmpty) {
+  def maybeShowAllBehaviorVersionsAction(maybeSearchText: Option[String], includeNonMatchingResults: Boolean = false): Option[SlackMessageAction] = {
+    if (!includeNonMatchingResults && !group.isMiscellaneous && matchingBehaviorVersions.nonEmpty && nonMatchingBehaviorVersions.nonEmpty) {
       val numVersions = triggerableBehaviorVersions.length
-      Some(SlackMessageActionButton(LIST_BEHAVIOR_GROUP_ACTIONS, s"List all $numVersions actions…", group.helpActionId))
+      val label = if (numVersions == 2) {
+        s"Show both actions"
+      } else {
+        s"Show all $numVersions actions"
+      }
+      Some(SlackMessageActionButton(LIST_BEHAVIOR_GROUP_ACTIONS, label, HelpGroupSearchValue(group.helpActionId, maybeSearchText).toString))
     } else {
       None
     }
   }
 
-  def slackRunActions: Seq[SlackMessageAction] = {
-    val behaviorVersions = behaviorVersionsToDisplay
+  def slackRunActionsFor(behaviorVersions: Seq[BehaviorVersionData]): Seq[SlackMessageAction] = {
     if (behaviorVersions.length == 1) {
       behaviorVersions.headOption.flatMap { version =>
         version.id.map { versionId =>
@@ -64,12 +77,12 @@ trait HelpResult {
     }
   }
 
-  def helpText: String = {
-    behaviorVersionsToDisplay.flatMap { ea => maybeHelpStringFor(ea) }.mkString("\n\n")
+  def helpTextFor(behaviorVersions: Seq[BehaviorVersionData]): String = {
+    behaviorVersions.flatMap(ea => maybeHelpStringFor(ea)).mkString("\n\n")
   }
 
-  def behaviorVersionsHeading: String = {
-    if (matchingBehaviorVersions.nonEmpty) {
+  def behaviorVersionsHeading(includeNonMatching: Boolean): String = {
+    if (!includeNonMatching && matchingBehaviorVersions.nonEmpty) {
       val numActions = matchingBehaviorVersions.length
       if (numActions == 1) {
         "_**1 matching action**_"
@@ -77,7 +90,7 @@ trait HelpResult {
         s"_**$numActions matching actions**_"
       }
     } else {
-      val numActions = nonMatchingBehaviorVersions.length
+      val numActions = triggerableBehaviorVersions.length
       if (numActions == 0) {
         "No actions to display."
       } else if (numActions == 1) {

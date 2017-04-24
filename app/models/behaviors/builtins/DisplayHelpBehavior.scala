@@ -17,6 +17,7 @@ case class DisplayHelpBehavior(
                          maybeSkillId: Option[String],
                          maybeStartAtIndex: Option[Int],
                          includeNameAndDescription: Boolean,
+                         includeNonMatchingResults: Boolean,
                          isFirstTrigger: Boolean,
                          event: Event,
                          lambdaService: AWSLambdaService,
@@ -53,14 +54,9 @@ case class DisplayHelpBehavior(
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
     val skillActions = resultsToShow.map(result => {
-      val group = result.group
-      val label = group.shortName
-      val helpActionValue = group.helpActionId
-      maybeHelpSearch.map { helpSearch =>
-        SlackMessageActionButton(SHOW_BEHAVIOR_GROUP_HELP, label, s"id=$helpActionValue&search=$helpSearch")
-      }.getOrElse {
-        SlackMessageActionButton(SHOW_BEHAVIOR_GROUP_HELP, label, helpActionValue)
-      }
+      val label = result.group.shortName
+      val buttonValue = HelpGroupSearchValue(result.group.helpActionId, maybeHelpSearch).toString
+      SlackMessageActionButton(SHOW_BEHAVIOR_GROUP_HELP, label, buttonValue)
     })
     val remainingGroupCount = resultsRemaining.length
     val actions = if (remainingGroupCount > 0) {
@@ -90,18 +86,18 @@ case class DisplayHelpBehavior(
       ""
     }
 
-    val sortedBehaviorVersions = result.behaviorVersionsToDisplay
-    val versionsText = result.helpText
-    val runnableActions = result.slackRunActions
+    val behaviorVersions = result.behaviorVersionsToDisplay(includeNonMatchingResults)
+    val versionsText = result.helpTextFor(behaviorVersions)
+    val runnableActions = result.slackRunActionsFor(behaviorVersions)
 
     val resultText =
       s"""$intro
          |
-         |$skillNameAndDescription${result.behaviorVersionsHeading ++ "  "}
+         |$skillNameAndDescription${result.behaviorVersionsHeading(includeNonMatchingResults) ++ "  "}
          |$versionsText
          |""".stripMargin
-    val actions = runnableActions ++ Seq(result.maybeShowAllBehaviorVersionsAction, Some(result.slackHelpIndexAction)).flatten
-    val actionText = if (sortedBehaviorVersions.length == 1) { None } else { Some("Select or type an action to run it now:") }
+    val actions = runnableActions ++ Seq(result.maybeShowAllBehaviorVersionsAction(maybeHelpSearch, includeNonMatchingResults), Some(result.slackHelpIndexAction)).flatten
+    val actionText = if (behaviorVersions.length == 1) { None } else { Some("Select or type an action to run it now:") }
     val messageActions = SlackMessageActions(SHOW_BEHAVIOR_GROUP_HELP, actions, actionText, Some(Color.BLUE_LIGHT), None)
     TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, messageActions)
   }

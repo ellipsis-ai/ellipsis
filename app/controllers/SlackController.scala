@@ -8,6 +8,7 @@ import models.behaviors.BehaviorResponse
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
+import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.cache.CacheApi
 import play.api.data.Form
@@ -297,18 +298,20 @@ class SlackController @Inject() (
                                    response_url: String
                                  ) extends RequestInfo {
 
-    def maybeHelpForSkillIdWithMaybeSearch: Option[(String, Option[String])] = {
-      val idAndSearchPattern = "id=(.+?)&search=(.+)".r
-      actions.find { info => info.name == SHOW_BEHAVIOR_GROUP_HELP }.flatMap { info =>
-        info.value.map {
-          case idAndSearchPattern(id, search) => (id, Some(search))
-          case value => (value, None)
+    def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
+      actions.find(_.name == SHOW_BEHAVIOR_GROUP_HELP).flatMap {
+        _.value.map { value =>
+          HelpGroupSearchValue.fromString(value)
         }
       }
     }
 
-    def maybeActionListForSkillId: Option[String] = {
-      actions.find(_.name == LIST_BEHAVIOR_GROUP_ACTIONS).flatMap(_.value)
+    def maybeActionListForSkillId: Option[HelpGroupSearchValue] = {
+      actions.find(_.name == LIST_BEHAVIOR_GROUP_ACTIONS).flatMap {
+        _.value.map { value =>
+          HelpGroupSearchValue.fromString(value)
+        }
+      }
     }
 
     def maybeHelpIndexAt: Option[Int] = {
@@ -370,7 +373,9 @@ class SlackController @Inject() (
 
     def findButtonLabelForNameAndValue(name: String, value: String): Option[String] = {
       val actions = this.original_message.attachments.flatMap(_.actions).flatten
-      val maybeAction = actions.find(action => action.`type` == "button" && action.name == name && action.value.contains(value))
+      val maybeAction = actions.find(action => action.`type` == "button" && action.name == name && action.value.exists { actionValue =>
+        actionValue == value || HelpGroupSearchValue.fromString(actionValue).helpGroupId == value
+      })
       maybeAction.map(_.text)
     }
   }
@@ -426,7 +431,17 @@ class SlackController @Inject() (
               info.maybeHelpIndexAt.foreach { index =>
                 info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
-                    DisplayHelpBehavior(None, None, Some(index), includeNameAndDescription = false,isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, dataService))
+                    DisplayHelpBehavior(
+                      None,
+                      None,
+                      Some(index),
+                      includeNameAndDescription = false,
+                      includeNonMatchingResults = false,
+                      isFirstTrigger = false,
+                      event,
+                      lambdaService,
+                      dataService
+                    ).result.flatMap(result => result.sendIn(None, dataService))
                   }.getOrElse(Future.successful({}))
                 }.recover {
                   case t: Throwable => {
@@ -436,10 +451,20 @@ class SlackController @Inject() (
                 resultText = s"$user clicked More help."
               }
 
-              info.maybeHelpForSkillIdWithMaybeSearch.foreach { case(skillId, maybeSearchText) =>
+              info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
                 info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
-                    val result = DisplayHelpBehavior(maybeSearchText, Some(skillId), None, includeNameAndDescription = true, isFirstTrigger = false, event, lambdaService, dataService).result
+                    val result = DisplayHelpBehavior(
+                      searchValue.maybeSearchText,
+                      Some(searchValue.helpGroupId),
+                      None,
+                      includeNameAndDescription = true,
+                      includeNonMatchingResults = false,
+                      isFirstTrigger = false,
+                      event,
+                      lambdaService,
+                      dataService
+                    ).result
                     result.flatMap(result => result.sendIn(None, dataService))
                   }.getOrElse(Future.successful({}))
                 }.recover {
@@ -447,17 +472,27 @@ class SlackController @Inject() (
                     Logger.error("Exception responding to a Slack action for skill help with maybe search", t)
                   }
                 }
-                resultText = info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, skillId).map { text =>
+                resultText = info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
                   s"$user clicked $text."
                 } getOrElse {
                   s"$user clicked a button."
                 }
               }
 
-              info.maybeActionListForSkillId.foreach { skillId =>
+              info.maybeActionListForSkillId.foreach { searchValue =>
                 info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
-                    val result = DisplayHelpBehavior(None, Some(skillId), None, includeNameAndDescription = false, isFirstTrigger = false, event, lambdaService, dataService).result
+                    val result = DisplayHelpBehavior(
+                      searchValue.maybeSearchText,
+                      Some(searchValue.helpGroupId),
+                      None,
+                      includeNameAndDescription = false,
+                      includeNonMatchingResults = true,
+                      isFirstTrigger = false,
+                      event,
+                      lambdaService,
+                      dataService
+                    ).result
                     result.flatMap(result => result.sendIn(None, dataService))
                   }.getOrElse(Future.successful({}))
                 }.recover {
