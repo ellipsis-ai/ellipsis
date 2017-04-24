@@ -307,6 +307,10 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeActionListForSkillId: Option[String] = {
+      actions.find(_.name == LIST_BEHAVIOR_GROUP_ACTIONS).flatMap(_.value)
+    }
+
     def maybeHelpIndexAt: Option[Int] = {
       actions.find { info => info.name == SHOW_HELP_INDEX }.map { _.value.map { value =>
         try {
@@ -422,11 +426,11 @@ class SlackController @Inject() (
               info.maybeHelpIndexAt.foreach { index =>
                 info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
-                    DisplayHelpBehavior(None, None, Some(index), isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, dataService))
+                    DisplayHelpBehavior(None, None, Some(index), includeNameAndDescription = false,isFirstTrigger = false, event, lambdaService, dataService).result.flatMap(result => result.sendIn(None, dataService))
                   }.getOrElse(Future.successful({}))
                 }.recover {
                   case t: Throwable => {
-                    Logger.error("Exception responding to a Slack action", t)
+                    Logger.error("Exception responding to a Slack action for help index", t)
                   }
                 }
                 resultText = s"$user clicked More help."
@@ -435,12 +439,12 @@ class SlackController @Inject() (
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { case(skillId, maybeSearchText) =>
                 info.maybeFutureEvent.flatMap { maybeEvent =>
                   maybeEvent.map { event =>
-                    val result = DisplayHelpBehavior(maybeSearchText, Some(skillId), None, isFirstTrigger = false, event, lambdaService, dataService).result
+                    val result = DisplayHelpBehavior(maybeSearchText, Some(skillId), None, includeNameAndDescription = true, isFirstTrigger = false, event, lambdaService, dataService).result
                     result.flatMap(result => result.sendIn(None, dataService))
                   }.getOrElse(Future.successful({}))
                 }.recover {
                   case t: Throwable => {
-                    Logger.error("Exception responding to a Slack action", t)
+                    Logger.error("Exception responding to a Slack action for skill help with maybe search", t)
                   }
                 }
                 resultText = info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, skillId).map { text =>
@@ -448,6 +452,20 @@ class SlackController @Inject() (
                 } getOrElse {
                   s"$user clicked a button."
                 }
+              }
+
+              info.maybeActionListForSkillId.foreach { skillId =>
+                info.maybeFutureEvent.flatMap { maybeEvent =>
+                  maybeEvent.map { event =>
+                    val result = DisplayHelpBehavior(None, Some(skillId), None, includeNameAndDescription = false, isFirstTrigger = false, event, lambdaService, dataService).result
+                    result.flatMap(result => result.sendIn(None, dataService))
+                  }.getOrElse(Future.successful({}))
+                }.recover {
+                  case t: Throwable => {
+                    Logger.error("Exception responding to a Slack action for skill action list", t)
+                  }
+                }
+                resultText = s"$user clicked List all actions"
               }
 
               info.maybeConfirmContinueConversationId.foreach { conversationId =>

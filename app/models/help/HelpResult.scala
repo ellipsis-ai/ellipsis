@@ -22,11 +22,7 @@ trait HelpResult {
       event.botPrefix
     else
       ""
-    if (matchingTriggers.contains(trigger)) {
-      s"**`$prefix${trigger.text}`**"
-    } else {
-      s"`$prefix${trigger.text}`"
-    }
+    s"`$prefix${trigger.text}`"
   }
 
   private lazy val triggerableBehaviorVersions: Seq[BehaviorVersionData] = group.behaviorVersions.filter(_.triggers.nonEmpty)
@@ -42,13 +38,9 @@ trait HelpResult {
   }
 
   def maybeShowAllBehaviorVersionsAction: Option[SlackMessageAction] = {
-    if (matchingBehaviorVersions.nonEmpty && nonMatchingBehaviorVersions.nonEmpty) {
-      val otherButtonLabel = if (nonMatchingBehaviorVersions.length == 1) {
-        "Show similar action"
-      } else {
-        "Show similar actions"
-      }
-      Some(SlackMessageActionButton(SHOW_BEHAVIOR_GROUP_HELP, otherButtonLabel, group.helpActionId))
+    if (!group.isMiscellaneous && matchingBehaviorVersions.nonEmpty && nonMatchingBehaviorVersions.nonEmpty) {
+      val numVersions = triggerableBehaviorVersions.length
+      Some(SlackMessageActionButton(LIST_BEHAVIOR_GROUP_ACTIONS, s"List all $numVersions actions…", group.helpActionId))
     } else {
       None
     }
@@ -56,10 +48,10 @@ trait HelpResult {
 
   def slackRunActions: Seq[SlackMessageAction] = {
     val behaviorVersions = behaviorVersionsToDisplay
-    val actions = if (behaviorVersions.length == 1) {
+    if (behaviorVersions.length == 1) {
       behaviorVersions.headOption.flatMap { version =>
         version.id.map { versionId =>
-          Seq(Some(SlackMessageActionButton(RUN_BEHAVIOR_VERSION, "Run this action", versionId)))
+          Seq(SlackMessageActionButton(RUN_BEHAVIOR_VERSION, "Run this action", versionId))
         }
       }.getOrElse(Seq())
     } else {
@@ -68,13 +60,12 @@ trait HelpResult {
           SlackMessageActionMenuItem(ea.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
         }
       }
-      Seq(Some(SlackMessageActionMenu(RUN_BEHAVIOR_VERSION, "Actions", menuItems)))
+      Seq(SlackMessageActionMenu(RUN_BEHAVIOR_VERSION, "Actions", menuItems))
     }
-    (actions :+ maybeShowAllBehaviorVersionsAction).flatten
   }
 
   def helpText: String = {
-    behaviorVersionsToDisplay.flatMap { ea => maybeHelpStringFor(ea) }.mkString("")
+    behaviorVersionsToDisplay.flatMap { ea => maybeHelpStringFor(ea) }.mkString("\n\n")
   }
 
   def behaviorVersionsHeading: String = {
@@ -133,7 +124,7 @@ trait HelpResult {
           val url = dataService.behaviors.editLinkFor(groupId, Some(behaviorId), lambdaService.configuration)
           s" [✎]($url)"
         }).getOrElse("")
-        Some(s"$triggersString$linkText\n\n")
+        Some(s"$triggersString$linkText")
       }
     }
   }

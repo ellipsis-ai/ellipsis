@@ -16,6 +16,7 @@ case class DisplayHelpBehavior(
                          maybeHelpString: Option[String],
                          maybeSkillId: Option[String],
                          maybeStartAtIndex: Option[Int],
+                         includeNameAndDescription: Boolean,
                          isFirstTrigger: Boolean,
                          event: Event,
                          lambdaService: AWSLambdaService,
@@ -81,7 +82,13 @@ case class DisplayHelpBehavior(
     }
 
     val group = result.group
-    val name = s"**${group.name}**"
+    val skillNameAndDescription = if (includeNameAndDescription) {
+      val name = s"**${group.name}**"
+      val description = result.description
+      s"$name  \n$description\n\n"
+    } else {
+      ""
+    }
 
     val sortedBehaviorVersions = result.behaviorVersionsToDisplay
     val versionsText = result.helpText
@@ -90,10 +97,10 @@ case class DisplayHelpBehavior(
     val resultText =
       s"""$intro
          |
-         |$name  \n${result.description}\n\n${result.behaviorVersionsHeading ++ "  "}
+         |$skillNameAndDescription${result.behaviorVersionsHeading ++ "  "}
          |$versionsText
          |""".stripMargin
-    val actions = runnableActions :+ result.slackHelpIndexAction
+    val actions = runnableActions ++ Seq(result.maybeShowAllBehaviorVersionsAction, Some(result.slackHelpIndexAction)).flatten
     val actionText = if (sortedBehaviorVersions.length == 1) { None } else { Some("Select or type an action to run it now:") }
     val messageActions = SlackMessageActions(SHOW_BEHAVIOR_GROUP_HELP, actions, actionText, Some(Color.BLUE_LIGHT), None)
     TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, messageActions)
