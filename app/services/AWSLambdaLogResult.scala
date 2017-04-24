@@ -2,12 +2,26 @@ package services
 
 case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, maybeError: Option[String]) {
 
-  def maybeTranslated: Option[String] = {
+  def shouldExcludeLine(line: String, functionLines: Int): Boolean = {
+    """<your function>:(\d+):""".r.findFirstMatchIn(line).exists { m =>
+      try {
+        val lineNumber = m.subgroups.head.toInt
+        lineNumber > functionLines
+      } catch {
+        case e: NumberFormatException => false
+      }
+    }
+  }
+
+  def maybeTranslated(functionLines: Int): Option[String] = {
     maybeError.map { error =>
       var translated = error
       translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
       translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
-      translated
+      translated.
+        split("\n").
+        filterNot { line => shouldExcludeLine(line, functionLines) }.
+        mkString("\n")
     }
   }
 
@@ -25,7 +39,7 @@ object AWSLambdaLogResult {
       nonErrorContent = m.subgroups.head
       maybeErrorContent = None
     }
-    val extractErrorRegex = """(?s)(.*\n)\S+\t\S+\t(\S*Error:.*)\n[^\n]*\nEND.*""".r
+    val extractErrorRegex = """(?s)(.*\n)\S+\t\S+\t(\S*Error:.*)\nEND.*""".r
     extractErrorRegex.findFirstMatchIn(text).foreach { m =>
       nonErrorContent = m.subgroups.head
       maybeErrorContent = m.subgroups.tail.headOption.map(s => s"\t$s")
