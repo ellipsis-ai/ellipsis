@@ -255,6 +255,10 @@ class AWSLambdaServiceImpl @Inject() (
         |     callback(null, { "result": result === undefined ? null : result });
         |   };
         |   $CONTEXT_PARAM.error = function(err) { callback(err || "(No error message or an empty error message was provided.)"); };
+        |   process.on('unhandledRejection', function(reason, p) {
+        |     throw(reason);
+        |   });
+        |
         |   ${awsCodeFor(maybeAwsConfig)}
         |   $CONTEXT_PARAM.accessTokens = {};
         |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
