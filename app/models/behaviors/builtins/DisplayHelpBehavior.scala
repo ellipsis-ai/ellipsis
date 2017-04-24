@@ -72,18 +72,6 @@ case class DisplayHelpBehavior(
     TextWithActionsResult(event, None, intro, forcePrivateResponse = false, attachment)
   }
 
-  private def actionHeadingFor(numActions: Int): String = {
-    if (numActions == 0) {
-      "No actions to display."
-    } else {
-      if (numActions == 1) {
-        "_**1 action**_  "
-      } else {
-        s"_**$numActions actions**_  "
-      }
-    }
-  }
-
   def skillResultFor(result: HelpResult): BotResult = {
 
     val intro = if (isFirstTrigger) {
@@ -95,14 +83,14 @@ case class DisplayHelpBehavior(
     val group = result.group
     val name = s"**${group.name}**"
 
-    val sortedBehaviorVersions = result.sortedBehaviorVersions
-    val versionsText = result.helpTextFor(sortedBehaviorVersions)
-    val runnableActions = result.slackRunActionsFor(sortedBehaviorVersions)
+    val sortedBehaviorVersions = result.behaviorVersionsToDisplay
+    val versionsText = result.helpText
+    val runnableActions = result.slackRunActions
 
     val resultText =
       s"""$intro
          |
-         |$name  \n${result.description}\n\n${actionHeadingFor(sortedBehaviorVersions.length)}
+         |$name  \n${result.description}\n\n${result.behaviorVersionsHeading ++ "  "}
          |$versionsText
          |""".stripMargin
     val actions = runnableActions :+ result.slackHelpIndexAction
