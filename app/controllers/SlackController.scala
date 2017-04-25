@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
-import models.behaviors.BehaviorResponse
+import models.behaviors.{BehaviorResponse, BotResult}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
@@ -354,6 +354,19 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeSendNewMessage(getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]]): Future[Any] = {
+      eventualMaybeEvent.flatMap(_.map { event =>
+        val client = event.clientFor(dataService)
+        val delayMilliseconds = 1000
+        val eventualResponse = getEventualMaybeResult(event).flatMap(maybeResult => {
+          maybeResult.map { result =>
+            result.sendIn(None, dataService)
+          }.getOrElse(Future.successful(None))
+        })
+        SlackMessageReactionHandler.handle(client, eventualResponse, this.channel.id, this.message_ts, delayMilliseconds)
+      }.getOrElse(Future.successful({})))
+    }
+
     private def originalMessageActions: Seq[ActionInfo] = {
       this.original_message.attachments.flatMap(_.actions).flatten
     }
@@ -542,16 +555,28 @@ class SlackController @Inject() (
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
-                info.eventualMaybeEvent.flatMap(_.map { event =>
-                  val eventualMaybeBehaviorVersion = dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
-                  val eventualResponse = eventualMaybeBehaviorVersion.flatMap(_.map { behaviorVersion =>
-                    val eventualSentResponse = BehaviorResponse.buildFor(event, behaviorVersion, Map(), None, None, lambdaService, dataService, cache, ws, configuration)
-                    eventualSentResponse.flatMap(_.result.map(_.sendIn(None, dataService)))
-                  }.getOrElse {
-                    Future.successful({})
-                  })
-                  SlackMessageReactionHandler.handle(event.clientFor(dataService), eventualResponse, info.channel.id, info.message_ts, delayMilliseconds = 500)
-                }.getOrElse(Future.successful({})))
+                info.maybeSendNewMessage { event =>
+                  for {
+                    maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
+                    maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+                      BehaviorResponse.buildFor(
+                        event,
+                        behaviorVersion,
+                        Map(),
+                        None,
+                        None,
+                        lambdaService,
+                        dataService,
+                        cache,
+                        ws,
+                        configuration
+                      ).map(Some(_))
+                    }.getOrElse(Future.successful(None))
+                    maybeResult <- maybeResponse.map { response =>
+                      response.result.map(Some(_))
+                    }.getOrElse(Future.successful(None))
+                  } yield maybeResult
+                }
 
                 resultText = info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
                   s"$user clicked $text"
