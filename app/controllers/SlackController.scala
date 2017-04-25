@@ -573,6 +573,10 @@ class SlackController @Inject() (
                       response.result.map(Some(_))
                     }.getOrElse(Future.successful(None))
                   } yield maybeResult
+                }.recover {
+                  case t: Throwable => {
+                    Logger.error(s"Exception responding to a Slack action to run behavior version $behaviorVersionId", t)
+                  }
                 }
 
                 resultText = info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
