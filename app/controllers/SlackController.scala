@@ -300,17 +300,13 @@ class SlackController @Inject() (
 
     def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
       actions.find(_.name == SHOW_BEHAVIOR_GROUP_HELP).flatMap {
-        _.value.map { value =>
-          HelpGroupSearchValue.fromString(value)
-        }
+        _.value.map(HelpGroupSearchValue.fromString)
       }
     }
 
     def maybeActionListForSkillId: Option[HelpGroupSearchValue] = {
       actions.find(_.name == LIST_BEHAVIOR_GROUP_ACTIONS).flatMap {
-        _.value.map { value =>
-          HelpGroupSearchValue.fromString(value)
-        }
+        _.value.map(HelpGroupSearchValue.fromString)
       }
     }
 
@@ -350,7 +346,7 @@ class SlackController @Inject() (
       }
     }
 
-    def maybeFutureEvent: Future[Option[SlackMessageEvent]] = {
+    def eventualMaybeEvent: Future[Option[SlackMessageEvent]] = {
       dataService.slackBotProfiles.allForSlackTeamId(this.team.id).map { botProfiles =>
         botProfiles.headOption.map { botProfile =>
           SlackMessageEvent(botProfile, this.channel.id, None, this.user.id, "", this.message_ts)
@@ -358,11 +354,13 @@ class SlackController @Inject() (
       }
     }
 
+    private def originalMessageActions: Seq[ActionInfo] = {
+      this.original_message.attachments.flatMap(_.actions).flatten
+    }
+
     def findOptionLabelForValue(value: String): Option[String] = {
       for {
-        attachment <- this.original_message.attachments.headOption
-        actions <- attachment.actions
-        select <- actions.find(_.`type` == "select")
+        select <- originalMessageActions.find(_.`type` == "select")
         options <- select.options
         matchingOption <- options.find(_.value == value)
         text <- matchingOption.text
@@ -372,10 +370,11 @@ class SlackController @Inject() (
     }
 
     def findButtonLabelForNameAndValue(name: String, value: String): Option[String] = {
-      val actions = this.original_message.attachments.flatMap(_.actions).flatten
-      val maybeAction = actions.find(action => action.`type` == "button" && action.name == name && action.value.exists { actionValue =>
-        actionValue == value || HelpGroupSearchValue.fromString(actionValue).helpGroupId == value
-      })
+      val maybeAction = originalMessageActions.find { action =>
+        action.`type` == "button" && action.name == name && action.value.exists { actionValue =>
+          actionValue == value || HelpGroupSearchValue.fromString(actionValue).helpGroupId == value
+        }
+      }
       maybeAction.map(_.text)
     }
   }
@@ -429,8 +428,7 @@ class SlackController @Inject() (
               val user = s"<@${info.user.id}>"
 
               info.maybeHelpIndexAt.foreach { index =>
-                info.maybeFutureEvent.flatMap { maybeEvent =>
-                  maybeEvent.map { event =>
+                info.eventualMaybeEvent.flatMap(_.map { event =>
                     DisplayHelpBehavior(
                       None,
                       None,
@@ -441,9 +439,9 @@ class SlackController @Inject() (
                       event,
                       lambdaService,
                       dataService
-                    ).result.flatMap(result => result.sendIn(None, dataService))
+                    ).result.flatMap(_.sendIn(None, dataService))
                   }.getOrElse(Future.successful({}))
-                }.recover {
+                ).recover {
                   case t: Throwable => {
                     Logger.error("Exception responding to a Slack action for help index", t)
                   }
@@ -452,9 +450,8 @@ class SlackController @Inject() (
               }
 
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
-                info.maybeFutureEvent.flatMap { maybeEvent =>
-                  maybeEvent.map { event =>
-                    val result = DisplayHelpBehavior(
+                info.eventualMaybeEvent.flatMap(_.map { event =>
+                    DisplayHelpBehavior(
                       searchValue.maybeSearchText,
                       Some(searchValue.helpGroupId),
                       None,
@@ -464,10 +461,9 @@ class SlackController @Inject() (
                       event,
                       lambdaService,
                       dataService
-                    ).result
-                    result.flatMap(result => result.sendIn(None, dataService))
+                    ).result.flatMap(_.sendIn(None, dataService))
                   }.getOrElse(Future.successful({}))
-                }.recover {
+                ).recover {
                   case t: Throwable => {
                     Logger.error("Exception responding to a Slack action for skill help with maybe search", t)
                   }
@@ -480,9 +476,8 @@ class SlackController @Inject() (
               }
 
               info.maybeActionListForSkillId.foreach { searchValue =>
-                info.maybeFutureEvent.flatMap { maybeEvent =>
-                  maybeEvent.map { event =>
-                    val result = DisplayHelpBehavior(
+                info.eventualMaybeEvent.flatMap(_.map { event =>
+                    DisplayHelpBehavior(
                       searchValue.maybeSearchText,
                       Some(searchValue.helpGroupId),
                       None,
@@ -492,10 +487,9 @@ class SlackController @Inject() (
                       event,
                       lambdaService,
                       dataService
-                    ).result
-                    result.flatMap(result => result.sendIn(None, dataService))
+                    ).result.flatMap(_.sendIn(None, dataService))
                   }.getOrElse(Future.successful({}))
-                }.recover {
+                ).recover {
                   case t: Throwable => {
                     Logger.error("Exception responding to a Slack action for skill action list", t)
                   }
@@ -548,7 +542,7 @@ class SlackController @Inject() (
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
-                info.maybeFutureEvent.flatMap(_.map { event =>
+                info.eventualMaybeEvent.flatMap(_.map { event =>
                   val eventualMaybeBehaviorVersion = dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
                   val eventualResponse = eventualMaybeBehaviorVersion.flatMap(_.map { behaviorVersion =>
                     val eventualSentResponse = BehaviorResponse.buildFor(event, behaviorVersion, Map(), None, None, lambdaService, dataService, cache, ws, configuration)

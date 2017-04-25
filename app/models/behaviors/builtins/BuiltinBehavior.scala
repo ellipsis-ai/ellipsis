@@ -47,7 +47,8 @@ object BuiltinBehavior {
           includeNameAndDescription = true,
           includeNonMatchingResults = false,
           isFirstTrigger = true,
-          event, lambdaService,
+          event,
+          lambdaService,
           dataService
         ))
         case rememberRegex(cmd) => Some(RememberBehavior(event, lambdaService, dataService))
