@@ -441,20 +441,19 @@ class SlackController @Inject() (
               val user = s"<@${info.user.id}>"
 
               info.maybeHelpIndexAt.foreach { index =>
-                info.eventualMaybeEvent.flatMap(_.map { event =>
-                    DisplayHelpBehavior(
-                      None,
-                      None,
-                      Some(index),
-                      includeNameAndDescription = false,
-                      includeNonMatchingResults = false,
-                      isFirstTrigger = false,
-                      event,
-                      lambdaService,
-                      dataService
-                    ).result.flatMap(_.sendIn(None, dataService))
-                  }.getOrElse(Future.successful({}))
-                ).recover {
+                info.maybeSendNewMessage { event =>
+                  DisplayHelpBehavior(
+                    None,
+                    None,
+                    Some(index),
+                    includeNameAndDescription = false,
+                    includeNonMatchingResults = false,
+                    isFirstTrigger = false,
+                    event,
+                    lambdaService,
+                    dataService
+                  ).result.map(Some(_))
+                }.recover {
                   case t: Throwable => {
                     Logger.error("Exception responding to a Slack action for help index", t)
                   }
@@ -463,20 +462,19 @@ class SlackController @Inject() (
               }
 
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
-                info.eventualMaybeEvent.flatMap(_.map { event =>
-                    DisplayHelpBehavior(
-                      searchValue.maybeSearchText,
-                      Some(searchValue.helpGroupId),
-                      None,
-                      includeNameAndDescription = true,
-                      includeNonMatchingResults = false,
-                      isFirstTrigger = false,
-                      event,
-                      lambdaService,
-                      dataService
-                    ).result.flatMap(_.sendIn(None, dataService))
-                  }.getOrElse(Future.successful({}))
-                ).recover {
+                info.maybeSendNewMessage { event =>
+                  DisplayHelpBehavior(
+                    searchValue.maybeSearchText,
+                    Some(searchValue.helpGroupId),
+                    None,
+                    includeNameAndDescription = true,
+                    includeNonMatchingResults = false,
+                    isFirstTrigger = false,
+                    event,
+                    lambdaService,
+                    dataService
+                  ).result.map(Some(_))
+                }.recover {
                   case t: Throwable => {
                     Logger.error("Exception responding to a Slack action for skill help with maybe search", t)
                   }
@@ -489,20 +487,19 @@ class SlackController @Inject() (
               }
 
               info.maybeActionListForSkillId.foreach { searchValue =>
-                info.eventualMaybeEvent.flatMap(_.map { event =>
-                    DisplayHelpBehavior(
-                      searchValue.maybeSearchText,
-                      Some(searchValue.helpGroupId),
-                      None,
-                      includeNameAndDescription = false,
-                      includeNonMatchingResults = true,
-                      isFirstTrigger = false,
-                      event,
-                      lambdaService,
-                      dataService
-                    ).result.flatMap(_.sendIn(None, dataService))
-                  }.getOrElse(Future.successful({}))
-                ).recover {
+                info.maybeSendNewMessage { event =>
+                  DisplayHelpBehavior(
+                    searchValue.maybeSearchText,
+                    Some(searchValue.helpGroupId),
+                    None,
+                    includeNameAndDescription = false,
+                    includeNonMatchingResults = true,
+                    isFirstTrigger = false,
+                    event,
+                    lambdaService,
+                    dataService
+                  ).result.map(Some(_))
+                }.recover {
                   case t: Throwable => {
                     Logger.error("Exception responding to a Slack action for skill action list", t)
                   }
