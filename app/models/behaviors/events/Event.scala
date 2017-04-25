@@ -104,7 +104,17 @@ trait Event {
   }
 
   def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService)(implicit actorSystem: ActorSystem): Future[BotResult] = {
-    DisplayHelpBehavior(Some(messageText), None, Some(0), isFirstTrigger = true, this, lambdaService, dataService).result
+    DisplayHelpBehavior(
+      Some(messageText),
+      None,
+      Some(0),
+      includeNameAndDescription = true,
+      includeNonMatchingResults = false,
+      isFirstTrigger = true,
+      this,
+      lambdaService,
+      dataService
+    ).result
   }
 
   def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]]

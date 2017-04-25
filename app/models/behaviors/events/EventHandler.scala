@@ -5,6 +5,7 @@ import javax.inject._
 import akka.actor.ActorSystem
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithActionsResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -76,8 +77,8 @@ class EventHandler @Inject() (
             val key = updatedConvo.pendingEventKey
             cache.set(key, event, 5.minutes)
             val actions = Seq(
-              SlackMessageActionButton("confirm_continue_conversation", "Yes, it's an answer", updatedConvo.id),
-              SlackMessageActionButton("dont_continue_conversation", "No, not an answer", updatedConvo.id)
+              SlackMessageActionButton(CONFIRM_CONTINUE_CONVERSATION, "Yes, it's an answer", updatedConvo.id),
+              SlackMessageActionButton(DONT_CONTINUE_CONVERSATION, "No, not an answer", updatedConvo.id)
             )
             val prompt = maybeLastPrompt.map { lastPrompt =>
               s"""It's been a while since I asked you:
