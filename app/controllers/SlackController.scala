@@ -354,7 +354,7 @@ class SlackController @Inject() (
       }
     }
 
-    def maybeSendNewMessage(getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]]): Future[Any] = {
+    def sendResultWithNewEvent(getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]]): Future[Unit] = {
       eventualMaybeEvent.flatMap(_.map { event =>
         val client = event.clientFor(dataService)
         val delayMilliseconds = 1000
@@ -441,7 +441,7 @@ class SlackController @Inject() (
               val user = s"<@${info.user.id}>"
 
               info.maybeHelpIndexAt.foreach { index =>
-                info.maybeSendNewMessage { event =>
+                info.sendResultWithNewEvent { event =>
                   DisplayHelpBehavior(
                     None,
                     None,
@@ -462,7 +462,7 @@ class SlackController @Inject() (
               }
 
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
-                info.maybeSendNewMessage { event =>
+                info.sendResultWithNewEvent { event =>
                   DisplayHelpBehavior(
                     searchValue.maybeSearchText,
                     Some(searchValue.helpGroupId),
@@ -487,7 +487,7 @@ class SlackController @Inject() (
               }
 
               info.maybeActionListForSkillId.foreach { searchValue =>
-                info.maybeSendNewMessage { event =>
+                info.sendResultWithNewEvent { event =>
                   DisplayHelpBehavior(
                     searchValue.maybeSearchText,
                     Some(searchValue.helpGroupId),
@@ -552,7 +552,7 @@ class SlackController @Inject() (
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
-                info.maybeSendNewMessage { event =>
+                info.sendResultWithNewEvent { event =>
                   for {
                     maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
                     maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
