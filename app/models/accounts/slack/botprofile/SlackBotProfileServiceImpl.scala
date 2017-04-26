@@ -3,9 +3,14 @@ package models.accounts.slack.botprofile
 import java.time.OffsetDateTime
 import javax.inject.{Inject, Provider}
 
+import akka.actor.ActorSystem
 import models.team.Team
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.BotResult
+import models.behaviors.events.SlackMessageEvent
+import play.api.Logger
+import utils.{SlackMessageReactionHandler, SlackTimestamp}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,7 +27,8 @@ class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_
 }
 
 class SlackBotProfileServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService]
+                                          dataServiceProvider: Provider[DataService],
+                                          implicit val actorSystem: ActorSystem
                                         ) extends SlackBotProfileService {
 
   def dataService = dataServiceProvider.get
@@ -84,5 +90,44 @@ class SlackBotProfileServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def eventualMaybeEvent(slackTeamId: String, channelId: String, userId: String): Future[Option[SlackMessageEvent]] = {
+    allForSlackTeamId(slackTeamId).map { botProfiles =>
+      botProfiles.headOption.map { botProfile =>
+        SlackMessageEvent(botProfile, channelId, None, userId, "", SlackTimestamp.now)
+      }
+    }
+  }
 
+  def sendResult(eventualMaybeResult: Future[Option[BotResult]]): Future[Option[String]] = {
+    for {
+      maybeResult <- eventualMaybeResult
+      maybeTimestamp <- maybeResult.map { result =>
+        result.sendIn(None, dataService)
+      }.getOrElse(Future.successful(None))
+    } yield maybeTimestamp
+  }
+
+  def sendResultWithNewEvent(
+    description: String,
+    getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
+    slackTeamId: String,
+    channelId: String,
+    userId: String,
+    originalMessageTs: String
+  ): Future[Unit] = {
+    val delayMilliseconds = 1000
+    (for {
+      maybeEvent <- eventualMaybeEvent(slackTeamId, channelId, userId)
+      _ <- maybeEvent.map { event =>
+        val client = clientFor(event.profile)
+        val eventualResult = getEventualMaybeResult(event)
+        sendResult(eventualResult)
+        SlackMessageReactionHandler.handle(client, eventualResult, channelId, originalMessageTs, delayMilliseconds)
+      }.getOrElse(Future.successful(None))
+    } yield {}).recover {
+      case t: Throwable => {
+        Logger.error(s"Exception responding to a Slack action: $description", t)
+      }
+    }
+  }
 }
