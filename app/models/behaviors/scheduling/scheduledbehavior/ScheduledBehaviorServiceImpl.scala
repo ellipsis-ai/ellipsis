@@ -131,13 +131,16 @@ class ScheduledBehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def uncompiledFindByBehaviorIdQueryFor(behaviorId: Rep[String]) = {
-    allWithUser.filter { case((((msg, _), _), _), _) => msg.behaviorId === behaviorId }
+  def uncompiledFindByBehaviorIdQueryFor(behaviorId: Rep[String], maybeUserId: Rep[Option[String]], maybeChannel: Rep[Option[String]]) = {
+    allWithUser.
+      filter { case((((msg, _), _), _), _) => msg.behaviorId === behaviorId }.
+      filter { case((((msg, _), _), _), _) => maybeUserId.isEmpty || msg.maybeUserId === maybeUserId }.
+      filter { case((((msg, _), _), _), _) => maybeChannel.isEmpty || msg.maybeChannel === maybeChannel }
   }
   val findByBehaviorIdQueryFor = Compiled(uncompiledFindByBehaviorIdQueryFor _)
 
-  def allForBehavior(behavior: Behavior): Future[Seq[ScheduledBehavior]] = {
-    val action = findByBehaviorIdQueryFor(behavior.id).result.map { r =>
+  def allForBehavior(behavior: Behavior, maybeUser: Option[User], maybeChannel: Option[String]): Future[Seq[ScheduledBehavior]] = {
+    val action = findByBehaviorIdQueryFor(behavior.id, maybeUser.map(_.id), maybeChannel).result.map { r =>
       r.map(tuple2ScheduledBehavior)
     }
     dataService.run(action)

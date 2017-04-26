@@ -332,12 +332,16 @@ class APIController @Inject() (
 
   case class UnscheduleActionInfo(
                                    actionName: String,
+                                   userId: Option[String],
+                                   channel: Option[String],
                                    token: String
                                  )
 
   private val unscheduleActionForm = Form(
     mapping(
       "actionName" -> nonEmptyText,
+      "userId" -> optional(nonEmptyText),
+      "channel" -> optional(nonEmptyText),
       "token" -> nonEmptyText
     )(UnscheduleActionInfo.apply)(UnscheduleActionInfo.unapply)
   )
@@ -351,16 +355,23 @@ class APIController @Inject() (
         val eventualResult = for {
           context <- ApiMethodContext.createFor(info.token)
           maybeBehavior <- context.maybeBehaviorFor(info.actionName)
+          maybeUser <- info.userId.map { userId =>
+            dataService.users.find(userId)
+          }.getOrElse(Future.successful(None))
           result <- maybeBehavior.map { behavior =>
-            dataService.scheduledBehaviors.allForBehavior(behavior).flatMap { scheduledBehaviors =>
-              if (scheduledBehaviors.isEmpty) {
-                Future.successful(Ok("There was nothing to unschedule for this action"))
-              } else {
-                for {
-                  displayText <- scheduledBehaviors.head.displayText(dataService)
-                  _ <- dataService.scheduledBehaviors.deleteFor(behavior, behavior.team)
-                } yield {
-                  Ok(s"Ok, I unscheduled everything for $displayText")
+            if (info.userId.isDefined && maybeUser.isEmpty) {
+              Future.successful(NotFound(s"Couldn't find a user with ID `${info.userId.get}`"))
+            } else {
+              dataService.scheduledBehaviors.allForBehavior(behavior, maybeUser, info.channel).flatMap { scheduledBehaviors =>
+                if (scheduledBehaviors.isEmpty) {
+                  Future.successful(Ok("There was nothing to unschedule for this action"))
+                } else {
+                  for {
+                    displayText <- scheduledBehaviors.head.displayText(dataService)
+                    _ <- dataService.scheduledBehaviors.deleteFor(behavior, behavior.team)
+                  } yield {
+                    Ok(s"Ok, I unscheduled everything for $displayText")
+                  }
                 }
               }
             }

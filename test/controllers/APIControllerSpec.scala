@@ -316,12 +316,15 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
   def unscheduleActionBodyFor(
                              actionName: String,
+                             maybeUserId: Option[String],
                              token: String
                            ): JsValue = {
-    JsObject(Seq(
+    val required = Seq(
       ("actionName", JsString(actionName)),
       ("token", JsString(token))
-    ))
+    )
+    val userPart = maybeUserId.map(uid => Seq(("userId", JsString(uid)))).getOrElse(Seq())
+    JsObject(required ++ userPart)
   }
 
   "unscheduleAction" should {
@@ -329,11 +332,32 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     "400 for invalid token" in new ControllerTestContext {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService)
-        val body = unscheduleActionBodyFor("foo", token)
+        val body = unscheduleActionBodyFor("foo", None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         contentAsString(result) mustBe "Invalid token"
+        verify(dataService.apiTokens, times(1)).find(token)
+      }
+    }
+
+    "404 for invalid user id" in new ControllerTestContext {
+      running(app) {
+        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+        val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService)
+        val actionName = "foo"
+        when(dataService.behaviors.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
+        when(dataService.behaviors.findWithoutAccessCheck(originatingBehavior.id)).thenReturn(Future.successful(Some(originatingBehavior)))
+        when(dataService.behaviors.findByIdOrName(org.mockito.Matchers.eq(actionName), any[BehaviorGroup])).thenReturn(Future.successful(Some(targetBehavior)))
+        val invalidUserId = "invalid"
+        when(dataService.users.find(invalidUserId)).thenReturn(Future.successful(None))
+        val body = unscheduleActionBodyFor("foo", Some(invalidUserId), token)
+        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val result = route(app, request).get
+        status(result) mustBe NOT_FOUND
+        contentAsString(result) mustBe s"Couldn't find a user with ID `${invalidUserId}`"
         verify(dataService.apiTokens, times(1)).find(token)
       }
     }
@@ -355,9 +379,9 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.scheduledBehaviors.deleteFor(targetBehavior, team)).thenReturn(Future.successful(true))
         val mockScheduledBehavior = mock[ScheduledBehavior]
         when(mockScheduledBehavior.displayText(dataService)).thenReturn(Future.successful(s"an action named $actionName"))
-        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
+        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, None)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
 
-        val body = unscheduleActionBodyFor(actionName, token)
+        val body = unscheduleActionBodyFor(actionName, None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK

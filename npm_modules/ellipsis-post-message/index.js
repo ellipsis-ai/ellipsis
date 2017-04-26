@@ -256,6 +256,8 @@ const PM = {
       } else {
         const formData = {
           actionName: actionName,
+          userId: args.userId,
+          channel: args.channel,
           token: ellipsis.token
         };
         request.
