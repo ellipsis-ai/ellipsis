@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
-import models.behaviors.{BehaviorResponse, BotResult}
+import models.behaviors.BehaviorResponse
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
@@ -20,7 +20,6 @@ import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
-import utils.SlackMessageReactionHandler
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

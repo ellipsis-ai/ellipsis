@@ -4,12 +4,12 @@ import java.time.OffsetDateTime
 import javax.inject.{Inject, Provider}
 
 import akka.actor.ActorSystem
-import models.team.Team
-import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.BotResult
 import models.behaviors.events.SlackMessageEvent
+import models.team.Team
 import play.api.Logger
+import services.DataService
 import utils.{SlackMessageReactionHandler, SlackTimestamp}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -98,7 +98,7 @@ class SlackBotProfileServiceImpl @Inject() (
     }
   }
 
-  def sendResult(eventualMaybeResult: Future[Option[BotResult]]): Future[Option[String]] = {
+  private def sendResult(eventualMaybeResult: Future[Option[BotResult]]): Future[Option[String]] = {
     for {
       maybeResult <- eventualMaybeResult
       maybeTimestamp <- maybeResult.map { result =>
