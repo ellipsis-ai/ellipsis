@@ -354,23 +354,23 @@ class SlackController @Inject() (
       }
     }
 
-    private def sendResultWith(maybeEvent: Option[SlackMessageEvent], maybeResult: Option[BotResult]): Future[Unit] = {
-      val delayMilliseconds = 1000
-      (for {
-        event <- maybeEvent
-        result <- maybeResult
-      } yield {
-        val client = event.clientFor(dataService)
-        val eventualResponse = result.sendIn(None, dataService)
-        SlackMessageReactionHandler.handle(client, eventualResponse, this.channel.id, this.message_ts, delayMilliseconds)
-      }).getOrElse(Future.successful({}))
+    def sendResult(eventualMaybeResult: Future[Option[BotResult]]): Future[Option[String]] = {
+      for {
+        maybeResult <- eventualMaybeResult
+        maybeTimestamp <- maybeResult.map(_.sendIn(None, dataService)).getOrElse(Future.successful(None))
+      } yield maybeTimestamp
     }
 
     def sendResultWithNewEvent(description: String, getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]]): Future[Unit] = {
+      val delayMilliseconds = 1000
       (for {
         maybeEvent <- eventualMaybeEvent
-        maybeResult <- maybeEvent.map(getEventualMaybeResult).getOrElse(Future.successful(None))
-        _ <- sendResultWith(maybeEvent, maybeResult)
+        _ <- maybeEvent.map { event =>
+          val client = event.clientFor(dataService)
+          val eventualResult = getEventualMaybeResult(event)
+          sendResult(eventualResult)
+          SlackMessageReactionHandler.handle(client, eventualResult, this.channel.id, this.message_ts, delayMilliseconds)
+        }.getOrElse(Future.successful(None))
       } yield {}).recover {
         case t: Throwable => {
           Logger.error(s"Exception responding to a Slack action: $description", t)
