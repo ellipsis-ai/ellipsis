@@ -354,17 +354,28 @@ class SlackController @Inject() (
       }
     }
 
-    def sendResultWithNewEvent(getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]]): Future[Unit] = {
-      eventualMaybeEvent.flatMap(_.map { event =>
+    private def sendResultWith(maybeEvent: Option[SlackMessageEvent], maybeResult: Option[BotResult]): Future[Unit] = {
+      val delayMilliseconds = 1000
+      (for {
+        event <- maybeEvent
+        result <- maybeResult
+      } yield {
         val client = event.clientFor(dataService)
-        val delayMilliseconds = 1000
-        val eventualResponse = getEventualMaybeResult(event).flatMap(maybeResult => {
-          maybeResult.map { result =>
-            result.sendIn(None, dataService)
-          }.getOrElse(Future.successful(None))
-        })
+        val eventualResponse = result.sendIn(None, dataService)
         SlackMessageReactionHandler.handle(client, eventualResponse, this.channel.id, this.message_ts, delayMilliseconds)
-      }.getOrElse(Future.successful({})))
+      }).getOrElse(Future.successful({}))
+    }
+
+    def sendResultWithNewEvent(description: String, getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]]): Future[Unit] = {
+      (for {
+        maybeEvent <- eventualMaybeEvent
+        maybeResult <- maybeEvent.map(getEventualMaybeResult).getOrElse(Future.successful(None))
+        _ <- sendResultWith(maybeEvent, maybeResult)
+      } yield {}).recover {
+        case t: Throwable => {
+          Logger.error(s"Exception responding to a Slack action: $description", t)
+        }
+      }
     }
 
     private def originalMessageActions: Seq[ActionInfo] = {
@@ -441,7 +452,7 @@ class SlackController @Inject() (
               val user = s"<@${info.user.id}>"
 
               info.maybeHelpIndexAt.foreach { index =>
-                info.sendResultWithNewEvent { event =>
+                info.sendResultWithNewEvent("help index", event =>
                   DisplayHelpBehavior(
                     None,
                     None,
@@ -453,16 +464,12 @@ class SlackController @Inject() (
                     lambdaService,
                     dataService
                   ).result.map(Some(_))
-                }.recover {
-                  case t: Throwable => {
-                    Logger.error("Exception responding to a Slack action for help index", t)
-                  }
-                }
+                )
                 resultText = s"$user clicked More help."
               }
 
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
-                info.sendResultWithNewEvent { event =>
+                info.sendResultWithNewEvent("skill help with maybe search", event =>
                   DisplayHelpBehavior(
                     searchValue.maybeSearchText,
                     Some(searchValue.helpGroupId),
@@ -474,11 +481,7 @@ class SlackController @Inject() (
                     lambdaService,
                     dataService
                   ).result.map(Some(_))
-                }.recover {
-                  case t: Throwable => {
-                    Logger.error("Exception responding to a Slack action for skill help with maybe search", t)
-                  }
-                }
+                )
                 resultText = info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
                   s"$user clicked $text."
                 } getOrElse {
@@ -487,7 +490,7 @@ class SlackController @Inject() (
               }
 
               info.maybeActionListForSkillId.foreach { searchValue =>
-                info.sendResultWithNewEvent { event =>
+                info.sendResultWithNewEvent("for skill action list", event =>
                   DisplayHelpBehavior(
                     searchValue.maybeSearchText,
                     Some(searchValue.helpGroupId),
@@ -499,11 +502,7 @@ class SlackController @Inject() (
                     lambdaService,
                     dataService
                   ).result.map(Some(_))
-                }.recover {
-                  case t: Throwable => {
-                    Logger.error("Exception responding to a Slack action for skill action list", t)
-                  }
-                }
+                )
                 resultText = s"$user clicked List all actions"
               }
 
@@ -552,7 +551,7 @@ class SlackController @Inject() (
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
-                info.sendResultWithNewEvent { event =>
+                info.sendResultWithNewEvent(s"run behavior version $behaviorVersionId", event =>
                   for {
                     maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
                     maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
@@ -573,11 +572,7 @@ class SlackController @Inject() (
                       response.result.map(Some(_))
                     }.getOrElse(Future.successful(None))
                   } yield maybeResult
-                }.recover {
-                  case t: Throwable => {
-                    Logger.error(s"Exception responding to a Slack action to run behavior version $behaviorVersionId", t)
-                  }
-                }
+                )
 
                 resultText = info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
                   s"$user clicked $text"
