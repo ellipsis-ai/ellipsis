@@ -20,7 +20,6 @@ import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import play.utils.UriEncoding
 import services.{AWSLambdaService, DataService, SlackEventService}
-import utils.SlackMessageReactionHandler
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -346,14 +345,6 @@ class SlackController @Inject() (
       }
     }
 
-    def eventualMaybeEvent: Future[Option[SlackMessageEvent]] = {
-      dataService.slackBotProfiles.allForSlackTeamId(this.team.id).map { botProfiles =>
-        botProfiles.headOption.map { botProfile =>
-          SlackMessageEvent(botProfile, this.channel.id, None, this.user.id, "", this.message_ts)
-        }
-      }
-    }
-
     private def originalMessageActions: Seq[ActionInfo] = {
       this.original_message.attachments.flatMap(_.actions).flatten
     }
@@ -428,46 +419,46 @@ class SlackController @Inject() (
               val user = s"<@${info.user.id}>"
 
               info.maybeHelpIndexAt.foreach { index =>
-                info.eventualMaybeEvent.flatMap(_.map { event =>
-                    DisplayHelpBehavior(
-                      None,
-                      None,
-                      Some(index),
-                      includeNameAndDescription = false,
-                      includeNonMatchingResults = false,
-                      isFirstTrigger = false,
-                      event,
-                      lambdaService,
-                      dataService
-                    ).result.flatMap(_.sendIn(None, dataService))
-                  }.getOrElse(Future.successful({}))
-                ).recover {
-                  case t: Throwable => {
-                    Logger.error("Exception responding to a Slack action for help index", t)
-                  }
-                }
+                dataService.slackBotProfiles.sendResultWithNewEvent(
+                  "help index",
+                  (event) => DisplayHelpBehavior(
+                    None,
+                    None,
+                    Some(index),
+                    includeNameAndDescription = false,
+                    includeNonMatchingResults = false,
+                    isFirstTrigger = false,
+                    event,
+                    lambdaService,
+                    dataService
+                  ).result.map(Some(_)),
+                  info.team.id,
+                  info.channel.id,
+                  info.user.id,
+                  info.message_ts
+                )
                 resultText = s"$user clicked More help."
               }
 
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
-                info.eventualMaybeEvent.flatMap(_.map { event =>
-                    DisplayHelpBehavior(
-                      searchValue.maybeSearchText,
-                      Some(searchValue.helpGroupId),
-                      None,
-                      includeNameAndDescription = true,
-                      includeNonMatchingResults = false,
-                      isFirstTrigger = false,
-                      event,
-                      lambdaService,
-                      dataService
-                    ).result.flatMap(_.sendIn(None, dataService))
-                  }.getOrElse(Future.successful({}))
-                ).recover {
-                  case t: Throwable => {
-                    Logger.error("Exception responding to a Slack action for skill help with maybe search", t)
-                  }
-                }
+                dataService.slackBotProfiles.sendResultWithNewEvent(
+                  "skill help with maybe search",
+                  (event) => DisplayHelpBehavior(
+                    searchValue.maybeSearchText,
+                    Some(searchValue.helpGroupId),
+                    None,
+                    includeNameAndDescription = true,
+                    includeNonMatchingResults = false,
+                    isFirstTrigger = false,
+                    event,
+                    lambdaService,
+                    dataService
+                  ).result.map(Some(_)),
+                  info.team.id,
+                  info.channel.id,
+                  info.user.id,
+                  info.message_ts
+                )
                 resultText = info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
                   s"$user clicked $text."
                 } getOrElse {
@@ -476,24 +467,24 @@ class SlackController @Inject() (
               }
 
               info.maybeActionListForSkillId.foreach { searchValue =>
-                info.eventualMaybeEvent.flatMap(_.map { event =>
-                    DisplayHelpBehavior(
-                      searchValue.maybeSearchText,
-                      Some(searchValue.helpGroupId),
-                      None,
-                      includeNameAndDescription = false,
-                      includeNonMatchingResults = true,
-                      isFirstTrigger = false,
-                      event,
-                      lambdaService,
-                      dataService
-                    ).result.flatMap(_.sendIn(None, dataService))
-                  }.getOrElse(Future.successful({}))
-                ).recover {
-                  case t: Throwable => {
-                    Logger.error("Exception responding to a Slack action for skill action list", t)
-                  }
-                }
+                dataService.slackBotProfiles.sendResultWithNewEvent(
+                  "for skill action list",
+                  event => DisplayHelpBehavior(
+                    searchValue.maybeSearchText,
+                    Some(searchValue.helpGroupId),
+                    None,
+                    includeNameAndDescription = false,
+                    includeNonMatchingResults = true,
+                    isFirstTrigger = false,
+                    event,
+                    lambdaService,
+                    dataService
+                  ).result.map(Some(_)),
+                  info.team.id,
+                  info.channel.id,
+                  info.user.id,
+                  info.message_ts
+                )
                 resultText = s"$user clicked List all actions"
               }
 
@@ -542,16 +533,33 @@ class SlackController @Inject() (
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
-                info.eventualMaybeEvent.flatMap(_.map { event =>
-                  val eventualMaybeBehaviorVersion = dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
-                  val eventualResponse = eventualMaybeBehaviorVersion.flatMap(_.map { behaviorVersion =>
-                    val eventualSentResponse = BehaviorResponse.buildFor(event, behaviorVersion, Map(), None, None, lambdaService, dataService, cache, ws, configuration)
-                    eventualSentResponse.flatMap(_.result.map(_.sendIn(None, dataService)))
-                  }.getOrElse {
-                    Future.successful({})
-                  })
-                  SlackMessageReactionHandler.handle(event.clientFor(dataService), eventualResponse, info.channel.id, info.message_ts, delayMilliseconds = 500)
-                }.getOrElse(Future.successful({})))
+                dataService.slackBotProfiles.sendResultWithNewEvent(
+                  s"run behavior version $behaviorVersionId",
+                  event => for {
+                    maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
+                    maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+                      BehaviorResponse.buildFor(
+                        event,
+                        behaviorVersion,
+                        Map(),
+                        None,
+                        None,
+                        lambdaService,
+                        dataService,
+                        cache,
+                        ws,
+                        configuration
+                      ).map(Some(_))
+                    }.getOrElse(Future.successful(None))
+                    maybeResult <- maybeResponse.map { response =>
+                      response.result.map(Some(_))
+                    }.getOrElse(Future.successful(None))
+                  } yield maybeResult,
+                  info.team.id,
+                  info.channel.id,
+                  info.user.id,
+                  info.message_ts
+                )
 
                 resultText = info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
                   s"$user clicked $text"
