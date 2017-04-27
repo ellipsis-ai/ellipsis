@@ -197,14 +197,8 @@ class ScheduledBehaviorServiceImpl @Inject() (
   }
   val rawFindQueryFor = Compiled(uncompiledRawFindQuery _)
 
-  def deleteFor(behavior: Behavior, team: Team): Future[Boolean] = {
+  def delete(scheduledBehavior: ScheduledBehavior): Future[Boolean] = {
     // recurrence deletes cascade to scheduled messages
-    val action = for {
-      allMatching <- rawFindQueryFor(behavior.id, team.id).result
-      didDelete <- DBIO.sequence(allMatching.map { ea =>
-        DBIO.from(dataService.recurrences.delete(ea.recurrenceId))
-      }).map(didDeletes => didDeletes.contains(true))
-    } yield didDelete
-    dataService.run(action)
+    dataService.recurrences.delete(scheduledBehavior.recurrence.id)
   }
 }

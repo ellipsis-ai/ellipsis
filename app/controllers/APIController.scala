@@ -368,7 +368,9 @@ class APIController @Inject() (
                 } else {
                   for {
                     displayText <- scheduledBehaviors.head.displayText(dataService)
-                    _ <- dataService.scheduledBehaviors.deleteFor(behavior, behavior.team)
+                    _ <- Future.sequence(scheduledBehaviors.map { ea =>
+                      dataService.scheduledBehaviors.delete(ea)
+                    })
                   } yield {
                     Ok(s"Ok, I unscheduled everything for $displayText")
                   }

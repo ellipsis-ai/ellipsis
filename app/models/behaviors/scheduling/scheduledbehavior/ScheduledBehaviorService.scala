@@ -30,6 +30,6 @@ trait ScheduledBehaviorService {
                       isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledBehavior]]
 
-  def deleteFor(behavior: Behavior, team: Team): Future[Boolean]
+  def delete(scheduledBehavior: ScheduledBehavior): Future[Boolean]
 
 }

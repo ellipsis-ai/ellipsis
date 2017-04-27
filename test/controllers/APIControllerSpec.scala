@@ -375,9 +375,10 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
         val mockVersion = mock[BehaviorGroupVersion]
         when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).thenReturn(Future.successful(Some(mockVersion)))
-
-        when(dataService.scheduledBehaviors.deleteFor(targetBehavior, team)).thenReturn(Future.successful(true))
         val mockScheduledBehavior = mock[ScheduledBehavior]
+        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, None)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
+
+        when(dataService.scheduledBehaviors.delete(mockScheduledBehavior)).thenReturn(Future.successful(true))
         when(mockScheduledBehavior.displayText(dataService)).thenReturn(Future.successful(s"an action named $actionName"))
         when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, None)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
 
@@ -386,9 +387,10 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe OK
 
-        verify(dataService.scheduledBehaviors, times(1)).deleteFor(targetBehavior, team)
+        verify(dataService.scheduledBehaviors, times(1)).delete(mockScheduledBehavior)
       }
     }
+
   }
 
 
