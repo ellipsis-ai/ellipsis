@@ -14,7 +14,7 @@ trait ScheduledBehaviorService {
 
   def find(id: String): Future[Option[ScheduledBehavior]]
 
-  def allForBehavior(behavior: Behavior): Future[Seq[ScheduledBehavior]]
+  def allForBehavior(behavior: Behavior, maybeUser: Option[User], maybeChannel: Option[String]): Future[Seq[ScheduledBehavior]]
 
   def save(scheduledBehavior: ScheduledBehavior): Future[ScheduledBehavior]
 
@@ -30,6 +30,6 @@ trait ScheduledBehaviorService {
                       isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledBehavior]]
 
-  def deleteFor(behavior: Behavior, team: Team): Future[Boolean]
+  def delete(scheduledBehavior: ScheduledBehavior): Future[Boolean]
 
 }
