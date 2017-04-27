@@ -33,7 +33,7 @@ const EventFormatter = {
   },
 
   formatEventWithDetails: function(event, tz, optionalTodayYMD, options) {
-    const time = this.formatEventTime(event, tz, optionalTodayYMD);
+    const time = this.formatEventDateTime(event, tz, optionalTodayYMD);
     let optionalData = "";
     if (event.description) {
       optionalData += `${event.description}  \n`;
@@ -45,11 +45,11 @@ const EventFormatter = {
   },
 
   formatEventWithoutDetails: function(event, tz, optionalTodayYMD, options) {
-    const time = this.formatEventTime(event, tz, optionalTodayYMD);
+    const time = this.formatEventDateTime(event, tz, optionalTodayYMD);
     return `${time}: **[${event.summary}](${event.htmlLink})**${this.formatHangoutLinkFor(event, options)}`;
   },
 
-  formatEventTime: function(event, tz, optionalTodayYMD) {
+  formatEventDateTime: function(event, tz, optionalTodayYMD) {
     if (!event) {
       return "";
     } else if (event.start.date) {

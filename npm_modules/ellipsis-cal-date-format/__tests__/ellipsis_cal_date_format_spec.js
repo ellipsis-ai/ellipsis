@@ -16,7 +16,7 @@ function formatTz(event, format_type, tz) {
 
 describe("Formatter", () => {
 
-  describe("formatEvent", () => {
+  describe("formatEventWithoutDetails", () => {
     it("Displays non-time parts of the event without details", () => {
       const event = {
         summary: "Some made-up event",
@@ -29,13 +29,17 @@ describe("Formatter", () => {
           date: '2017-01-03'
         }
       };
-      expect(Formatter.formatEvent(event)).toBe([
+      expect(Formatter.formatEventWithoutDetails(event)).toBe([
         format(event.start.date, 'ALL_DAY'),
         Formatter.verbiage.DASH,
         format('2017-01-02', 'ALL_DAY') + ":",
         `**[${event.summary}](${event.htmlLink})** · [Join hangout](${event.hangoutLink})`
       ].join(" "));
     });
+
+  });
+
+  describe("formatEventWithDetails", () => {
 
     it("Displays non-time parts of the event with details", () => {
       const event = {
@@ -51,13 +55,31 @@ describe("Formatter", () => {
           date: '2017-01-03'
         }
       };
-      expect(Formatter.formatEvent(event, null, null, { details: true })).toBe([
+      expect(Formatter.formatEventWithDetails(event, null, null, { details: true })).toBe([
         format(event.start.date, 'ALL_DAY') + " ",
         Formatter.verbiage.DASH + " ",
         format('2017-01-02', 'ALL_DAY') + "  \n",
         `**[${event.summary}](${event.htmlLink})**  \n${event.description}  \n_Where: ${event.location}_  \n[Join hangout](${event.hangoutLink})`
       ].join(""));
     });
+  });
+
+  describe("formatEvent", () => {
+
+    it("Calls the appropriate formatting method given details=true", () => {
+      const MyFormatter = require('../index');
+      MyFormatter.formatEventWithDetails = jest.fn();
+      MyFormatter.formatEvent({}, null, null, { details: true });
+      expect(MyFormatter.formatEventWithDetails.mock.calls.length).toBe(1);
+    });
+
+    it("Calls the appropriate formatting method given details=false", () => {
+      const MyFormatter = require('../index');
+      MyFormatter.formatEventWithoutDetails = jest.fn();
+      MyFormatter.formatEvent({}, null, null, { details: false });
+      expect(MyFormatter.formatEventWithoutDetails.mock.calls.length).toBe(1);
+    });
+
   });
 
   // The end date for all-day events is always one more than the last day of the event
