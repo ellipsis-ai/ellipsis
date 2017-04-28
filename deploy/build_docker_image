@@ -6,15 +6,18 @@ PUBLIC_ASSETS_DIR=/tmp/public-assets
 ASSETS_BUCKET=ellipsis-assets
 EB_BUCKET=elasticbeanstalk-us-east-1-170937251085
 APP_NAME="My First Elastic Beanstalk Application"
+TARGET_ENV="production"
 
-if [ $1 = "stag01" ]; then
-  printf "\n\n Deploying to stag01 \n\n"
+if [ "$1" = "stag01" ]; then
+  TARGET_ENV="stag01"
   STAG01_ACCOUNT_ID="458075145501"
   EB_BUCKET="elasticbeanstalk-us-east-1-${STAG01_ACCOUNT_ID}"
   ASSETS_BUCKET="assets-${STAG01_ACCOUNT_ID}"
   APP_NAME="playapp"
   AWS_ELLIPSIS_PROFILE="el-stag01-${STAG01_ACCOUNT_ID}"
 fi
+
+printf "\n\n Deploying to ${TARGET_ENV} \n\n"
 
 hold_on_to_your_butts() {
   printf "\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;138m0\e[38;5;145m0\e[38;5;52m1\e[0m \e[0m \e[38;5;53m0\e[38;5;139m1\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;225m0\e[38;5;181m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;24m0\e[0m \e[0m \e[38;5;17m0\e[38;5;17m1\e[38;5;17m1\e[0m
@@ -63,32 +66,32 @@ fi
 GIT_USERNAME=`git config user.name`
 DISPLAY_USERNAME=${GIT_USERNAME:-$USER}
 printf "${GREEN}Announcing the deployment to #dev...${PLAIN}"
-curl -f --data "message=Heads%20up!%20${DISPLAY_USERNAME}%20is%20preparing%20a%20deploy.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}The deploy announcement failed. Please check the ELLIPSIS_DEPLOY_TOKEN environment variable.${PLAIN}" && exit 1)
+curl -f --data "message=Heads%20up!%20${DISPLAY_USERNAME}%20is%20preparing%20a%20deploy%20to%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}The deploy announcement failed. Please check the ELLIPSIS_DEPLOY_TOKEN environment variable.${PLAIN}" && exit 1)
 printf "\n"
 pushd `git rev-parse --show-toplevel` > /dev/null
 git diff-index --quiet HEAD --
 if [ $? -eq 1 ];then
-  printf "${GREEN}You have uncommitted changes in your working directory. \
-          Deal with them first.${PLAIN}";
+  printf "\n\n${GREEN}You have uncommitted changes in your working directory.\n"
+  printf "Deal with them first!${PLAIN}\n\n";
   exit 1
 fi
 
 if [ ! -f node_modules/.bin/eslint ];then
-  printf "${GREEN}eslint${PLAIN} is not installed. Try running \
-         ${GREEN}npm install${PLAIN}.";
+  printf "\n\n${GREEN}eslint${PLAIN} is not installed.\n"
+  printf "Try running ${GREEN}npm install${PLAIN}.\n\n";
   exit 1
 fi
 
 if [ ! -f node_modules/.bin/jest ];then
-  printf "${GREEN}jest${PLAIN} is not installed. Try running \
-          ${GREEN}npm install${PLAIN}.";
+  printf "\n\n${GREEN}jest${PLAIN} is not installed.\n"
+  printf "Try running ${GREEN}npm install${PLAIN}.\n\n";
   exit 1
 fi
 
 type activator >/dev/null 2>&1 || {
-  printf "${GREEN}activator${PLAIN} is not installed. Visit \
-          ${GREEN}https://www.lightbend.com/activator/download${PLAIN} \
-          to download it.";
+  printf "\n\n${GREEN}activator${PLAIN} is not installed.\n"
+  printf "Visit ${GREEN}https://www.lightbend.com/activator/download${PLAIN}"
+  printf "to download it.";
   exit 1
 }
 
@@ -191,4 +194,4 @@ else
 fi
 
 osascript -e "display notification \"The build script has ended.\" with title \"Build $VERSION_LABEL\" sound name \"Sosumi\""
-curl -f --data "message=🚀%20Build%20**${VERSION_LABEL}**%20is%20ready%20for%20deployment.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}Warning: the post-build announcement failed.${PLAIN}" && exit 1)
+curl -f --data "message=🚀%20Build%20**${VERSION_LABEL}**%20is%20ready%20for%20deployment%20on%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}Warning: the post-build announcement failed.${PLAIN}" && exit 1)
