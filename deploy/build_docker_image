@@ -28,9 +28,9 @@ printf "${GREEN}Checking your local branch...${PLAIN}\n"
 pushd `git rev-parse --show-toplevel` > /dev/null
 git diff-index --quiet HEAD --
 if [ $? -eq 1 ];then
-  printf "\n\n${GREEN}You have uncommitted changes in your working directory.\n"
+  printf "\n\n${MAGENTA}You have uncommitted changes in your working directory.\n"
   printf "Deal with them first!${PLAIN}\n\n";
-  # exit 1
+  exit 1
 fi
 printf "Done.\n"
 
@@ -68,41 +68,41 @@ hold_on_to_your_butts() {
 
 printf "${GREEN}Checking your Environment...${PLAIN}\n"
 if [ -z "$ELLIPSIS_DEPLOY_TOKEN" ];then
-  printf "${GREEN}You need to set the ELLIPSIS_DEPLOY_TOKEN environment variable.\n"
+  printf "${MAGENTA}You need to set the ELLIPSIS_DEPLOY_TOKEN environment variable.\n"
   printf "Visit https://bot.ellipsis.ai/list_api_tokens and add"
-  printf "the deploy token to your environment.${PLAIN}"
+  printf "the deploy token to your environment.${PLAIN}\n\n"
   exit 1
 fi
 
 if [ ! -f node_modules/.bin/eslint ];then
-  printf "\n\n${GREEN}eslint${PLAIN} is not installed.\n"
-  printf "Try running ${GREEN}npm install${PLAIN}.\n\n";
+  printf "\n\n${MAGENTA}eslint is not installed.\n"
+  printf "Try running npm install${PLAIN}.\n\n";
   exit 1
 fi
 
 if [ ! -f node_modules/.bin/jest ];then
-  printf "\n\n${GREEN}jest${PLAIN} is not installed.\n"
-  printf "Try running ${GREEN}npm install${PLAIN}.\n\n";
+  printf "\n\n${MAGENTA}jest is not installed.\n"
+  printf "Try running npm install${PLAIN}.\n\n";
   exit 1
 fi
 
-type activator >/dev/null 2>&1 || {
-  printf "\n\n${GREEN}activator${PLAIN} is not installed.\n"
-  printf "Visit ${GREEN}https://www.lightbend.com/activator/download${PLAIN}"
-  printf "to download it.";
+type activator2 >/dev/null 2>&1 || {
+  printf "\n\n${MAGENTA}activator is not installed.\n"
+  printf "Visit https://www.lightbend.com/activator/download"
+  printf "to download it.${PLAIN}\n\n";
   exit 1
 }
 
-if ! type aws > /dev/null;then
-  printf "\n\nYou need to set up the aws CLI tools.\n"
-  printf "Try ${GREEN}brew install awscli${PLAIN} if you’re using brew,\n"
-  printf "or go to ${GREEN}https://aws.amazon.com/cli/${PLAIN}.\n";
+type aws >/dev/null 2>&1 || {
+  printf "\n\n${MAGENTA}You need to set up the aws CLI tools.\n"
+  printf "Try brew install awscli if you’re using brew,\n"
+  printf "or go to https://aws.amazon.com/cli/.${PLAIN}\n\n";
   exit 1
-if
+}
 
 if [ -z ${AWS_ELLIPSIS_PROFILE+x} ];then
-  printf "You need to set the ${GREEN}AWS_ELLIPSIS_PROFILE${PLAIN}"
-  printf "env var with the profile to use for AWS.\n"
+  printf "${MAGENTA}You need to set the AWS_ELLIPSIS_PROFILE"
+  printf "env var with the profile to use for AWS.${PLAIN}\n"
   printf "
 1. If you haven’t already, run ${GREEN}aws configure --profile ellipsis${PLAIN} to set up a
  profile.
