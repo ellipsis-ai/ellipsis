@@ -1,6 +1,20 @@
 #!/bin/sh
 
 VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
+PUBLIC_ASSETS_DIR=/tmp/public-assets
+
+ASSETS_BUCKET=ellipsis-assets
+EB_BUCKET=elasticbeanstalk-us-east-1-170937251085
+APP_NAME="My First Elastic Beanstalk Application"
+
+if [ $1 = "stag01" ]; then
+  printf "\n\n Deploying to stag01 \n\n"
+  STAG01_ACCOUNT_ID="458075145501"
+  EB_BUCKET="elasticbeanstalk-us-east-1-${STAG01_ACCOUNT_ID}"
+  ASSETS_BUCKET="assets-${STAG01_ACCOUNT_ID}"
+  APP_NAME="playapp"
+  AWS_ELLIPSIS_PROFILE="el-stag01-${STAG01_ACCOUNT_ID}"
+fi
 
 hold_on_to_your_butts() {
   printf "\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;138m0\e[38;5;145m0\e[38;5;52m1\e[0m \e[0m \e[38;5;53m0\e[38;5;139m1\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;225m0\e[38;5;181m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;24m0\e[0m \e[0m \e[38;5;17m0\e[38;5;17m1\e[38;5;17m1\e[0m
@@ -165,8 +179,7 @@ zip -qq -r $BUNDLE_PATH .
 popd > /dev/null
 popd > /dev/null
 
-BUCKET=elasticbeanstalk-us-east-1-170937251085
-APP_NAME="My First Elastic Beanstalk Application"
+
 
 if ! type aws > /dev/null;
 then
@@ -203,22 +216,17 @@ profile to use for AWS.
   else
 
     printf "${MAGENTA}Syncing assets with S3...${PLAIN}";
-    PUBLIC_ASSETS_DIR=/tmp/public-assets
-    ASSETS_BUCKET=ellipsis-assets
     mkdir -p $PUBLIC_ASSETS_DIR
     rm -rf $PUBLIC_ASSETS_DIR/*
     unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-assets.jar -d $PUBLIC_ASSETS_DIR/
     aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSETS_BUCKET/ --acl=public-read --quiet
-
     S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
-    printf "
-${MAGENTA}Uploading ${GREEN}$BUNDLE${MAGENTA} to S3...${PLAIN}";
-    aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$BUCKET/$S3_KEY
-
+    printf "${MAGENTA}Uploading ${GREEN}$BUNDLE${MAGENTA} to S3...${PLAIN}";
+    aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$EB_BUCKET/$S3_KEY
     aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
     --application-name "$APP_NAME" \
     --version-label $VERSION_LABEL \
-    --source-bundle S3Bucket=$BUCKET,S3Key=$S3_KEY \
+    --source-bundle S3Bucket=$EB_BUCKET,S3Key=$S3_KEY \
     --process;
 
   fi
