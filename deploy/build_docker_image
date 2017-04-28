@@ -86,7 +86,7 @@ if [ ! -f node_modules/.bin/jest ];then
   exit 1
 fi
 
-type activator2 >/dev/null 2>&1 || {
+type activator >/dev/null 2>&1 || {
   printf "\n\n${MAGENTA}activator is not installed.\n"
   printf "Visit https://www.lightbend.com/activator/download"
   printf "to download it.${PLAIN}\n\n";
